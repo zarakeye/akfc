@@ -5,8 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma/client"
 }
 
 datasource db {
@@ -38,11 +38,27 @@ model User {
   likes         Like[]
 }
 
+model Permission {
+  id    Int               @id @default(autoincrement())
+  name  String            @unique
+  roles RolePermissions[]
+}
+
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  permissions String[]
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  permissions RolePermissions[]
   users       User[]
+}
+
+model RolePermissions {
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
 }
 
 model Preferences {
@@ -94,17 +110,24 @@ model Slot {
 }
 
 model Activity {
-  id           Int          @id @default(autoincrement())
-  name         String
-  slots        Slot[]
-  type         ActivityType
-  martialArt   String
-  instructorId Int
-  origin       String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id             Int           @id @default(autoincrement())
+  name           String
+  slots          Slot[]
+  activityTypeId Int?
+  type           ActivityType? @relation(fields: [activityTypeId], references: [id])
+  martialArt     String
+  instructorId   Int
+  origin         String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@unique([name])
+}
+
+model ActivityType {
+  id         Int        @id @default(autoincrement())
+  type       String
+  activities Activity[]
 }
 
 model Stage {
@@ -157,10 +180,4 @@ enum Day {
   FRIDAY
   SATURDAY
   SUNDAY
-}
-
-
-enum ActivityType {
-  COURSE
-  STAGE
 }

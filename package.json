@@ -2,31 +2,40 @@
   "name": "akfc_2",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.0",
     "@tanstack/react-query": "^5.90.7",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@trpc/client": "^11.7.1",
     "@trpc/react-query": "^11.7.1",
     "@trpc/server": "^11.7.1",
     "bcryptjs": "^3.0.3",
+    "generate-password": "^1.7.1",
     "jsonwebtoken": "^9.0.2",
     "next": "16.0.1",
+    "nodemailer": "^7.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-query-devtools": "^2.6.3",
     "superjson": "^2.2.5",
-    "zod": "^4.1.12"
+    "zod": "^4.1.12",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -36,5 +45,5 @@
     "ts-node": "^10.9.2",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd"
+  "packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
 }
