@@ -1,24 +1,25 @@
 import { create } from "zustand";
 import { trpcClient } from "@lib/trpcClient";
-import type { User as PrismaUser, Role as PrismaRole } from "@/generated/prisma/client";
+import type { User as PrismaUser, Role as PrismaRole } from "@prisma/client";
+import { boolean } from "zod";
 
-interface User extends PrismaUser {
+export interface SessionUser extends PrismaUser {
   role: PrismaRole;
 }
 
 interface UserState {
-  user: User | null;
+  user: SessionUser | null;
   loading: boolean;
-  setUser: (u: User | null) => void;
-  fetchUser: () => Promise<void>;
-  logout: () => Promise<void>;
+  setUser: (u: SessionUser | null) => void;
+  fetchUser: () => Promise<boolean>;
+  logout: () => Promise<boolean>;
 }
 
 export const useUserStore = create<UserState>()((set) => ({
   user: null,
   loading: false,
   
-  setUser: (u: User | null) => set({ user: u }),
+  setUser: (u: SessionUser | null) => set({ user: u }),
   
   /**
    * Fetches the user from the API and updates the user state.
@@ -28,7 +29,7 @@ export const useUserStore = create<UserState>()((set) => ({
    * retrieved user. If the request fails, it sets the user state
    * to null.
    */
-  fetchUser: async () => {
+  fetchUser: async (): Promise<boolean> => {
     set({ loading: true });
 
     try {
@@ -36,7 +37,7 @@ export const useUserStore = create<UserState>()((set) => ({
 
       if (!userData) {
         set({ user: null, loading: false });
-        return;
+        return false;
       }
       
       let fullRole: PrismaRole | null = null;
@@ -44,14 +45,16 @@ export const useUserStore = create<UserState>()((set) => ({
         fullRole = await trpcClient.role.getById.query({ id: userData.roleId });
       }
 
-      const user: User = {
+      const user: SessionUser = {
         ...userData,
         role: fullRole!
       };
 
       set({ user, loading: false });
+      return true;
     } catch {
       set({ user: null, loading: false });
+      return false;
     }
   },
 
@@ -59,8 +62,13 @@ export const useUserStore = create<UserState>()((set) => ({
    * Logs the user out of the application by calling the logout mutation.
    * This sets the user state to null.
    */
-  logout: async () => {
-    await trpcClient.auth.logout.mutate();
-    set({ user: null });
-  }
+  logout: async (): Promise<boolean> =>{
+    try {
+      await trpcClient.auth.logout.mutate();
+      set({ user: null });
+      return true;
+    } catch {
+      return false;
+    }
+  },
 }));

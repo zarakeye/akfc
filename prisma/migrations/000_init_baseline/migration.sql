@@ -1,0 +1,1 @@
+-- baseline migration: actual database schema is the base state

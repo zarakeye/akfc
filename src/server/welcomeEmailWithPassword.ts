@@ -21,7 +21,7 @@ const transporter = nodemail.createTransport({
  * @param {string} password - the temporary password
  * @returns {Promise<void>} - a promise that resolves when the email has been sent
  */
-export default async function sendPasswordEmail(to: string, subject: string, password: string) {
+export default async function sendPasswordEmail(to: string, subject: string, password: string): Promise<void> {
   const mailInfo = {
     from: `${shortName} <${process.env.SMTP_FROM_NOREPLY}@${process.env.APP_DOLMAIN}>`,
     to,

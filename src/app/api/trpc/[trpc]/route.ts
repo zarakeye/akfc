@@ -1,9 +1,9 @@
-import { appRouter } from '@server/trpc';
+import { appRouter } from '@/server/trpc';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { createContext } from '@server/trpc';
+import { createContext } from '@/server/trpc';
 import type { NextRequest } from 'next/server';
 
-export const runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 /**
  * Handles an incoming request and returns the response from the
@@ -20,4 +20,4 @@ const handler = (req: NextRequest): Promise<Response> =>
     createContext
   });
 
-  export { handler as GET, handler as POST, handler as OPTIONS, handler as DELETE, handler as PATCH, handler as PUT, handler as HEAD, handler as CONNECT, handler as TRACE };
+export { handler as GET, handler as POST, handler as OPTIONS, handler as DELETE, handler as PATCH, handler as PUT, handler as HEAD, handler as CONNECT, handler as TRACE };

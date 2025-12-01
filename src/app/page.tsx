@@ -1,8 +1,41 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { JSX, use, useEffect, useState } from "react";
+import Image from "next/image";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import UpdateUserForm from "@/components/admin/UpdateUserForm";
+import { trpcClient } from "@/lib/trpcClient";
+import { User } from "@prisma/client";
+
+export default function Home(): JSX.Element {
+  const currentUser = useUserStore((state) => state.user);
+  const [distantCurrentUser, setDistantCurrentUser] = useState<User | null>(null);
+  const [firstLogin, setFirstLogin] = useState(false);
+
+  
+
+  useEffect(() => {
+    const updateFirstLogin = async (): Promise<void> => {
+      if (currentUser) setFirstLogin(currentUser.isFirstLogin);
+
+    }
+    updateFirstLogin();
+
+    const fetchCurrentUser = async (): Promise<void> => {
+      const userData = await trpcClient.auth.me.query();
+      setDistantCurrentUser(userData);
+    }
+    fetchCurrentUser();
+  }, [currentUser]);
+
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+    <>
+    {firstLogin && distantCurrentUser &&
+      <UpdateUserForm user={distantCurrentUser} setFirstLogin={setFirstLogin} />
+    }
+    {!firstLogin &&
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
         <Image
           className="dark:invert"
@@ -61,5 +94,8 @@ export default function Home() {
         </div>
       </main>
     </div>
+    }
+    
+    </>
   );
 }
