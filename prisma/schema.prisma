@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  engineType = "binary"
+  provider      = "prisma-client-js"
+  engineType    = "binary"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -38,9 +39,9 @@ model User {
   comments      Comment[]
   likes         Like[]
   avatar        String?
-  Courses       Course[]    @relation("UserCourses")
-  Stage         Stage[]     @relation("UserStages")
-  Activities    Activity[]  @relation("UserActivities")
+  Courses       Course[]     @relation("UserCourses")
+  Stage         Stage[]      @relation("UserStages")
+  Activities    Activity[]   @relation("UserActivities")
 }
 
 model Permission {
@@ -83,6 +84,7 @@ model Session {
   token     String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String?
   createdAt DateTime @default(now())
   expiresAt DateTime
 }
@@ -97,18 +99,19 @@ model Verification {
 }
 
 model Course {
-  id          Int      @id @default(autoincrement())
-  label       String
-  content     Json
-  beginTime   Int
-  endTime     Int
-  day         Day
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  coachId     String
-  coach       User     @relation("UserCourses", fields: [coachId], references: [id])
-
-  @@unique([label])
+  id         Int      @id @default(autoincrement())
+  label      String   @unique
+  // discipline String   // 'CALLiGRAPHY' | 'MARTIAL ART'
+  // style      String   
+  content    Json
+  beginTime  Int
+  endTime    Int
+  day        Day
+  requisites String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  coachId    String
+  coach      User     @relation("UserCourses", fields: [coachId], references: [id])
 }
 
 model Slot {
@@ -120,51 +123,58 @@ model Slot {
 }
 
 model Activity {
-  id             Int           @id @default(autoincrement())
-  name           String
-  description    String?
-  slots          Slot[]
-  activityTypeId Int?
-  activityType   ActivityType? @relation(fields: [activityTypeId], references: [id])
-  martialArt     String
-  instructorId   String
-  instructor     User          @relation("UserActivities", fields: [instructorId], references: [id])
-  origin         String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  slots        Slot[]
+  martialArt   String
+  instructorId String
+  instructor   User     @relation("UserActivities", fields: [instructorId], references: [id])
+  origin       String? // e.g., "Chine", "Philippines"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([name])
 }
 
-model ActivityType {
-  id         Int        @id @default(autoincrement())
-  type       String     @unique
-  activities Activity[]
+model Category {
+  id   Int    @id @default(autoincrement())
+  type String @unique
+}
+
+model MartialArt {
+  id          Int     @id @default(autoincrement())
+  name        String
+  style       String?
+  origin      String?
+  description String?
 }
 
 model Stage {
   id            Int      @id @default(autoincrement())
-  date          DateTime
-  description   String?
-  beginTime     Int
-  endTime       Int
-  program       String[]
-  animatorId    String
-  animator      User     @relation("UserStages", fields: [animatorId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  preRegistered Int[]
+  label         String
+  date          DateTime // date of the stage
+  description   Json // details about the stage
+  beginTime     Int // in minutes from midnight
+  endTime       Int // in minutes from midnight
+  program       Json
+  animatorId    String // references User.id
+  animator      User     @relation("UserStages", fields: [animatorId], references: [id]) // the user who animates the stage
+  createdAt     DateTime @default(now()) // timestamp when the stage was created
+  updatedAt     DateTime @updatedAt // timestamp when the stage was last updated
+  preRegistered String[] // list of User IDs who have pre-registered
 }
 
 model Post {
-  id              Int      @id @default(autoincrement())
-  title           String
-  content         Json
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  publicationDate DateTime?
+  id              Int       @id @default(autoincrement())
+  title           String // title of the post
+  content         Json // content of the post in JSON format
+  authorId        String // references User.id
+  author          User      @relation(fields: [authorId], references: [id]) // the user who authored the post
+  createdAt       DateTime  @default(now()) // timestamp when the post was created
+  updatedAt       DateTime  @updatedAt // timestamp when the post was last updated
+  publicationDate DateTime? // optional publication date
+  comments        Comment[]
   likes           Like[]
 }
 
@@ -176,17 +186,17 @@ model Comment {
   articleId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  post      Post?    @relation(fields: [postId], references: [id])
+  postId    Int?
 }
 
 model Like {
   id     Int     @id @default(autoincrement())
-  postId Int
-  post   Post    @relation(fields: [postId], references: [id])
-  userId String
-  user   User    @relation(fields: [userId], references: [id])
-  like   Boolean @default(false)
-
-  @@unique([postId, userId])
+  postId Int // references Post.id
+  post   Post    @relation(fields: [postId], references: [id]) // the post that is liked
+  userId String // references User.id
+  user   User    @relation(fields: [userId], references: [id]) // the user who liked the post
+  like   Boolean @default(false) // true for like, false for unlike
 }
 
 enum Day {
@@ -197,4 +207,29 @@ enum Day {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum WushuStyle {
+  CHOY_LI_FUT
+  TAI_CHI_CHUAN
+  TANG_LANG_QUAN
+  WING_CHUN
+  CHANG_QUAN
+  SHAOLIN_QUAN
+  FAN_ZI_QUAN
+  CHUO_JIAO
+  BA_JI_QUAN
+  HUNG_GAR
+  LAU_GAR
+  MOK_GAR
+  XING_YI_QUAN
+  BA_QUA_ZHANG
+  HOU_QUAN
+  SHE_QUAN
+  YING_QUAN
+  HU_QUAN
+  HE_QUAN
+  ZUI_QUAN
+  SHUAI_JIAO
+  QI_GONG
 }

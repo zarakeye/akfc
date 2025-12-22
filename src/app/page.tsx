@@ -1,9 +1,9 @@
 'use client';
 
-import { JSX, use, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import Image from "next/image";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import UpdateUserForm from "@/components/admin/UpdateUserForm";
+import UpdateUserForm from "@/app/entities/users/[server]/update/UpdateUserForm";
 import { trpcClient } from "@/lib/trpcClient";
 import { User } from "@prisma/client";
 

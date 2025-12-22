@@ -3,13 +3,15 @@ import { authRouter } from '../routers/auth.router';
 import { roleRouter } from '../routers/role.router';
 import { userRouter } from '../routers/user.router';
 import { permissionRouter } from '../routers/permission.router';
-import { activityTypeRouter } from '@/server/routers/activityType.router';
-import { Role, User } from '@prisma/client';
-import { COOKIE_NAME } from '@/lib/constants';
+import { categoryRouter } from '@/server/routers/category.router';
+import { sessionRouter } from '../routers/session.router';
+import { postRouter } from '@/server/routers/post.router';
+import { uploadImagesRouter } from '../routers/uploadImages.router';
+import { courseRouter } from '../routers/course.router';
 import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
 import { router } from '@server/trpc/core';
 import type { SessionCtx } from '@server/trpc/core';
+import { getUserFromSessionJWT } from '@/lib/session/session.server';
 
 /**
  * Retrieves the user associated with the current session cookie.
@@ -18,47 +20,53 @@ import type { SessionCtx } from '@server/trpc/core';
  */
 export async function createContext(): Promise<SessionCtx> {
   const cookieStore = await cookies();
-  const cookie = cookieStore.get(COOKIE_NAME);
-  const JWT_SECRET = process.env.JWT_SECRET;
 
-  if (!cookie) return { prisma, user: null };
+  const user = await getUserFromSessionJWT();
+  console.log('🔑 USER FROM CONTEXT:', user);
+  
+  if (!user) return { prisma, user: null, session: null, cookies: cookieStore };
+  let session: SessionCtx['session'] = null;
 
   try {
-    const payload = jwt.verify(
-      cookie.value,
-      JWT_SECRET ?? ''
-    ) as { sessionId: string; userId: string };
-
-    const session = await prisma.session.findUnique({
-      where: { id: payload.sessionId },
+    // 🔑 Verify the JWT
+    session = await prisma.session.findFirst({
+      where: { userId: user.id },
       include: {
         user: {
           include: {
             role: {
-              include: { permissions: { include: { permission: true } } } }
+              include: {
+                permissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            }
           }
         }
       }
     });
 
-    if (!session || session.expiresAt < new Date()) return { prisma, user: null };
-    if (!session.user.role) throw new Error("User role missing !");
+    if (!session || session.expiresAt < new Date()) return { prisma, user: null, session: null, cookies: cookieStore };
+    if (session.user && !session.user.role) throw new Error("User role missing !");
 
-    const userWithRole = {
-      ...session.user,
-      role: {
-        ...session.user.role,
-        permissions: session.user.role.permissions.map(p => p.permission)
-      }
+    // ⭐ NORMALISATION
+    const normalizedSession = {
+      ...session,
+      user
     };
 
     return {
       prisma,
-      user: userWithRole as User & { role: Role & { permissions: [] } },
+      user,
+      session: normalizedSession,
+      cookies: cookieStore,
     };
-  } catch {
-    return { prisma, user: null };
-  }  
+  } catch (err) {
+    console.error('Error creating context', err);
+    return { prisma, user: null, session: null, cookies: cookieStore };
+  }
 }
 
 export const appRouter = router({
@@ -66,8 +74,11 @@ export const appRouter = router({
   role: roleRouter,
   user: userRouter,
   permission: permissionRouter,
-  activityType: activityTypeRouter,
-
+  category: categoryRouter,
+  post: postRouter,
+  upload: uploadImagesRouter,
+  course: courseRouter,
+  session: sessionRouter
 });
 
 export type AppRouter = typeof appRouter;

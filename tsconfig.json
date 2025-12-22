@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,21 +25,42 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@server/*": ["src/server/*"],
-      "@lib/*": ["src/lib/*"],
-      "@components/*": ["src/components/*"],
-      "@generated/*": ["src/generated/*"],
-      "@routers/*": ["src/server/routers/*"],
+      "@/*": [
+        "src/*"
+      ],
+      "@server/*": [
+        "src/server/*"
+      ],
+      "@lib/*": [
+        "src/lib/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@generated/*": [
+        "src/generated/*"
+      ],
+      "@routers/*": [
+        "src/server/routers/*"
+      ]
     }
   },
   "include": [
     "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/cropper-elements.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    // ".next/types/**/*.ts",
+    // ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    "prisma/seed.js",
+    "prisma.config.ts.back",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "prisma/seed.js", "prisma.config.ts.back"  ],
-  "exclude": ["node_modules"]
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

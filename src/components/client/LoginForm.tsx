@@ -2,19 +2,18 @@
 
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, JSX, use, useState } from "react";
-import { AuthAction } from "@/server/actions/auth.action";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { useActionState, useEffect, JSX, useState } from "react";
+import { AuthAction } from "@server/actions/auth.action";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { authSchema } from "@/server/validation/auth.schema";
-import { trpc } from "@/lib/trpcClient";
-import { AuthState } from "@/server/actions/actionState.interfaces";
-import { getClientSession } from "@/lib/session/session.client";
-import { get } from "http";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { authSchema } from "@server/validation/auth.schema";
+import { trpc } from "@lib/trpcClient";
+import { AuthState } from "@server/actions/actionState.interfaces";
+import { getClientSession } from "@lib/session/session.client";
+import { useUserStore } from "@lib/stores/useUserStore";
 
 interface FormValues { email: string; password: string }
 
@@ -31,6 +30,7 @@ export function LoginForm(): JSX.Element {
   const [state, formAction] = useActionState(AuthAction, { success: false, error: undefined } as AuthState);
   const router = useRouter();
   const [loginSuccess, setLoginSuccess] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // 1️⃣ Validation client instantanée
   const form = useForm<FormValues>({
@@ -45,35 +45,52 @@ export function LoginForm(): JSX.Element {
   const utils = trpc.useUtils(); // To immediately update the client cache after login
 
   useEffect(() => {
-    if (state.success) {
-      toast.success("Connexion réussie !");
-      utils.auth.me.invalidate(); // Invalidate the current user query to refetch user data
-      form.reset();
-    } else if (state.error) {
-      toast.error(state.error);
-    }
+    const checkSession = async () => { 
+      if (state.success) {
+        // ⚡ On va chercher l'utilisateur via le store
+        const loggedIn = await useUserStore.getState().fetchUser();
+
+        if (loggedIn) {
+          toast.success("Connexion réussie !");
+          router.push("/admin/dashboard");
+          router.refresh();
+        } else if (state.error) {
+          toast.error("Impossible de récupérer la session");
+        }
+      } 
+    };
+
+    void checkSession();
   }, [state, utils, form, router]);
 
-  useEffect(() => {
-    const performLoginSuccessCheck = async () => {
-      const loginResult = await useUserStore.getState().fetchUser();
-      if (loginResult) setLoginSuccess(true);
-    }
-    void performLoginSuccessCheck();
-  }, [state.success]);
+  // useEffect(() => {
+  //   const performLoginSuccessCheck = async () => {
+  //     setError(null);
+  //     const loginResult = await useUserStore.getState().fetchUser();
+  //     if (loginResult) {
+  //       setLoginSuccess(true);
+  //       setError(null);
+  //     }
+  //     else {
+  //       setLoginSuccess(false);
+  //       setError('Email ou mot de passe incorrect');
+  //     }
+  //   }
+  //   void performLoginSuccessCheck();
+  // }, [state.success]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (loginSuccess) {
-        router.push('/admin/dashboard');
-        router.refresh();
-      } else {
-        router.push('/');
-        router.refresh();
-      }
-    };
-    void fetchData();
-  }, [router, loginSuccess]);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     if (loginSuccess) {
+  //       router.push('/admin/dashboard');
+  //       router.refresh();
+  //     } else {
+  //       router.push('/');
+  //       router.refresh();
+  //     }
+  //   };
+  //   void fetchData();
+  // }, [router, loginSuccess]);
 
   return (
     <Form {...form}>

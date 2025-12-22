@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, JSX } from 'react';
-import type { User } from '@generated/prisma/client'
+import type { User } from '@prisma/client';
 
 interface AuthGateProps {
   user: User | null

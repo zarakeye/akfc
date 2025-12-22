@@ -167,3 +167,45 @@
   border: 1px solid #ccc;
   padding: 0.5rem;
 }
+
+/* Damier blanc/gris derrière l'image */
+.cropper-container,
+
+
+/* Grille de cadrage plus grise */
+.reactEasyCrop_CropAreaGrid {
+  border-color: rgba(128, 128, 128, 0.8) !important;
+}
+
+/* Slider générique */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #374151; /* gray-700 */
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+/* Curseur Webkit */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981; /* green-500 par défaut */
+  cursor: pointer;
+  border: none;
+  margin-top: -5px; /* centre le thumb */
+}
+
+/* Curseur Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  border: none;
+}

@@ -6,22 +6,20 @@ import UserMenu from "@components/client/UserMenu";
 import { Suspense, useEffect, useState } from "react";
 // import { trpc } from '@lib/trpcClient';
 import Image from "next/image";
-import { getClientSession } from "@/lib/session/session.client";
 import { usePathname } from "next/navigation";
-import { get } from "http";
+import { useUserStore } from "@/lib/stores/useUserStore";
 
 export default function Header() {
-  // Server-side: Retrieve the current user from the session
-  // const caller = await trpcCaller();
-  const currentUser = getClientSession();
+  const currentUser = useUserStore((state) => state.user);
   // const [isActive, setIsActive] = useState<string>('');
   const pathname = usePathname();
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);
 
   useEffect(() => {
+    currentUser;
     console.log(`current user : ${currentUser}`)
-  }, [currentUser])
+  }, [])
 
   // useEffect(() => {
   //   console.log('isActive : ', isActive)

@@ -1,34 +1,15 @@
-// Hybrid Session
-
 import 'server-only';
 import { prisma } from '@server/prisma';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { Role, User } from '@prisma/client';
+import { Role, User, Session, Permission } from '@prisma/client';
 import { COOKIE_NAME, SESSION_DURATION_MS } from '../constants';
+import type { UserEnhancedStrict } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-interface Session {
-  id: string;
-  // isFirstLogin: boolean;
-  token: string;
-  userId: string;
-  expiresAt: Date;
-}
-
-/**
- * Creates a new session and returns the session object.
- * The session is created with a random token, the user ID, and an expiration date 7 days from now.
- * The session is then stored in a JWT, which is stored in a secure cookie.
- * @param {string} user - The ID of the user to create the session for.
- * @returns {Promise<Session>} - The created session object.
- */
-export async function createSessionJWT(user: User): Promise<Session> {
-  const { id, isFirstLogin } = user;
-  
-  // Generate a random token
-  const token = crypto.randomUUID();
+export async function createSessionJWT(user: UserEnhancedStrict): Promise<{ user: UserEnhancedStrict; session: Session }> {
+  const sessionToken = crypto.randomUUID();
   
   // Set the token to expire in 7 days
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
@@ -36,61 +17,60 @@ export async function createSessionJWT(user: User): Promise<Session> {
   // Create the session
   const session = await prisma.session.create({
     data: {
-      token,
-      userId: id,
-      // isFirstLogin,
+      token: sessionToken,
+      userId: user.id,
+      role: user.role?.name ?? null,
       expiresAt
     }
   });
 
+  console.log('🔑 SESSION CREATED:', session);
   // Create the JWT
-  const jwtToken = jwt.sign({
-    sessionId: session.id,
-    userId: id,
-    isFirstLogin
-  }, JWT_SECRET ?? '', {
-    expiresIn: "7d"
-  });
+  const jwtToken = jwt.sign(
+    {
+      sessionId: session.id,
+      userId: user.id,
+    },
+    JWT_SECRET ?? '',
+    {
+      expiresIn: "7d"
+    }
+  );
 
-  // Set the cookie
-  const cookieStore = await cookies();
-
-  cookieStore.set(COOKIE_NAME, jwtToken, {
+  const cookiestore = await cookies();
+  console.log('🍪 COOKIE is SETTING:', jwtToken);
+  cookiestore.set(COOKIE_NAME, jwtToken, {
     httpOnly: true,
-    secure: true, // process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production",
     sameSite: 'lax', // "strict",
     expires: expiresAt,
     path: '/'
   });
 
-  return session;
+  const testCookie = cookiestore.get(COOKIE_NAME)?.value;
+  console.log('🍪 COOKIE SET:', testCookie);
+
+  console.log("CTX USER:", JSON.stringify(user, null, 2));
+
+  return { user, session };
 }
 
-/**
- * Deletes a session by its ID, or by the value of the secure cookie named __session if no ID is provided.
- * If the session is found, it is deleted from the database and the cookie is deleted from the browser.
- * If the session is not found, or if no cookie is present, the function does nothing.
- * @param {string} [sessionId] - The ID of the session to delete. If not provided, the function will delete the session associated with the secure cookie named __session.
- */
-export async function deleteSession(sessionId?: string) {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get(COOKIE_NAME);
+export async function deleteSession() {
+  const cookiestore = await cookies();
+  const cookie = cookiestore.get(COOKIE_NAME);
 
   if (!cookie) return null;
 
-  await prisma.session.delete({
-    where: sessionId ? { id: sessionId } : { token: cookie!.value }
-  });
-
-  cookieStore.delete(COOKIE_NAME);
+  try {
+    const payload = jwt.verify(cookie.value, JWT_SECRET!) as { sessionId: string; };
+    await prisma.session.delete({ where: { id: payload.sessionId } });
+  } catch (err) {
+    console.error("deleteSession error:", err);
+  }
+  cookiestore.delete(COOKIE_NAME);
 }
 
-/**
- * Retrieves the user associated with the current session cookie.
- * If the session cookie is not present, or if the session has expired, the function returns null.
- * @returns {Promise<User | null>} - The user associated with the session cookie, or null if the session cookie is not present or has expired.
- */
-export async function getUserFromSessionJWT(): Promise<User | null> {
+export async function getUserFromSessionJWT(): Promise<(User & { role: (Role & { permissions: Permission[]; }) | null }) | null> {
   // Get the cookie
   const cookieStore = await cookies();
   const cookie = cookieStore.get(COOKIE_NAME);
@@ -99,32 +79,45 @@ export async function getUserFromSessionJWT(): Promise<User | null> {
 
   try {
     // Verify the JWT
-    const payload = jwt.verify(cookie.value, JWT_SECRET ?? '') as { sessionId: string; userId: string };
+    const payload = jwt.verify(cookie.value, JWT_SECRET ?? '') as {
+      sessionId: string;
+      userId: string;
+      // token: string
+    };
+    console.log("PAYLOAD:", payload);
 
     const session = await prisma.session.findUnique({
-      where: { id: payload.sessionId },
-      include: { user: { include: { role: true } } }
-    });
+      where: {
+        id: payload.sessionId
+        // token: payload.token
+      },
+      include: {
+        user: {
+          include: { role: { include : { permissions: { include: { permission: true } } } } } }
+        }
+      });
 
     if (!session || session.expiresAt < new Date()) return null;
 
     if (!session.user.role) throw new Error("User role missing !");
 
-    return session.user as User & { role: Role};
+    return {
+      ...session.user,
+      role: session.user.role ? {
+        ...session.user.role,
+        permissions: session.user.role.permissions.map(p => p.permission)
+      } : null
+    }
   } catch {
     return null;
   }
 }
 
-export async function refreshSessionJWT(user: User) {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get(COOKIE_NAME);
-  if (!cookie) return;
-
+export async function refreshSessionJWT(session: Session, user: User) {
   // Regénérer un nouveau JWT avec les nouvelles infos
   const newJwt = jwt.sign(
     {
-      sessionId: user.id, // ou session.id selon ton schema réel
+      sessionId: session.id, // ou session.id selon ton schema réel
       userId: user.id,
       isFirstLogin: user.isFirstLogin
     },
@@ -132,14 +125,30 @@ export async function refreshSessionJWT(user: User) {
     { expiresIn: "7d" }
   );
 
-  cookieStore.set(COOKIE_NAME, newJwt, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    // reprends l'expiration précédente !
-    expires: new Date(Date.now() + SESSION_DURATION_MS)
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, newJwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      // reprends l'expiration précédente !
+      expires: new Date(Date.now() + SESSION_DURATION_MS)
+    });
+
+    const updatedSession = await prisma.session.update({
+      where: { id: session.id },
+      data: {
+        token: newJwt,
+        expiresAt: new Date(Date.now() + SESSION_DURATION_MS)
+      }
+    });
+
+    return updatedSession;
+  } catch (error) {
+    console.error("Error refreshing session JWT:", error);
+    return null;
+  }
 }
 
 

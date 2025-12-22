@@ -24,6 +24,22 @@ export const roleRouter = router({
       return role;
     }),
 
+  getByIdWithPermissions: protectedProcedure
+    .use(requirePermission("manage_roles"))
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.role.findUnique({
+        where: { id: input.id },
+        include: {
+          permissions: {
+            include: {
+              permission: true,
+            },
+          },
+        },
+      });
+    }),
+
   create: protectedProcedure
     .use(requirePermission("manage_roles"))
     .input(z.object({
@@ -60,7 +76,7 @@ export const roleRouter = router({
 
   update: protectedProcedure
     .use(requirePermission("manage_roles"))
-    .input(z.object({ id: z.number(), name: z.string().min(1) }))
+    .input(z.object({ id: z.number(), name: z.string().min(1), description: z.string(), permissions: z.array(z.number().int().positive()).min(1, "Vous devez choisir au moins une permission"), }))
     .mutation(async ({ ctx, input }) => {
       const role = await ctx.prisma.role.findUnique({
         where: { id: input.id },
@@ -72,7 +88,13 @@ export const roleRouter = router({
 
       return ctx.prisma.role.update({
         where: { id: input.id },
-        data: { name: input.name },
+        data: {
+          name: input.name,
+          description: input.description,
+          permissions: {
+            set: input.permissions.map((id) => ({ permissionId: id })),
+          },
+        }
       })
     }),
 

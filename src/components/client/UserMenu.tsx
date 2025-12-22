@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUserStore } from '@/lib/stores/useUserStore';
 import { clientSessionLogout } from '@/lib/session/session.client';
+import { SessionUser } from '@/lib/stores/useUserStore';
 
 interface UserMenuProps {
-  user: User & { role?: { name: string } };
+  user: SessionUser;
   // logout: () => Promise<void>;
 }
 

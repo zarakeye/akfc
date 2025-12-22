@@ -1,29 +1,32 @@
+import { Session } from "@prisma/client";
+import { UserEnhancedStrict } from "@/types";
+
 // 🧩 2. Type de retour de l’action
-export interface CreatePermissionState {
-  success: boolean;
-  error?: string;
-}
+
 
 export interface AuthState {
   success: boolean;
   error?: string;
+  session?: Session;
+  user: UserEnhancedStrict | null;
 }
 
-export interface CreateRoleState {
+
+
+
+
+
+export interface GalleryCropperState {
   success: boolean;
   error?: string;
 }
 
-export interface CreateUserState {
+export interface CreateActivityTypeState {
   success: boolean;
   error?: string;
 }
 
-export interface UpdateUserState {
-  success: boolean;
-  error?: string;
-}
-export interface CreateCourseState {
+export interface CreateActivityState {
   success: boolean;
   error?: string;
 }
