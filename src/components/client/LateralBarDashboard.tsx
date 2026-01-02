@@ -1,9 +1,10 @@
 'use client';
 
 import { JSX } from "react";
-import type { SessionUser } from "@/lib/stores/useUserStore";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import type { UserEnhanced } from "@/types";
 import Image from "next/image";
-import { RoleWithPermissions } from "../../app/entities/Roles/[clients]/RoleCard";
+import { RoleWithPermissions } from "@/app/admin/roles/RoleCard";
 
 interface LateralBarDashboardProps {
   creating: boolean;
@@ -12,7 +13,8 @@ interface LateralBarDashboardProps {
   setOpenList: (openList: 'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null) => void;
   displayMyInfo: boolean;
   setDisplayMyInfo: (updateMe: boolean) => void;
-  currentUser: SessionUser | null;
+
+  currentUser: UserEnhanced | null;
   setUpdateRole: (role: RoleWithPermissions | null) => void
 }
 

@@ -75,6 +75,8 @@ export async function getUserFromSessionJWT(): Promise<(User & { role: (Role & {
   const cookieStore = await cookies();
   const cookie = cookieStore.get(COOKIE_NAME);
 
+  console.log("🍪 COOKIE:", cookie);
+
   if (!cookie) return null;
 
   try {

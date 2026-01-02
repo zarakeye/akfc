@@ -12,23 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreateRoleForm } from '@/app/entities/Roles/[server]/create/CreateRoleForm';
-import { CreateUserForm } from '@/app/entities/users/[server]/create/CreateUser.form';
-import { CreatePermissionForm } from '@/app/entities/permissions/[server]/create/CreatePermissionForm';
+import { CreateRoleForm } from '@/app/forms/CreateRole.form';
+import { CreateUserForm } from '@/app/forms/CreateUser.form';
+import { CreatePermissionForm } from '@/app/forms/CreatePermission.form';
 import { trpc } from '@/lib/trpcClient';
 import type { Course, Role, User } from '@prisma/client';
-import UpdateUserForm from '@/app/entities/users/[server]/update/UpdateUserForm';
+import UpdateUserForm from '@/app/forms/UpdateUser.form';
 import LateralBarDashboard from '@components/client/LateralBarDashboard';
-import RolesList from '@/app/entities/Roles/[clients]/RolesList';
-import UserCard from '@/app/entities/users/[client]/UserCard';
-import PermissionsList from '@/app/entities/permissions/[client]/Permissions.table';
-import UsersList from '@/app/entities/users/[client]/UsersList';
-import CreateCourseForm from '@/app/entities/courses/[server]/create/CreateCourse.form';
-import { CreateActivityTypeForm } from '@/app/entities/categories/[server]/create/CreateCategory.form';
-import ActivityTypesList from '@/app/entities/categories/[client]/categories.table';
+import RolesList from '@/app/admin/roles/RolesList';
+import UserCard from '@/app/admin/users/UserCard';
+import PermissionsList from '@/app/admin/permissions/Permissions.table';
+import UsersList from '@/app/admin/users/UsersList';
+import CreateCourseForm from '@/app/forms/CreateCourse.form';
+import { CreateActivityTypeForm } from '@/app/forms/CreateCategory.form';
+import ActivityTypesList from '@/app/admin/categories/categories.table';
 // import { UpdateRoleForm } from '@/components/admin/UpdateRoleForm';
-import RoleCard, { RoleWithPermissions } from '@/app/entities/Roles/[clients]/RoleCard';
-import { UpdateRoleForm } from '@/app/entities/Roles/[server]/update/UpdateRoleForm';
+import RoleCard, { RoleWithPermissions } from '@/app/admin/roles/RoleCard';
+import { UpdateRoleForm } from '@/app/forms/UpdateRole.form';
 import { useUserStore } from '@/lib/stores/useUserStore';
 
 export default function Dashboard(): JSX.Element {

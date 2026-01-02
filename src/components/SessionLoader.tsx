@@ -2,6 +2,11 @@
 
 import { useEffect } from "react";
 import { useUserStore } from "@lib/stores/useUserStore";
+import { useCategoryStore } from "@/lib/stores/useCategoryStore";
+// import { useActivityStore } from "@/lib/stores/useActivityStore";
+import { useCourseStore } from "@/lib/stores/useCourseStore";
+// import { useStageStore } from "@/lib/stores/useStageStore";
+// import { useEventStore } from "@/lib/stores/useEventStore";
 
 /**
  * A component that loads the user session on mount.
@@ -12,7 +17,16 @@ import { useUserStore } from "@lib/stores/useUserStore";
  */
 export function SessionLoader({ children }: { children: React.ReactNode }) {
   const fetchUser = useUserStore((state) => state.fetchUser);
+  const user = useUserStore((state) => state.user);
+  console.log('SessionLoader user : ', user);
   const setSession = useUserStore((state) => state.setSession);
+  const session = useUserStore((state) => state.session);
+  console.log('SessionLoader session : ', session);
+  const { categories, fetchCategories } = useCategoryStore();
+  const { courses, fetchCourses } = useCourseStore();
+  // const { fetchActivities } = useActivityStore();
+  // const { fetchStages } = useStageStore();
+  // const { fetchEvents } = useEventStore();
 
   useEffect(() => {
     fetchUser();
@@ -26,11 +40,19 @@ export function SessionLoader({ children }: { children: React.ReactNode }) {
         } catch {
           window.sessionStorage.removeItem("session");
         }
-      }
-
-      
+      } 
     }
   }, [fetchUser, setSession]);
+
+  useEffect(() => {
+    if (user) {
+      fetchCategories();
+      fetchCourses();
+      // fetchActivities();
+      // fetchStages();
+      // fetchEvents();
+    }
+  }, [user, fetchCategories, fetchCourses]);
 
   return <>{children}</>;
 }

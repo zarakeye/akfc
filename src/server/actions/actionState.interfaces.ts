@@ -16,10 +16,7 @@ export interface AuthState {
 
 
 
-export interface GalleryCropperState {
-  success: boolean;
-  error?: string;
-}
+
 
 export interface CreateActivityTypeState {
   success: boolean;

@@ -24,7 +24,7 @@ export const uploadImagesRouter = router({
   uploadImage: protectedProcedure
     .input(
       z.object({
-        activityType: z.string().nullable().optional(),
+        category: z.string().nullable().optional(),
         activityId: z.string().nullable().optional(),
         newActivityName: z.string().optional(),
         userId: z.string(),
@@ -39,8 +39,8 @@ export const uploadImagesRouter = router({
     .mutation(async ({ input }) => {
       let folder = "";
 
-      if (input.activityType && input.activityId) {
-        folder = `${input.activityType}/${input.activityId}`;
+      if (input.category && input.activityId) {
+        folder = `${input.category}/${input.activityId}`;
       } else if (input.newActivityName) {
         folder = `new/${input.newActivityName}`;
       } else {
