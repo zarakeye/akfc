@@ -1,11 +1,11 @@
 import React, { JSX } from 'react';
-import PicturesDragNDrogForm from '@/app/forms/PicturesDragNDrogForm';
+import PicturesDragNDropForm from '@/app/forms/PicturesDragNDropForm';
 
 export default function Gallery(): JSX.Element {
   return (
     <main>
       <h1>Gallery</h1>
-      <PicturesDragNDrogForm />
+      <PicturesDragNDropForm />
     </main>
   );
 }

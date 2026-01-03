@@ -1,9 +1,9 @@
 'use server';
 
-import { picturesDragNDrogFormSchema } from "@/server/schemas/picturesDragNDropForm.schema";
+import { picturesDragNDropFormSchema } from "@/server/schemas/picturesDragNDropForm.schema";
 import { trpcCaller } from "../trpc/trpcCaller";
 
-export type PicturesDragNDrogFormState = {
+export type PicturesDragNDropFormState = {
   success: boolean;
   error?: string;
 }
@@ -31,9 +31,9 @@ function extractPictures(formData: FormData) {
 }
 
 export const picturesDragNDropFormAction = async (
-  _: PicturesDragNDrogFormState,
+  _: PicturesDragNDropFormState,
   formData: FormData
-): Promise<PicturesDragNDrogFormState> => {
+): Promise<PicturesDragNDropFormState> => {
   console.log('🧪 picturesDragNDropForm RAW FormData:', Object.fromEntries(formData.entries()));
 
   // const pictures = extractPictures(formData);
@@ -46,7 +46,7 @@ export const picturesDragNDropFormAction = async (
   const pictures = rawPictures ? JSON.parse(rawPictures as string) : [];
 
   // ✅ Validation Zod coté serveur
-  const result = picturesDragNDrogFormSchema.safeParse({
+  const result = picturesDragNDropFormSchema.safeParse({
     userId: formData.get('userId')?.toString().trim(),
     categoryId: formData.get('categoryId')?.toString().trim() ?? null,
     activityId: formData.get('activityId')?.toString().trim() ?? null,

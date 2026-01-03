@@ -5,7 +5,7 @@ export const CroppedImageSchema = z.object({
   name: z.string(),
 })
 
-export const picturesDragNDrogFormSchema = z.object({
+export const picturesDragNDropFormSchema = z.object({
   categoryId: z.string().nullable().optional(), // z.number().nullable(),
   activityId: z.string().nullable().optional(), // z.number().nullable().optional(),
   newActivityName: z.string().optional(),
@@ -15,5 +15,5 @@ export const picturesDragNDrogFormSchema = z.object({
   pictures: z.array(CroppedImageSchema).min(1, "Vous devez choisir au moins une image"),
 });
 
-export type PicturesDragNDrogFormValuesType = z.infer<typeof picturesDragNDrogFormSchema>;
+export type PicturesDragNDropFormValuesType = z.infer<typeof picturesDragNDropFormSchema>;
 export type CroppedImageSchema = z.infer<typeof CroppedImageSchema>;
