@@ -77,19 +77,18 @@ export default function CropGridOverlay({
     <div
       ref={gridRef}
       onMouseDown={onMouseDown}
-      className="absolute border-2 border-gray-400 pointer-events-auto cursor-move select-none"
+      className="absolute border  pointer-events-auto cursor-move select-none"
       style={{
         left: grid.x,
         top: grid.y,
         width: grid.width,
         height: grid.height,
-        background: `rgba(255, 255, 255, 0.5)`,
       }}
     >
       {/* Grid lines 3x3 */}
-      <div className="w-full h-full grid grid-cols-3 grid-rows-3 border border-gray-400">
+      <div className="w-full h-full grid grid-cols-3 grid-rows-3 ">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="border border-gray-400/50" />
+          <div key={i} className="border border-gray-300" />
         ))}
       </div>
     </div>

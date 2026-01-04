@@ -7,6 +7,7 @@ import { Check, X } from 'lucide-react';
 import { PictureItem } from '@/types/picture';
 import type { CropperProps, CropGrid } from '@/types/cropper';
 import CropGridOverlay from './cropGridOverlay';
+import CropMaskOverlay from './cropMaskOverlay';
 
 type CropGridOverlayProps = {
   grid: CropGrid;
@@ -20,9 +21,6 @@ export default function Cropper({
   onCancel,
 }: CropperProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // image
-  const [imageURL, setImageURL] = useState<string>('');
 
   // Transformations
   const [zoom, setZoom] = useState<number>(1);
@@ -93,18 +91,17 @@ export default function Cropper({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded shadow w-[360px]">
+      <div className="bg-white p-4 rounded shadow w-[550px]">
         <div
           ref={workspaceRef}
-          className="relative w-[500px] h-[500px] overflow-hidden bg-damier"
+          className="relative w-[500px] h-[500px] overflow-hidden bg-[#f5F5F5] bg-checkerboard"
         >
           {/* IMAGE */}
           <img
-            src={imageURL}
-            className='absolute top-1/2 left-1/2'
+            src={picture.previewUrl}
+            className='absolute w-full h-full object-contain'
             style={{
               transform: `
-                translate(-50%, -50%)
                 scale(${zoom})
                 rotate(${rotation}deg)
               `,
@@ -113,17 +110,20 @@ export default function Cropper({
             }}
           />
 
-        {/* CROP GRID */}
-        <CropGridOverlay
-          grid={grid}
-          setGrid={setgrid}
-          workspaceRef={workspaceRef}
-        />
-      </div>
-        <canvas
+          {/* OVERLAY OMBRE */}
+          <CropMaskOverlay grid={grid} />
+
+          {/* CROP GRID */}
+          <CropGridOverlay
+            grid={grid}
+            setGrid={setgrid}
+            workspaceRef={workspaceRef}
+          />
+        </div>
+        {/* <canvas
           ref={canvasRef}
           className="border mb-4 block mx-auto"
-        />
+        /> */}
         
         <div className='flex justify-between'>
           <button
