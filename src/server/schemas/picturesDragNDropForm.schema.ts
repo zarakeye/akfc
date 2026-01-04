@@ -1,19 +1,30 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const CroppedImageSchema = z.object({
-  base64: z.string(), // base64 encoded image
-  name: z.string(),
-})
-
-export const picturesDragNDropFormSchema = z.object({
-  categoryId: z.string().nullable().optional(), // z.number().nullable(),
-  activityId: z.string().nullable().optional(), // z.number().nullable().optional(),
-  newActivityName: z.string().optional(),
-  userId: z.string(),
-
-  // array of base64 encoded images (Blob -> Base64)
-  pictures: z.array(CroppedImageSchema).min(1, "Vous devez choisir au moins une image"),
+export const pictureSchema = z.object({
+  name: z.string().min(1),
+  base64: z.string().min(1),
 });
 
-export type PicturesDragNDropFormValuesType = z.infer<typeof picturesDragNDropFormSchema>;
-export type CroppedImageSchema = z.infer<typeof CroppedImageSchema>;
+export const picturesDragNDropFormSchema = z
+  .object({
+    userId: z.string().optional(), // ⛔ ne bloque plus
+    categoryId: z.string().min(1, 'Veuillez choisir une catégorie'),
+    activityId: z.string().nullable().optional(),
+    newActivityName: z.string().optional(),
+    pictures: z
+      .array(pictureSchema)
+      .min(1, 'Vous devez choisir au moins une image'),
+  })
+  .superRefine((data, ctx) => {
+    // 🧠 règle métier : catégorie "Cours" => activity obligatoire
+    if (data.categoryId === '1' && !data.activityId) {
+      ctx.addIssue({
+        path: ['activityId'],
+        code: z.ZodIssueCode.custom,
+        message: 'Veuillez choisir un cours',
+      });
+    }
+  });
+
+export type PicturesDragNDropFormValuesType =
+  z.infer<typeof picturesDragNDropFormSchema>;

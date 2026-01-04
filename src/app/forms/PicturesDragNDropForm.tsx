@@ -1,273 +1,255 @@
 'use client';
 
-import { JSX, useActionState, useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import Cropper, { type CroppedImage } from '../gallery/ui/Cropper';
-import {
-  picturesDragNDropFormSchema,
-  type PicturesDragNDropFormValuesType,
-} from '@/server/schemas/picturesDragNDropForm.schema';
-import {
-  picturesDragNDropFormAction,
-  type PicturesDragNDropFormState,
-} from '@/server/actions/picturesDragNDropForm.action';
+import { useActionState } from 'react';
+import { picturesDragNDropFormAction } from '@/server/actions/picturesDragNDropForm.action';
 import { useUserStore } from '@/lib/stores/useUserStore';
 import { useCategoryStore } from '@/lib/stores/useCategoryStore';
 import { useCourseStore } from '@/lib/stores/useCourseStore';
-import Image from 'next/image';
+import type { PicturesDragNDropFormValuesType } from '@/types/picturesDragNDropForm.types';
+import type { PictureItem } from '@/types/picture';
+import Cropper from '@/app/gallery/ui/Cropper';
 
-type PictureEntry = {
-  id: string;
-  name: string;
-  originalBase64: string;
-  base64: string;
-  selected?: boolean;
-};
+// type LocalPicture = {
+//   id: string;
+//   file: File;           // version actuelle pour submit
+//   originalFile: File;   // version originale pour reset
+//   previewUrl: string;   // pour la preview
+// };
 
-export default function PicturesDragNDropForm(): JSX.Element {
-  const currentUser = useUserStore((s) => s.user);
-  useCategoryStore();
-  useCourseStore();
+const initialState = { success: false };
 
-  /** source de vérité mutable */
-  const picturesByIdRef = useRef<Map<string, PictureEntry>>(new Map());
+function replacePicture(
+  pictures: PictureItem[],
+  pictureId: string,
+  croppedFile: File
+): PictureItem[] {
+  return pictures.map(pic => {
+    if (pic.id !== pictureId) return pic;
 
-  /** états React */
-  const [orderedIds, setOrderedIds] = useState<string[]>([]);
-  const [picturesForRender, setPicturesForRender] = useState<PictureEntry[]>([]);
-  const [activeCropId, setActiveCropId] = useState<string | null>(null);
-  const [activePicture, setActivePicture] = useState<{
-    id: string;
-    name: string;
-    base64: string;
-  } | null>(null);
+    return {
+      ...pic,
+      file: croppedFile,
+      previewUrl: URL.createObjectURL(croppedFile),
+    };
+  });
+}
 
-  const [state, formAction, isPending] =
-    useActionState<PicturesDragNDropFormState, FormData>(
-      picturesDragNDropFormAction,
-      {} as PicturesDragNDropFormState
-    );
+export default function PicturesDragNDropForm() {
+  const [state, formAction, isPending] = useActionState(
+    picturesDragNDropFormAction,
+    initialState
+  );
+
+  const [pictures, setPictures] = useState<PictureItem[]>([]);
+  const [pictureToCrop, setPictureToCrop] = useState<PictureItem | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<PicturesDragNDropFormValuesType>({
-    resolver: zodResolver(picturesDragNDropFormSchema),
     defaultValues: {
-      userId: currentUser?.id ?? '',
+      userId: '',
       categoryId: null,
       activityId: null,
       newActivityName: '',
       pictures: [],
     },
-    mode: 'onBlur',
   });
 
-  const { setValue } = form;
+  const { register, watch } = form;
 
-  /* ------------------ sync helpers ------------------ */
+  const { user } = useUserStore();
+  const { categories } = useCategoryStore();
+  const { courses } = useCourseStore();
 
-  const syncPicturesForRender = () => {
-    setPicturesForRender(
-      orderedIds
-        .map((id) => picturesByIdRef.current.get(id))
-        .filter(Boolean) as PictureEntry[]
-    );
+  const categoryId = watch('categoryId');
+
+  // -------------------------------
+  // Dropzone
+  // -------------------------------
+  const onDrop = (acceptedFiles: File[]) => {
+    const next = acceptedFiles.map(file => ({
+      id: crypto.randomUUID(),
+      file,
+      originalFile: file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPictures(prev => [...prev, ...next]);
   };
 
-  const syncFormPictures = () => {
-    setValue(
-      'pictures',
-      Array.from(picturesByIdRef.current.values()).map((p) => ({
-        name: p.name,
-        base64: p.base64,
-      })),
-      { shouldValidate: true, shouldDirty: true }
-    );
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': [] },
+  });
 
-  /* ------------------ handlers ------------------ */
+  // -------------------------------
+  // Synchroniser input file réel
+  // -------------------------------
+  useEffect(() => {
+    if (!fileInputRef.current) return;
 
-  const handleAddImages = (images: { name: string; preview: string }[]) => {
-    const nextIds: string[] = [];
+    const dt = new DataTransfer();
 
-    images.forEach((img) => {
-      const id = crypto.randomUUID();
-      picturesByIdRef.current.set(id, {
-        id,
-        name: img.name,
-        originalBase64: img.preview,
-        base64: img.preview,
-        selected: false,
-      });
-      nextIds.push(id);
+    pictures.forEach(p => {
+      dt.items.add(p.file);
     });
+    
+    fileInputRef.current.files = dt.files;
+  }, [pictures]);
 
-    setOrderedIds((ids) => [...ids, ...nextIds]);
-  };
+  // -------------------------------
+  // Handlers Cropper (à brancher plus tard)
+  // -------------------------------
+  const handleCrop = ({ pictureId, croppedFile }: {
+    pictureId: string;
+    croppedFile: File }) => {
+    setPictures(prev =>
+      replacePicture(prev, pictureId, croppedFile)
+    );
 
-  const handleCrop = (id: string | number, cropped: CroppedImage) => {
-    const realId = typeof id === 'number' ? orderedIds[id] : id;
-    const entry = picturesByIdRef.current.get(realId);
-    if (!entry) return;
-
-    picturesByIdRef.current.set(realId, {
-      ...entry,
-      base64: cropped.base64,
-    });
-
-    syncFormPictures();
-    syncPicturesForRender();
+    setPictureToCrop(null);
   };
 
   const handleResetImage = (id: string) => {
-    const entry = picturesByIdRef.current.get(id);
-    if (!entry) return;
-
-    picturesByIdRef.current.set(id, {
-      ...entry,
-      base64: entry.originalBase64,
-    });
-
-    syncFormPictures();
-    syncPicturesForRender();
+    
   };
 
   const handleRemoveImage = (id: string) => {
-    picturesByIdRef.current.delete(id);
-    setOrderedIds((ids) => ids.filter((i) => i !== id));
+    // setPictures(prev => prev.filter(p => p.id !== id));
   };
 
-  const handleToggleSelect = (id: string) => {
-    const entry = picturesByIdRef.current.get(id);
-    if (!entry) return;
-
-    picturesByIdRef.current.set(id, {
-      ...entry,
-      selected: !entry.selected,
-    });
-
-    syncPicturesForRender();
-  };
-
-  const handleRemoveSelected = () => {
-    orderedIds.forEach((id) => {
-      if (picturesByIdRef.current.get(id)?.selected) {
-        picturesByIdRef.current.delete(id);
-      }
-    });
-
-    setOrderedIds((ids) =>
-      ids.filter((id) => picturesByIdRef.current.has(id))
-    );
-  };
-
-  /* ------------------ effects ------------------ */
-
-  useEffect(() => {
-    syncPicturesForRender();
-    syncFormPictures();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderedIds]);
-
-  useEffect(() => {
-    if (!activeCropId) {
-      setActivePicture(null);
-      return;
-    }
-
-    const entry = picturesByIdRef.current.get(activeCropId);
-    if (!entry) return;
-
-    setActivePicture({
-      id: entry.id,
-      name: entry.name,
-      base64: entry.base64,
-    });
-  }, [activeCropId]);
-
-  /* ------------------ render ------------------ */
-
+  // -------------------------------
+  // Render
+  // -------------------------------
   return (
     <form action={formAction}>
-      <input type="hidden" {...form.register('userId')} />
-
-      <h2 className="text-2xl font-bold mb-4">Ajouter des images</h2>
-
-      <Cropper
-        onAddImages={handleAddImages}
-        onCrop={handleCrop}
-        image={activePicture}
-        onClose={() => setActiveCropId(null)}
+      {/* Hidden fields pour le server action */}
+      <input type="hidden" {...register('userId')} value={user?.id ?? ''} />
+      <input type="hidden" {...register('categoryId')} value={form.getValues('categoryId') ?? ''} />
+      <input type="hidden" {...register('activityId')} value={form.getValues('activityId') ?? ''} />
+      <input type="hidden" {...register('newActivityName')} value={form.getValues('newActivityName') ?? ''} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        name='pictures'
+        multiple
+        hidden
       />
 
-      <div className="flex flex-wrap gap-4 mt-4">
-        {picturesForRender.map((p) => {
-          const isCropped = p.base64 !== p.originalBase64;
+      {/* Select catégorie */}
+      <label className="block font-semibold mb-1">Catégorie</label>
+      <select {...register('categoryId')} className="border rounded p-2 w-full">
+        <option value="">— Choisir une catégorie —</option>
+        {categories.map(cat => (
+          <option key={cat.id} value={String(cat.id)}>
+            {cat.type}
+          </option>
+        ))}
+      </select>
 
-          return (
-            <div
-              key={p.id}
-              className="relative w-32 h-32 border rounded-md overflow-hidden"
-            >
-              <Image
-                src={p.base64}
-                alt={p.name}
-                fill
-                className="object-contain cursor-pointer"
-                onClick={() => setActiveCropId(p.id)}
-              />
+      {/* Select cours si catégorie Cours */}
+      {categoryId === '1' && (
+        <>
+          <label className="block font-semibold mt-4 mb-1">Cours</label>
+          <select {...register('activityId')} className="border rounded p-2 w-full">
+            <option value="">— Choisir un cours —</option>
+            {courses.map(course => (
+              <option key={course.id} value={String(course.id)}>
+                {course.label}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
 
-              <button
-                type="button"
-                onClick={() => handleRemoveImage(p.id)}
-                className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1 rounded"
-              >
-                ✕
-              </button>
-
-              {isCropped && (
-                <button
-                  type="button"
-                  onClick={() => handleResetImage(p.id)}
-                  className="absolute bottom-1 right-1 bg-yellow-500 text-white text-xs px-1 rounded"
-                >
-                  Reset
-                </button>
-              )}
-
-              <input
-                type="checkbox"
-                checked={p.selected ?? false}
-                onChange={() => handleToggleSelect(p.id)}
-                className="absolute bottom-1 left-1"
-              />
-            </div>
-          );
-        })}
+      {/* Dropzone */}
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed p-6 rounded-md text-center mt-4 ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+      >
+        <input {...getInputProps()} />
+        {isDragActive ? 'Dépose ici' : 'Glisse des images ou clique'}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      {/* Previews */}
+      <div className="grid grid-cols-3 gap-4">
+      {pictures.map((pic, index) => (
         <button
+          key={index}
           type="button"
-          onClick={handleRemoveSelected}
-          className="px-4 py-2 bg-red-600 text-white rounded"
+          onClick={() => setPictureToCrop(pic)}
+          className="relative"
         >
-          Supprimer les sélectionnées
+          <img
+            src={pic.previewUrl}
+            alt=""
+            className="rounded object-cover w-full h-40"
+          />
         </button>
-
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          {isPending ? 'Envoi…' : 'Soumettre'}
-        </button>
+      ))}
       </div>
+      {/* <div className="flex gap-4 mt-4 flex-wrap">
+        {pictures.map(p => (
+          <div key={p.id} className="relative w-32 h-32 border rounded overflow-hidden">
+            <img
+              src={p.previewUrl}
+              alt="preview"
+              className="object-cover w-full h-full cursor-pointer"
+              // plus tard : onClick -> ouvrir cropper
+            />
+            <button
+              type="button"
+              className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
+              onClick={() => handleRemoveImage(p.id)}
+            >
+              X
+            </button>
+            <button
+              type="button"
+              className="absolute bottom-1 right-1 bg-yellow-500 text-white text-xs px-1 rounded"
+              onClick={() => handleResetImage(p.id)}
+            >
+              Reset
+            </button>
+          </div>
+        ))}
+      </div> */}
 
-      {state?.success && (
-        <span className="text-green-600 ml-2">✔ Envoi réussi</span>
+      {/* Cropper */}
+      {pictureToCrop && (
+        <Cropper
+          picture={pictureToCrop}
+          onCancel={() => setPictureToCrop(null)}
+          onCrop={handleCrop}
+          // onConfirm={(croppedFile) => {
+          //   setPictures((prev) =>
+          //     prev.map((p) =>
+          //       p === pictureToCrop
+          //         ? {
+          //             file: croppedFile,
+          //             previewUrl: URL.createObjectURL(croppedFile),
+          //           }
+          //         : p
+          //     )
+          // );
+
+          // setPictureToCrop(null);
+          // }}
+        />
       )}
-      {state?.error && (
-        <span className="text-red-600 ml-2">{state.error}</span>
-      )}
+
+      {/* Submit */}
+      <button
+        type="submit"
+        disabled={isPending}
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        {isPending ? 'Envoi…' : 'Envoyer'}
+      </button>
+
+      {state?.error && <p className="text-red-600 mt-2">{state.error}</p>}
+      {state?.success && <p className="text-green-600 mt-2">✔ OK</p>}
     </form>
   );
 }

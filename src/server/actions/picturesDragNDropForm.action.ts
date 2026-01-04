@@ -1,73 +1,97 @@
 'use server';
 
 import { picturesDragNDropFormSchema } from "@/server/schemas/picturesDragNDropForm.schema";
-import { trpcCaller } from "../trpc/trpcCaller";
+import { uploadToCloudinary } from "../cloudinary/upload";
+// import { trpcCaller } from "../trpc/trpcCaller";
 
 export type PicturesDragNDropFormState = {
   success: boolean;
   error?: string;
 }
 
-function extractPictures(formData: FormData) {
-  const pictures: { name: string; base64: string }[] = [];
+// function extractPictures(formData: FormData) {
+//   const pictures: { name: string; base64: string }[] = [];
 
-  for (const [key, value] of formData.entries()) {
-    const match = key.match(/^pictures\.(\d+)\.(name|base64)$/);
-    if (!match) continue;
+//   for (const [key, value] of formData.entries()) {
+//     const match = key.match(/^pictures\.(\d+)\.(name|base64)$/);
+//     if (!match) continue;
 
-    const index = Number(match[1]);
-    const field = match[2] as 'name' | 'base64';
+//     const index = Number(match[1]);
+//     const field = match[2] as 'name' | 'base64';
 
-    if (!pictures[index]) {
-      pictures[index] = { name: '', base64: '' };
-    }
+//     if (!pictures[index]) {
+//       pictures[index] = { name: '', base64: '' };
+//     }
 
-    pictures[index][field] = value.toString();
-  }
+//     pictures[index][field] = value.toString();
+//   }
 
-  return pictures.filter(
-    (p) => p.name && p.base64
-  );
-}
+//   return pictures.filter(
+//     (p) => p.name && p.base64
+//   );
+// }
 
 export const picturesDragNDropFormAction = async (
   _: PicturesDragNDropFormState,
   formData: FormData
 ): Promise<PicturesDragNDropFormState> => {
-  console.log('🧪 picturesDragNDropForm RAW FormData:', Object.fromEntries(formData.entries()));
+  try {
+    // 1. Récupération des fichiers
+    const files = formData.getAll('pictures') as File[];
 
-  // const pictures = extractPictures(formData);
+    console.log('files', files);
 
-  // const parsedPictures = JSON.parse(
-  //   formData.get('pictures')?.toString() ?? '[]'
-  // );
+    if (!files.length) {
+      return {
+        success: false,
+        error: 'Vous devez choisir au moins une image !',
+      };
+    }
 
-  const rawPictures = formData.get('pictures');
-  const pictures = rawPictures ? JSON.parse(rawPictures as string) : [];
+    // 2. Upload Cloudinary
+    const uploadedPictures = [];
 
-  // ✅ Validation Zod coté serveur
-  const result = picturesDragNDropFormSchema.safeParse({
-    userId: formData.get('userId')?.toString().trim(),
-    categoryId: formData.get('categoryId')?.toString().trim() ?? null,
-    activityId: formData.get('activityId')?.toString().trim() ?? null,
-    newActivityName: formData.get('newActivityName')?.toString().trim() ?? '',
-    pictures, //: parsedPictures, // formData.get('pictures') ? JSON.parse(formData.get('pictures') as string) : [],
-  });
+    for (const file of files) {
+      const result = await uploadToCloudinary(file);
 
-  console.log("Validation result:", result);
+      uploadedPictures.push({
+        url: result.secure_url,
+        name: file.name,
+        publicId: result.public_id,
+      });
+    }
 
-  if (!result.success) {
-    console.error('❌ Zod error:', result.error);
+    // ✅ Validation Zod coté serveur (metadata uniquement)
+    const parsed = picturesDragNDropFormSchema.safeParse({
+      userId: formData.get('userId')?.toString().trim(),
+      categoryId: formData.get('categoryId')?.toString().trim() ?? null,
+      activityId: formData.get('activityId')?.toString().trim() ?? null,
+      newActivityName: formData.get('newActivityName')?.toString().trim() ?? '',
+      pictures: uploadedPictures,
+    });
+
+    if (!parsed.success) {
+      console.error('❌ Zod error:', parsed.error);
+      return {
+        success: false,
+        error: parsed.error.issues[0].message ?? 'Données de formulaire invalides !',
+      };
+    }
+
+    // console.log("✅ Form data validated:", result.data);
+    // console.log('✅ pictures:', result.data.pictures);
+
+    // 4️⃣ TODO: persistance DB via tRPC / Prisma / etc.
+    // await trpcCaller.gallery.create(parsed.data)
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('❌ Error uploading files:', error);
     return {
       success: false,
-      error: result.error.issues[0].message ?? 'Données de formulaire invalides !',
+      error: 'Une erreur est survenue lors de l\'upload des fichiers.',
     };
   }
-
-  console.log("✅ Form data validated:", result.data);
-  console.log('✅ pictures:', result.data.pictures);
-
-  return {
-    success: true,
-  };
-}
+};
