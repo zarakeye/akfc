@@ -5,7 +5,7 @@ import { requirePermission } from "./middleware";
 export const courseRouter = router({
   getAll: publicProcedure
     .query(async ({ ctx }) => {
-      return ctx.prisma.course.findMany({ orderBy: { id: "asc" } });
+      return await ctx.prisma.course.findMany({ orderBy: { id: "asc" } });
     }),
 
   getById: publicProcedure

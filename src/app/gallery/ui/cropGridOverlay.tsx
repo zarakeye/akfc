@@ -40,12 +40,15 @@ export default function CropGridOverlay({
   /* 📐 mesurer le workspace une fois monté */
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!dragStart.current || !workspaceRef.current) return;
-      
-      const dx = e.clientX - dragStart.current.mouseX;
-      const dy = e.clientY - dragStart.current.mouseY;
+      const start = dragStart.current;
+      const workspace = workspaceRef.current;
 
-      const workspaceRect = workspaceRef.current.getBoundingClientRect();
+      if (!start || !workspace) return;
+
+      const dx = e.clientX - start.mouseX;
+      const dy = e.clientY - start.mouseY;
+
+      const workspaceRect = workspace.getBoundingClientRect();
 
       setGrid((prev) => ({
         ...prev,

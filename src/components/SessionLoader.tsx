@@ -22,8 +22,8 @@ export function SessionLoader({ children }: { children: React.ReactNode }) {
   const setSession = useUserStore((state) => state.setSession);
   const session = useUserStore((state) => state.session);
   console.log('SessionLoader session : ', session);
-  const { categories, fetchCategories } = useCategoryStore();
-  const { courses, fetchCourses } = useCourseStore();
+  const { fetchCategories } = useCategoryStore();
+  const { fetchCourses } = useCourseStore();
   // const { fetchActivities } = useActivityStore();
   // const { fetchStages } = useStageStore();
   // const { fetchEvents } = useEventStore();

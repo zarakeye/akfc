@@ -17,3 +17,12 @@ export type CropGrid = {
   width: number;
   height: number;
 };
+
+export type ViewportTransform = {
+  zoom: number;
+  rotation: number;
+  workspaceWidth: number;
+  workspaceHeight: number;
+  imageWidth: number;   // naturalWidth
+  imageHeight: number;  // naturalHeight
+};

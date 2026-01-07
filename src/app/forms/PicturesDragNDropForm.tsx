@@ -11,6 +11,7 @@ import { useCourseStore } from '@/lib/stores/useCourseStore';
 import type { PicturesDragNDropFormValuesType } from '@/types/picturesDragNDropForm.types';
 import type { PictureItem } from '@/types/picture';
 import Cropper from '@/app/gallery/ui/Cropper';
+import { CropResult } from '@/types/cropper';
 
 // type LocalPicture = {
 //   id: string;
@@ -20,22 +21,6 @@ import Cropper from '@/app/gallery/ui/Cropper';
 // };
 
 const initialState = { success: false };
-
-function replacePicture(
-  pictures: PictureItem[],
-  pictureId: string,
-  croppedFile: File
-): PictureItem[] {
-  return pictures.map(pic => {
-    if (pic.id !== pictureId) return pic;
-
-    return {
-      ...pic,
-      file: croppedFile,
-      previewUrl: URL.createObjectURL(croppedFile),
-    };
-  });
-}
 
 export default function PicturesDragNDropForm() {
   const [state, formAction, isPending] = useActionState(
@@ -94,18 +79,25 @@ export default function PicturesDragNDropForm() {
     pictures.forEach(p => {
       dt.items.add(p.file);
     });
-    
+
     fileInputRef.current.files = dt.files;
   }, [pictures]);
 
   // -------------------------------
   // Handlers Cropper (à brancher plus tard)
   // -------------------------------
-  const handleCrop = ({ pictureId, croppedFile }: {
-    pictureId: string;
-    croppedFile: File }) => {
+  const handleCrop = ({ pictureId, croppedFile }: CropResult) => {
     setPictures(prev =>
-      replacePicture(prev, pictureId, croppedFile)
+      prev.map(pic => {
+        if (pic.id !== pictureId) return pic;
+        console.log('🟩 preview remplacée pour :', pictureId);
+
+        return {
+          ...pic,
+          file: croppedFile,
+          previewUrl: URL.createObjectURL(croppedFile),
+        };
+      })
     );
 
     setPictureToCrop(null);
@@ -174,17 +166,17 @@ export default function PicturesDragNDropForm() {
 
       {/* Previews */}
       <div className="grid grid-cols-3 gap-4">
-      {pictures.map((pic, index) => (
+      {pictures.map((pic) => (
         <button
-          key={index}
+          key={pic.id}
           type="button"
           onClick={() => setPictureToCrop(pic)}
-          className="relative"
+          className="relative w-30 h-30 border rounded overflow-hidden bg-gray-100"
         >
           <img
             src={pic.previewUrl}
             alt=""
-            className="rounded object-cover w-full h-40"
+            className="absolute inset-0 w-full h-full object-contain cursor-pointer"
           />
         </button>
       ))}

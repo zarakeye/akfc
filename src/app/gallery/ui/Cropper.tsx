@@ -8,12 +8,13 @@ import { PictureItem } from '@/types/picture';
 import type { CropperProps, CropGrid } from '@/types/cropper';
 import CropGridOverlay from './cropGridOverlay';
 import CropMaskOverlay from './cropMaskOverlay';
+import untranformImageRect from './untranformImageRect';
 
-type CropGridOverlayProps = {
-  grid: CropGrid;
-  setGrid: (grid: CropGrid) => void;
-  workspaceRef: React.RefObject<HTMLDivElement>;
-};
+// type CropGridOverlayProps = {
+//   grid: CropGrid;
+//   setGrid: (grid: CropGrid) => void;
+//   workspaceRef: React.RefObject<HTMLDivElement>;
+// };
 
 export default function Cropper({
   picture,
@@ -37,7 +38,7 @@ export default function Cropper({
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  useEffect(() => {
+  const handleCrop = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -46,47 +47,100 @@ export default function Cropper({
 
     const img = new Image();
     img.src = picture.previewUrl;
+
+    const workspace = workspaceRef.current!;
+    if (!workspace) return;
+    const workspaceRect = workspace.getBoundingClientRect();
+
+    /**
+     * ⚠️ IMPORTANT MENTAL MODEL
+     *
+     * - The image is NEVER modified in pixel space
+     * - Zoom and rotation are purely visual (CSS transforms)
+     * - The crop grid visually appears fixed
+     *
+     * Therefore:
+     * 1) We first convert the grid from DOM space to image pixel space
+     * 2) Then we undo user transforms (rotation, zoom) to locate
+     *    the real pixel rectangle to crop
+     */
+
+    // image affichée en object-contain: passage DOM -> image affichée
+    //Ceci n'est pas le zoom appliqué, mais le redimensionnement pour "contain": un mapping de repères
+    // Ratio DOM → image pixels (object-contain mapping)
+    const domToImageScaleX = img.width / workspaceRect.width; 
+    const domToImageScaleY = img.height / workspaceRect.height;
+
+    // Ratio DOM → image pixels (object-contain mapping) 
+    const gridInImagePixels: CropGrid = {
+      x: grid.x * domToImageScaleX,
+      y: grid.y * domToImageScaleY,
+      width: grid.width * domToImageScaleX,
+      height: grid.height * domToImageScaleY,
+    };
+
+    console.log('🟦 gridInImagePixels calculé:', gridInImagePixels);
+
+    // 1️⃣ calcule le rectangle dans l'image réelle
     img.onload = () => {
-      // Dimensions fixes pour le MVP
-      const cropSize = 300;
+      const imageRect = untranformImageRect(
+        // gridInImageSpace,
+        gridInImagePixels,
+        {
+          width: img.width,
+          height: img.height,
+        },
+        {
+          scale: zoom,
+          rotation,
+        }
+      );
 
-      canvas.height = cropSize;
-      canvas.width = cropSize;
+      console.log('🟦 imageRect utilisé:', imageRect);
 
-      // centrer l'image
-      const sx = Math.max(0, (img.width - cropSize) / 2);
-      const sy = Math.max(0, (img.height - cropSize) / 2);
+      // 2️⃣ dimensionne le canvas au crop réel
+      canvas.width = Math.round(imageRect.width);
+      canvas.height = Math.round(imageRect.height);
 
-      ctx.clearRect(0, 0, cropSize, cropSize);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+
+      // pivot = centre du canvas
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      
+      // appliquer la rotation VISUELLE
+      ctx.rotate((rotation * Math.PI) / 180);  
+
+      // 3️⃣ dessiner l'image recadrée autour du pivot
       ctx.drawImage(
         img,
-        sx,
-        sy,
-        cropSize,
-        cropSize,
-        0,
-        0,
-        cropSize,
-        cropSize
+        imageRect.x,
+        imageRect.y,
+        imageRect.width,
+        imageRect.height,
+        -canvas.width / 2,
+        -canvas.height / 2,
+        canvas.width,
+        canvas.height
       );
+
+      ctx.restore();
+
+      // 4️⃣ extract cropped image as Blob/File
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        const croppedFile = new File([blob], picture.file.name, {
+          type: 'image/png',
+          lastModified: Date.now(),
+        });
+        onCrop({
+          pictureId: picture.id,
+          croppedFile
+        });
+      }, 'image/png');
     };
-  }, [picture]);
-
-  const handleCrop = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const croppedFile = new File([blob], picture.file.name, {
-        type: 'image/png',
-        lastModified: Date.now(),
-      });
-      onCrop({
-        pictureId: picture.id,
-        croppedFile
-      });
-    }, 'image/png');
   };
 
   return (
@@ -120,10 +174,41 @@ export default function Cropper({
             workspaceRef={workspaceRef}
           />
         </div>
-        {/* <canvas
+        <canvas
           ref={canvasRef}
           className="border mb-4 block mx-auto"
-        /> */}
+        />
+
+        <div className="mt-4 space-y-3">
+          <label className="flex items-center gap-3 text-sm">
+            Zoom
+            <input
+              type="range"
+              min={0.5}
+              max={3}
+              step={0.01}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="w-12 text-right">{zoom.toFixed(2)}</span>
+          </label>
+
+          <label className="flex items-center gap-3 text-sm">
+            Rotation
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              step={1}
+              value={rotation}
+              onChange={(e) => setRotation(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="w-12 text-right">{rotation}°</span>
+          </label>
+        </div>
+
         
         <div className='flex justify-between'>
           <button
