@@ -11,14 +11,22 @@ type Transform = {
 };
 
 /**
- * Undo user-applied transforms (zoom + rotation)
- * on a rect expressed in image pixel space.
+ * Given a crop rect expressed in IMAGE PIXEL SPACE
+ * but visually transformed by CSS (zoom + rotation),
+ * this function returns the rect in ORIGINAL IMAGE PIXELS.
  *
- * Order is CRITICAL:
- * 1) reverse rotation
- * 2) reverse scale
+ * ⚠️ Order is critical:
+ * 1) undo rotation
+ * 2) undo scale
+ *
+ * This function does NOT draw anything.
+ * It only locates the correct pixels.
+ *
+ * @param {Object} grid - A crop rect expressed in IMAGE PIXEL SPACE
+ * @param {Object} imageSize - The original image size
+ * @param {Object} transform - The visual transformation (zoom + rotation)
+ * @returns {Object} The rect in ORIGINAL IMAGE PIXELS
  */
-
 export default function untranformImageRect(
   grid: Rect,
   imageSize: { width: number; height: number },

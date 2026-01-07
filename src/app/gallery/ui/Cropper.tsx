@@ -1,46 +1,32 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Rnd } from 'react-rnd';
-import * as Slider from '@radix-ui/react-slider';
-import { Check, X } from 'lucide-react';
-import { PictureItem } from '@/types/picture';
+import { useEffect, useRef, useState } from 'react';
 import type { CropperProps, CropGrid } from '@/types/cropper';
 import CropGridOverlay from './cropGridOverlay';
 import CropMaskOverlay from './cropMaskOverlay';
 import untranformImageRect from './untranformImageRect';
+import { useTransformWithUndo } from '@/app/hooks/useTransformWithUndo';
 
-// type CropGridOverlayProps = {
-//   grid: CropGrid;
-//   setGrid: (grid: CropGrid) => void;
-//   workspaceRef: React.RefObject<HTMLDivElement>;
-// };
+export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
+  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
 
-export default function Cropper({
-  picture,
-  onCrop,
-  onCancel,
-}: CropperProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const zoom = useTransformWithUndo(1, { commitDelay: 250 });
+  const rotation = useTransformWithUndo(0, { commitDelay: 250 });
 
-  // Transformations
-  const [zoom, setZoom] = useState<number>(1);
-  const [rotation, setRotation] = useState<number>(0);
-  
-  // Crop grid
-  const [grid, setgrid] = useState<CropGrid>({
-    x: 50,
-    y: 50,
+  const [grid, setGrid] = useState<CropGrid>({
+    x: 150,
+    y: 150,
     width: 200,
     height: 200,
   });
-  const workspaceRef = useRef<HTMLDivElement | null>(null);
-  const isDraggingRef = useRef(false);
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const handleCrop = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  /** ⚡ Preview live */
+  useEffect(() => {
+    const canvas = previewCanvasRef.current;
+    const workspace = workspaceRef.current;
+    if (!canvas || !workspace) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -48,71 +34,90 @@ export default function Cropper({
     const img = new Image();
     img.src = picture.previewUrl;
 
-    const workspace = workspaceRef.current!;
-    if (!workspace) return;
     const workspaceRect = workspace.getBoundingClientRect();
 
-    /**
-     * ⚠️ IMPORTANT MENTAL MODEL
-     *
-     * - The image is NEVER modified in pixel space
-     * - Zoom and rotation are purely visual (CSS transforms)
-     * - The crop grid visually appears fixed
-     *
-     * Therefore:
-     * 1) We first convert the grid from DOM space to image pixel space
-     * 2) Then we undo user transforms (rotation, zoom) to locate
-     *    the real pixel rectangle to crop
-     */
-
-    // image affichée en object-contain: passage DOM -> image affichée
-    //Ceci n'est pas le zoom appliqué, mais le redimensionnement pour "contain": un mapping de repères
-    // Ratio DOM → image pixels (object-contain mapping)
-    const domToImageScaleX = img.width / workspaceRect.width; 
-    const domToImageScaleY = img.height / workspaceRect.height;
-
-    // Ratio DOM → image pixels (object-contain mapping) 
-    const gridInImagePixels: CropGrid = {
-      x: grid.x * domToImageScaleX,
-      y: grid.y * domToImageScaleY,
-      width: grid.width * domToImageScaleX,
-      height: grid.height * domToImageScaleY,
-    };
-
-    console.log('🟦 gridInImagePixels calculé:', gridInImagePixels);
-
-    // 1️⃣ calcule le rectangle dans l'image réelle
     img.onload = () => {
+      const domToImageScaleX = img.width / workspaceRect.width;
+      const domToImageScaleY = img.height / workspaceRect.height;
+
+      const gridInImagePixels: CropGrid = {
+        x: grid.x * domToImageScaleX,
+        y: grid.y * domToImageScaleY,
+        width: grid.width * domToImageScaleX,
+        height: grid.height * domToImageScaleY,
+      };
+
       const imageRect = untranformImageRect(
-        // gridInImageSpace,
         gridInImagePixels,
-        {
-          width: img.width,
-          height: img.height,
-        },
-        {
-          scale: zoom,
-          rotation,
-        }
+        { width: img.width, height: img.height },
+        { scale: zoom.value, rotation: rotation.value }
       );
 
-      console.log('🟦 imageRect utilisé:', imageRect);
+      const size = 120;
+      canvas.width = size;
+      canvas.height = size;
 
-      // 2️⃣ dimensionne le canvas au crop réel
-      canvas.width = Math.round(imageRect.width);
-      canvas.height = Math.round(imageRect.height);
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((rotation.value * Math.PI) / 180);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const scale = size / Math.max(imageRect.width, imageRect.height);
+
+      ctx.drawImage(
+        img,
+        imageRect.x,
+        imageRect.y,
+        imageRect.width,
+        imageRect.height,
+        -imageRect.width / 2 * scale,
+        -imageRect.height / 2 * scale,
+        imageRect.width * scale,
+        imageRect.height * scale
+      );
+
+      ctx.restore();
+    };
+  }, [zoom.value, rotation.value, grid, picture.previewUrl]);
+
+  /** ⚡ Crop final */
+  const handleCrop = () => {
+    const canvas = exportCanvasRef.current;
+    const workspace = workspaceRef.current;
+    if (!canvas || !workspace) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = picture.previewUrl;
+
+    const workspaceRect = workspace.getBoundingClientRect();
+
+    img.onload = () => {
+      const domToImageScaleX = img.width / workspaceRect.width;
+      const domToImageScaleY = img.height / workspaceRect.height;
+
+      const gridInImagePixels: CropGrid = {
+        x: grid.x * domToImageScaleX,
+        y: grid.y * domToImageScaleY,
+        width: grid.width * domToImageScaleX,
+        height: grid.height * domToImageScaleY,
+      };
+
+      const imageRect = untranformImageRect(
+        gridInImagePixels,
+        { width: img.width, height: img.height },
+        { scale: zoom.value, rotation: rotation.value }
+      );
+
+      canvas.width = imageRect.width;
+      canvas.height = imageRect.height;
 
       ctx.save();
-
-      // pivot = centre du canvas
       ctx.translate(canvas.width / 2, canvas.height / 2);
-      
-      // appliquer la rotation VISUELLE
-      ctx.rotate((rotation * Math.PI) / 180);  
+      ctx.rotate((rotation.value * Math.PI) / 180);
 
-      // 3️⃣ dessiner l'image recadrée autour du pivot
       ctx.drawImage(
         img,
         imageRect.x,
@@ -127,173 +132,93 @@ export default function Cropper({
 
       ctx.restore();
 
-      // 4️⃣ extract cropped image as Blob/File
       canvas.toBlob((blob) => {
         if (!blob) return;
-        
-        const croppedFile = new File([blob], picture.file.name, {
-          type: 'image/png',
-          lastModified: Date.now(),
-        });
         onCrop({
           pictureId: picture.id,
-          croppedFile
+          croppedFile: new File([blob], picture.file.name, {
+            type: 'image/png',
+            lastModified: Date.now(),
+          }),
         });
       }, 'image/png');
     };
   };
 
+  const resetAll = () => {
+    zoom.reset();
+    rotation.reset();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded shadow w-[550px]">
-        <div
-          ref={workspaceRef}
-          className="relative w-[500px] h-[500px] overflow-hidden bg-[#f5F5F5] bg-checkerboard"
-        >
-          {/* IMAGE */}
-          <img
-            src={picture.previewUrl}
-            className='absolute w-full h-full object-contain'
-            style={{
-              transform: `
-                scale(${zoom})
-                rotate(${rotation}deg)
-              `,
-              transformOrigin: 'center',
-              pointerEvents: 'none',
-            }}
-          />
+    <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4">
+      <div className="bg-white p-4 rounded shadow gap-4">
+        <div className="flex gap-4">
+          <div
+            ref={workspaceRef}
+            className="relative w-[500px] h-[500px] overflow-hidden bg-checkerboard"
+          >
+            <img
+              src={picture.previewUrl}
+              className="absolute w-full h-full object-contain pointer-events-none"
+              style={{
+                transform: `scale(${zoom.value}) rotate(${rotation.value}deg)`,
+              }}
+            />
+            <CropMaskOverlay grid={grid} />
+            <CropGridOverlay grid={grid} setGrid={setGrid} workspaceRef={workspaceRef} />
+          </div>
 
-          {/* OVERLAY OMBRE */}
-          <CropMaskOverlay grid={grid} />
-
-          {/* CROP GRID */}
-          <CropGridOverlay
-            grid={grid}
-            setGrid={setgrid}
-            workspaceRef={workspaceRef}
-          />
+          <canvas ref={previewCanvasRef} className="border w-32 h-32" />
         </div>
-        <canvas
-          ref={canvasRef}
-          className="border mb-4 block mx-auto"
-        />
 
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center gap-3 text-sm">
-            Zoom
+        <div className="flex gap-6 mt-4">
+          {/* Zoom */}
+          <div className="flex items-center gap-2">
             <input
               type="range"
-              min={0.5}
+              min={0.1}
               max={3}
               step={0.01}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1"
+              value={zoom.value}
+              onMouseDown={zoom.startInteraction}
+              onMouseUp={zoom.endInteraction}
+              onChange={(e) => zoom.set(Number(e.target.value))}
             />
-            <span className="w-12 text-right">{zoom.toFixed(2)}</span>
-          </label>
+            <button onClick={zoom.undo}>undo</button>
+            <button onClick={zoom.reset}>reset</button>
+          </div>
 
-          <label className="flex items-center gap-3 text-sm">
-            Rotation
+          {/* Rotation */}
+          <div className="flex items-center gap-2">
             <input
               type="range"
               min={-180}
               max={180}
               step={1}
-              value={rotation}
-              onChange={(e) => setRotation(Number(e.target.value))}
-              className="flex-1"
+              value={rotation.value}
+              onMouseDown={rotation.startInteraction}
+              onMouseUp={rotation.endInteraction}
+              onChange={(e) => rotation.set(Number(e.target.value))}
             />
-            <span className="w-12 text-right">{rotation}°</span>
-          </label>
+            <button onClick={rotation.undo}>undo</button>
+            <button onClick={rotation.reset}>reset</button>
+          </div>
+
+          <button onClick={resetAll} className="px-3 py-1 bg-red-500 text-white rounded">
+            Reset all
+          </button>
         </div>
 
-        
-        <div className='flex justify-between'>
-          <button
-            type="button"
-            className="px-3 py-1 border rounded"
-            onClick={onCancel}
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            className="px-3 py-1 bg-blue-600 text-white rounded"
-            onClick={handleCrop}
-          >
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onCancel}>Annuler</button>
+          <button onClick={handleCrop} className="bg-blue-600 text-white px-3 py-1 rounded">
             Cropper
           </button>
         </div>
-        {/* <Rnd
-          size={{ width: cropBox.width, height: cropBox.height }}
-          position={{ x: cropBox.x, y: cropBox.y }}
-          onDragStop={(_, d) => setCropBox((b) => ({ ...b, x: d.x, y: d.y }))}
-          onResizeStop={(_, __, ref, ___, position) =>
-            setCropBox({
-              x: position.x,
-              y: position.y,
-              width: ref.offsetWidth,
-              height: ref.offsetHeight,
-            })
-          }
-          bounds="parent"
-          className="border-2 border-yellow-500"
-        /> */}
-
-      {/* <div className="absolute bottom-2 left-2 flex gap-4 items-center">
-        <div className="flex items-center gap-2">
-          Zoom
-          <Slider.Root
-            className="w-32 h-4"
-            value={[zoom * 100]}
-            min={50}
-            max={200}
-            onValueChange={([v]) => setZoom(v / 100)}
-          >
-            <Slider.Track className="relative bg-gray-300 h-2 rounded-full">
-              <Slider.Range className="absolute bg-blue-500 h-2 rounded-full" />
-            </Slider.Track>
-            <Slider.Thumb className="block w-4 h-4 bg-white border border-gray-400 rounded-full" />
-          </Slider.Root>
-        </div>
-
-        <div className="flex items-center gap-2">
-          Rotation
-          <Slider.Root
-            className="w-32 h-4"
-            value={[rotation]}
-            min={0}
-            max={360}
-            onValueChange={([v]) => setRotation(v)}
-          >
-            <Slider.Track className="relative bg-gray-300 h-2 rounded-full">
-              <Slider.Range className="absolute bg-blue-500 h-2 rounded-full" />
-            </Slider.Track>
-            <Slider.Thumb className="block w-4 h-4 bg-white border border-gray-400 rounded-full" />
-          </Slider.Root>
-        </div>
-
-        <button
-          type="button"
-          className="px-2 py-1 bg-green-500 text-white rounded flex items-center gap-1"
-          onClick={handleCropClick}
-        >
-          <Check size={16} />
-          Crop
-        </button>
-
-        <button
-          type="button"
-          className="px-2 py-1 bg-red-500 text-white rounded flex items-center gap-1"
-          onClick={onClose}
-        >
-          <X size={16} />
-          Fermer
-        </button>
-      </div> */}
       </div>
+
+      <canvas ref={exportCanvasRef} className="hidden" />
     </div>
   );
 }
