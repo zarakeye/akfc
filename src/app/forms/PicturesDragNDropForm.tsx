@@ -13,13 +13,6 @@ import type { PictureItem } from '@/types/picture';
 import Cropper from '@/app/gallery/ui/Cropper';
 import { CropResult } from '@/types/cropper';
 
-// type LocalPicture = {
-//   id: string;
-//   file: File;           // version actuelle pour submit
-//   originalFile: File;   // version originale pour reset
-//   previewUrl: string;   // pour la preview
-// };
-
 const initialState = { success: false };
 
 export default function PicturesDragNDropForm() {
@@ -27,10 +20,15 @@ export default function PicturesDragNDropForm() {
     picturesDragNDropFormAction,
     initialState
   );
+  const { user } = useUserStore();
+  const { categories } = useCategoryStore();
+  const { courses } = useCourseStore();
 
   const [pictures, setPictures] = useState<PictureItem[]>([]);
   const [pictureToCrop, setPictureToCrop] = useState<PictureItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
 
   const form = useForm<PicturesDragNDropFormValuesType>({
     defaultValues: {
@@ -43,11 +41,6 @@ export default function PicturesDragNDropForm() {
   });
 
   const { register, watch } = form;
-
-  const { user } = useUserStore();
-  const { categories } = useCategoryStore();
-  const { courses } = useCourseStore();
-
   const categoryId = watch('categoryId');
 
   // -------------------------------
@@ -62,7 +55,6 @@ export default function PicturesDragNDropForm() {
     }));
     setPictures(prev => [...prev, ...next]);
   };
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': [] },
@@ -71,17 +63,17 @@ export default function PicturesDragNDropForm() {
   // -------------------------------
   // Synchroniser input file réel
   // -------------------------------
-  // useEffect(() => {
-  //   if (!fileInputRef.current) return;
+  useEffect(() => {
+    if (!fileInputRef.current) return;
 
-  //   const dt = new DataTransfer();
+    const dt = new DataTransfer();
 
-  //   pictures.forEach(p => {
-  //     dt.items.add(p.file);
-  //   });
+    pictures.forEach(p => {
+      dt.items.add(p.file);
+    });
 
-  //   fileInputRef.current.files = dt.files;
-  // }, [pictures]);
+    fileInputRef.current.files = dt.files;
+  }, [pictures]);
 
   // -------------------------------
   // Handlers Cropper (à brancher plus tard)
@@ -104,42 +96,84 @@ export default function PicturesDragNDropForm() {
   };
 
   const handleResetImage = (id: string) => {
-    
+    setPictures(prev => prev.map(p => p.id === id 
+      ? {
+        ...p,
+        file: p.originalFile,
+        previewUrl: URL.createObjectURL(p.originalFile),
+      }
+      : p
+    ));
   };
 
   const handleRemoveImage = (id: string) => {
-    // setPictures(prev => prev.filter(p => p.id !== id));
+    setPictures(prev => prev.filter(p => p.id !== id));
   };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      return next;
+    });
+  };
+
+  const removeSelected = () => {
+    setPictures(prev => prev.filter(p => !selectedIds.has(p.id)));
+    setSelectedIds(new Set());
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      form.setValue('userId', user.id, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
+    }
+  }, [user?.id, form]);
 
   // -------------------------------
   // Render
   // -------------------------------
   return (
-    <form action={formData => {
-      // 🔒 Injection contrôlée des fichiers
-      pictures.forEach(p => {
-        formData.append('pictures', p.file);
-      });
-
-      // 🚀 Appel server action
-      formAction(formData);
-    }}>
-      {/* Hidden fields pour le server action */}
-      <input type="hidden" {...register('userId')} value={user?.id ?? ''} />
-      <input type="hidden" {...register('categoryId')} value={form.getValues('categoryId') ?? ''} />
-      <input type="hidden" {...register('activityId')} value={form.getValues('activityId') ?? ''} />
-      <input type="hidden" {...register('newActivityName')} value={form.getValues('newActivityName') ?? ''} />
-      {/* <input
-        ref={fileInputRef}
-        type="file"
-        name='pictures'
-        multiple
-        hidden
-      /> */}
+    <form
+      action={formData => {
+        // 🔒 Injection contrôlée des fichiers
+        pictures.forEach(p => {
+          formData.append('pictures', p.file);
+        });
+        // 🚀 Appel server action
+        formAction(formData);
+      }}
+      onSubmit={async (e) => {
+        const valid = await form.trigger();
+        if (!valid) e.preventDefault();
+      }}
+      className="space-y-4 w-80"
+    >
+      {/* Hidden field pour le server action */}
+      <input type="hidden" {...register('userId')} />
 
       {/* Select catégorie */}
       <label className="block font-semibold mb-1">Catégorie</label>
-      <select {...register('categoryId')} className="border rounded p-2 w-full">
+      <select
+        {...register('categoryId')}
+        onChange={(e) => {
+          form.setValue('categoryId', e.target.value, {
+            shouldDirty: true,
+            shouldValidate: true
+          });
+          form.setValue('activityId', null);
+          form.setValue('newActivityName', '');
+        }}
+        className="border rounded p-2 w-full"
+      >
         <option value="">— Choisir une catégorie —</option>
         {categories.map(cat => (
           <option key={cat.id} value={String(cat.id)}>
@@ -151,15 +185,36 @@ export default function PicturesDragNDropForm() {
       {/* Select cours si catégorie Cours */}
       {categoryId === '1' && (
         <>
-          <label className="block font-semibold mt-4 mb-1">Cours</label>
-          <select {...register('activityId')} className="border rounded p-2 w-full">
-            <option value="">— Choisir un cours —</option>
-            {courses.map(course => (
-              <option key={course.id} value={String(course.id)}>
-                {course.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="block font-semibold mt-4 mb-1">Cours</label>
+            <select
+              {...register('activityId')}
+              onChange={(e) => {
+                form.setValue('activityId', e.target.value, {
+                  shouldDirty: true,
+                  shouldValidate: true
+                });
+                // form.setValue('newActivityName', '');
+              }}
+              className="border rounded p-2 w-full"
+            >
+              <option value="">— Choisir un cours —</option>
+              {courses.map(course => (
+                <option key={course.id} value={String(course.id)}>
+                  {course.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold mt-4 mb-1">Entre l&apos;activité</label>
+            <input
+              {...register('newActivityName')}
+              type="text"
+              className="border rounded p-2 w-full" 
+            />
+          </div>
         </>
       )}
 
@@ -173,22 +228,50 @@ export default function PicturesDragNDropForm() {
       </div>
 
       {/* Previews */}
-      <div className="grid grid-cols-3 gap-4">
-      {pictures.map((pic) => (
-        <button
-          key={pic.id}
-          type="button"
-          onClick={() => setPictureToCrop(pic)}
-          className="relative w-30 h-30 border rounded overflow-hidden bg-gray-100"
-        >
+      <div className="grid grid-cols-3 gap-4 mt-4">
+        {pictures.map(pic => (
+          <div key={pic.id} className="relative w-32 h-32 border rounded overflow-hidden group">
           <img
             src={pic.previewUrl}
             alt=""
-            className="absolute inset-0 w-full h-full object-contain cursor-pointer"
+            className="w-full h-full object-contain cursor-pointer"
+            onClick={() => setPictureToCrop(pic)} // <-- clic sur l'image seulement
           />
-        </button>
-      ))}
+
+          <div className="absolute top-1 left-1 right-1 flex justify-between items-start z-10 pointer-events-auto">
+            <input
+              type="checkbox"
+              className="scale-125 z-10"
+              checked={selectedIds.has(pic.id)}
+              onChange={(e) => { e.stopPropagation(); toggleSelect(pic.id); }}
+            />
+            <div className="flex flex-col gap-1 z-10">
+              <button
+                type="button"
+                className="bg-red-500 text-white text-xs px-1 rounded"
+                onClick={(e) => { e.stopPropagation(); handleRemoveImage(pic.id); }}
+              >
+                🗑
+              </button>
+              <button
+                type="button"
+                className="bg-yellow-500 text-white text-xs px-1 rounded"
+                onClick={(e) => { e.stopPropagation(); handleResetImage(pic.id); }}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        ))}
       </div>
+
+      {/* Bouton suppression en lot */}
+      {selectedIds.size > 0 && (
+        <button type="button" className="px-3 py-1 bg-red-600 text-white rounded mt-2" onClick={removeSelected}>
+          Supprimer sélection
+        </button>
+      )}
 
       {/* Cropper */}
       {pictureToCrop && (

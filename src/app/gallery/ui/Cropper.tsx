@@ -185,8 +185,8 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
               onMouseUp={zoom.endInteraction}
               onChange={(e) => zoom.set(Number(e.target.value))}
             />
-            <button onClick={zoom.undo}>undo</button>
-            <button onClick={zoom.reset}>reset</button>
+            <button type='button' onClick={zoom.undo}>undo</button>
+            <button type='button' onClick={zoom.reset}>reset</button>
           </div>
 
           {/* Rotation */}
@@ -201,8 +201,8 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
               onMouseUp={rotation.endInteraction}
               onChange={(e) => rotation.set(Number(e.target.value))}
             />
-            <button onClick={rotation.undo}>undo</button>
-            <button onClick={rotation.reset}>reset</button>
+            <button type='button' onClick={rotation.undo}>undo</button>
+            <button type='button' onClick={rotation.reset}>reset</button>
           </div>
 
           <button onClick={resetAll} className="px-3 py-1 bg-red-500 text-white rounded">
@@ -211,8 +211,8 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onCancel}>Annuler</button>
-          <button onClick={handleCrop} className="bg-blue-600 text-white px-3 py-1 rounded">
+          <button type='button' onClick={onCancel}>Annuler</button>
+          <button type='button' onClick={handleCrop} className="bg-blue-600 text-white px-3 py-1 rounded">
             Cropper
           </button>
         </div>
