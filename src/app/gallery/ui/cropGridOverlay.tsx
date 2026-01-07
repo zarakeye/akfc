@@ -53,11 +53,11 @@ export default function CropGridOverlay({
       setGrid((prev) => ({
         ...prev,
         x: Math.min(
-          Math.max(dragStart.current!.gridX + dx, 0),
+          Math.max(start.gridX + dx, 0),
           workspaceRect.width - prev.width
         ),
         y: Math.min(
-          Math.max(dragStart.current!.gridY + dy, 0),
+          Math.max(start.gridY + dy, 0),
           workspaceRect.height - prev.height
         ),
       }));

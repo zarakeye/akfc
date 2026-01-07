@@ -2,34 +2,11 @@
 
 import { picturesDragNDropFormSchema } from "@/server/schemas/picturesDragNDropForm.schema";
 import { uploadToCloudinary } from "../cloudinary/upload";
-// import { trpcCaller } from "../trpc/trpcCaller";
 
 export type PicturesDragNDropFormState = {
   success: boolean;
   error?: string;
 }
-
-// function extractPictures(formData: FormData) {
-//   const pictures: { name: string; base64: string }[] = [];
-
-//   for (const [key, value] of formData.entries()) {
-//     const match = key.match(/^pictures\.(\d+)\.(name|base64)$/);
-//     if (!match) continue;
-
-//     const index = Number(match[1]);
-//     const field = match[2] as 'name' | 'base64';
-
-//     if (!pictures[index]) {
-//       pictures[index] = { name: '', base64: '' };
-//     }
-
-//     pictures[index][field] = value.toString();
-//   }
-
-//   return pictures.filter(
-//     (p) => p.name && p.base64
-//   );
-// }
 
 export const picturesDragNDropFormAction = async (
   _: PicturesDragNDropFormState,

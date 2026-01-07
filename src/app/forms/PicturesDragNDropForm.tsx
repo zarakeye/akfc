@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import { useActionState } from 'react';
-import { picturesDragNDropFormAction } from '@/server/actions/picturesDragNDropForm.action';
+import { picturesDragNDropFormAction, type PicturesDragNDropFormState } from '@/server/actions/picturesDragNDropForm.action';
 import { useUserStore } from '@/lib/stores/useUserStore';
 import { useCategoryStore } from '@/lib/stores/useCategoryStore';
 import { useCourseStore } from '@/lib/stores/useCourseStore';
@@ -23,7 +23,7 @@ import { CropResult } from '@/types/cropper';
 const initialState = { success: false };
 
 export default function PicturesDragNDropForm() {
-  const [state, formAction, isPending] = useActionState(
+  const [state, formAction, isPending] = useActionState<PicturesDragNDropFormState, FormData>(
     picturesDragNDropFormAction,
     initialState
   );
@@ -71,17 +71,17 @@ export default function PicturesDragNDropForm() {
   // -------------------------------
   // Synchroniser input file réel
   // -------------------------------
-  useEffect(() => {
-    if (!fileInputRef.current) return;
+  // useEffect(() => {
+  //   if (!fileInputRef.current) return;
 
-    const dt = new DataTransfer();
+  //   const dt = new DataTransfer();
 
-    pictures.forEach(p => {
-      dt.items.add(p.file);
-    });
+  //   pictures.forEach(p => {
+  //     dt.items.add(p.file);
+  //   });
 
-    fileInputRef.current.files = dt.files;
-  }, [pictures]);
+  //   fileInputRef.current.files = dt.files;
+  // }, [pictures]);
 
   // -------------------------------
   // Handlers Cropper (à brancher plus tard)
@@ -115,19 +115,27 @@ export default function PicturesDragNDropForm() {
   // Render
   // -------------------------------
   return (
-    <form action={formAction}>
+    <form action={formData => {
+      // 🔒 Injection contrôlée des fichiers
+      pictures.forEach(p => {
+        formData.append('pictures', p.file);
+      });
+
+      // 🚀 Appel server action
+      formAction(formData);
+    }}>
       {/* Hidden fields pour le server action */}
       <input type="hidden" {...register('userId')} value={user?.id ?? ''} />
       <input type="hidden" {...register('categoryId')} value={form.getValues('categoryId') ?? ''} />
       <input type="hidden" {...register('activityId')} value={form.getValues('activityId') ?? ''} />
       <input type="hidden" {...register('newActivityName')} value={form.getValues('newActivityName') ?? ''} />
-      <input
+      {/* <input
         ref={fileInputRef}
         type="file"
         name='pictures'
         multiple
         hidden
-      />
+      /> */}
 
       {/* Select catégorie */}
       <label className="block font-semibold mb-1">Catégorie</label>
@@ -181,32 +189,6 @@ export default function PicturesDragNDropForm() {
         </button>
       ))}
       </div>
-      {/* <div className="flex gap-4 mt-4 flex-wrap">
-        {pictures.map(p => (
-          <div key={p.id} className="relative w-32 h-32 border rounded overflow-hidden">
-            <img
-              src={p.previewUrl}
-              alt="preview"
-              className="object-cover w-full h-full cursor-pointer"
-              // plus tard : onClick -> ouvrir cropper
-            />
-            <button
-              type="button"
-              className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
-              onClick={() => handleRemoveImage(p.id)}
-            >
-              X
-            </button>
-            <button
-              type="button"
-              className="absolute bottom-1 right-1 bg-yellow-500 text-white text-xs px-1 rounded"
-              onClick={() => handleResetImage(p.id)}
-            >
-              Reset
-            </button>
-          </div>
-        ))}
-      </div> */}
 
       {/* Cropper */}
       {pictureToCrop && (
@@ -214,20 +196,6 @@ export default function PicturesDragNDropForm() {
           picture={pictureToCrop}
           onCancel={() => setPictureToCrop(null)}
           onCrop={handleCrop}
-          // onConfirm={(croppedFile) => {
-          //   setPictures((prev) =>
-          //     prev.map((p) =>
-          //       p === pictureToCrop
-          //         ? {
-          //             file: croppedFile,
-          //             previewUrl: URL.createObjectURL(croppedFile),
-          //           }
-          //         : p
-          //     )
-          // );
-
-          // setPictureToCrop(null);
-          // }}
         />
       )}
 
