@@ -1,7 +1,7 @@
 'use client';
 
 import { t } from '@/server/trpc/core';
-import { SessionUser, useUserStore } from '@lib/stores/useUserStore';
+import { SessionUser, useUserStore } from '@/lib/stores/useSessionStore';
 
 export function getClientSession(): SessionUser | null {
   return useUserStore.getState().user;

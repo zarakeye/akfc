@@ -3,16 +3,10 @@ import { prisma } from "@server/prisma";
 import bcrypt from "bcryptjs";
 import { createSessionJWT } from "@server/lib/session/session.server";
 import type { UserEnhancedStrict } from "@/types";
-import { Session } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-type loginServiceResult = {
-  session: Session;
-  token: string;
-  userId: string;
-};
 
-export async function loginService(email: string, password: string): Promise<loginServiceResult> {
+export async function loginService(email: string, password: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
@@ -53,11 +47,5 @@ export async function loginService(email: string, password: string): Promise<log
       : null,
   };
   
-  const { session, token } = await createSessionJWT(normalizedUser);
-
-  return {
-    session,
-    token,
-    userId: user.id,
-  };
+  await createSessionJWT(normalizedUser);
 }

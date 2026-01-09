@@ -1,25 +1,24 @@
 'use client';
 
 import Link from "next/link";
-import { LoginForm } from "./LoginForm";
+import LoginForm from "./LoginForm";
 import UserMenu from "@components/client/UserMenu";
 import { Suspense, useEffect, useState } from "react";
 // import { trpc } from '@lib/trpcClient';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { useSessionStore } from "@/lib/stores/useSessionStore";
+import { User } from "@prisma/client";
+import { trpcClient } from "@/lib/trpcClient";
 
 export default function Header() {
-  const currentUser = useUserStore((state) => state.user);
+  const { session } = useSessionStore();
+  const user = session?.user;
   // const [isActive, setIsActive] = useState<string>('');
   const pathname = usePathname();
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);
 
-  useEffect(() => {
-    currentUser;
-    console.log(`current user : ${currentUser}`)
-  }, [])
 
   // useEffect(() => {
   //   console.log('isActive : ', isActive)
@@ -49,7 +48,7 @@ export default function Header() {
         >
           Accueil
         </Link>
-        {currentUser &&
+        {user &&
           <Link
             href="/admin/dashboard"
             className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/admin/dashboard" ? "text-[40px]" : "text-[20px]"}`}
@@ -135,8 +134,8 @@ export default function Header() {
       </nav>
 
       <Suspense fallback={<div>Chargement...</div>}>
-        {currentUser
-          ? <UserMenu user={currentUser} />
+        {user
+          ? <UserMenu user={user} />
           : <LoginForm />
         }
       </Suspense>

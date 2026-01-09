@@ -9,9 +9,7 @@ import { Permission, Role, Session, User } from "@prisma/client";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 type CreateSessionResult = {
-  session: Session;
-  token: string;
-  expiresAt: Date;
+  sessionId: Session['id'];
 }
 
 export async function createSessionJWT(user: UserEnhancedStrict): Promise<CreateSessionResult> {
@@ -21,7 +19,7 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
   // 1️⃣ DB session
   const session = await prisma.session.create({
     data: {
-      token: crypto.randomUUID(),
+      // token: crypto.randomUUID(),
       userId: user.id,
       role: user.role?.name ?? null,
       expiresAt
@@ -32,18 +30,26 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
   const token = jwt.sign(
     {
       sessionId: session.id,
-      userId: user.id,
+      // userId: user.id,
     },
     JWT_SECRET!,
     {
-      expiresIn: Math.floor(SESSION_DURATION_MS / 1000),
+      expiresIn: '7d',
     }
   );
 
+
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    expires: expiresAt,
+    path: '/',
+  });
+
   return {
-    session,
-    token,
-    expiresAt
+    sessionId: session.id,
   };
 }
 
@@ -65,9 +71,9 @@ export async function deleteSessionFromCookie() {
     });
   } catch (err) {
     console.error("deleteSession error:", err);
-  } finally {
-    cookiestore.delete(COOKIE_NAME);
-  }
+  } 
+  
+  cookiestore.delete(COOKIE_NAME);
 }
 
 
@@ -142,7 +148,6 @@ export async function refreshSessionJWT(session: Session, user: User) {
     const updatedSession = await prisma.session.update({
       where: { id: session.id },
       data: {
-        token: newJwt,
         expiresAt: new Date(Date.now() + SESSION_DURATION_MS)
       }
     });

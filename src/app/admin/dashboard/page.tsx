@@ -29,7 +29,8 @@ import ActivityTypesList from '@/app/admin/categories/categories.table';
 // import { UpdateRoleForm } from '@/components/admin/UpdateRoleForm';
 import RoleCard, { RoleWithPermissions } from '@/app/admin/roles/RoleCard';
 import { UpdateRoleForm } from '@/app/forms/UpdateRole.form';
-import { useUserStore } from '@/lib/stores/useUserStore';
+import { useSessionStore } from '@/lib/stores/useSessionStore';
+import type { UserEnhanced } from '@/types';
 
 export default function Dashboard(): JSX.Element {
   const [creating, setCreating] = useState<'USER' | 'PERMISSION' | 'ROLE' | 'COURSE' | 'EVENT' | 'STAGE' | 'POST' | 'ACTIVITY_TYPE' | null>(null);
@@ -43,20 +44,15 @@ export default function Dashboard(): JSX.Element {
   const [displayEventCard, setDisplayEventCard] = useState<User | null>(null);
   const [displayStageCard, setDisplayStageCard] = useState<User | null>(null);
   const [openList, setOpenList] = useState<'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null>(null);
-  // const [updateUser, setUpdateUser] = useState<boolean>(false);
   const [displayMyInfo, setDisplayMyInfo] = useState<boolean>(true);
-  // const { data: user } = trpc.auth.me.useQuery();
-  // const [firstLogin, setFirstLogin] = useState<boole
-  const currentUser = useUserStore((state) => state.user);
-  const session = useUserStore((state) => state.session);
+  const { session } = useSessionStore();
 
+  const currentUser: UserEnhanced  = session?.user ?? null;
 
-  console.log('currentUser', currentUser);
   const me = {
     ...currentUser
   };
   delete me?.role;
-  console.log('me', me);
 
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 

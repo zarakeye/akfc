@@ -7,11 +7,13 @@ import { COOKIE_NAME } from "@/lib/constants";
 import jwt from "jsonwebtoken";
 import { loginService } from "../services/auth.service";
 import { Session } from "@prisma/client";
+import { SessionEnhanced } from "@/types";
+import { redirect } from "next/navigation";
 
 export interface AuthState {
   success: boolean;
   error?: string;
-  session?: Session;
+  // session?: Session;
 }
 
 /**
@@ -40,17 +42,19 @@ export const AuthAction = async (
 
   try {
     await loginService(parsed.data.email, parsed.data.password);
+    
+    redirect("/");
 
     return { success: true };
-  } catch {
+  } catch (error: any) {
     return {
       success: false,
-      error: "Something went wrong" ,
+      error: error.message ?? "Something went wrong" ,
     };
   }
 }
 
-export async function getSessionAction(){
+export async function getSessionAction(): Promise<SessionEnhanced | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -89,7 +93,7 @@ export async function getSessionAction(){
     }
 
     // ⭐ NORMALISATION OBLIGATOIRE
-    const normalizedSession = {
+    const normalizedSession: SessionEnhanced = {
       ...session,
       user: {
         ...session.user,

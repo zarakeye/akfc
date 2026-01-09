@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import { useActionState } from 'react';
 import { picturesDragNDropFormAction, type PicturesDragNDropFormState } from '@/server/actions/picturesDragNDropForm.action';
-import { useUserStore } from '@/lib/stores/useUserStore';
+import { useSessionStore } from '@/lib/stores/useSessionStore';
 import { useCategoryStore } from '@/lib/stores/useCategoryStore';
 import { useCourseStore } from '@/lib/stores/useCourseStore';
 import type { PicturesDragNDropFormValuesType } from '@/types/picturesDragNDropForm.types';
@@ -20,7 +20,7 @@ export default function PicturesDragNDropForm() {
     picturesDragNDropFormAction,
     initialState
   );
-  const { user } = useUserStore();
+  const { user } = useSessionStore();
   const { categories } = useCategoryStore();
   const { courses } = useCourseStore();
 

@@ -1,122 +1,84 @@
 'use client';
 
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { trpcClient } from "@/lib/trpcClient"; // ou fetch vers /api/auth/login
+import { useSessionStore } from "@/lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, JSX, useState } from "react";
-import { AuthAction, type AuthState } from "@server/actions/auth.action";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Input } from "@components/ui/Input";
-import { Button } from "@components/ui/Button";
-import { toast } from "sonner";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { authSchema } from "@server/validation/auth.schema";
-import { trpc } from "@lib/trpcClient";
-import { useUserStore } from "@lib/stores/useUserStore";
-
-interface FormValues {
-  email: string;
-  password: string
-}
-
-const initialState: AuthState = {
-  success: false,
-}
 
 /**
- * LoginForm is a form to login to the application.
- * It uses the useForm hook to validate the form data and the useActionState hook to handle the server action.
- * When the form is submitted, it calls the formAction function which handles the server action and updates the state.
- * If the state is successful, it shows a success toast and invalidates the current user query to refetch user data.
- * If the state is an error, it shows an error toast.
- * @returns {JSX.Element} A form with email and password fields and a submit button.
+ * A React component that renders a login form.
+ * It handles form submission by calling the login endpoint
+ * and redirecting the user to the homepage if the login is successful.
+ * The form has two fields: email and password, and a submit button.
+ * If the login fails, it displays an error message.
  */
-export function LoginForm(): JSX.Element {
+export default function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { fetchSession } = useSessionStore();
   const router = useRouter();
 
-  // 🔐 Server Action state
-  const [state, formAction] = useActionState(AuthAction, initialState);
-  
-  // 📋 Client-side validation
-  const form = useForm<FormValues>({
-    resolver: zodResolver(authSchema),
-    defaultValues: {
-      email: '',
-      password: ''
-    },
-    mode: "onBlur"
-  });
+  /**
+   * Handles the form submission by calling the login endpoint
+   * and redirecting the user to the homepage if the login is successful
+   * @param {React.FormEvent<HTMLFormElement>} e - The form submission event
+   */
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  // const utils = trpc.useUtils(); // To immediately update the client cache after login
-
-  // 🔄 Post-login effect
-  useEffect(() => {
-    if (!state.success) return;
-
-    (async () => {
-      const { fetchUser } = useUserStore.getState();
-      await fetchUser();
+    try {
+      // Ici tu appelles ton endpoint TRPC ou REST
+      const res = await trpcClient.auth.login.mutate({ email, password });
       
-      toast.success("Connexion réussie");
-      router.push('/');
-      router.refresh();
-    })();
-  }, [state.success, router]);
-
-  // ❌ Error toast (once)
-  useEffect(() => {
-    if (state.error) {
-      toast.error(state.error);
+      if (res.success) {
+        // fetch session après login pour mettre à jour le store
+        await fetchSession();
+        useSessionStore.getState().setJustLoggedIn(true);
+        router.push('/'); // ou router.push('/')
+      } else {
+        setError(res.error || 'Login failed');
+      }
+    } catch (err) {
+      setError((err as Error).message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
-  }, [state.error]);
+  };
 
   return (
-    <Form {...form}>
-      <form
-        action={formAction}
-        onSubmit={async (e) => {
-          const valid = await form.trigger();
-          if (!valid) e.preventDefault();
-        }}
-        className="space-y-4"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex gap-2">
+        <input
+          type="email"
+          name="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+          className="border rounded bg-white px-2 py-1"
+        />
+        <input
+          type="password"
+          name="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+          className="border rounded bg-white px-2 py-1"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded"
       >
-        <div className="flex flex-col">
-          <div className="flex gap-2.5">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Email</FormLabel>
-                  <FormControl>
-                    <Input {...field} id="email" type="email" className="w-[200px] h-[42px] bg-white" />
-                  </FormControl>
-                  <div className="h-10">
-                    <FormMessage/>
-                  </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white">Mot de passe</FormLabel>
-                  <FormControl>
-                    <Input {...field} id="password" type="password" autoComplete="off" className="w-[200px] h-[42px] bg-white" />
-                  </FormControl>
-                  <div className="w-[200px] h-10">
-                    <FormMessage/>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-          <Button type="submit" className="">Connexion</Button>
-        </div>
-        {state.success && toast.success("Connexion réussie !")}
-        {state.error && toast.error(state.error)}
-      </form>
-    </Form>
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
+      {error && <p className="text-red-500">{error}</p>}
+    </form>
   );
 }

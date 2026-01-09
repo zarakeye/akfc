@@ -1,79 +1,52 @@
 'use client';
 
-import { JSX, use, useEffect, useState } from 'react';
-import { trpc } from '@lib/trpcClient';
-// import { Button } from '@/components/ui/Button';
-import type { User } from '@prisma/client';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Image from 'next/image';
-import { useUserStore } from '@/lib/stores/useUserStore';
-import { clientSessionLogout } from '@/lib/session/session.client';
-import { SessionUser } from '@/lib/stores/useUserStore';
+import { useRouter } from 'next/navigation';
+import { useSessionStore } from '@/lib/stores/useSessionStore';
+import type { UserEnhanced } from '@/types';
 
 interface UserMenuProps {
-  user: SessionUser;
-  // logout: () => Promise<void>;
+  user: UserEnhanced;
 }
 
-/**
- * Component UserMenu
- * 
- * @param {user} User object with role field
- * @param {logout} logout function
- * @returns JSX element
- */
-export default function UserMenu({ user }: UserMenuProps): JSX.Element {
-  const [open, setOpen] = useState<boolean>(false);
-  // const logoutMutation = trpc.auth.logout.useMutation();
-  const [logoutSubmited, setLogoutSubmited] = useState(false);
-  const [logoutSuccess, setLogoutSuccess] = useState<boolean | null>(null);
+export default function UserMenu({ user }: UserMenuProps) {
+  const [open, setOpen] = useState(false);
   const router = useRouter();
+  const logout = useSessionStore(s => s.logout);
 
-  useEffect(() => {
-    if (logoutSubmited) {
-      const performLogout = async () => {
-        const logoutResult = await useUserStore.getState().logout();
-        if (logoutResult) setLogoutSuccess(true);
-      }
-      performLogout();
+  const handleLogout = async () => {
+    const success = await logout(); // met à jour le store
+
+    if (success) {
+      router.push('/'); // redirige vers la page d'accueil
+      // router.refresh(); // re-render des composants qui lisent le store
     }
-  }, [logoutSubmited, router]);
-
-  useEffect(() => {
-    if (logoutSuccess) {
-      router.push('/');
-      router.refresh();
-    }
-  }, [router, logoutSuccess]);
-
+  };
 
   return (
-    <div className="relative inline-block p-10" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div
+      className="relative inline-block p-2"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       <div className="flex items-center gap-2 cursor-pointer">
         <Image
           src="/account_circle_size40.svg"
           alt="User Icon"
           width={40}
           height={40}
-          className="rounded-full cursor-pointer"
+          className="rounded-full"
         />
-        <span className='text-white'>{user.firstName ?? 'Utilisateur'}</span>
+        <span className="text-white">{user?.firstName ?? 'Utilisateur'}</span>
       </div>
-      
+
       {open && (
-        <div className="absolute right-1/2 translate-x-1/2 top-5 mt-2 w-60 bg-white border rounded shadow-md z-50">
-          <p className="px-4 py-2 text-sm text-gray-700">{user.email}</p>
+        <div className="absolute right-0 top-10 w-60 bg-white border rounded shadow-md z-50">
+          <p className="px-4 py-2 text-sm text-gray-700">{user?.email}</p>
           <button
             className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
-            onClick={() => {
-              if (!logoutSubmited) {
-                setLogoutSubmited(true);
-                // useClientSessionLogout();
-                //   router.push('/');
-                //   router.refresh();
-                // });
-              }
-            }}
+            onClick={handleLogout}
           >
             Déconnexion
           </button>

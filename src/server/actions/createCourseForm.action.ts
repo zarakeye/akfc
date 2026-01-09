@@ -1,7 +1,7 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { getUserFromSessionJWT } from "@/lib/session/session.server";
+import { getUserFromSessionJWT } from "@server/lib/session/session.server";
 import { prisma } from "@server/prisma";
 import { createCourseFormSchema } from "@/server/schemas/createCourseForm.schema";
 // import type { Course } from "@generated/prisma/client";

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from "react";
-import { useUserStore } from "@lib/stores/useUserStore";
+import { useSessionStore } from "@/lib/stores/useSessionStore";
 import { useCategoryStore } from "@/lib/stores/useCategoryStore";
 // import { useActivityStore } from "@/lib/stores/useActivityStore";
 import { useCourseStore } from "@/lib/stores/useCourseStore";
+import { set } from "zod";
 // import { useStageStore } from "@/lib/stores/useStageStore";
 // import { useEventStore } from "@/lib/stores/useEventStore";
 
@@ -16,15 +17,14 @@ import { useCourseStore } from "@/lib/stores/useCourseStore";
  * @param {React.ReactNode} props.children - The children component to render.
  */
 export function SessionLoader({ children }: { children: React.ReactNode }) {
-  const { fetchUser, user, loading } = useUserStore();
- 
+  const { fetchSession, user } = useSessionStore();
   const { fetchCategories } = useCategoryStore();
   const { fetchCourses } = useCourseStore();
 
   // 🔑 1. Charger la session UNE FOIS
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    fetchSession();
+  }, [fetchSession]);
 
   // 📦 2. Charger les données métier APRES auth
   useEffect(() => {
@@ -33,10 +33,6 @@ export function SessionLoader({ children }: { children: React.ReactNode }) {
       fetchCourses();
     }
   }, [user, fetchCategories, fetchCourses]);
-
-  if (loading) {
-    return <div>Loading...</div>; // ou spinner
-  }
 
   return <>{children}</>;
 }

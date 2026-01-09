@@ -16,7 +16,7 @@ import type { /*Role,*/ User } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateUserFormSchema, type FormValues } from '@/server/schemas/updateUserForm.schema';
-import { useUserStore/*, type SessionUser*/ } from '@/lib/stores/useUserStore';
+import { useSessionStore } from '@/lib/stores/useSessionStore';
 import { CldUploadWidget, CldUploadButton } from 'next-cloudinary';
 import Image from 'next/image';
 import { set } from 'zod';
@@ -54,38 +54,14 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
 
   const [state, formAction, isPending] = useActionState<UpdateUserFormState, FormData>(updateUserFormAction, {} as UpdateUserFormState);
 
-  // const setUser = useUserStore(s => s.setUser);
-  // const currentUser = useUserStore(s => s.user);
-  // useEffect(() => {
-  //   if (state.success && currentUser?.id === user.id) {
-  //     const values = form.getValues();
-  //     const roleQuery = trpc.role.getById.useQuery({ id: Number(values.roleId) });
-
-  //     const updatedUser: SessionUser = {
-  //       ...user,
-  //       firstName: values.firstName,
-  //       lastName: values.lastName,
-  //       email: values.email,
-  //       password: values.password || user.password,
-  //       roleId: Number(values.roleId ?? user.roleId),
-  //       phone: values.phone as string,
-  //       birthDate: values.birthDate ? new Date(values.birthDate) : null,
-  //       isFirstLogin: values.isFirstLogin === 'true' ? true : false,
-  //       role: roleQuery.data as Role,
-  //     };
-  //     setUser(updatedUser);
-  //   }
-  // }, [state.success, form, setUser, user]);
-
-  const fetchUser = useUserStore(s => s.fetchUser);
-  const currentUser = useUserStore.getState().user;
+  const { fetchSession, session } = useSessionStore();
 
   useEffect(() => {
-    if (state.success && currentUser?.id === user.id) {
-      void fetchUser();
+    if (state.success && session?.user?.id === user.id) {
+      void fetchSession();
       if (setFirstLogin) setFirstLogin(false);
     }
-  }, [state.success, fetchUser, user, currentUser, setFirstLogin]);
+  }, [state.success, fetchSession, session?.user?.id, user.id, setFirstLogin]);
 
   return (
     <Form {...form}>

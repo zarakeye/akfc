@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from "react";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { useUserStore } from "@/lib/stores/useSessionStore";
 import type { UserEnhanced } from "@/types";
 import Image from "next/image";
 import { RoleWithPermissions } from "@/app/admin/roles/RoleCard";

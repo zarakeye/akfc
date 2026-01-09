@@ -1,15 +1,15 @@
 import { initTRPC } from '@trpc/server';
-import { prisma } from '@server/prisma';
+// import { prisma } from '@server/prisma';
 import superjson from 'superjson';
-import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+// import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { UserEnhanced, SessionEnhanced } from '@/types';
 
 
 export interface SessionCtx {
-  prisma: typeof prisma;
+  // prisma: typeof prisma;
   user: UserEnhanced;
   session: SessionEnhanced;
-  cookies: Promise<ReadonlyRequestCookies | null> | ReadonlyRequestCookies | null;
+  // cookies: Promise<ReadonlyRequestCookies | null> | ReadonlyRequestCookies | null;
 }
 
 export const t = initTRPC.context<SessionCtx>().create({

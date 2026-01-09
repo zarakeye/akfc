@@ -1,7 +1,7 @@
 "use server";
 // export const runtime = 'nodejs';
 
-import { getUserFromSessionJWT, refreshSessionJWT } from "@/lib/session/session.server";
+import { getUserFromSessionJWT, refreshSessionJWT } from "@server/lib/session/session.server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@server/prisma";
 import { updateUserFormSchema } from "@/server/schemas/updateUserForm.schema";

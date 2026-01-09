@@ -1,7 +1,7 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { getUserFromSessionJWT } from "@/lib/session/session.server";
+import { getUserFromSessionJWT } from "@server/lib/session/session.server";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "@/lib/generatePassword";
 import sendPasswordEmail from "@/server/welcomeEmailWithPassword";
