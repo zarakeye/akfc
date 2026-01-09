@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, JSX, useState } from "react";
-import { AuthAction } from "@server/actions/auth.action";
+import { AuthAction, type AuthState } from "@server/actions/auth.action";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
@@ -11,11 +11,16 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authSchema } from "@server/validation/auth.schema";
 import { trpc } from "@lib/trpcClient";
-import { AuthState } from "@server/actions/actionState.interfaces";
-import { getClientSession } from "@lib/session/session.client";
 import { useUserStore } from "@lib/stores/useUserStore";
 
-interface FormValues { email: string; password: string }
+interface FormValues {
+  email: string;
+  password: string
+}
+
+const initialState: AuthState = {
+  success: false,
+}
 
 /**
  * LoginForm is a form to login to the application.
@@ -26,13 +31,12 @@ interface FormValues { email: string; password: string }
  * @returns {JSX.Element} A form with email and password fields and a submit button.
  */
 export function LoginForm(): JSX.Element {
-  // 2️⃣ State côté serveur (Server Action)
-  const [state, formAction] = useActionState(AuthAction, { success: false, error: undefined } as AuthState);
   const router = useRouter();
-  const [loginSuccess, setLoginSuccess] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  // 1️⃣ Validation client instantanée
+  // 🔐 Server Action state
+  const [state, formAction] = useActionState(AuthAction, initialState);
+  
+  // 📋 Client-side validation
   const form = useForm<FormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
@@ -42,55 +46,28 @@ export function LoginForm(): JSX.Element {
     mode: "onBlur"
   });
 
-  const utils = trpc.useUtils(); // To immediately update the client cache after login
+  // const utils = trpc.useUtils(); // To immediately update the client cache after login
 
+  // 🔄 Post-login effect
   useEffect(() => {
-    const checkSession = async () => { 
-      if (state.success) {
-        // ⚡ On va chercher l'utilisateur via le store
-        const loggedIn = await useUserStore.getState().fetchUser();
+    if (!state.success) return;
 
-        if (loggedIn) {
-          toast.success("Connexion réussie !");
-          router.push("/admin/dashboard");
-          router.refresh();
-        } else if (state.error) {
-          toast.error("Impossible de récupérer la session");
-        }
-      } 
-    };
+    (async () => {
+      const { fetchUser } = useUserStore.getState();
+      await fetchUser();
+      
+      toast.success("Connexion réussie");
+      router.push('/');
+      router.refresh();
+    })();
+  }, [state.success, router]);
 
-    void checkSession();
-  }, [state, utils, form, router]);
-
-  // useEffect(() => {
-  //   const performLoginSuccessCheck = async () => {
-  //     setError(null);
-  //     const loginResult = await useUserStore.getState().fetchUser();
-  //     if (loginResult) {
-  //       setLoginSuccess(true);
-  //       setError(null);
-  //     }
-  //     else {
-  //       setLoginSuccess(false);
-  //       setError('Email ou mot de passe incorrect');
-  //     }
-  //   }
-  //   void performLoginSuccessCheck();
-  // }, [state.success]);
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     if (loginSuccess) {
-  //       router.push('/admin/dashboard');
-  //       router.refresh();
-  //     } else {
-  //       router.push('/');
-  //       router.refresh();
-  //     }
-  //   };
-  //   void fetchData();
-  // }, [router, loginSuccess]);
+  // ❌ Error toast (once)
+  useEffect(() => {
+    if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state.error]);
 
   return (
     <Form {...form}>

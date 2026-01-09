@@ -8,51 +8,43 @@ import type { UserEnhancedStrict } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export async function createSessionJWT(user: UserEnhancedStrict): Promise<{ user: UserEnhancedStrict; session: Session }> {
-  const sessionToken = crypto.randomUUID();
-  
+type CreateSessionResult = {
+  session: Session;
+  token: string;
+  expiresAt: Date;
+}
+
+export async function createSessionJWT(user: UserEnhancedStrict): Promise<CreateSessionResult> {
   // Set the token to expire in 7 days
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-
-  // Create the session
+  
+  // 1️⃣ DB session
   const session = await prisma.session.create({
     data: {
-      token: sessionToken,
+      token: crypto.randomUUID(),
       userId: user.id,
       role: user.role?.name ?? null,
       expiresAt
     }
   });
 
-  console.log('🔑 SESSION CREATED:', session);
-  // Create the JWT
-  const jwtToken = jwt.sign(
+  // 2️⃣ JWT
+  const token = jwt.sign(
     {
       sessionId: session.id,
       userId: user.id,
     },
-    JWT_SECRET ?? '',
+    JWT_SECRET!,
     {
-      expiresIn: "7d"
+      expiresIn: Math.floor(SESSION_DURATION_MS / 1000),
     }
   );
 
-  const cookiestore = await cookies();
-  console.log('🍪 COOKIE is SETTING:', jwtToken);
-  cookiestore.set(COOKIE_NAME, jwtToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: 'lax', // "strict",
-    expires: expiresAt,
-    path: '/'
-  });
-
-  const testCookie = cookiestore.get(COOKIE_NAME)?.value;
-  console.log('🍪 COOKIE SET:', testCookie);
-
-  console.log("CTX USER:", JSON.stringify(user, null, 2));
-
-  return { user, session };
+  return {
+    session,
+    token,
+    expiresAt
+  };
 }
 
 export async function deleteSession() {

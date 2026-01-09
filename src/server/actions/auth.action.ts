@@ -1,18 +1,18 @@
 'use server';
 
 import { prisma } from "@/server/prisma";
-import bcrypt from "bcryptjs";
 import { authSchema } from "@server/validation/auth.schema";
-import type { AuthState } from "@server/actions/actionState.interfaces";
-import { createSessionJWT } from "@/lib/session/session.server";
-import { UserEnhancedStrict } from "@/types";
 import { cookies } from "next/headers";
 import { COOKIE_NAME } from "@/lib/constants";
 import jwt from "jsonwebtoken";
+import { loginService } from "../services/auth.service";
+import { Session } from "@prisma/client";
 
-
-// export type UserWithRole = (User & { role: (Role & { permissions: Permission[] }) | null }) | null;
-// export type SessionWithUser = (Session & { user: User & { role: (Role & { permissions: Permission[] }) | null } }) | null;
+export interface AuthState {
+  success: boolean;
+  error?: string;
+  session?: Session;
+}
 
 /**
  * AuthAction is a server action that handles the authentication of a user.
@@ -22,82 +22,30 @@ import jwt from "jsonwebtoken";
  * If an error occurs during the authentication process, it returns an object with success set to false and an errors object with an error message for the email.
  */
 export const AuthAction = async (
-  prevState: AuthState,
+  _: AuthState,
   formData: FormData
 ): Promise<AuthState> => {
-  console.log('AuthAction called');
-  console.log("FORMDATA", Array.from(formData.entries()));
-
-  
   // ✅ Validation Zod côté serveur
-  const result = authSchema.safeParse({
+  const parsed = authSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
   });
 
-  if (!result.success) {
+  if (!parsed.success) {
     return {
       success: false,
-      error: result.error.issues[0].message,
-      user: null,
+      error: parsed.error.issues[0].message,
     };
   }
 
   try {
-    // ✅ Insertion Prisma
-    const user = await prisma.user.findUnique({
-      where: {
-        email: result.data.email,
-      },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    await loginService(parsed.data.email, parsed.data.password);
 
-    if (!user) {
-      return {
-        success: false,
-        error: "This user does not exist",
-        user: null
-      };
-    }
-
-    const valid = await bcrypt.compare(result.data.password, user.password);
-
-    if (!valid) {
-      console.log('Password is incorrect');
-      return {
-        success: false,
-        error: "Password is incorrect",
-        user: null
-      };
-    }
-
-    const normalizedUser = {
-      ...user,
-      role: user.role ? {
-        ...user.role,
-        permissions: user.role?.permissions.map(p => p.permission)
-      } : null
-    } as UserEnhancedStrict;
-
-
-    const { session } = await createSessionJWT(normalizedUser);
-
-    return { success: true, session, user: normalizedUser };
+    return { success: true };
   } catch {
     return {
       success: false,
       error: "Something went wrong" ,
-      user: null
     };
   }
 }
@@ -114,7 +62,7 @@ export async function getSessionAction(){
     const payload = jwt.verify(
       token,
       JWT_SECRET ?? "",
-    ) as { sessionId: string;/* userId: string*/ };
+    ) as { sessionId: string;};
 
     if (!payload) return null;
 
@@ -132,7 +80,13 @@ export async function getSessionAction(){
       },
     });
 
-    if (!session || session.expiresAt < new Date()) return null;
+    if (!session) return null;
+
+    // ✅ Si la session est expirée, on la supprime
+    if (session.expiresAt < new Date()) {
+      await prisma.session.delete({ where: { id: session.id } });
+      return null;
+    }
 
     // ⭐ NORMALISATION OBLIGATOIRE
     const normalizedSession = {

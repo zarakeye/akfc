@@ -11,7 +11,11 @@ import { courseRouter } from '../routers/course.router';
 import { cookies } from 'next/headers';
 import { router } from '@server/trpc/core';
 import type { SessionCtx } from '@server/trpc/core';
-import { getUserFromSessionJWT } from '@/lib/session/session.server';
+import { COOKIE_NAME } from '@/lib/constants';
+import jwt from 'jsonwebtoken';
+import { UserEnhanced } from '@/types';
+import { startSessionCleanupCron } from '../lib/session/sessionCleanup';
+import { start } from 'repl';
 
 /**
  * Retrieves the user associated with the current session cookie.
@@ -21,16 +25,23 @@ import { getUserFromSessionJWT } from '@/lib/session/session.server';
 export async function createContext(): Promise<SessionCtx> {
   const cookieStore = await cookies();
 
-  const user = await getUserFromSessionJWT();
-  console.log('🔑 USER FROM CONTEXT:', user);
-  
-  if (!user) return { prisma, user: null, session: null, cookies: cookieStore };
-  let session: SessionCtx['session'] = null;
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) return {
+    prisma,
+    user: null,
+    session: null,
+    cookies: cookieStore
+  };
 
   try {
     // 🔑 Verify the JWT
-    session = await prisma.session.findFirst({
-      where: { userId: user.id },
+    const payload = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as { sessionId: string; userId: string };
+
+    const session = await prisma.session.findUnique({
+      where: { id: payload.sessionId },
       include: {
         user: {
           include: {
@@ -48,19 +59,37 @@ export async function createContext(): Promise<SessionCtx> {
       }
     });
 
-    if (!session || session.expiresAt < new Date()) return { prisma, user: null, session: null, cookies: cookieStore };
+    if (!session) {
+      cookieStore.delete(COOKIE_NAME);
+      return {
+        prisma,
+        user: null,
+        session: null,
+        cookies: cookieStore
+      };
+    }
+
+    if (session.expiresAt < new Date()) {
+      await prisma.session.delete({ where: { id: session.id } });
+      cookieStore.delete(COOKIE_NAME);
+
+      return {
+        prisma,
+        user: null,
+        session: null,
+        cookies: cookieStore
+      };
+    }
+
+
     if (session.user && !session.user.role) throw new Error("User role missing !");
 
-    // ⭐ NORMALISATION
-    const normalizedSession = {
-      ...session,
-      user
-    };
+   if (!session.user.role) throw new Error("User role missing !");
 
     return {
       prisma,
-      user,
-      session: normalizedSession,
+      user: session.user as UserEnhanced,
+      session,
       cookies: cookieStore,
     };
   } catch (err) {
@@ -68,6 +97,9 @@ export async function createContext(): Promise<SessionCtx> {
     return { prisma, user: null, session: null, cookies: cookieStore };
   }
 }
+
+// Lance le cron dès que le serveur démarre
+startSessionCleanupCron();
 
 export const appRouter = router({
   auth: authRouter,

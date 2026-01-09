@@ -1,6 +1,23 @@
 import { router, protectedProcedure, publicProcedure } from "@server/trpc/core";
 import { requirePermission } from "./middleware";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+/**
+ * Utils
+ */
+const cleanExpiredSessions = async (prisma: PrismaClient) => {
+  await prisma.session.deleteMany({
+    where: {
+      expiresAt: {
+        lte: new Date(),
+      },
+    },
+  })
+}
 
 export const sessionRouter = router({
   update: protectedProcedure
@@ -30,4 +47,6 @@ export const sessionRouter = router({
         console.log('Error fetching sessions:', error);
       }
     })
+
+  
 });

@@ -4,13 +4,14 @@ import { getSessionAction } from "@/server/actions/auth.action";
 import { UserEnhanced, SessionEnhanced } from "@/types";
 
 interface UserStore {
+  clearSession: () => void;
   user: UserEnhanced; //UserWithRole;
   session: SessionEnhanced; //SessionWithUser;
 
   isAuthenticated: boolean;
   loading: boolean;
 
-  setUser: (u: UserEnhanced) => void;
+  // setUser: (u: UserEnhanced) => void;
   setSession: (s: SessionEnhanced) => void;
 
   fetchUser: () => Promise<void>;
@@ -23,106 +24,88 @@ interface UserStore {
 export const useUserStore = create<UserStore>()((set, get) => ({
   user: null,
   session: null,
-
   loading: false,
 
-
-  
   get isAuthenticated() {
     return !!get().user;
   },
 
-  setUser: (u: UserEnhanced) => set({ user: u }),
-  setSession: (s: SessionEnhanced ) => {
-    set({ session: s });
+  // setUser: (u: UserEnhanced) => set({ user: u }),
 
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("session", JSON.stringify(s));
-    } else {
-      (window as Window).sessionStorage.removeItem("session");
-    }
+  /**
+   * Sets the session and user in the store.
+   * If the session is null, it clears the session and user in the store.
+   * If the session is not null, it sets the session and user in the store.
+   */
+  setSession: (session: SessionEnhanced ) => {
+    set({
+      session,
+      user: session?.user ?? null,
+      loading: false,
+    });
   },
 
-  // login: async (email: string, password: string): Promise<boolean> => {
-  //   try {
-  //     const { user, session, token } = await trpcClient.auth.login.mutate({ email, password });
-  //     set({ user, session });
-      
-  //     if (typeof window !== "undefined") {
-  //       window.sessionStorage.setItem("session", JSON.stringify(session));
-  //       window.localStorage.setItem("token", token!);
-  //     }
-
-  //     return true;
-  //   } catch (error) {
-  //     console.error(error);
-  //     return false;
-  //   }
-  // },
+  /**
+   * Clears the session and user in the store.
+   * Sets the loading state to false.
+   */
+  clearSession: () => {
+    set({
+      session: null,
+      user: null,
+      loading: false,
+    });
+  },
+  
   
   /**
-   * Fetches the user session from the server and updates the store.
-   * If the session is not present or has expired, it sets the user and session to null.
-   * If the session is present, it sets the user and session and updates the loading state.
-   * It also stores the session in the local storage.
+   * Fetches the user session and sets it in the store.
+   * If the session is null, it clears the session and user in the store.
+   * If the session is not null, it sets the session and user in the store.
+   * It also catches any errors and logs them to the console.
+   * It then clears the session and user in the store.
    */
   fetchUser: async (): Promise<void> => {
     try {
       const session = await getSessionAction();
 
       if (!session) {
-        set({ user: null, session: null, loading: false });
-
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.removeItem('session');
-        }
+        get().clearSession();
 
         return;
       }
 
-      const { user } = session;
-
-      set({
-        user,
-        session,
-        loading: false,
-      });
-
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('session', JSON.stringify(session));
-      }
-
-      console.log("STORE AFTER fetchUser:", get().user, get().session);
+      get().setSession(session);
     } catch (err) {
       console.error("fetchUser error: ", err);
-      set({ user: null, session: null, loading: false });
+      get().clearSession();
     }
-  },
-
-  hasPermission: (permission): boolean => {
-    const user = get().user;
-
-    if (!user?.role?.permissions) return false;
-
-    return user.role.permissions.some((p) => p.name === permission);
   },
 
   /**
-   * Logs the user out of the application by calling the logout mutation.
-   * This sets the user state to null.
+   * Checks if the user has the given permission.
+   * It returns true if the user has the permission, and false otherwise.
+   * @param {string} permission - The permission to check.
+   * @returns {boolean} - True if the user has the permission, false otherwise.
+   */
+  hasPermission: (permission): boolean => {
+    const role = get().user?.role;
+
+    if (!role?.permissions) return false;
+
+    return role.permissions.some((p) => p.name === permission);
+  },
+
+  
+  /**
+   * Logs out the user by clearing the session in the store and calling the logout mutation in the auth router.
+   * @returns {Promise<boolean>} - A promise that resolves to true if the logout was successful.
    */
   logout: async (): Promise<boolean> =>{
-    try {
-      await trpcClient.auth.logout.mutate();
+    await trpcClient.auth.logout.mutate();
 
-      set({ user: null, session: null });
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem("session");
-      }
+    get().clearSession();
 
-      return true;
-    } catch {
-      return false;
-    }
+    return true;
   },
 }));

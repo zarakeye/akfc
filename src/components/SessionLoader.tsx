@@ -16,43 +16,27 @@ import { useCourseStore } from "@/lib/stores/useCourseStore";
  * @param {React.ReactNode} props.children - The children component to render.
  */
 export function SessionLoader({ children }: { children: React.ReactNode }) {
-  const fetchUser = useUserStore((state) => state.fetchUser);
-  const user = useUserStore((state) => state.user);
-  console.log('SessionLoader user : ', user);
-  const setSession = useUserStore((state) => state.setSession);
-  const session = useUserStore((state) => state.session);
-  console.log('SessionLoader session : ', session);
+  const { fetchUser, user, loading } = useUserStore();
+ 
   const { fetchCategories } = useCategoryStore();
   const { fetchCourses } = useCourseStore();
-  // const { fetchActivities } = useActivityStore();
-  // const { fetchStages } = useStageStore();
-  // const { fetchEvents } = useEventStore();
 
+  // 🔑 1. Charger la session UNE FOIS
   useEffect(() => {
     fetchUser();
+  }, [fetchUser]);
 
-    if (typeof window !== "undefined") {
-      const stored = window.sessionStorage.getItem("session");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setSession(parsed);
-        } catch {
-          window.sessionStorage.removeItem("session");
-        }
-      } 
-    }
-  }, [fetchUser, setSession]);
-
+  // 📦 2. Charger les données métier APRES auth
   useEffect(() => {
     if (user) {
       fetchCategories();
       fetchCourses();
-      // fetchActivities();
-      // fetchStages();
-      // fetchEvents();
     }
   }, [user, fetchCategories, fetchCourses]);
+
+  if (loading) {
+    return <div>Loading...</div>; // ou spinner
+  }
 
   return <>{children}</>;
 }
