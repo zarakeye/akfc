@@ -1,41 +1,26 @@
 'use client';
-// import Image from "next/image";
-import UpdateUserForm from "@/app/forms/UpdateUser.form";
 import { useSessionStore } from "@/lib/stores/useSessionStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import UpdateUserForm from "./forms/UpdateMe.form";
 
 export default function Home() {
-  const user = useSessionStore((state) => state.session?.user);
-  const justLoggedIn = useSessionStore((state) => state.justLoggedIn);
-  const justLoggedOut = useSessionStore((state) => state.justLoggedOut);
-  const setJustLoggedIn = useSessionStore((state) => state.setJustLoggedIn);
-  const setJustLoggedOut = useSessionStore((state) => state.setJustLoggedOut);
+  const session = useSessionStore(state => state.session);
+  const status = useSessionStore(state => state.status);
+  const resetStatus = useSessionStore(state => state.resetStatus);
 
-  // reset flags **après rendu**
-  useEffect(() => {
-    if (justLoggedIn) setJustLoggedIn(false);
-    // if (justLoggedOut) setJustLoggedOut(false);
-  }, [justLoggedIn, justLoggedOut, setJustLoggedIn, setJustLoggedOut]);
+  let message: string;
 
-  useEffect(() => {
-    if (!justLoggedOut) return;
-
-    const timer = setTimeout(() => {
-      setJustLoggedOut(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [justLoggedOut, setJustLoggedOut]);
-
-
-  let message = "Bienvenue invité !"; // par défaut
-  if (justLoggedOut) {
+  if (status === "justLoggedOut") {
     message = "Vous êtes déconnecté";
+  } else if (session?.user) {
+    message = `Bienvenue ${session.user.firstName ?? session.user.email}`;
+  } else {
+    message = "Bienvenue invité !";
   }
-  else if (user && !justLoggedIn && !justLoggedOut) message = `Bienvenue ${user.firstName || user.email}`;
 
-  if (user?.isFirstLogin) {
-    return <UpdateUserForm user={user} setFirstLogin={() => {/* ... */}} />;
+  // Si c'est le premier login, afficher le formulaire
+  if (session?.user?.isFirstLogin) {
+    return <UpdateUserForm />;
   }
 
   return (

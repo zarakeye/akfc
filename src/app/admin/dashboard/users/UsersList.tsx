@@ -6,6 +6,16 @@ import { Table, type Column } from 'react-ts-tab-lib';
 import Image from 'next/image';
 import type { User, Role } from '@prisma/client';
 
+/**
+ * UsersList component
+ * 
+ * This component is responsible for displaying a list of all users from the database.
+ * It uses the trpc.user.getAll hook to fetch the data and the react-ts-tab-lib library to render the table.
+ * 
+ * The component also handles loading and error states for both the users and roles data.
+ * 
+ * @returns {JSX.Element} A JSX element representing the UsersList component.
+ */
 export default function UsersList(): JSX.Element {
   const { data: users = [], isLoading, isError } = trpc.user.getAll.useQuery();
   const [isUsersLoading, setIsUsersLoading] = useState(false);

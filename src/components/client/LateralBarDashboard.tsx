@@ -1,50 +1,23 @@
 'use client';
 
 import { JSX } from "react";
-import { useUserStore } from "@/lib/stores/useSessionStore";
-import type { UserEnhanced } from "@/types";
+import { useSessionStore } from "@/lib/stores/useSessionStore";
 import Image from "next/image";
-import { RoleWithPermissions } from "@/app/admin/roles/RoleCard";
+import { useRouter } from "next/navigation";
 
-interface LateralBarDashboardProps {
-  creating: boolean;
-  setCreating: (creating: 'USER' | 'PERMISSION' | 'ROLE' | 'COURSE' | 'EVENT' | 'STAGE' | 'POST' | 'ACTIVITY_TYPE' | null) => void;
-  openlist: boolean 
-  setOpenList: (openList: 'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null) => void;
-  displayMyInfo: boolean;
-  setDisplayMyInfo: (updateMe: boolean) => void;
-
-  currentUser: UserEnhanced | null;
-  setUpdateRole: (role: RoleWithPermissions | null) => void
-}
-
-export default function LateralBarDashboard(
-  {
-    creating,
-    setCreating,
-    openlist,
-    setOpenList,
-    displayMyInfo,
-    setDisplayMyInfo,
-    currentUser,
-    setUpdateRole
-  }: LateralBarDashboardProps
-): JSX.Element {
-  // if (['admin', 'coach'].includes(currentUser.role.name)) {
-    
-  // }
-
-  // console.log('currentUser.role.name : ', currentUser?.role.name)
+export default function LateralBarDashboard(): JSX.Element {
+  const router = useRouter();
+  const role = useSessionStore(state => state.session?.user?.role);
 
   return (
-    currentUser?.role && currentUser?.role.name === 'ADMIN'
+    role && role.name === 'ADMIN'
     ? (
       <aside className='w-60 bg-gray-800 text-white p-5'>
         <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
 
         <ul className="space-y-2">
 
-        {currentUser && ['ADMIN', 'COACH'].includes(currentUser.role.name) && (
+        {['ADMIN', 'COACH'].includes(role.name) && (
           <>
             <li>
               <div className="flex">
@@ -59,10 +32,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('USERS');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/users');
                   }}
                 >
                   Utilisateurs
@@ -70,10 +40,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setCreating('USER');
-                    setDisplayMyInfo(false);
-                    setOpenList(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/users/create');
                   }}
                 >
                   <Image
@@ -92,10 +59,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('ROLES');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/roles');
                   }}
                 >
                   Rôles
@@ -104,10 +68,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setCreating('ROLE');
-                    setDisplayMyInfo(false);
-                    setOpenList(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/roles/create');
                   }}
                 >
                   <Image
@@ -125,22 +86,14 @@ export default function LateralBarDashboard(
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    setOpenList('PERMISSIONS');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
-                  }}
+                  onClick={() => router.push('admin/dashboard/permissions')}
                 >
                   Permissions
                 </button>
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setDisplayMyInfo(false);
-                    setOpenList(null);
-                    setCreating('PERMISSION');
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/permissions/create');
                   }}
                 >
                   <Image
@@ -153,27 +106,21 @@ export default function LateralBarDashboard(
               </div>
             </li>
 
-            {/* Activity types */}
+            {/* Activity categories */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('ACTIVITY_TYPES');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/categories');
                   }}
                 >
-                  <span>Types d&apos;activités</span>
+                  <span>Catégories d&apos;activités</span>
                 </button>
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setDisplayMyInfo(false);
-                    setOpenList(null);
-                    setCreating('ACTIVITY_TYPE');
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/categories/create');
                   }}
                 >
                   <Image
@@ -192,10 +139,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('COURSES');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                  router.push('/admin/dashboard/courses');
                   }}
                 >
                   Cours
@@ -203,10 +147,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList(null);
-                    setDisplayMyInfo(false);
-                    setCreating('COURSE');
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/courses/create');
                   }}
                 >
                   <Image
@@ -224,10 +165,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('EVENTS');
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/events');
                   }}
                 >
                   Évènements
@@ -235,10 +173,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList(null);
-                    setDisplayMyInfo(false);
-                    setCreating('EVENT');
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/events/create');
                   }}
                 >
                   <Image
@@ -256,10 +191,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('STAGES')
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/stages');
                   }}
                 >
                   Stages
@@ -267,10 +199,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setCreating('STAGE')
-                    setDisplayMyInfo(false);
-                    setOpenList(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/stages/create');
                   }}
                 >
                   <Image
@@ -288,10 +217,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList('POSTS')
-                    setDisplayMyInfo(false);
-                    setCreating(null);
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/posts');
                   }}
                 >
                   Posts
@@ -299,10 +225,7 @@ export default function LateralBarDashboard(
                 <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    setOpenList(null);
-                    setDisplayMyInfo(false);
-                    setCreating('POST');
-                    setUpdateRole(null);
+                    router.push('/admin/dashboard/posts/create');
                   }}
                 >
                   <Image
@@ -314,13 +237,41 @@ export default function LateralBarDashboard(
                 </button>
               </div>
             </li>
+
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push('/admin/dashboard/gallery');
+                  }}
+                >
+                  Gallerie
+                </button>
+                {/* <button
+                  className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push('/admin/dashboard/posts/create');
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer un post"
+                    width={16}
+                    height={16}
+                  />
+                </button> */}
+              </div>
+            </li>
           </>
         )}
 
           <li>
             <button
               className="w-full text-center mt-5"
-              onClick={() => setDisplayMyInfo(!displayMyInfo)}
+              onClick={() => {
+                router.push('/admin/dashboard');
+              }}
             >
               Mon profil
             </button>

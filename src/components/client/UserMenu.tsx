@@ -4,25 +4,20 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/useSessionStore';
-import type { UserEnhanced } from '@/types';
 
-interface UserMenuProps {
-  user: UserEnhanced;
-}
-
-export default function UserMenu({ user }: UserMenuProps) {
+export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const logout = useSessionStore(s => s.logout);
+  const user = useSessionStore(s => s.session?.user);
 
   const handleLogout = async () => {
-    const success = await logout(); // met à jour le store
-
-    if (success) {
-      router.push('/'); // redirige vers la page d'accueil
-      // router.refresh(); // re-render des composants qui lisent le store
-    }
+    await logout(); // met à jour le store
+    router.push('/'); // redirige vers la page d'accueil
   };
+
+  // Si pas connecté, ne pas afficher le menu
+  if (!user) return null;
 
   return (
     <div
@@ -38,12 +33,12 @@ export default function UserMenu({ user }: UserMenuProps) {
           height={40}
           className="rounded-full"
         />
-        <span className="text-white">{user?.firstName ?? 'Utilisateur'}</span>
+        <span className="text-white">{user.firstName ?? 'Utilisateur'}</span>
       </div>
 
       {open && (
         <div className="absolute right-0 top-10 w-60 bg-white border rounded shadow-md z-50">
-          <p className="px-4 py-2 text-sm text-gray-700">{user?.email}</p>
+          <p className="px-4 py-2 text-sm text-gray-700">{user.email}</p>
           <button
             className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
             onClick={handleLogout}

@@ -12,16 +12,6 @@ export type UserEnhancedStrict = (User  & {
   }) | null
 });
 
-export type SessionEnhanced = (Session & {
-  user: (User & {
-    role:( Role & {
-      permissions: (
-        Permission[]
-      )
-    }) | null
-  }) | null
-}) | null;
-
 export type SessionEnhancedStrict = (Session & {
   user: (User & {
     role:( Role & {

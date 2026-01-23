@@ -2,13 +2,14 @@
 
 import { trpc } from '@/lib/trpcClient';
 import { JSX, useState } from 'react';
-import { UpdateRoleForm } from '../../forms/UpdateRole.form';
+import { UpdateRoleForm } from '@/app/forms/UpdateRole.form';
 import { Role } from '@prisma/client';
 
 interface RoleCardProps {
-  setDisplayRoleCard: (role: null) => void;
-  displayRoleCard: Role | null;
-  setUpdateRole: (updateRole: RoleWithPermissions | null) => void;
+  // setDisplayRoleCard: (role: null) => void;
+  // displayRoleCard: Role | null;
+  // setUpdateRole: (updateRole: RoleWithPermissions | null) => void;
+  roleId: number
 }
 
 export type RoleWithPermissions = {
@@ -23,12 +24,14 @@ export type RoleWithPermissions = {
   }[];
 };
 
-export default function RoleCard({ displayRoleCard, setDisplayRoleCard, setUpdateRole }: RoleCardProps): JSX.Element {
+/**
+ * Card pour afficher un rôle.
+ * @param {number} roleId - L'ID du rôle à afficher.
+ * @returns {JSX.Element} La card affichant le rôle.
+ */
+export default function RoleCard({ /*displayRoleCard, setDisplayRoleCard, setUpdateRole*/ roleId }: RoleCardProps): JSX.Element {
   const { data: role, isLoading } = trpc.role.getByIdWithPermissions.useQuery(
-    { id: displayRoleCard?.id ?? 0 },
-    {
-      enabled: !!displayRoleCard,
-    }
+    { id: /*displayRoleCard?.*/roleId ?? 0 },
   );
 
   if (isLoading) return (
@@ -49,7 +52,7 @@ export default function RoleCard({ displayRoleCard, setDisplayRoleCard, setUpdat
 
   return (
     <>
-    {displayRoleCard && (
+    {/* {displayRoleCard && ( */}
     <div className="flex flex-col card w-96 bg-base-100 shadow-xl">
       <div className="card-body">
         <h2 className="card-title">Rôle : {role.name}</h2>
@@ -66,10 +69,10 @@ export default function RoleCard({ displayRoleCard, setDisplayRoleCard, setUpdat
       <div className="flex justify-end gap-2">
         <button
           className="btn btn-primary bg-gray-600 text-white rounded px-2"
-          onClick={() => {
-            setUpdateRole(role);
-            setDisplayRoleCard(null)
-          }}
+          // onClick={() => {
+          //   setUpdateRole(role);
+          //   setDisplayRoleCard(null)
+          // }}
         >
           Modifier
         </button>
@@ -77,7 +80,7 @@ export default function RoleCard({ displayRoleCard, setDisplayRoleCard, setUpdat
         <button className="btn btn-primary bg-gray-600 text-white rounded px-2">Liste des rôles</button>
       </div>
     </div>
-    )}
+    {/* )} */}
     </>
   );
 }

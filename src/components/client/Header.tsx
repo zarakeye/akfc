@@ -3,7 +3,7 @@
 import Link from "next/link";
 import LoginForm from "./LoginForm";
 import UserMenu from "@components/client/UserMenu";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 // import { trpc } from '@lib/trpcClient';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,17 +12,11 @@ import { User } from "@prisma/client";
 import { trpcClient } from "@/lib/trpcClient";
 
 export default function Header() {
-  const { session } = useSessionStore();
-  const user = session?.user;
+  const user = useSessionStore(state => state.session?.user);
   // const [isActive, setIsActive] = useState<string>('');
   const pathname = usePathname();
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);
-
-
-  // useEffect(() => {
-  //   console.log('isActive : ', isActive)
-  // }, [isActive])
 
   return (
     <header className="flex justify-between items-center bg-black shadow-md">
@@ -135,7 +129,7 @@ export default function Header() {
 
       <Suspense fallback={<div>Chargement...</div>}>
         {user
-          ? <UserMenu user={user} />
+          ? <UserMenu />
           : <LoginForm />
         }
       </Suspense>

@@ -16,6 +16,15 @@ export const permissionRouter = router({
       });
     }),
 
+  getById: protectedProcedure
+    .use(requirePermission("manage_permissions"))
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.permission.findUnique({
+        where: { id: input.id },
+      });
+    }),
+
   create: protectedProcedure
     .use(requirePermission("manage_permissions")) // publicProcedure
     .input(z.object({ name: z.string().min(1) }))
@@ -65,7 +74,7 @@ export const permissionRouter = router({
     .use(requirePermission("manage_permissions"))
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.role?.permissions.map((p: { name: string; }) => p.name).includes("manage_permissions")) {
+      if (!ctx.sessionClient?.user?.role?.permissions.map((p) => p).includes("manage_permissions")) {
         throw new Error("Forbidden");
       }
 
@@ -88,7 +97,7 @@ export const permissionRouter = router({
     .use(requirePermission("manage_permissions"))
     .input(z.object({ permissionId: z.number(), roleId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.role?.permissions.map((p: { name: string; }) => p.name).includes("manage_permissions")) {
+      if (!ctx.sessionClient?.user?.role?.permissions.map((p) => p).includes("manage_permissions")) {
         throw new Error("Forbidden");
       }
 
@@ -112,7 +121,7 @@ export const permissionRouter = router({
     .use(requirePermission("manage_permissions"))
     .input(z.object({ permissionId: z.number(), roleId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.role?.permissions.map((p: { name: string; }) => p.name).includes("manage_permissions")) {
+      if (!ctx.sessionClient?.user?.role?.permissions.map((p) => p).includes("manage_permissions")) {
         throw new Error("Forbidden");
       }
 

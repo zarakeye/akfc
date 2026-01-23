@@ -5,9 +5,9 @@ import { useSessionStore } from "@/lib/stores/useSessionStore";
 import { useCategoryStore } from "@/lib/stores/useCategoryStore";
 // import { useActivityStore } from "@/lib/stores/useActivityStore";
 import { useCourseStore } from "@/lib/stores/useCourseStore";
-import { set } from "zod";
 // import { useStageStore } from "@/lib/stores/useStageStore";
 // import { useEventStore } from "@/lib/stores/useEventStore";
+import { trpcClient } from "@/lib/trpcClient";
 
 /**
  * A component that loads the user session on mount.
@@ -17,22 +17,33 @@ import { set } from "zod";
  * @param {React.ReactNode} props.children - The children component to render.
  */
 export function SessionLoader({ children }: { children: React.ReactNode }) {
-  const { fetchSession, user } = useSessionStore();
-  const { fetchCategories } = useCategoryStore();
-  const { fetchCourses } = useCourseStore();
+  const loginSuccess = useSessionStore((state) => state.loginSuccess);
+  const resetStatus = useSessionStore((state) => state.resetStatus);
+  const setLoading = useSessionStore((state) => state.setLoading);
+  const fetchCategories = useCategoryStore((state) => state.fetchCategories);
+  const fetchCourses = useCourseStore((state) => state.fetchCourses);
 
-  // 🔑 1. Charger la session UNE FOIS
+  // 📦 1. Charger les données métier AVANT auth
   useEffect(() => {
-    fetchSession();
-  }, [fetchSession]);
+    async function hydrateSessionStore() {
+      setLoading(true);
 
-  // 📦 2. Charger les données métier APRES auth
-  useEffect(() => {
-    if (user) {
-      fetchCategories();
-      fetchCourses();
+      try {
+        const session = await trpcClient.auth.getSession.query();
+
+        if (session) {
+          loginSuccess(session);
+        } else {
+          resetStatus();
+        } 
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [user, fetchCategories, fetchCourses]);
 
+    hydrateSessionStore();
+    fetchCategories();
+    fetchCourses();
+  }, [loginSuccess, resetStatus, setLoading, fetchCategories, fetchCourses]);
   return <>{children}</>;
 }

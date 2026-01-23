@@ -42,9 +42,6 @@ export const authRouter = router({
 
   getSession: publicProcedure
     .query(async ({ ctx }) => {
-      return {
-        user: ctx.user,
-        expiresAt: ctx.session?.expiresAt
-      }
+      return ctx.sessionClient;
     }),
 });

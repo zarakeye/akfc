@@ -5,14 +5,14 @@ import { trpc } from '@lib/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { Role } from '@prisma/client';
 
-interface RolesListProps {
-  setCreating: (creating: 'USER' | 'PERMISSION' | 'ROLE' | 'COURSE' | 'EVENT' | 'STAGE' | 'POST' | 'ACTIVITY_TYPE' | null) => void
-  setOpenList: (open: 'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null) => void
-  setDisplayingMyInfo: (display: boolean) => void
-  setDisplayRoleCard: (role: Role | null) => void
-}
+// interface RolesListProps {
+//   setCreating: (creating: 'USER' | 'PERMISSION' | 'ROLE' | 'COURSE' | 'EVENT' | 'STAGE' | 'POST' | 'ACTIVITY_TYPE' | null) => void
+//   setOpenList: (open: 'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null) => void
+//   setDisplayingMyInfo: (display: boolean) => void
+//   setDisplayRoleCard: (role: Role | null) => void
+// }
 
-export default function RolesList({ setCreating, setOpenList, setDisplayingMyInfo, setDisplayRoleCard }: RolesListProps): JSX.Element {
+export default function RolesList(/*{ setCreating, setOpenList, setDisplayingMyInfo, setDisplayRoleCard }: RolesListProps*/): JSX.Element {
   const { data: roles, isLoading, isError } = trpc.role.getAll.useQuery();
 
   if (isLoading) return <div>Loading...</div>;
@@ -42,12 +42,12 @@ export default function RolesList({ setCreating, setOpenList, setDisplayingMyInf
       <Table
         columns={columns}
         rows={roles || []}
-        onRowClick={(role: Role | null) => {
-          setCreating(null);
-          setOpenList(null);
-          setDisplayingMyInfo(false);
-          setDisplayRoleCard(role);
-        }}
+        // onRowClick={(role: Role | null) => {
+        //   setCreating(null);
+        //   setOpenList(null);
+        //   setDisplayingMyInfo(false);
+        //   setDisplayRoleCard(role);
+        // }}
       />
 
       

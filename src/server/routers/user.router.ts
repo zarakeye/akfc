@@ -1,8 +1,11 @@
 import { router, protectedProcedure } from "@server/trpc/core";
 import { z } from "zod";
-import { requirePermission } from "./middleware";
+import { requirePermission, isAuthenticated, isAdmin } from "./middleware";
 // import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { TRPCError } from "@trpc/server";
+import { UserProfile } from "@/types/user-profile.types";
+import { updateUserFormSchema } from "../schemas/updateUserForm.schema";
 
 export const userRouter = router({
   // ------------------------------------
@@ -175,24 +178,15 @@ export const userRouter = router({
     // ------------------------------------
     // UPDATE user by id
     // ------------------------------------
-    update: protectedProcedure
-      .use(requirePermission("manage_users"))
-      .input(
-        z.object({
-          id: z.string().refine((value) => {
-          // Regular expression to validate email format
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-        }, 'Invalid email format'),
-          email: z.string(),
-          roleId: z.number()
-        })
-      )
+    updateProfile: protectedProcedure
+      .use(isAuthenticated)
+      .input(updateUserFormSchema)
       .mutation(async ({ ctx, input }) => {
         return ctx.prisma.user.update({
-          where: { id: input.id },
+          where: { id: ctx.sessionClient!.user!.id },
           data: {
-            email: input.email,
-            roleId: input.roleId,
+            ...input,
+            isFirstLogin: false, // 🔒 règle métier
           },
         });
       }),
@@ -209,5 +203,80 @@ export const userRouter = router({
         });
       }),
 
+    getCurrrentUserProfile: protectedProcedure
+      .use(isAuthenticated)
+      .query(async ({ ctx }) => {
+        const userId = ctx.sessionClient!.user!.id;
 
+        const user = await ctx.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            pseudo: true,
+            avatar: true,
+            aboutMe: true,
+            phone: true,
+            birthDate: true,
+            isFirstLogin: true,
+            role: true
+          },
+        });
+
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found"
+          });
+        }
+
+        const userProfile = {
+          ...user,
+          birthDate: user.birthDate
+            ? user.birthDate.toISOString().split("T")[0]
+            : null,
+        }
+
+        return userProfile satisfies UserProfile;
+      }),
+
+    getProfileById: protectedProcedure
+      .use(isAdmin)
+      .input(z.object({ id: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const user = await ctx.prisma.user.findUnique({
+          where: { id: input.id },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            pseudo: true,
+            avatar: true,
+            aboutMe: true,
+            phone: true,
+            birthDate: true,
+            isFirstLogin: true,
+            role: true
+          },
+        });
+
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found"
+          });
+        }
+
+        const userProfile = {
+          ...user,
+          birthDate: user.birthDate
+            ? user.birthDate.toISOString().split("T")[0]
+            : null,
+        }
+
+        return userProfile satisfies UserProfile;
+      }),
 });

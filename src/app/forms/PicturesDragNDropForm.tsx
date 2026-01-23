@@ -20,9 +20,9 @@ export default function PicturesDragNDropForm() {
     picturesDragNDropFormAction,
     initialState
   );
-  const { user } = useSessionStore();
-  const { categories } = useCategoryStore();
-  const { courses } = useCourseStore();
+  const user = useSessionStore(s => s.session?.user);
+  const categories = useCategoryStore(s => s.categories);
+  const courses = useCourseStore(s => s.courses);
 
   const [pictures, setPictures] = useState<PictureItem[]>([]);
   const [pictureToCrop, setPictureToCrop] = useState<PictureItem | null>(null);
@@ -40,8 +40,8 @@ export default function PicturesDragNDropForm() {
     },
   });
 
-  const { register, watch } = form;
-  const categoryId = watch('categoryId');
+  const { register } = form;
+  const categoryId = form.watch('categoryId');
 
   // -------------------------------
   // Dropzone
@@ -95,6 +95,11 @@ export default function PicturesDragNDropForm() {
     setPictureToCrop(null);
   };
 
+  /**
+   * Reset an image to its original state.
+   *
+   * @param {string} id - The ID of the image to reset.
+   */
   const handleResetImage = (id: string) => {
     setPictures(prev => prev.map(p => p.id === id 
       ? {
@@ -106,6 +111,11 @@ export default function PicturesDragNDropForm() {
     ));
   };
 
+  /**
+   * Remove an image from the list of images to upload.
+   *
+   * @param {string} id - The ID of the image to remove.
+   */
   const handleRemoveImage = (id: string) => {
     setPictures(prev => prev.filter(p => p.id !== id));
   };
@@ -124,6 +134,10 @@ export default function PicturesDragNDropForm() {
     });
   };
 
+  /**
+   * Remove all images which are currently selected from the list of images to upload.
+   * This function also resets the selection to an empty set.
+   */
   const removeSelected = () => {
     setPictures(prev => prev.filter(p => !selectedIds.has(p.id)));
     setSelectedIds(new Set());
@@ -181,6 +195,8 @@ export default function PicturesDragNDropForm() {
           </option>
         ))}
       </select>
+
+      
 
       {/* Select cours si catégorie Cours */}
       {categoryId === '1' && (

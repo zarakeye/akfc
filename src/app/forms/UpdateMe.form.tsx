@@ -19,49 +19,38 @@ import { updateUserFormSchema, type FormValues } from '@/server/schemas/updateUs
 import { useSessionStore } from '@/lib/stores/useSessionStore';
 import { CldUploadWidget, CldUploadButton } from 'next-cloudinary';
 import Image from 'next/image';
-import { set } from 'zod';
-// import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@lib/trpcClient';
+import type { UserProfile } from '@/types/user-profile.types';
 // import { z } from 'zod';
 
 // type FormValues = z.infer<typeof updateUserSchema>;
 
-interface UpdateUserFormProps {
-  user: User;
-  setFirstLogin?: (firstLogin: boolean) => void;
-}
+const initialState = { success: false };
 
-export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormProps): JSX.Element {
-  const { firstName, lastName, email, roleId, phone, birthDate, isFirstLogin } = user;
+export default function UpdateMe_Form(): JSX.Element {
+  const {data: profile, isLoading} = trpc.user.getProfile.useQuery();
   const [open, setOpen] = useState<boolean>(false);
   // const [resource, setResource] = useState();
-
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(updateUserFormSchema),
     defaultValues: {
-      id: String(user.id),
-      firstName: firstName as string ?? '',
-      lastName: lastName as string || '',
-      email: email as string || '',
-      password: '',
-      roleId: String(roleId || 0),
-      phone: phone as string || '',
-      birthDate: birthDate ? new Date(birthDate).toISOString().split('T')[0] : '',
-      isFirstLogin: String(isFirstLogin || false),
-      avatar: user.avatar ?? '',
+      firstName: profile?.firstName ?? '',
+      lastName: profile?.lastName ?? '',
+      aboutMe: profile?.aboutMe ?? '',
+      phone: profile?.phone ?? '',
+      birthDate: profile?.birthDate ?? '',
+      pseudo: profile?.pseudo ?? '',
+      avatar: profile?.avatar ?? '',
     },
     mode: 'onBlur',
   });
 
-  const [state, formAction, isPending] = useActionState<UpdateUserFormState, FormData>(updateUserFormAction, {} as UpdateUserFormState);
+  const [state, formAction, isPending] = useActionState<UpdateUserFormState, FormData>(updateUserFormAction, initialState);
 
-  const { fetchSession, session } = useSessionStore();
+  if (isLoading) return <div>Chargement du profil...</div>;
 
-  useEffect(() => {
-    if (state.success && session?.user?.id === user.id) {
-      void fetchSession();
-      if (setFirstLogin) setFirstLogin(false);
-    }
-  }, [state.success, fetchSession, session?.user?.id, user.id, setFirstLogin]);
+  if (!profile) return <div>Profil introuvable !!!</div>;
 
   return (
     <Form {...form}>
@@ -73,6 +62,7 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
         }}  
         className="flex flex-col gap-4"
       >
+        <input type="hidden" {...form.register("avatar")} />
         <div>
           <FormField
             control={form.control}
@@ -115,7 +105,7 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
           }
         </div>
 
-        <div>
+        {/* <div>
           <FormField
             control={form.control}
             name="email"
@@ -134,9 +124,9 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
           {form.formState.errors.email && 
             <p className="text-red-500">{form.formState.errors.email.message}</p>
           }
-        </div>
+        </div> */}
 
-        <div>
+        {/* <div>
           <FormField
             control={form.control}
             name="password"
@@ -155,7 +145,7 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
           {form.formState.errors.password && 
             <p className="text-red-500">{form.formState.errors.password.message}</p>
           }
-        </div>
+        </div> */}
 
         <div className="flex flex-col gap-3">
           <FormField
@@ -220,9 +210,6 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
           <p className="text-red-500">{form.formState.errors.phone.message}</p>
         }
         </div>
-        <input type="hidden" {...form.register("id")} />
-        <input type="hidden" {...form.register("isFirstLogin")} />
-        <input type="hidden" {...form.register("roleId")}/>
         <input
           type="hidden"
           {...form.register("birthDate")}
@@ -272,9 +259,7 @@ export default function UpdateUserForm({ user, setFirstLogin }: UpdateUserFormPr
             </Button>
           )}
 
-          <input type="hidden" {...form.register("avatar")} />
 
-          {}
         </div>
 
 

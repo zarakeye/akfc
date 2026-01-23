@@ -7,11 +7,12 @@ import { sessionRouter } from '../routers/session.router';
 import { postRouter } from '@/server/routers/post.router';
 import { uploadImagesRouter } from '../routers/uploadImages.router';
 import { courseRouter } from '../routers/course.router';
+import { cloudinaryRouter } from '../routers/cloudinary.router';
 import { router } from '@server/trpc/core';
 import type { SessionCtx } from '@server/trpc/core';
-import { UserEnhanced } from '@/types';
 import { startSessionCleanupCron } from '../lib/session/sessionCleanup';
 import { getSessionFromRequest } from '../auth/getSessionFromRequest';
+import { prisma } from '../prisma';
 /**
  * Retrieves the user associated with the current session cookie.
  * If the session cookie is not present, or if the session has expired, the function returns null.
@@ -19,17 +20,17 @@ import { getSessionFromRequest } from '../auth/getSessionFromRequest';
  */
 export async function createContext(): Promise<SessionCtx> {
   try {
-    const session = await getSessionFromRequest();
+    const sessionClient = await getSessionFromRequest();
 
     return {
-      user: session?.user as UserEnhanced,
-      session,
+      sessionClient,
+      prisma
     };
   } catch (err) {
     console.error('Error creating context', err);
     return {
-      user: null,
-      session: null,
+      sessionClient: null,
+      prisma
     };
   }
 }
@@ -46,7 +47,8 @@ export const appRouter = router({
   post: postRouter,
   upload: uploadImagesRouter,
   course: courseRouter,
-  session: sessionRouter
+  session: sessionRouter,
+  cloudinary: cloudinaryRouter
 });
 
 export type AppRouter = typeof appRouter;

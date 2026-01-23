@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { trpcClient } from "@lib/trpcClient";
-import type { UserEnhanced, SessionEnhanced } from "@/types";
+import { SessionClient } from "@/types/session.types";
+
+export type SessionStatus =
+  | "idle" // app faîchement ouverte, aucune action
+  | 'guest' // jamais connecté
+  | "authenticated" // connecté stable
+  | "justLoggedIn" // feedback UX
+  | "justLoggedOut" // feedback UX
 
 // 1️⃣ useUserStore (finalisé)
 // fetchUser récupère la session via getSessionAction.
@@ -24,68 +31,48 @@ import type { UserEnhanced, SessionEnhanced } from "@/types";
 // - `logout`: Logs out the user by clearing the session and returning a promise indicating success or failure.
 
 interface SessionStore {
-  session: {
-    user: UserEnhanced | null;
-  } | null;
+  session: SessionClient | null;
+  status: SessionStatus;
   loading: boolean;
-  justLoggedIn: boolean;
-  justLoggedOut: boolean;
 
-  setSession: (s: {user: UserEnhanced; expiresAt: Date | undefined;}, wasLoggedIn: boolean) => void;
+  setLoading: (loading: boolean) => void;
   fetchSession: () => Promise<void>;
-  clearSession: () => void;
-  hasPermission: (permission: string) => boolean;
-
-  get user(): UserEnhanced | null;
-  logout: () => Promise<boolean>;
-  get isAuthenticated(): boolean;
-
-  setJustLoggedOut: (value: boolean) => void;
-  setJustLoggedIn: (value: boolean) => void;
+  loginSuccess: (s: SessionClient) => void;
+  logout: () => Promise<void>;
+  resetStatus: () => void;
 }
 
 export const useSessionStore = create<SessionStore>()((set, get) => ({
-  // user: null,
   session: null,
   loading: false,
-  justLoggedIn: false,
-  justLoggedOut: false,
-
-  get user(): UserEnhanced | null {
-    return get().session?.user ?? null;
-  },
+  status: "idle",
 
   /**
-   * Checks if the user is currently authenticated.
-   * @returns {boolean} - True if the user is authenticated, false otherwise.
+   * Sets the loading state to the provided boolean value.
+   * @param {boolean} loading - Whether the user-related operation is currently in progress.
    */
-  get isAuthenticated(): boolean {
-    return !!get().user;
+  setLoading: (loading: boolean): void => {
+    set({ loading });
   },
-
-
-  setSession: (session: {user: UserEnhanced; expiresAt: Date | undefined;} , isNewLogin = false): void => {
+  
+  /**
+   * Called when the user session is successfully set.
+   * Updates the `session`, `status` and `loading` properties in the store.
+   * @param {SessionClient} session - The user session to be set.
+   */
+  loginSuccess: (session): void => {
     set({
       session,
-      loading: false,
-      justLoggedIn: isNewLogin,
-      justLoggedOut: false
+      status: "justLoggedIn",
+      loading: false
     });
+
+    setTimeout(() => {
+      set({ status: "authenticated" });
+    }, 3000);
   },
 
-  /**
-   * Clears the user session and its associated user in the store.
-   * If the browser window is available, it also clears the session in the browser's session storage.
-   */
-  clearSession: (): void => {
-    set({
-      session: null,
-      loading: false,
-      justLoggedIn: false,
-      justLoggedOut: false,
-    });
-  },
-
+  // 🔁 Appelé UNE fois (SessionLoader)
   /**
    * Fetches the user session from the server and updates the `user` and `session` properties accordingly.
    * If the session is absent or expired, it clears the session and its associated user in the store.
@@ -97,69 +84,52 @@ export const useSessionStore = create<SessionStore>()((set, get) => ({
 
     try {
       const session = await trpcClient.auth.getSession.query();
-      const wasLoggedIn = !!get().user;
 
       if (!session) {
-        // ❌ Indique qu'on n'a pas de session, et on clear le store
-        get().clearSession();
-      } else {
-        // ✅ Indique qu'on a une session, et on set le store
-        get().setSession(session, !wasLoggedIn);
+        set({ session: null, status: 'guest', loading: false });
+        return;
       }
-    } catch (err) {
-      console.error("fetchSession error:", err);
-      set({ session: null });
-    } finally {
-      // ✅ Indique qu'on a fini
-      set({ loading: false });
-    }
-  },
 
-  /**
-   * Checks if the user has a specific permission.
-   * If the user does not have a role or the role does not have permissions, it returns false.
-   * @param {string} permission - The name of the permission to check.
-   * @returns {boolean} - True if the user has the permission, false otherwise.
-   */
-  hasPermission: (permission: string): boolean => {
-    const role = get().user?.role;
-    return !!role?.permissions.some(p => p.name === permission);
-  },
-
-  /**
-   * Logs out the user by clearing the session and its associated user in the store.
-   * @returns {Promise<boolean>} - True if the logout was successful, false otherwise.
-   */
-  logout: async (): Promise<boolean> => {
-    try {
-      await trpcClient.auth.logout.mutate();
+      set({ session, status: "authenticated", loading: false });
+    } catch {
       set({
         session: null,
-        loading: false,
-        justLoggedIn: false,
-        justLoggedOut: true
-      })
-      return true;
-    } catch {
-      return false;
+        status: "guest",
+        loading: false
+      });
     }
   },
 
+  // 🚪 Logout centralisé
   /**
-   * Sets the `justLoggedOut` property in the store to the provided value.
-   * This property is used to track whether the user has just logged out or not.
-   * @param {boolean} value - The value to set the `justLoggedOut` property to.
+   * Logs out the user and clears the session in the store.
+   * It also sets the UX status to "justLoggedOut".
+   * @returns {Promise<void>} - The promise resolves when the logout mutation has been completed and the store has been updated.
    */
-  setJustLoggedOut: (value: boolean) => {
-    set({ justLoggedOut: value });
+  logout: async (): Promise<void> => {
+    await trpcClient.auth.logout.mutate();
+
+    set({
+      session: null,
+      status: "justLoggedOut",
+      loading: false
+    });
+
+    setTimeout(() => {
+      set({ status: "guest" });
+    }, 3000);
   },
 
+  // 🧹 Reset UX → état stable
   /**
-   * Sets the `justLoggedIn` property in the store to the provided value.
-   * This property is used to track whether the user has just logged in or not.
-   * @param {boolean} value - The value to set the `justLoggedIn` property to.
+   * Resets the transient status of the session to its steady state.
+   * If the session is present, it sets the status to "authenticated", otherwise it sets it to "idle".
    */
-  setJustLoggedIn: (value: boolean) => {
-    set({ justLoggedIn: value });
+  resetStatus: () => {
+    const { session } = get();
+
+    set({
+      status: session ? "authenticated" : "guest",
+    });
   },
 }));

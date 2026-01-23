@@ -4,6 +4,7 @@ import { useState } from "react";
 import { trpcClient } from "@/lib/trpcClient"; // ou fetch vers /api/auth/login
 import { useSessionStore } from "@/lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
+import { stat } from "fs";
 
 /**
  * A React component that renders a login form.
@@ -17,7 +18,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { fetchSession } = useSessionStore();
+  const loginSuccess = useSessionStore(state => state.loginSuccess);
   const router = useRouter();
 
   /**
@@ -34,14 +35,24 @@ export default function LoginForm() {
       // Ici tu appelles ton endpoint TRPC ou REST
       const res = await trpcClient.auth.login.mutate({ email, password });
       
-      if (res.success) {
-        // fetch session après login pour mettre à jour le store
-        await fetchSession();
-        useSessionStore.getState().setJustLoggedIn(true);
-        router.push('/'); // ou router.push('/')
-      } else {
+      if (!res.success) {
         setError(res.error || 'Login failed');
+        // fetch session après login pour mettre à jour le store
       }
+
+      // 🔑 Récupérer la session côté serveur après login
+      const session = await trpcClient.auth.getSession.query();
+
+      if (!session) {
+        setError('Login failed');
+        return;
+      }
+
+      // 🔑 Mettre à jour le store avec la session
+      loginSuccess(session);
+
+      // 🔑 Redirection
+      router.push('/'); // ou router.push('/')
     } catch (err) {
       setError((err as Error).message || 'Login failed');
     } finally {
