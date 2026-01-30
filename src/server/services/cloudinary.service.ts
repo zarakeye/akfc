@@ -1,4 +1,4 @@
-import { cloudinary } from '../cloudinary/cloudinary.client';
+import { cloudinary } from '@server/cloudinary/cloudinary.client';
 
 
 export async function listAuthenticatedResources(prefix: string) {

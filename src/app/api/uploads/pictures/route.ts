@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { uploadToCloudinaryAuthenticated } from '@/server/cloudinary/upload';
+import { uploadToCloudinaryAuthenticated } from '@/server/cloudinary/services/upload';
 
 export const runtime = 'nodejs';
 

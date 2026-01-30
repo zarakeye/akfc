@@ -1,4 +1,4 @@
 export { TreeView } from './TreeView';
 export { FolderItem } from './FolderItem';
-export { injectVirtualFolders } from './injectVirtualFolders';
+export { injectStatusRoots } from './injectStatusRoots';
 export * from './tree.utils';

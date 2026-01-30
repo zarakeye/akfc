@@ -1,0 +1,1 @@
+export type FolderStatus = 'pending' | 'published' | 'bin';

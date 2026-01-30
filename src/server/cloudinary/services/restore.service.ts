@@ -1,4 +1,4 @@
-import { cloudinary } from "./cloudinary.client";
+import { cloudinary } from "../cloudinary.client";
 import { isBin, isInsideApp } from "./cloudinary.path";
 
 /**

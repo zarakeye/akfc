@@ -1,6 +1,6 @@
 'use server';
 
-import { uploadToCloudinaryAuthenticated } from '@/server/cloudinary/upload';
+import { uploadToCloudinaryAuthenticated } from '@/server/cloudinary/services/upload';
 import { prisma } from '@/server/prisma';
 import slugify from 'slugify';
 

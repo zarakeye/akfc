@@ -1,12 +1,16 @@
 import { z } from "zod";
 
 import { router, protectedProcedure } from "@server/trpc/core";
-import { isAdmin } from "./middleware";
+import { isAdmin } from "@server/routers/middleware";
 
-import { listAuthenticatedResources } from "../services/cloudinary.service";
+import { listAuthenticatedResources } from "@server/services/cloudinary.service";
 // Cloudinary tree builder — contract v1
-import { buildCloudinaryTreeV1 as buildCloudinaryTree } from "../cloudinary/tree";
-import { cloudinary } from "../cloudinary/cloudinary.client";
+import { buildCloudinaryTreeV1 as buildCloudinaryTree } from "@server/cloudinary/tree";
+import { cloudinary } from "@/server/cloudinary/cloudinary.client";
+import { moveFile } from "@/server/cloudinary/services/cloudinary.moveFile";
+import { moveService } from "@/server/cloudinary/services/move.service";
+import { moveSchema } from "@server/cloudinary/schemas/move.schema";
+import { mapCloudinaryFolderToClient } from "@server/mappers/cloudinary/tree.v1.mapper";
 
 const PROJECT_ROOT = process.env.APP_SHORT_NAME || 'my-app';
 
@@ -36,10 +40,13 @@ export const cloudinaryRouter = router({
       }
 
       const resources = await listAuthenticatedResources(normalizedPath);
-      
-      const tree = buildCloudinaryTree(resources, normalizedPath);
 
-      return tree;
+      const cloudinaryTree = buildCloudinaryTree(resources, normalizedPath);
+
+      // ✅ MAPPING ICI
+      const clientTree = mapCloudinaryFolderToClient(cloudinaryTree);
+
+      return clientTree; // 👉 FolderNode
     }),
 
   // ─────────────────────────────────────────────
@@ -122,4 +129,31 @@ export const cloudinaryRouter = router({
 
       return { success: true };
     }),
+
+  moveFile: protectedProcedure
+    .input(
+      z.object({
+        publicId: z.string().min(1),
+        from: z.string().min(1),
+        to: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { publicId, from, to } = input;
+
+      return moveFile({
+        publicId,
+        from,
+        to
+      });
+    }),
+
+  move: protectedProcedure
+    .input(moveSchema)
+    .mutation(async ({ input }) => {
+      await moveService(input);
+
+      return { success: true };
+    }),
+
 });

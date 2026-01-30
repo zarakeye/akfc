@@ -1,4 +1,4 @@
-import { FolderNode, TreeNode, VirtualFolderNode } from "../types";
+import { FolderNode } from "@components/cloudinary-finder/types";
 
 // 🔍 Est-ce un dossier ?
 /**
@@ -7,17 +7,23 @@ import { FolderNode, TreeNode, VirtualFolderNode } from "../types";
  * @param node - The folder node to get the key for.
  * @returns A unique key for the folder node.
  */
-export function getFolderKey(node: FolderNode | VirtualFolderNode): string {
-  return node.type === 'folder'
-    ? node.path
-    : `__virtual__/${node.kind}`;
+export function getFolderKey(node: FolderNode): string {
+  return node.fullPath;
 }
 
+
+/**
+ * Builds an index of all folders in a tree, keyed by their path.
+ * This index can be used to quickly look up a folder node by its path.
+ *
+ * @param root - The root folder node of the tree to build the index from.
+ * @returns A Map of folder nodes, keyed by their path.
+ */
 export function buildFolderIndex(root: FolderNode): Map<string, FolderNode> {
   const map = new Map<string, FolderNode>();
 
   function walk(node: FolderNode) {
-    map.set(node.path, node); // Add the path to the map with the folder node
+    map.set(node.fullPath, node); // Add the path to the map with the folder node
 
     for (const child of node.children) {
       if (child.type === 'folder') {
@@ -30,3 +36,4 @@ export function buildFolderIndex(root: FolderNode): Map<string, FolderNode> {
 
   return map;
 }
+

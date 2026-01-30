@@ -6,9 +6,13 @@ import { trpc } from '@lib/trpcClient';
 import { TreeView } from '@components/cloudinary-finder/TreeView/TreeView';
 import { FolderContent } from '@components/cloudinary-finder/Finder/FolderContent';
 import { FilePreviewSidebar } from '@components/cloudinary-finder/Finder/FilePreviewSidebar';
-import { injectVirtualFolders } from '@components/cloudinary-finder/TreeView/injectVirtualFolders';
+import { injectStatusRoots } from '@/components/cloudinary-finder/TreeView/injectStatusRoots';
 import { FolderNode, FileNode } from '@components/cloudinary-finder/types';
 import { buildFolderIndex } from '@components/cloudinary-finder/TreeView';
+
+import { BreadCrumb } from '@components/cloudinary-finder/Finder/BreadCrumb';
+import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
+import AppTreeWrapper from '../TreeView/AppTreeWrapper';
 
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
 const INITIAL_PATH = `${APP_SHORT_NAME}/pending`;
@@ -26,7 +30,7 @@ function findFolderByPath(
 ): FolderNode | null {
   if (!node) return null;
   
-  if (node.path === path) return node;
+  if (node.fullPath === path) return node;
   
     for (const child of node.children) {
       if (child.type === 'folder') {
@@ -45,9 +49,21 @@ export function FinderLayout() {
   const { data: tree, isLoading, isError } =
     trpc.cloudinary.getFolderTree.useQuery({ path: APP_SHORT_NAME });
 
+  const utils = trpc.useUtils();
+  const move = trpc.cloudinary.move.useMutation({
+    onSuccess: async () => {
+      utils.cloudinary.getFolderTree.invalidate();
+    },
+  });
+
   const folderIndex = useMemo(() => {
     if (!tree) return null;
     return buildFolderIndex(tree);
+  }, [tree]);
+
+  const statusRoots = useMemo(() => {
+    if (!tree) return [];
+    return injectStatusRoots(tree);
   }, [tree]);
 
   const isVirtualPath = currentPath.startsWith('__virtual__/');
@@ -61,30 +77,50 @@ export function FinderLayout() {
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !tree) return <div>Erreur</div>;
 
-  const treeWithVirtuals = injectVirtualFolders(tree);
+  // const treeWithVirtuals = injectStatusRoots(tree);
+
+  function handleMove(intent: MoveIntent) {
+    move.mutate(intent);
+    setSelectedFile(null);
+  }
+
 
   return (
     <div className="flex h-full border rounded-lg overflow-hidden">
       {/* 🌳 Tree */}
       <aside className="w-72 border-r overflow-auto">
-        <TreeView
-          node={treeWithVirtuals}
-          currentPath={currentPath}
-          onSelectFolder={(path) => {
-            setCurrentPath(path);
-            setSelectedFile(null);
-          }}
-        />
+        <AppTreeWrapper appName={APP_SHORT_NAME}>
+          <TreeView
+            roots={statusRoots}
+            currentPath={currentPath}
+            onSelectFolder={(path) => {
+              setCurrentPath(path);
+              setSelectedFile(null);
+            }}
+            onMove={handleMove}
+          />
+        </AppTreeWrapper>
       </aside>
 
       {/* <div className="flex-1 w-full"> */}
         {/* 📁 Explorer */}
         <section className="flex-1 overflow-auto p-4">
+          <BreadCrumb
+            path={currentPath}
+            onNavigate={(path) => {
+              setCurrentPath(path);
+              setSelectedFile(null);
+            }}
+          />
           {isVirtualPath ? (
             <div className='text-gray-500 italic'>Vide</div>
           ) : currentFolder ? (
             <FolderContent
               folder={currentFolder}
+              onOpenFolder={path => {
+                setCurrentPath(path);
+                setSelectedFile(null);
+              }}
               onSelectFile={setSelectedFile}
             />
           ) : (

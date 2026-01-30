@@ -20,7 +20,7 @@ export function mapCloudinaryFolderToClient(
 ): FolderNode {
   return {
     type: "folder",
-    path: folder.path,
+    fullPath: folder.path, // 🔑 unifié
     name: folder.name,
     children: folder.children.map(mapCloudinaryNodeToClient),
   };
@@ -38,7 +38,7 @@ export function mapCloudinaryFileToClient(
   return {
     type: "file",
     name: file.name,
-    publicId: file.publicId,
+    fullPath: file.publicId, // 🔑 publicId devient fullPath
     url: file.url,
   };
 }

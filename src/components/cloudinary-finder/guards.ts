@@ -3,7 +3,6 @@ import {
   FolderNode,
   FileNode,
   BaseNode,
-  VirtualFolderNode
 } from "./types";
 
 /**
@@ -12,8 +11,8 @@ import {
  * @param node - The TreeNode to check.
  * @returns True if the node is a FolderNode or a VirtualFolderNode, false otherwise.
  */
-export function isFolderLike(node: TreeNode): node is FolderNode | VirtualFolderNode {
-  return node.type === "folder" || node.type === "virtual-folder";
+export function isRealFolderNode(node: TreeNode): node is FolderNode {
+  return node.type === "folder";
 }
 
 // 🔍 Est-ce un fichier ?
