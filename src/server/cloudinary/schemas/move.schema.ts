@@ -22,7 +22,7 @@ const sourceSchema = z.discriminatedUnion('type', [
 /* ---------- TARGET ---------- */
 
 const virtualTargetSchema = z.object({
-  type: z.literal('virtual'),
+  type: z.literal('virtual-folder'),
   status: folderKindSchema,
 });
 

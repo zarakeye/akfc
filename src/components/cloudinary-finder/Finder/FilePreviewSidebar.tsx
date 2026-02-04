@@ -1,14 +1,22 @@
 'use client';
 
+import { JSX } from 'react';
 import Image from 'next/image';
-import { FileNode } from '../types';
+import { FileNode } from '@/components/cloudinary-finder/types';
 
 type Props = {
   file: FileNode;
   onClose: () => void;
 };
 
-export function FilePreviewSidebar({ file, onClose }: Props) {
+/**
+ * A sidebar component that displays a preview of a file.
+ *
+ * @param {FileNode} file - The file to be previewed.
+ * @param {() => void} onClose - A callback function to be called when the sidebar is closed.
+ * @returns A JSX element representing the sidebar component.
+ */
+export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">

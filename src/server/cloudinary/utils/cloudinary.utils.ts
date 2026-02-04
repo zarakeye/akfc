@@ -1,69 +1,49 @@
 import { FolderStatus } from "@/core/cloudinary/folder.types";
-import { cloudinary } from "@server/cloudinary/cloudinary.client";
 import { MoveIntent } from "@server/cloudinary/schemas/move.schema";
 
 /**
- * Replace the status segment of a fullPath with a new status.
+ * Replaces the status segment of a Cloudinary path with a new status.
  *
- * @example
- * replaceStatusSegment("mon_app/pending/category/activity/img", "published") returns "mon_app/published/category/activity/img"
- *
- * @param fullPath The fullPath to modify.
- * @param nextStatus The new status to set.
- * @returns The modified fullPath.
+ * @param {string} fullPath - The Cloudinary path to modify.
+ * @param {FolderStatus} newStatus - The new status to set.
+ * @returns {string} - The modified Cloudinary path.
+ * @throws {Error} - If the input path is invalid (less than 2 parts).
  */
 export function replaceStatusSegment(
   fullPath: string,
-  nextStatus: FolderStatus
-) {
+  newStatus: FolderStatus
+): string {
   const parts = fullPath.split('/');
 
   if (parts.length < 2) {
-    throw new Error(`Invalid fullPath: ${fullPath}`);
+    throw new Error(`Invalid Cloudinary path: ${fullPath}`);
   }
 
-  parts[1] = nextStatus;
+  // part[0] = app name
+  // part[1] = status segment
+  parts[1] = newStatus;
   return parts.join('/');
 }
 
 /**
  * Move a file into a folder.
  *
- * @param filePath The full path of the file to move.
- * @param targetFolderPath The full path of the folder to move the file into.
- * @returns The full path of the file after moving it into the folder.
+ * @param {string} filePath - The full path of the file to move.
+ * @param {string} folderPath - The full path of the folder to move the file into.
+ * @returns {string} - The full path of the file after moving it into the folder.
+ * @throws {Error} - If the filePath is invalid.
  */
 export function moveFileIntoFolder(
   filePath: string,
-  targetFolderPath: string
-) {
+  folderPath: string
+): string {
   const fileName = filePath.split('/').pop();
 
   if (!fileName) {
     throw new Error(`Invalid filePath: ${filePath}`);
   }
 
-  return `${targetFolderPath}/${fileName}`;
-}
-
-/**
- * Move a folder to a new prefix.
- *
- * @example
- * moveFolderPrefix("mon_app/pending/category/activity/img", "my_app") returns "my_app/pending/category/activity/img"
- *
- * @param {string} folderPath - The full path of the folder to move.
- * @param {string} targetPrefix - The new prefix to move the folder to.
- * @returns {string} - The full path of the folder after moving it to the new prefix.
- */
-export function moveFolderPrefix(
-  folderPath: string,
-  targetPrefix: string
-): string {
-  const parts = folderPath.split('/');
-  const [, , ...rest] = parts; // Skip app name and current status
-
-  return `${targetPrefix}/${rest.join('/')}`;
+  return `${folderPath}/${fileName}`;
 }
 
 /**

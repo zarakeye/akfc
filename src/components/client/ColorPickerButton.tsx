@@ -1,15 +1,30 @@
-import { useState, useEffect, useRef } from "react";
+import { JSX, useState, useEffect, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import PaletteIcon from "@mui/icons-material/Palette";
 import { HexColorPicker } from "react-colorful";
 
-export default function ColorPickerButton({ editor }: { editor: Editor | null }) {
+/**
+ * Bouton pour appliquer une couleur de texte à la sélection actuelle.
+ * Ouvre une palette de couleurs qui permet de choisir une couleur.
+ * La couleur est stockée localement dans l'état `color`.
+ * Lorsque la selection change, la couleur active est mise à jour en conséquence.
+ * Si la sélection est vide ou que le curseur est dans un texte coloré, le bouton est désactivé.
+ *
+ * @param {Editor | null} editor - L'éditeur Tiptap actuel.
+ * @returns {JSX.Element | null} Le bouton de palette de couleurs si l'éditeur est défini, sinon null.
+ */
+export default function ColorPickerButton({ editor }: { editor: Editor | null }): JSX.Element | null {
   const [open, setOpen] = useState(false);
   const [color, setColor] = useState("#000000");
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Fermer sur clic extérieur
   useEffect(() => {
+    /**
+     * Ferme la palette de couleurs si on clique en dehors
+     * de la palette actuellement ouverte.
+     * @param {MouseEvent} event - L'evenement de clic.
+     */
     function handleClickOutside(event: MouseEvent) {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setOpen(false);
@@ -23,6 +38,10 @@ export default function ColorPickerButton({ editor }: { editor: Editor | null })
   useEffect(() => {
     if (!editor) return; // 👈 test à l’intérieur, pas autour du hook
 
+    /**
+     * Mettre à jour la couleur active en fonction des attributs de style de texte de l'éditeur.
+     * Si la couleur est définie, met à jour l'état local `color` avec cette valeur.
+     */
     const updateColor = () => {
       const attrs = editor.getAttributes("textStyle");
       if (typeof attrs.color === "string" && attrs.color) {
@@ -46,11 +65,21 @@ export default function ColorPickerButton({ editor }: { editor: Editor | null })
   const hasSelectionOrMark =
     !editor.state.selection.empty || !!editor.getAttributes("textStyle").color;
 
+  /**
+   * Applique une couleur de texte à la sélection actuelle.
+   * Met à jour l'état local `color` avec la valeur donnée.
+   * @param {string} value - La couleur de texte à appliquer (format hexadécimal sans #)
+   */
   const applyColor = (value: string) => {
     setColor(value);
     editor.chain().focus().setColor(value).run();
   };
 
+  /**
+   * Convert a hex color string to a RGB color string.
+   * @param {string} hex - The hex color string (with or without #)
+   * @returns {string} A RGB color string (e.g. "rgb(255, 0, 0)")
+   */
   const hexToRgb = (hex: string) => {
     const h = hex.replace("#", "");
     const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;

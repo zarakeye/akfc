@@ -1,13 +1,13 @@
 // src/components/cloudinary-finder/TreeView/FolderItem.tsx
 'use client';
 
+import { JSX } from 'react';
 import { FolderNode } from '../types';
 import { FolderStatus } from '@/core/cloudinary/folder.types';
-import { isRealFolderNode } from '../guards';
+import { isFolderNode } from '../guards';
 import { getFolderKey } from './tree.utils';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
-import { DragSource } from '@/shared/cloudinary/move.intent';
-import { virtualTarget, folderTarget } from '../move.factories';
+import { DragSource } from '@/shared/cloudinary/move.types';
 import clsx from 'clsx';
 // import { FolderKind } from '@/components/cloudinary-finder/types';
 
@@ -22,12 +22,17 @@ type Props = {
   onMove: (intent: MoveIntent) => void;
 };
 
-function isDropTarget(folder: FolderNode ) {
-  return (
-    folder.type === 'folder'
-  );
-}
-
+/**
+ * Folder item component.
+ *
+ * This component represents a single folder item in the tree view.
+ * It displays the folder name and a toggle button to open/close the folder.
+ * It also handles drag and drop events to move the folder to a new location.
+ *
+ * @param {Props} props - The props object containing the folder item properties.
+ *
+ * @returns {JSX.Element} - The folder item component.
+ */
 export function FolderItem({
   status,
   folder,
@@ -37,7 +42,7 @@ export function FolderItem({
   onSelectFolder,
   level,
   onMove,
-}: Props) {
+}: Props): JSX.Element {
   const isVirtual = folder === null;
   const key = isVirtual ? `__virtual__/${status}` : getFolderKey(folder);
   const isOpen = openFolders.has(key);
@@ -45,9 +50,40 @@ export function FolderItem({
   const isActive =
    !isVirtual && folder.fullPath === currentPath;
 
-  const subFolders = folder?.children?.filter(isRealFolderNode) ?? [];
+  const subFolders = folder?.children?.filter(isFolderNode) ?? [];
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  /************ DRAG ************/
+  function handleDragStart(e: React.DragEvent) {
+    if (isVirtual) return;
+
+    const source: DragSource = {
+      type: 'folder',
+      fullPath: folder!.fullPath,
+    };
+
+    e.dataTransfer.setData(
+      'application/cloudinary',
+      JSON.stringify(source)
+    );
+
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setDragImage(
+      e.currentTarget,
+      16,
+      16
+    );
+  }
+
+  /**
+   * Handles a drop event on the folder item.
+   *
+   * @param {React.DragEvent} e - The drop event.
+   *
+   * This function prevents the default drag behavior, parses the drag data
+   * to get the source of the drag, and then calls the onMove function with
+   * a MoveIntent object containing the source and target of the move.
+   */
+  function handleDrop(e: React.DragEvent) {
     e.preventDefault();
 
     const raw = e.dataTransfer.getData('application/cloudinary');
@@ -56,11 +92,10 @@ export function FolderItem({
     const source: DragSource = JSON.parse(raw);
 
     const target: MoveIntent['target'] = isVirtual
-        ? { type: 'virtual', status }
-        : { type: 'folder', fullPath: folder.fullPath };
+        ? { type: 'virtual-folder', status }
+        : { type: 'folder', fullPath: folder!.fullPath };
 
 
-    // onMove(intent);
     onMove({
       source,
       target,
@@ -75,22 +110,19 @@ export function FolderItem({
         className={clsx(
           'flex items-center gap-1 cursor-pointer px-2 py-1 rounded',
           isActive && 'bg-blue-100 font-medium',
-          folder && isDropTarget(folder) && 'hover:bg-green-50'
+          'hover:bg-green-50'
         )}
         style={{ paddingLeft: `${level * 16}px` }}
+        draggable={!isVirtual}
+        onDragStart={handleDragStart}
+        onDragOver={e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
         onClick={() => {
           isVirtual
             ? onSelectFolder(`__virtual__/${status}`)
             : onSelectFolder(folder.fullPath);
-        }}
-        onDragOver={e => {
-          if (!folder) return;
-          if (!isDropTarget(folder)) {
-            e.dataTransfer.dropEffect = 'none';
-            return;
-          };
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
         }}
         onDrop={handleDrop}
       >
@@ -108,14 +140,14 @@ export function FolderItem({
           <span className="w-4" />
         )}
 
-        <span>📁 {isVirtual ? status : folder?.name}</span>
+        <span>📁 {isVirtual ? status : folder!.name}</span>
       </div>
 
       {isOpen &&
         subFolders.map(child => (
           <FolderItem
-            status={status}
             key={getFolderKey(child)}
+            status={status}
             folder={child}
             currentPath={currentPath}
             openFolders={openFolders}

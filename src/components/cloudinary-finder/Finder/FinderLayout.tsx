@@ -7,12 +7,12 @@ import { TreeView } from '@components/cloudinary-finder/TreeView/TreeView';
 import { FolderContent } from '@components/cloudinary-finder/Finder/FolderContent';
 import { FilePreviewSidebar } from '@components/cloudinary-finder/Finder/FilePreviewSidebar';
 import { injectStatusRoots } from '@/components/cloudinary-finder/TreeView/injectStatusRoots';
-import { FolderNode, FileNode } from '@components/cloudinary-finder/types';
-import { buildFolderIndex } from '@components/cloudinary-finder/TreeView';
+import { FolderNode, FileNode } from '@/components/cloudinary-finder/types';
 
 import { BreadCrumb } from '@components/cloudinary-finder/Finder/BreadCrumb';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import AppTreeWrapper from '../TreeView/AppTreeWrapper';
+import { canMove } from '@/server/cloudinary/move.guards';
 
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
 const INITIAL_PATH = `${APP_SHORT_NAME}/pending`;
@@ -42,6 +42,13 @@ function findFolderByPath(
   return null;
 }
 
+/**
+ * FinderLayout is the main component of the cloudinary finder app.
+ * It displays a tree view of the cloudinary folders and files, and allows the user to navigate through them.
+ * It also displays a file preview sidebar when a file is selected.
+ *
+ * @returns A JSX element representing the FinderLayout component.
+ */
 export function FinderLayout() {
   const [currentPath, setCurrentPath] = useState(INITIAL_PATH);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
@@ -51,15 +58,13 @@ export function FinderLayout() {
 
   const utils = trpc.useUtils();
   const move = trpc.cloudinary.move.useMutation({
+    /**
+     * Invalidate the getFolderTree query after a successful move operation.
+     */
     onSuccess: async () => {
       utils.cloudinary.getFolderTree.invalidate();
     },
   });
-
-  const folderIndex = useMemo(() => {
-    if (!tree) return null;
-    return buildFolderIndex(tree);
-  }, [tree]);
 
   const statusRoots = useMemo(() => {
     if (!tree) return [];
@@ -70,16 +75,28 @@ export function FinderLayout() {
 
   // ✅ hook TOUJOURS appelé
   const currentFolder = useMemo<FolderNode | null>(() => {
-    if (isVirtualPath) return null;
-    return findFolderByPath(tree!, currentPath);
+    if (!tree || isVirtualPath) return null;
+    return findFolderByPath(tree, currentPath);
   }, [currentPath, isVirtualPath, tree]);
 
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !tree) return <div>Erreur</div>;
 
-  // const treeWithVirtuals = injectStatusRoots(tree);
-
+  /**
+   * 🔁 Point central du DnD
+   * Handle a move intent.
+   *
+   * If the move is not allowed, log a warning and exit.
+   * Otherwise, call the move mutation and reset the selected file.
+   *
+   * @param {MoveIntent} intent - The move intent to handle.
+   */
   function handleMove(intent: MoveIntent) {
+    if (!canMove(intent.source, intent.target)) {
+      console.warn('[DnD] Move not allowed', intent);
+      return;
+    }
+    
     move.mutate(intent);
     setSelectedFile(null);
   }
@@ -102,42 +119,41 @@ export function FinderLayout() {
         </AppTreeWrapper>
       </aside>
 
-      {/* <div className="flex-1 w-full"> */}
-        {/* 📁 Explorer */}
-        <section className="flex-1 overflow-auto p-4">
-          <BreadCrumb
-            path={currentPath}
-            onNavigate={(path) => {
+      {/* 📁 Explorer */}
+      <section className="flex-1 overflow-auto p-4">
+        <BreadCrumb
+          path={currentPath}
+          onNavigate={(path) => {
+            setCurrentPath(path);
+            setSelectedFile(null);
+          }}
+        />
+        {isVirtualPath ? (
+          <div className='text-gray-500 italic'>Vide</div>
+        ) : currentFolder ? (
+          <FolderContent
+            folder={currentFolder}
+            onOpenFolder={path => {
               setCurrentPath(path);
               setSelectedFile(null);
             }}
+            onSelectFile={setSelectedFile}
+            onMove={handleMove}
           />
-          {isVirtualPath ? (
-            <div className='text-gray-500 italic'>Vide</div>
-          ) : currentFolder ? (
-            <FolderContent
-              folder={currentFolder}
-              onOpenFolder={path => {
-                setCurrentPath(path);
-                setSelectedFile(null);
-              }}
-              onSelectFile={setSelectedFile}
-            />
-          ) : (
-           <div className='text-gray-500'>Dossier introuvable</div> 
-          )}
-        </section>
-
-        {/* 🖼️ Sidebar Aperçu fichier */}
-        {selectedFile && (
-          <aside className="w-96 border-l bg-white">
-            <FilePreviewSidebar
-              file={selectedFile}
-              onClose={() => setSelectedFile(null)}
-            />
-          </aside>
+        ) : (
+          <div className='text-gray-500'>Dossier introuvable</div> 
         )}
-      </div>
-    // </div>
+      </section>
+
+      {/* 🖼️ Sidebar Aperçu fichier */}
+      {selectedFile && (
+        <aside className="w-96 border-l bg-white">
+          <FilePreviewSidebar
+            file={selectedFile}
+            onClose={() => setSelectedFile(null)}
+          />
+        </aside>
+      )}
+    </div>
   );
 }

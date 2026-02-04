@@ -5,6 +5,10 @@ import { useSessionStore } from "@/lib/stores/useSessionStore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+/**
+ * Composant du barre latéral de l'application.
+ * Il permet d'accéder à l'ensemble des fonctionnalités de l'application.
+ */
 export default function LateralBarDashboard(): JSX.Element {
   const router = useRouter();
   const role = useSessionStore(state => state.session?.user?.role);

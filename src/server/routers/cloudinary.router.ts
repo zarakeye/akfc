@@ -130,23 +130,23 @@ export const cloudinaryRouter = router({
       return { success: true };
     }),
 
-  moveFile: protectedProcedure
-    .input(
-      z.object({
-        publicId: z.string().min(1),
-        from: z.string().min(1),
-        to: z.string().min(1),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { publicId, from, to } = input;
+  // moveFile: protectedProcedure
+  //   .input(
+  //     z.object({
+  //       publicId: z.string().min(1),
+  //       from: z.string().min(1),
+  //       to: z.string().min(1),
+  //     })
+  //   )
+  //   .mutation(async ({ input }) => {
+  //     const { publicId, from, to } = input;
 
-      return moveFile({
-        publicId,
-        from,
-        to
-      });
-    }),
+  //     return moveFile({
+  //       publicId,
+  //       from,
+  //       to
+  //     });
+  //   }),
 
   move: protectedProcedure
     .input(moveSchema)

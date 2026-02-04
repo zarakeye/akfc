@@ -1,4 +1,4 @@
-import { FolderNode } from "@components/cloudinary-finder/types";
+import { FolderNode } from "@/components/cloudinary-finder/types";
 
 // 🔍 Est-ce un dossier ?
 /**

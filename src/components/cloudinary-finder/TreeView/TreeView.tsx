@@ -2,8 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FolderNode, StatusRootNode } from '../types';
-import { FolderStatus } from '@/core/cloudinary/folder.types'
+import { StatusRootNode } from '../types';
 import { FolderItem } from './FolderItem';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 

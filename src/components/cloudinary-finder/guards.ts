@@ -3,7 +3,7 @@ import {
   FolderNode,
   FileNode,
   BaseNode,
-} from "./types";
+} from "@/components/cloudinary-finder/types";
 
 /**
  * Checks if a TreeNode is a FolderNode or a VirtualFolderNode.
@@ -11,7 +11,7 @@ import {
  * @param node - The TreeNode to check.
  * @returns True if the node is a FolderNode or a VirtualFolderNode, false otherwise.
  */
-export function isRealFolderNode(node: TreeNode): node is FolderNode {
+export function isFolderNode(node: TreeNode): node is FolderNode {
   return node.type === "folder";
 }
 

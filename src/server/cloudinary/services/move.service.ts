@@ -3,7 +3,6 @@ import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import {
   replaceStatusSegment,
   moveFileIntoFolder,
-  moveFolderPrefix,
 } from '@server/cloudinary/utils/cloudinary.utils';
 
 /**
@@ -25,33 +24,79 @@ import {
 export async function moveService(intent: MoveIntent): Promise<void> {
   const { source, target } = intent;
 
-  // 🔹 FILE → VIRTUAL
-  if (target.type === 'virtual') {
-    const newFullPath = replaceStatusSegment(source.fullPath, target.status);
+  console.log('Executing move intent:', intent);
+
+  // 🔹 FILE / FOLDER → VIRTUAL
+  if (target.type === 'virtual-folder') {
+    const newPrefix = replaceStatusSegment(
+      source.fullPath,
+      target.status
+    );
 
     if (source.type === 'file') {
-      await cloudinary.uploader.rename(source.fullPath, newFullPath, { overwrite: true });
+      await renameAsset(
+        source.fullPath,
+        newPrefix
+      );
     } else {
-      await moveFolderRecursively(source.fullPath, newFullPath);
+      await moveFolderRecursively(
+        source.fullPath, 
+        newPrefix
+      );
     }
 
     return;
   }
 
-  // 🔹 FILE → FOLDER
+  // 🔹 FILE / FOLDER → FOLDER
   if (target.type === 'folder') {
     if (source.type === 'file') {
-      const newFullPath = moveFileIntoFolder(source.fullPath, target.fullPath);
-      await cloudinary.uploader.rename(source.fullPath, newFullPath, { overwrite: true });
-    } else {
-      moveFolderPrefix(
+      const newPath = moveFileIntoFolder(
         source.fullPath,
-        `${target.fullPath}/${source.fullPath.split('/').pop()}`
+        target.fullPath
+      );
+
+      await renameAsset(
+        source.fullPath,
+        newPath
+      );
+    } else {
+      const folderName = source.fullPath.split('/').pop();
+
+      if (!folderName) return;
+
+      const targetPrefix = `${target.fullPath}/${folderName}`;
+
+      await moveFolderRecursively(
+        source.fullPath,
+        targetPrefix
       );
     }
+
+    return;
   }
 
   throw new Error('Invalid move intent');
+}
+
+/**
+ * Renames an asset on Cloudinary.
+ * @param from - The public ID of the asset to rename.
+ * @param to - The new public ID of the asset.
+ * @returns A promise that resolves when the asset has been renamed.
+ */
+async function renameAsset(
+  from: string,
+  to: string
+) {
+  await cloudinary.uploader.rename(
+    from,
+    to,
+    {
+      type: 'authenticated',
+      overwrite: true
+    }
+  );
 }
 
 /**
@@ -65,15 +110,28 @@ async function moveFolderRecursively(
   sourcePrefix: string,
   targetPrefix: string
 ) {
-  const resources = await cloudinary.api.resources({
-    type: 'upload',
-    prefix: sourcePrefix,
-    max_results: 500,
-  });
+  let nextCursor: string | undefined;
 
-  for (const asset of resources.resources) {
-    const newPath = asset.public_id.replace(sourcePrefix, targetPrefix);
+  do {
+    const res = await cloudinary.api.resources({
+      type: 'authenticated',
+      prefix: sourcePrefix,
+      max_results: 500,
+      next_cursor: nextCursor,
+    });
 
-    await cloudinary.uploader.rename(asset.public_id, newPath, { overwrite: true });
-  }
+    for (const asset of res.resources) {
+      const newPubicId = asset.public_id.replace(
+        sourcePrefix,
+        targetPrefix
+      );
+
+      await renameAsset(
+        asset.public_id,
+        newPubicId
+      );
+    }
+
+    nextCursor = res.next_cursor;
+  } while (nextCursor);
 }

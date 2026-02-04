@@ -7,7 +7,7 @@ import type {
 import type {
   FolderNode,
   FileNode,
-} from "@components/cloudinary-finder/types";
+} from "@/components/cloudinary-finder/types";
 
 /**
  * Maps a CloudinaryFolderNode to a FolderNode.

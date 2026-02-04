@@ -4,16 +4,19 @@ import Link from "next/link";
 import LoginForm from "./LoginForm";
 import UserMenu from "@components/client/UserMenu";
 import { Suspense, useState } from "react";
-// import { trpc } from '@lib/trpcClient';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSessionStore } from "@/lib/stores/useSessionStore";
-import { User } from "@prisma/client";
-import { trpcClient } from "@/lib/trpcClient";
 
+/**
+ * Header component of the application.
+ * It displays the logo, navbar, user menu and login form.
+ * The navbar is only visible when the user is connected.
+ * The user menu is only visible when the user is connected.
+ * The login form is only visible when the user is not connected.
+ */
 export default function Header() {
   const user = useSessionStore(state => state.session?.user);
-  // const [isActive, setIsActive] = useState<string>('');
   const pathname = usePathname();
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);

@@ -1,17 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/useSessionStore';
 
-export default function UserMenu() {
+/**
+ * UserMenu is a React component that displays a user menu when the user is connected.
+ * It shows the user's first name, email and a logout button.
+ * When the user clicks on the logout button, it clears the session and redirects the user to the homepage.
+ * The menu is only visible when the user is connected.
+ * @returns {React.ReactElement | null} - The user menu React element or null if the user is not connected.
+ */
+export default function UserMenu(): JSX.Element | null {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const logout = useSessionStore(s => s.logout);
   const user = useSessionStore(s => s.session?.user);
 
-  const handleLogout = async () => {
+  /**
+   * Logs out the user by clearing the session and redirecting to the homepage.
+   * @returns {Promise<void>} - The promise resolves when the logout mutation has been completed and the user has been redirected.
+   */
+  const handleLogout = async (): Promise<void> => {
     await logout(); // met à jour le store
     router.push('/'); // redirige vers la page d'accueil
   };

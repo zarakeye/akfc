@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { trpcClient } from "@/lib/trpcClient"; // ou fetch vers /api/auth/login
 import { useSessionStore } from "@/lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
-import { stat } from "fs";
 
 /**
  * A React component that renders a login form.
@@ -13,7 +12,7 @@ import { stat } from "fs";
  * The form has two fields: email and password, and a submit button.
  * If the login fails, it displays an error message.
  */
-export default function LoginForm() {
+export default function LoginForm(): JSX.Element {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
