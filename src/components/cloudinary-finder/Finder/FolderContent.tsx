@@ -1,11 +1,12 @@
 'use client';
 
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 import Image from 'next/image';
 import { FolderNode, FileNode } from '@/components/cloudinary-finder/types';
 import { isFileNode, isFolderNode } from '@components/cloudinary-finder/guards';
 import { DragSource } from '@/shared/cloudinary/move.types';
 import { MoveIntent } from '@/server/cloudinary/schemas/move.schema';
+import { canMove } from '@/server/cloudinary/move.guards';
 
 type Props = {
   folder: FolderNode;
@@ -30,6 +31,10 @@ export function FolderContent({ folder, onOpenFolder, onSelectFile, onMove }: Pr
   const subFolders = folder.children.filter(isFolderNode);
   const files = folder.children.filter(isFileNode);
 
+  // 🆕 État local pour le feedback visuel de drop
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isDropAllowed, setIsDropAllowed] = useState<boolean | null>(null);
+
   /**
    * Handles a drop event on a folder item.
    *
@@ -43,6 +48,10 @@ export function FolderContent({ folder, onOpenFolder, onSelectFile, onMove }: Pr
     e.preventDefault();
     e.stopPropagation();
 
+    setIsDragOver(false);
+    setIsDropAllowed(null);
+
+    // Récupérer les données de drag&drop
     const raw = e.dataTransfer.getData('application/cloudinary');
     if (!raw) return;
 
@@ -57,12 +66,41 @@ export function FolderContent({ folder, onOpenFolder, onSelectFile, onMove }: Pr
     });
   };
 
+  /**
+   * 🆕 Gestion du drag over avec vérification canMove
+   */
+  const handleDragOver = (e: React.DragEvent, targetPath: string) => {
+    e.preventDefault();
+    
+    const raw = e.dataTransfer.getData('application/cloudinary');
+    if (!raw) return;
+
+    const source: DragSource = JSON.parse(raw);
+
+    const allowed = canMove(source, {
+      type: 'folder',
+      fullPath: targetPath,
+    });
+
+    setIsDragOver(true);
+    setIsDropAllowed(allowed);
+
+    e.dataTransfer.dropEffect = allowed ? 'move' : 'none';
+  };
+
+  /**
+   * 🆕 Gestion du drag leave
+   */
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+    setIsDropAllowed(null);
+  };
+
   return (
     <div
       className="space-y-6"
-      onDragOver={e => {
-        e.preventDefault();
-      }}
+      onDragOver={(e: React.DragEvent) => handleDragOver(e, folder.fullPath)}
+      onDragLeave={handleDragLeave}
       onDrop={e => handleDropOnFolder(e, folder.fullPath)}
     >
       {/* 📁 Dossiers */}
@@ -85,10 +123,8 @@ export function FolderContent({ folder, onOpenFolder, onSelectFile, onMove }: Pr
                     JSON.stringify(source),
                   );
                 }}
-                onDragOver={e => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                }}
+                onDragOver={e => handleDragOver(e, f.fullPath)}
+                onDragLeave={handleDragLeave}
                 onDrop={e => handleDropOnFolder(e, f.fullPath)}
                 onClick={() => {
                   onOpenFolder(f.fullPath);

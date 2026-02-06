@@ -80,7 +80,7 @@ export default function ColorPickerButton({ editor }: { editor: Editor | null })
    * @param {string} hex - The hex color string (with or without #)
    * @returns {string} A RGB color string (e.g. "rgb(255, 0, 0)")
    */
-  const hexToRgb = (hex: string) => {
+  const hexToRgb = (hex: string): string => {
     const h = hex.replace("#", "");
     const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
     const bigint = parseInt(full, 16);
