@@ -63,14 +63,11 @@ export function FolderItem({
 
     // Ghost visuel
     const ghost = document.createElement('div');
-    ghost.className =
-      'fixed z-[9999] pointer-events-none flex items-center gap-1 ' +
-      'bg-white rounded px-2 py-1 text-sm';
-    // ghost.innerHTML = `<span>📁</span><span>${folder!.name}</span>`;
+    ghost.className = "fixed z-[9999] pointer-events-none flex flex-col justify-center items-center";
 
-    ghost.innerHTML = `<div className="flex flex-col justify-center items-center">
-        <p>📁 ${folder!.name}</p>
-      </div>`
+    const folderNameParagraph = document.createElement('p');
+    folderNameParagraph.textContent = `📁 ${folder!.name}`;
+    ghost.appendChild(folderNameParagraph);
 
     document.body.appendChild(ghost);
     ghostRef.current = ghost;
@@ -81,6 +78,11 @@ export function FolderItem({
     window.addEventListener('pointerup', handlePointerUp, { once: true });
   }
 
+  /**
+   * Updates the ghost element's position by setting its left and top CSS
+   * properties to the given x and y coordinates, with an offset of 12px.
+   * If the ghost element does not exist, the function does nothing.
+   */
   function moveGhost(x: number, y: number) {
     if (!ghostRef.current) return;
     ghostRef.current.style.left = `${x + 12}px`;
@@ -89,7 +91,17 @@ export function FolderItem({
 
   /**********************
    * 🆕 DRAG MOVE
-   **********************/
+   *
+   * Handles a pointer move event while dragging a folder item.
+   *
+   * Updates the ghost element's position and updates the drag over state
+   * based on whether the pointer is over a drop zone or not.
+   *
+   * If the pointer is over a drop zone, it checks if the target path is not equal
+   * to the source path and if the target path does not start with the source path.
+   * If the conditions are met, it sets the drag over state to 'allowed', otherwise it sets
+   * it to 'forbidden'. It also updates the ghost element's icon accordingly.
+   */
   function handlePointerMove(e: PointerEvent) {
     if (!draggingRef.current) return;
 
@@ -119,6 +131,12 @@ export function FolderItem({
   }
 
 
+  /**
+   * Updates the ghost element's icon based on the drag over state.
+   *
+   * @param {string} folderName - The name of the folder being dragged.
+   * @param {'allowed'|'forbidden'} state - The drag over state.
+   */
   function updateGhostIcon(folderName: string, state: 'allowed' | 'forbidden') {
     if (!ghostRef.current) return;
 
@@ -150,7 +168,13 @@ export function FolderItem({
 
   /**********************
    * 🆕 DRAG END
-   **********************/
+   *
+   * Handles a pointer up event, which marks the end of a drag gesture.
+   * If the pointer is over a drop zone and the drag over state is 'allowed',
+   * it calls the onMove callback with a MoveIntent object containing the source and target of the move.
+   * Finally, it cleans up the drag state by calling the cleanupDrag function.
+   * @param {PointerEvent} e - The pointer up event.
+   */
   function handlePointerUp(e: PointerEvent) {
     draggingRef.current = false;
 
@@ -175,6 +199,10 @@ export function FolderItem({
     cleanupDrag();
   }
 
+  /**
+   * Cleans up the drag state by removing the ghost element, setting the drag over state to 'none',
+   * and removing the event listener for the pointer move event.
+   */
   function cleanupDrag() {
     setDragOverState('none');
 
