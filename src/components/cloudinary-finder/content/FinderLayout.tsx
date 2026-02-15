@@ -3,13 +3,13 @@
 import { useMemo, useState } from 'react';
 import { trpc } from '@lib/trpcClient';
 
-import { TreeView } from '@components/cloudinary-finder/TreeView/TreeView';
-import { FolderContent } from '@components/cloudinary-finder/Finder/FolderContent';
-import { FilePreviewSidebar } from '@components/cloudinary-finder/Finder/FilePreviewSidebar';
+import {TreeView} from '@components/cloudinary-finder/TreeView/TreeView';
+import FolderContentView from '@/components/cloudinary-finder/content/FolderContentView';
+import { FilePreviewSidebar } from '@/components/cloudinary-finder/content/FilePreviewSidebar';
 import { injectStatusRoots } from '@/components/cloudinary-finder/TreeView/injectStatusRoots';
 import { FolderNode, FileNode } from '@/components/cloudinary-finder/types';
 
-import { BreadCrumb } from '@components/cloudinary-finder/Finder/BreadCrumb';
+import { BreadCrumb } from '@/components/cloudinary-finder/content/BreadCrumb';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import AppTreeWrapper from '../TreeView/AppTreeWrapper';
 import { canMove } from '@/server/cloudinary/move.guards';
@@ -49,7 +49,7 @@ function findFolderByPath(
  *
  * @returns A JSX element representing the FinderLayout component.
  */
-export function FinderLayout() {
+export default function FinderLayout() {
   const [currentPath, setCurrentPath] = useState(INITIAL_PATH);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
@@ -83,6 +83,16 @@ export function FinderLayout() {
   if (isError || !tree) return <div>Erreur</div>;
 
   /**
+   * Handle a folder open event.
+   * Set the current path to the opened folder, and reset the selected file to null.
+   * @param {string} path - The path of the folder to open.
+   */
+  function handleOpen(path: string) {
+    setCurrentPath(path);
+    setSelectedFile(null);
+  }
+
+  /**
    * 🔁 Point central du DnD
    * Handle a move intent.
    *
@@ -101,7 +111,6 @@ export function FinderLayout() {
     setSelectedFile(null);
   }
 
-
   return (
     <div className="flex h-full border rounded-lg overflow-hidden">
       {/* 🌳 Tree */}
@@ -110,10 +119,7 @@ export function FinderLayout() {
           <TreeView
             roots={statusRoots}
             currentPath={currentPath}
-            onSelectFolder={(path) => {
-              setCurrentPath(path);
-              setSelectedFile(null);
-            }}
+            onOpen={handleOpen}
             onMove={handleMove}
           />
         </AppTreeWrapper>
@@ -131,7 +137,7 @@ export function FinderLayout() {
         {isVirtualPath ? (
           <div className='text-gray-500 italic'>Vide</div>
         ) : currentFolder ? (
-          <FolderContent
+          <FolderContentView
             folder={currentFolder}
             onOpenFolder={path => {
               setCurrentPath(path);

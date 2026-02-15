@@ -1,25 +1,41 @@
 import { FolderStatus } from "@/core/cloudinary/folder.types";
-import { FolderNode, StatusRootNode } from "@/components/cloudinary-finder/types";
+import { FolderNode, VirtualFolderNode, RootNode } from "@/components/cloudinary-finder/types";
 
 const STATUSES: FolderStatus[] = ["pending", "published", "bin"];
+const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
 
+/**
+ * Inject virtual folders for missing statuses into the tree.
+ *
+ * @param {FolderNode} tree - The tree to inject into.
+ * @returns {RootNode[]} - The injected tree.
+ */
 export function injectStatusRoots(
-  root: FolderNode
-): StatusRootNode[] {
-  return STATUSES.map((status) => {
+  tree: FolderNode
+): RootNode[] {
+  const roots: RootNode[] = [];
 
-    const realFolder =
-      root.children.find(
-        (child): child is FolderNode =>
-          child.type === "folder" &&
-          child.name === status
-      ) ?? null;
+  for (const status of STATUSES) {
+    const existing = tree.children.find(
+      (child): child is FolderNode =>
+        child.type === "folder" && child.name === status
+    );
 
-      return {
-        type: 'virtual-folder',
+    if (existing) {
+      // Dossier réel existant
+      roots.push(existing);
+    } else {
+      // Dossier virtuel
+      const virtualNode: VirtualFolderNode = {
+        type: "virtual-folder",
         name: status,
+        fullPath: `${APP_SHORT_NAME}/${status}`,
         status,
-        node: realFolder,
       };
-  });
+      
+      roots.push(virtualNode);
+    }
+  }
+
+  return roots;
 }

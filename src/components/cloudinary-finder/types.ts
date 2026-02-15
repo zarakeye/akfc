@@ -4,38 +4,41 @@ import type { FolderStatus } from "@/core/cloudinary/folder.types";
 export type BaseNode = {
   name: string;
   type: 'file' | 'folder' | 'virtual-folder';
-};
-
-// ─────────────────────────────
-// 📁 Folder
-// ─────────────────────────────
-export type FileNode = BaseNode & {
-  type: 'file';
   fullPath: string;
-  url: string;
 };
 
 // ─────────────────────────────
 // 🖼️ File
 // ─────────────────────────────
+export type FileNode = BaseNode & {
+  type: 'file';
+  url: string;
+};
+
+// ─────────────────────────────
+// 📁 Folder
+// ─────────────────────────────
 export type FolderNode = BaseNode & {
   type: 'folder';
-  fullPath: string;
   children: TreeNode[];
 };
 
 // ─────────────────────────────
-// 🌳 Union stricte
+// 🧪 Folder virtuel (UX only)
+// Root logique d’un status
+// ─────────────────────────────
+export type VirtualFolderNode = BaseNode & {
+  type: 'virtual-folder';
+  status: FolderStatus;
+};
+
+// ─────────────────────────────
+// 🌳 Union stricte (structure rélle)
 // ─────────────────────────────
 export type TreeNode = FileNode | FolderNode;
 
 // ─────────────────────────────
-// 🧪 Folder virtuel (UX only)
-// Root logique d’un status
-// node === null => virtual (dossier vide)
+// 🌳 Union flexible
 // ─────────────────────────────
-export type StatusRootNode = BaseNode & {
-  type: 'virtual-folder';
-  status: FolderStatus;
-  node: FolderNode | null; // null => dossier virtuel non existant
-};
+export type RootNode = FolderNode | VirtualFolderNode;
+

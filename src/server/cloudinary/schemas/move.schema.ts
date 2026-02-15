@@ -14,9 +14,19 @@ const folderSourceSchema = z.object({
   fullPath: z.string().min(1),
 });
 
+/**
+ * Sélection multiple (UI / intention)
+ */
+const selectionSourceSchema = z.object({
+  type: z.literal('selection'),
+  roots: z.array(z.string().min(1)).min(1),
+  excluded: z.array(z.string().min(1)).optional(),
+});
+
 const sourceSchema = z.discriminatedUnion('type', [
   fileSourceSchema,
   folderSourceSchema,
+  selectionSourceSchema,
 ]);
 
 /* ---------- TARGET ---------- */

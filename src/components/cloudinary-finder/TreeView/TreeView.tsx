@@ -1,51 +1,52 @@
 // src/components/cloudinary-finder/TreeView/TreeView.tsx
 'use client';
 
-import { useState } from 'react';
-import { StatusRootNode } from '../types';
-import { FolderItem } from './FolderItem';
+import { JSX } from 'react';
+import {  RootNode } from '../types';
+import VirtualFolderNodeComponent from '@components/cloudinary-finder/TreeView/VirtualFolderNodeComponent';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
+import FolderNodeComponent from '@/components/cloudinary-finder/TreeView/FolderNodeComponent';
 
 type Props = {
-  roots: StatusRootNode[];
+  roots: RootNode[];
   currentPath: string;
-  onSelectFolder: (path: string) => void;
+  onOpen: (path: string) => void;
   onMove: (intent: MoveIntent) => void;
 };
 
 export function TreeView({
   roots,
   currentPath,
-  onSelectFolder,
+  onOpen,
   onMove,
-}: Props) {
-  const [openFolders, setOpenFolders] = useState<Set<string>>(
-    () => new Set()
-  );
-
-  function toggleFolder(key: string) {
-    setOpenFolders(prev => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }
-
+}: Props): JSX.Element {
   return (
-    <div>
-      {roots.map((tree) => (
-        <FolderItem
-          key={tree.status}
-          status={tree.status}
-          folder={tree.node}
-          currentPath={currentPath}
-          openFolders={openFolders}
-          onToggleFolder={toggleFolder}
-          onSelectFolder={onSelectFolder}
-          level={0}
-          onMove={onMove}
-        />
-      ))}
+    <div className="space-y-1">
+      {roots.map((node) => {
+        // 🔹 Virtual folder
+        if (node.type === 'virtual-folder') {
+          return (
+            <VirtualFolderNodeComponent
+              key={node.fullPath}
+              node={node}
+              currentPath={currentPath}
+              onOpen={onOpen}
+              onMove={onMove}
+            />
+          );
+        }
+
+        // 🔹 Real folder (TypeScript sait ici que node est FolderNode)
+        return (
+          <FolderNodeComponent
+            key={node.fullPath}
+            folder={node}
+            currentPath={currentPath}
+            onOpen={onOpen}
+            onMove={onMove}
+          />
+        );
+      })}
     </div>
   );
 }
