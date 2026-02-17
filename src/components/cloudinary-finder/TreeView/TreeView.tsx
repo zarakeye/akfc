@@ -1,7 +1,7 @@
 // src/components/cloudinary-finder/TreeView/TreeView.tsx
 'use client';
 
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 import {  RootNode } from '../types';
 import VirtualFolderNodeComponent from '@components/cloudinary-finder/TreeView/VirtualFolderNodeComponent';
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';

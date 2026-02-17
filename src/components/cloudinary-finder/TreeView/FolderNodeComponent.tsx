@@ -6,7 +6,6 @@ import type { DragSource } from '@/shared/cloudinary/move.types';
 import { MoveIntent } from '@/server/cloudinary/schemas/move.schema';
 import clsx from 'clsx';
 
-
 type Props = {
   folder: FolderNode;
   currentPath?: string;
@@ -33,10 +32,7 @@ export default function FolderNodeComponent({
       fullPath: folder.fullPath,
     };
 
-    e.dataTransfer.setData(
-      'application/cloudinary',
-      JSON.stringify(payload),
-    );
+    e.dataTransfer.setData('application/cloudinary', JSON.stringify(payload));
     e.stopPropagation();
   };
 
@@ -54,28 +50,12 @@ export default function FolderNodeComponent({
 
   /**
    * Handles a drop event on a folder item.
-   * If the dropped item is a folder and its path is the same as the current folder, does nothing.
-   * Otherwise, calls the `onMove` function with the dropped item as the source and the current folder as the target.
+   * Calls `onMove` with the dropped item as source and current folder as target.
    */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsOver(false);
 
-    /**
-     * FolderItem is a React component that represents a folder item in the tree view.
-     * It accepts the following props:
-     * - `status`: The status of the folder (e.g. 'loading', 'error', 'success').
-     * - `folder`: The folder object to be displayed. If `null`, a virtual folder with the given `status` will be displayed.
-     * - `currentPath`: The current path of the user in the tree view.
-     * - `openFolders`: A set of folder paths that are currently open in the tree view.
-     * - `onToggleFolder`: A function to be called when the user clicks on a folder to toggle its open state.
-     * - `onSelectFolder`: A function to be called when the user selects a folder.
-     * - `level`: The level of the folder in the tree view.
-     * - `onMove`: A function to be called when the user drags and drops a folder item.
-     *
-     * The component renders a folder item with a chevron on the left if the folder has subfolders, and a drag handle on the right.
-     * If the folder is currently open, it renders a list of subfolders below the folder item.
-     */
     const raw = e.dataTransfer.getData('application/cloudinary');
     if (!raw) return;
 
@@ -101,7 +81,7 @@ export default function FolderNodeComponent({
   // -------------------
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsOpen(v => !v);
+    setIsOpen((v) => !v);
   };
 
   const handleOpen = () => {
@@ -111,11 +91,17 @@ export default function FolderNodeComponent({
   const subFolders = folder.children.filter(
     (child): child is FolderNode => child.type === 'folder'
   );
-  
+
   return (
     <div className="select-none">
       {/* Ligne principale */}
       <div
+        /**
+         * ✅ AJOUT IMPORTANT :
+         * Permet au handler du <aside> (FinderLayout) de détecter
+         * que le clic est sur un item Tree, et donc de NE PAS clearSelection.
+         */
+        data-tree-item="true"
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -130,10 +116,7 @@ export default function FolderNodeComponent({
       >
         {/* Chevron */}
         {subFolders.length > 0 ? (
-          <span
-            onClick={handleToggle}
-            className="cursor-pointer w-4 inline-block"
-          >
+          <span onClick={handleToggle} className="cursor-pointer w-4 inline-block">
             {isOpen ? '▾' : '▸'}
           </span>
         ) : (
@@ -150,7 +133,7 @@ export default function FolderNodeComponent({
       {/* Enfants */}
       {isOpen && subFolders.length > 0 && (
         <div className="ml-4 space-y-1">
-          {subFolders.map(child => (
+          {subFolders.map((child) => (
             <FolderNodeComponent
               key={child.fullPath}
               folder={child}
@@ -163,25 +146,4 @@ export default function FolderNodeComponent({
       )}
     </div>
   );
-
-  // return (
-  //   <div>
-  //     <div
-  //       className={`cursor-pointer px-2 py-1 rounded ${
-  //         isActive ? 'bg-muted' : ''
-  //       }`}
-  //       onClick={() => onOpen('fullPath' in folder ? folder.fullPath : folder.status)}
-  //       onDragOver={(e) => e.preventDefault()}
-  //       onDrop={handleDrop}
-  //     >
-  //       📁 {folder.name}
-  //     </div>
-
-  //     {children && (
-  //       <div className="ml-4">
-  //         {children}
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 }

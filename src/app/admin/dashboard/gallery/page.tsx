@@ -1,7 +1,7 @@
 // src/app/dashboard/gallery/page.tsx
 'use client';
 
-import FinderLayout from '@/components/cloudinary-finder/content/FinderLayout';
+import FinderLayout from '@/components/cloudinary-finder/SelectedFolderContent/FinderLayout';
 
 export default function GalleryPage() {
   return (

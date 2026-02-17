@@ -15,7 +15,7 @@ const folderSourceSchema = z.object({
 });
 
 /**
- * Sélection multiple (UI / intention)
+ * ✅ Multi-selection support
  */
 const selectionSourceSchema = z.object({
   type: z.literal('selection'),
@@ -53,5 +53,4 @@ export const moveSchema = z.object({
   target: targetSchema,
 });
 
-/* 🔥 Type unique, dérivé */
 export type MoveIntent = z.infer<typeof moveSchema>;

@@ -8,53 +8,36 @@ import clsx from "clsx";
 import { DragSource } from "@/shared/cloudinary/move.types";
 
 type Props = {
-  node: VirtualFolderNode,
-  currentPath?: string,
-  onOpen: (path: string) => void,
-  onMove: (intent: MoveIntent) => void
-}
+  node: VirtualFolderNode;
+  currentPath?: string;
+  onOpen: (path: string) => void;
+  onMove: (intent: MoveIntent) => void;
+};
 
 /**
- * VirtualFolderNodeComponent is a React component that represents a virtual folder in the tree view.
- * It accepts the following props:
- * - `node`: The virtual folder object to be displayed.
- * - `currentPath`: The current path of the user in the tree view.
- * - `onOpen`: A function to be called when the user clicks on the virtual folder to open it.
- * - `onMove`: A function to be called when the user drags and drops a folder item.
- * 
- * The component renders a folder item with a chevron on the left if the folder has subfolders, and a drag handle on the right.
- * If the folder is currently open, it renders a list of subfolders below the folder item.
+ * VirtualFolderNodeComponent represents a "status root" that may not exist physically yet.
+ * It is a drop target (so items can be moved into it).
  */
 export default function VirtualFolderNodeComponent({
   node,
   currentPath,
   onOpen,
   onMove,
-  }: Props): JSX.Element {
+}: Props): JSX.Element {
   const [isOver, setIsOver] = useState<boolean>(false);
 
   const isActive = node.fullPath === currentPath;
 
   // 🔹 Autoriser le drop
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Nécessaire pour autoriser le drop
+    e.preventDefault();
     setIsOver(true);
   };
 
-  /**
-   * Resets the `isOver` state to `false` when the user drags
-   * something out of the virtual folder node.
-   */
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     setIsOver(false);
   };
 
-  /**
-   * Handles a drop event on a virtual folder node.
-   * Parses the dropped item from the `application/cloudinary` data transfer format,
-   * and calls the `onMove` function with the parsed item as the source and the current folder as the target.
-   * If the dropped item is invalid, logs an error to the console.
-   */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsOver(false);
@@ -81,20 +64,33 @@ export default function VirtualFolderNodeComponent({
 
   return (
     <div
+      /**
+       * ✅ AJOUT IMPORTANT :
+       * Marqueur pour que FinderLayout sache qu'on clique sur un item Tree
+       * et ne clearSelection pas en mode multiSelect.
+       */
+      data-tree-item="true"
       onClick={() => onOpen(node.fullPath)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={clsx(
-        'px-3 py-1 rounded cursor-pointer select-none',
+        /**
+         * ✅ Action effectuée :
+         * - On adopte la même structure que FolderNodeComponent pour l'alignement :
+         *   flex + gap-2 + px-3 py-1
+         * - On ajoute un spacer "w-4" à gauche (colonne chevron) même si virtual n'a pas de chevron.
+         */
+        'flex items-center gap-2 px-3 py-1 rounded cursor-pointer select-none',
         isActive && 'bg-blue-100 text-blue-700',
         isOver && 'bg-blue-50'
       )}
     >
-      <div className="flex items-center gap-2">
-        <span>📂</span>
-        <span className="capitalize">{node.name}</span>
-      </div>
+      {/* Spacer chevron pour aligner avec les folders réels */}
+      <span className="w-4 inline-block" />
+
+      <span>📂</span>
+      <span className="capitalize">{node.name}</span>
     </div>
   );
 }
