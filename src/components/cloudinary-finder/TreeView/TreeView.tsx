@@ -88,7 +88,8 @@ export function TreeView({
 
     setOpenFolders((prev) => {
       const next = new Set(prev);
-      next.has(path) ? next.delete(path) : next.add(path);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
       return next;
     });
   }
@@ -108,7 +109,7 @@ export function TreeView({
                * ✅ Nouveau : TreeView informe les nodes du mode multi-select
                * pour qu’ils masquent leurs chevrons/affichages
                */
-              multiSelectActive={multiSelectActive}
+              // multiSelectActive={multiSelectActive}
             />
           );
         }

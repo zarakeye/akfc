@@ -56,7 +56,7 @@
     // ".next/dev/types/**/*.ts",
     "**/*.mts",
     "prisma/seed.js",
-    "prisma.config.ts.back",
+    "prisma.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

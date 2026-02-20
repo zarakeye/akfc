@@ -1,13 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
-  engineType    = "binary"
   binaryTargets = ["native"]
+  engineType    = "binary"
 }
 
 datasource db {
@@ -19,8 +13,6 @@ model User {
   id            String       @id @default(cuid())
   firstName     String?
   lastName      String?
-  pseudo        String?
-  aboutMe       String?
   email         String       @unique
   emailVerified Boolean      @default(false)
   password      String
@@ -28,20 +20,22 @@ model User {
   phone         String?
   image         String?
   roleId        Int?
-  role          Role?        @relation(fields: [roleId], references: [id])
   memberSince   DateTime?
-  preferences   Preferences?
   isFirstLogin  Boolean      @default(true)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @default(now()) @updatedAt
-  sessions      Session[]
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]
+  aboutMe       String?
+  pseudo        String?
   avatar        String?
-  Courses       Course[]     @relation("UserCourses")
-  Stage         Stage[]      @relation("UserStages")
   Activities    Activity[]   @relation("UserActivities")
+  comments      Comment[]
+  Courses       Course[]     @relation("UserCourses")
+  likes         Like[]
+  posts         Post[]
+  preferences   Preferences?
+  sessions      Session[]
+  Stage         Stage[]      @relation("UserStages")
+  role          Role?        @relation(fields: [roleId], references: [id])
 }
 
 model Permission {
@@ -54,38 +48,37 @@ model Permission {
 model Role {
   id          Int               @id @default(autoincrement())
   name        String            @unique
-  permissions RolePermissions[]
   description String?
+  permissions RolePermissions[]
   users       User[]
 }
 
 model RolePermissions {
   roleId       Int
   permissionId Int
-
-  role       Role       @relation(fields: [roleId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
 
   @@id([roleId, permissionId])
 }
 
 model Preferences {
   id           Int     @id @default(autoincrement())
-  description  String?
   displayEmail Boolean @default(false)
   displayPhone Boolean @default(false)
   darkMode     Boolean @default(true)
   userId       String  @unique
+  description  String?
   user         User    @relation(fields: [userId], references: [id])
 }
 
 model Session {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String?
   createdAt DateTime @default(now())
   expiresAt DateTime
+  role      String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Verification {
@@ -99,17 +92,15 @@ model Verification {
 
 model Course {
   id         Int      @id @default(autoincrement())
-  label      String   @unique
-  // discipline String   // 'CALLiGRAPHY' | 'MARTIAL ART'
-  // style      String   
-  content    Json
   beginTime  Int
   endTime    Int
   day        Day
-  requisites String[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  content    Json
+  label      String   @unique
   coachId    String
+  requisites String[]
   coach      User     @relation("UserCourses", fields: [coachId], references: [id])
 }
 
@@ -123,17 +114,15 @@ model Slot {
 
 model Activity {
   id           Int      @id @default(autoincrement())
-  name         String
-  description  String?
-  slots        Slot[]
+  name         String   @unique
   martialArt   String
   instructorId String
-  instructor   User     @relation("UserActivities", fields: [instructorId], references: [id])
-  origin       String? // e.g., "Chine", "Philippines"
+  origin       String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  @@unique([name])
+  description  String?
+  instructor   User     @relation("UserActivities", fields: [instructorId], references: [id])
+  slots        Slot[]
 }
 
 model Category {
@@ -151,51 +140,70 @@ model MartialArt {
 
 model Stage {
   id            Int      @id @default(autoincrement())
+  date          DateTime
+  beginTime     Int
+  endTime       Int
+  preRegistered String[]
+  animatorId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   label         String
-  date          DateTime // date of the stage
-  description   Json // details about the stage
-  beginTime     Int // in minutes from midnight
-  endTime       Int // in minutes from midnight
   program       Json
-  animatorId    String // references User.id
-  animator      User     @relation("UserStages", fields: [animatorId], references: [id]) // the user who animates the stage
-  createdAt     DateTime @default(now()) // timestamp when the stage was created
-  updatedAt     DateTime @updatedAt // timestamp when the stage was last updated
-  preRegistered String[] // list of User IDs who have pre-registered
+  description   Json
+  animator      User     @relation("UserStages", fields: [animatorId], references: [id])
 }
 
 model Post {
   id              Int       @id @default(autoincrement())
-  title           String // title of the post
-  content         Json // content of the post in JSON format
-  authorId        String // references User.id
-  author          User      @relation(fields: [authorId], references: [id]) // the user who authored the post
-  createdAt       DateTime  @default(now()) // timestamp when the post was created
-  updatedAt       DateTime  @updatedAt // timestamp when the post was last updated
-  publicationDate DateTime? // optional publication date
+  title           String
+  content         Json
+  authorId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  publicationDate DateTime?
   comments        Comment[]
   likes           Like[]
+  author          User      @relation(fields: [authorId], references: [id])
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
   content   Json
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
   articleId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  post      Post?    @relation(fields: [postId], references: [id])
   postId    Int?
+  author    User     @relation(fields: [authorId], references: [id])
+  post      Post?    @relation(fields: [postId], references: [id])
 }
 
 model Like {
   id     Int     @id @default(autoincrement())
-  postId Int // references Post.id
-  post   Post    @relation(fields: [postId], references: [id]) // the post that is liked
-  userId String // references User.id
-  user   User    @relation(fields: [userId], references: [id]) // the user who liked the post
-  like   Boolean @default(false) // true for like, false for unlike
+  postId Int
+  userId String
+  like   Boolean @default(false)
+  post   Post    @relation(fields: [postId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
+}
+
+model CloudinaryFolder {
+  id        String                @id @default(cuid())
+  appRoot   String
+  fullPath  String
+  status    CloudinaryFolderStatus
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@unique([appRoot, fullPath])
+  @@index([appRoot])
+  @@index([appRoot, status])
+}
+
+enum CloudinaryFolderStatus {
+  pending
+  published
+  bin
 }
 
 enum Day {

@@ -10,66 +10,74 @@ type Props = {
   onClose: () => void;
 };
 
-/**
- * Retourne true si path est:
- * - bin
- * - OU un descendant de bin
- *
- * Ex:
- * - my-app/bin               => true
- * - my-app/bin/sous-dossier  => true
- */
+type ParsedPath = {
+  status: 'pending' | 'published' | 'bin' | null;
+  base: string;   // `${appRoot}/${status}` si status OK
+  suffix: string; // partie après `${base}/`
+};
+
+function normalizePath(p: string): string {
+  return p.replace(/^\/+|\/+$/g, '');
+}
+
+function parsePath(fullPath: string): ParsedPath {
+  const p = normalizePath(fullPath);
+  const parts = p.split('/').filter(Boolean);
+
+  const appRoot = parts[0] ?? '';
+  const statusCandidate = parts[1] ?? null;
+
+  const status =
+    statusCandidate === 'pending' || statusCandidate === 'published' || statusCandidate === 'bin'
+      ? statusCandidate
+      : null;
+
+  const base = status ? `${appRoot}/${status}` : appRoot;
+  const prefix = status ? `${base}/` : `${base}/`;
+  const suffix = status && p.startsWith(prefix) ? p.slice(prefix.length) : '';
+
+  return { status, base, suffix };
+}
+
 function isInBinTree(path: string): boolean {
   return path.endsWith('/bin') || path.includes('/bin/');
 }
 
-/**
- * Évite les noms invalides pour un segment de public_id Cloudinary:
- * - pas de slash
- * - trim
- * - optionnel: remplacer les espaces
- */
-function sanitizeName(input: string): string {
-  return input.trim().replace(/\//g, '').replace(/\s+/g, ' ');
-}
-
-/**
- * Remplace le dernier segment d'un public_id.
- * Ex: "a/b/c" + "new" => "a/b/new"
- */
-function replaceLastSegment(fullPath: string, newLastSegment: string): string {
-  const parts = fullPath.split('/');
-  parts[parts.length - 1] = newLastSegment;
-  return parts.join('/');
+function selectLastSegment(input: HTMLInputElement) {
+  const v = input.value;
+  const i = v.lastIndexOf('/');
+  const start = i >= 0 ? i + 1 : 0;
+  input.setSelectionRange(start, v.length);
 }
 
 export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
+  // ✅ Remount key => reset local state sans useEffect setState
+  return <FilePreviewSidebarInner key={file.fullPath} file={file} onClose={onClose} />;
+}
+
+function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
   const utils = trpc.useUtils();
 
-  // ─────────────────────────────────────────────
-  // UI state: mode rename
-  // ─────────────────────────────────────────────
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [draftName, setDraftName] = useState(file.name);
+  const parsed = useMemo(() => parsePath(file.fullPath), [file.fullPath]);
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftSuffix, setDraftSuffix] = useState(parsed.suffix);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Quand on ouvre le mode rename: focus auto
+  // focus + sélection : OK
   useEffect(() => {
-  if (!isRenaming) return;
+    if (!isRenaming) return;
+    const id = setTimeout(() => {
+      if (!inputRef.current) return;
+      inputRef.current.focus();
+      selectLastSegment(inputRef.current);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [isRenaming]);
 
-  // Focus async pour être sûr que l'input est monté
-  const id = setTimeout(() => inputRef.current?.focus(), 0);
-  return () => clearTimeout(id);
-}, [isRenaming]);
+  const fileIsInBinTree = useMemo(() => isInBinTree(file.fullPath), [file.fullPath]);
+  const canSecureRename = parsed.status !== null;
 
-  // ─────────────────────────────────────────────
-  // Mutations
-  // ─────────────────────────────────────────────
-
-  /**
-   * ✅ Déplacement vers bin (corbeille) : utilise cloudinary.move
-   */
   const moveToBin = trpc.cloudinary.move.useMutation({
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
@@ -78,10 +86,6 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
     onError: (err) => console.error('[moveToBin] failed:', err),
   });
 
-  /**
-   * ✅ Suppression définitive : utilise cloudinary.deletePicture
-   * (dans ton backend actuel, c'est "destroy" type authenticated)
-   */
   const deleteForever = trpc.cloudinary.deletePicture.useMutation({
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
@@ -90,13 +94,6 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
     onError: (err) => console.error('[deletePicture] failed:', err),
   });
 
-  /**
-   * ⚠️ Renommer : nécessite une mutation backend.
-   * 👉 À ajouter dans cloudinary.router.ts (ex: cloudinary.renamePicture)
-   *
-   * Expected input:
-   * { fromPublicId: string; toPublicId: string }
-   */
   const renamePicture = trpc.cloudinary.renamePicture.useMutation({
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
@@ -106,106 +103,64 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
     onError: (err) => console.error('[renamePicture] failed:', err),
   });
 
-  // ─────────────────────────────────────────────
-  // Derived state
-  // ─────────────────────────────────────────────
-  const fileIsInBinTree = useMemo(() => isInBinTree(file.fullPath), [file.fullPath]);
+  const isBusy = moveToBin.isPending || deleteForever.isPending || renamePicture.isPending;
 
-  const isBusy =
-    moveToBin.isPending ||
-    deleteForever.isPending ||
-    renamePicture.isPending;
-
-  // ─────────────────────────────────────────────
-  // Actions
-  // ─────────────────────────────────────────────
-
-  function handleSendToBin() {
-    // sécurité : si déjà dans bin, on n’envoie pas
-    if (fileIsInBinTree) return;
-
-    moveToBin.mutate({
-      source: {
-        type: 'file',
-        fullPath: file.fullPath,
-      },
-      target: {
-        type: 'virtual-folder',
-        status: 'bin',
-      },
-    });
-  }
-
-  function handleDeleteForever() {
-    const ok = confirm(
-      '⚠️ Supprimer définitivement ce fichier ?\n\nCette action est irréversible.'
-    );
-    if (!ok) return;
-
-    deleteForever.mutate({ publicId: file.fullPath });
-  }
-
-  function handleStartRename() {
-    setDraftName(file.name);
+  function startRename() {
+    if (!canSecureRename) return;
+    setDraftSuffix(parsed.suffix);
     setIsRenaming(true);
   }
 
-  function handleCancelRename() {
+  function cancelRename() {
     setIsRenaming(false);
-    setDraftName(file.name);
+    setDraftSuffix(parsed.suffix);
   }
 
-  function handleSaveRename() {
-    const clean = sanitizeName(draftName);
+  function applyRename() {
+    if (!canSecureRename) return;
 
-    if (!clean) return;
-    if (clean === file.name) {
-      // aucun changement
+    const cleanedSuffix = normalizePath(draftSuffix);
+    if (!cleanedSuffix) return;
+
+    const fromPublicId = normalizePath(file.fullPath);
+    const toPublicId = `${parsed.base}/${cleanedSuffix}`;
+
+    if (toPublicId === fromPublicId) {
       setIsRenaming(false);
       return;
     }
 
-    const toPublicId = replaceLastSegment(file.fullPath, clean);
-
-    const ok = confirm(
-      `Renommer:\n\n${file.fullPath}\n→\n${toPublicId}\n\nConfirmer ?`
-    );
+    const ok = confirm(`Renommer/déplacer ce fichier ?\n\n${fromPublicId}\n→\n${toPublicId}\n`);
     if (!ok) return;
 
-    renamePicture.mutate({
-      fromPublicId: file.fullPath,
-      toPublicId,
+    renamePicture.mutate({ fromPublicId, toPublicId });
+  }
+
+  function sendToBin() {
+    if (fileIsInBinTree) return;
+
+    moveToBin.mutate({
+      source: { type: 'file', fullPath: file.fullPath },
+      target: { type: 'virtual-folder', status: 'bin' },
     });
+  }
+
+  function deleteNow() {
+    const ok = confirm('⚠️ Supprimer définitivement ce fichier ?\n\nCette action est irréversible.');
+    if (!ok) return;
+    deleteForever.mutate({ publicId: file.fullPath });
   }
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b gap-3">
         <div className="min-w-0 flex-1">
-          {!isRenaming ? (
-            <h3 className="font-medium truncate" title={file.name}>
-              {file.name}
-            </h3>
-          ) : (
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveRename();
-                  if (e.key === 'Escape') handleCancelRename();
-                }}
-                disabled={isBusy}
-                className="w-full border rounded px-2 py-1 text-sm"
-                placeholder="Nouveau nom"
-              />
-            </div>
-          )}
-          <div className="text-xs text-gray-500 truncate" title={file.fullPath}>
+          <h3 className="font-medium truncate" title={file.name}>
+            {file.name}
+          </h3>
+          {/* <div className="text-xs text-gray-500 truncate" title={file.fullPath}>
             {file.fullPath}
-          </div>
+          </div> */}
         </div>
 
         <button onClick={onClose} className="text-xl" disabled={isBusy}>
@@ -213,36 +168,35 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
         </button>
       </div>
 
-      {/* Actions */}
       <div className="p-4 border-b flex flex-wrap gap-2">
         {!isRenaming ? (
           <>
-            {/* Rename */}
             <button
-              onClick={handleStartRename}
-              disabled={isBusy}
+              onClick={startRename}
+              disabled={isBusy || !canSecureRename}
               className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-              title="Renommer"
+              title={
+                canSecureRename
+                  ? 'Renommer / déplacer (édition du suffix après status)'
+                  : 'Chemin non conforme (impossible de sécuriser <app>/<status>)'
+              }
             >
               ✏️ Renommer
             </button>
 
-            {/* Bin / Delete */}
             {!fileIsInBinTree ? (
               <button
-                onClick={handleSendToBin}
+                onClick={sendToBin}
                 disabled={isBusy}
                 className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                title="Envoyer vers la corbeille"
               >
                 🗑 Envoyer vers bin
               </button>
             ) : (
               <button
-                onClick={handleDeleteForever}
+                onClick={deleteNow}
                 disabled={isBusy}
                 className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                title="Supprimer définitivement"
               >
                 ❌ Supprimer
               </button>
@@ -250,16 +204,32 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
           </>
         ) : (
           <>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 whitespace-nowrap">{parsed.base}/</span>
+              <input
+                ref={inputRef}
+                className="border rounded px-2 py-2 text-sm w-[520px]"
+                value={draftSuffix}
+                onChange={(e) => setDraftSuffix(e.target.value)}
+                disabled={isBusy}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyRename();
+                  if (e.key === 'Escape') cancelRename();
+                }}
+                placeholder="clients/2026/img_001"
+              />
+            </div>
+
             <button
-              onClick={handleSaveRename}
-              disabled={isBusy || !sanitizeName(draftName)}
+              onClick={applyRename}
+              disabled={isBusy || !normalizePath(draftSuffix)}
               className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {renamePicture.isPending ? 'Enregistrement…' : 'Enregistrer'}
+              {renamePicture.isPending ? '…' : 'Appliquer'}
             </button>
 
             <button
-              onClick={handleCancelRename}
+              onClick={cancelRename}
               disabled={isBusy}
               className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
             >
@@ -268,7 +238,6 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
           </>
         )}
 
-        {/* petit feedback d’erreur */}
         {(moveToBin.error || deleteForever.error || renamePicture.error) && (
           <span className="text-sm text-red-600">
             {(moveToBin.error?.message ??
@@ -279,7 +248,6 @@ export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
         )}
       </div>
 
-      {/* Preview */}
       <div className="flex-1 flex items-center justify-center p-4">
         <Image
           src={file.url}
