@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
  * Composant du barre latéral de l'application.
  * Il permet d'accéder à l'ensemble des fonctionnalités de l'application.
  */
-export default function LateralBarDashboard(): JSX.Element {
+export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
   const role = useSessionStore(state => state.session?.user?.role);
 
@@ -250,9 +250,9 @@ export default function LateralBarDashboard(): JSX.Element {
                     router.push('/admin/dashboard/gallery');
                   }}
                 >
-                  Gallerie
+                  Banque d&apos;images
                 </button>
-                {/* <button
+                <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
                     router.push('/admin/dashboard/posts/create');
@@ -264,7 +264,7 @@ export default function LateralBarDashboard(): JSX.Element {
                     width={16}
                     height={16}
                   />
-                </button> */}
+                </button>
               </div>
             </li>
           </>

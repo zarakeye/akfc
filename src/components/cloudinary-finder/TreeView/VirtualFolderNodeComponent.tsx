@@ -1,11 +1,12 @@
 'use client';
 
-import { VirtualFolderNode } from "@/components/cloudinary-finder/types";
-import { MoveIntent } from "@server/cloudinary/schemas/move.schema";
+import { JSX, useState } from 'react';
+import clsx from 'clsx';
 
-import { JSX, useState } from "react";
-import clsx from "clsx";
-import { DragSource } from "@/shared/cloudinary/move.types";
+import type { VirtualFolderNode } from '@/components/cloudinary-finder/types';
+import type { DragSource } from '@/shared/cloudinary/move.types';
+import type { MoveIntent } from '@server/cloudinary/schemas/move.schema';
+import { canMove } from '@/server/cloudinary/move.guards';
 
 type Props = {
   node: VirtualFolderNode;
@@ -15,8 +16,9 @@ type Props = {
 };
 
 /**
- * VirtualFolderNodeComponent represents a "status root" that may not exist physically yet.
- * It is a drop target (so items can be moved into it).
+ * ✅ Virtual folder = dropzone only (non draggable)
+ * ✅ Alignement visuel: réserve la place du chevron des folders réels
+ * ✅ data-drop-* compatibles avec dragGhost.manager.ts
  */
 export default function VirtualFolderNodeComponent({
   node,
@@ -24,23 +26,46 @@ export default function VirtualFolderNodeComponent({
   onOpen,
   onMove,
 }: Props): JSX.Element {
-  const [isOver, setIsOver] = useState<boolean>(false);
+  const [isOver, setIsOver] = useState(false);
+  const [isForbidden, setIsForbidden] = useState(false);
 
   const isActive = node.fullPath === currentPath;
 
-  // 🔹 Autoriser le drop
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsOver(true);
+    e.preventDefault(); // nécessaire pour autoriser le drop
+
+    const raw = e.dataTransfer.getData('application/cloudinary');
+    if (!raw) {
+      setIsOver(true);
+      setIsForbidden(true);
+      return;
+    }
+
+    try {
+      const source: DragSource = JSON.parse(raw);
+      const ok = canMove(source, { type: 'virtual-folder', status: node.status });
+
+      setIsOver(true);
+      setIsForbidden(!ok);
+
+      e.dataTransfer.dropEffect = ok ? 'move' : 'none';
+    } catch {
+      setIsOver(true);
+      setIsForbidden(true);
+      e.dataTransfer.dropEffect = 'none';
+    }
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = () => {
     setIsOver(false);
+    setIsForbidden(false);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     setIsOver(false);
+    setIsForbidden(false);
 
     const raw = e.dataTransfer.getData('application/cloudinary');
     if (!raw) return;
@@ -50,47 +75,39 @@ export default function VirtualFolderNodeComponent({
 
       const intent: MoveIntent = {
         source,
-        target: {
-          type: 'folder',
-          fullPath: node.fullPath,
-        },
+        // ✅ IMPORTANT: virtual-folder target (pas folder/fullPath)
+        target: { type: 'virtual-folder', status: node.status },
       };
 
       onMove(intent);
     } catch (err) {
-      console.error('[VirtualFolderNode] Invalid drop payload', err);
+      console.error('[VirtualFolderNodeComponent] Invalid drop payload', err);
     }
   };
 
   return (
     <div
-      /**
-       * ✅ AJOUT IMPORTANT :
-       * Marqueur pour que FinderLayout sache qu'on clique sur un item Tree
-       * et ne clearSelection pas en mode multiSelect.
-       */
-      data-tree-item="true"
+      // ✅ requis pour dragGhost.manager.ts (document.dragover)
+      data-drop-type="virtual-folder"
+      data-drop-status={node.status}
       onClick={() => onOpen(node.fullPath)}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={clsx(
-        /**
-         * ✅ Action effectuée :
-         * - On adopte la même structure que FolderNodeComponent pour l'alignement :
-         *   flex + gap-2 + px-3 py-1
-         * - On ajoute un spacer "w-4" à gauche (colonne chevron) même si virtual n'a pas de chevron.
-         */
-        'flex items-center gap-2 px-3 py-1 rounded cursor-pointer select-none',
+        'px-9 py-1 rounded cursor-pointer select-none',
         isActive && 'bg-blue-100 text-blue-700',
-        isOver && 'bg-blue-50'
+        isOver && !isForbidden && 'bg-emerald-400/15',
+        isOver && isForbidden && 'bg-rose-400/15'
       )}
     >
-      {/* Spacer chevron pour aligner avec les folders réels */}
-      <span className="w-4 inline-block" />
+      <div className="flex items-center gap-2">
+        {/* ✅ placeholder chevron pour aligner */}
+        <span className="w-4 inline-block" />
 
-      <span>📂</span>
-      <span className="capitalize">{node.name}</span>
+        <span>📂</span>
+        <span className="capitalize truncate">{node.name}</span>
+      </div>
     </div>
   );
 }

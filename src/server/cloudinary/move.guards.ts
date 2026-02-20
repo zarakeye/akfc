@@ -25,7 +25,10 @@ export const isSelectionSource = (s: DragSource): s is { type: 'selection'; root
 export const isFolderTarget = (t: MoveTarget): t is { type: 'folder'; fullPath: string } => t.type === 'folder';
 
 /** ✅ virtual-folder */
-export const isVirtualFolderTarget = (t: MoveTarget): t is { type: 'virtual-folder'; status: "pending" | "published" } => t.type === 'virtual-folder';
+export const isVirtualFolderTarget = (
+  t: MoveTarget
+): t is { type: 'virtual-folder'; status: 'pending' | 'published' | 'bin' } =>
+  t.type === 'virtual-folder';
 
 /**
  * ---------------------------------------------------------------------------

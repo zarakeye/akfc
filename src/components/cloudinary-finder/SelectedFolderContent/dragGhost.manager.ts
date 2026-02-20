@@ -183,7 +183,7 @@ function handleDocumentDragOver(e: DragEvent) {
 function cleanup() {
   document.removeEventListener('dragover', handleDocumentDragOver);
   window.removeEventListener('drop', cleanup, true);
-  window.removeEventListener('dragend', cleanup as any, true);
+  window.removeEventListener('dragend', cleanup, true);
 
   if (ghostEl) {
     ghostEl.remove();
@@ -224,5 +224,5 @@ export function startDragGhost(args: {
 
   document.addEventListener('dragover', handleDocumentDragOver);
   window.addEventListener('drop', cleanup, true);
-  window.addEventListener('dragend', cleanup as any, true);
+  window.addEventListener('dragend', cleanup, true);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import LateralBarDashboard from '@/components/client/LateralBarDashboard';
+import ControlPanelSidebar from '@/components/client/ControlPanelSidebar';
 import { Providers } from '@/app/admin/dashboard/providers';
 
 interface Props {
@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: Props) {
   return (
     <Providers>
       <div className="flex min-h-screen">
-        <LateralBarDashboard />
+        <ControlPanelSidebar />
 
       {/* ⚠️ le main DOIT être relative */}
       <main className="relative flex-1 p-10 overflow-hidden">

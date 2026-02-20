@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useMemo } from 'react';
+import React, { JSX } from 'react';
 
 import { FolderNode, FileNode } from '@/components/cloudinary-finder/types';
 import { isFileNode, isFolderNode } from '@components/cloudinary-finder/guards';
@@ -12,6 +12,7 @@ import GridFolderItem from './GridFolderItem';
 import GridFileItem from './GridFileItem';
 
 import { useSelectionStore } from '@/lib/stores/useSelectionStore';
+import { trpc } from '@/lib/trpcClient';
 
 type Props = {
   folder: FolderNode;
@@ -19,6 +20,10 @@ type Props = {
   onSelectFile?: (file: FileNode) => void;
   onMove: (intent: MoveIntent) => void;
 };
+
+function isInBinTree(path: string): boolean {
+  return path.endsWith('/bin') || path.includes('/bin/');
+}
 
 export default function FolderContentView({
   folder,
@@ -29,15 +34,27 @@ export default function FolderContentView({
   const subFolders = folder.children.filter(isFolderNode);
   const files = folder.children.filter(isFileNode);
 
-  const { multiSelectActive, isSelected, clearSelection } = useSelectionStore();
+  const { multiSelectActive, clearSelection } = useSelectionStore();
+  const utils = trpc.useUtils();
 
-  // (Optionnel) pas encore utilisé ici, conservé pour la suite
-  const selectedPathsInFolder = useMemo(() => {
-    if (!multiSelectActive) return [];
-    return folder.children
-      .filter((item) => isSelected(item.fullPath))
-      .map((item) => item.fullPath);
-  }, [folder.children, multiSelectActive, isSelected]);
+  /**
+   * ✅ Nouvelle règle UX:
+   * - le bouton "Supprimer définitivement" n'apparaît que si:
+   *   1) on est dans bin (ou descendant)
+   *   2) le dossier courant n'est pas vide
+   *
+   * => Ça empêche d'afficher le bouton dans des vues "vides" (ou virtual)
+   */
+  const hasContent = folder.children.length > 0;
+  const showKillButton = isInBinTree(folder.fullPath) && hasContent;
+
+  const emptyBin = trpc.cloudinary.emptyBin.useMutation({
+    onSuccess: async () => {
+      await utils.cloudinary.getFolderTree.invalidate();
+      clearSelection();
+    },
+    onError: (err) => console.error('[emptyBin] failed:', err),
+  });
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -63,14 +80,9 @@ export default function FolderContentView({
       className="space-y-6"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
-      /**
-       * ✅ Action effectuée :
-       * - Sortie multi-select sur clic "vide"
-       * - Détection robuste : si le click n'est PAS dans un [data-content-item="true"]
-       */
       onMouseDown={(e) => {
         if (!multiSelectActive) return;
-        
+
         const el = e.target as Element | null;
         if (!el) return;
 
@@ -78,6 +90,25 @@ export default function FolderContentView({
         if (!insideItem) clearSelection();
       }}
     >
+      {showKillButton && (
+        <div className="mb-2">
+          <button
+            onClick={() => {
+              const ok = confirm(
+                '⚠️ Supprimer définitivement TOUT le contenu de la corbeille ?\n\nCette action est irréversible.'
+              );
+              if (!ok) return;
+              emptyBin.mutate();
+            }}
+            disabled={emptyBin.isPending}
+            className="px-4 py-2 rounded bg-red-600/20 border-red-600 hover:bg-red-600/20 disabled:opacity-50 cursor-pointer"
+            title='Vider la corbeille'
+          >
+            {emptyBin.isPending ? 'Suppression…' : '🗑️ Vider la corbeille'}
+          </button>
+        </div>
+      )}
+
       {subFolders.length > 0 && (
         <section>
           <h3 className="font-medium mb-2">Dossiers</h3>

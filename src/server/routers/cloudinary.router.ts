@@ -11,8 +11,36 @@ import { moveFile } from "@/server/cloudinary/services/cloudinary.moveFile";
 import { moveService } from "@/server/cloudinary/services/move.service";
 import { moveSchema } from "@server/cloudinary/schemas/move.schema";
 import { mapCloudinaryFolderToClient } from "@server/mappers/cloudinary/tree.v1.mapper";
+import { emptyBinService } from "@/server/cloudinary/services/emptyBin.service";
 
 const PROJECT_ROOT = process.env.APP_SHORT_NAME || 'my-app';
+
+type CloudinaryResourceType = "image" | "video" | "raw";
+
+/**
+ * Renommer un asset Cloudinary (authenticated) de manière robuste.
+ * On essaye image/video/raw car Cloudinary exige souvent le bon resource_type.
+ */
+async function renameAuthenticatedResource(fromPublicId: string, toPublicId: string) {
+  const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
+  let lastError: unknown = null;
+
+  for (const resource_type of resourceTypes) {
+    try {
+      await cloudinary.uploader.rename(fromPublicId, toPublicId, {
+        type: "authenticated",
+        resource_type,
+        overwrite: true,
+      });
+      return; // ✅ success
+    } catch (err) {
+      lastError = err;
+      // continue -> try next type
+    }
+  }
+
+  throw lastError ?? new Error("Rename failed (unknown error)");
+}
 
 function normalizePath(path: string) {
   return path.replace(/^\/+|\/+$/g, '');
@@ -152,6 +180,47 @@ export const cloudinaryRouter = router({
     .input(moveSchema)
     .mutation(async ({ input }) => {
       await moveService(input);
+
+      return { success: true };
+    }),
+
+  // ─────────────────────────────────────────────
+  // 6️⃣ Vider la corbeille (bin) — suppression définitive
+  // ─────────────────────────────────────────────
+  emptyBin: protectedProcedure
+    .use(isAdmin) // ✅ très important: action destructive => admin only
+    .mutation(async () => {
+      await emptyBinService(PROJECT_ROOT);
+      return { success: true };
+    }),
+
+  // ─────────────────────────────────────────────
+  // 3bis️⃣ Renommer une image (ou asset) ✅ NEW
+  // ─────────────────────────────────────────────
+  renamePicture: protectedProcedure
+    .use(isAdmin)
+    .input(
+      z.object({
+        fromPublicId: z.string().min(1),
+        toPublicId: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const from = normalizePath(input.fromPublicId);
+      const to = normalizePath(input.toPublicId);
+
+      // 🔐 Sécurité : empêcher de sortir du projet
+      if (!from.startsWith(PROJECT_ROOT) || !to.startsWith(PROJECT_ROOT)) {
+        throw new Error("Forbidden path");
+      }
+
+      // ✅ (Optionnel) blocage des renames dangereux :
+      // - empêcher de remonter de dossier via '..' (normalement absent dans public_id)
+      if (from.includes("..") || to.includes("..")) {
+        throw new Error("Invalid path");
+      }
+
+      await renameAuthenticatedResource(from, to);
 
       return { success: true };
     }),
