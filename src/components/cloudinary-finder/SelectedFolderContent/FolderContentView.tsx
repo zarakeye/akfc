@@ -34,19 +34,27 @@ export default function FolderContentView({
   const subFolders = folder.children.filter(isFolderNode);
   const files = folder.children.filter(isFileNode);
 
-  const { multiSelectActive, clearSelection } = useSelectionStore();
+  const { multiSelectActive, selection, clearSelection } = useSelectionStore();
   const utils = trpc.useUtils();
 
   /**
-   * ✅ Nouvelle règle UX:
-   * - le bouton "Supprimer définitivement" n'apparaît que si:
-   *   1) on est dans bin (ou descendant)
-   *   2) le dossier courant n'est pas vide
-   *
-   * => Ça empêche d'afficher le bouton dans des vues "vides" (ou virtual)
+   * ✅ Nouvel UX:
+   * - Dans /bin, le bouton change selon le multiSelect:
+   *   - normal => "Vider la corbeille" (tout supprimer)
+   *   - multiselect => "Supprimer la sélection" (seulement cochés)
    */
   const hasContent = folder.children.length > 0;
-  const showKillButton = isInBinTree(folder.fullPath) && hasContent;
+
+  /**
+   * ✅ UX rule (bin):
+   * - mode normal: bouton "🗑️ Vider la corbeille" (tout supprimer)
+   * - mode multiselect: bouton "🗑️ Supprimer la sélection" (seulement les items cochés)
+   */
+  const inBin = isInBinTree(folder.fullPath);
+  const selectionRootsCount = selection.roots.size;
+
+  const showEmptyBinButton = inBin && !multiSelectActive && hasContent;
+  const showDeleteSelectionButton = inBin && multiSelectActive && selectionRootsCount > 0;
 
   const emptyBin = trpc.cloudinary.emptyBin.useMutation({
     onSuccess: async () => {
@@ -54,6 +62,19 @@ export default function FolderContentView({
       clearSelection();
     },
     onError: (err) => console.error('[emptyBin] failed:', err),
+  });
+
+  /**
+   * Supprimer uniquement la sélection dans la corbeille (roots - excluded)
+   * - respecte la logique roots/excluded de ton store
+   * - supprime Cloudinary + purge DB placeholders (via router)
+   */
+  const deleteSelectionInBin = trpc.cloudinary.deleteSelectionInBin.useMutation({
+    onSuccess: async () => {
+      await utils.cloudinary.getFolderTree.invalidate();
+      clearSelection();
+    },
+    onError: (err) => console.error('[deleteSelectionInBin] failed:', err),
   });
 
   const handleDrop = (e: React.DragEvent) => {
@@ -90,7 +111,7 @@ export default function FolderContentView({
         if (!insideItem) clearSelection();
       }}
     >
-      {showKillButton && (
+      {showEmptyBinButton && (
         <div className="mb-2">
           <button
             onClick={() => {
@@ -102,9 +123,37 @@ export default function FolderContentView({
             }}
             disabled={emptyBin.isPending}
             className="px-4 py-2 rounded bg-red-600/20 border-red-600 hover:bg-red-600/20 disabled:opacity-50 cursor-pointer"
-            title='Vider la corbeille'
+            title="Vider la corbeille"
           >
             {emptyBin.isPending ? 'Suppression…' : '🗑️ Vider la corbeille'}
+          </button>
+        </div>
+      )}
+
+      {showDeleteSelectionButton && (
+        <div className="mb-2">
+          <button
+            onClick={() => {
+              const roots = Array.from(selection.roots);
+              const excluded = Array.from(selection.excluded);
+
+              const ok = confirm(
+                `⚠️ Supprimer définitivement la sélection ?\n\n` +
+                  `Éléments racines: ${roots.length}\n` +
+                  `Exclusions: ${excluded.length}\n\n` +
+                  `Cette action est irréversible.`
+              );
+              if (!ok) return;
+
+              deleteSelectionInBin.mutate({ roots, excluded });
+            }}
+            disabled={deleteSelectionInBin.isPending}
+            className="px-4 py-2 rounded bg-red-600/20 border-red-600 hover:bg-red-600/20 disabled:opacity-50 cursor-pointer"
+            title="Supprimer la sélection"
+          >
+            {deleteSelectionInBin.isPending
+              ? 'Suppression…'
+              : `🗑️ Supprimer la sélection (${selectionRootsCount})`}
           </button>
         </div>
       )}

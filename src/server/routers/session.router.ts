@@ -1,10 +1,10 @@
 import { router, protectedProcedure, publicProcedure } from "@server/trpc/core";
-import { requirePermission } from "./middleware";
+import { isAdmin, requirePermission } from "./middleware";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+// import { TRPCError } from "@trpc/server";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 /**
  * Utils
@@ -21,7 +21,7 @@ const cleanExpiredSessions = async (prisma: PrismaClient) => {
 
 export const sessionRouter = router({
   update: protectedProcedure
-    .use(requirePermission("manage_sessions"))
+    .use(isAdmin)
     .input(z.object({
       id: z.string(),
       token: z.string(),
@@ -34,7 +34,8 @@ export const sessionRouter = router({
       return ctx.prisma.session.update({
         where: { id: input.id },
         data: {
-          token: input.token,
+          // token: input.token,
+          ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
         },
       });
     }),

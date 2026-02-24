@@ -1,5 +1,5 @@
 import { protectedProcedure, router } from "@/server/trpc/core";
-import { requirePermission } from "./middleware";
+import { isAdmin, requirePermission } from "./middleware";
 import { z } from "zod";
 
 export const roleRouter = router({
@@ -75,29 +75,34 @@ export const roleRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_roles"))
-    .input(z.object({ id: z.number(), name: z.string().min(1), description: z.string(), permissions: z.array(z.number().int().positive()).min(1, "Vous devez choisir au moins une permission"), }))
+    .use(isAdmin)
+    .input(
+      z.object({
+        id: z.number().int(),
+        name: z.string().min(1),
+        permissions: z.array(z.number().int()).default([]),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      const role = await ctx.prisma.role.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!role) {
-        throw new Error("Role not found");
-      }
+      const roleId = input.id;
 
       return ctx.prisma.role.update({
-        where: { id: input.id },
+        where: { id: roleId },
         data: {
           name: input.name,
-          description: input.description,
           permissions: {
-            set: input.permissions.map((id) => ({ permissionId: id })),
+            // ✅ compound unique key
+            set: input.permissions.map((permissionId) => ({
+              roleId_permissionId: { roleId, permissionId },
+            })),
           },
-        }
-      })
+        },
+        include: {
+          permissions: { include: { permission: true } },
+        },
+      });
     }),
-
+    
   delete: protectedProcedure
     .use(requirePermission("manage_roles"))
     .input(z.object({ id: z.number() }))

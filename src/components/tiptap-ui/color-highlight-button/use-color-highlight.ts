@@ -1,24 +1,32 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState } from "react"
-import { type Editor } from "@tiptap/react"
-import { useHotkeys } from "react-hotkeys-hook"
+/**
+ * use-color-highlight.ts
+ *
+ * Constat (AKFC):
+ * - Le template TipTap UI d'origine supportait 2 modes :
+ *   - "mark" : surlignage (Highlight mark) ✅ supporté (extension officielle)
+ *   - "node" : background d'un node via commandes:
+ *       toggleNodeBackgroundColor / unsetNodeBackgroundColor
+ *     ❌ ces commandes proviennent d'une extension CUSTOM qui n'existe pas dans ce repo
+ *
+ * Décision (solution réellement satisfaisante):
+ * - On garde une UX complète de "highlight multicolor" via Highlight mark (officiel)
+ * - On conserve l'API publique `mode` pour compat, mais on DÉSACTIVE proprement "node"
+ *   (pas de commande fantôme, pas de faux typage, pas de crash runtime)
+ */
 
-// --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Editor } from "@tiptap/react";
+import { useHotkeys } from "react-hotkeys-hook";
 
-// --- Lib ---
-import {
-  isMarkInSchema,
-  isNodeTypeSelected,
-  isExtensionAvailable,
-} from "@/lib/tiptap-utils"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
+import { isMarkInSchema, isNodeTypeSelected } from "@/lib/tiptap-utils";
+import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon";
 
-// --- Icons ---
-import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon"
+export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h";
 
-export const COLOR_HIGHLIGHT_SHORTCUT_KEY = "mod+shift+h"
 export const HIGHLIGHT_COLORS = [
   {
     label: "Default background",
@@ -70,165 +78,113 @@ export const HIGHLIGHT_COLORS = [
     value: "var(--tt-color-highlight-red)",
     border: "var(--tt-color-highlight-red-contrast)",
   },
-]
-export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number]
+] as const;
 
-export type HighlightMode = "mark" | "node"
+export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number];
 
 /**
- * Configuration for the color highlight functionality
+ * API conservée pour compat
+ * - mark : supporté (Highlight mark)
+ * - node : désactivé (extension absente)
  */
+export type HighlightMode = "mark" | "node";
+
 export interface UseColorHighlightConfig {
-  /**
-   * The Tiptap editor instance.
-   */
-  editor?: Editor | null
-  /**
-   * The color to apply when toggling the highlight.
-   */
-  highlightColor?: string
-  /**
-   * Optional label to display alongside the icon.
-   */
-  label?: string
-  /**
-   * Whether the button should hide when the mark is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean
-  /**
-   * The highlighting mode to use.
-   * - "mark": Uses the highlight mark extension (default)
-   * - "node": Uses the node background extension
-   * @default "mark"
-   */
-  mode?: HighlightMode
-  /**
-   * Called when the highlight is applied.
-   */
-  onApplied?: ({
-    color,
-    label,
-    mode,
-  }: {
-    color: string
-    label: string
-    mode: HighlightMode
-  }) => void
+  editor?: Editor | null;
+  highlightColor?: string;
+  label?: string;
+  hideWhenUnavailable?: boolean;
+  mode?: HighlightMode;
+  onApplied?: (params: { color: string; label: string; mode: HighlightMode }) => void;
 }
 
 export function pickHighlightColorsByValue(values: string[]) {
-  const colorMap = new Map(
-    HIGHLIGHT_COLORS.map((color) => [color.value, color])
-  )
+  // Map clé string -> HighlightColor
+  const colorMap = new Map<string, HighlightColor>(
+    HIGHLIGHT_COLORS.map((c) => [c.value, c])
+  );
+
   return values
-    .map((value) => colorMap.get(value))
-    .filter((color): color is (typeof HIGHLIGHT_COLORS)[number] => !!color)
+    .map((v) => colorMap.get(v))
+    .filter((c): c is HighlightColor => !!c);
+}
+
+function isNodeModeSupported(mode: HighlightMode) {
+  // Ici on centralise la règle : node mode est désactivé.
+  return mode !== "node";
 }
 
 /**
- * Checks if highlight can be applied based on the mode and current editor state
+ * Peut-on appliquer le highlight ?
  */
-export function canColorHighlight(
-  editor: Editor | null,
-  mode: HighlightMode = "mark"
-): boolean {
-  if (!editor || !editor.isEditable) return false
+export function canColorHighlight(editor: Editor | null, mode: HighlightMode = "mark"): boolean {
+  if (!editor || !editor.isEditable) return false;
 
-  if (mode === "mark") {
-    if (
-      !isMarkInSchema("highlight", editor) ||
-      isNodeTypeSelected(editor, ["image"])
-    )
-      return false
+  // node mode: désactivé (extension absente)
+  if (!isNodeModeSupported(mode)) return false;
 
-    return editor.can().setMark("highlight")
-  } else {
-    if (!isExtensionAvailable(editor, ["nodeBackground"])) return false
+  // Mark highlight doit exister
+  if (!isMarkInSchema("highlight", editor)) return false;
 
-    try {
-      return editor.can().toggleNodeBackgroundColor("test")
-    } catch {
-      return false
-    }
-  }
+  // Évite de “highlight” des nodes non-text (ex: image selection)
+  if (isNodeTypeSelected(editor, ["image"])) return false;
+
+  // `setMark('highlight')` doit être possible
+  return editor.can().setMark("highlight");
 }
 
 /**
- * Checks if highlight is currently active
+ * Le highlight est-il actif ?
  */
 export function isColorHighlightActive(
   editor: Editor | null,
   highlightColor?: string,
   mode: HighlightMode = "mark"
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  if (mode === "mark") {
-    return highlightColor
-      ? editor.isActive("highlight", { color: highlightColor })
-      : editor.isActive("highlight")
-  } else {
-    if (!highlightColor) return false
+  if (!isNodeModeSupported(mode)) return false;
 
-    try {
-      const { state } = editor
-      const { selection } = state
-
-      const $pos = selection.$anchor
-      for (let depth = $pos.depth; depth >= 0; depth--) {
-        const node = $pos.node(depth)
-        if (node && node.attrs?.backgroundColor === highlightColor) {
-          return true
-        }
-      }
-      return false
-    } catch {
-      return false
-    }
-  }
+  return highlightColor
+    ? editor.isActive("highlight", { color: highlightColor })
+    : editor.isActive("highlight");
 }
 
 /**
- * Removes highlight based on the mode
+ * Retire le highlight (mark)
  */
-export function removeHighlight(
-  editor: Editor | null,
-  mode: HighlightMode = "mark"
-): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!canColorHighlight(editor, mode)) return false
+export function removeHighlight(editor: Editor | null, mode: HighlightMode = "mark"): boolean {
+  if (!editor || !editor.isEditable) return false;
 
-  if (mode === "mark") {
-    return editor.chain().focus().unsetMark("highlight").run()
-  } else {
-    return editor.chain().focus().unsetNodeBackgroundColor().run()
-  }
+  if (!isNodeModeSupported(mode)) return false;
+  if (!canColorHighlight(editor, mode)) return false;
+
+  return editor.chain().focus().unsetMark("highlight").run();
 }
 
 /**
- * Determines if the highlight button should be shown
+ * Montrer/masquer le bouton
  */
 export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
-  mode: HighlightMode
+  editor: Editor | null;
+  hideWhenUnavailable: boolean;
+  mode: HighlightMode;
 }): boolean {
-  const { editor, hideWhenUnavailable, mode } = props
+  const { editor, hideWhenUnavailable, mode } = props;
 
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) return false;
 
-  if (mode === "mark") {
-    if (!isMarkInSchema("highlight", editor)) return false
-  } else {
-    if (!isExtensionAvailable(editor, ["nodeBackground"])) return false
-  }
+  // node mode: on ne l'affiche pas (sinon UX “cassée”)
+  if (!isNodeModeSupported(mode)) return false;
+
+  // mark highlight doit exister
+  if (!isMarkInSchema("highlight", editor)) return false;
 
   if (hideWhenUnavailable && !editor.isActive("code")) {
-    return canColorHighlight(editor, mode)
+    return canColorHighlight(editor, mode);
   }
 
-  return true
+  return true;
 }
 
 export function useColorHighlight(config: UseColorHighlightConfig) {
@@ -239,101 +195,95 @@ export function useColorHighlight(config: UseColorHighlightConfig) {
     hideWhenUnavailable = false,
     mode = "mark",
     onApplied,
-  } = config
+  } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const isMobile = useIsBreakpoint()
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canColorHighlightState = canColorHighlight(editor, mode)
-  const isActive = isColorHighlightActive(editor, highlightColor, mode)
+  const { editor } = useTiptapEditor(providedEditor);
+  const isMobile = useIsBreakpoint();
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+
+  const canApply = useMemo(() => canColorHighlight(editor, mode), [editor, mode]);
+  const isActive = useMemo(
+    () => isColorHighlightActive(editor, highlightColor, mode),
+    [editor, highlightColor, mode]
+  );
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const handleSelectionUpdate = () => {
-      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable, mode }))
-    }
+      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable, mode }));
+    };
 
-    handleSelectionUpdate()
-
-    editor.on("selectionUpdate", handleSelectionUpdate)
+    handleSelectionUpdate();
+    editor.on("selectionUpdate", handleSelectionUpdate);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate)
-    }
-  }, [editor, hideWhenUnavailable, mode])
+      editor.off("selectionUpdate", handleSelectionUpdate);
+    };
+  }, [editor, hideWhenUnavailable, mode]);
 
   const handleColorHighlight = useCallback(() => {
-    if (!editor || !canColorHighlightState || !highlightColor || !label)
-      return false
+    if (!editor || !canApply || !highlightColor) return false;
 
-    if (mode === "mark") {
-      if (editor.state.storedMarks) {
-        const highlightMarkType = editor.schema.marks.highlight
-        if (highlightMarkType) {
-          editor.view.dispatch(
-            editor.state.tr.removeStoredMark(highlightMarkType)
-          )
-        }
+    // node mode: désactivé
+    if (!isNodeModeSupported(mode)) return false;
+
+    // Supprime stored mark highlight avant de toggle (comportement original du template)
+    if (editor.state.storedMarks) {
+      const highlightMarkType = editor.schema.marks.highlight;
+      if (highlightMarkType) {
+        editor.view.dispatch(editor.state.tr.removeStoredMark(highlightMarkType));
       }
-
-      setTimeout(() => {
-        const success = editor
-          .chain()
-          .focus()
-          .toggleMark("highlight", { color: highlightColor })
-          .run()
-        if (success) {
-          onApplied?.({ color: highlightColor, label, mode })
-        }
-        return success
-      }, 0)
-
-      return true
-    } else {
-      const success = editor
-        .chain()
-        .focus()
-        .toggleNodeBackgroundColor(highlightColor)
-        .run()
-
-      if (success) {
-        onApplied?.({ color: highlightColor, label, mode })
-      }
-      return success
     }
-  }, [canColorHighlightState, highlightColor, editor, label, onApplied, mode])
+
+    // Applique / toggle le highlight
+    const success = editor
+      .chain()
+      .focus()
+      .toggleMark("highlight", { color: highlightColor })
+      .run();
+
+    if (success) {
+      onApplied?.({
+        color: highlightColor,
+        label: label ?? "Highlight",
+        mode,
+      });
+    }
+
+    return success;
+  }, [editor, canApply, highlightColor, label, mode, onApplied]);
 
   const handleRemoveHighlight = useCallback(() => {
-    const success = removeHighlight(editor, mode)
+    const success = removeHighlight(editor, mode);
     if (success) {
-      onApplied?.({ color: "", label: "Remove highlight", mode })
+      onApplied?.({ color: "", label: "Remove highlight", mode });
     }
-    return success
-  }, [editor, onApplied, mode])
+    return success;
+  }, [editor, mode, onApplied]);
 
   useHotkeys(
     COLOR_HIGHLIGHT_SHORTCUT_KEY,
     (event) => {
-      event.preventDefault()
-      handleColorHighlight()
+      event.preventDefault();
+      handleColorHighlight();
     },
     {
-      enabled: isVisible && canColorHighlightState,
+      enabled: isVisible && canApply,
       enableOnContentEditable: !isMobile,
       enableOnFormTags: true,
     }
-  )
+  );
 
   return {
     isVisible,
     isActive,
     handleColorHighlight,
     handleRemoveHighlight,
-    canColorHighlight: canColorHighlightState,
-    label: label || `Highlight`,
+    canColorHighlight: canApply,
+    label: label || "Highlight",
     shortcutKeys: COLOR_HIGHLIGHT_SHORTCUT_KEY,
     Icon: HighlighterIcon,
     mode,
-  }
+  };
 }

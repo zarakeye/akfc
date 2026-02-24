@@ -4,6 +4,8 @@ import React, {
   Dispatch,
   JSX,
   SetStateAction,
+  useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -14,12 +16,9 @@ import type { DragSource, MoveTarget } from '@/shared/cloudinary/move.types';
 import type { MoveIntent } from '@/server/cloudinary/schemas/move.schema';
 
 import { useSelectionStore } from '@/lib/stores/useSelectionStore';
-import { isItemSelected } from '@/lib/selection/selection.utils';
 import { useLongPress } from '@/lib/stores/useLongPress';
 
 import { canMove } from '@/server/cloudinary/move.guards';
-
-// ✅ ghost IDENTIQUE à la grid
 import { startDragGhost } from '@/components/cloudinary-finder/SelectedFolderContent/dragGhost.manager';
 
 type Props = {
@@ -36,13 +35,74 @@ type Props = {
   setOpenFolders: Dispatch<SetStateAction<Set<string>>>;
 };
 
+type TriState = 'checked' | 'indeterminate' | 'unchecked';
+
+function normalizePath(p: string) {
+  return p.replace(/^\/+|\/+$/g, '');
+}
+
 /**
- * FolderNodeComponent (Tree)
- * - ✅ Multi-select (checkbox) via useSelectionStore
- * - ✅ DnD : utilise dragGhost.manager.ts => rendu 100% identique à la grid
- * - ✅ data-drop-* compatibles dragGhost.manager.ts
- * - ✅ FIX: pile de ghosts = on passe la LISTE COMPLETE, le manager fait slice(0,3)+compteur+dx/dy
+ * pending/published/bin = “status roots” => pas de checkbox.
+ *
+ * Convention actuelle :
+ * - <appRoot>/<status>
  */
+function isStatusRootFolder(fullPath: string): boolean {
+  const parts = normalizePath(fullPath).split('/').filter(Boolean);
+  if (parts.length !== 2) return false;
+  return parts[1] === 'pending' || parts[1] === 'published' || parts[1] === 'bin';
+}
+
+/**
+ * ✅ Tri-state basé sur roots/excluded (pas sur les enfants chargés).
+ *
+ * Pourquoi ?
+ * - En tree view, un folder peut être fermé => ses descendants ne sont pas dans le DOM.
+ * - L'état du checkbox doit refléter le store (roots/excluded), pas seulement les enfants visibles.
+ *
+ * Règles :
+ * - checked:
+ *   - le folder est sélectionné (isSelected(folderPath) = true)
+ *   - ET il n'existe aucune exclusion sous ce folder
+ * - indeterminate:
+ *   - le folder n'est pas sélectionné mais un descendant root l'est
+ *   - OU le folder est sélectionné mais on a des exclusions sous lui
+ * - unchecked:
+ *   - rien de sélectionné dans ce sous-arbre
+ */
+function getFolderTriState(params: {
+  folderPath: string;
+  roots: Set<string>;
+  excluded: Set<string>;
+  isSelected: (path: string) => boolean;
+}): TriState {
+  const { folderPath, roots, excluded, isSelected } = params;
+
+  const selectedSelf = isSelected(folderPath);
+
+  // descendant root ? (si oui, le parent devient indeterminate)
+  let hasDescendantRoot = false;
+  for (const r of roots) {
+    if (r !== folderPath && r.startsWith(`${folderPath}/`)) {
+      hasDescendantRoot = true;
+      break;
+    }
+  }
+
+  // exclusion sous le folder ? (si oui et folder sélectionné => indeterminate)
+  let hasExcludedInside = false;
+  for (const ex of excluded) {
+    if (ex === folderPath || ex.startsWith(`${folderPath}/`)) {
+      hasExcludedInside = true;
+      break;
+    }
+  }
+
+  if (selectedSelf) return hasExcludedInside ? 'indeterminate' : 'checked';
+  if (hasDescendantRoot) return 'indeterminate';
+  return 'unchecked';
+}
+
 export default function FolderNodeComponent({
   folder,
   currentPath,
@@ -59,22 +119,59 @@ export default function FolderNodeComponent({
   const [isOver, setIsOver] = useState(false);
   const [isForbidden, setIsForbidden] = useState(false);
 
-  const { selection, startSelection, toggleItem, clearSelection } =
-    useSelectionStore();
+  const {
+    selection,
+    startSelection,
+    toggleItem,
+    clearSelection,
+    isSelected,
+    uncheckFolderPreserveDescendants,
+  } = useSelectionStore();
 
-  const selected = isItemSelected(folder.fullPath, selection);
+  const statusRoot = useMemo(() => isStatusRootFolder(folder.fullPath), [folder.fullPath]);
 
-  // ✅ empêche le “click parasite” quand on relâche après longpress
+  const tri = useMemo(
+    () =>
+      getFolderTriState({
+        folderPath: folder.fullPath,
+        roots: selection.roots,
+        excluded: selection.excluded,
+        isSelected,
+      }),
+    [folder.fullPath, selection.roots, selection.excluded, isSelected]
+  );
+
+  /**
+   * ✅ “Actionnable” = UNIQUEMENT les éléments validés.
+   *
+   * Spéc demandé : en multiselect,
+   * - checked => peut subir action
+   * - indeterminate => NE DOIT PAS subir action
+   */
+  const isValidated = tri === 'checked';
+
+  // indeterminate reste visuel, mais non-actionnable
+  const rowHighlighted = tri !== 'unchecked';
+
+  const checkboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!checkboxRef.current) return;
+    checkboxRef.current.indeterminate = tri === 'indeterminate';
+  }, [tri]);
+
   const longPressFiredRef = useRef(false);
 
   const longPressHandlers = useLongPress(() => {
+    // ✅ Status roots : pas de multiselect dessus
+    if (statusRoot) return;
+
     longPressFiredRef.current = true;
     startSelection(folder.fullPath);
   });
 
   function buildDragSource(): DragSource {
-    // ✅ multi-select & item sélectionné => payload selection
-    if (multiSelectActive && selected) {
+    // ✅ multiselect + élément validé => selection
+    if (multiSelectActive && isValidated) {
       return {
         type: 'selection',
         roots: Array.from(selection.roots),
@@ -82,32 +179,27 @@ export default function FolderNodeComponent({
       };
     }
 
-    // ✅ multi-select mais item NON sélectionné => reset + drag uniquement lui
-    if (multiSelectActive && !selected) {
+    // ✅ multiselect + indeterminate => pas d'action (on évite le move/delete involontaire)
+    if (multiSelectActive && tri === 'indeterminate') {
+      // on renvoie un drag source “neutre” (mais on désactive draggable en amont)
+      return { type: 'folder', fullPath: folder.fullPath };
+    }
+
+    // ✅ multiselect + item non sélectionné => reset + drag uniquement ce folder
+    // (comportement conservé)
+    if (multiSelectActive && tri === 'unchecked') {
       clearSelection();
       return { type: 'folder', fullPath: folder.fullPath };
     }
 
-    // ✅ mode normal
     return { type: 'folder', fullPath: folder.fullPath };
   }
 
-  /**
-   * ✅ FIX IMPORTANT (pile identique grid)
-   * On NE coupe PAS à 3 ici.
-   * On renvoie la liste complète => dragGhost.manager.ts gère:
-   * - slice(0,3) pour affichage
-   * - compteur si > 3
-   * - dx/dy pour la pile
-   */
   function buildFolderPreviewsForGhost(source: DragSource): { kind: 'folder'; name: string }[] {
     if (source.type === 'selection') {
       const excluded = new Set(source.excluded ?? []);
       const roots = (source.roots ?? []).filter((p) => !excluded.has(p));
 
-      // ⚠️ ici on reste sur "roots" (pas d’expansion descendants),
-      // exactement comme ta logique selection roots/excluded.
-      // => pile visible dès que tu as plusieurs roots sélectionnés.
       const previews = roots.map((p) => {
         const parts = p.split('/');
         const name = parts[parts.length - 1] || p;
@@ -120,26 +212,15 @@ export default function FolderNodeComponent({
     return [{ kind: 'folder' as const, name: folder.name }];
   }
 
-  // -----------------------
-  // Drag (source)
-  // -----------------------
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     const source = buildDragSource();
 
     e.dataTransfer.setData('application/cloudinary', JSON.stringify(source));
     e.dataTransfer.effectAllowed = 'move';
 
-    // ✅ ghost IDENTIQUE grid (pile + badge + compteur gérés par manager)
-    startDragGhost({
-      e,
-      source,
-      previews: buildFolderPreviewsForGhost(source),
-    });
+    startDragGhost({ e, source, previews: buildFolderPreviewsForGhost(source) });
   };
 
-  // -----------------------
-  // Drop (target)
-  // -----------------------
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
@@ -155,10 +236,8 @@ export default function FolderNodeComponent({
       const target: MoveTarget = { type: 'folder', fullPath: folder.fullPath };
 
       const ok = canMove(source, target);
-
       setIsOver(true);
       setIsForbidden(!ok);
-
       e.dataTransfer.dropEffect = ok ? 'move' : 'none';
     } catch {
       setIsOver(true);
@@ -186,36 +265,70 @@ export default function FolderNodeComponent({
       const target: MoveTarget = { type: 'folder', fullPath: folder.fullPath };
 
       if (!canMove(source, target)) return;
-
-      const intent: MoveIntent = { source, target };
-      onMove(intent);
+      onMove({ source, target });
     } catch (err) {
       console.error('[FolderNodeComponent] Invalid drop payload', err);
     }
   };
 
-  // -----------------------
-  // Toggle + navigation
-  // -----------------------
+  const subFolders = folder.children.filter((child): child is FolderNode => child.type === 'folder');
+
+  /**
+   * Row click
+   * - Multi-select:
+   *   - status root => navigation (onOpen) (pas de sélection)
+   *   - normal folder => toggle
+   * - Normal:
+   *   - navigation
+   */
   const handleRowClick = () => {
     if (multiSelectActive) {
+      if (statusRoot) {
+        onOpen(folder.fullPath);
+        return;
+      }
       toggleItem(folder.fullPath);
       return;
     }
     onOpen(folder.fullPath);
   };
 
-  const subFolders = folder.children.filter(
-    (child): child is FolderNode => child.type === 'folder'
-  );
+  /**
+   * Checkbox change
+   * - status roots: pas de checkbox
+   * - uncheck d'un folder root validé => garder descendance cochée
+   * - sinon toggle standard
+   */
+  const handleCheckboxChange = () => {
+    if (statusRoot) return;
+
+    const isRoot = selection.roots.has(folder.fullPath);
+
+    // ✅ spécial: uncheck d'un folder root validé => on garde la descendance cochée
+    if (tri === 'checked' && isRoot) {
+      const directChildrenPaths = folder.children.map((c) => c.fullPath);
+      uncheckFolderPreserveDescendants(folder.fullPath, directChildrenPaths);
+      return;
+    }
+
+    toggleItem(folder.fullPath);
+  };
+
+  // ✅ Désactivation des actions sur les dossiers indéterminés
+  // - ils restent visibles, mais ne peuvent pas être draggés (action).
+  // - les folders status restent draggables en mode normal (utile), mais pas en multiselect.
+  const draggable = !multiSelectActive
+    ? true
+    : !statusRoot && tri !== 'indeterminate';
 
   return (
     <div className="select-none">
       <div
+        data-tree-item="true"
         data-drop-type="folder"
         data-drop-path={folder.fullPath}
-        draggable
-        onDragStart={handleDragStart}
+        draggable={draggable}
+        onDragStart={draggable ? handleDragStart : undefined}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -234,19 +347,28 @@ export default function FolderNodeComponent({
           isActive && !multiSelectActive && 'bg-blue-100 text-blue-700',
           isOver && !isForbidden && 'bg-emerald-400/15',
           isOver && isForbidden && 'bg-rose-400/15',
-          multiSelectActive && selected && 'bg-gray-200',
-          multiSelectActive && !selected && 'hover:bg-gray-100'
+
+          // background: sélection visuelle (checked OU indeterminate)
+          multiSelectActive && rowHighlighted && 'bg-gray-200',
+          multiSelectActive && !rowHighlighted && 'hover:bg-gray-100'
         )}
       >
-        {/* Checkbox */}
-        {multiSelectActive ? (
+        {/* Checkbox : pas sur les status roots */}
+        {multiSelectActive && !statusRoot ? (
           <input
+            ref={checkboxRef}
             type="checkbox"
-            checked={selected}
-            onChange={() => toggleItem(folder.fullPath)}
+            checked={tri === 'checked'}
+            onChange={handleCheckboxChange}
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
+            className="h-4 w-4 accent-blue-600"
+            title={
+              tri === 'indeterminate'
+                ? 'Sélection partielle (indéterminée) — aucune action ne s’applique sur ce dossier'
+                : 'Sélectionner ce dossier'
+            }
           />
         ) : (
           <span className="w-4 inline-block" />
@@ -287,9 +409,7 @@ export default function FolderNodeComponent({
                 if (multiSelectActive) return;
                 setOpenFolders((prev) => {
                   const next = new Set(prev);
-                  next.has(child.fullPath)
-                    ? next.delete(child.fullPath)
-                    : next.add(child.fullPath);
+                  next.has(child.fullPath) ? next.delete(child.fullPath) : next.add(child.fullPath);
                   return next;
                 });
               }}

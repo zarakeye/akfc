@@ -3,9 +3,11 @@
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
 import type { RootNode, FolderNode } from '../types';
+
 import VirtualFolderNodeComponent from '@components/cloudinary-finder/TreeView/VirtualFolderNodeComponent';
-import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import FolderNodeComponent from '@/components/cloudinary-finder/TreeView/FolderNodeComponent';
+
+import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import { useSelectionStore } from '@/lib/stores/useSelectionStore';
 
 type Props = {
@@ -41,13 +43,9 @@ function collectAllFolderPaths(roots: RootNode[]): string[] {
   return acc;
 }
 
-export function TreeView({
-  roots,
-  currentPath,
-  onOpen,
-  onMove,
-}: Props): JSX.Element {
+export function TreeView({ roots, currentPath, onOpen, onMove }: Props): JSX.Element {
   const multiSelectActive = useSelectionStore((s) => s.multiSelectActive);
+  const clearSelection = useSelectionStore((s) => s.clearSelection);
 
   /**
    * ✅ State centralisé pour l’ouverture des folders du Tree.
@@ -95,7 +93,27 @@ export function TreeView({
   }
 
   return (
-    <div className="space-y-1">
+    <div
+      className="space-y-1"
+      /**
+       * ✅ UX : sortir du multiselect UNIQUEMENT si clic "dans le vide" du panneau Tree.
+       * On considère comme "pas le vide" tout élément qui est dans un item marqué data-tree-item="true".
+       *
+       * Pourquoi capture ?
+       * - pour attraper le clic tôt, mais
+       * - comme tes checkboxes stopPropagation + closest() protège, ça ne sort pas du multiselect
+       *   quand tu cliques un item.
+       */
+      onMouseDownCapture={(e) => {
+        if (!multiSelectActive) return;
+
+        const el = e.target as Element | null;
+        if (!el) return;
+
+        const insideTreeItem = el.closest('[data-tree-item="true"]');
+        if (!insideTreeItem) clearSelection();
+      }}
+    >
       {roots.map((node) => {
         if (node.type === 'virtual-folder') {
           return (
@@ -106,8 +124,8 @@ export function TreeView({
               onOpen={onOpen}
               onMove={onMove}
               /**
-               * ✅ Nouveau : TreeView informe les nodes du mode multi-select
-               * pour qu’ils masquent leurs chevrons/affichages
+               * Si ton VirtualFolderNodeComponent rend une ligne clickable,
+               * assure-toi qu'il met data-tree-item="true" dessus.
                */
               // multiSelectActive={multiSelectActive}
             />
@@ -121,18 +139,9 @@ export function TreeView({
             currentPath={currentPath}
             onOpen={onOpen}
             onMove={onMove}
-            /**
-             * ✅ Nouveau : open contrôlé par TreeView
-             */
             isOpen={openFolders.has(node.fullPath)}
             onToggleOpen={() => toggleFolder(node.fullPath)}
-            /**
-             * ✅ Nouveau : masque chevrons en multi-select
-             */
             multiSelectActive={multiSelectActive}
-            /**
-             * ✅ Nouveau : openFolders partagé pour récursivité
-             */
             openFolders={openFolders}
             setOpenFolders={setOpenFolders}
           />

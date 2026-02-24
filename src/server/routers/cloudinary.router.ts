@@ -10,6 +10,7 @@ import { moveSchema } from "@server/cloudinary/schemas/move.schema";
 import { mapCloudinaryFolderToClient } from "@server/mappers/cloudinary/tree.v1.mapper";
 import { buildCloudinaryTreeV1 } from "@server/cloudinary/tree";
 import { prisma } from "@server/prisma";
+import { replaceStatusSegment } from "@server/cloudinary/utils/cloudinary.utils";
 
 const PROJECT_ROOT = process.env.APP_SHORT_NAME || "my-app";
 
@@ -23,9 +24,19 @@ function assertSafePath(path: string) {
 }
 
 /**
- * Ex: "my-app/pending/a/b/file" =>
- * folder ancestors: ["my-app/pending", "my-app/pending/a", "my-app/pending/a/b"]
+ * Interdit toute opération "cloudinaryRouter" sur le storage caché du bin.
+ *
+ * Pourquoi :
+ * - Un contenu placé en corbeille est immuable (lecture / restore / deleteForever uniquement).
+ * - Toute mutation sur `.trash` doit passer par `trashRouter`.
  */
+function assertNotInTrashStorage(path: string) {
+  const p = normalizePath(path);
+  if (p.startsWith(`${PROJECT_ROOT}/bin/.trash/`)) {
+    throw new Error("Forbidden operation on trash storage. Use trashRouter.");
+  }
+}
+
 function folderAncestorsOfPublicId(publicId: string): string[] {
   const parts = normalizePath(publicId).split("/").filter(Boolean);
   if (parts.length < 2) return [];
@@ -40,10 +51,6 @@ function folderAncestorsOfPublicId(publicId: string): string[] {
   return out;
 }
 
-/**
- * Ex: "my-app/pending/a/b" =>
- * ["my-app/pending", "my-app/pending/a", "my-app/pending/a/b"]
- */
 function folderAncestorsOfFolderPath(folderPath: string): string[] {
   const parts = normalizePath(folderPath).split("/").filter(Boolean);
   const out: string[] = [];
@@ -53,12 +60,15 @@ function folderAncestorsOfFolderPath(folderPath: string): string[] {
   return out;
 }
 
+/**
+ * Déduit le status à partir du path.
+ * Convention: my-app/<status>/...
+ */
 function statusFromPath(path: string): "pending" | "published" | "bin" {
-  // Convention actuelle: my-app/<status>/...
   const parts = normalizePath(path).split("/").filter(Boolean);
   const status = parts[1];
   if (status === "pending" || status === "published" || status === "bin") return status;
-  // fallback (ne devrait pas arriver si tes paths respectent la convention)
+  // fallback (ne devrait pas arriver si les paths respectent la convention)
   return "pending";
 }
 
@@ -66,7 +76,7 @@ type CloudinaryResourceType = "image" | "video" | "raw";
 
 /**
  * Renommer un asset Cloudinary (authenticated) de manière robuste.
- * (Cloudinary exige souvent le bon resource_type.)
+ * Cloudinary exige souvent le bon resource_type.
  */
 async function renameAuthenticatedResource(fromPublicId: string, toPublicId: string) {
   const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
@@ -86,6 +96,49 @@ async function renameAuthenticatedResource(fromPublicId: string, toPublicId: str
   }
 
   throw lastError ?? new Error("Rename failed (unknown error)");
+}
+
+/**
+ * Détruire un asset Cloudinary (authenticated) de manière robuste.
+ * Les typings Cloudinary exigent parfois resource_type => on teste image/video/raw.
+ */
+async function destroyAuthenticatedResource(publicId: string) {
+  const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
+  let lastError: unknown = null;
+
+  for (const resource_type of resourceTypes) {
+    try {
+      await cloudinary.uploader.destroy(publicId, {
+        type: "authenticated",
+        resource_type,
+      });
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError ?? new Error("Destroy failed (unknown error)");
+}
+
+/**
+ * Supprimer par préfixe en authenticated (robuste).
+ *
+ * Pourquoi :
+ * - Les typings Cloudinary pour `api.delete_resources_by_prefix` varient selon version.
+ * - Sur certains projets TS, `type:"authenticated"` n'est pas accepté par les types.
+ * - On centralise ici avec un cast minimal pour rester compatible.
+ */
+async function deleteAuthenticatedByPrefix(prefix: string) {
+  const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
+
+  for (const resource_type of resourceTypes) {
+    // cast minimal pour supporter les variations de typings
+    await (cloudinary.api).delete_resources_by_prefix(prefix, {
+      type: "authenticated",
+      resource_type,
+    });
+  }
 }
 
 /**
@@ -111,6 +164,7 @@ async function renameFolderPrefixOnCloudinary(fromPrefix: string, toPrefix: stri
       for (const asset of res.resources ?? []) {
         const from = asset.public_id as string;
         const to = from.replace(fromPrefix, toPrefix);
+
         await cloudinary.uploader.rename(from, to, {
           type: "authenticated",
           resource_type,
@@ -124,7 +178,8 @@ async function renameFolderPrefixOnCloudinary(fromPrefix: string, toPrefix: stri
 }
 
 /**
- * Upsert un ensemble de folders (ancêtres inclus)
+ * Upsert un ensemble de folders (ancêtres inclus).
+ * Important pour “matérialiser” en DB des dossiers rencontrés via Cloudinary.
  */
 async function upsertFolders(paths: string[]) {
   const unique = Array.from(new Set(paths)).filter(Boolean);
@@ -146,6 +201,55 @@ async function upsertFolders(paths: string[]) {
   );
 }
 
+/**
+ * ✅ DB SYNC: déplacer/renommer des dossiers “DB-only” sous un préfixe.
+ *
+ * Pourquoi :
+ * - Cloudinary n'a pas de dossiers réels.
+ * - Un dossier vide (placeholder DB) n'a pas d'assets => moveService ne “voit” rien.
+ * - Donc si on glisse ce dossier vers /bin (ou autre status), la DB doit être renommée.
+ *
+ * Comment :
+ * - on récupère tous les CloudinaryFolder sous fromPrefix (lui-même + descendants)
+ * - on calcule le newFullPath sous toPrefix
+ * - on upsert la destination (au cas où elle existe déjà)
+ * - on supprime l'ancien en transaction
+ */
+async function moveDbFoldersPrefix(params: {
+  fromPrefix: string;
+  toPrefix: string;
+  nextStatus: "pending" | "published" | "bin";
+}) {
+  const { fromPrefix, toPrefix, nextStatus } = params;
+
+  const rows = await prisma.cloudinaryFolder.findMany({
+    where: {
+      appRoot: PROJECT_ROOT,
+      OR: [{ fullPath: fromPrefix }, { fullPath: { startsWith: `${fromPrefix}/` } }],
+    },
+    select: { id: true, fullPath: true },
+  });
+
+  if (!rows.length) return;
+
+  await prisma.$transaction(async (tx) => {
+    for (const row of rows) {
+      const newFullPath =
+        row.fullPath === fromPrefix
+          ? toPrefix
+          : `${toPrefix}${row.fullPath.slice(fromPrefix.length)}`;
+
+      await tx.cloudinaryFolder.upsert({
+        where: { appRoot_fullPath: { appRoot: PROJECT_ROOT, fullPath: newFullPath } },
+        create: { appRoot: PROJECT_ROOT, fullPath: newFullPath, status: nextStatus },
+        update: { status: nextStatus },
+      });
+
+      await tx.cloudinaryFolder.delete({ where: { id: row.id } });
+    }
+  });
+}
+
 export const cloudinaryRouter = router({
   /**
    * ✅ Tree Finder (DB folders + Cloudinary files)
@@ -162,7 +266,7 @@ export const cloudinaryRouter = router({
       const resources = await listAuthenticatedResources(normalizedPath);
 
       // 2) Sync opportuniste DB: créer/assurer les dossiers ancêtres des assets
-      const discoveredFolderPaths = resources.flatMap((r: typeof resources[0]) => folderAncestorsOfPublicId(r.publicId));
+      const discoveredFolderPaths = resources.flatMap((r: { publicId: string }) => folderAncestorsOfPublicId(r.publicId));
       await upsertFolders(discoveredFolderPaths);
 
       // 3) Charger les dossiers enregistrés en DB sous ce root
@@ -185,18 +289,22 @@ export const cloudinaryRouter = router({
       return clientTree;
     }),
 
-  // Alias pending conservé (tu peux le supprimer plus tard)
+  // Alias pending conservé
   getPendingTree: protectedProcedure.query(async () => {
     const rootPath = `${PROJECT_ROOT}/pending`;
     const resources = await listAuthenticatedResources(rootPath);
     return buildCloudinaryTreeV1(resources, [rootPath], rootPath);
   }),
 
-  // Supprimer une image (attention: si tu as video/raw, on pourra le rendre robuste aussi)
   deletePicture: protectedProcedure
-    .input(z.object({ publicId: z.string() }))
+    .use(isAdmin)
+    .input(z.object({ publicId: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      await cloudinary.uploader.destroy(input.publicId, { type: "authenticated" });
+      const publicId = normalizePath(input.publicId);
+      assertSafePath(publicId);
+      assertNotInTrashStorage(publicId);
+
+      await destroyAuthenticatedResource(publicId);
       return { success: true };
     }),
 
@@ -213,6 +321,8 @@ export const cloudinaryRouter = router({
 
       assertSafePath(from);
       assertSafePath(to);
+      assertNotInTrashStorage(from);
+      assertNotInTrashStorage(to);
 
       await renameAuthenticatedResource(from, to);
 
@@ -223,8 +333,7 @@ export const cloudinaryRouter = router({
     }),
 
   /**
-   * ✅ Créer un dossier (même vide) dans la registry DB
-   * (c'est LE point qui “résout” la disparition des dossiers vides)
+   * ✅ Créer un dossier (même vide) dans la registry DB.
    */
   createFolder: protectedProcedure
     .use(isAdmin)
@@ -232,6 +341,7 @@ export const cloudinaryRouter = router({
     .mutation(async ({ input }) => {
       const fullPath = normalizePath(input.fullPath);
       assertSafePath(fullPath);
+      assertNotInTrashStorage(fullPath);
 
       // On upsert tous les ancêtres (y compris lui-même)
       await upsertFolders(folderAncestorsOfFolderPath(fullPath));
@@ -254,6 +364,8 @@ export const cloudinaryRouter = router({
 
       assertSafePath(fromPrefix);
       assertSafePath(toPrefix);
+      assertNotInTrashStorage(fromPrefix);
+      assertNotInTrashStorage(toPrefix);
 
       if (fromPrefix === toPrefix) return { success: true };
 
@@ -264,10 +376,7 @@ export const cloudinaryRouter = router({
       const impacted = await prisma.cloudinaryFolder.findMany({
         where: {
           appRoot: PROJECT_ROOT,
-          OR: [
-            { fullPath: fromPrefix },
-            { fullPath: { startsWith: `${fromPrefix}/` } },
-          ],
+          OR: [{ fullPath: fromPrefix }, { fullPath: { startsWith: `${fromPrefix}/` } }],
         },
         select: { id: true, fullPath: true },
       });
@@ -284,7 +393,7 @@ export const cloudinaryRouter = router({
         return { id: f.id, nextFullPath };
       });
 
-      // 4) Collision check (si un folder existe déjà avec le même path cible, hors des impacted)
+      // 4) Collision check (si un folder existe déjà avec le même path cible, hors impacted)
       const targetPaths = Array.from(new Set(updates.map((u) => u.nextFullPath)));
       const collisions = await prisma.cloudinaryFolder.findMany({
         where: {
@@ -296,9 +405,7 @@ export const cloudinaryRouter = router({
       });
 
       if (collisions.length > 0) {
-        throw new Error(
-          `Folder rename collision: ${collisions.map((c) => c.fullPath).join(", ")}`
-        );
+        throw new Error(`Folder rename collision: ${collisions.map((c) => c.fullPath).join(", ")}`);
       }
 
       // 5) Transaction: appliquer updates + upsert ancêtres
@@ -325,41 +432,41 @@ export const cloudinaryRouter = router({
       return { success: true };
     }),
 
-  // Supprimer dossier (cloudinary prefix) (tu pourras plus tard faire une version "DB soft delete")
+  // Supprimer dossier (cloudinary prefix)
   deleteFolder: protectedProcedure
     .input(z.object({ prefix: z.string() }))
     .mutation(async ({ input }) => {
       const normalizedPrefix = normalizePath(input.prefix);
       assertSafePath(normalizedPrefix);
+      assertNotInTrashStorage(normalizedPrefix);
 
-      await cloudinary.api.delete_resources_by_prefix(normalizedPrefix, {
-        type: "authenticated",
-      });
-
+      await deleteAuthenticatedByPrefix(normalizedPrefix);
       return { success: true };
     }),
 
   emptyBin: protectedProcedure
     .use(isAdmin)
     .mutation(async () => {
-      const binPrefix = `${PROJECT_ROOT}/bin`;
-      // sécurité (optionnelle)
-      assertSafePath(binPrefix);
-
-      // Supprime par resource_type pour être sûr de vider complètement
-      const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
-
-      for (const resource_type of resourceTypes) {
-        await cloudinary.api.delete_resources_by_prefix(binPrefix, {
-          type: "authenticated",
-          resource_type,
-        });
-      }
-
-      return { success: true };
+      // IMPORTANT : depuis l'introduction de TrashEntry, vider le bin doit passer
+      // par `trash.deleteForever` (ou un futur `trash.emptyBin`).
+      throw new Error("Deprecated. Use trash.deleteForever (or trash.emptyBin).");
     }),
 
-  // Validation images (inchangé)
+  deleteSelectionInBin: protectedProcedure
+    .use(isAdmin)
+    .input(
+      z.object({
+        roots: z.array(z.string().min(1)).min(1),
+        excluded: z.array(z.string().min(1)).optional(),
+      })
+    )
+    .mutation(async () => {
+      // IMPORTANT : depuis l'introduction de TrashEntry, supprimer en bin doit passer
+      // par `trash.deleteForever` (sélection = trashIds).
+      throw new Error("Deprecated. Use trash.deleteForever (by trashIds).");
+    }),
+
+  // Validation images (inchangé, mais on sécurise le rename + trash guard)
   validatePictures: protectedProcedure
     .input(
       z.object({
@@ -370,27 +477,80 @@ export const cloudinaryRouter = router({
     )
     .mutation(async ({ input }) => {
       for (const oldPublicId of input.publicIds) {
-        const filename = oldPublicId.split("/").pop();
+        const oldId = normalizePath(oldPublicId);
+        assertSafePath(oldId);
+        assertNotInTrashStorage(oldId);
+
+        const filename = oldId.split("/").pop();
         if (!filename) continue;
 
         const newPublicId = `${PROJECT_ROOT}/${input.category}/${input.activity}/${filename}`;
 
-        await cloudinary.uploader.rename(oldPublicId, newPublicId, {
-          type: "authenticated",
-        });
+        const newId = normalizePath(newPublicId);
+        assertSafePath(newId);
+        assertNotInTrashStorage(newId);
+
+        await renameAuthenticatedResource(oldId, newId);
 
         // Sync DB: ancêtres
-        await upsertFolders(folderAncestorsOfPublicId(newPublicId));
+        await upsertFolders(folderAncestorsOfPublicId(newId));
       }
 
       return { success: true };
     }),
 
-  // Move (DnD + multi-select) — inchangé ici (move.service gère déjà)
-  move: protectedProcedure
-    .input(moveSchema)
-    .mutation(async ({ input }) => {
-      await moveService(input);
-      return { success: true };
-    }),
+  /**
+   * ✅ Move (DnD + multi-select)
+   * IMPORTANT : move -> bin est interdit ici (trash.trashToBin).
+   */
+  move: protectedProcedure.input(moveSchema).mutation(async ({ input }) => {
+    if (input.target.type === "virtual-folder" && input.target.status === "bin") {
+      throw new Error("Move to bin is not allowed here. Use trash.trashToBin.");
+    }
+
+    await moveService(input);
+
+    const { source, target } = input;
+
+    // DB sync seulement quand on change de "status" (virtual-folder)
+    if (target.type === "virtual-folder") {
+      // 1) Source = dossier unique
+      if (source.type === "folder") {
+        const fromPrefix = normalizePath(source.fullPath);
+        assertSafePath(fromPrefix);
+        assertNotInTrashStorage(fromPrefix);
+
+        const toPrefix = replaceStatusSegment(fromPrefix, target.status);
+        assertSafePath(toPrefix);
+        assertNotInTrashStorage(toPrefix);
+
+        await moveDbFoldersPrefix({
+          fromPrefix,
+          toPrefix,
+          nextStatus: target.status,
+        });
+      }
+
+      // 2) Source = multi-selection
+      if (source.type === "selection") {
+        for (const root of source.roots) {
+          const fromPrefix = normalizePath(root);
+          assertSafePath(fromPrefix);
+          assertNotInTrashStorage(fromPrefix);
+
+          const toPrefix = replaceStatusSegment(fromPrefix, target.status);
+          assertSafePath(toPrefix);
+          assertNotInTrashStorage(toPrefix);
+
+          await moveDbFoldersPrefix({
+            fromPrefix,
+            toPrefix,
+            nextStatus: target.status,
+          });
+        }
+      }
+    }
+
+    return { success: true };
+  }),
 });

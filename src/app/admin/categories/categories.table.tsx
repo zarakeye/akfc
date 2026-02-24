@@ -1,7 +1,7 @@
 import { JSX } from 'react';
 import { trpc } from '@lib/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
-import type { ActivityType } from '@prisma/client';
+import type { Category } from '@prisma/client';
 
 export default function CategoriesTable(): JSX.Element {
   const { data: activityTypes, isLoading, isError } = trpc.category.getAll.useQuery();
@@ -9,7 +9,7 @@ export default function CategoriesTable(): JSX.Element {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading permissions.</div>;
 
-  const columns: Column<ActivityType>[] = [
+  const columns: Column<Category>[] = [
     {
       property: 'id',
       displayName: 'ID',

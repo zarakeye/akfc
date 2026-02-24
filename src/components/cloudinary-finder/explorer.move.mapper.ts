@@ -19,6 +19,47 @@ import type {
   MoveTarget,
 } from '@/shared/cloudinary/move.types';
 
+function normalizePath(p: string) {
+  return p.replace(/^\/+|\/+$/g, '');
+}
+
+/**
+ * ✅ Filtre “actionnable” (validé) pour roots/excluded.
+ *
+ * Spécification UX (fixée) :
+ * - Les éléments indéterminés ne doivent PAS subir d'actions (move/delete).
+ *
+ * Dans roots/excluded, un root devient “indéterminé” dès qu'il possède au moins
+ * une exclusion sous lui.
+ *
+ * => on retire donc des roots tout root qui a une exclusion (ex === root ou ex sous root/)
+ * => on retire aussi les exclusions qui ne sont pas sous un root conservé
+ */
+function filterSelectionForActions(selection: SelectionState): SelectionState {
+  const roots = Array.from(selection.roots, normalizePath);
+  const excluded = Array.from(selection.excluded, normalizePath);
+
+  const validRoots: string[] = [];
+
+  for (const r of roots) {
+    const hasExcludedUnder = excluded.some((ex) => ex === r || ex.startsWith(`${r}/`));
+    if (!hasExcludedUnder) validRoots.push(r);
+  }
+
+  const validRootsSet = new Set(validRoots);
+  const validExcluded = excluded.filter((ex) => {
+    for (const r of validRootsSet) {
+      if (ex === r || ex.startsWith(`${r}/`)) return true;
+    }
+    return false;
+  });
+
+  return {
+    roots: new Set(validRoots),
+    excluded: new Set(validExcluded),
+  };
+}
+
 type DragInput =
   | {
       kind: 'single';
@@ -37,8 +78,11 @@ export function explorerNodeToDragSource(
    * ✅ CAS mlti-select : payload Zod "selection"
    */
   if (input.kind === 'selection') {
-    const roots = Array.from(input.selection.roots);
-    const excludedArr = Array.from(input.selection.excluded);
+    // ✅ On n'envoie que la partie “validée / actionnable”
+    // (les roots indéterminés ne doivent pas subir d'action)
+    const actionable = filterSelectionForActions(input.selection);
+    const roots = Array.from(actionable.roots);
+    const excludedArr = Array.from(actionable.excluded);
 
     return {
       type: 'selection',

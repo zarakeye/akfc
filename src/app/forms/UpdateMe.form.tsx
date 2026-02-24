@@ -1,281 +1,244 @@
-'use client';
+"use client";
 
-import { JSX, useActionState, useEffect, useState } from 'react';
-import { updateUserFormAction, type UpdateUserFormState } from '@/server/actions/updateUserForm.action';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ChevronDownIcon } from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
+import { useEffect, useMemo } from "react";
+import { useActionState } from "react";
+import { useForm } from "react-hook-form";
+import { useFormStatus } from "react-dom";
+
+import { trpc } from "@/lib/trpcClient";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import type { /*Role,*/ User } from '@prisma/client';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { updateUserFormSchema, type FormValues } from '@/server/schemas/updateUserForm.schema';
-import { useSessionStore } from '@/lib/stores/useSessionStore';
-import { CldUploadWidget, CldUploadButton } from 'next-cloudinary';
-import Image from 'next/image';
-import { trpc } from '@lib/trpcClient';
-import type { UserProfile } from '@/types/user-profile.types';
-// import { z } from 'zod';
+  updateUserFormAction,
+  initialUpdateUserFormState,
+  type UpdateUserFormState,
+} from "@/server/actions/updateUserForm.action";
 
-// type FormValues = z.infer<typeof updateUserSchema>;
+/**
+ * UpdateMe.form.tsx
+ *
+ * Pattern hybride (comme le reste de ton projet) :
+ * - react-hook-form pour gérer l’UX des champs (defaultValues, contrôles, etc.)
+ * - useActionState pour exécuter la server action et récupérer un state typé
+ *
+ * Important :
+ * - Les champs name=... doivent matcher ceux attendus par updateUserFormAction()
+ * - La validation finale est côté serveur (Zod + DB)
+ */
 
-const initialState = { success: false };
+type UpdateMeFormValues = {
+  firstName: string;
+  lastName: string;
+  pseudo?: string;
+  aboutMe?: string;
+  phone?: string;
+  birthDate?: string; // YYYY-MM-DD
+  avatar?: string;
+};
 
-export default function UpdateMe_Form(): JSX.Element {
-  const {data: profile, isLoading} = trpc.user.getProfile.useQuery();
-  const [open, setOpen] = useState<boolean>(false);
-  // const [resource, setResource] = useState();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(updateUserFormSchema),
-    defaultValues: {
-      firstName: profile?.firstName ?? '',
-      lastName: profile?.lastName ?? '',
-      aboutMe: profile?.aboutMe ?? '',
-      phone: profile?.phone ?? '',
-      birthDate: profile?.birthDate ?? '',
-      pseudo: profile?.pseudo ?? '',
-      avatar: profile?.avatar ?? '',
-    },
-    mode: 'onBlur',
-  });
-
-  const [state, formAction, isPending] = useActionState<UpdateUserFormState, FormData>(updateUserFormAction, initialState);
-
-  if (isLoading) return <div>Chargement du profil...</div>;
-
-  if (!profile) return <div>Profil introuvable !!!</div>;
+function SubmitButton(props: { disabled?: boolean }) {
+  const { pending } = useFormStatus();
 
   return (
-    <Form {...form}>
-      <form
-        action={formAction}
-        onSubmit={async (e) => {
-          const valid = await form.trigger();
-          if (!valid) e.preventDefault();
-        }}  
-        className="flex flex-col gap-4"
-      >
-        <input type="hidden" {...form.register("avatar")} />
-        <div>
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prénom</FormLabel>
-                <FormControl>
-                  <Input {...field} {...form.register("firstName")} id="firstName" type="text"  />
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-          {form.formState.errors.firstName && 
-            <p className="text-red-500">{form.formState.errors.firstName.message}</p>
-          }
+    <button
+      type="submit"
+      className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
+      disabled={pending || props.disabled}
+    >
+      {pending ? "Enregistrement..." : "Enregistrer"}
+    </button>
+  );
+}
+
+export default function UpdateMeForm() {
+  // 1) Profil (source pour hydrate le form)
+  const profileQuery = trpc.user.getCurrentUserProfile.useQuery();
+
+  // 2) Action server (useActionState)
+  const [state, formAction] = useActionState<UpdateUserFormState, FormData>(
+    updateUserFormAction,
+    initialUpdateUserFormState
+  );
+
+  // 3) RHF
+  const {
+    register,
+    reset,
+    setError,
+    formState: { errors, isDirty },
+  } = useForm<UpdateMeFormValues>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      pseudo: "",
+      aboutMe: "",
+      phone: "",
+      birthDate: "",
+      avatar: "",
+    },
+    mode: "onBlur",
+  });
+
+  // 4) Hydrate le form depuis le profil
+  useEffect(() => {
+    if (!profileQuery.data) return;
+
+    const p = profileQuery.data;
+
+    reset(
+      {
+        firstName: p.firstName ?? "",
+        lastName: p.lastName ?? "",
+        pseudo: p.pseudo ?? "",
+        aboutMe: p.aboutMe ?? "",
+        phone: p.phone ?? "",
+        birthDate: (p.birthDate as string | null) ?? "",
+        avatar: p.avatar ?? "",
+      },
+      { keepDirty: false }
+    );
+  }, [profileQuery.data, reset]);
+
+  // 5) Remonter les fieldErrors serveur vers RHF (affichage inline)
+  useEffect(() => {
+    if (!state?.fieldErrors) return;
+
+    const fe = state.fieldErrors;
+
+    if (fe.firstName) setError("firstName", { type: "server", message: fe.firstName });
+    if (fe.lastName) setError("lastName", { type: "server", message: fe.lastName });
+    if (fe.pseudo) setError("pseudo", { type: "server", message: fe.pseudo });
+    if (fe.aboutMe) setError("aboutMe", { type: "server", message: fe.aboutMe });
+    if (fe.phone) setError("phone", { type: "server", message: fe.phone });
+    if (fe.birthDate) setError("birthDate", { type: "server", message: fe.birthDate });
+    if (fe.avatar) setError("avatar", { type: "server", message: fe.avatar });
+  }, [state, setError]);
+
+  // 6) Après succès : on refetch profil pour être sûr d’être aligné DB
+  useEffect(() => {
+    if (!state.ok) return;
+    profileQuery.refetch();
+  }, [state.ok]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loading = profileQuery.isLoading;
+  const loadError = profileQuery.error;
+
+  const canSubmit = useMemo(() => {
+    // Option: empêcher submit si rien n’a changé
+    // Tu peux enlever isDirty si tu veux permettre un submit "idempotent"
+    return !loading && !loadError && isDirty;
+  }, [loading, loadError, isDirty]);
+
+  return (
+    <section className="space-y-4">
+      <header className="space-y-1">
+        <h2 className="text-lg font-semibold">Mon profil</h2>
+        <p className="text-sm text-slate-600">
+          Mets à jour tes informations. Le rôle est géré par l’admin.
+        </p>
+      </header>
+
+      {loading && <div>Chargement…</div>}
+
+      {loadError && (
+        <div className="text-sm text-red-600">
+          Impossible de charger le profil : {loadError.message}
         </div>
+      )}
 
-        <div>
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom de famille</FormLabel>
-                <FormControl>
-                  <Input {...field} {...form.register("lastName")} id="lastName" type="text"  />
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-          {form.formState.errors.lastName && 
-            <p className="text-red-500">{form.formState.errors.lastName.message}</p>
-          }
+      {/* Message global serveur */}
+      {state.formError && (
+        <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+          {state.formError}
         </div>
+      )}
 
-        {/* <div>
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input {...field} {...form.register("email")} id="email" type="text"  />
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-          {form.formState.errors.email && 
-            <p className="text-red-500">{form.formState.errors.email.message}</p>
-          }
-        </div> */}
-
-        {/* <div>
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mot de passe</FormLabel>
-                <FormControl>
-                  <Input {...field} {...form.register("password")} id="password" type="text"  />
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-          {form.formState.errors.password && 
-            <p className="text-red-500">{form.formState.errors.password.message}</p>
-          }
-        </div> */}
-
-        <div className="flex flex-col gap-3">
-          <FormField
-            control={form.control}
-            name="birthDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date de naissance</FormLabel>
-                <FormControl>
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        id="birthDate"
-                        className="w-48 justify-between font-normal"
-                      >
-                        {field.value ? new Date(field.value).toLocaleDateString() : "Sélectionnez une date"}
-                        <ChevronDownIcon />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        captionLayout="dropdown"
-                        onSelect={(selected) => {
-                          if (selected) {
-                            field.onChange(selected.toISOString().split("T")[0]);
-                            setOpen(false);
-                          }
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-          {form.formState.errors.birthDate && 
-            <p className="text-red-500">{form.formState.errors.birthDate.message}</p>
-          }
+      {state.ok && state.message && (
+        <div className="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+          {state.message}
         </div>
+      )}
 
-        <div>
-          <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Téléphone</FormLabel>
-              <FormControl>
-                <Input {...field} type="phone" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {form.formState.errors.phone && 
-          <p className="text-red-500">{form.formState.errors.phone.message}</p>
-        }
-        </div>
-        <input
-          type="hidden"
-          {...form.register("birthDate")}
-          value={form.getValues("birthDate") || ""}
-        />
-
-        <div className="flex flex-col gap-2">
-          <FormLabel>Photo de profil</FormLabel>
-
-          {/* Preview si image déjà définie */}
-          {form.watch("avatar") && (
-            <Image
-              src={form.watch("avatar")!}
-              alt="preview"
-              className="w-24 h-24 rounded-full object-cover"
-              width={500}
-              height={500}
-              sizes="(max-width: 768px) 100px, 200px"
+      {/* IMPORTANT : on soumet via action={formAction} pour useActionState */}
+      <form action={formAction} className="space-y-4 max-w-xl">
+        <div className="grid gap-2">
+          <label className="grid gap-1">
+            <span className="text-sm">Prénom</span>
+            <input
+              className="border rounded px-3 py-2"
+              {...register("firstName")}
+              name="firstName"
             />
-          )}
-
-          <CldUploadWidget
-            uploadPreset="akfc_preset"
-            onSuccess={(result) => {
-              // @ts-expect-error Cloudinary type
-              const url = result?.info?.secure_url as string;
-              form.setValue("avatar", url, { shouldValidate: true });
-            }}
-          >
-            {({ open }) => (
-              <Button type="button" variant="secondary" onClick={() => open()}>
-                Upload photo
-              </Button>
+            {errors.firstName?.message && (
+              <span className="text-xs text-red-600">{errors.firstName.message}</span>
             )}
-          </CldUploadWidget>
+          </label>
 
-          {/* Bouton "supprimer" */}
-          {form.watch("avatar") && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                form.setValue("avatar", "", { shouldValidate: true });
-              }}
-            >
-              Supprimer le cliché
-            </Button>
-          )}
+          <label className="grid gap-1">
+            <span className="text-sm">Nom</span>
+            <input className="border rounded px-3 py-2" {...register("lastName")} name="lastName" />
+            {errors.lastName?.message && (
+              <span className="text-xs text-red-600">{errors.lastName.message}</span>
+            )}
+          </label>
 
+          <label className="grid gap-1">
+            <span className="text-sm">Pseudo</span>
+            <input className="border rounded px-3 py-2" {...register("pseudo")} name="pseudo" />
+            {errors.pseudo?.message && (
+              <span className="text-xs text-red-600">{errors.pseudo.message}</span>
+            )}
+          </label>
 
+          <label className="grid gap-1">
+            <span className="text-sm">Téléphone</span>
+            <input className="border rounded px-3 py-2" {...register("phone")} name="phone" />
+            {errors.phone?.message && (
+              <span className="text-xs text-red-600">{errors.phone.message}</span>
+            )}
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm">Date de naissance</span>
+            <input
+              type="date"
+              className="border rounded px-3 py-2"
+              {...register("birthDate")}
+              name="birthDate"
+            />
+            {errors.birthDate?.message && (
+              <span className="text-xs text-red-600">{errors.birthDate.message}</span>
+            )}
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm">À propos</span>
+            <textarea
+              className="border rounded px-3 py-2 min-h-[96px]"
+              {...register("aboutMe")}
+              name="aboutMe"
+            />
+            {errors.aboutMe?.message && (
+              <span className="text-xs text-red-600">{errors.aboutMe.message}</span>
+            )}
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm">Avatar (URL)</span>
+            <input className="border rounded px-3 py-2" {...register("avatar")} name="avatar" />
+            {errors.avatar?.message && (
+              <span className="text-xs text-red-600">{errors.avatar.message}</span>
+            )}
+          </label>
         </div>
 
-
-        {/* --- erreur serveur --- */}
-        {state.error && !form.formState.isValid &&
-          <p className="text-red-500">{state.error}</p>
-        }
-
-        {/* --- bouton --- */}
-        <div className="flex gap-3.5 justify-end">
-          {/* <Button type="button" onClick={() => setCreatingPermission(false)}>Annuler</Button> */}
-          <Button type="submit" disabled={isPending} className="">
-            {isPending ? 'enregistrement en cours...' : 'Modifier'}
-          </Button>
+        <div className="flex items-center gap-3">
+          <SubmitButton disabled={!canSubmit} />
+          {!isDirty && (
+            <span className="text-xs text-slate-500">
+              Aucun changement à enregistrer.
+            </span>
+          )}
         </div>
       </form>
-    </Form>
+    </section>
   );
 }

@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { UserProfile } from "@/types/user-profile.types";
 import { updateUserFormSchema } from "../schemas/updateUserForm.schema";
+import { updateUserRoleByIdSchema } from "../schemas/updateUserRoleById.schema";
 
 export const userRouter = router({
   // ------------------------------------
@@ -29,55 +30,6 @@ export const userRouter = router({
         },
       });
     }),
-    // .use(requirePermission("manage_users"))
-    // .input(
-    //   z.object({
-    //     page: z.number().default(1),
-    //     pageSize: z.number().default(10),
-    //     search: z.string().optional(),
-    //   })
-    // )
-    // .query(async ({ ctx, input }) => {
-    //   const { page, pageSize, search } = input;
-
-    //   const where = search
-    //     ? {
-    //       OR: [
-    //         { role: { is: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
-    //         { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
-    //       ],
-    //     }
-    //     : {};
-
-    //   const [users, total] = await Promise.all([
-    //     ctx.prisma.user.findMany({
-    //       where,
-    //       skip: (page - 1) * pageSize,
-    //       take: pageSize,
-    //       orderBy: { id: "asc" },
-    //       include: {
-    //         role: {
-    //           include: {
-    //             permissions: {
-    //               include: {
-    //                 permission: true,
-    //               },
-    //             },
-    //           },
-    //         },
-    //       }
-    //     }),
-    //     ctx.prisma.user.count({ where }),
-    //   ]);
-
-    //   return {
-    //     users,
-    //     total,
-    //     page,
-    //     pageSize,
-    //     pageCount: Math.ceil(total / pageSize),
-    //   };
-    // }),
 
   // ------------------------------------
   // Get user by id
@@ -203,7 +155,14 @@ export const userRouter = router({
         });
       }),
 
-    getCurrrentUserProfile: protectedProcedure
+    /**
+     * Profil de l'utilisateur actuellement connecté.
+     *
+     * Règle:
+     * - un user complète son profil lui-même (UpdateMe).
+     * - l'admin ne gère pas le profil, uniquement des tâches d'administration.
+     */
+    getCurrentUserProfile: protectedProcedure
       .use(isAuthenticated)
       .query(async ({ ctx }) => {
         const userId = ctx.sessionClient!.user!.id;
@@ -240,6 +199,64 @@ export const userRouter = router({
         }
 
         return userProfile satisfies UserProfile;
+      }),
+
+    /**
+     * ✅ ADMIN: mettre à jour UNIQUEMENT le rôle d'un utilisateur.
+     *
+     * Pourquoi:
+     * - c'est un point de contrôle sensible (RBAC)
+     * - on le sépare volontairement des autres champs du profil
+     * - l'utilisateur est responsable de compléter son profil (UpdateMe)
+     *
+     * Sécurité:
+     * - permission "manage_users" requise
+     * - vérifie que le role existe
+     * - empêche par défaut de modifier SON PROPRE rôle (évite de se lock)
+     */
+    updateUserRoleById: protectedProcedure
+      .use(requirePermission("manage_users"))
+      .input(updateUserRoleByIdSchema)
+      .mutation(async ({ ctx, input }) => {
+        const actorId = ctx.sessionClient?.user?.id;
+        if (!actorId) {
+          throw new TRPCError({ code: "UNAUTHORIZED" });
+        }
+
+        if (actorId === input.userId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You cannot change your own role.",
+          });
+        }
+
+        const role = await ctx.prisma.role.findUnique({
+          where: { id: input.roleId },
+          select: { id: true },
+        });
+
+        if (!role) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Role not found",
+          });
+        }
+
+        const user = await ctx.prisma.user.update({
+          where: { id: input.userId },
+          data: { roleId: input.roleId },
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+          },
+        });
+
+        return user;
       }),
 
     getProfileById: protectedProcedure

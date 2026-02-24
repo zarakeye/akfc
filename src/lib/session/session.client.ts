@@ -1,42 +1,22 @@
-'use client';
+"use client";
 
-import { t } from '@/server/trpc/core';
-import { SessionUser, useUserStore } from '@/lib/stores/useSessionStore';
+import { useSessionStore } from "@/lib/stores/useSessionStore";
 
-export function getClientSession(): SessionUser | null {
-  return useUserStore.getState().user;
+/**
+ * session.client.ts
+ *
+ * Le store exporte useSessionStore (pas SessionUser/useUserStore).
+ * On expose ici une API client simple, sans casser le typage.
+ */
+
+export type SessionUser = NonNullable<
+  ReturnType<typeof useSessionStore.getState>["session"]
+>["user"];
+
+export function getSessionUser(): SessionUser | null {
+  return useSessionStore.getState().session?.user ?? null;
 }
 
-export function useClientSession(): SessionUser | null {
-  const { user } = useUserStore();
-  return user;
-}
-
-export function useClientSessionLoading(): boolean {
-  const { loading } = useUserStore();
-  return loading;
-}
-
-export function useClientSessionUser(): SessionUser | null {
-  const { user } = useUserStore();
-  return user;
-}
-export function useClientSessionFetchUser(): () => Promise<boolean> {
-  const { fetchUser } = useUserStore();
-  return fetchUser;
-}
-
-
-export function clientSessionLogout(): void {
-  const logout = useUserStore.getState().logout;
-  // return;
-  logout();
-}
-
-export function updateSession(newJwt: string): void {
-  const session = useUserStore.getState().session;
-  const updatedSession = {
-    ...session,
-    token: newJwt
-  }
+export function isLoggedIn(): boolean {
+  return !!useSessionStore.getState().session?.user;
 }

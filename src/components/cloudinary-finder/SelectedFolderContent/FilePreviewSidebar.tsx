@@ -8,6 +8,13 @@ import { trpc } from '@/lib/trpcClient';
 type Props = {
   file: FileNode;
   onClose: () => void;
+  /**
+   * Quand true, la preview est en lecture seule (bin / trash).
+   * - pas de rename
+   * - pas de move
+   * - pas de delete
+   */
+  readOnly?: boolean;
 };
 
 type ParsedPath = {
@@ -50,12 +57,19 @@ function selectLastSegment(input: HTMLInputElement) {
   input.setSelectionRange(start, v.length);
 }
 
-export function FilePreviewSidebar({ file, onClose }: Props): JSX.Element {
+export function FilePreviewSidebar({ file, onClose, readOnly }: Props): JSX.Element {
   // ✅ Remount key => reset local state sans useEffect setState
-  return <FilePreviewSidebarInner key={file.fullPath} file={file} onClose={onClose} />;
+  return (
+    <FilePreviewSidebarInner
+      key={file.fullPath}
+      file={file}
+      onClose={onClose}
+      readOnly={!!readOnly}
+    />
+  );
 }
 
-function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
+function FilePreviewSidebarInner({ file, onClose, readOnly }: Props): JSX.Element {
   const utils = trpc.useUtils();
 
   const parsed = useMemo(() => parsePath(file.fullPath), [file.fullPath]);
@@ -78,12 +92,13 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
   const fileIsInBinTree = useMemo(() => isInBinTree(file.fullPath), [file.fullPath]);
   const canSecureRename = parsed.status !== null;
 
-  const moveToBin = trpc.cloudinary.move.useMutation({
+  const trashToBin = trpc.trash.trashToBin.useMutation({
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
+      await utils.trash.listBin.invalidate();
       onClose();
     },
-    onError: (err) => console.error('[moveToBin] failed:', err),
+    onError: (err) => console.error('[trashToBin] failed:', err),
   });
 
   const deleteForever = trpc.cloudinary.deletePicture.useMutation({
@@ -103,9 +118,10 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
     onError: (err) => console.error('[renamePicture] failed:', err),
   });
 
-  const isBusy = moveToBin.isPending || deleteForever.isPending || renamePicture.isPending;
+  const isBusy = trashToBin.isPending || deleteForever.isPending || renamePicture.isPending;
 
   function startRename() {
+    if (readOnly) return;
     if (!canSecureRename) return;
     setDraftSuffix(parsed.suffix);
     setIsRenaming(true);
@@ -117,6 +133,7 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
   }
 
   function applyRename() {
+    if (readOnly) return;
     if (!canSecureRename) return;
 
     const cleanedSuffix = normalizePath(draftSuffix);
@@ -137,15 +154,17 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
   }
 
   function sendToBin() {
+    if (readOnly) return;
     if (fileIsInBinTree) return;
 
-    moveToBin.mutate({
-      source: { type: 'file', fullPath: file.fullPath },
-      target: { type: 'virtual-folder', status: 'bin' },
+    trashToBin.mutate({
+      appRoot: file.fullPath.split('/')[0] ?? '',
+      sources: [{ kind: 'file', fullPath: file.fullPath }],
     });
   }
 
   function deleteNow() {
+    if (readOnly) return;
     const ok = confirm('⚠️ Supprimer définitivement ce fichier ?\n\nCette action est irréversible.');
     if (!ok) return;
     deleteForever.mutate({ publicId: file.fullPath });
@@ -173,7 +192,7 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
           <>
             <button
               onClick={startRename}
-              disabled={isBusy || !canSecureRename}
+              disabled={isBusy || !canSecureRename || readOnly}
               className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
               title={
                 canSecureRename
@@ -187,7 +206,7 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
             {!fileIsInBinTree ? (
               <button
                 onClick={sendToBin}
-                disabled={isBusy}
+                disabled={isBusy || readOnly}
                 className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
               >
                 🗑 Envoyer vers bin
@@ -195,7 +214,7 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
             ) : (
               <button
                 onClick={deleteNow}
-                disabled={isBusy}
+                disabled={isBusy || readOnly}
                 className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
               >
                 ❌ Supprimer
@@ -238,9 +257,9 @@ function FilePreviewSidebarInner({ file, onClose }: Props): JSX.Element {
           </>
         )}
 
-        {(moveToBin.error || deleteForever.error || renamePicture.error) && (
+        {(trashToBin.error || deleteForever.error || renamePicture.error) && (
           <span className="text-sm text-red-600">
-            {(moveToBin.error?.message ??
+            {(trashToBin.error?.message ??
               deleteForever.error?.message ??
               renamePicture.error?.message) ||
               'Erreur'}

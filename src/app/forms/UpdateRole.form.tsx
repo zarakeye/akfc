@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateRoleFormSchema } from "@/server/schemas/updateRoleForm.schema";
 import { AlertCircleIcon, BadgeCheckIcon, CheckIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
-import type { RoleWithPermissions } from "@/app/admin/roles/RoleCard";
+import type { RoleWithPermissions } from "@/app/admin/dashboard/roles/RoleCard";
 
 interface UpdateRoleFormProps {
   role: RoleWithPermissions;

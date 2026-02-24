@@ -10,32 +10,35 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  firstName     String?
-  lastName      String?
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  password      String
-  birthDate     DateTime?
-  phone         String?
-  image         String?
-  roleId        Int?
-  memberSince   DateTime?
-  isFirstLogin  Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now()) @updatedAt
-  aboutMe       String?
-  pseudo        String?
-  avatar        String?
-  Activities    Activity[]   @relation("UserActivities")
-  comments      Comment[]
-  Courses       Course[]     @relation("UserCourses")
-  likes         Like[]
-  posts         Post[]
-  preferences   Preferences?
-  sessions      Session[]
-  Stage         Stage[]      @relation("UserStages")
-  role          Role?        @relation(fields: [roleId], references: [id])
+  id                    String               @id @default(cuid())
+  firstName             String?
+  lastName              String?
+  email                 String               @unique
+  emailVerified         Boolean              @default(false)
+  password              String
+  birthDate             DateTime?
+  phone                 String?
+  image                 String?
+  roleId                Int?
+  memberSince           DateTime?
+  isFirstLogin          Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @default(now()) @updatedAt
+  aboutMe               String?
+  pseudo                String?
+  avatar                String?
+  Activities            Activity[]           @relation("UserActivities")
+  comments              Comment[]
+  Courses               Course[]             @relation("UserCourses")
+  likes                 Like[]
+  posts                 Post[]
+  preferences           Preferences?
+  sessions              Session[]
+  Stage                 Stage[]              @relation("UserStages")
+  role                  Role?                @relation(fields: [roleId], references: [id])
+  auditLogsAsActor      AuditLog[]           @relation("AuditActor")
+  auditLogsAsTargetUser AuditLog[]           @relation("AuditTargetUser")
+  passwordResetTokens   PasswordResetToken[]
 }
 
 model Permission {
@@ -79,6 +82,39 @@ model Session {
   expiresAt DateTime
   role      String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Audit Log (sécurité & support)
+ * Objectif (minimal mais solide) :
+ * - tracer les actions sensibles faites par un admin (ex: changement de rôle)
+ * - conserver qui a fait quoi, sur qui, quand, + une meta JSON
+ * Note :
+ * - actorUserId/targetUserId sont nullable + onDelete:SetNull
+ * pour conserver l'historique même si un compte est supprimé.
+ */
+model AuditLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  actorUserId String?
+  actorEmail  String?
+
+  action AuditAction
+
+  targetUserId String?
+  meta         Json?
+
+  actor      User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([targetUserId])
+  @@index([action, createdAt])
+}
+
+enum AuditAction {
+  USER_ROLE_CHANGED
 }
 
 model Verification {
@@ -188,12 +224,12 @@ model Like {
 }
 
 model CloudinaryFolder {
-  id        String                @id @default(cuid())
+  id        String                 @id @default(cuid())
   appRoot   String
   fullPath  String
   status    CloudinaryFolderStatus
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
 
   @@unique([appRoot, fullPath])
   @@index([appRoot])
@@ -204,6 +240,104 @@ enum CloudinaryFolderStatus {
   pending
   published
   bin
+}
+
+/**
+ * Corbeille (bin) : une entrée = un "root" jeté (folder ou file).
+ * IMPORTANT (design validé) :
+ * - Le storage Cloudinary réel est caché : `${appRoot}/bin/.trash/${id}/...`
+ * - L'utilisateur voit seulement displayName + provenance (previousPath).
+ * - Restore = toujours vers previousPath, collision => auto-rename du contenu restauré.
+ * Méta comparaison :
+ * - sizeBytes = somme des bytes du sous-arbre (si calculé)
+ * - cloudinaryCreatedAt = max(created_at) du sous-arbre (choix "a")
+ */
+model TrashEntry {
+  id      String           @id @default(uuid())
+  appRoot String
+  kind    TrashEntryKind
+  status  TrashEntryStatus @default(IN_BIN)
+
+  /**
+   * Nom affiché dans la liste plate du bin
+   * ex: "cours1" ou "image.png"
+   */
+  displayName String
+
+  /**
+   * Chemin d'origine complet (tooltip et cible de restore)
+   * ex: "AKFC/pending/cours/cours1"
+   */
+  previousPath String
+
+  /**
+   * Chemin de stockage réel dans Cloudinary (caché)
+   * ex:
+   * - folder: "AKFC/bin/.trash/<uuid>/cours1"
+   * - file:   "AKFC/bin/.trash/<uuid>/image.png" (ou public_id équivalent)
+   */
+  storageRoot String
+
+  /**
+   * Date de mise en corbeille (sert aussi au suffix de renommage en cas de collision au restore)
+   */
+  trashedAt DateTime @default(now())
+
+  /**
+   * Rempli lors du restore.
+   * - restoredToPath == previousPath si pas de collision
+   * - sinon, chemin renommé (suffix "bin <date>")
+   */
+  restoredAt     DateTime?
+  restoredToPath String?
+
+  /**
+   * Si tu veux tracer la suppression définitive (audit).
+   * Si tu préfères supprimer la ligne, tu peux omettre ce champ,
+   * mais je recommande de le garder : ça aide énormément en debug/support.
+   */
+  deletedAt DateTime?
+
+  /**
+   * Métadonnées Cloudinary utiles en UI sans ouvrir la preview.
+   * - Pour folder : agrégat du sous-arbre
+   * - Pour file   : valeur du fichier
+   */
+  sizeBytes           BigInt?
+  cloudinaryCreatedAt DateTime?
+
+  @@index([appRoot])
+  @@index([appRoot, status, trashedAt])
+  @@index([appRoot, previousPath])
+  @@index([appRoot, kind])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  tokenHash String @unique
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  requestIp String?
+  userAgent String?
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+enum TrashEntryKind {
+  folder
+  file
+}
+
+enum TrashEntryStatus {
+  IN_BIN
+  RESTORED
+  DELETED
 }
 
 enum Day {

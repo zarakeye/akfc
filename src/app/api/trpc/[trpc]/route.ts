@@ -1,23 +1,16 @@
-import { appRouter } from '@/server/trpc';
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { createContext } from '@/server/trpc';
-import type { NextRequest } from 'next/server';
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import type { NextRequest } from "next/server";
 
-// export const runtime = 'nodejs';
+import { appRouter } from "@/server/trpc";
+import { createTRPCContext } from "@/server/trpc/core";
 
-/**
- * Handles an incoming request and returns the response from the
- * appRouter.
- *
- * @param {NextRequest} req The incoming request.
- * @returns {Promise<Response>} The response from the appRouter.
- */
-const handler = (req: NextRequest): Promise<Response> =>
-  fetchRequestHandler({
-    endpoint: '/api/trpc',
+const handler = async (req: NextRequest) => {
+  return fetchRequestHandler({
+    endpoint: "/api/trpc",
     req,
     router: appRouter,
-    createContext
+    createContext: async () => createTRPCContext(req),
   });
+};
 
-export { handler as GET, handler as POST, handler as OPTIONS, handler as DELETE, handler as PATCH, handler as PUT, handler as HEAD, handler as CONNECT, handler as TRACE };
+export { handler as GET, handler as POST };

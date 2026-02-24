@@ -17,7 +17,7 @@ export const postRouter = router({
         data: {
           title: input.title,
           content: input.content,
-          authorId: ctx.user!.id,
+          authorId: ctx.sessionClient!.user!.id,
         },
       });
     }),
