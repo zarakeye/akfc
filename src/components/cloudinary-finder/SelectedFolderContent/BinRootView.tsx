@@ -1,10 +1,11 @@
 'use client';
 
 import { JSX, useMemo } from 'react';
-import clsx from 'clsx';
-
 import { trpc } from '@/lib/trpcClient';
 import { useSelectionStore } from '@/lib/stores/useSelectionStore';
+
+import BinGridFolderItem from '@/components/cloudinary-finder/SelectedFolderContent/BinGridFolderItem';
+import BinGridFileItem from '@/components/cloudinary-finder/SelectedFolderContent/BinGridFileItem';
 
 type Props = {
   appRoot: string;
@@ -13,92 +14,175 @@ type Props = {
 };
 
 /**
- * BinRootView
+ * BinRootView (GRID)
  *
- * Affiche la liste plate de la corbeille : TrashEntryDTO.
+ * ✅ rendu identique à GridFolderItem / GridFileItem (cards 32x32)
+ * ✅ checkbox visible uniquement quand binMultiSelectActive=true
+ * ✅ longpress => active binMultiSelect + sélectionne (géré dans BinGrid*Item)
+ * ✅ click dans le vide => exit bin multiselect
  *
- * - checkbox => sélection par trashId (store.binSelection)
- * - click item =>
- *   - folder => ouvre la navigation "trash-folder"
- *   - file   => ouvre la preview (read-only)
+ * ✅ bouton toolbar:
+ * - normal : 🧹 Vider la corbeille
+ * - multiselect : ❌ Supprimer définitivement la sélection (N)
  */
-export default function BinRootView({ appRoot, onOpenTrashFolder, onSelectTrashFile }: Props): JSX.Element {
-  const toggleBinItem = useSelectionStore((s) => s.toggleBinItem);
-  const isBinSelected = useSelectionStore((s) => s.isBinSelected);
-  const multiSelectActive = useSelectionStore((s) => s.multiSelectActive);
+export default function BinRootView({
+  appRoot,
+  onOpenTrashFolder,
+  onSelectTrashFile,
+}: Props): JSX.Element {
+  const utils = trpc.useUtils();
+
+  const binMultiSelectActive = useSelectionStore((s) => s.binMultiSelectActive);
+  const binSelection = useSelectionStore((s) => s.binSelection);
+  const clearBinSelection = useSelectionStore((s) => s.clearBinSelection);
+
+  const selectedIds = useMemo(() => Array.from(binSelection), [binSelection]);
+  const hasSelection = selectedIds.length > 0;
 
   const { data, isLoading, isError, error } = trpc.trash.listBin.useQuery({
     appRoot,
     limit: 100,
+    cursor: null,
   });
 
   const items = data?.items ?? [];
-
   const isEmpty = useMemo(() => !isLoading && items.length === 0, [isLoading, items.length]);
+
+  const deleteForever = trpc.trash.deleteForever.useMutation({
+    onSuccess: async () => {
+      await utils.trash.listBin.invalidate();
+      await utils.cloudinary.getFolderTree.invalidate();
+      clearBinSelection();
+    },
+    onError: (err) => console.error('[trash.deleteForever] failed:', err),
+  });
+
+  async function handleEmptyBin() {
+    const ok = confirm('⚠️ Vider la corbeille ?\n\nTout le contenu sera supprimé définitivement.');
+    if (!ok) return;
+
+    const allIds: string[] = [];
+    let cursor: string | null | undefined = null;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const res = await utils.trash.listBin.fetch({
+        appRoot,
+        limit: 100,
+        cursor,
+        search: undefined,
+      });
+
+      allIds.push(...res.items.map((x) => x.id));
+
+      if (!res.nextCursor) break;
+      cursor = res.nextCursor;
+    }
+
+    if (allIds.length === 0) {
+      alert('La corbeille est déjà vide.');
+      return;
+    }
+
+    deleteForever.mutate({ appRoot, ids: allIds });
+  }
+
+  async function handleDeleteSelection() {
+    if (!hasSelection) return;
+
+    const ok = confirm('⚠️ Supprimer définitivement la sélection ?\n\nCette action est irréversible.');
+    if (!ok) return;
+
+    deleteForever.mutate({ appRoot, ids: selectedIds });
+  }
+
+  const isBusy = deleteForever.isPending;
 
   if (isLoading) return <div className="text-gray-500">Chargement de la corbeille…</div>;
   if (isError) return <div className="text-red-600">Erreur : {error?.message ?? 'inconnue'}</div>;
   if (isEmpty) return <div className="text-gray-500 italic">Corbeille vide</div>;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {items.map((it) => {
-        const checked = isBinSelected(it.id);
+    <div
+      className="space-y-4 min-h-full"
+      onMouseDownCapture={(e) => {
+        // ✅ click dans le vide => sortir du multiselect bin
+        if (!binMultiSelectActive) return;
 
-        return (
-          <div
-            key={it.id}
-            className={clsx(
-              'border rounded-lg p-3 flex gap-2 items-start hover:shadow-sm transition',
-              checked && 'ring-2 ring-blue-500'
-            )}
-            title={it.previousPath}
-            onMouseDown={(e) => {
-              // Empêche le focus/drag parasite
-              e.stopPropagation();
-            }}
+        const el = e.target as Element | null;
+        if (!el) return;
+
+        // ✅ ne pas clear si clic sur toolbar
+        if (el.closest('[data-no-clear-multiselect="true"]')) return;
+
+        const insideItem = el.closest('[data-content-item="true"]');
+        if (!insideItem) clearBinSelection();
+      }}
+    >
+      {/* Toolbar */}
+      <div className="flex gap-2" data-no-clear-multiselect="true">
+        {binMultiSelectActive ? (
+          <button
+            onClick={handleDeleteSelection}
+            disabled={!hasSelection || isBusy}
+            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+            title={!hasSelection ? 'Aucune sélection' : 'Supprimer définitivement la sélection'}
           >
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={checked}
-              onChange={() => toggleBinItem(it.id)}
-              onClick={(e) => e.stopPropagation()}
-            />
+            {isBusy ? 'Suppression…' : `❌ Supprimer définitivement (${selectedIds.length})`}
+          </button>
+        ) : (
+          <button
+            onClick={handleEmptyBin}
+            disabled={isBusy}
+            className="px-4 py-2 rounded bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+            title="Vider la corbeille"
+          >
+            🧹 Vider la corbeille
+          </button>
+        )}
+      </div>
 
-            <div
-              className="min-w-0 flex-1 cursor-pointer"
-              onClick={() => {
-                // Si multiselect, on permet quand même d'ouvrir en click,
-                // mais l'utilisateur peut aussi cliquer checkbox.
-                if (it.kind === 'folder') {
-                  onOpenTrashFolder({ trashId: it.id, displayName: it.displayName });
-                  return;
+      <div className="grid grid-cols-3 gap-4">
+        {items.map((it) => {
+          const title = it.previousPath;
+
+          if (it.kind === 'folder') {
+            return (
+              <div key={it.id} title={title}>
+                <BinGridFolderItem
+                  trashId={it.id}
+                  displayName={it.displayName}
+                  canMultiSelect={true} // BinRootView = racine du bin => autorisé
+                  onOpen={(trashId) => onOpenTrashFolder({ trashId, displayName: it.displayName })}
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div key={it.id} title={title}>
+              <BinGridFileItem
+                trashId={it.id}
+                displayName={it.displayName}
+                previewUrl={it.previewUrl ?? null}
+                canMultiSelect={true} // BinRootView = racine du bin => autorisé
+                onOpen={(trashId) =>
+                  onSelectTrashFile({
+                    id: trashId,
+                    name: it.displayName,
+                    url: it.previewUrl,
+                    previousPath: it.previousPath,
+                  })
                 }
-                onSelectTrashFile({
-                  id: it.id,
-                  name: it.displayName,
-                  url: it.previewUrl,
-                  previousPath: it.previousPath,
-                });
-              }}
-            >
-              <div className="font-medium truncate">{it.displayName}</div>
-              <div className="text-xs text-gray-500 truncate" title={it.previousPath}>
-                {it.previousPathShort}
-              </div>
-              <div className="text-[11px] text-gray-400 mt-1">
-                {it.createdAt ? `Cloudinary: ${new Date(it.createdAt).toLocaleString()}` : ''}
-                {it.sizeBytes !== undefined ? ` • ${it.sizeBytes.toLocaleString()} o` : ''}
-              </div>
+              />
             </div>
+          );
+        })}
+      </div>
 
-            <div className="text-xs text-gray-400 select-none">
-              {it.kind === 'folder' ? '📁' : '🖼️'}
-            </div>
-          </div>
-        );
-      })}
+      {deleteForever.error && (
+        <p className="text-sm text-red-600">{deleteForever.error.message || 'Erreur inconnue'}</p>
+      )}
     </div>
   );
 }

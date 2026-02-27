@@ -1,3 +1,4 @@
+// src/lib/stores/useSelectionStore.ts
 import { create } from 'zustand';
 
 import { SelectionState } from '@lib/selection/selection.types';
@@ -5,58 +6,59 @@ import { SelectionState } from '@lib/selection/selection.types';
 /**
  * useSelectionStore
  *
- * Modèle roots/excluded :
- * - roots    : éléments sélectionnés comme racines (un root couvre lui-même + ses descendants)
- * - excluded : éléments explicitement décochés DANS une zone couverte par un root
+ * ✅ Normal selection (pending/published/...):
+ * - multiSelectActive + selection {roots, excluded}
  *
- * Ex:
- * - roots = ["app/pending/a"] => tout "app/pending/a/**" est sélectionné
- * - excluded = ["app/pending/a/x"] => "x" et son sous-arbre sont retirés de la sélection
+ * ✅ Bin selection (root /bin only):
+ * - binMultiSelectActive + binSelection (Set<trashId>)
  *
- * ✅ Règles UX fixées ensemble :
- * - Le mode multiSelectActive NE DOIT JAMAIS se désactiver automatiquement.
- * - Même si la sélection devient vide, on reste en multiselect.
- * - On quitte uniquement via clearSelection() (action explicite).
- *
- * ✅ Règle UX (décoche dossier root mais garder descendance) :
- * - Si on décoche un dossier qui est un root explicite,
- *   on veut garder ses descendants cochés.
- *   => on remplace le root par SES ENFANTS DIRECTS en roots.
+ * ⚠️ Important:
+ * - un longPress dans le bin ne doit PAS activer multiSelectActive normal
+ * - un longPress hors bin ne doit PAS activer binMultiSelectActive
  */
 
 type SelectionStore = {
+  // -----------------------------
+  // NORMAL
+  // -----------------------------
   multiSelectActive: boolean;
   selection: SelectionState;
-
-  /**
-   * ✅ Bin selection (liste plate)
-   *
-   * Dans `AKFC/bin` (liste plate), la sélection ne se fait pas sur des fullPath réels,
-   * mais sur des `trashId`.
-   *
-   * On garde donc un set dédié, pour éviter les hacks du type "__trash__/...".
-   */
-  binSelection: Set<string>;
 
   startSelection: (rootPath: string) => void;
   isSelected: (path: string) => boolean;
   toggleItem: (path: string) => void;
-
-  /** Sélection dans le bin root (liste plate) */
-  isBinSelected: (trashId: string) => boolean;
-  toggleBinItem: (trashId: string) => void;
-
-  /**
-   * Décoche un dossier ROOT tout en gardant sa descendance cochée.
-   *
-   * - folderPath doit être présent dans selection.roots.
-   * - directChildrenPaths = chemins des enfants directs (folders + files) connus côté UI.
-   */
   uncheckFolderPreserveDescendants: (folderPath: string, directChildrenPaths: string[]) => void;
 
+  // -----------------------------
+  // BIN
+  // -----------------------------
+  binMultiSelectActive: boolean;
+  binSelection: Set<string>;
+
+  startBinSelection: (trashId: string) => void;
+  toggleBinSelection: (trashId: string) => void;
+
+  // Aliases (compat)
+  startBinItem: (trashId: string) => void;
+  toggleBinItem: (trashId: string) => void;
+  isBinSelected: (trashId: string) => boolean;
+
+  // -----------------------------
+  // CLEAR
+  // -----------------------------
+  clearNormalSelection: () => void;
+  clearBinSelection: () => void;
+
+  /**
+   * Compat: beaucoup de code appelle clearSelection()
+   * => on clear tout (normal + bin) pour rester safe.
+   */
   clearSelection: () => void;
 };
 
+// -----------------------------
+// Helpers selection normal
+// -----------------------------
 function normalizePath(p: string) {
   return p.replace(/^\/+|\/+$/g, '');
 }
@@ -79,7 +81,6 @@ function isBlockedByExcluded(path: string, excluded: Set<string>) {
   return false;
 }
 
-/** retire les exclusions sous `path` (compression locale) */
 function removeExcludedUnder(path: string, excluded: Set<string>) {
   const next = new Set(excluded);
   for (const ex of excluded) {
@@ -88,21 +89,14 @@ function removeExcludedUnder(path: string, excluded: Set<string>) {
   return next;
 }
 
-/**
- * Compression roots :
- * - si un root est descendant d'un autre root => inutile
- * - si on ajoute un root parent => il absorbe les roots enfants
- */
 function compressRoots(roots: Set<string>) {
   const arr = Array.from(roots).sort();
   const next = new Set<string>();
 
   for (const r of arr) {
-    // déjà couvert par un root gardé ?
     if (isCoveredByRoots(r, next)) continue;
     next.add(r);
 
-    // absorption des roots descendants
     for (const kept of Array.from(next)) {
       if (kept !== r && kept.startsWith(`${r}/`)) next.delete(kept);
     }
@@ -111,10 +105,6 @@ function compressRoots(roots: Set<string>) {
   return next;
 }
 
-/**
- * Compression excluded :
- * - si un excluded est descendant d'un autre excluded => inutile
- */
 function compressExcluded(excluded: Set<string>) {
   const arr = Array.from(excluded).sort();
   const next = new Set<string>();
@@ -123,7 +113,6 @@ function compressExcluded(excluded: Set<string>) {
     if (isBlockedByExcluded(ex, next)) continue;
     next.add(ex);
 
-    // absorption exclusions descendantes
     for (const kept of Array.from(next)) {
       if (kept !== ex && kept.startsWith(`${ex}/`)) next.delete(kept);
     }
@@ -133,14 +122,14 @@ function compressExcluded(excluded: Set<string>) {
 }
 
 export const useSelectionStore = create<SelectionStore>((set, get) => ({
+  // -----------------------------
+  // NORMAL
+  // -----------------------------
   multiSelectActive: false,
-
   selection: {
     roots: new Set(),
     excluded: new Set(),
   },
-
-  binSelection: new Set(),
 
   startSelection: (rootPath: string) => {
     const p = normalizePath(rootPath);
@@ -151,8 +140,8 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
         roots: new Set([p]),
         excluded: new Set(),
       },
-
-      // ✅ En mode "path selection", on vide la sélection bin.
+      // ✅ ne pas mélanger
+      binMultiSelectActive: false,
       binSelection: new Set(),
     });
   },
@@ -176,14 +165,10 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       const isRoot = roots.has(p);
       const coveredByRoot = isCoveredByRoots(p, roots);
 
-      // 1) toggle root explicite : retirer root
-      // ⚠️ Par défaut, retirer un root retire implicitement sa descendance.
-      // Le cas “retirer le dossier mais garder la descendance” se fait via
-      // uncheckFolderPreserveDescendants().
+      // 1) root explicite -> remove root + exclusions dessous
       if (isRoot) {
         roots.delete(p);
 
-        // purge exclusions sous ce root
         const nextExcluded = new Set<string>();
         for (const ex of excluded) {
           if (!(ex === p || ex.startsWith(`${p}/`))) nextExcluded.add(ex);
@@ -193,13 +178,15 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
         excluded = compressExcluded(nextExcluded);
 
         return {
-          // ✅ ne pas auto-sortir du multiselect
           multiSelectActive: true,
           selection: { roots, excluded },
+          // ✅ bin intact
+          binMultiSelectActive: state.binMultiSelectActive,
+          binSelection: state.binSelection,
         };
       }
 
-      // 2) couvert par root => toggle exclusion (exclut un sous-arbre)
+      // 2) couvert -> toggle exclusion
       if (coveredByRoot) {
         if (excluded.has(p)) {
           excluded.delete(p);
@@ -214,10 +201,12 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
         return {
           multiSelectActive: true,
           selection: { roots, excluded },
+          binMultiSelectActive: state.binMultiSelectActive,
+          binSelection: state.binSelection,
         };
       }
 
-      // 3) pas couvert => add root
+      // 3) pas couvert -> add root
       roots.add(p);
       roots = compressRoots(roots);
       excluded = compressExcluded(excluded);
@@ -225,33 +214,8 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       return {
         multiSelectActive: true,
         selection: { roots, excluded },
-
-        // ✅ Toute action de sélection "path" vide la sélection bin.
-        binSelection: new Set(),
-      };
-    });
-  },
-
-  isBinSelected: (trashId: string) => {
-    const id = String(trashId);
-    return get().binSelection.has(id);
-  },
-
-  toggleBinItem: (trashId: string) => {
-    const id = String(trashId);
-
-    set((state) => {
-      const next = new Set(state.binSelection);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-
-      return {
-        // ✅ ne pas auto-sortir du multiselect
-        multiSelectActive: true,
-
-        // ✅ En mode "bin selection", on vide la sélection "path".
-        selection: { roots: new Set(), excluded: new Set() },
-        binSelection: next,
+        binMultiSelectActive: state.binMultiSelectActive,
+        binSelection: state.binSelection,
       };
     });
   },
@@ -264,21 +228,15 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       let roots = compressRoots(normalizeSet(state.selection.roots));
       let excluded = compressExcluded(normalizeSet(state.selection.excluded));
 
-      // On ne fait l'opération que si le dossier est un root explicite.
       if (!roots.has(folder)) return state;
 
-      // 1) retirer le root dossier
       roots.delete(folder);
 
-      // 2) ajouter ses enfants directs comme roots
-      // Un descendant appartient forcément à UN enfant direct => on conserve tout le sous-arbre.
       for (const c of children) {
         if (c === folder || !c.startsWith(`${folder}/`)) continue;
         roots.add(c);
       }
 
-      // 3) si excluded contenait exactement le folder, on l'enlève
-      // (sinon ça irait à l'encontre de “garder les descendants sélectionnés”)
       if (excluded.has(folder)) excluded.delete(folder);
 
       roots = compressRoots(roots);
@@ -287,7 +245,62 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       return {
         multiSelectActive: true,
         selection: { roots, excluded },
+        binMultiSelectActive: state.binMultiSelectActive,
+        binSelection: state.binSelection,
       };
+    });
+  },
+
+  // -----------------------------
+  // BIN
+  // -----------------------------
+  binMultiSelectActive: false,
+  binSelection: new Set(),
+
+  startBinSelection: (trashId: string) => {
+    set({
+      binMultiSelectActive: true,
+      binSelection: new Set([trashId]),
+      // ✅ ne pas mélanger
+      multiSelectActive: false,
+      selection: { roots: new Set(), excluded: new Set() },
+    });
+  },
+
+  toggleBinSelection: (trashId: string) => {
+    set((state) => {
+      const next = new Set(state.binSelection);
+      if (next.has(trashId)) next.delete(trashId);
+      else next.add(trashId);
+
+      return {
+        binMultiSelectActive: true,
+        binSelection: next,
+        multiSelectActive: state.multiSelectActive,
+        selection: state.selection,
+      };
+    });
+  },
+
+  // Aliases (compat)
+  startBinItem: (trashId: string) => get().startBinSelection(trashId),
+  toggleBinItem: (trashId: string) => get().toggleBinSelection(trashId),
+  isBinSelected: (trashId: string) => get().binSelection.has(trashId),
+
+  // -----------------------------
+  // CLEAR
+  // -----------------------------
+  clearNormalSelection: () => {
+    set({
+      multiSelectActive: false,
+      selection: { roots: new Set(), excluded: new Set() },
+    });
+  },
+
+  clearBinSelection: () => {
+    set({
+      binMultiSelectActive: false,
+      binSelection: new Set(),
     });
   },
 
@@ -295,8 +308,7 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     set({
       multiSelectActive: false,
       selection: { roots: new Set(), excluded: new Set() },
-
-      // ✅ clear bin selection aussi
+      binMultiSelectActive: false,
       binSelection: new Set(),
     });
   },

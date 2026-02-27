@@ -1,4 +1,3 @@
-// src/components/cloudinary-finder/TreeView/TreeView.tsx
 'use client';
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
@@ -10,68 +9,89 @@ import FolderNodeComponent from '@/components/cloudinary-finder/TreeView/FolderN
 import { MoveIntent } from '@server/cloudinary/schemas/move.schema';
 import { useSelectionStore } from '@/lib/stores/useSelectionStore';
 
+import { trpc } from '@/lib/trpcClient';
+
+import {
+  basenamePath,
+  type TrashMap,
+  type TrashEntryUi,
+} from '@/components/cloudinary-finder/utils/binTrashUI';
+
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@/server/trpc';
+
 type Props = {
   roots: RootNode[];
   currentPath: string;
   onOpen: (path: string) => void;
   onMove: (intent: MoveIntent) => void;
+  appRoot: string;
 };
 
-/**
- * ✅ Collecte toutes les clés de folders du tree (fullPath).
- * Utilisé pour "tout ouvrir" en multi-select.
- */
+function normalizePath(p: string) {
+  return p.replace(/^\/+|\/+$/g, '');
+}
+
 function collectAllFolderPaths(roots: RootNode[]): string[] {
   const acc: string[] = [];
 
   function walkFolder(folder: FolderNode) {
     acc.push(folder.fullPath);
-
     for (const child of folder.children) {
-      if (child.type === 'folder') {
-        walkFolder(child);
-      }
+      if (child.type === 'folder') walkFolder(child);
     }
   }
 
   for (const node of roots) {
-    if (node.type === 'folder') {
-      walkFolder(node);
-    }
+    if (node.type === 'folder') walkFolder(node);
   }
 
   return acc;
 }
 
-export function TreeView({ roots, currentPath, onOpen, onMove }: Props): JSX.Element {
+function isInBinUi(currentPath: string) {
+  const p = normalizePath(currentPath);
+  return p.includes('/bin') && (p.endsWith('/bin') || p.includes('/bin/'));
+}
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type ListBinOutput = RouterOutputs['trash']['listBin'];
+
+type TrashItem =
+  ListBinOutput extends { items: (infer T)[] }
+    ? T
+    : ListBinOutput extends { entries: (infer T)[] }
+      ? T
+      : never;
+
+function extractTrashItems(data: ListBinOutput | undefined): TrashItem[] {
+  if (!data) return [];
+
+  if ('items' in data && Array.isArray((data as { items?: unknown }).items)) {
+    return (data as { items: TrashItem[] }).items;
+  }
+
+  if ('entries' in data && Array.isArray((data as { entries?: unknown }).entries)) {
+    return (data as { entries: TrashItem[] }).entries;
+  }
+
+  return [];
+}
+
+export function TreeView({ roots, currentPath, onOpen, onMove, appRoot }: Props): JSX.Element {
   const multiSelectActive = useSelectionStore((s) => s.multiSelectActive);
   const clearSelection = useSelectionStore((s) => s.clearSelection);
 
-  /**
-   * ✅ State centralisé pour l’ouverture des folders du Tree.
-   * On stocke les fullPath ouverts.
-   */
   const [openFolders, setOpenFolders] = useState<Set<string>>(() => new Set());
-
-  /**
-   * ✅ Backup/restauration : on mémorise l’état "normal"
-   * avant d’entrer en multi-select, puis on le restaure à la sortie.
-   */
   const openBackupRef = useRef<Set<string> | null>(null);
 
   const allFolderPaths = useMemo(() => collectAllFolderPaths(roots), [roots]);
 
   useEffect(() => {
     if (multiSelectActive) {
-      // Backup une seule fois à l'entrée
-      if (!openBackupRef.current) {
-        openBackupRef.current = new Set(openFolders);
-      }
-
-      // ✅ Tout ouvrir
+      if (!openBackupRef.current) openBackupRef.current = new Set(openFolders);
       setOpenFolders(new Set(allFolderPaths));
     } else {
-      // ✅ Restaurer si on avait un backup
       if (openBackupRef.current) {
         setOpenFolders(openBackupRef.current);
         openBackupRef.current = null;
@@ -81,29 +101,100 @@ export function TreeView({ roots, currentPath, onOpen, onMove }: Props): JSX.Ele
   }, [multiSelectActive, allFolderPaths]);
 
   function toggleFolder(path: string) {
-    // En multi-select : pas de toggle
     if (multiSelectActive) return;
 
     setOpenFolders((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
+      next.has(path) ? next.delete(path) : next.add(path);
       return next;
     });
   }
 
+  const inBin = useMemo(() => isInBinUi(currentPath), [currentPath]);
+
+  /**
+   * ✅ IMPORTANT:
+   * - `limit` doit respecter le schema (max 100) sinon 400.
+   * - ne PAS passer `search: undefined` pour éviter "undefined" sérialisé.
+   */
+  const listBin = trpc.trash.listBin.useQuery(
+    {
+      appRoot,
+      limit: 100,
+      cursor: null,
+      // search: undefined, // ❌ ne pas envoyer
+    },
+    {
+      staleTime: 20_000,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const allTrashItems = useMemo<TrashItem[]>(() => {
+    return extractTrashItems(listBin.data as ListBinOutput | undefined);
+  }, [listBin.data]);
+
+  /**
+   * ✅ Map utilisée UNIQUEMENT en contexte bin (masques .trash + labels)
+   */
+  const trashMap: TrashMap | undefined = useMemo(() => {
+    if (!inBin) return undefined;
+
+    const map: TrashMap = new Map();
+
+    for (const e of allTrashItems) {
+      const ui: TrashEntryUi = {
+        id: e.id,
+        previousPath: e.previousPath,
+        displayName: basenamePath(e.previousPath),
+      };
+      map.set(ui.id, ui);
+    }
+
+    return map;
+  }, [inBin, allTrashItems]);
+
+  /**
+   * ✅ Bin pleine/vide : calcul basé sur listBin même hors bin
+   */
+  const binHasItems = allTrashItems.length > 0;
+
+  // 🔎 Logs conservés pour valider le fix (tu peux les enlever ensuite)
+  useEffect(() => {
+    const binNode = roots.find((n) => n.fullPath === `${appRoot}/bin`);
+    // eslint-disable-next-line no-console
+    console.log('[TreeView][BIN DEBUG]', {
+      appRoot,
+      currentPath,
+      inBin,
+      listBinStatus: {
+        isLoading: listBin.isLoading,
+        isFetching: listBin.isFetching,
+        isError: listBin.isError,
+        hasData: Boolean(listBin.data),
+      },
+      trashCount: allTrashItems.length,
+      binHasItems,
+      binNodeType: binNode ? binNode.type : 'MISSING',
+      binNodeFullPath: binNode?.fullPath ?? null,
+      binNodeName: binNode?.name ?? null,
+    });
+  }, [
+    appRoot,
+    currentPath,
+    inBin,
+    roots,
+    listBin.isLoading,
+    listBin.isFetching,
+    listBin.isError,
+    listBin.data,
+    allTrashItems.length,
+    binHasItems,
+  ]);
+
   return (
     <div
       className="space-y-1"
-      /**
-       * ✅ UX : sortir du multiselect UNIQUEMENT si clic "dans le vide" du panneau Tree.
-       * On considère comme "pas le vide" tout élément qui est dans un item marqué data-tree-item="true".
-       *
-       * Pourquoi capture ?
-       * - pour attraper le clic tôt, mais
-       * - comme tes checkboxes stopPropagation + closest() protège, ça ne sort pas du multiselect
-       *   quand tu cliques un item.
-       */
       onMouseDownCapture={(e) => {
         if (!multiSelectActive) return;
 
@@ -123,11 +214,6 @@ export function TreeView({ roots, currentPath, onOpen, onMove }: Props): JSX.Ele
               currentPath={currentPath}
               onOpen={onOpen}
               onMove={onMove}
-              /**
-               * Si ton VirtualFolderNodeComponent rend une ligne clickable,
-               * assure-toi qu'il met data-tree-item="true" dessus.
-               */
-              // multiSelectActive={multiSelectActive}
             />
           );
         }
@@ -144,6 +230,8 @@ export function TreeView({ roots, currentPath, onOpen, onMove }: Props): JSX.Ele
             multiSelectActive={multiSelectActive}
             openFolders={openFolders}
             setOpenFolders={setOpenFolders}
+            trashMap={trashMap}
+            binHasItems={binHasItems}
           />
         );
       })}

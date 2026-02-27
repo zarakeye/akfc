@@ -6,6 +6,7 @@ import { trpc } from '@/lib/trpcClient';
 type Props = {
   path: string;
   onNavigate: (path: string) => void;
+  
 };
 
 type ParsedPath = {
@@ -32,7 +33,7 @@ function parsePath(fullPath: string): ParsedPath {
       : null;
 
   const base = status ? `${appRoot}/${status}` : appRoot;
-  const prefix = status ? `${base}/` : `${base}/`;
+  const prefix = `${base}/`;
   const suffix = status && p.startsWith(prefix) ? p.slice(prefix.length) : '';
 
   return { appRoot, status, base, suffix };
@@ -106,8 +107,13 @@ function BreadCrumbInner({
 
   const isStatusRoot = parsed.status !== null && normalizePath(path) === parsed.base;
 
+  // ✅ NO EDIT IN BIN (root + sous-dossiers)
+  const isInBin = parsed.status === 'bin';
+  const canEdit = Boolean(parsed.status) && !isInBin;
+
   function startEdit() {
     if (!parsed.status) return;
+    if (isInBin) return;          // ✅ lock
     if (isStatusRoot) return;
     setDraftSuffix(parsed.suffix); // init au clic
     setEditing(true);
@@ -120,6 +126,7 @@ function BreadCrumbInner({
 
   function applyEdit() {
     if (!parsed.status) return;
+    if (isInBin) return; // ✅ lock (sécurité)
 
     const cleaned = normalizePath(draftSuffix);
     if (!cleaned) return;
@@ -178,7 +185,7 @@ function BreadCrumbInner({
     );
   }
 
-  // ✅ Mode normal : breadcrumb + bouton ✏️
+  // ✅ Mode normal : breadcrumb (+ bouton ✏️ seulement si canEdit)
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -197,14 +204,14 @@ function BreadCrumbInner({
         ))}
       </div>
 
-      {parsed.status && (
+      {canEdit && (
         <button
           onClick={startEdit}
           disabled={isBusy || isStatusRoot}
           className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           title={
             isStatusRoot
-              ? 'Renommer la racine pending/published/bin est désactivé'
+              ? 'Renommer la racine pending/published est désactivé'
               : 'Modifier le chemin du dossier'
           }
         >

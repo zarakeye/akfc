@@ -1,3 +1,4 @@
+// src/components/cloudinary-finder/TreeView/FolderNodeComponent.tsx
 'use client';
 
 import React, {
@@ -5,9 +6,9 @@ import React, {
   JSX,
   SetStateAction,
   useEffect,
-  useMemo,
   useRef,
   useState,
+  useMemo,
 } from 'react';
 import clsx from 'clsx';
 
@@ -20,6 +21,13 @@ import { useLongPress } from '@/lib/stores/useLongPress';
 
 import { canMove } from '@/server/cloudinary/move.guards';
 import { startDragGhost } from '@/components/cloudinary-finder/SelectedFolderContent/dragGhost.manager';
+import Image from 'next/image';
+import {
+  type TrashMap,
+  getTrashIdFromStoragePath,
+  getBinTooltipTitle,
+  normalizePath,
+} from '@/components/cloudinary-finder/utils/binTrashUI';
 
 type Props = {
   folder: FolderNode;
@@ -33,43 +41,31 @@ type Props = {
   multiSelectActive: boolean;
   openFolders: Set<string>;
   setOpenFolders: Dispatch<SetStateAction<Set<string>>>;
+
+  trashMap?: TrashMap;
+
+  binHasItems?: boolean;
 };
 
 type TriState = 'checked' | 'indeterminate' | 'unchecked';
 
-function normalizePath(p: string) {
-  return p.replace(/^\/+|\/+$/g, '');
-}
-
-/**
- * pending/published/bin = “status roots” => pas de checkbox.
- *
- * Convention actuelle :
- * - <appRoot>/<status>
- */
 function isStatusRootFolder(fullPath: string): boolean {
   const parts = normalizePath(fullPath).split('/').filter(Boolean);
   if (parts.length !== 2) return false;
   return parts[1] === 'pending' || parts[1] === 'published' || parts[1] === 'bin';
 }
 
-/**
- * ✅ Tri-state basé sur roots/excluded (pas sur les enfants chargés).
- *
- * Pourquoi ?
- * - En tree view, un folder peut être fermé => ses descendants ne sont pas dans le DOM.
- * - L'état du checkbox doit refléter le store (roots/excluded), pas seulement les enfants visibles.
- *
- * Règles :
- * - checked:
- *   - le folder est sélectionné (isSelected(folderPath) = true)
- *   - ET il n'existe aucune exclusion sous ce folder
- * - indeterminate:
- *   - le folder n'est pas sélectionné mais un descendant root l'est
- *   - OU le folder est sélectionné mais on a des exclusions sous lui
- * - unchecked:
- *   - rien de sélectionné dans ce sous-arbre
- */
+function isBinContext(currentPath?: string) {
+  if (!currentPath) return false;
+  const p = normalizePath(currentPath);
+  return p.includes('/bin') && (p.endsWith('/bin') || p.includes('/bin/'));
+}
+
+function isInTrashStorage(fullPath: string) {
+  const p = normalizePath(fullPath);
+  return p.includes('/bin/.trash/');
+}
+
 function getFolderTriState(params: {
   folderPath: string;
   roots: Set<string>;
@@ -80,7 +76,6 @@ function getFolderTriState(params: {
 
   const selectedSelf = isSelected(folderPath);
 
-  // descendant root ? (si oui, le parent devient indeterminate)
   let hasDescendantRoot = false;
   for (const r of roots) {
     if (r !== folderPath && r.startsWith(`${folderPath}/`)) {
@@ -89,7 +84,6 @@ function getFolderTriState(params: {
     }
   }
 
-  // exclusion sous le folder ? (si oui et folder sélectionné => indeterminate)
   let hasExcludedInside = false;
   for (const ex of excluded) {
     if (ex === folderPath || ex.startsWith(`${folderPath}/`)) {
@@ -103,6 +97,10 @@ function getFolderTriState(params: {
   return 'unchecked';
 }
 
+function binTooltipFallback() {
+  return 'Élément supprimé (corbeille)';
+}
+
 export default function FolderNodeComponent({
   folder,
   currentPath,
@@ -113,6 +111,8 @@ export default function FolderNodeComponent({
   multiSelectActive,
   openFolders,
   setOpenFolders,
+  trashMap,
+  binHasItems,
 }: Props): JSX.Element {
   const isActive = folder.fullPath === currentPath;
 
@@ -128,7 +128,7 @@ export default function FolderNodeComponent({
     uncheckFolderPreserveDescendants,
   } = useSelectionStore();
 
-  const statusRoot = useMemo(() => isStatusRootFolder(folder.fullPath), [folder.fullPath]);
+  const statusRoot = isStatusRootFolder(folder.fullPath);
 
   const tri = useMemo(
     () =>
@@ -141,16 +141,7 @@ export default function FolderNodeComponent({
     [folder.fullPath, selection.roots, selection.excluded, isSelected]
   );
 
-  /**
-   * ✅ “Actionnable” = UNIQUEMENT les éléments validés.
-   *
-   * Spéc demandé : en multiselect,
-   * - checked => peut subir action
-   * - indeterminate => NE DOIT PAS subir action
-   */
   const isValidated = tri === 'checked';
-
-  // indeterminate reste visuel, mais non-actionnable
   const rowHighlighted = tri !== 'unchecked';
 
   const checkboxRef = useRef<HTMLInputElement>(null);
@@ -162,15 +153,33 @@ export default function FolderNodeComponent({
   const longPressFiredRef = useRef(false);
 
   const longPressHandlers = useLongPress(() => {
-    // ✅ Status roots : pas de multiselect dessus
     if (statusRoot) return;
-
     longPressFiredRef.current = true;
     startSelection(folder.fullPath);
   });
 
+  // ✅ BIN UI MASK
+  const inBin = isBinContext(currentPath);
+  const inTrashStorage = isInTrashStorage(folder.fullPath);
+  const trashId = inTrashStorage ? getTrashIdFromStoragePath(folder.fullPath) : null;
+
+  if (inBin && folder.name === '.trash') {
+    return <></>;
+  }
+
+  let uiLabel = folder.name;
+  if (inBin && inTrashStorage) {
+    if (trashId && folder.name === trashId) {
+      uiLabel = trashMap?.get(trashId)?.displayName ?? 'Élément supprimé';
+    }
+  }
+
+  let title = folder.fullPath;
+  if (inBin && inTrashStorage) {
+    title = trashMap ? getBinTooltipTitle(folder.fullPath, trashMap) : binTooltipFallback();
+  }
+
   function buildDragSource(): DragSource {
-    // ✅ multiselect + élément validé => selection
     if (multiSelectActive && isValidated) {
       return {
         type: 'selection',
@@ -179,14 +188,10 @@ export default function FolderNodeComponent({
       };
     }
 
-    // ✅ multiselect + indeterminate => pas d'action (on évite le move/delete involontaire)
     if (multiSelectActive && tri === 'indeterminate') {
-      // on renvoie un drag source “neutre” (mais on désactive draggable en amont)
       return { type: 'folder', fullPath: folder.fullPath };
     }
 
-    // ✅ multiselect + item non sélectionné => reset + drag uniquement ce folder
-    // (comportement conservé)
     if (multiSelectActive && tri === 'unchecked') {
       clearSelection();
       return { type: 'folder', fullPath: folder.fullPath };
@@ -206,18 +211,16 @@ export default function FolderNodeComponent({
         return { kind: 'folder' as const, name };
       });
 
-      return previews.length ? previews : [{ kind: 'folder' as const, name: folder.name }];
+      return previews.length ? previews : [{ kind: 'folder' as const, name: uiLabel }];
     }
 
-    return [{ kind: 'folder' as const, name: folder.name }];
+    return [{ kind: 'folder' as const, name: uiLabel }];
   }
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     const source = buildDragSource();
-
     e.dataTransfer.setData('application/cloudinary', JSON.stringify(source));
     e.dataTransfer.effectAllowed = 'move';
-
     startDragGhost({ e, source, previews: buildFolderPreviewsForGhost(source) });
   };
 
@@ -253,7 +256,6 @@ export default function FolderNodeComponent({
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     setIsOver(false);
     setIsForbidden(false);
 
@@ -273,14 +275,6 @@ export default function FolderNodeComponent({
 
   const subFolders = folder.children.filter((child): child is FolderNode => child.type === 'folder');
 
-  /**
-   * Row click
-   * - Multi-select:
-   *   - status root => navigation (onOpen) (pas de sélection)
-   *   - normal folder => toggle
-   * - Normal:
-   *   - navigation
-   */
   const handleRowClick = () => {
     if (multiSelectActive) {
       if (statusRoot) {
@@ -293,18 +287,11 @@ export default function FolderNodeComponent({
     onOpen(folder.fullPath);
   };
 
-  /**
-   * Checkbox change
-   * - status roots: pas de checkbox
-   * - uncheck d'un folder root validé => garder descendance cochée
-   * - sinon toggle standard
-   */
   const handleCheckboxChange = () => {
     if (statusRoot) return;
 
     const isRoot = selection.roots.has(folder.fullPath);
 
-    // ✅ spécial: uncheck d'un folder root validé => on garde la descendance cochée
     if (tri === 'checked' && isRoot) {
       const directChildrenPaths = folder.children.map((c) => c.fullPath);
       uncheckFolderPreserveDescendants(folder.fullPath, directChildrenPaths);
@@ -314,12 +301,20 @@ export default function FolderNodeComponent({
     toggleItem(folder.fullPath);
   };
 
-  // ✅ Désactivation des actions sur les dossiers indéterminés
-  // - ils restent visibles, mais ne peuvent pas être draggés (action).
-  // - les folders status restent draggables en mode normal (utile), mais pas en multiselect.
-  const draggable = !multiSelectActive
-    ? true
-    : !statusRoot && tri !== 'indeterminate';
+  const draggable = !multiSelectActive ? true : !statusRoot && tri !== 'indeterminate';
+
+  const showChevron = !multiSelectActive && subFolders.length > 0 && folder.name !== 'bin';
+
+  /**
+   * ✅ FIX: full/empty corrigé
+   */
+  const binIcon = binHasItems ? (
+    <Image src="/full_trash.svg" alt="full-trash" width={20} height={20} />
+  ) : (
+    <Image src="/empty_trash.svg" alt="empty-trash" width={20} height={20} />
+  );
+
+  const icon = folder.name === 'bin' ? binIcon : '📁';
 
   return (
     <div className="select-none">
@@ -347,13 +342,11 @@ export default function FolderNodeComponent({
           isActive && !multiSelectActive && 'bg-blue-100 text-blue-700',
           isOver && !isForbidden && 'bg-emerald-400/15',
           isOver && isForbidden && 'bg-rose-400/15',
-
-          // background: sélection visuelle (checked OU indeterminate)
           multiSelectActive && rowHighlighted && 'bg-gray-200',
           multiSelectActive && !rowHighlighted && 'hover:bg-gray-100'
         )}
+        title={title}
       >
-        {/* Checkbox : pas sur les status roots */}
         {multiSelectActive && !statusRoot ? (
           <input
             ref={checkboxRef}
@@ -374,10 +367,9 @@ export default function FolderNodeComponent({
           <span className="w-4 inline-block" />
         )}
 
-        {/* Chevron */}
         {multiSelectActive ? (
           <span className="w-4 inline-block" />
-        ) : subFolders.length > 0 ? (
+        ) : showChevron ? (
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -391,8 +383,9 @@ export default function FolderNodeComponent({
           <span className="w-4 inline-block" />
         )}
 
-        <span>{folder.name === 'bin' ? '🗑️' : '📁'}</span>
-        <span className="capitalize truncate">{folder.name}</span>
+        <span>{icon}</span>
+
+        <span className="capitalize truncate">{uiLabel}</span>
       </div>
 
       {isOpen && subFolders.length > 0 && (
@@ -416,6 +409,8 @@ export default function FolderNodeComponent({
               multiSelectActive={multiSelectActive}
               openFolders={openFolders}
               setOpenFolders={setOpenFolders}
+              trashMap={trashMap}
+              binHasItems={binHasItems}
             />
           ))}
         </div>

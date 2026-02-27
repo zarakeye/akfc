@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { trpc } from '@lib/trpcClient';
-import { useIsMutating } from '@tanstack/react-query';
 
 import { TreeView } from '@components/cloudinary-finder/TreeView/TreeView';
 import FolderContentView from '@/components/cloudinary-finder/SelectedFolderContent/FolderContentView';
@@ -22,7 +21,7 @@ import MultiSelectSidebar from '../MultiSelect/MultiSelectSidebar';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
-const INITIAL_PATH = `${APP_SHORT_NAME}/pending`;
+const INITIAL_PATH = `${APP_SHORT_NAME}`;
 
 function normalizePath(p: string): string {
   return p.replace(/^\/+|\/+$/g, '');
@@ -42,29 +41,31 @@ function findFolderByPath(node: FolderNode, path: string): FolderNode | null {
   return null;
 }
 
+function isEditableTarget(el: EventTarget | null): boolean {
+  if (!el || !(el instanceof HTMLElement)) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+  if (el.isContentEditable) return true;
+  return false;
+}
+
 export default function FinderLayout() {
   const [currentPath, setCurrentPath] = useState(INITIAL_PATH);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
-  /**
-   * Contexte de navigation dans un root trash (folder).
-   * - null => navigation normale (tree)
-   * - non null => on est dans `AKFC/bin/<displayName>/...` mais le backend navigue via trashId+relativePath.
-   */
   const [trashCtx, setTrashCtx] = useState<{
     trashId: string;
     displayName: string;
     relativePath: string;
   } | null>(null);
 
-  /**
-   * Preview read-only pour les contenus issus de la corbeille.
-   * Dans la preview, le tooltip doit afficher la provenance (previousPath).
-   */
   const [trashPreviewMeta, setTrashPreviewMeta] = useState<{ previousPath: string } | null>(null);
 
-  const multiSelectActive = useSelectionStore((state) => state.multiSelectActive);
-  const clearSelection = useSelectionStore((state) => state.clearSelection);
+  const multiSelectActive = useSelectionStore((s) => s.multiSelectActive);
+  const clearNormalSelection = useSelectionStore((s) => s.clearNormalSelection);
+
+  const binMultiSelectActive = useSelectionStore((s) => s.binMultiSelectActive);
+  const clearBinSelection = useSelectionStore((s) => s.clearBinSelection);
 
   const treeRef = useRef<HTMLDivElement>(null);
   const explorerRef = useRef<HTMLDivElement>(null);
@@ -78,7 +79,8 @@ export default function FinderLayout() {
   const move = trpc.cloudinary.move.useMutation({
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
-      clearSelection();
+      clearNormalSelection();
+      clearBinSelection();
     },
     onError: (err) => {
       console.error('[move] failed:', err);
@@ -89,13 +91,13 @@ export default function FinderLayout() {
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
       await utils.trash.listBin.invalidate();
-      clearSelection();
+      clearNormalSelection();
+      clearBinSelection();
     },
     onError: (err) => console.error('[trashToBin] failed:', err),
   });
 
-  const mutatingCount = useIsMutating();
-  const showGlobalSpinner = mutatingCount > 0;
+  const showGlobalSpinner = move.isPending || trashToBin.isPending;
 
   const statusRoots = useMemo(() => {
     if (!tree) return [];
@@ -103,7 +105,6 @@ export default function FinderLayout() {
   }, [tree]);
 
   const isVirtualPath = currentPath.startsWith('__virtual__/');
-
   const isBinRootPath = normalizePath(currentPath) === `${APP_SHORT_NAME}/bin`;
 
   const currentFolder = useMemo<FolderNode | null>(() => {
@@ -111,16 +112,11 @@ export default function FinderLayout() {
     return findFolderByPath(tree, currentPath);
   }, [currentPath, isVirtualPath, tree, trashCtx]);
 
-  /**
-   * ✅ Bool UX: est-ce que le dossier courant (réel) a du contenu ?
-   * - Si virtual path => false
-   * - Si currentFolder null => false
-   * - Sinon => children.length > 0
-   */
   const currentFolderHasContent = !!currentFolder && currentFolder.children.length > 0;
 
   useEffect(() => {
-    if (!multiSelectActive) return;
+    const active = multiSelectActive || binMultiSelectActive;
+    if (!active) return;
 
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node | null;
@@ -131,13 +127,31 @@ export default function FinderLayout() {
       const inSidebar = !!multiSelectSidebarRef.current?.contains(target);
 
       if (!inTree && !inExplorer && !inSidebar) {
-        clearSelection();
+        clearNormalSelection();
+        clearBinSelection();
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [multiSelectActive, clearSelection]);
+  }, [multiSelectActive, binMultiSelectActive, clearNormalSelection, clearBinSelection]);
+
+  useEffect(() => {
+    const active = multiSelectActive || binMultiSelectActive;
+    if (!active) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (isEditableTarget(e.target)) return;
+
+      e.preventDefault();
+      clearNormalSelection();
+      clearBinSelection();
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [multiSelectActive, binMultiSelectActive, clearNormalSelection, clearBinSelection]);
 
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !tree) return <div>Erreur</div>;
@@ -147,7 +161,9 @@ export default function FinderLayout() {
     setSelectedFile(null);
     setTrashPreviewMeta(null);
     setTrashCtx(null);
-    clearSelection();
+
+    clearNormalSelection();
+    clearBinSelection();
   }
 
   function handleMove(intent: MoveIntent) {
@@ -156,7 +172,6 @@ export default function FinderLayout() {
       return;
     }
 
-    // ✅ Drop vers bin => corbeille (trashToBin), pas un move status.
     if (intent.target.type === 'virtual-folder' && intent.target.status === 'bin') {
       const sources: Array<
         | { kind: 'file'; fullPath: string }
@@ -188,8 +203,11 @@ export default function FinderLayout() {
           <div
             className="flex-1"
             onMouseDown={(e) => {
-              if (!multiSelectActive) return;
-              if (e.target === e.currentTarget) clearSelection();
+              if (!(multiSelectActive || binMultiSelectActive)) return;
+              if (e.target === e.currentTarget) {
+                clearNormalSelection();
+                clearBinSelection();
+              }
             }}
           >
             <AppTreeWrapper appName={APP_SHORT_NAME}>
@@ -198,6 +216,7 @@ export default function FinderLayout() {
                 currentPath={currentPath}
                 onOpen={handleOpen}
                 onMove={handleMove}
+                appRoot={APP_SHORT_NAME}
               />
             </AppTreeWrapper>
           </div>
@@ -211,11 +230,9 @@ export default function FinderLayout() {
               setSelectedFile(null);
               setTrashPreviewMeta(null);
 
-              // Navigation breadcrumb :
-              // - Si on clique sur `AKFC/bin` => on sort du trashCtx et on affiche la liste plate.
-              // - Si on clique sur `AKFC/bin/<displayName>/...` => on ajuste relativePath.
               const normalized = normalizePath(path);
               const binRoot = `${APP_SHORT_NAME}/bin`;
+
               if (trashCtx) {
                 if (normalized === binRoot) {
                   setTrashCtx(null);
@@ -230,7 +247,8 @@ export default function FinderLayout() {
                 }
               }
 
-              clearSelection();
+              clearNormalSelection();
+              clearBinSelection();
             }}
           />
 
@@ -244,14 +262,14 @@ export default function FinderLayout() {
                 setCurrentPath(`${APP_SHORT_NAME}/bin/${displayName}`);
                 setSelectedFile(null);
                 setTrashPreviewMeta(null);
-                clearSelection();
+                clearNormalSelection();
+                clearBinSelection();
               }}
               onSelectTrashFile={({ name, url, previousPath }) => {
                 if (!url) {
                   alert('Preview indisponible (URL manquante).');
                   return;
                 }
-                // On réutilise FileNode pour la preview (read-only).
                 setSelectedFile({ type: 'file', name, fullPath: `${APP_SHORT_NAME}/bin/${name}`, url });
                 setTrashPreviewMeta({ previousPath });
               }}
@@ -266,7 +284,8 @@ export default function FinderLayout() {
                 setCurrentPath(`${APP_SHORT_NAME}/bin/${trashCtx.displayName}/${nextRel}`);
                 setSelectedFile(null);
                 setTrashPreviewMeta(null);
-                clearSelection();
+                clearNormalSelection();
+                clearBinSelection();
               }}
               onSelectTrashFile={(file) => {
                 setSelectedFile({
@@ -299,7 +318,7 @@ export default function FinderLayout() {
           )}
         </section>
 
-        {selectedFile && !multiSelectActive && (
+        {selectedFile && !multiSelectActive && !binMultiSelectActive && (
           <aside className="w-96 border-l bg-white">
             <FilePreviewSidebar
               file={selectedFile}
@@ -321,15 +340,10 @@ export default function FinderLayout() {
           </aside>
         )}
 
-        {multiSelectActive && (
+        {(multiSelectActive || binMultiSelectActive) && (
           <aside ref={multiSelectSidebarRef} className="w-80 border-l bg-white">
             <MultiSelectSidebar
               currentPath={currentPath}
-              /**
-               * ✅ Nouvelle sécurité UX:
-               * le bouton "Supprimer définitivement" n'apparaît
-               * que si le dossier courant réel a du contenu.
-               */
               currentFolderHasContent={currentFolderHasContent}
             />
           </aside>

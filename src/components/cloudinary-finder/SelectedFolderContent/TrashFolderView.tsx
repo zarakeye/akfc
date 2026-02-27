@@ -1,9 +1,10 @@
 'use client';
 
 import { JSX } from 'react';
-import clsx from 'clsx';
-
 import { trpc } from '@/lib/trpcClient';
+
+import BinGridFolderItem from '@/components/cloudinary-finder/SelectedFolderContent/BinGridFolderItem';
+import BinGridFileItem from '@/components/cloudinary-finder/SelectedFolderContent/BinGridFileItem';
 
 type Props = {
   appRoot: string;
@@ -17,6 +18,7 @@ type Props = {
  * TrashFolderView
  *
  * Navigation lecture seule à l'intérieur d'un root trash (folder).
+ * ✅ rendu fidèle GridFolderItem/GridFileItem
  * - pas de checkbox
  * - pas de DnD
  * - folders => navigation (relativePath)
@@ -46,49 +48,42 @@ export default function TrashFolderView({
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 gap-4">
       {children.map((n) => {
         if (n.type === 'folder') {
+          const next = relativePath ? `${relativePath}/${n.name}` : n.name;
+          const title = n.meta?.previousPath ?? n.fullPath;
+
           return (
-            <div
+            <BinGridFolderItem
               key={n.fullPath}
-              className={clsx('border rounded-lg p-3 cursor-pointer hover:shadow-sm transition')}
-              onClick={() => {
-                // relativePath = current + '/' + folderName
-                const next = relativePath ? `${relativePath}/${n.name}` : n.name;
-                onOpenRelativeFolder(next);
-              }}
-              title={n.fullPath}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📁</span>
-                <div className="font-medium truncate">{n.name}</div>
-              </div>
-              <div className="text-xs text-gray-500 truncate mt-1" title={n.meta.previousPath}>
-                {n.meta.previousPath}
-              </div>
-            </div>
+              trashId={n.fullPath} // read-only
+              displayName={n.name}
+              canMultiSelect={false}
+              title={title}
+              onOpen={() => onOpenRelativeFolder(next)}
+            />
           );
         }
 
-        // file
+        const title = n.meta?.previousPath ?? n.fullPath;
+
         return (
-          <div
+          <BinGridFileItem
             key={n.fullPath}
-            className={clsx('border rounded-lg p-3 cursor-pointer hover:shadow-sm transition')}
-            onClick={() => {
-              onSelectTrashFile({ name: n.name, url: n.url, previousPath: n.meta.previousPath });
+            trashId={n.fullPath} // read-only
+            displayName={n.name}
+            previewUrl={n.url}
+            canMultiSelect={false}
+            title={title}
+            onOpen={() => {
+              onSelectTrashFile({
+                name: n.name,
+                url: n.url,
+                previousPath: n.meta?.previousPath ?? '',
+              });
             }}
-            title={n.meta.previousPath}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🖼️</span>
-              <div className="font-medium truncate">{n.name}</div>
-            </div>
-            <div className="text-xs text-gray-500 truncate mt-1" title={n.meta.previousPath}>
-              {n.meta.previousPath}
-            </div>
-          </div>
+          />
         );
       })}
     </div>

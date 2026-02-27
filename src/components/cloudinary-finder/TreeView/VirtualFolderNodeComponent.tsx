@@ -1,7 +1,8 @@
 'use client';
 
-import { JSX, useState } from 'react';
+import { JSX, useMemo, useState } from 'react';
 import clsx from 'clsx';
+import Image from 'next/image';
 
 import type { VirtualFolderNode } from '@/components/cloudinary-finder/types';
 import type { DragSource } from '@/shared/cloudinary/move.types';
@@ -13,6 +14,11 @@ type Props = {
   currentPath?: string;
   onOpen: (path: string) => void;
   onMove: (intent: MoveIntent) => void;
+
+  /**
+   * ✅ Pour l'icône bin pleine/vide même quand "bin" est VIRTUEL
+   */
+  binHasItems?: boolean;
 };
 
 /**
@@ -25,11 +31,26 @@ export default function VirtualFolderNodeComponent({
   currentPath,
   onOpen,
   onMove,
+  binHasItems,
 }: Props): JSX.Element {
   const [isOver, setIsOver] = useState(false);
   const [isForbidden, setIsForbidden] = useState(false);
 
   const isActive = node.fullPath === currentPath;
+
+  const icon = useMemo(() => {
+    // ✅ bin: icône pleine/vide
+    if (node.status === 'bin') {
+      return binHasItems ? (
+        <Image src="/full_trash.svg" alt="full-trash" width={20} height={20} />
+      ) : (
+        <Image src="/empty_trash.svg" alt="empty-trash" width={20} height={20} />
+      );
+    }
+
+    // ✅ autres status: icône dossier
+    return '📂';
+  }, [node.status, binHasItems]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault(); // nécessaire pour autoriser le drop
@@ -79,6 +100,9 @@ export default function VirtualFolderNodeComponent({
         target: { type: 'virtual-folder', status: node.status },
       };
 
+      // ✅ garde-fou: si canMove=false, ne pas déclencher onMove
+      if (!canMove(source, intent.target)) return;
+
       onMove(intent);
     } catch (err) {
       console.error('[VirtualFolderNodeComponent] Invalid drop payload', err);
@@ -100,12 +124,13 @@ export default function VirtualFolderNodeComponent({
         isOver && !isForbidden && 'bg-emerald-400/15',
         isOver && isForbidden && 'bg-rose-400/15'
       )}
+      title={node.fullPath}
     >
       <div className="flex items-center gap-2">
         {/* ✅ placeholder chevron pour aligner */}
         <span className="w-4 inline-block" />
 
-        <span>📂</span>
+        <span>{icon}</span>
         <span className="capitalize truncate">{node.name}</span>
       </div>
     </div>
