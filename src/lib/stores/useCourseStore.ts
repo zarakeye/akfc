@@ -12,14 +12,26 @@ export interface CourseStoreState {
   // deleteCourse: (id: number) => Promise<void>;
 }
 
-export const useCourseStore = create<CourseStoreState>((set, get) => ({
+export const useCourseStore = create<CourseStoreState>((set, get): CourseStoreState => ({
   courses: [],
   setCourses: (courses: Course[]) => set({ courses }),
-  fetchCourses: async () => {
+
+  /**
+   * Fetches all courses from the server and updates the store.
+   * Resolves with void when complete.
+   */
+  fetchCourses: async (): Promise<void> => {
     const courses = await trpcClient.course.getAll.query();
     set({ courses });
   },
-  fetchCourseById: async (id: number) => {
+
+  /**
+   * Fetches a course from the server by its id.
+   * Resolves with the course object if found, or null if not found.
+   * @param id The id of the course to fetch.
+   * @returns A promise that resolves with the course object or null.
+   */
+  fetchCourseById: async (id: number): Promise<Course | null> => {
     const course = await trpcClient.course.getById.query({ id });
     return course;
   },

@@ -12,6 +12,13 @@ type CreateSessionResult = {
   sessionId: Session['id'];
 }
 
+/**
+ * Creates a new session for the user and returns the session id.
+ * The session is stored in the database and a JWT token is generated.
+ * The JWT token is set to expire in 7 days and is stored in a cookie.
+ * @param {UserEnhancedStrict} user - The user to create a session for
+ * @returns {Promise<CreateSessionResult>} - A promise resolving to an object containing the session id
+ */
 export async function createSessionJWT(user: UserEnhancedStrict): Promise<CreateSessionResult> {
   // Set the token to expire in 7 days
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
@@ -56,6 +63,7 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
 /**
  * Deletes the session associated with the given cookie, and then deletes the cookie.
  * If the cookie is not present, the function does nothing.
+ * @returns {Promise<void>} - A promise resolving when the session has been deleted and the cookie has been removed.
  */
 export async function deleteSessionFromCookie() {
   const cookiestore = await cookies();
@@ -76,7 +84,11 @@ export async function deleteSessionFromCookie() {
   cookiestore.delete(COOKIE_NAME);
 }
 
-
+/**
+ * Retrieves the user associated with the session from the cookie.
+ * If the cookie is not present, or the session is invalid/expired, returns null.
+ * @returns {Promise<(User & { role: (Role & { permissions: Permission[]; }) | null> | null>} - A promise resolving to the user, including their role and permissions.
+ */
 export async function getUserFromSessionJWT(): Promise<(User & { role: (Role & { permissions: Permission[]; }) | null }) | null> {
   // Get the cookie
   const cookieStore = await cookies();
@@ -122,6 +134,12 @@ export async function getUserFromSessionJWT(): Promise<(User & { role: (Role & {
   }
 }
 
+/**
+ * Refresh the session JWT with the new information.
+ * @param {Session} session - The session to refresh.
+ * @param {User} user - The user associated with the session.
+ * @returns {Promise<Session | null>} - The updated session or null if an error occurs.
+ */
 export async function refreshSessionJWT(session: Session, user: User) {
   // Regénérer un nouveau JWT avec les nouvelles infos
   const newJwt = jwt.sign(
@@ -159,13 +177,24 @@ export async function refreshSessionJWT(session: Session, user: User) {
   }
 }
 
-
+/**
+ * Retrieves the JWT token from the cookie store.
+ * If the cookie is not present, returns null.
+ * @returns {Promise<string | null>} - The JWT token if present, null otherwise.
+ */
 export async function getToken(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
+
   return token ?? null;
 }
 
+/**
+ * Verifies the given JWT token and returns the decoded payload if successful,
+ * or null if the token is invalid or missing.
+ * @param {string | null} token - The JWT token to verify.
+ * @returns {{ sub: string } | null} - The decoded payload if successful, null otherwise.
+ */
 export function verifyJwt(token: string | null): { sub: string } | null {
   try {
     if (!token) return null;

@@ -9,7 +9,16 @@ export type CreateRoleFormState = {
   error?: string;
 }
 
-// 🧩 Action Server
+/**
+ * 🧩 Action Server
+ * Creates a new role with the given name, permissions, and description.
+ * 
+ * @param {CreateRoleFormState} prevState - The current state of the action.
+ * @param {FormData} formData - The form data containing the name, permissions, and description.
+ * @returns {Promise<CreateRoleFormState>} A promise that resolves to an object with a success property and an error property.
+ * If the creation is successful, success is true and error is an empty object.
+ * If the creation fails, success is false and error is an object with a message property.
+ */
 export const createRoleFormAction = async (
   prevState: CreateRoleFormState,
   formData: FormData

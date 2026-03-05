@@ -1,14 +1,11 @@
 'use client';
 
+import { JSX } from 'react';
 import { trpc } from '@/lib/trpcClient';
-import { JSX, useState } from 'react';
-import { UpdateRoleForm } from '@/app/forms/UpdateRole.form';
-import { Role } from '@prisma/client';
+// import { UpdateRoleForm } from '@/app/forms/UpdateRole.form';
+// import { Role } from '@prisma/client';
 
 interface RoleCardProps {
-  // setDisplayRoleCard: (role: null) => void;
-  // displayRoleCard: Role | null;
-  // setUpdateRole: (updateRole: RoleWithPermissions | null) => void;
   roleId: number
 }
 
@@ -51,8 +48,6 @@ export default function RoleCard({ /*displayRoleCard, setDisplayRoleCard, setUpd
   );
 
   return (
-    <>
-    {/* {displayRoleCard && ( */}
     <div className="flex flex-col card w-96 bg-base-100 shadow-xl">
       <div className="card-body">
         <h2 className="card-title">Rôle : {role.name}</h2>
@@ -71,7 +66,6 @@ export default function RoleCard({ /*displayRoleCard, setDisplayRoleCard, setUpd
           className="btn btn-primary bg-gray-600 text-white rounded px-2"
           // onClick={() => {
           //   setUpdateRole(role);
-          //   setDisplayRoleCard(null)
           // }}
         >
           Modifier
@@ -80,7 +74,5 @@ export default function RoleCard({ /*displayRoleCard, setDisplayRoleCard, setUpd
         <button className="btn btn-primary bg-gray-600 text-white rounded px-2">Liste des rôles</button>
       </div>
     </div>
-    {/* )} */}
-    </>
   );
 }

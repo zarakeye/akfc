@@ -27,7 +27,7 @@ export interface CursorVisibilityOptions {
 export function useCursorVisibility({
   editor,
   overlayHeight = 0,
-}: CursorVisibilityOptions) {
+}: CursorVisibilityOptions): ReturnType<typeof useBodyRect> {
   const { height: windowHeight } = useWindowSize()
   const rect = useBodyRect({
     enabled: true,
@@ -36,6 +36,12 @@ export function useCursorVisibility({
   })
 
   useEffect(() => {
+    /**
+     * Ensures that the cursor remains visible when typing in a Tiptap editor.
+     * Automatically scrolls the window when the cursor would be hidden by the toolbar.
+     * @param {Editor} editor The Tiptap editor instance
+     * @param {number} overlayHeight Toolbar height to account for
+     */
     const ensureCursorVisibility = () => {
       if (!editor) return
 

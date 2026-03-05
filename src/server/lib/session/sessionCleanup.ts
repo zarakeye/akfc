@@ -4,7 +4,9 @@ import { prisma } from "@/server/prisma";
 const CLEANUP_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
- * Supprime toutes les sessions expirées dans la DB
+ * Supprime toutes les sessions expirées dans la base de données.
+ * Si des sessions sont supprimées, affiche un message de log indiquant le nombre de sessions supprimées.
+ * Si une erreur survient, affiche un message d'erreur avec le détail de l'erreur.
  */
 export async function cleanupExpiredSessions(): Promise<void> {
   try {
@@ -23,7 +25,9 @@ export async function cleanupExpiredSessions(): Promise<void> {
 }
 
 /**
- * Lance le cron interne pour nettoyer les sessions périodiquement
+ * Lance le nettoyage des sessions expirées de manière périodique.
+ * Au démarrage, nettoie les sessions expirées.
+ * Ensuite, lance une boucle d'appel répétée toutes les 10 minutes pour nettoyer les sessions expirées.
  */
 export function startSessionCleanupCron(): void {
   // Au démarrage

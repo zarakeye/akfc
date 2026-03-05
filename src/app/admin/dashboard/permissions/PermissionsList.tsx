@@ -5,6 +5,12 @@ import { trpc } from '@lib/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { Permission } from '@prisma/client';
 
+/**
+ * A component that displays a list of all permissions from the database.
+ * It uses the trpc.permission.getAll hook to fetch the data and the react-ts-tab-lib library to render the table.
+ * The component also handles loading and error states for both the permissions data.
+ * @returns {JSX.Element} A JSX element representing the PermissionsList component.
+ */
 export default function PermissionsList(): JSX.Element {
   const { data: permissions, isLoading, isError } = trpc.permission.getAll.useQuery();
 

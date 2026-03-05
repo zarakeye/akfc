@@ -52,6 +52,20 @@ export const isVirtualFolderTarget = (
  * mais c'est acceptable tant qu'on n'a pas un resolver vers l'arbre.
  */
 
+/**
+ * Returns true if the source can be moved to the target, false otherwise.
+ * This guard function implements the following rules:
+ * - A selection can be moved to a virtual folder.
+ * - A selection can be moved to a folder if none of its roots are equal to the target or are descendants of the target.
+ * - A folder cannot be moved to itself or to one of its descendants.
+ * - A file can be moved to a folder or to a virtual folder.
+ * - A folder can be moved to a folder or to a virtual folder.
+ * - All other moves are not allowed.
+ *
+ * @param source The source of the move, which can be a file, a folder, or a selection.
+ * @param target The target of the move, which can be a folder or a virtual folder.
+ * @returns True if the move is allowed according to the rules, false otherwise.
+ */
 export const canMove = (
   source: DragSource,
   target: MoveTarget

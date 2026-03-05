@@ -29,6 +29,16 @@ type SessionDB = Session & {
   }) | null;
 };
 
+/**
+ * Maps a SessionDB object to a SessionClient object.
+ *
+ * If the SessionDB object is null or has no user, returns a SessionClient object with a null user.
+ *
+ * Otherwise, returns a SessionClient object with the user's information and role details.
+ *
+ * @param {SessionDB | null} session - The SessionDB object to map.
+ * @returns {SessionClient} - The mapped SessionClient object.
+ */
 function mapSessionDBToSessionClient(session: SessionDB | null): SessionClient {
   if (!session || !session.user) {
     return {
@@ -61,7 +71,11 @@ function mapSessionDBToSessionClient(session: SessionDB | null): SessionClient {
 }
 
 /**
- * Parse simple d'un header Cookie.
+ * Parse a simple cookie header.
+ *
+ * @param {string | null} cookieHeader - The raw cookie header string.
+ * @param {string} name - The name of the cookie to search for.
+ * @returns {string | null} - The value of the cookie if found, or null otherwise.
  */
 function getCookieFromHeader(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -81,6 +95,10 @@ function getCookieFromHeader(cookieHeader: string | null, name: string): string 
 
 /**
  * Récupère le token cookie soit via req.headers, soit via cookies() Next.
+ * Fallback sur cookies() si req est null.
+ * Retourne le token cookie si disponible, null sinon.
+ * @param {Request | null} [req] - La requête Next.
+ * @returns {Promise<string | null>} - Le token cookie si disponible, null sinon.
  */
 async function readAuthToken(req?: Request): Promise<string | null> {
   // 1) si on a req => on lit le header cookie (marchera partout)
@@ -98,6 +116,14 @@ async function readAuthToken(req?: Request): Promise<string | null> {
   }
 }
 
+/**
+ * Récupère la session en cours associée à la requête.
+ * Si le token cookie est absent ou invalide, renvoie null.
+ * Sinon, récupère la session en cours et renvoie les informations de la session.
+ *
+ * @param {Request | null} [req] - La requête Next.
+ * @returns {Promise<SessionClient | null>} - La session en cours si disponible, null sinon.
+ */
 export async function getSessionFromRequest(req?: Request): Promise<SessionClient | null> {
   const token = await readAuthToken(req);
 

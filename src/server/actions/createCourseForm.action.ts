@@ -12,8 +12,22 @@ export interface CreateCourseStateType {
   error?: string;
 }
 
-// 🧩 Action Server
-
+/**
+ * 🧩 Action Server
+ * Creates a new course with the given form data.
+ * 
+ * Validation is done in two steps:
+ * - First, the form data is validated against the `createCourseFormSchema` using Zod.
+ * - If the validation is successful, the course is created in Prisma.
+ * 
+ * If any error occurs during the process, an error message is returned.
+ * 
+ * @param {CreateCourseStateType} prevState - The current state of the action.
+ * @param {FormData} formData - The form data containing the course details.
+ * @returns {Promise<CreateCourseStateType>} A promise that resolves to an object with a success property and an error property.
+ * If the creation is successful, success is true and error is an empty object.
+ * If the creation fails, success is false and error is an object with a message property.
+ */
 export const createCourseFormAction = async (
   prevState: CreateCourseStateType,
   formData: FormData

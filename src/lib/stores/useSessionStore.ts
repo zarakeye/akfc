@@ -42,7 +42,7 @@ interface SessionStore {
   resetStatus: () => void;
 }
 
-export const useSessionStore = create<SessionStore>()((set, get) => ({
+export const useSessionStore = create<SessionStore>()((set, get): SessionStore => ({
   session: null,
   loading: false,
   status: "idle",

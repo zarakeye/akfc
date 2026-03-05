@@ -1,8 +1,12 @@
 import { v2 as cloudinary } from 'cloudinary';
 
 /**
- * Supprime logiquement tous les fichiers d’un dossier virtuel
- * en les déplaçant vers la corbeille (bin).
+ * Supprime définitivement tous les fichiers contenus dans un dossier virtuel de la corbeille
+ * en utilisant metadata.back comme source de vérité.
+ * 
+ * @param path - Chemin de dossier virtuel de la corbeille
+ * 
+ * @returns Une promesse qui se résout en tant que l'opération est terminée
  */
 export async function deleteAll(path: string): Promise<void> {
   let nextCursor: string | undefined;

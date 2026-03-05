@@ -1,9 +1,10 @@
 'use client';
 
+import { JSX } from 'react';
 import UserCard from "../dashboard/users/UserCard";
 import { useSessionStore } from "@/lib/stores/useSessionStore";
 
-export default function DashboardHome() {
+export default function DashboardHome(): JSX.Element {
   const user = useSessionStore(state => state.session?.user);
 
   return (

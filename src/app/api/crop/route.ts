@@ -4,7 +4,24 @@ import sharp from 'sharp';
 
 export const runtime = 'nodejs';
 
-export async function POST(req: Request) {
+/**
+ * Crop an image to a given area.
+ *
+ * @param {Request} req - Request object from Next.js
+ * @returns {Promise<NextResponse>} - Response object from Next.js
+ *
+ * @example
+ * POST /api/crop -d 'file=@/path/to/image.jpg&left=10&top=20&width=100&height=50&rotate=45&id=12345'
+ *
+ * @param {File | null} formData.file - File object from multipart/form-data
+ * @param {number} [formData.left=0] - Left coordinate of the area to crop
+ * @param {number} [formData.top=0] - Top coordinate of the area to crop
+ * @param {number} [formData.width=0] - Width of the area to crop
+ * @param {number} [formData.height=0] - Height of the area to crop
+ * @param {number} [formData.rotate=0] - Rotation of the area to crop in degrees
+ * @param {string} [formData.id=''] - Optional ID to identify the cropped image
+ */
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     const formData = await req.formData();
 

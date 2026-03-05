@@ -42,7 +42,6 @@ export default function UsersList(): JSX.Element {
   }, [isError]);
 
   const columns: Column<User>[] = [
-    // { property: 'id', displayName: 'ID', type: 'string' },
     { property: 'firstName', displayName: 'Prénom', type: 'string' },
     { property: 'lastName', displayName: 'Nom', type: 'string' },
     { property: 'email', displayName: 'Email', type: 'string' },

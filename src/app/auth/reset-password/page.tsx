@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpcClient";
 
@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpcClient";
  * - En cas de succès: message + redirection possible vers /auth/login
  */
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 

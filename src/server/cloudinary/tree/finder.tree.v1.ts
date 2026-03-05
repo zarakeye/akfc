@@ -12,6 +12,16 @@ interface FlatResource {
  * - Base: dossiers venant de la DB (même vides)
  * - + Injection: fichiers venant de Cloudinary (resources)
  */
+
+/**
+ * Builds the "Finder Tree" (V1) by combining the registered folder paths
+ * from the DB with the resources from Cloudinary.
+ *
+ * @param resources A list of resources from Cloudinary
+ * @param registeredFolderPaths A list of folder paths registered in the DB
+ * @param rootPath The root path of the tree
+ * @returns The root of the Finder Tree
+ */
 export function buildCloudinaryTree(
   resources: FlatResource[],
   registeredFolderPaths: string[],
@@ -24,6 +34,14 @@ export function buildCloudinaryTree(
     children: [],
   };
 
+  /**
+   * Ensures that the given absolute folder path exists in the tree.
+   *
+   * @param absoluteFolderPath - The absolute folder path to ensure
+   *
+   * This function will create all necessary intermediate folders in the tree
+   * if they do not already exist.
+   */
   const ensureFolder = (absoluteFolderPath: string) => {
     if (absoluteFolderPath === rootPath) return;
 

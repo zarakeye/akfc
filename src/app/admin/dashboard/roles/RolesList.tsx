@@ -5,14 +5,16 @@ import { trpc } from '@lib/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { Role } from '@prisma/client';
 
-// interface RolesListProps {
-//   setCreating: (creating: 'USER' | 'PERMISSION' | 'ROLE' | 'COURSE' | 'EVENT' | 'STAGE' | 'POST' | 'ACTIVITY_TYPE' | null) => void
-//   setOpenList: (open: 'USERS' | 'PERMISSIONS' | 'ROLES' | 'COURSES' | 'EVENTS' | 'STAGES' | 'POSTS' | 'ACTIVITY_TYPES' | null) => void
-//   setDisplayingMyInfo: (display: boolean) => void
-//   setDisplayRoleCard: (role: Role | null) => void
-// }
-
-export default function RolesList(/*{ setCreating, setOpenList, setDisplayingMyInfo, setDisplayRoleCard }: RolesListProps*/): JSX.Element {
+/**
+ * RolesList component
+ * 
+ * This component is responsible for displaying a list of all roles from the database.
+ * It uses the trpc.role.getAll hook to fetch the data and the react-ts-tab-lib library to render the table.
+ * The component also handles loading and error states for the roles data.
+ * 
+ * @returns {JSX.Element} A JSX element representing the RolesList component.
+ */
+export default function RolesList(): JSX.Element {
   const { data: roles, isLoading, isError } = trpc.role.getAll.useQuery();
 
   if (isLoading) return <div>Loading...</div>;

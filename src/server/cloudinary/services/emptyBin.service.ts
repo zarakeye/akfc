@@ -3,11 +3,10 @@ import { cloudinary } from "@/server/cloudinary/cloudinary.client";
 type ResourceType = "image" | "video" | "raw";
 
 /**
- * Vide irréversiblement la corbeille (bin) pour le projet.
- * - Supporte authenticated
- * - Supprime image/video/raw
+ * Supprime irréversiblement la corbeille (bin) pour le projet.
  *
- * ⚠️ IRRÉVERSIBLE
+ * @param {string} projectRoot - Root du projet Cloudinary
+ * @returns {Promise<void>} - Promesse qui se résout lorsque la corbeille est vide
  */
 export async function emptyBinService(projectRoot: string): Promise<void> {
   const binPrefix = `${projectRoot}/bin`;

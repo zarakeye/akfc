@@ -7,6 +7,15 @@ import {
   moveToBin,
 } from "./cloudinary.path";
 
+/**
+ * Deletes files from Cloudinary.
+ *
+ * Files are permanently deleted from Cloudinary storage and CDN and cannot be restored.
+ * 
+ * @param {string[]} publicIds - An array of publicIds to delete.
+ * @throws {Error} If any of the publicIds is not valid.
+ * @returns {Promise<void>} A promise that resolves when the files are deleted.
+ */
 export async function deleteFiles(publicIds: string[]): Promise<void> {
   for (const publicId of publicIds) {
     try {

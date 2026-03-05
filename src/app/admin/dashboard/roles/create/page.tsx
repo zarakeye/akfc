@@ -1,13 +1,14 @@
 'use client';
 
-import { CreateRoleForm } from "@/app/forms/CreateRole.form";
+import { JSX } from 'react';
+import { CreateRoleForm } from "@/features/admin-forms/components/CreateRole.form";
 
 /**
  * Page for creating a new role.
  *
  * Displays a form for creating a new role, with fields for name, description, and permissions.
  */
-export default function CreateRolePage() {
+export default function CreateRolePage(): JSX.Element {
   return (
     <>
       <h2 className="text-2xl font-bold mb-4">Créer un rôle</h2>

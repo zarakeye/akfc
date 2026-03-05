@@ -2,7 +2,7 @@
 // export const runtime = 'nodejs';
 
 import { prisma } from "@server/prisma";
-import { createCategoryFormSchema, type CreateCategoryFormSchema } from "@/server/schemas/createCategoryForm.schema";
+import { createCategoryFormSchema } from "@/server/schemas/createCategoryForm.schema";
 import type { CreateActivityTypeState } from "@server/actions/actionState.interfaces";
 
 export interface CreateCategoryState {
@@ -10,7 +10,16 @@ export interface CreateCategoryState {
   error?: string;
 }
 
-// 🧩 Action Server
+/**
+ * 🧩 Action Server
+ * Creates a new activity type with the given type.
+ * 
+ * @param {CreateActivityTypeState} prevState - The current state of the action.
+ * @param {FormData} formData - The form data containing the type.
+ * @returns {Promise<CreateActivityTypeState>} A promise that resolves to an object with a success property and an error property.
+ * If the creation is successful, success is true and error is an empty object.
+ * If the creation fails, success is false and error is an object with a message property.
+ */
 export const createActivityTypeAction = async (
   prevState: CreateActivityTypeState,
   formData: FormData

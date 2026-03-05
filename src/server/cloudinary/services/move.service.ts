@@ -27,6 +27,15 @@ type ListedAsset = {
   resource_type: CloudinaryResourceType;
 };
 
+/**
+ * Exécute un intent de move.
+ *
+ * @param intent - Le move intent à exécuter.
+ *
+ * @returns Une promesse qui se résout en rien une fois le move intent exécuté.
+ *
+ * @throws {Error} Si le move intent est invalide.
+ */
 export async function moveService(intent: MoveIntent): Promise<void> {
   const { source, target } = intent;
 
@@ -133,6 +142,13 @@ export async function moveService(intent: MoveIntent): Promise<void> {
  * ---------------------------------------------------------------------------
  */
 
+/**
+ * Rename an asset on Cloudinary with the given resource type.
+ * @param from The current public ID of the asset.
+ * @param to The new public ID of the asset.
+ * @param resourceType The type of the asset to rename.
+ * @returns A promise that resolves when the asset has been renamed.
+ */
 async function renameAsset(from: string, to: string, resourceType: CloudinaryResourceType) {
   // ✅ on passe resource_type pour que rename marche (image/video/raw)
   await cloudinary.uploader.rename(from, to, {
@@ -142,6 +158,12 @@ async function renameAsset(from: string, to: string, resourceType: CloudinaryRes
   });
 }
 
+/**
+ * Récupère les informations sur un asset Cloudinary (authenticated) en essayant les 3 types de ressources (image, video, raw).
+ * @param publicId The public ID of the asset to retrieve info from.
+ * @returns A promise that resolves with an object containing the resource type of the asset.
+ * @throws {Error} If the asset is not found (any resource type).
+ */
 async function getAssetInfo(publicId: string): Promise<{ resource_type: CloudinaryResourceType }> {
   // cloudinary.api.resource() nécessite le bon resource_type, donc on essaie les 3
   for (const rt of ['image', 'video', 'raw'] as const) {
@@ -158,6 +180,15 @@ async function getAssetInfo(publicId: string): Promise<{ resource_type: Cloudina
   throw new Error(`Asset not found (any resource_type): ${publicId}`);
 }
 
+/**
+ * List all the assets under a given prefix (authenticated) for image/video/raw.
+ * NOTE perf:
+ * - on pagine par 500.
+ * - en cas de gros dossiers, cette liste peut être lourde.
+ *   On optimise plus tard si nécessaire (cache, listing par "subfolders", etc.).
+ * @param prefix The prefix to list assets under.
+ * @returns A promise that resolves with an array of ListedAsset objects.
+ */
 async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
   const out: ListedAsset[] = [];
 
@@ -187,6 +218,14 @@ async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
   return out;
 }
 
+/**
+ * Renomme un dossier récursivement (image/video/raw) de sourcePrefix vers targetPrefix.
+ * - On bouge image/video/raw, paginé.
+ * - (Ton ancienne version ne gérait qu'un type implicite et une pagination partielle selon usage.)
+ * @param sourcePrefix Le préfixe actuel du dossier à renommer.
+ * @param targetPrefix Le préfixe cible du dossier à renommer.
+ * @returns Une promesse qui se résout lorsqu'un dossier a été renommé.
+ */
 async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
   /**
    * Version robuste: on bouge image/video/raw, paginé.
@@ -220,6 +259,11 @@ async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string)
  * ---------------------------------------------------------------------------
  */
 
+/**
+ * Collect all the assets that are under the given roots and not excluded.
+ * @param input The input object with roots and excluded arrays.
+ * @returns A promise that resolves with an array of ListedAsset objects.
+ */
 async function collectSelectedAssets(input: {
   roots: string[];
   excluded: string[];
@@ -251,6 +295,14 @@ async function collectSelectedAssets(input: {
   return out;
 }
 
+/**
+ * Try to get an asset from Cloudinary by its public ID, authenticated.
+ * The function will try all the resource types in order (image, video, raw).
+ * If an asset is found, it returns a ListedAsset object with the public ID and resource type.
+ * If no asset is found (any resource type), it returns null.
+ * @param publicId The public ID of the asset to try to get.
+ * @returns A promise that resolves with a ListedAsset object or null.
+ */
 async function tryGetAsset(publicId: string): Promise<ListedAsset | null> {
   for (const rt of ['image', 'video', 'raw'] as const) {
     try {
@@ -286,6 +338,13 @@ async function moveSelectionIntoFolder(params: {
 }) {
   const { roots, excluded, targetFolder } = params;
 
+  /**
+   * Returns true if the public ID is excluded, false otherwise.
+   * An asset is excluded if its public ID is equal to an excluded string
+   * or if it starts with an excluded string followed by a slash.
+   * @param publicId The public ID to check.
+   * @returns True if the asset is excluded, false otherwise.
+   */
   const isExcluded = (publicId: string) =>
     excluded.some((ex) => publicId === ex || publicId.startsWith(`${ex}/`));
 

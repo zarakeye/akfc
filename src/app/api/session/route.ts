@@ -4,7 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { COOKIE_NAME } from "@/lib/constants";
 
-export async function GET(req: NextRequest) {
+/**
+ * GET /api/session
+ * @summary Récupère la session en cours.
+ * @description Si le cookie est absent ou invalide, redirige vers la page de login.
+ * Sinon, récupère la session en cours et renvoie les informations de la session.
+ * @returns {NextResponse} - JSON contenant les informations de la session.
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
   // Récupère le cookie
   const cookieHeader = req.headers.get("cookie") ?? "";
   const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => {
@@ -24,7 +31,6 @@ export async function GET(req: NextRequest) {
   }
 
   // Récupère la session
-  // const payload = jwt.verify(token, process.env.JWT_SECRET ?? "");
   const session = await prisma.session.findUnique({
     where: { id: payload.sessionId },
     include: { user: { include: { role: true } } },

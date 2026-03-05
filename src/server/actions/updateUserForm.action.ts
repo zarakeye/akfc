@@ -45,13 +45,26 @@ export const initialUpdateUserFormState: UpdateUserFormState = {
   formError: undefined,
 };
 
+/**
+ * Returns the first error message from the given array of strings.
+ * If no errors are present, returns undefined.
+ * @param {string[] | undefined} errs - An array of error messages.
+ * @returns {string | undefined} The first error message, or undefined if no errors are present.
+ */
 function firstError(errs?: string[] | undefined): string | undefined {
   if (!errs || errs.length === 0) return undefined;
   return errs[0];
 }
 
 /**
- * Action server utilisée par useActionState
+ * 🧩 Action Server
+ * Mise à jour le profil utilisateur avec les données du formulaire.
+ *
+ * @param {UpdateUserFormState} prevState - L'état précédent de l'action.
+ * @param {FormData} formData - Les données du formulaire.
+ * @returns {Promise<UpdateUserFormState>} Une promesse qui résout à un objet avec des propriétés ok, message, fieldErrors et formError.
+ * Si la mise à jour est réussie, ok est true, message est un message de succès, fieldErrors est un objet vide et formError est undefined.
+ * Si la mise à jour échoue, ok est false, message est un message d'erreur, fieldErrors est un objet contenant les erreurs de validation par champ et formError est un message d'erreur global.
  */
 export async function updateUserFormAction(
   prevState: UpdateUserFormState,
@@ -141,7 +154,8 @@ export async function updateUserFormAction(
       where: { id: userId },
       data: updateData,
     });
-  } catch (e) {
+  } catch (err) {
+    console.error("updateUserFormAction error:", err);
     return {
       ok: false,
       formError: "Erreur serveur lors de la mise à jour. Réessaie.",

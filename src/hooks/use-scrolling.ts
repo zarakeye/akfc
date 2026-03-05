@@ -9,6 +9,14 @@ interface UseScrollingOptions {
   fallbackToDocument?: boolean
 }
 
+/**
+ * Hook that tracks whether an element or window is currently scrolling.
+ * @param {ScrollTarget} target The element or window to track. If not provided, defaults to the window.
+ * @param {UseScrollingOptions} options Options to customize the hook.
+ * @param {number} [options.debounce=150] The debounce time in milliseconds.
+ * @param {boolean} [options.fallbackToDocument=true] Whether to fallback to the document when using window as the target.
+ * @returns {boolean} Whether the target is currently scrolling.
+ */
 export function useScrolling(
   target?: ScrollTarget,
   options: UseScrollingOptions = {}

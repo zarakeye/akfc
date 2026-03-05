@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { JSX, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpcClient";
 
 /**
@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpcClient";
  * - On affiche toujours un message de succès (anti-enumeration)
  */
 
-export default function ForgotPasswordPage() {
+export default function ForgotPasswordPage(): JSX.Element {
   const requestReset = trpc.auth.requestPasswordReset.useMutation();
 
   const [email, setEmail] = useState("");

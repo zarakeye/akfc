@@ -1,4 +1,4 @@
-import { FolderStatus } from "@/core/cloudinary/folder.types";
+import { FolderStatus } from "@/shared/cloudinary/folder.types";
 import { MoveIntent } from "@server/cloudinary/schemas/move.schema";
 
 /**

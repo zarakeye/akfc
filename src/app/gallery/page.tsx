@@ -1,5 +1,5 @@
 import React, { JSX } from 'react';
-import PicturesDragNDropForm from '@/app/forms/PicturesDragNDropForm';
+import PicturesDragNDropForm from '@/features/admin-forms/components/PicturesDragNDropForm';
 
 export default function Gallery(): JSX.Element {
   return (

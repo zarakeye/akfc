@@ -13,9 +13,8 @@ export interface CreateUserFormState {
   error?: string;
 }
 
-// 🧩 4. Action
-
 /**
+ * 🧩 Action Server
  * Creates a new user with the given email and role id.
  * 
  * @param prevState - The current state of the action.

@@ -9,7 +9,22 @@ export interface UpdateRoleFormState {
   error?: string;
 }
 
-// 🧩 Action Server
+/**
+ * 🧩 Action Server
+ * Updates a role with the given form data.
+ * 
+ * Validation is done in two steps:
+ * - First, the form data is validated against the `updateRoleFormSchema` using Zod.
+ * - If the validation is successful, the role is updated in Prisma.
+ * 
+ * If any error occurs during the process, an error message is returned.
+ * 
+ * @param {UpdateRoleFormState} prevState - The current state of the action.
+ * @param {FormData} formData - The form data containing the role details.
+ * @returns {Promise<UpdateRoleFormState>} A promise that resolves to an object with a success property and an error property.
+ * If the update is successful, success is true and error is an empty object.
+ * If the update fails, success is false and error is an object with a message property.
+ */
 export const updateRoleFormAction = async (
   prevState: UpdateRoleFormState,
   formData: FormData

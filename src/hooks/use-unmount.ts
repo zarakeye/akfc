@@ -1,21 +1,21 @@
-import { useRef, useEffect } from "react"
+"use client"
+
+import { useEffect, useEffectEvent } from "react"
 
 /**
  * Hook that executes a callback when the component unmounts.
  *
- * @param callback Function to be called on component unmount
+ * React 19+ version using useEffectEvent to avoid stale closures
+ * without having to manage a ref manually.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const useUnmount = (callback: (...args: Array<any>) => any) => {
-  const ref = useRef(callback)
-  ref.current = callback
+export const useUnmount = (callback: () => void) => {
+  const onUnmount = useEffectEvent(callback)
 
-  useEffect(
-    () => () => {
-      ref.current()
-    },
-    []
-  )
+  useEffect(() => {
+    return () => {
+      onUnmount()
+    }
+  }, [])
 }
 
 export default useUnmount

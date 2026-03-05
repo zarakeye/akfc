@@ -1,5 +1,6 @@
 'use client';
 
+import { JSX } from 'react';
 import RoleCard from "../RoleCard";
 
 interface RolePageProps {
@@ -8,7 +9,7 @@ interface RolePageProps {
   }
 }
 
-export default function RolePage({params}: RolePageProps) {
+export default function RolePage({params}: RolePageProps): JSX.Element {
   return (
     <>
       <RoleCard roleId={params.id} />

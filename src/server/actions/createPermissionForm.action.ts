@@ -8,7 +8,16 @@ export type CreatePermissionFormState = {
   error?: string;
 }
 
-// 🧩 Action Server
+/**
+ * 🧩 Action Server
+ * Creates a new permission with the given name.
+ * 
+ * @param {CreatePermissionFormState} prevState - The current state of the action.
+ * @param {FormData} formData - The form data containing the name.
+ * @returns {Promise<CreatePermissionFormState>} A promise that resolves to an object with a success property and an error property.
+ * If the creation is successful, success is true and error is an empty object.
+ * If the creation fails, success is false and error is an object with a message property.
+ */
 export const createPermissionFormAction = async (
   prevState: CreatePermissionFormState,
   formData: FormData

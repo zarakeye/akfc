@@ -1,13 +1,20 @@
 'use client';
 
-import ControlPanelSidebar from '@/components/client/ControlPanelSidebar';
+import { JSX } from 'react';
+import ControlPanelSidebar from '@/features/app-shell/components/ControlPanelSidebar';
 import { Providers } from '@/app/admin/dashboard/providers';
 
 interface Props {
   children: React.ReactNode;
 }
 
-export default function DashboardLayout({ children }: Props) {
+/**
+ * Composant qui encapsule le layout de la page d'administration.
+ * Il prend en paramètre un élément React qui sera rendu dans le composant <main>.
+ * Ce composant est entouré d'un composant <Providers> qui fournit les providers de l'application.
+ * Le composant <ControlPanelSidebar> est également rendu dans le composant <div>.
+ */
+export default function DashboardLayout({ children }: Props): JSX.Element {
   return (
     <Providers>
       <div className="flex min-h-screen">

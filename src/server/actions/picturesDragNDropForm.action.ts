@@ -11,6 +11,23 @@ export type PicturesDragNDropFormState = {
   error?: string;
 };
 
+/**
+ * 🧩 Action Server
+ * Uploads multiple files to Cloudinary and saves them to a Prisma database.
+ *
+ * The function takes a FormData object containing the following fields:
+ * - userId: The ID of the user who is uploading the files.
+ * - categoryId: The ID of the category where the files will be uploaded.
+ * - activityId: The ID of the activity where the files will be uploaded.
+ * - newActivityName: The name of the activity where the files will be uploaded (required if activityId is not provided).
+ * - pictures: An array of File objects representing the files to be uploaded.
+ *
+ * The function returns an object with a success property and an error property.
+ * If the upload is successful, success is true and error is an empty object.
+ * If the upload fails, success is false and error is an object with a message property.
+ *
+ * @throws {Error} If any of the files are empty.
+ */
 export async function picturesDragNDropFormAction(
   _: { success: boolean; error?: string },
   formData: FormData

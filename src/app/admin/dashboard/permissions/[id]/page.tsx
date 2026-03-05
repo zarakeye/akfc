@@ -1,5 +1,6 @@
 'use client';
 
+import { JSX } from 'react';
 import { trpc } from "@/lib/trpcClient";
 
 interface PermissionPageProps {
@@ -13,7 +14,7 @@ interface PermissionPageProps {
  * @param {PermissionPageProps} params - Les paramètres de la page, incluant l'ID de la permission.
  * @returns {JSX.Element} La page affichant la permission.
  */
-export default function PermissionPage({params}: PermissionPageProps) {
+export default function PermissionPage({params}: PermissionPageProps): JSX.Element {
   const { data: permission, isLoading } = trpc.permission.getById.useQuery({ id: params.id });
 
   if (isLoading) return <div>Chargement de la permission...</div>;

@@ -28,6 +28,12 @@ export function useTiptapEditor(providedEditor?: Editor | null): {
 
   const editorState = useEditorState({
     editor: mainEditor,
+    /**
+     * Selector that returns the Tiptap editor, its state, and its can command function.
+     * If no editor is found in the context, it returns null for the editor, undefined for the editor state, and undefined for the can command function.
+     * @param context - The context object containing the Tiptap editor, its state, and its can command function.
+     * @returns An object containing the Tiptap editor, its state, and its can command function.
+     */
     selector(context) {
       if (!context.editor) {
         return {

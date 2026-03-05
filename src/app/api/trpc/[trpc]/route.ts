@@ -11,7 +11,13 @@ import { createTRPCContext } from "@/server/trpc/core";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const handler = async (req: NextRequest) => {
+/**
+ * Handles incoming requests to /api/trpc.
+ * Calls the fetchRequestHandler from @trpc/server/adapters/fetch,
+ * passing in the appRouter, the current request, and a function to create a TRPC context from the request.
+ * @returns A promise resolving to a Response object.
+ */
+const handler = async (req: NextRequest): Promise<Response> => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
