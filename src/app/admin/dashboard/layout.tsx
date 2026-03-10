@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import ControlPanelSidebar from '@/features/app-shell/components/ControlPanelSidebar';
+import ControlPanelSidebar from '@/features/app-shell/ControlPanelSidebar';
 import { Providers } from '@/app/admin/dashboard/providers';
 
 interface Props {

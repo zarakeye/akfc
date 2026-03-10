@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Martial Arts Club Website
 
-First, run the development server:
+Ce projet est le site d’un club d’arts martiaux.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Il sert également de base à une série de tutoriels autour du développement d’une application fullstack moderne avec Next.js.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Technologies
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js
+- React 19
+- TypeScript
+- tRPC
+- Prisma
+- Cloudinary
+- Tiptap
+- Zustand
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+# Fonctionnalités
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Authentification
+- Gestion des utilisateurs
+- Gestion des rôles et permissions
+- Gestion des contenus
+- Gestion des médias
+- Finder Cloudinary
+- Drag & Drop
+- Cropper d’image
+- Editeur de texte
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+# Documentation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+La documentation pédagogique du projet se trouve dans :
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+docs/
+
+---
+# Tutoriels
+
+Chaque aspect du projet est expliqué sous forme de tutoriels :
+
+- architecture
+- backend
+- auth
+- formulaires
+- cloudinary
+- finder
+- hooks
+- editor
+---
+# Objectif pédagogique
+
+Ce projet montre comment construire une application fullstack moderne avec :
+
+- une architecture claire
+- un backend typé
+- une gestion avancée des médias
+- une interface riche
+
+Chaque fonctionnalité est accompagnée d’explications détaillées.

@@ -25,7 +25,7 @@ import {
   TableCellsIcon,
 } from "@heroicons/react/24/solid";
 
-import ColorPickerButton from "../../app-shell/components/ColorPickerButton";
+import ColorPickerButton from "../../app-shell/ColorPickerButton";
 
 type TextEditorProps = {
   value?: unknown;

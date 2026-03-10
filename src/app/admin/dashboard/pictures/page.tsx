@@ -7,7 +7,7 @@ import FinderLayout from '@/features/cloudinary-finder/ui/layout/FinderLayout';
  * Page de gestionnaire de galerie.
  * 
  * Cette page affiche une layout de type gestionnaire de fichiers
- * qui permet de naviguer dans l'arborescence des fichiers de l'application.
+ * qui permet de naviguer dans l'arborescence des pictures (photos et vidéos) de l'application.
  * 
  * Elle affiche un titre "Gestionnaire de galerie" et un composant FinderLayout
  * qui encapsule le layout de la page de gestionnaire.

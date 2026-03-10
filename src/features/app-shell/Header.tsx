@@ -1,8 +1,8 @@
 'use client';
 
 import Link from "next/link";
-import LoginForm from "@/features/auth-ui/components/LoginForm";
-import UserMenu from "@/features/app-shell/components/UserMenu";
+import LoginForm from "@/features/auth-ui/LoginForm";
+import UserMenu from "@/features/app-shell/UserMenu";
 import { Suspense, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";

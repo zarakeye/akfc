@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 /**
  * Composant du barre latéral de l'application.
  * Il permet d'accéder à l'ensemble des fonctionnalités de l'application.
+ * Il est conditionnellement affiché en fonction du rôle de l'utilisateur.
  */
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
@@ -182,7 +183,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 >
                   <Image
                     src="/add_circle.svg"
-                    alt="Créer un nouveau évènement"
+                    alt="Créer un nouvel évènement"
                     width={16}
                     height={16}
                   />
@@ -247,7 +248,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/gallery');
+                    router.push('/admin/dashboard/pictures');
                   }}
                 >
                   Banque d&apos;images
@@ -255,12 +256,12 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/posts/create');
+                    router.push('/admin/dashboard/pictures/add');
                   }}
                 >
                   <Image
                     src="/add_circle.svg"
-                    alt="Créer un post"
+                    alt="Ajouter une image ou une vidéo"
                     width={16}
                     height={16}
                   />
