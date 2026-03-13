@@ -1,0 +1,31 @@
+import { DocsLayout } from "@/components/docs/DocsLayout"
+import { Callout } from "@/components/docs/Callout"
+
+export const metadata = {
+  title: "Documentation",
+  description: "Documentation technique et pédagogique du projet AKFC.",
+}
+
+<DocsLayout
+  title="Documentation AKFC"
+  description="Bienvenue dans la documentation du projet du club d’arts martiaux."
+>
+  Cette documentation a deux rôles :
+
+  - expliquer l’architecture du projet
+  - servir de base à une série de tutoriels
+
+  <Callout title="Pourquoi cette doc existe">
+    Ce projet n’est pas seulement un produit. Il sert aussi de support
+    pédagogique pour montrer comment construire une application fullstack moderne.
+  </Callout>
+
+  ## Sections principales
+
+  - Roadmap pédagogique
+  - Modélisation du domaine
+  - Architecture
+  - Tutoriels
+  - Cloudinary Finder
+  - Hooks personnalisés
+</DocsLayout>

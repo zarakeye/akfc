@@ -1,78 +1,101 @@
 # Frontend Architecture
 
-The frontend is built with **Next.js (App Router)** and follows a
-modular structure.
+Le frontend est construit avec **Next.js App Router**.
 
-------------------------------------------------------------------------
+L’architecture privilégie une organisation **par feature**.
 
-# Overview
+---
 
-Main directories:
+# Structure
 
-    src
-      app
-      features
-      hooks
-      shared
+```text
+apps/web/src
+│
+├─ app
+├─ components
+├─ features
+├─ hooks
+├─ lib
+└─ styles
+```
 
-------------------------------------------------------------------------
+---
 
 # App Router
 
-The `app` directory defines the routes of the application.
+Le dossier `app` définit les routes.
 
-Responsibilities:
+Responsabilités :
 
--   page routing
--   layouts
--   server components
+- routing
+- layouts
+- server components
+- route handlers
 
-------------------------------------------------------------------------
+Exemple :
+
+```text
+app
+ ├─ admin
+ ├─ gallery
+ ├─ auth
+ └─ api
+```
+
+---
 
 # Features
 
-Each feature contains its own UI and logic.
+Les fonctionnalités sont regroupées par domaine.
 
-Example:
+Exemples :
 
-    features
-      cloudinary-finder
-      editor
-      auth
+```text
+features
+ ├─ cloudinary-finder
+ ├─ editor-tiptap
+ ├─ gallery-crop
+ └─ auth-ui
+```
 
-This structure improves maintainability and scalability.
+Chaque feature peut contenir :
 
-------------------------------------------------------------------------
+```text
+ui/
+state/
+model/
+utils/
+adapters/
+guards/
+```
+
+---
 
 # Hooks
 
-Reusable hooks are stored in:
+Les hooks réutilisables sont dans :
 
-    src/hooks
+```text
+src/hooks
+```
 
-Examples:
+Exemples :
 
--   useThrottledCallback
--   useElementRect
--   useMenuNavigation
--   useIsBreakpoint
+- useThrottledCallback
+- useElementRect
+- useMenuNavigation
+- useIsBreakpoint
+- useUnmount
 
-------------------------------------------------------------------------
+Ces hooks encapsulent des comportements complexes.
 
-# Shared Types
+---
 
-Shared types and utilities are stored in:
+# State management
 
-    src/shared
+Le projet utilise **Zustand**.
 
-These types can later be reused by a mobile application.
+Exemples d’usage :
 
-------------------------------------------------------------------------
-
-# State Management
-
-The project uses **Zustand** for local state management.
-
-Example:
-
--   multi-selection state in the Finder.
+- sélection multiple dans le Finder
+- état de certaines interfaces

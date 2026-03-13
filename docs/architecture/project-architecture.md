@@ -1,151 +1,193 @@
 # Project Architecture
 
-This document explains the overall architecture of the project.
+Ce document décrit l’architecture globale du projet.
 
-The application is the website of a martial arts club and serves as the
-foundation for a series of tutorials about building modern fullstack
-applications with:
+Le projet est le **site d’un club d’arts martiaux** et sert également de base à une **série de tutoriels techniques** expliquant comment construire une application fullstack moderne.
 
--   Next.js
--   React 19
--   TypeScript
--   tRPC
--   Prisma
--   Cloudinary
+Les technologies principales sont :
 
-The project is also designed with a future **React Native (Expo)**
-application in mind.
+- Next.js (App Router)
+- React 19
+- TypeScript
+- tRPC
+- Prisma
+- Cloudinary
+- Zustand
+- Zod
 
-------------------------------------------------------------------------
+L’architecture est conçue pour permettre à terme l’ajout d’une **application mobile React Native via Expo**.
 
-# Architectural Goals
+---
 
-The architecture aims to:
+# Objectifs de l’architecture
 
--   separate business logic from UI
--   keep the backend strongly typed
--   make the system modular and maintainable
--   allow future extension to a mobile application
--   support a tutorial-driven documentation structure
+L’architecture vise à :
 
-------------------------------------------------------------------------
+- séparer clairement les responsabilités
+- maintenir un backend fortement typé
+- isoler la logique métier
+- faciliter la réutilisation du code
+- préparer l’intégration future d’une application mobile
 
-# Repository Structure
+---
 
-Current simplified structure:
+# Architecture générale
 
-    project-root
-    │
-    ├─ docs
-    │
-    ├─ prisma
-    │
-    ├─ src
-    │  ├─ app
-    │  ├─ features
-    │  ├─ hooks
-    │  ├─ server
-    │  └─ shared
-    │
-    └─ public
+Le projet suit une architecture en couches.
 
-------------------------------------------------------------------------
+```text
+UI
+↓
+State / Hooks
+↓
+Domain Model
+↓
+API Client
+↓
+Backend Services
+↓
+Database / External APIs
+```
 
-# Feature-Based Architecture
+Chaque couche possède une responsabilité claire.
 
-The frontend is organized using a **feature-based architecture**.
+---
 
-Example:
+# Organisation du repository
 
-    src/features
-      cloudinary-finder
-      editor
-      auth
+Le projet est organisé sous forme de **workspace monorepo**.
 
-Each feature can contain:
+```text
+project-root
+│
+├─ apps
+│  ├─ web
+│  └─ mobile (future)
+│
+├─ packages
+│  ├─ backend
+│  └─ contracts
+│
+├─ docs
+├─ prisma
+└─ public
+```
 
-    ui
-    state
-    model
-    utils
-    adapters
-    guards
+---
 
-This structure keeps features isolated and easier to understand.
+# Applications
 
-------------------------------------------------------------------------
+## apps/web
 
-# Separation of Concerns
+Contient l’application **Next.js**.
 
-The architecture separates responsibilities into layers.
+Structure :
 
-    UI
-    ↓
-    State
-    ↓
-    Domain Model
-    ↓
-    API Client
-    ↓
-    Backend Services
-    ↓
-    Database / External APIs
+```text
+apps/web/src
+├─ app
+├─ components
+├─ features
+├─ hooks
+├─ lib
+└─ styles
+```
 
-------------------------------------------------------------------------
+Responsabilités :
 
-# Backend Architecture
+- UI
+- état client
+- appels API
 
-The backend uses **tRPC** and follows this structure:
+---
 
-    routers
-    services
-    schemas
-    mappers
-    guards
+## apps/mobile (future)
 
-Each layer has a clear responsibility.
+Contiendra l’application **React Native / Expo**.
 
-------------------------------------------------------------------------
+Elle réutilisera :
 
-# Media Management
+- les contrats API
+- certains types
+- certaines règles métier
 
-Images are handled through Cloudinary.
+---
 
-Responsibilities:
+# Packages partagés
 
--   upload and transformation
--   CDN delivery
--   metadata stored in the database
--   Finder UI for media management
+## packages/backend
 
-------------------------------------------------------------------------
+Contient la logique backend réutilisable :
 
-# Documentation Strategy
+```text
+routers
+services
+schemas
+mappers
+guards
+cloudinary
+auth
+middlewares
+```
 
-The project includes extensive documentation in `/docs`.
+---
 
-This documentation serves two purposes:
+## packages/contracts
 
--   explain the architecture
--   act as a series of tutorials.
+Contient les **contrats partagés** :
 
-------------------------------------------------------------------------
+- types TypeScript
+- schémas Zod
+- DTO
+- constantes
 
-# Future Mobile Application
+Ce package garantit la cohérence entre :
 
-The architecture is designed so that parts of the codebase can later be
-reused by a React Native (Expo) mobile application.
+- frontend web
+- backend
+- future application mobile
 
-Future structure could look like:
+---
 
-    apps
-      web
-      mobile
+# Services externes
 
-    packages
-      ui
-      types
-      core
-      api
+## Cloudinary
 
-This would allow sharing logic between web and mobile applications.
+Cloudinary est utilisé pour :
+
+- stockage d’images
+- transformations
+- CDN
+- gestion des dossiers
+
+Le projet inclut un **Finder Cloudinary personnalisé**.
+
+---
+
+## Base de données
+
+La base de données est gérée via **Prisma**.
+
+Elle stocke notamment :
+
+- utilisateurs
+- rôles
+- posts
+- métadonnées d’images
+- corbeille
+
+---
+
+# Documentation
+
+La documentation du projet se trouve dans :
+
+```text
+docs/
+```
+
+Elle sert à :
+
+- expliquer l’architecture
+- documenter les décisions techniques
+- servir de base à des tutoriels

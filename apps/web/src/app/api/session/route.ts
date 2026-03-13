@@ -1,0 +1,44 @@
+// api/session/route.ts
+import { prisma } from "packages/backend/src/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { COOKIE_NAME } from "packages/contracts/src/auth/constants";
+
+/**
+ * GET /api/session
+ * @summary Récupère la session en cours.
+ * @description Si le cookie est absent ou invalide, redirige vers la page de login.
+ * Sinon, récupère la session en cours et renvoie les informations de la session.
+ * @returns {NextResponse} - JSON contenant les informations de la session.
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  // Récupère le cookie
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const cookies = Object.fromEntries(cookieHeader.split("; ").map(c => {
+    const [key, ...v] = c.split("=");
+    return [key, decodeURIComponent(v.join("="))];
+  }));
+  const token = cookies[COOKIE_NAME];
+
+  if (!token) return NextResponse.redirect("/login");
+
+  let payload: { sessionId: string; userId: string };
+
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET ?? "") as { sessionId: string; userId: string };
+  } catch {
+    return NextResponse.redirect("/login");
+  }
+
+  // Récupère la session
+  const session = await prisma.session.findUnique({
+    where: { id: payload.sessionId },
+    include: { user: { include: { role: true } } },
+  });
+
+  if (!session || session.expiresAt < new Date()) {
+    return NextResponse.redirect("/login");
+  }
+  
+  return NextResponse.json(session);
+}

@@ -1,71 +1,69 @@
 # Mobile Readiness
 
-The project is designed to eventually support a **React Native (Expo)**
-mobile application.
+Le projet est conçu pour permettre l’ajout futur d’une application mobile **React Native avec Expo**.
 
-------------------------------------------------------------------------
+---
 
-# Motivation
+# Objectifs
 
-Many parts of the application can be reused between web and mobile:
+L’architecture permet de partager :
 
--   domain types
--   validation schemas
--   API contracts
--   business logic
+- types
+- schémas
+- contrats API
+- logique métier
 
-Preparing for this early prevents heavy refactoring later.
+entre le web et le mobile.
 
-------------------------------------------------------------------------
+---
 
-# Code That Can Be Shared
+# Code partagé
 
-Examples of reusable elements:
+Le code réutilisable se trouve dans :
 
--   Zod schemas
--   TypeScript types
--   API clients
--   business logic helpers
+```text
+packages/contracts
+packages/backend
+```
 
-------------------------------------------------------------------------
+---
 
-# Code That Will Stay Platform Specific
+# Code spécifique au web
 
-Some parts must remain platform specific:
+Certaines parties resteront spécifiques au web :
 
-Web:
+- drag & drop DOM
+- ResizeObserver
+- interactions desktop complexes
 
--   DOM-based drag & drop
--   ResizeObserver hooks
--   certain UI components
+---
 
-Mobile:
+# Code spécifique au mobile
 
--   touch gestures
--   React Native components
+L’application mobile aura ses propres implémentations pour :
 
-------------------------------------------------------------------------
+- gestures tactiles
+- navigation mobile
+- composants natifs
 
-# Possible Future Monorepo
+---
 
-A future structure might be:
+# Future application mobile
 
-    apps
-      web
-      mobile
+La future application sera située dans :
 
-    packages
-      ui
-      types
-      core
-      api
+```text
+apps/mobile
+```
 
-------------------------------------------------------------------------
+Elle consommera la même API que l’application web.
 
-# Benefits
+---
 
-Preparing the architecture for mobile allows:
+# Avantages
 
--   easier expansion
--   shared code
--   better long-term maintainability
+Cette architecture permet :
+
+- une meilleure évolutivité
+- une réutilisation du code
+- une maintenance plus simple

@@ -1,92 +1,138 @@
 # Backend Architecture
 
-The backend is implemented using **tRPC** with a layered architecture.
+Le backend est construit avec **tRPC** et suit une architecture en couches.
 
-------------------------------------------------------------------------
+Objectifs :
 
-# Overview
+- séparer les responsabilités
+- isoler la logique métier
+- garantir la sécurité
+- faciliter les tests
 
-The backend structure:
+---
 
-    server
-      routers
-      services
-      schemas
-      mappers
-      guards
+# Structure du backend
 
-Each layer has a specific responsibility.
+```text
+packages/backend/src
+│
+├─ routers
+├─ services
+├─ schemas
+├─ mappers
+├─ guards
+├─ cloudinary
+├─ auth
+└─ middlewares
+```
 
-------------------------------------------------------------------------
+---
 
 # Routers
 
-Routers define the public API of the backend.
+Les routers exposent l’API.
 
-Responsibilities:
+Responsabilités :
 
--   expose procedures
--   validate input
--   call services
+- définir les procédures tRPC
+- valider les entrées
+- appeler les services
 
-Example:
+Exemples :
 
-    cloudinary.router.ts
-    auth.router.ts
-    posts.router.ts
+```text
+cloudinary.router.ts
+auth.router.ts
+post.router.ts
+```
 
-------------------------------------------------------------------------
+---
 
 # Services
 
-Services contain the business logic.
+Les services contiennent la **logique métier**.
 
-Responsibilities:
+Responsabilités :
 
--   coordinate database operations
--   communicate with external APIs
--   apply domain rules
+- coordination des opérations
+- accès à la base de données
+- appels à des services externes
 
-------------------------------------------------------------------------
+Exemples :
+
+```text
+cloudinary.service.ts
+post.service.ts
+user.service.ts
+```
+
+---
 
 # Schemas
 
-Schemas are defined using **Zod**.
+Les schemas utilisent **Zod**.
 
-They ensure:
+Ils permettent :
 
--   input validation
--   type safety
--   consistent data structures
+- validation runtime
+- inférence de types
+- uniformisation des données
 
-------------------------------------------------------------------------
+Exemples :
+
+```text
+createUser.schema.ts
+updatePost.schema.ts
+moveAsset.schema.ts
+```
+
+---
 
 # Mappers
 
-Mappers convert data between layers.
+Les mappers convertissent les données entre les différentes couches.
 
-Examples:
+Exemples :
 
--   database models → DTO
--   Cloudinary responses → internal models
+```text
+Prisma → DTO
+Cloudinary → modèle interne
+```
 
-------------------------------------------------------------------------
+---
 
 # Guards
 
-Guards enforce security rules.
+Les guards gèrent la sécurité.
 
-Examples:
+Exemples :
 
--   authentication checks
--   role-based access control
--   resource ownership validation
+- vérification d’authentification
+- RBAC
+- vérification d’accès à une ressource
 
-------------------------------------------------------------------------
+Exemples :
 
-# Benefits of this Architecture
+```text
+requireAdmin
+requireAuthenticatedUser
+```
 
--   clear separation of concerns
--   easier testing
--   reusable business logic
--   better scalability
+---
+
+# Cloudinary
+
+La logique liée à Cloudinary est isolée dans :
+
+```text
+cloudinary/
+```
+
+Responsabilités :
+
+- navigation dans les dossiers
+- déplacement d’assets
+- suppression
+- restauration
+
+Cette logique est utilisée par le **Cloudinary Finder** côté frontend.
