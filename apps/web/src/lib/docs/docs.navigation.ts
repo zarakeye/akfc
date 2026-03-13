@@ -15,14 +15,22 @@ export function groupDocsBySection(pages: DocPage[]) {
   const grouped = new Map<string, DocPage[]>()
 
   for (const page of pages) {
-    const key = page.section ?? "Documentation"
-    const existing = grouped.get(key) ?? []
+    const section = page.section ?? "Documentation"
+    const existing = grouped.get(section) ?? []
     existing.push(page)
-    grouped.set(key, existing)
+    grouped.set(section, existing)
   }
 
-  return Array.from(grouped.entries()).map(([section, items]) => ({
-    section,
-    items,
-  }))
+  const orderedSections = Array.from(grouped.entries()).map(
+    ([section, items]) => ({
+      section,
+      items: [...items].sort((a, b) => {
+        const orderCompare = (a.order ?? 9999) - (b.order ?? 9999)
+        if (orderCompare !== 0) return orderCompare
+        return a.title.localeCompare(b.title)
+      }),
+    })
+  )
+
+  return orderedSections.sort((a, b) => a.section.localeCompare(b.section))
 }

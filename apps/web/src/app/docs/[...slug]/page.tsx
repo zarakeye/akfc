@@ -17,7 +17,7 @@ interface PageProps {
   }>
 }
 
-export default async function DocPage({ params }: PageProps) {
+export default async function Page({ params }: PageProps) {
   const { slug = [] } = await params
 
   if (!slug.length || !docExists(slug)) {
@@ -29,7 +29,7 @@ export default async function DocPage({ params }: PageProps) {
   const pages = getAllDocs()
   const { prev, next } = getPrevNext(pages, slug)
 
-  const { content } = await compileMDX<DocFrontmatter>({
+  const compiled = await compileMDX<DocFrontmatter>({
     source,
     components: mdxComponents,
     options: {
@@ -41,12 +41,13 @@ export default async function DocPage({ params }: PageProps) {
     <DocsLayout
       title={frontmatter.title}
       description={frontmatter.description}
+      currentPath={`/docs/${slug.join("/")}`}
     >
       <Breadcrumbs slug={slug} />
 
       <div className="flex">
         <article className="flex-1">
-          {content}
+          {compiled.content}
           <DocsPagination prev={prev} next={next} />
         </article>
 
