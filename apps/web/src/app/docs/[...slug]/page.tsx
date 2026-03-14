@@ -4,7 +4,7 @@ import { compileMDX } from "next-mdx-remote/rsc"
 import { Breadcrumbs } from "@/components/docs/Breadcrumbs"
 import { DocsLayout } from "@/components/docs/DocsLayout"
 import { DocsPagination } from "@/components/docs/DocsPagination"
-import { DocsToc } from "@/components/docs/DocsToc"
+import { DocsRightAside } from "@/components/docs/DocsRightAside"
 import { getPrevNext } from "@/lib/docs/docs.navigation"
 import { docExists, getAllDocs, getDocSource } from "@/lib/docs/docs.source"
 import { extractToc } from "@/lib/docs/docs.toc"
@@ -37,22 +37,36 @@ export default async function Page({ params }: PageProps) {
     },
   })
 
+  const header = (
+    <div>
+      <Breadcrumbs slug={slug} />
+
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">
+          {frontmatter.title}
+        </h1>
+
+        {frontmatter.description ? (
+          <p className="mt-3 text-lg text-muted-foreground">
+            {frontmatter.description}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  )
+
+  const footer = <DocsPagination prev={prev} next={next} />
+
   return (
     <DocsLayout
       title={frontmatter.title}
       description={frontmatter.description}
       currentPath={`/docs/${slug.join("/")}`}
+      header={header}
+      footer={footer}
+      rightAside={<DocsRightAside items={toc} />}
     >
-      <Breadcrumbs slug={slug} />
-
-      <div className="flex">
-        <article className="flex-1">
-          {compiled.content}
-          <DocsPagination prev={prev} next={next} />
-        </article>
-
-        <DocsToc items={toc} />
-      </div>
+      {compiled.content}
     </DocsLayout>
   )
 }

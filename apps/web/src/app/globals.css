@@ -223,3 +223,14 @@ input[type="range"]::-moz-range-thumb {
     10px -10px, 
     -10px 0px;
 }
+
+/* Hide scrollbars but keep scroll functionality */
+
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE / Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}

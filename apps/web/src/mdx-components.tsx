@@ -2,18 +2,32 @@ import type { MDXComponents } from "mdx/types"
 
 import { Callout } from "@/components/docs/Callout"
 import { CodeBlock } from "@/components/docs/CodeBlock"
+import { FileTree, FileTreeItem } from "@/components/docs/FileTree"
+import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
 
 export const mdxComponents: MDXComponents = {
   Callout,
   CodeBlock,
+  FileTree,
+  FileTreeItem,
+  ArchitectureDiagram,
   h1: (props) => (
     <h1 className="mt-8 mb-4 text-3xl font-bold tracking-tight" {...props} />
   ),
   h2: (props) => (
-    <h2 className="mt-8 mb-3 text-2xl font-semibold tracking-tight" {...props} />
+    <h2
+      id={props.id}
+      className="mt-10 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24"
+      {...props}
+    />
   ),
+
   h3: (props) => (
-    <h3 className="mt-6 mb-2 text-xl font-semibold tracking-tight" {...props} />
+    <h3
+      id={props.id}
+      className="mt-8 mb-3 text-xl font-semibold tracking-tight scroll-mt-24"
+      {...props}
+    />
   ),
   p: (props) => <p className="mb-4 leading-7" {...props} />,
   ul: (props) => <ul className="mb-4 list-disc space-y-2 pl-6" {...props} />,

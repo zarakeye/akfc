@@ -12,20 +12,38 @@ export function DocsPagination({
   if (!prev && !next) return null
 
   return (
-    <div className="mt-10 flex justify-between border-t pt-6 text-sm">
+    <div className="grid grid-cols-2 gap-3">
       {prev ? (
-        <Link href={`/docs/${prev.slug.join("/")}`} className="hover:underline">
-          ← {prev.title}
+        <Link
+          href={`/docs/${prev.slug.join("/")}`}
+          className="group rounded-xl border bg-background px-4 py-3 transition-colors hover:bg-muted/40"
+        >
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">
+            Previous
+          </div>
+          <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+            ← {prev.title}
+          </div>
         </Link>
       ) : (
         <div />
       )}
 
       {next ? (
-        <Link href={`/docs/${next.slug.join("/")}`} className="hover:underline">
-          {next.title} →
+        <Link
+          href={`/docs/${next.slug.join("/")}`}
+          className="group rounded-xl border bg-background px-4 py-3 text-right transition-colors hover:bg-muted/40"
+        >
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">
+            Next
+          </div>
+          <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+            {next.title} →
+          </div>
         </Link>
-      ) : null}
+      ) : (
+        <div />
+      )}
     </div>
   )
 }
