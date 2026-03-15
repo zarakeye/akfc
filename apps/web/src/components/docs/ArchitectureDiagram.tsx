@@ -1,10 +1,12 @@
 import type { ReactNode } from "react"
 
 interface ArchitectureDiagramProps {
-  steps: string[]
+  steps?: string[]
 }
 
-export function ArchitectureDiagram({ steps }: ArchitectureDiagramProps) {
+export function ArchitectureDiagram({ steps = [] }: ArchitectureDiagramProps) {
+  if (!steps.length) return null
+
   return (
     <div className="my-8 overflow-x-auto">
       <div className="flex items-center gap-3">

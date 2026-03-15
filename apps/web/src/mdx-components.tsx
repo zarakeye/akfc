@@ -4,10 +4,14 @@ import { Callout } from "@/components/docs/Callout"
 import { CodeBlock } from "@/components/docs/CodeBlock"
 import { FileTree, FileTreeItem } from "@/components/docs/FileTree"
 import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
+import { CodeExample } from "@/components/docs/CodeExample"
+import { CodeWalkthrough } from "@/components/docs/CodeWalkthrough"
 
 export const mdxComponents: MDXComponents = {
   Callout,
   CodeBlock,
+  CodeExample,
+  CodeWalkthrough,
   FileTree,
   FileTreeItem,
   ArchitectureDiagram,

@@ -1,23 +1,359 @@
 ---
-title: "Project Architecture"
-description: "Vue d’ensemble de l’architecture du projet."
-section: "Architecture"
+title: Project Architecture
+description: Organisation générale du projet et choix d'architecture
+section: Architecture
 order: 1
 ---
 
-Vue globale de l'architecture du projet.
+# Project Architecture
 
-## Couches
+Dans cette section, nous allons explorer **l'architecture générale du
+projet AKFC**.
 
-- Frontend Next.js
-- Backend tRPC
-- Prisma
-- Cloudinary
+L'objectif est de comprendre :
 
-## Vision
+-   comment le projet est structuré
+-   comment les différentes parties communiquent
+-   pourquoi certaines décisions techniques ont été prises
 
-Le projet est structuré pour accueillir :
+Avant d'entrer dans les détails du code, il est essentiel de comprendre
+**la structure globale du système**.
 
-- une application web Next.js
-- une future application mobile Expo
-- des packages partagés pour les contrats et la logique backend
+------------------------------------------------------------------------
+
+## A monorepo architecture
+
+Le projet utilise une architecture **monorepo**.
+
+Un monorepo consiste à regrouper plusieurs applications et packages dans
+**un seul dépôt**.
+
+Structure simplifiée :
+
+    akfc/
+      apps/
+        web/
+      packages/
+        backend/
+
+### apps/
+
+Le dossier `apps` contient les **applications exécutables**.
+
+Dans ce projet :
+
+    apps/
+      web/
+
+`web` est l'application **Next.js** qui sert à la fois :
+
+-   le frontend
+-   certaines parties du backend
+
+------------------------------------------------------------------------
+
+### packages/
+
+Le dossier `packages` contient du **code partagé**.
+
+Dans ce projet :
+
+    packages/
+      backend/
+
+Ce package contient notamment :
+
+-   les routes **tRPC**
+-   la logique métier
+-   l'accès à la base de données
+-   les services backend
+
+Cette séparation permet de garder une **architecture claire** entre :
+
+-   l'interface utilisateur
+-   la logique applicative
+
+------------------------------------------------------------------------
+
+## Why a monorepo?
+
+Le monorepo offre plusieurs avantages.
+
+### 1. Partage de types
+
+Comme tout est écrit en **TypeScript**, il est très utile de partager
+les types entre :
+
+-   backend
+-   frontend
+
+Par exemple :
+
+-   types de données
+-   DTO
+-   réponses API
+
+Cela permet un **typage end-to-end**.
+
+------------------------------------------------------------------------
+
+### 2. Cohérence du projet
+
+Toutes les parties du projet vivent dans le même dépôt :
+
+-   frontend
+-   backend
+-   documentation
+
+Cela facilite :
+
+-   la maintenance
+-   les refactorings
+-   la compréhension globale du système
+
+------------------------------------------------------------------------
+
+### 3. Évolution future
+
+L'architecture a été pensée pour permettre l'ajout de nouvelles
+applications.
+
+Par exemple :
+
+    apps/
+      web/
+      mobile/
+
+Une application **React Native / Expo** pourra être ajoutée plus tard
+tout en réutilisant :
+
+-   le backend
+-   les types
+-   certaines logiques partagées
+
+------------------------------------------------------------------------
+
+## Backend architecture
+
+Le backend repose sur **tRPC**.
+
+tRPC permet de construire une API **entièrement typée**.
+
+Structure simplifiée :
+
+    packages/backend/
+      src/
+        trpc/
+        services/
+        repositories/
+        schemas/
+
+### trpc/
+
+Contient la définition des routes API.
+
+Exemple :
+
+    auth.login
+    auth.getSession
+    category.getAll
+    course.getAll
+
+Chaque route expose une procédure accessible depuis le frontend.
+
+------------------------------------------------------------------------
+
+### services/
+
+Les services contiennent la **logique métier**.
+
+Ils orchestrent :
+
+-   les accès à la base
+-   les règles métier
+-   les validations
+
+Cela évite d'avoir une logique trop lourde dans les routes.
+
+------------------------------------------------------------------------
+
+### repositories
+
+Les repositories sont responsables de **l'accès aux données**.
+
+Ils utilisent **Prisma** pour interagir avec la base PostgreSQL.
+
+------------------------------------------------------------------------
+
+### schemas
+
+Les schémas définissent :
+
+-   la validation des entrées
+-   la structure des données
+
+La validation est souvent faite avec **Zod**.
+
+------------------------------------------------------------------------
+
+## Frontend architecture
+
+Le frontend est construit avec **Next.js App Router**.
+
+Structure simplifiée :
+
+    apps/web/src/
+      app/
+      features/
+      components/
+      lib/
+
+### app/
+
+Le dossier `app` contient les **routes Next.js**.
+
+Exemples :
+
+    app/
+      page.tsx
+      docs/
+      admin/
+
+Chaque dossier correspond à une route.
+
+------------------------------------------------------------------------
+
+### features/
+
+Le dossier `features` contient les **fonctionnalités de l'application**.
+
+Exemple :
+
+    features/
+      auth-ui/
+      cloudinary-finder/
+      editor-tiptap/
+
+Chaque feature contient :
+
+-   ses composants
+-   ses hooks
+-   sa logique frontend
+
+Cela permet d'éviter une architecture basée uniquement sur :
+
+    components/
+    hooks/
+    utils/
+
+qui devient difficile à maintenir à grande échelle.
+
+------------------------------------------------------------------------
+
+### components/
+
+Les composants génériques réutilisables.
+
+Exemples :
+
+-   layout
+-   UI primitives
+-   composants de documentation
+
+------------------------------------------------------------------------
+
+### lib/
+
+Le dossier `lib` contient :
+
+-   utilitaires
+-   helpers
+-   logique partagée
+
+------------------------------------------------------------------------
+
+## Media management
+
+Le projet utilise **Cloudinary** pour gérer les images.
+
+Cloudinary permet :
+
+-   stocker des images
+-   transformer les images
+-   optimiser les performances
+
+Le projet inclut également un **media explorer personnalisé** appelé
+**Cloudinary Finder**.
+
+Ce composant permet :
+
+-   parcourir les dossiers
+-   visualiser les images
+-   déplacer des fichiers
+-   gérer une corbeille
+
+Nous verrons son fonctionnement dans un tutoriel dédié.
+
+------------------------------------------------------------------------
+
+## Documentation system
+
+La documentation que vous êtes en train de lire est intégrée directement
+dans l'application.
+
+Elle est écrite en **MDX**.
+
+Structure :
+
+    content/docs/
+      introduction/
+      architecture/
+      tutorials/
+
+Les pages sont ensuite rendues dynamiquement dans l'application Next.js.
+
+Cela permet :
+
+-   d'avoir une documentation versionnée
+-   d'utiliser des composants React dans la doc
+-   de maintenir la documentation proche du code
+
+------------------------------------------------------------------------
+
+## Putting everything together
+
+Voici une vue simplifiée du système :
+
+    Frontend (Next.js)
+            │
+            ▼
+         tRPC API
+            │
+            ▼
+         Services
+            │
+            ▼
+         Prisma ORM
+            │
+            ▼
+       PostgreSQL
+
+Pour les médias :
+
+    Frontend
+       │
+       ▼
+    Cloudinary API
+       │
+       ▼
+    Cloudinary Storage
+
+------------------------------------------------------------------------
+
+## Next step
+
+Maintenant que nous avons vu l'architecture générale du projet, la
+prochaine étape consiste à comprendre **le modèle métier**.
+
+Dans la section suivante, nous explorerons les **entités principales du
+domaine**.

@@ -1,0 +1,256 @@
+---
+title: Authentication Architecture
+description: Vue d’ensemble de l’architecture d’authentification du projet AKFC
+section: Architecture
+order: 6
+---
+
+# Authentication Architecture
+
+Le projet AKFC implémente un système d'authentification basé sur :
+
+- **Next.js**
+- **tRPC**
+- **Zod**
+- **Prisma**
+- **cookies HTTP-only**
+- **sessions sécurisées côté serveur**
+
+L’objectif est de fournir un système :
+
+- simple à comprendre
+- sécurisé
+- cohérent avec une architecture full-stack TypeScript
+- suffisamment clair pour être pédagogique
+
+---
+
+## Idée générale
+
+L’authentification du projet ne repose pas sur un seul fichier ou une seule fonction.
+
+Elle résulte d’une collaboration entre plusieurs couches :
+
+- **un schéma de validation** pour contrôler les entrées
+- **un router tRPC** pour exposer les procédures frontend-facing
+- **une logique serveur de session** pour maintenir l’état d’authentification
+- **un contexte tRPC** pour rendre la session disponible dans les procédures backend
+- **Prisma** pour accéder aux données persistées
+
+Autrement dit :
+
+> l’authentification est une chaîne de responsabilités, pas un simple “login”.
+
+---
+
+## Les grands principes
+
+Le système d’authentification repose sur plusieurs principes importants :
+
+- le mot de passe n’est jamais stocké en clair
+- les entrées utilisateur sont validées avant traitement
+- les sessions sont stockées côté serveur
+- les cookies sont HTTP-only
+- les routes sensibles sont protégées par le backend
+- le contexte tRPC rend la session disponible à chaque requête
+
+Ces principes améliorent à la fois :
+
+- la sécurité
+- la lisibilité de l’architecture
+- la maintenabilité du projet
+
+---
+
+## Les fichiers clés
+
+Dans le projet, plusieurs fichiers jouent un rôle central.
+
+### `packages/contracts/schemas/auth/auth.schema.ts`
+
+Ce fichier définit le schéma Zod utilisé pour valider les identifiants.
+
+Il représente le **contrat d’entrée** attendu par le backend.
+
+### `packages/backend/src/routers/auth.router.ts`
+
+Ce router expose les procédures d’authentification appelées par le frontend.
+
+On y retrouve notamment :
+
+- `login`
+- `logout`
+- `getSession`
+- les procédures liées au reset password
+
+Il s’agit du point d’entrée principal côté API.
+
+### `packages/backend/src/auth/getSessionFromRequest.ts`
+
+Ce fichier contient la logique permettant de :
+
+- lire le token depuis la requête ou les cookies
+- vérifier sa validité
+- retrouver la session correspondante
+- reconstruire une session exploitable côté application
+
+C’est une pièce centrale de l’architecture.
+
+### `packages/backend/src/trpc/core.ts`
+
+Ce fichier crée le contexte tRPC.
+
+Il injecte notamment :
+
+- la session courante
+- Prisma
+- certaines informations de requête comme l’IP ou le user-agent
+
+Il définit aussi la différence entre :
+
+- `publicProcedure`
+- `protectedProcedure`
+
+### `packages/backend/src/lib/session/session.server.ts`
+
+Cette couche regroupe la logique serveur liée à la session.
+
+Elle permet d’éviter de disperser cette responsabilité dans les routers.
+
+---
+
+## Processus d’authentification
+
+Le flux d’authentification se déroule en plusieurs étapes.
+
+### 1. Envoi des identifiants
+
+L’utilisateur envoie :
+
+- son email
+- son mot de passe
+
+Ces données sont reçues par une procédure tRPC.
+
+### 2. Validation des données
+
+Avant toute logique métier, les données sont validées avec **Zod**.
+
+Cela garantit que :
+
+- l’email a un format correct
+- le mot de passe respecte les contraintes définies
+
+### 3. Traitement par le router d’authentification
+
+Le router tRPC d’authentification reçoit la demande et orchestre le traitement.
+
+Son rôle n’est pas de tout faire lui-même, mais de :
+
+- recevoir la demande
+- vérifier les entrées
+- déléguer la logique métier si nécessaire
+- renvoyer une réponse propre au frontend
+
+### 4. Vérification de l’identité
+
+Le backend retrouve l’utilisateur concerné et vérifie si la tentative de connexion est valide.
+
+Cette étape peut s’appuyer sur Prisma et sur une logique de service dédiée.
+
+### 5. Création ou récupération de session
+
+Si l’authentification réussit :
+
+- une session est créée ou retrouvée
+- cette session est ensuite associée à un cookie sécurisé
+
+La session représente l’état d’authentification côté serveur.
+
+### 6. Relecture de session lors des requêtes suivantes
+
+Lors des requêtes ultérieures, le backend ne “refait” pas le login.
+
+Il lit le cookie, vérifie le token, retrouve la session et reconstruit un objet session exploitable.
+
+### 7. Injection dans le contexte tRPC
+
+Le contexte tRPC rend ensuite cette session disponible aux procédures backend via `ctx`.
+
+C’est ce mécanisme qui permet aux routes protégées de savoir :
+
+- si un utilisateur est connecté
+- qui il est
+- quels droits il possède potentiellement
+
+---
+
+## Protection des routes
+
+Certaines routes nécessitent une authentification.
+
+Pour cela, le projet distingue :
+
+- les procédures publiques
+- les procédures protégées
+
+Une procédure protégée vérifie qu’un utilisateur existe bien dans la session courante.
+
+Cela permet, par exemple :
+
+- d’empêcher un utilisateur non connecté d’accéder à certaines actions
+- de préparer ensuite une logique plus fine autour des rôles et permissions
+
+---
+
+## Pourquoi cette architecture est intéressante
+
+Cette architecture présente plusieurs avantages.
+
+### Séparation claire des responsabilités
+
+Chaque couche a un rôle net :
+
+- Zod valide
+- le router orchestre
+- la session conserve l’état
+- le contexte redistribue cet état
+
+### Meilleure sécurité
+
+Le backend garde la main sur l’authentification :
+
+- validation stricte
+- sessions côté serveur
+- cookies HTTP-only
+- routes protégées
+
+### Excellente base pédagogique
+
+Le projet est particulièrement intéressant pour apprendre :
+
+- comment structurer une authentification moderne
+- comment articuler frontend et backend
+- comment éviter de mélanger validation, API, session et logique métier
+
+---
+
+## Ce qu’il faut retenir
+
+L’idée essentielle est la suivante :
+
+> dans AKFC, l’authentification n’est pas un simple formulaire de login, mais une architecture complète reliant validation, router, session, contexte et base de données.
+
+C’est cette organisation qui rend le système à la fois :
+
+- plus robuste
+- plus clair
+- plus facile à expliquer
+
+---
+
+## Étape suivante
+
+Maintenant que l’architecture générale est comprise, la prochaine étape consiste à passer au niveau implémentation :
+
+**Authentication with tRPC**

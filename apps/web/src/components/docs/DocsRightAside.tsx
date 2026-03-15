@@ -123,7 +123,7 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
         <div className="my-3 flex min-h-0 flex-1 items-stretch">
           <div className="relative h-full w-[2px] overflow-hidden rounded-full bg-muted/60">
             <div
-              className="absolute bottom-0 left-0 w-full rounded-full bg-primary transition-[height] duration-150"
+              className="absolute top-0 left-0 w-full rounded-full bg-primary transition-[height] duration-150"
               style={progressStyle}
             />
           </div>

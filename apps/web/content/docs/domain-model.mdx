@@ -1,17 +1,278 @@
-## Domain Model
+---
+title: Domain Model
+description: Modèle métier du projet AKFC
+section: Domain
+order: 1
+---
 
-<Callout type="info" title="Objectif">
-Le Domain Model décrit les entités métiers du club d’arts martiaux.
-</Callout>
+Le **domain model** décrit les entités principales du projet et les relations qui existent entre elles.
 
-Les principales entités sont :
+Dans un projet réel, cette étape est essentielle.  
+Avant même de parler de composants React, de routes API ou de base de données, il faut comprendre **ce que l’application manipule réellement**.
 
-- User
-- Course
-- Category
-- Post
-- Media
+Dans le cas d’AKFC, le domaine métier est celui d’un **club d’arts martiaux** avec :
 
-<Callout type="tip">
-La modélisation du domaine est toujours réalisée **avant le backend**.
-</Callout>
+- des utilisateurs
+- des rôles et permissions
+- des cours
+- des catégories
+- des contenus éditoriaux
+- des médias
+
+## Why the domain model matters
+
+Le domain model sert plusieurs objectifs :
+
+- clarifier le vocabulaire du projet
+- éviter les ambiguïtés
+- poser une base solide pour la base de données
+- guider la structure de l’API
+- aider à structurer le frontend
+
+Autrement dit, le domain model est la **colonne vertébrale fonctionnelle** du projet.
+
+## Main entities
+
+Les entités principales du projet sont les suivantes :
+
+- `User`
+- `Role`
+- `Permission`
+- `Course`
+- `Category`
+- `Post`
+- `Media`
+
+Selon l’évolution du projet, d’autres entités pourront être ajoutées plus tard.  
+Mais celles-ci suffisent déjà à porter une grande partie de la logique métier.
+
+## User
+
+L’entité `User` représente une personne disposant d’un accès à l’application.
+
+Dans le cadre de ce projet, un utilisateur est surtout lié à l’administration du site.  
+Il peut se connecter, accéder à certaines pages, et effectuer certaines actions selon son rôle.
+
+### Typical properties
+
+- `id`
+- `email`
+- `passwordHash`
+- `firstName`
+- `lastName`
+- `roleId`
+- `createdAt`
+- `updatedAt`
+
+### Why these properties?
+
+- `id` permet d’identifier l’utilisateur de manière unique
+- `email` sert à l’authentification et à la communication
+- `passwordHash` permet de ne jamais stocker un mot de passe brut
+- `roleId` relie l’utilisateur à son rôle
+- `createdAt` et `updatedAt` facilitent le suivi des modifications
+
+## Role
+
+L’entité `Role` définit un niveau global d’autorité dans le système.
+
+Exemples :
+
+- administrateur
+- éditeur
+- modérateur
+
+### Typical properties
+
+- `id`
+- `name`
+- `description`
+
+Un rôle sert à regrouper des permissions cohérentes.
+
+## Permission
+
+L’entité `Permission` représente une capacité précise.
+
+Exemples :
+
+- créer un article
+- modifier un cours
+- supprimer un média
+
+### Typical properties
+
+- `id`
+- `name`
+- `description`
+
+### Role / Permission relationship
+
+Un rôle possède généralement **plusieurs permissions**.  
+Cette relation permet une gestion fine des autorisations.
+
+Cela permet d’éviter un système trop rigide basé uniquement sur des rôles “magiques”.
+
+## Category
+
+L’entité `Category` permet de classer certains contenus ou certains cours.
+
+Dans un site de club d’arts martiaux, cela peut servir à distinguer :
+
+- les disciplines
+- les niveaux
+- les types de contenu
+
+### Typical properties
+
+- `id`
+- `name`
+- `slug`
+- `description`
+
+### Why `slug`?
+
+Le `slug` permet d’obtenir des URLs propres et lisibles.  
+Exemple :
+
+```text
+/categories/kung-fu
+```
+
+## Course
+
+L’entité `Course` représente un cours proposé par le club.
+
+Un cours appartient généralement à une catégorie.
+
+### Typical properties
+
+- `id`
+- `title`
+- `description`
+- `categoryId`
+- `createdAt`
+- `updatedAt`
+
+### Relationship with Category
+
+Un `Course` est généralement lié à une `Category`.
+
+Exemple :
+
+- catégorie : *Kung Fu*
+- cours : *Kung Fu adultes débutants*
+
+Cette relation permet une organisation plus claire des contenus du club.
+
+## Post
+
+L’entité `Post` représente un contenu éditorial.
+
+Elle sert pour :
+
+- les actualités
+- les annonces
+- les publications du site
+
+### Typical properties
+
+- `id`
+- `title`
+- `slug`
+- `excerpt`
+- `content`
+- `authorId`
+- `createdAt`
+- `updatedAt`
+- `publishedAt`
+
+### Why this entity matters
+
+L’entité `Post` est importante car elle relie :
+
+- l’éditeur de texte riche
+- l’administration
+- le rendu public du site
+
+C’est une entité très pédagogique, car elle traverse à la fois :
+
+- le frontend
+- le backend
+- la base de données
+- la gestion des médias
+
+## Media
+
+L’entité `Media` représente une ressource visuelle ou fichier géré via Cloudinary.
+
+### Typical properties
+
+- `id`
+- `publicId`
+- `folder`
+- `resourceType`
+- `format`
+- `width`
+- `height`
+- `createdAt`
+
+### Why separate Media from Cloudinary itself?
+
+Cloudinary est le système de stockage et de transformation,  
+mais le projet a besoin d’une représentation métier locale de certains médias.
+
+Cela permet notamment :
+
+- de rattacher un média à un contenu
+- de suivre certains usages
+- de structurer le Finder Cloudinary
+
+## Relationships between entities
+
+Voici les relations principales :
+
+- un `User` possède un `Role`
+- un `Role` possède plusieurs `Permission`
+- un `Course` appartient à une `Category`
+- un `Post` peut être lié à un `User` auteur
+- un `Post` peut être illustré par un ou plusieurs `Media`
+
+## Why these choices are important
+
+Ces choix ne sont pas simplement techniques.
+
+Ils permettent :
+
+- une meilleure lisibilité du projet
+- une meilleure maintenabilité
+- une meilleure séparation des responsabilités
+- une meilleure pédagogie
+
+En documentant bien les entités, on rend le projet plus clair pour :
+
+- le développeur qui le maintient
+- le recruteur qui le découvre
+- le développeur junior qui s’en inspire
+
+## Domain model and architecture
+
+Le domain model influence directement :
+
+- la base de données Prisma
+- les schémas Zod
+- les DTO
+- les routes tRPC
+- les formulaires frontend
+- les écrans d’administration
+
+Autrement dit, si le domain model est clair, **tout le reste du projet devient plus cohérent**.
+
+## Next step
+
+Maintenant que les entités principales du domaine sont posées, la prochaine étape logique est d’explorer :
+
+- soit l’architecture backend
+- soit le premier tutoriel technique sur l’authentification
+
+Dans les deux cas, le domain model servira de point d’appui pour comprendre le reste.

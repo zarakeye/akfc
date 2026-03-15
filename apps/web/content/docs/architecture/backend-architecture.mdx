@@ -1,20 +1,155 @@
 ---
-title: "Backend Architecture"
-description: "Organisation du backend et des couches serveur."
-section: "Architecture"
-order: 2
+title: Backend Architecture
+description: Architecture backend du projet AKFC
+section: Architecture
+order: 3
 ---
 
-Le backend est organisé en couches claires.
+# Backend Architecture
 
-## Couches
+Le backend du projet repose sur **une architecture modulaire et typée**.
 
-- routers
-- services
-- schemas
-- mappers
-- guards
+Les objectifs principaux sont :
 
-## Objectif
+- maintenir une séparation claire des responsabilités
+- garantir un typage fort entre les couches
+- rendre le code facilement testable et maintenable
 
-Séparer transport, validation, logique métier et sécurité.
+---
+
+## Vue d'ensemble
+
+Les principales briques backend sont :
+
+- **Next.js API routes**
+- **tRPC**
+- **Prisma**
+- **Zod**
+- **DTO**
+- **Guards**
+
+Ces éléments travaillent ensemble pour former une architecture cohérente.
+
+---
+
+## tRPC comme couche API
+
+L'API du projet est construite avec **tRPC**.
+
+Cela permet :
+
+- un typage partagé entre frontend et backend
+- une réduction du boilerplate
+- une meilleure expérience développeur
+
+Chaque domaine fonctionnel expose son propre **router**.
+
+Exemples :
+
+- `auth.router`
+- `course.router`
+- `category.router`
+
+---
+
+## Prisma comme couche d'accès aux données
+
+Prisma est utilisé pour interagir avec la base PostgreSQL.
+
+Prisma apporte :
+
+- un client fortement typé
+- des migrations structurées
+- une modélisation claire de la base de données
+
+Le schéma Prisma sert de **source de vérité pour le modèle de données**.
+
+---
+
+## Validation avec Zod
+
+Toutes les entrées API sont validées avec **Zod**.
+
+Cela permet :
+
+- de sécuriser les entrées utilisateur
+- de documenter les structures attendues
+- de générer des types TypeScript automatiquement
+
+---
+
+## DTO (Data Transfer Objects)
+
+Les DTO servent à **contrôler ce qui est exposé par l'API**.
+
+Ils permettent notamment de :
+
+- cacher certains champs internes
+- transformer les données
+- stabiliser les réponses API
+
+---
+
+## Guards
+
+Les guards permettent de protéger certaines opérations.
+
+Exemples :
+
+- vérifier qu'un utilisateur est connecté
+- vérifier qu'un utilisateur possède un rôle particulier
+
+Les guards constituent la **couche d'autorisation** du backend.
+
+---
+
+## Organisation des dossiers
+
+Le backend est structuré par domaine fonctionnel.
+
+Exemple :
+
+- `auth`
+- `courses`
+- `categories`
+- `posts`
+
+Chaque domaine contient généralement :
+
+- les routes tRPC
+- les schémas Zod
+- les services
+- les DTO
+
+---
+
+## Pourquoi cette architecture
+
+Cette organisation permet :
+
+- une meilleure lisibilité
+- une forte modularité
+- une évolutivité du projet
+
+Elle correspond également aux pratiques modernes du développement full‑stack TypeScript.
+
+---
+
+## Lien avec le frontend
+
+Grâce à tRPC et TypeScript :
+
+- les types sont partagés
+- les appels API sont typés
+- les erreurs sont détectées plus tôt
+
+Cela réduit considérablement les erreurs entre frontend et backend.
+
+---
+
+## Étape suivante
+
+Maintenant que l'architecture backend est claire, la prochaine étape logique est d'explorer :
+
+- le système d'authentification
+- la structure des routers tRPC

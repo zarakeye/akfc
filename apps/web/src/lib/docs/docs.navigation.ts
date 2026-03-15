@@ -1,5 +1,25 @@
 import type { DocPage } from "@/lib/docs/docs.types"
 
+const SECTION_ORDER = [
+  "Introduction",
+  "Foundation",
+  "Architecture",
+  "Domain",
+  "Tutorials",
+  "Patterns",
+  "Infrastructure",
+  "Advanced",
+  "Documentation",
+] as const
+
+function getSectionRank(section: string): number {
+  const index = SECTION_ORDER.indexOf(
+    section as (typeof SECTION_ORDER)[number]
+  )
+
+  return index === -1 ? SECTION_ORDER.length : index
+}
+
 export function getPrevNext(pages: DocPage[], slug: string[]) {
   const index = pages.findIndex(
     (page) => page.slug.join("/") === slug.join("/")
@@ -32,5 +52,10 @@ export function groupDocsBySection(pages: DocPage[]) {
     })
   )
 
-  return orderedSections.sort((a, b) => a.section.localeCompare(b.section))
+  return orderedSections.sort((a, b) => {
+    const rankCompare = getSectionRank(a.section) - getSectionRank(b.section)
+    if (rankCompare !== 0) return rankCompare
+
+    return a.section.localeCompare(b.section)
+  })
 }

@@ -225,12 +225,97 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Hide scrollbars but keep scroll functionality */
-
 .scrollbar-hidden {
-  -ms-overflow-style: none; /* IE / Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .scrollbar-hidden::-webkit-scrollbar {
-  display: none; /* Chrome / Safari */
+  display: none;
+}
+
+@layer components {
+  .docs-codeblock {
+    @apply text-sm;
+    background: #12141a;
+    color: #e5e7eb;
+  }
+
+  .docs-codeblock .codeblock-pre,
+  .docs-codeblock .shiki {
+    @apply m-0 overflow-x-auto;
+    padding: 0.5rem 0 !important;
+    background: transparent !important;
+    font-size: 13px !important;
+  }
+
+  .docs-codeblock .codeblock-pre code,
+  .docs-codeblock .shiki code {
+    @apply block min-w-full;
+    font-family: var(--font-geist-mono), monospace;
+  }
+
+  .docs-codeblock .line {
+    @apply block relative m-0;
+    padding-right: 1rem;
+    line-height: 1.25 !important;
+  }
+
+  .docs-codeblock .code-line-numbered {
+    padding-left: 3.5rem;
+  }
+
+  .docs-codeblock .code-line-numbered::before {
+    content: attr(data-line);
+    @apply absolute select-none pointer-events-none text-right;
+    left: 0;
+    width: 2.75rem;
+    color: rgba(255, 255, 255, 0.28);
+  }
+
+  .docs-codeblock .shiki {
+    background: transparent !important;
+  }
+
+  .docs-codeblock .snippet-scope-line {
+    background: rgba(59, 130, 246, 0.08) !important;
+  }
+
+  .docs-codeblock .snippet-scope-line.code-line-numbered::before {
+    color: rgba(255, 255, 255, 0.58);
+  }
+
+  .docs-codeblock .highlight-line {
+    background: rgba(59, 130, 246, 0.18) !important;
+    box-shadow: inset 3px 0 0 rgb(59, 130, 246);
+    padding-left: calc(3.5rem - 3px);
+  }
+
+  .docs-codeblock .highlight-line.code-line-numbered::before {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 700;
+  }
+
+  .docs-codeblock .snippet-scope-line.highlight-line {
+    background: rgba(59, 130, 246, 0.24) !important;
+  }
+
+  .docs-codeblock .snippet-scope-line.highlight-line.code-line-numbered::before {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 700;
+  }
+
+  .docs-codeblock .line {
+    @apply block relative m-0;
+    padding-right: 1rem;
+    line-height: 1.25 !important;
+  }
+
+  .docs-codeblock .line:empty::after {
+    content: " ";
+  }
+
+  .docs-codeblock .line:empty {
+    min-height: 1.25em;
+  }
 }

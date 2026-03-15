@@ -1,0 +1,196 @@
+---
+title: Forms with useForm and useActionState
+description: Construire des formulaires robustes avec validation, mutations tRPC et gestion d'état moderne
+section: Tutorials
+order: 4
+---
+
+# Forms with useForm and useActionState
+
+Dans ce tutoriel, nous allons voir comment implémenter **des formulaires modernes et robustes** dans le projet AKFC.
+
+Nous allons combiner plusieurs outils :
+
+- React
+- React Hook Form (`useForm`)
+- validation avec Zod
+- mutations tRPC
+- `useActionState` pour la gestion des états d'action
+
+Objectifs :
+
+- créer un formulaire typé
+- valider les entrées utilisateur
+- envoyer les données au backend via tRPC
+- gérer les états de chargement et d'erreur
+
+---
+
+# Pourquoi React Hook Form
+
+Les formulaires sont souvent complexes :
+
+- validation
+- gestion des erreurs
+- performances
+- synchronisation avec l'état React
+
+**React Hook Form** est une solution très performante car elle :
+
+- minimise les re-renders
+- fonctionne très bien avec TypeScript
+- s'intègre parfaitement avec Zod
+
+---
+
+# Installation
+
+Si ce n'est pas déjà fait :
+
+```
+pnpm add react-hook-form
+pnpm add @hookform/resolvers
+```
+
+---
+
+# Validation avec Zod
+
+Nous commençons par définir un schéma de validation.
+
+```ts
+import { z } from "zod"
+
+export const createCourseSchema = z.object({
+  title: z.string().min(3),
+  categoryId: z.string()
+})
+```
+
+Ce schéma sera utilisé :
+
+- côté frontend
+- côté backend
+
+---
+
+# Création du formulaire
+
+Exemple de formulaire pour créer un cours.
+
+```ts
+const form = useForm({
+  resolver: zodResolver(createCourseSchema)
+})
+```
+
+Cela permet de connecter directement **Zod** à React Hook Form.
+
+---
+
+# Enregistrer les champs
+
+Chaque champ doit être enregistré.
+
+```tsx
+<input
+  {...form.register("title")}
+  placeholder="Course title"
+/>
+```
+
+Les erreurs peuvent être affichées :
+
+```tsx
+{form.formState.errors.title && (
+  <p>{form.formState.errors.title.message}</p>
+)}
+```
+
+---
+
+# Mutation tRPC
+
+Pour envoyer les données au backend :
+
+```ts
+const mutation = trpc.course.create.useMutation()
+```
+
+Soumission du formulaire :
+
+```ts
+const onSubmit = form.handleSubmit(async (data) => {
+  await mutation.mutateAsync(data)
+})
+```
+
+---
+
+# Gestion de l'état avec useActionState
+
+React introduit `useActionState` pour gérer les états d'action.
+
+Exemple :
+
+```ts
+const [state, submitAction, isPending] = useActionState(
+  async (_, formData) => {
+    await mutation.mutateAsync({
+      title: formData.get("title")
+    })
+  },
+  null
+)
+```
+
+Avantages :
+
+- gestion simple des états
+- meilleure intégration avec React Server Components
+
+---
+
+# Gestion des erreurs
+
+Les erreurs backend peuvent être affichées :
+
+```ts
+if (mutation.error) {
+  console.error(mutation.error.message)
+}
+```
+
+Ou affichées dans l'interface utilisateur.
+
+---
+
+# Bonnes pratiques
+
+Quelques bonnes pratiques importantes :
+
+- toujours valider avec Zod
+- ne jamais faire confiance aux données utilisateur
+- afficher les erreurs clairement
+- garder les formulaires simples
+
+---
+
+# Résumé
+
+Dans ce tutoriel nous avons vu comment :
+
+- créer un formulaire avec React Hook Form
+- valider avec Zod
+- envoyer les données via tRPC
+- gérer les états d'action
+
+Cela constitue la **base des interfaces d'administration du projet**.
+
+---
+
+# Prochaine étape
+
+Le prochain tutoriel couvrira :
+
+👉 **Cloudinary Upload Pipeline**

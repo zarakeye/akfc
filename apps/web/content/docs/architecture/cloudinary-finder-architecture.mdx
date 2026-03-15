@@ -1,19 +1,138 @@
 ---
-title: "Cloudinary Finder Architecture"
-description: "Architecture détaillée de la feature Cloudinary Finder."
-section: "Architecture"
-order: 5
+title: Cloudinary Finder Architecture
+description: Architecture du système de gestion des médias Cloudinary
+section: Architecture
+order: 7
 ---
 
-Le Finder est l’une des features les plus riches du projet.
+# Cloudinary Finder Architecture
 
-## Modules
+Le projet AKFC utilise **Cloudinary** pour la gestion des médias (images, assets, etc.).
 
-- UI
-- State
-- Guards
-- Adapters
-- DnD
-- Tree View
-- Grid View
-- Trash / Bin
+Cependant, l'interface native de Cloudinary n'est pas toujours adaptée à une intégration dans une application d'administration.
+
+C'est pourquoi le projet implémente un **Cloudinary Finder personnalisé**.
+
+Cet outil permet de :
+
+- naviguer dans les dossiers Cloudinary
+- afficher les assets
+- déplacer des ressources
+- gérer un système de corbeille (bin)
+- intégrer les médias dans l'éditeur de contenu
+
+---
+
+## Objectifs du Finder
+
+Le Finder Cloudinary a plusieurs objectifs :
+
+- offrir une expérience proche d'un **explorateur de fichiers**
+- simplifier la gestion des médias pour les administrateurs
+- centraliser l'utilisation des assets dans l'application
+
+---
+
+## Architecture générale
+
+Le système est composé de plusieurs couches :
+
+1. **Cloudinary API**
+2. **Backend tRPC**
+3. **DTO de transformation**
+4. **Frontend Finder**
+5. **Drag & Drop Manager**
+
+---
+
+## Cloudinary API
+
+Cloudinary agit comme **le système de stockage principal**.
+
+Il fournit :
+
+- upload d'images
+- transformation dynamique
+- organisation en dossiers
+- CDN pour la distribution des assets
+
+---
+
+## Backend tRPC
+
+Le backend expose une série de routes tRPC permettant d'interagir avec Cloudinary.
+
+Exemples :
+
+- `cloudinary.getFolderTree`
+- `cloudinary.listAssets`
+- `cloudinary.moveAsset`
+- `cloudinary.deleteAsset`
+
+Ces routes servent d'interface entre le frontend et Cloudinary.
+
+---
+
+## DTO et transformation des données
+
+Les réponses Cloudinary sont transformées en **DTO (Data Transfer Objects)**.
+
+Cela permet :
+
+- d'uniformiser les données côté frontend
+- de filtrer certaines informations inutiles
+- de simplifier la manipulation des assets
+
+---
+
+## Frontend Finder
+
+Le Finder est une interface React qui reproduit les comportements classiques d'un explorateur :
+
+- navigation dans l'arborescence
+- sélection d'éléments
+- preview des images
+- actions contextuelles
+
+---
+
+## Drag & Drop
+
+Le système supporte également le **drag & drop** pour déplacer les assets entre dossiers.
+
+Cette fonctionnalité repose sur :
+
+- un gestionnaire de drag
+- des validations côté backend
+- des guards pour éviter les opérations invalides
+
+---
+
+## Système de corbeille
+
+Le projet implémente un système de **bin** permettant de déplacer temporairement des assets avant suppression.
+
+Cela offre :
+
+- une sécurité supplémentaire
+- une meilleure gestion des erreurs utilisateur
+
+---
+
+## Lien avec l'éditeur de contenu
+
+Le Finder est directement intégré avec l'éditeur TipTap.
+
+Cela permet :
+
+- de sélectionner une image
+- de l'insérer dans un article
+- de gérer les médias sans quitter l'éditeur
+
+---
+
+## Conclusion
+
+Le Cloudinary Finder est une brique importante de l'architecture du projet.
+
+Il démontre comment intégrer un service externe dans une architecture full-stack moderne.

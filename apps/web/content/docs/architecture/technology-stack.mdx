@@ -1,0 +1,177 @@
+---
+title: Technology Stack
+description: Choix technologiques et raisons architecturales du projet AKFC
+section: Architecture
+order: 2
+---
+
+# Technology Stack
+
+Ce chapitre explique **pourquoi ces technologies ont été choisies** pour le projet AKFC.
+
+L'objectif n'est pas seulement d'énumérer des outils, mais de comprendre **comment chaque choix participe à une architecture cohérente**.
+
+Dans un projet pédagogique, expliquer les décisions est aussi important que montrer le code.
+
+---
+
+## Vue d'ensemble de la stack
+
+Le projet repose principalement sur :
+
+- **Next.js**
+- **TypeScript**
+- **tRPC**
+- **Prisma**
+- **PostgreSQL**
+- **Cloudinary**
+- **TipTap**
+- **TailwindCSS**
+
+Chaque technologie remplit un rôle précis dans l'architecture.
+
+---
+
+## Next.js
+
+Next.js est utilisé comme **framework fullstack principal**.
+
+### Pourquoi Next.js ?
+
+Next.js permet :
+
+- le rendu serveur (SSR)
+- les Server Components
+- les Server Actions
+- un routing moderne
+- une intégration simple avec React
+
+Dans ce projet, Next.js sert de **colonne vertébrale applicative**.
+
+Il héberge :
+
+- le frontend
+- les routes API
+- l'intégration avec tRPC
+
+---
+
+## TypeScript
+
+Le projet utilise TypeScript pour garantir :
+
+- une meilleure sécurité de type
+- une documentation implicite du code
+- une meilleure maintenabilité
+
+Dans une architecture moderne, TypeScript permet de partager les types entre :
+
+- frontend
+- backend
+- base de données
+
+---
+
+## tRPC
+
+tRPC permet de créer une API **type-safe** entre frontend et backend.
+
+### Pourquoi tRPC ?
+
+Contrairement à REST traditionnel :
+
+- les types sont partagés
+- aucune duplication des schémas
+- les appels API sont totalement typés
+
+Cela permet une expérience développeur extrêmement fluide.
+
+---
+
+## Prisma
+
+Prisma est utilisé comme **ORM moderne** pour PostgreSQL.
+
+### Ce que Prisma apporte
+
+- migrations structurées
+- génération de types
+- requêtes expressives
+- intégration TypeScript parfaite
+
+Dans ce projet, Prisma sert de **couche d'accès aux données**.
+
+---
+
+## PostgreSQL
+
+PostgreSQL est utilisé comme base de données principale.
+
+### Pourquoi PostgreSQL ?
+
+PostgreSQL offre :
+
+- fiabilité
+- robustesse
+- performances
+- écosystème mature
+
+C'est une base très adaptée aux applications web modernes.
+
+---
+
+## Cloudinary
+
+Cloudinary est utilisé pour la gestion des médias.
+
+Le projet utilise Cloudinary pour :
+
+- l'upload d'images
+- la transformation d'images
+- l'optimisation des assets
+
+Un **Finder Cloudinary personnalisé** a été construit pour gérer les médias.
+
+---
+
+## TipTap
+
+TipTap est utilisé comme éditeur de texte riche.
+
+Il permet :
+
+- un éditeur extensible
+- une architecture basée sur ProseMirror
+- un contrôle total du rendu
+
+C'est un choix idéal pour construire un éditeur pédagogique.
+
+---
+
+## TailwindCSS
+
+Tailwind est utilisé pour le styling.
+
+### Pourquoi Tailwind ?
+
+- rapidité de développement
+- cohérence visuelle
+- design system implicite
+
+Il permet également une intégration facile avec des composants réutilisables.
+
+---
+
+## Conclusion
+
+Cette stack n'est pas choisie au hasard.
+
+Elle vise à offrir :
+
+- une **architecture moderne**
+- une **expérience développeur optimale**
+- un **projet pédagogique riche**
+
+Chaque technologie est utilisée pour illustrer des concepts importants du développement fullstack.
+
+Dans les prochains chapitres, nous verrons comment ces briques s'assemblent dans l'architecture complète du projet.

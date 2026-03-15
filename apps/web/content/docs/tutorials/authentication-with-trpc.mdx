@@ -1,0 +1,337 @@
+---
+title: Authentication with tRPC
+description: Comprendre comment l’authentification est structurée dans le projet avec tRPC, Zod, Prisma et la gestion de session.
+section: Tutorials
+order: 1
+---
+
+import { CodeExample } from "@/components/docs/CodeExample"
+import { CodeWalkthrough } from "@/components/docs/CodeWalkthrough"
+import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
+import { Callout } from "@/components/docs/Callout"
+
+# Authentication with tRPC
+
+Dans ce tutoriel, nous allons comprendre comment l’authentification est organisée dans le projet.
+
+L’objectif n’est pas seulement de lire quelques fichiers, mais de bien visualiser le rôle de chaque couche :
+
+- le **modèle de données**
+- la **validation**
+- le **router tRPC**
+- la **reconstruction de session**
+- le **contexte serveur**
+
+---
+
+## Vue d’ensemble du flux
+
+<ArchitectureDiagram
+  steps={[
+    "Client",
+    "Validation Zod",
+    "Router tRPC",
+    "Session serveur",
+    "Contexte tRPC",
+    "Database",
+  ]}
+/>
+
+<Callout>
+Un bon système d’authentification repose rarement sur un seul fichier.  
+Il s’agit presque toujours d’une chaîne de responsabilités entre validation, accès aux données, logique métier et session.
+</Callout>
+
+---
+
+# 1 — Validation des identifiants
+
+Avant toute chose, le backend doit vérifier la forme des données envoyées par le client.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/schemas/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetRange="1-11"
+  snippetHighlight="3-9"
+  snippetTitle="Schéma Zod des identifiants"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce schéma impose deux choses :
+
+- un email au bon format
+- un mot de passe d’au moins 12 caractères
+
+C’est une première ligne de défense indispensable.
+
+---
+
+# 2 — Vue d’ensemble du router d’authentification
+
+Le cœur du flux se trouve dans le router tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/routers/auth.router.ts"
+  filename="auth.router.ts"
+  snippetRange="1-51"
+  snippetHighlight="16,38,44"
+  snippetTitle="Vue d’ensemble du router d’authentification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce fichier ne se limite pas au login.  
+Il regroupe plusieurs procédures liées à l’authentification :
+
+- `login`
+- `logout`
+- `getSession`
+- la réinitialisation de mot de passe
+
+Pour bien comprendre le flux principal, nous allons maintenant nous concentrer sur la procédure `login`.
+
+---
+
+# 3 — Lecture guidée de la procédure login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/routers/auth.router.ts"
+  filename="auth.router.ts"
+  snippetRange="16-35"
+  title="Lecture guidée de la procédure login"
+  stepsJson='[
+    {
+      "title": "Procédure publique",
+      "body": "Le login est exposé comme une procédure publique. C’est logique, car un utilisateur non connecté doit pouvoir appeler cette route.",
+      "scope": "1-1",
+      "focus": "1"
+    },
+    {
+      "title": "Validation inline avec Zod",
+      "body": "Le router définit ici directement un schéma Zod contenant un email valide et un mot de passe d’au moins 12 caractères.",
+      "scope": "2-5",
+      "focus": "2-5"
+    },
+    {
+      "title": "Extraction des données",
+      "body": "La mutation récupère ensuite les données validées depuis input avant de lancer la logique métier.",
+      "scope": "6-7",
+      "focus": "6-7"
+    },
+    {
+      "title": "Délégation au service métier",
+      "body": "Le router ne fait pas toute la logique lui-même. Il délègue l’authentification à loginService, ce qui garde une architecture plus propre.",
+      "scope": "8-19",
+      "focus": "9"
+    },
+    {
+      "title": "Réponse de succès",
+      "body": "Si le service ne lève pas d’erreur, la mutation retourne simplement un succès. Le router reste ici très léger.",
+      "scope": "8-19",
+      "focus": "11-13"
+    },
+    {
+      "title": "Gestion d’échec",
+      "body": "En cas d’erreur, la mutation renvoie un objet d’échec avec un message exploitable côté client.",
+      "scope": "8-19",
+      "focus": "14-18"
+    }
+  ]'
+/>
+
+<Callout>
+Ce bloc montre une bonne séparation des responsabilités : le router orchestre la requête, mais délègue la logique métier réelle à `loginService`.
+</Callout>
+
+---
+
+# 4 — La déconnexion
+
+Le logout montre une autre idée importante : certaines procédures doivent être protégées.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/routers/auth.router.ts"
+  filename="auth.router.ts"
+  snippetRange="38-42"
+  snippetHighlight="1-3"
+  snippetTitle="Procédure de logout"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ici, la procédure est définie avec `protectedProcedure`.  
+Autrement dit, elle ne peut être appelée que si une session valide existe déjà.
+
+---
+
+# 5 — Lire la session courante
+
+Le router expose aussi une procédure simple pour demander :
+
+> qui est connecté en ce moment ?
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/routers/auth.router.ts"
+  filename="auth.router.ts"
+  snippetRange="44-47"
+  snippetHighlight="1-3"
+  snippetTitle="Procédure getSession"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette procédure ne reconstruit pas elle-même la session.  
+Elle récupère simplement la session déjà préparée dans le contexte tRPC.
+
+---
+
+# 6 — Reconstruction de la session depuis la requête
+
+C’est ici que le backend relit réellement l’état d’authentification.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="112-151"
+  snippetHighlight="4-9,11-22,24,26"
+  snippetTitle="Reconstruction de la session depuis la requête"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette fonction suit une logique très claire :
+
+1. lire le token
+2. vérifier qu’il est valide
+3. retrouver la session en base
+4. vérifier qu’elle n’est pas expirée
+5. transformer la session brute en session exploitable côté client
+
+C’est une fonction centrale, car elle permet au backend de savoir si un utilisateur est déjà authentifié lors d’une requête suivante.
+
+---
+
+# 7 — Lecture du token d’authentification
+
+Avant cela, il faut encore être capable de récupérer le token depuis la requête ou les cookies Next.js.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="85-105"
+  snippetHighlight="3-6,9-14"
+  snippetTitle="Lecture du token depuis la requête"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette couche est importante car elle rend la logique compatible avec plusieurs contextes :
+
+- handlers basés sur `Request`
+- App Router via `cookies()`
+
+---
+
+# 8 — Création du contexte tRPC
+
+Une fois la session reconstruite, le contexte tRPC peut l’injecter dans les procédures backend.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="23-35"
+  snippetHighlight="5-10"
+  snippetTitle="Création du contexte tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est ici que le backend prépare, pour chaque requête :
+
+- la session courante
+- l’accès à Prisma
+- l’IP de la requête
+- le user-agent
+
+Le contexte agit comme un “sac de travail” transmis aux procédures tRPC.
+
+---
+
+# 9 — Protéger une procédure avec le contexte
+
+Le fichier `core.ts` montre aussi comment on crée une procédure protégée.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="40-49"
+  snippetHighlight="3-7"
+  snippetTitle="Création de protectedProcedure"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le middleware vérifie ici un point simple mais fondamental :
+
+- si `ctx.sessionClient?.user` n’existe pas
+- alors la requête est refusée
+
+C’est ce mécanisme qui permet ensuite au projet de distinguer :
+
+- les procédures publiques
+- les procédures réservées aux utilisateurs authentifiés
+
+---
+
+# 10 — Résumé du flux complet
+
+Si on remet tout dans l’ordre :
+
+1. le client envoie ses identifiants
+2. le schéma Zod valide les données
+3. le router tRPC déclenche la procédure `login`
+4. le router délègue la logique métier à un service
+5. une session est ensuite retrouvée ou reconstruite côté serveur
+6. le contexte tRPC injecte cette session dans les requêtes suivantes
+7. les procédures protégées peuvent alors s’appuyer sur cette identité
+
+<ArchitectureDiagram
+  steps={[
+    "login()",
+    "loginService",
+    "session/token",
+    "getSessionFromRequest",
+    "createTRPCContext",
+    "ctx.sessionClient",
+    "protectedProcedure",
+  ]}
+/>
+
+---
+
+# 11 — Ce qu’il faut retenir
+
+Voici les idées les plus importantes :
+
+- **Zod** protège l’entrée
+- **le router tRPC** orchestre la requête
+- **le service métier** porte la logique de connexion
+- **`getSessionFromRequest`** reconstruit l’état d’authentification
+- **`createTRPCContext`** distribue cet état au reste du backend
+- **`protectedProcedure`** bloque les requêtes non authentifiées
+
+Autrement dit :
+
+> l’authentification n’est pas une simple fonction login, mais une collaboration entre validation, router, session et contexte.
+
+---
+
+# 12 — Étape suivante
+
+Le prolongement logique de ce tutoriel est la protection des routes :
+
+- comment brancher `protectedProcedure`
+- comment utiliser `ctx.sessionClient`
+- comment aller ensuite vers rôles et permissions

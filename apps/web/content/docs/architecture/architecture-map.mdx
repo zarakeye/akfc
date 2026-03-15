@@ -1,0 +1,173 @@
+---
+title: Architecture Map
+description: Vue d'ensemble de l'architecture du projet AKFC
+section: Architecture
+order: 0
+---
+
+# Architecture Map
+
+Cette page donne une **vue globale de l'architecture du projet AKFC**.
+
+Elle permet de comprendre rapidement comment les différentes couches du projet interagissent.
+
+Le projet suit une architecture **full‑stack moderne basée sur TypeScript**.
+
+---
+
+# Vue d'ensemble
+
+```
+Frontend (Next.js)
+        │
+        ▼
+tRPC API Layer
+        │
+        ▼
+Backend Services
+        │
+        ▼
+Prisma ORM
+        │
+        ▼
+PostgreSQL Database
+```
+
+En parallèle :
+
+```
+TipTap Editor
+      │
+      ▼
+Cloudinary Upload Pipeline
+      │
+      ▼
+Cloudinary Storage
+```
+
+---
+
+# Frontend
+
+Le frontend est construit avec **Next.js App Router**.
+
+Responsabilités principales :
+
+- rendu des pages
+- formulaires
+- affichage des données
+- gestion de l'état côté client
+
+Le frontend **ne parle jamais directement à la base de données**.
+
+---
+
+# tRPC Layer
+
+tRPC sert de **couche d'API typée** entre frontend et backend.
+
+Avantages :
+
+- typage end‑to‑end
+- pas de duplication des types
+- API plus sûre
+
+Flux typique :
+
+```
+React Component
+      ↓
+tRPC hook
+      ↓
+tRPC router
+```
+
+---
+
+# Backend Services
+
+Les services backend contiennent la **logique métier du projet**.
+
+Ils orchestrent :
+
+- validation
+- règles métier
+- accès à la base de données
+- gestion des erreurs
+
+Cette couche permet de **ne pas mélanger logique métier et accès aux données**.
+
+---
+
+# Prisma ORM
+
+Prisma agit comme **couche d'accès à la base de données**.
+
+Il permet :
+
+- requêtes typées
+- migrations
+- génération de client TypeScript
+
+Exemple :
+
+```ts
+await prisma.user.findUnique({
+  where: { email }
+})
+```
+
+---
+
+# Database
+
+La base de données utilisée est **PostgreSQL**.
+
+Elle stocke :
+
+- utilisateurs
+- rôles
+- permissions
+- cours
+- catégories
+- contenus
+
+---
+
+# Cloudinary
+
+Cloudinary est utilisé pour :
+
+- stockage des images
+- transformations d'image
+- gestion des médias
+
+Le projet inclut un **Cloudinary Finder custom**.
+
+---
+
+# Résumé
+
+Architecture simplifiée :
+
+```
+Next.js UI
+     ↓
+tRPC API
+     ↓
+Backend Services
+     ↓
+Prisma ORM
+     ↓
+PostgreSQL
+```
+
+Et pour les médias :
+
+```
+TipTap Editor
+      ↓
+Cloudinary Upload
+      ↓
+Cloudinary Storage
+```
