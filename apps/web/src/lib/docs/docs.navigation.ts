@@ -59,3 +59,29 @@ export function groupDocsBySection(pages: DocPage[]) {
     return a.section.localeCompare(b.section)
   })
 }
+
+export function getPrevNextInSection(
+  pages: DocPage[],
+  slug: string[],
+  section: string
+) {
+  const sectionPages = pages
+    .filter((page) => page.section === section)
+    .sort((a, b) => {
+      const orderCompare = (a.order ?? 9999) - (b.order ?? 9999)
+      if (orderCompare !== 0) return orderCompare
+      return a.title.localeCompare(b.title)
+    })
+
+  const index = sectionPages.findIndex(
+    (page) => page.slug.join("/") === slug.join("/")
+  )
+
+  return {
+    prev: index > 0 ? sectionPages[index - 1] : null,
+    next:
+      index >= 0 && index < sectionPages.length - 1
+        ? sectionPages[index + 1]
+        : null,
+  }
+}

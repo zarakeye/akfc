@@ -1,46 +1,46 @@
-import { unified } from "unified"
-import remarkParse from "remark-parse"
-import { visit } from "unist-util-visit"
-import type { Heading, PhrasingContent, Root } from "mdast"
-
 import type { TocItem } from "@/lib/docs/docs.types"
 
-function extractText(nodes: PhrasingContent[]): string {
-  return nodes
-    .map((node) => {
-      if ("value" in node && typeof node.value === "string") {
-        return node.value
-      }
+function baseSlugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+}
 
-      if ("children" in node && Array.isArray(node.children)) {
-        return extractText(node.children as PhrasingContent[])
-      }
+function createUniqueSlugger() {
+  const counts = new Map<string, number>()
 
-      return ""
-    })
-    .join("")
+  return (text: string) => {
+    const base = baseSlugify(text)
+    const count = counts.get(base) ?? 0
+    counts.set(base, count + 1)
+
+    return count === 0 ? base : `${base}-${count}`
+  }
 }
 
 export function extractToc(markdown: string): TocItem[] {
-  const tree = unified().use(remarkParse).parse(markdown) as Root
   const toc: TocItem[] = []
+  const slugify = createUniqueSlugger()
+  const lines = markdown.split("\n")
 
-  visit(tree, "heading", (node: Heading) => {
-    const text = extractText(node.children)
+  for (const line of lines) {
+    const match = line.match(/^\s*(#{2,3})\s+(.*)$/)
+    if (!match) continue
 
-    if (!text.trim()) return
-
-    const id = text
-      .toLowerCase()
-      .replace(/[^a-z0-9 ]/g, "")
-      .replace(/\s+/g, "-")
+    const depth = match[1].length
+    const value = match[2].trim()
+    if (!value) continue
 
     toc.push({
-      depth: node.depth,
-      value: text,
-      id,
+      depth,
+      value,
+      id: slugify(value),
     })
-  })
+  }
 
   return toc
 }

@@ -87,7 +87,6 @@ export default function PicturesDragNDropForm(): JSX.Element {
     setPictures(prev =>
       prev.map(pic => {
         if (pic.id !== pictureId) return pic;
-        console.log('🟩 preview remplacée pour :', pictureId);
 
         return {
           ...pic,

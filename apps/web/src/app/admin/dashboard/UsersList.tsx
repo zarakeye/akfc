@@ -85,7 +85,6 @@ export default function UsersList(): JSX.Element {
   // Remove nested role relation for Table<User>
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const sanitizedUsers = users.map(({ role, ...rest }) => rest);
-  console.log('Sanitized Users:', sanitizedUsers);
 
   return (
     isUsersLoading || isRolesLoading 

@@ -19,12 +19,6 @@ function decorateShikiHtml(
 ): string {
   let lineIndex = 0
 
-  console.log({
-    startingLineNumber,
-    highlightLines,
-    scopeLines,
-  })
-
   return html.replace(/<span class="line"(.*?)>/g, (_match, attrs) => {
     const lineNumber = startingLineNumber + lineIndex
     lineIndex += 1
@@ -93,8 +87,6 @@ export async function renderCodeBlockHtml({
     showLineNumbers,
     startingLineNumber
   )
-
-  console.log(html.includes("highlight-line"))
 
   return html
 }

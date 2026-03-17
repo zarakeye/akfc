@@ -12,6 +12,21 @@ function getCenterScrollContainer(): HTMLElement | null {
   return document.getElementById("docs-content-scroll")
 }
 
+function getOffsetTopWithinContainer(
+  element: HTMLElement,
+  container: HTMLElement
+): number {
+  let top = 0
+  let current: HTMLElement | null = element
+
+  while (current && current !== container) {
+    top += current.offsetTop
+    current = current.offsetParent as HTMLElement | null
+  }
+
+  return top
+}
+
 export function DocsRightAside({ items }: { items: TocItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -22,18 +37,33 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
 
     const headings = items
       .map((item) => document.getElementById(item.id))
-      .filter(Boolean) as HTMLElement[]
+      .filter((el): el is HTMLElement => !!el)
+
+    console.log("TOC ids:", items.map((item) => item.id))
+
+    console.log(
+      "Headings found:",
+      items.map((item) => ({
+        id: item.id,
+        found: !!document.getElementById(item.id),
+        tag: document.getElementById(item.id)?.tagName,
+      }))
+    )
+
+    console.log("Scroll container:", document.getElementById("docs-content-scroll"))
 
     if (!headings.length) return
 
     const updateActiveHeading = () => {
-      const containerTop = container.getBoundingClientRect().top
+      const scrollTop = container.scrollTop
+      const offsetThreshold = 120
 
       let current: string | null = null
 
       for (const heading of headings) {
-        const rect = heading.getBoundingClientRect()
-        if (rect.top - containerTop <= 120) {
+        const headingTop = getOffsetTopWithinContainer(heading, container)
+
+        if (headingTop - scrollTop <= offsetThreshold) {
           current = heading.id
         }
       }
@@ -106,6 +136,38 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
     })
   }
 
+  const scrollToHeading = (id: string) => {
+    const container = getCenterScrollContainer()
+    const heading = document.getElementById(id)
+
+    console.log("scrollToHeading", {
+      id,
+      container: !!container,
+      heading: !!heading,
+      headingId: heading?.id,
+      headingTag: heading?.tagName,
+    })
+
+    if (!container || !heading) return
+
+    heading.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    })
+
+
+    // const top = getOffsetTopWithinContainer(heading, container) - 96
+
+    // container.scrollTo({
+    //   top: Math.max(top, 0),
+    //   behavior: "smooth",
+    // })
+
+    setActiveId(id)
+    window.history.replaceState(null, "", `#${id}`)
+  }
+
   if (!items.length) return null
 
   return (
@@ -146,26 +208,27 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
           </p>
 
           <ul className="space-y-2 text-sm">
-            {items.map((item) => {
+            {items.map((item, index) => {
               const active = activeId === item.id
 
               return (
                 <li
-                  key={item.id}
+                  key={`${item.id}-${index}`}
                   style={{
                     marginLeft: `${Math.max(item.depth - 2, 0) * 12}px`,
                   }}
                 >
-                  <a
-                    href={`#${item.id}`}
-                    className={`transition-colors ${
+                  <button
+                    type="button"
+                    onClick={() => scrollToHeading(item.id)}
+                    className={`text-left transition-colors ${
                       active
                         ? "font-medium text-primary"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {item.value}
-                  </a>
+                  </button>
                 </li>
               )
             })}

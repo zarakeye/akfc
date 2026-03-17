@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
-
 import { DocsSidebar } from "@/components/docs/DocsSidebar"
+import { generateDocsIndex } from "@/lib/docs/docs.index"
 
 export function DocsLayout({
   title,
@@ -19,9 +19,14 @@ export function DocsLayout({
   rightAside?: ReactNode
   children: ReactNode
 }) {
+  const { navigation } = generateDocsIndex();
+
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-background">
-      <DocsSidebar currentPath={currentPath} />
+      <DocsSidebar
+        currentPath={currentPath}
+        navigation={navigation}
+      />
 
       <main className="min-w-0 flex-1 overflow-hidden">
         <div className="flex h-full min-h-0 overflow-hidden px-8 py-6">

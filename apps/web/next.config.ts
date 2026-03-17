@@ -3,6 +3,9 @@ import createMDX from "@next/mdx"
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
+  options: {
+    rehypePlugins: ["rehype-slug"],
+  },
 })
 
 const nextConfig: NextConfig = {
@@ -12,7 +15,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
-        port: "",
         pathname: "/**",
       },
     ],

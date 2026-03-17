@@ -1,359 +1,165 @@
 ---
-title: Project Architecture
-description: Organisation générale du projet et choix d'architecture
+title: Project architecture
+description: Vue globale de l’architecture du monorepo et des différentes couches du projet.
 section: Architecture
 order: 1
 ---
 
-# Project Architecture
+# Project architecture
 
-Dans cette section, nous allons explorer **l'architecture générale du
-projet AKFC**.
+Cette page présente la structure globale du projet.
 
-L'objectif est de comprendre :
+Le repository est organisé comme un **monorepo** séparant clairement :
 
--   comment le projet est structuré
--   comment les différentes parties communiquent
--   pourquoi certaines décisions techniques ont été prises
+- l’interface utilisateur
+- la logique backend
+- les contrats partagés
+- la documentation
 
-Avant d'entrer dans les détails du code, il est essentiel de comprendre
-**la structure globale du système**.
+Cette séparation permet :
 
-------------------------------------------------------------------------
+- une architecture plus claire
+- un partage de types sécurisé
+- une évolution indépendante des différentes couches.
 
-## A monorepo architecture
+---
 
-Le projet utilise une architecture **monorepo**.
+## Vue rapide du monorepo
 
-Un monorepo consiste à regrouper plusieurs applications et packages dans
-**un seul dépôt**.
+<ProjectArchitectureTree />
 
-Structure simplifiée :
+Cette vue montre l’organisation générale du repository.
 
-    akfc/
-      apps/
-        web/
-      packages/
-        backend/
+Chaque dossier a un rôle spécifique dans l’architecture du projet.
 
-### apps/
+---
 
-Le dossier `apps` contient les **applications exécutables**.
+## Architecture logique du projet
 
-Dans ce projet :
+<ProjectArchitectureLayers />
 
-    apps/
-      web/
+Cette organisation permet de séparer clairement les responsabilités.
 
-`web` est l'application **Next.js** qui sert à la fois :
+---
 
--   le frontend
--   certaines parties du backend
+## Flux global de l’application
 
-------------------------------------------------------------------------
+<ArchitectureDiagram
+  steps={[
+    "Client React",
+    "tRPC Router",
+    "Services métier",
+    "Prisma",
+    "Database",
+  ]}
+/>
 
-### packages/
+Lorsqu’un utilisateur effectue une action :
 
-Le dossier `packages` contient du **code partagé**.
+1. le **client React** déclenche une requête
+2. la requête est traitée par un **router tRPC**
+3. le router délègue la logique à un **service métier**
+4. le service interagit avec **Prisma**
+5. Prisma communique avec la **base de données**
 
-Dans ce projet :
+Cette organisation permet de garder :
 
-    packages/
-      backend/
+- des routers légers
+- une logique métier centralisée
+- un accès aux données bien structuré.
 
-Ce package contient notamment :
+---
 
--   les routes **tRPC**
--   la logique métier
--   l'accès à la base de données
--   les services backend
+## Organisation du monorepo
 
-Cette séparation permet de garder une **architecture claire** entre :
+### apps/web
 
--   l'interface utilisateur
--   la logique applicative
+Application frontend basée sur Next.js.
 
-------------------------------------------------------------------------
+Elle contient :
 
-## Why a monorepo?
+- l’interface utilisateur
+- les pages de documentation
+- les composants UI
+- les hooks React
+- les stores Zustand
 
-Le monorepo offre plusieurs avantages.
+C’est également ici que se trouve la documentation pédagogique du projet.
 
-### 1. Partage de types
+---
 
-Comme tout est écrit en **TypeScript**, il est très utile de partager
-les types entre :
+### packages/backend
 
--   backend
--   frontend
+Contient la logique serveur.
 
-Par exemple :
+On y trouve notamment :
 
--   types de données
--   DTO
--   réponses API
+- les **routers tRPC**
+- les **services métier**
+- la **gestion des sessions**
+- l’intégration **Prisma**
 
-Cela permet un **typage end-to-end**.
+Le backend n’est pas directement exposé comme une API REST, mais via **tRPC**.
 
-------------------------------------------------------------------------
+---
 
-### 2. Cohérence du projet
+### packages/contracts
 
-Toutes les parties du projet vivent dans le même dépôt :
+Ce package contient les éléments partagés entre client et serveur.
 
--   frontend
--   backend
--   documentation
+Principalement :
 
-Cela facilite :
+- les **schémas Zod**
+- les **types TypeScript**
+- les **contrats d’API**
 
--   la maintenance
--   les refactorings
--   la compréhension globale du système
+Cela garantit que :
 
-------------------------------------------------------------------------
+- le frontend et le backend utilisent exactement les mêmes types
+- les validations sont centralisées.
 
-### 3. Évolution future
+---
 
-L'architecture a été pensée pour permettre l'ajout de nouvelles
-applications.
+### prisma
 
-Par exemple :
+Contient le **modèle de données** et les migrations.
 
-    apps/
-      web/
-      mobile/
+On y trouve :
 
-Une application **React Native / Expo** pourra être ajoutée plus tard
-tout en réutilisant :
+- `schema.prisma`
+- les migrations
+- la configuration de la base de données
 
--   le backend
--   les types
--   certaines logiques partagées
+Prisma agit comme couche d’accès aux données pour les services backend.
 
-------------------------------------------------------------------------
+---
 
-## Backend architecture
+## Pourquoi cette architecture ?
 
-Le backend repose sur **tRPC**.
+Cette architecture apporte plusieurs avantages :
 
-tRPC permet de construire une API **entièrement typée**.
+### séparation claire des responsabilités
 
-Structure simplifiée :
+Chaque couche a un rôle précis.
 
-    packages/backend/
-      src/
-        trpc/
-        services/
-        repositories/
-        schemas/
+### partage de types sécurisé
 
-### trpc/
+Grâce au package `contracts`, le client et le serveur partagent les mêmes schémas.
 
-Contient la définition des routes API.
+### meilleure maintenabilité
 
-Exemple :
+La logique métier n’est pas mélangée avec :
 
-    auth.login
-    auth.getSession
-    category.getAll
-    course.getAll
+- l’interface utilisateur
+- la couche réseau
+- la base de données.
 
-Chaque route expose une procédure accessible depuis le frontend.
+---
 
-------------------------------------------------------------------------
+## Navigation dans l’architecture
 
-### services/
+Pour explorer plus en détail chaque partie :
 
-Les services contiennent la **logique métier**.
-
-Ils orchestrent :
-
--   les accès à la base
--   les règles métier
--   les validations
-
-Cela évite d'avoir une logique trop lourde dans les routes.
-
-------------------------------------------------------------------------
-
-### repositories
-
-Les repositories sont responsables de **l'accès aux données**.
-
-Ils utilisent **Prisma** pour interagir avec la base PostgreSQL.
-
-------------------------------------------------------------------------
-
-### schemas
-
-Les schémas définissent :
-
--   la validation des entrées
--   la structure des données
-
-La validation est souvent faite avec **Zod**.
-
-------------------------------------------------------------------------
-
-## Frontend architecture
-
-Le frontend est construit avec **Next.js App Router**.
-
-Structure simplifiée :
-
-    apps/web/src/
-      app/
-      features/
-      components/
-      lib/
-
-### app/
-
-Le dossier `app` contient les **routes Next.js**.
-
-Exemples :
-
-    app/
-      page.tsx
-      docs/
-      admin/
-
-Chaque dossier correspond à une route.
-
-------------------------------------------------------------------------
-
-### features/
-
-Le dossier `features` contient les **fonctionnalités de l'application**.
-
-Exemple :
-
-    features/
-      auth-ui/
-      cloudinary-finder/
-      editor-tiptap/
-
-Chaque feature contient :
-
--   ses composants
--   ses hooks
--   sa logique frontend
-
-Cela permet d'éviter une architecture basée uniquement sur :
-
-    components/
-    hooks/
-    utils/
-
-qui devient difficile à maintenir à grande échelle.
-
-------------------------------------------------------------------------
-
-### components/
-
-Les composants génériques réutilisables.
-
-Exemples :
-
--   layout
--   UI primitives
--   composants de documentation
-
-------------------------------------------------------------------------
-
-### lib/
-
-Le dossier `lib` contient :
-
--   utilitaires
--   helpers
--   logique partagée
-
-------------------------------------------------------------------------
-
-## Media management
-
-Le projet utilise **Cloudinary** pour gérer les images.
-
-Cloudinary permet :
-
--   stocker des images
--   transformer les images
--   optimiser les performances
-
-Le projet inclut également un **media explorer personnalisé** appelé
-**Cloudinary Finder**.
-
-Ce composant permet :
-
--   parcourir les dossiers
--   visualiser les images
--   déplacer des fichiers
--   gérer une corbeille
-
-Nous verrons son fonctionnement dans un tutoriel dédié.
-
-------------------------------------------------------------------------
-
-## Documentation system
-
-La documentation que vous êtes en train de lire est intégrée directement
-dans l'application.
-
-Elle est écrite en **MDX**.
-
-Structure :
-
-    content/docs/
-      introduction/
-      architecture/
-      tutorials/
-
-Les pages sont ensuite rendues dynamiquement dans l'application Next.js.
-
-Cela permet :
-
--   d'avoir une documentation versionnée
--   d'utiliser des composants React dans la doc
--   de maintenir la documentation proche du code
-
-------------------------------------------------------------------------
-
-## Putting everything together
-
-Voici une vue simplifiée du système :
-
-    Frontend (Next.js)
-            │
-            ▼
-         tRPC API
-            │
-            ▼
-         Services
-            │
-            ▼
-         Prisma ORM
-            │
-            ▼
-       PostgreSQL
-
-Pour les médias :
-
-    Frontend
-       │
-       ▼
-    Cloudinary API
-       │
-       ▼
-    Cloudinary Storage
-
-------------------------------------------------------------------------
-
-## Next step
-
-Maintenant que nous avons vu l'architecture générale du projet, la
-prochaine étape consiste à comprendre **le modèle métier**.
-
-Dans la section suivante, nous explorerons les **entités principales du
-domaine**.
+- voir la section **Domain**
+- voir la section **Patterns**
+- voir les **Tutorials**

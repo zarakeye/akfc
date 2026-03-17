@@ -1,4 +1,5 @@
 import type { MDXComponents } from "mdx/types"
+import { Children } from "react"
 
 import { Callout } from "@/components/docs/Callout"
 import { CodeBlock } from "@/components/docs/CodeBlock"
@@ -6,6 +7,25 @@ import { FileTree, FileTreeItem } from "@/components/docs/FileTree"
 import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
 import { CodeExample } from "@/components/docs/CodeExample"
 import { CodeWalkthrough } from "@/components/docs/CodeWalkthrough"
+import { slugify } from "@/lib/docs/slugify"
+import { ProjectArchitectureTree } from "@/components/docs/ProjectArchitectureTree"
+import { ProjectArchitectureLayers } from "./components/docs/ProjectArchitectureLayers"
+
+function getHeadingText(children: React.ReactNode): string {
+  return Children.toArray(children).join("").trim()
+}
+
+function HeadingAnchor({ id }: { id: string }) {
+  return (
+    <a
+      href={`#${id}`}
+      aria-label="Lien direct vers cette section"
+      className="ml-2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
+    >
+      #
+    </a>
+  )
+}
 
 export const mdxComponents: MDXComponents = {
   Callout,
@@ -15,24 +35,48 @@ export const mdxComponents: MDXComponents = {
   FileTree,
   FileTreeItem,
   ArchitectureDiagram,
-  h1: (props) => (
-    <h1 className="mt-8 mb-4 text-3xl font-bold tracking-tight" {...props} />
-  ),
-  h2: (props) => (
-    <h2
-      id={props.id}
-      className="mt-10 mb-4 text-2xl font-semibold tracking-tight scroll-mt-24"
+  ProjectArchitectureTree,
+  ProjectArchitectureLayers,
+
+  h1: ({ children, ...props }) => (
+    <h1
       {...props}
-    />
+      className="mt-8 mb-4 scroll-mt-24 text-3xl font-bold tracking-tight"
+    >
+      {children}
+    </h1>
   ),
 
-  h3: (props) => (
-    <h3
-      id={props.id}
-      className="mt-8 mb-3 text-xl font-semibold tracking-tight scroll-mt-24"
-      {...props}
-    />
-  ),
+  h2: ({ children, ...props }) => {
+    const id = slugify(getHeadingText(children))
+
+    return (
+      <h2
+        {...props}
+        id={id}
+        className="group mt-10 mb-4 scroll-mt-24 text-2xl font-semibold tracking-tight"
+      >
+        <span>{children}</span>
+        <HeadingAnchor id={id} />
+      </h2>
+    )
+  },
+
+  h3: ({ children, ...props }) => {
+    const id = slugify(getHeadingText(children))
+
+    return (
+      <h3
+        {...props}
+        id={id}
+        className="group mt-8 mb-3 scroll-mt-24 text-xl font-semibold tracking-tight"
+      >
+        <span>{children}</span>
+        <HeadingAnchor id={id} />
+      </h3>
+    )
+  },
+
   p: (props) => <p className="mb-4 leading-7" {...props} />,
   ul: (props) => <ul className="mb-4 list-disc space-y-2 pl-6" {...props} />,
   ol: (props) => <ol className="mb-4 list-decimal space-y-2 pl-6" {...props} />,

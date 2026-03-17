@@ -1,51 +1,94 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 
-import { getAllDocs } from "@/lib/docs/docs.source"
-import { groupDocsBySection } from "@/lib/docs/docs.navigation"
+import type { DocPage } from "@/lib/docs/docs.types"
+
+type NavigationSection = {
+  section: string
+  items: DocPage[]
+}
 
 export function DocsSidebar({
   currentPath,
+  navigation,
 }: {
   currentPath?: string
+  navigation: NavigationSection[]
 }) {
-  const pages = getAllDocs()
-  const sections = groupDocsBySection(pages)
+  const [open, setOpen] = useState(true)
 
   return (
-    <aside className="hidden h-full w-72 shrink-0 border-r bg-muted/20 lg:block">
-      <div className="h-full overflow-y-hidden px-6 py-8 hover:overflow-y-auto focus-within:overflow-y-auto">
-        <nav className="space-y-8">
-          {sections.map((section) => (
-            <div key={section.section}>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {section.section}
-              </h2>
+    <aside
+      className={`flex h-full min-h-0 shrink-0 flex-col border-r bg-background transition-all duration-300 ${
+        open ? "w-[260px]" : "w-[64px]"
+      }`}
+    >
+      <div className="flex shrink-0 items-center justify-between border-b px-3 py-3">
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-label={open ? "Réduire la navigation" : "Ouvrir la navigation"}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          ☰
+        </button>
+
+        {open ? (
+          <span className="pr-2 text-sm font-semibold text-foreground">
+            Documentation
+          </span>
+        ) : null}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        {open ? (
+          navigation.map(({ section, items }) => (
+            <div key={section} className="mb-8">
+              <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {section}
+              </h3>
 
               <ul className="space-y-1">
-                {section.items.map((item) => {
-                  const href = `/docs/${item.slug.join("/")}`
-                  const active = currentPath === href
+                {items.map((doc) => {
+                  const slug = `/docs/${doc.slug.join("/")}`
+                  const active = currentPath === slug
 
                   return (
-                    <li key={item.slug.join("/")}>
+                    <li key={slug}>
                       <Link
-                        href={href}
-                        className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                        href={slug}
+                        className={
                           active
-                            ? "bg-primary/10 font-medium text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
+                            ? "block rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-foreground"
+                            : "block rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                        }
                       >
-                        {item.title}
+                        {doc.title}
                       </Link>
                     </li>
                   )
                 })}
               </ul>
             </div>
-          ))}
-        </nav>
+          ))
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            {navigation.map(({ section }) => (
+              <div
+                key={section}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-[10px] font-semibold uppercase text-muted-foreground"
+                title={section}
+              >
+                {section.slice(0, 2)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   )
 }
+
+export default DocsSidebar

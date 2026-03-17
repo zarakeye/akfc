@@ -4,12 +4,16 @@ import { compileMDX } from "next-mdx-remote/rsc"
 import { Breadcrumbs } from "@/components/docs/Breadcrumbs"
 import { DocsLayout } from "@/components/docs/DocsLayout"
 import { DocsPagination } from "@/components/docs/DocsPagination"
-import { DocsRightAside } from "@/components/docs/DocsRightAside"
-import { getPrevNext } from "@/lib/docs/docs.navigation"
+import { DocsRightAsideDrawer } from "@/components/docs/DocsRightAsideDrawer"
+import ProjectArchitectureTree from "@/components/docs/ProjectArchitectureTree"
+import { getPrevNext, getPrevNextInSection } from "@/lib/docs/docs.navigation"
 import { docExists, getAllDocs, getDocSource } from "@/lib/docs/docs.source"
 import { extractToc } from "@/lib/docs/docs.toc"
 import type { DocFrontmatter } from "@/lib/docs/docs.types"
 import { mdxComponents } from "@/mdx-components"
+import { generateDocsIndex } from "@/lib/docs/docs.index"
+import DocsSearch from "@/components/docs/DocsSearch"
+import { getSearchDocuments } from "@/lib/docs/docs.search"
 
 interface PageProps {
   params: Promise<{
@@ -26,8 +30,12 @@ export default async function Page({ params }: PageProps) {
 
   const { source, frontmatter } = getDocSource(slug)
   const toc = extractToc(source)
-  const pages = getAllDocs()
-  const { prev, next } = getPrevNext(pages, slug)
+
+  const { pages } = generateDocsIndex()
+  const { prev, next } =
+    frontmatter.section === "Tutorials"
+      ? getPrevNextInSection(pages, slug, "Tutorials")
+      : getPrevNext(pages, slug)
 
   const compiled = await compileMDX<DocFrontmatter>({
     source,
@@ -37,10 +45,14 @@ export default async function Page({ params }: PageProps) {
     },
   })
 
+  const searchDocs = getSearchDocuments()
+
   const header = (
     <div>
-      <Breadcrumbs slug={slug} />
-
+      <div className="mb-4 flex items-center justify-between">
+        <Breadcrumbs slug={slug} />
+        <DocsSearch docs={searchDocs} />
+      </div>
       <div>
         <h1 className="text-4xl font-bold tracking-tight">
           {frontmatter.title}
@@ -64,9 +76,16 @@ export default async function Page({ params }: PageProps) {
       currentPath={`/docs/${slug.join("/")}`}
       header={header}
       footer={footer}
-      rightAside={<DocsRightAside items={toc} />}
+      rightAside={<DocsRightAsideDrawer items={toc} />}
     >
-      {compiled.content}
+      {slug.join("/") === "architecture/project-architecture" ? (
+        <>
+          <ProjectArchitectureTree />
+          {compiled.content}
+        </>
+      ) : (
+        compiled.content
+      )}
     </DocsLayout>
   )
 }
