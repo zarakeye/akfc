@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import RolesList from "./RolesList";
+import RolesList from "@/features/admin/roles/components/RolesList";
 
 /**
  * Page displaying the list of roles.

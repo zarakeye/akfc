@@ -1,196 +1,2938 @@
 ---
-title: Forms with useForm and useActionState
-description: Construire des formulaires robustes avec validation, mutations tRPC et gestion d'état moderne
+title: Forms with useForm & useActionState
+slug: forms-with-useform-useactionstate
+description: Comprendre l’évolution des formulaires et construire une approche hybride moderne avec Next.js
 section: Tutorials
 order: 1
 ---
 
-# Forms with useForm and useActionState
+import { Callout } from "@/features/docs/ui/Callout"
+import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
 
-Dans ce tutoriel, nous allons voir comment implémenter **des formulaires modernes et robustes** dans le projet AKFC.
+# Forms — faire entrer l’utilisateur dans un système déjà structuré
 
-Nous allons combiner plusieurs outils :
+## Pourquoi les formulaires deviennent un problème… dès que le système devient sérieux
 
-- React
-- React Hook Form (`useForm`)
-- validation avec Zod
-- mutations tRPC
-- `useActionState` pour la gestion des états d'action
+Dans le tutoriel précédent, nous avons construit quelque chose de fondamental.
 
-Objectifs :
+Nous avons défini un modèle.  
+Des entités.  
+Des relations.  
+Un système cohérent porté par Prisma.
 
-- créer un formulaire typé
-- valider les entrées utilisateur
-- envoyer les données au backend via tRPC
-- gérer les états de chargement et d'erreur
+👉 autrement dit : un monde structuré existe déjà côté serveur
 
----
+Mais à ce stade, ce système est encore fermé.
 
-# Pourquoi React Hook Form
+Il est correct.  
+Il est typé.  
+Il est cohérent.
 
-Les formulaires sont souvent complexes :
+👉 mais aucun utilisateur ne peut encore interagir avec lui
 
-- validation
-- gestion des erreurs
-- performances
-- synchronisation avec l'état React
-
-**React Hook Form** est une solution très performante car elle :
-
-- minimise les re-renders
-- fonctionne très bien avec TypeScript
-- s'intègre parfaitement avec Zod
+Et c’est précisément ici que les formulaires entrent en jeu.
 
 ---
 
-# Installation
+## 🧠 Une idée fondamentale
 
-Si ce n'est pas déjà fait :
+Un formulaire n’est pas une couche UI.
 
-```
-pnpm add react-hook-form
-pnpm add @hookform/resolvers
-```
+👉 c’est un point de passage
 
 ---
 
-# Validation avec Zod
+C’est l’endroit où une intention humaine :
 
-Nous commençons par définir un schéma de validation.
+- écrire un email  
+- modifier un profil  
+- créer une ressource  
 
-```ts
-import { z } from "zod"
-
-export const createCourseSchema = z.object({
-  title: z.string().min(3),
-  categoryId: z.string()
-})
-```
-
-Ce schéma sera utilisé :
-
-- côté frontend
-- côté backend
+👉 tente d’entrer dans un système structuré
 
 ---
 
-# Création du formulaire
+Et ce passage n’est pas neutre.
 
-Exemple de formulaire pour créer un cours.
+Parce que ce que l’utilisateur envoie :
 
-```ts
-const form = useForm({
-  resolver: zodResolver(createCourseSchema)
-})
-```
-
-Cela permet de connecter directement **Zod** à React Hook Form.
+- n’est pas fiable  
+- n’est pas typé  
+- n’est pas validé  
+- n’est pas sécurisé  
 
 ---
 
-# Enregistrer les champs
+Alors que le système que nous avons construit avec Prisma, lui, est :
 
-Chaque champ doit être enregistré.
+- strict  
+- contraint  
+- typé  
+- cohérent  
 
-```tsx
-<input
-  {...form.register("title")}
-  placeholder="Course title"
+---
+
+👉 le formulaire est donc une zone de friction
+
+---
+
+C’est une frontière entre deux mondes qui ne parlent pas la même langue :
+
+- 🌐 le navigateur → interaction, UX, événements  
+- 🧠 le serveur → logique métier, validation, persistance  
+
+Mais surtout :
+
+👉 une frontière entre **l’intention utilisateur**  
+👉 et **le modèle Prisma**
+
+---
+
+Et c’est ici que beaucoup de projets échouent.
+
+---
+
+## ⚠️ Le problème réel des formulaires modernes
+
+Quand React est arrivé, nous avons gagné du contrôle.
+
+Nous avons commencé à :
+
+- intercepter les événements  
+- gérer les états  
+- envoyer des requêtes manuellement  
+
+---
+
+Mais en échange, nous avons déplacé la complexité.
+
+Chaque formulaire est devenu :
+
+- une gestion d’inputs  
+- une validation côté client  
+- une logique réseau  
+- une gestion d’erreurs  
+- une synchronisation UI  
+
+---
+
+👉 et surtout :
+
+👉 une duplication implicite du modèle serveur
+
+---
+
+Parce que très souvent :
+
+- le frontend définit ses propres types  
+- le backend valide de son côté  
+- les règles divergent  
+- les incohérences apparaissent  
+
+---
+
+Et ce problème est invisible au début.
+
+👉 mais il explose avec le temps
+
+---
+
+## 🧨 Le vrai enjeu
+
+Un formulaire ne doit pas :
+
+👉 “collecter des données”
+
+---
+
+Il doit :
+
+👉 transformer une intention utilisateur  
+👉 en une structure conforme au modèle du système
+
+---
+
+Et ce modèle… nous l’avons déjà :
+
+👉 il vient de Prisma
+
+---
+
+## 🔄 Ce que change Next.js App Router
+
+Avec les Server Actions, quelque chose change profondément.
+
+Nous ne simulons plus un envoi serveur avec un `fetch`.
+
+👉 nous reconnectons directement le formulaire au serveur
+
+---
+
+Mais cela ne supprime pas le problème.
+
+👉 cela le rend visible
+
+---
+
+Parce que maintenant, une question devient centrale :
+
+👉 qui est responsable de quoi ?
+
+---
+
+- le client gère-t-il la validation ?
+- le serveur doit-il tout vérifier ?
+- où vivent les erreurs ?
+- où s’applique le typage ?
+
+---
+
+C’est exactement ce que nous allons structurer.
+
+---
+
+## 🧱 Ce que nous allons construire
+
+Dans ce tutoriel, nous n’allons pas simplement “faire un formulaire”.
+
+Nous allons construire un système cohérent, aligné avec ce que nous avons posé avec Prisma.
+
+---
+
+Nous allons voir comment organiser les responsabilités :
+
+- React Hook Form → gérer l’expérience utilisateur  
+- Zod → valider les données côté serveur  
+- Server Actions → porter la logique métier  
+- useActionState → relier serveur et interface  
+
+---
+
+Mais surtout :
+
+👉 comprendre pourquoi ces outils existent  
+👉 et pourquoi ils doivent être utilisés ensemble
+
+---
+
+## 🎯 L’objectif réel
+
+L’objectif n’est pas d’avoir un formulaire qui fonctionne.
+
+👉 l’objectif est d’avoir un formulaire qui respecte le système
+
+---
+
+Autrement dit :
+
+👉 un point d’entrée fiable  
+👉 dans un modèle déjà structuré
+
+---
+
+<Callout type="info">
+Un formulaire moderne n’est pas un composant.
+
+👉 c’est une interface entre une intention humaine et un modèle typé
+
+Et ce modèle… est défini par Prisma.
+
+Tout l’enjeu est de faire en sorte que cette transition ne casse pas la cohérence du système.
+</Callout>
+
+## 🔍 Revenir en arrière pour comprendre ce que nous avons cassé
+
+Avant d’aller plus loin, il est utile de faire un détour.
+
+Pas par nostalgie.  
+Mais parce que beaucoup de problèmes actuels viennent du fait que nous ne comprenons plus comment le web fonctionnait à l’origine.
+
+---
+
+### Le modèle HTML natif : simple, mais structurant
+
+À l’époque du HTML pur, un formulaire était un mécanisme simple et puissant.
+
+L’utilisateur remplissait des champs, puis le navigateur envoyait directement les données au serveur via une requête HTTP.  
+Le serveur traitait la demande et renvoyait une nouvelle page.
+
+Tout était clair :
+
+- le navigateur gérait la soumission  
+- le serveur gérait la logique  
+- le cycle était entièrement contrôlé par le web lui-même  
+
+---
+
+Ce modèle avait quelque chose de très important.
+
+👉 la responsabilité était bien placée
+
+---
+
+Le navigateur ne faisait que :
+
+- capturer l’intention  
+- envoyer les données  
+
+Le serveur, lui :
+
+- validait  
+- traitait  
+- persistait  
+
+---
+
+👉 il n’y avait pas d’ambiguïté
+
+---
+
+### La rupture introduite par React
+
+Avec React, ce modèle a changé.
+
+Nous ne soumettions plus un formulaire.
+
+👉 nous interceptions un événement
+
+---
+
+Nous récupérions les données, puis :
+
+- nous faisions un `fetch`  
+- nous gérions des états  
+- nous gérions les erreurs  
+- nous synchronisions l’UI  
+
+---
+
+Ce modèle a apporté beaucoup de contrôle.
+
+Mais il a aussi introduit quelque chose de dangereux :
+
+👉 un déplacement des responsabilités
+
+---
+
+Peu à peu, le client a commencé à :
+
+- valider  
+- structurer  
+- orchestrer la logique  
+
+---
+
+👉 alors que ces responsabilités appartiennent au serveur
+
+---
+
+### Ce que cela a cassé
+
+Ce changement n’est pas anodin.
+
+Il a introduit :
+
+- de la duplication (validation client + serveur)  
+- des incohérences  
+- une illusion de sécurité côté client  
+- une complexité croissante dans chaque formulaire  
+
+---
+
+Et surtout :
+
+👉 une perte de clarté sur le rôle de chaque couche
+
+---
+
+## 🧠 Pourquoi ce retour est essentiel
+
+Ce détour nous permet de comprendre quelque chose de fondamental.
+
+---
+
+Le problème des formulaires modernes ne vient pas des outils.
+
+👉 il vient du fait que les responsabilités ont été déplacées
+
+---
+
+Et c’est exactement ce que nous allons corriger dans ce tutoriel.
+
+---
+
+👉 en reconnectant le formulaire au serveur  
+👉 sans perdre la qualité d’expérience côté client
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement apprendre à écrire un formulaire. Nous allons reconstruire l’histoire du formulaire dans React, et comprendre pourquoi le modèle que nous allons construire est une réconciliation avec quelque chose de plus ancien. Trois mouvements, puis une ouverture vers la suite.
+
+- **Mouvement 1 — La rupture.** Nous revenons au point de départ — le contrat natif entre le formulaire et le serveur —, puis nous regardons ce que React a cassé en le réinterprétant, et comment les bibliothèques ont tenté de soigner le symptôme sans toucher la cause.
+- **Mouvement 2 — La réconciliation.** Nous découvrons le pont que `useActionState` construit, puis comment App Router en fait une vraie route retour au serveur via les Server Actions, et enfin comment ces pièces se combinent avec React Hook Form dans un modèle hybride qui tient.
+- **Mouvement 3 — Les limites du modèle.** Nous regardons où ce modèle casse, où son confort devient dangereux, et comment choisir lucidement quand l’utiliser — et quand aller chercher autre chose.
+
+La **Section 9** ouvrira ensuite la porte vers la suite du parcours — tRPC — en montrant pourquoi, malgré tout ce que nous venons de construire, un problème reste entier.
+
+---
+
+## Mouvement 1 — La rupture
+
+Avant de comprendre ce que nous allons construire, nous devons comprendre pourquoi il faut reconstruire. Ce mouvement est un détour historique — pas par nostalgie, mais parce que c’est la seule façon de voir ce qui a été perdu en route, et donc ce que nous essayons de retrouver.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 1** — Nous revenons à l’origine : `<form action="...">`, et nous voyons comment le web avait déjà résolu le problème du formulaire avec élégance, avant même l’arrivée des frameworks.
+- **Section 2** — Nous regardons ce que React a fait à ce contrat : en interceptant le submit, il a gagné en flexibilité mais déplacé silencieusement des responsabilités qui n’auraient pas dû bouger.
+- **Section 3** — Nous observons la tentative de sauvetage par les form libraries — React Hook Form en particulier — et nous voyons pourquoi elles soignent le confort côté client sans toucher à la fracture architecturale côté serveur.
+
+À la fin de ce mouvement, nous ne verrons plus le formulaire comme un problème UI à résoudre, mais comme un contrat ancien qu’il faut réapprendre à honorer.
+
+---
+
+## 1 — The origin: `<form action="">`
+
+## Le web avait déjà résolu le problème
+
+À l’origine, tout était déjà pensé.
+
+Le web n’a pas attendu les frameworks pour résoudre le problème des formulaires.  
+Dès HTML, un mécanisme complet existait déjà pour faire transiter des données du navigateur vers le serveur.
+
+<CodeSnippet
+  language="html"
+  title="Formulaire HTML natif"
+  filename="demo.html"
+  kind="educational"
+  highlightLines="1-5"
+  codeJson='"<form action=\"/login\" method=\"POST\">\n  <input name=\"email\" />\n  <input name=\"password\" />\n  <button type=\"submit\">Login</button>\n</form>"'
+ />
+
+Quand l’utilisateur clique sur **Login**, le navigateur prend entièrement le relais.
+
+Il ne demande pas à JavaScript quoi faire.  
+Il applique un comportement natif, défini par le standard du web.
+
+---
+
+### 🔄 Ce qui se passe réellement
+
+Concrètement, voici le cycle complet :
+
+- le navigateur lit l’attribut `action` → `/login`, qui désigne la route serveur  
+- il collecte tous les champs ayant un attribut `name`  
+- il sérialise ces données (`application/x-www-form-urlencoded` ou `multipart/form-data`)  
+- il envoie une requête HTTP (`POST` ici) vers le serveur  
+- puis il laisse le serveur répondre  
+
+---
+
+👉 aucune logique côté client  
+👉 aucune orchestration  
+👉 aucun état complexe  
+
+---
+
+### 🧠 Une séparation des responsabilités parfaite
+
+Le rôle du navigateur est clair :  
+👉 capturer, transformer, transmettre  
+
+Le rôle du serveur est tout aussi clair :  
+👉 recevoir, valider, traiter  
+
+---
+
+Et surtout :
+
+👉 **le serveur reste la source de vérité**
+
+---
+
+Ce point est fondamental.
+
+Parce que ce que le serveur reçoit n’est pas “juste des données”.
+
+👉 ce sont des données destinées à entrer dans un système structuré
+
+Aujourd’hui, dans notre projet :
+
+👉 ce système est défini par Prisma
+
+---
+
+Même si à l’époque Prisma n’existait pas :
+
+👉 le principe était déjà là
+
+---
+
+👉 le formulaire n’était qu’un point d’entrée  
+👉 vers un modèle côté serveur
+
+---
+
+### 🏗️ Un système unifié
+
+Dans beaucoup d’applications de cette époque, le serveur ne se contentait pas de recevoir des données.
+
+Il était à la fois :
+
+- serveur web (il générait le HTML)  
+- serveur de données (il exécutait la logique métier et accédait à la base)  
+
+---
+
+👉 rendu et logique vivaient ensemble  
+
+---
+
+Cela avait une conséquence très importante :
+
+👉 il n’y avait **aucune ambiguïté sur le flux**
+
+---
+
+- une requête entrait  
+- elle était traitée  
+- une réponse complète sortait  
+
+---
+
+Le navigateur n’avait rien à orchestrer.
+
+👉 il envoyait un formulaire  
+👉 le serveur renvoyait un état complet  
+
+---
+
+### ⚠️ Pourquoi ce modèle était si puissant
+
+Ce modèle avait plusieurs propriétés essentielles :
+
+- une seule source de vérité (le serveur)  
+- aucune duplication de logique  
+- aucune validation concurrente  
+- un flux simple et prévisible  
+
+---
+
+👉 il était **structurellement cohérent**
+
+---
+
+Et surtout :
+
+👉 il forçait naturellement le respect du modèle côté serveur
+
+---
+
+<Callout type="info">
+Dans le modèle HTML natif :
+
+- le navigateur gère la collecte et l’envoi des données  
+- le serveur gère toute la logique métier  
+- le protocole HTTP sert de contrat entre les deux  
+
+👉 le formulaire est déjà un point d’entrée vers un système structuré
+
+Il n’y a pas d’état client complexe, pas de duplication de validation, et très peu de surface d’erreur.
+</Callout>
+
+---
+
+### 🔥 Ce que nous allons casser ensuite
+
+Ce modèle était simple.
+
+Mais il avait une limite :
+
+👉 très peu de contrôle côté interface
+
+---
+
+C’est précisément ce que React va chercher à résoudre.
+
+Mais en le faisant :
+
+👉 il va déplacer une partie des responsabilités  
+👉 et introduire une nouvelle complexité
+
+---
+
+👉 c’est ce basculement que nous allons analyser maintenant
+
+---
+
+👉 **Où nous en sommes :** le web avait déjà tout pensé — un formulaire, une action, une méthode, et le navigateur qui fait le travail de transmission en respectant le serveur comme source de vérité. Ce modèle n’était pas primitif, il était juste : chaque couche tenait son rôle, sans qu’une autre ait à le deviner. Reste à voir ce que React en a fait, et pourquoi ce qui ressemblait à une amélioration a en réalité déplacé le problème ailleurs.
+
+---
+
+## 2 — The React rupture
+
+Puis React a changé les règles.
+
+Le formulaire n’est plus un mécanisme natif que nous déclenchons.  
+C’est devenu un événement que nous interceptons.
+
+Au lieu de laisser le navigateur soumettre le formulaire, nous empêchons son comportement par défaut :
+
+<CodeSnippet
+  language="ts"
+  title="React — interception du submit"
+  filename="LoginForm.tsx"
+  kind="anti-pattern"
+  codeJson='"onSubmit={(e) => {\n  e.preventDefault()\n  // logique custom\n}}"'
 />
-```
 
-Les erreurs peuvent être affichées :
+À partir de ce moment-là, tout bascule.
 
-```tsx
-{form.formState.errors.title && (
-  <p>{form.formState.errors.title.message}</p>
-)}
+---
+
+## 🔄 Le contrat est cassé
+
+Le navigateur ne fait plus rien pour nous.  
+C’est désormais JavaScript qui doit tout orchestrer :
+
+- récupérer les valeurs des champs  
+- gérer leur état  
+- valider les données  
+- envoyer une requête HTTP manuelle (`fetch`)  
+- gérer les erreurs  
+- synchroniser l’interface utilisateur  
+
+---
+
+Nous gagnons en contrôle.
+
+👉 mais nous perdons une chose essentielle :
+
+👉 **le lien direct avec le serveur**
+
+---
+
+Et donc :
+
+👉 le lien direct avec le modèle
+
+---
+
+Dans notre projet :
+
+👉 ce modèle est défini par Prisma
+
+---
+
+Mais avec cette approche :
+
+- le frontend commence à définir ses propres structures  
+- la validation se fait deux fois (client + serveur)  
+- les règles peuvent diverger  
+- les incohérences deviennent possibles  
+
+---
+
+👉 le système n’est plus naturellement cohérent
+
+---
+
+## 🧨 Le vrai problème introduit par React
+
+Ce changement n’est pas juste technique.
+
+👉 il est architectural
+
+---
+
+Le formulaire ne transporte plus une intention vers le modèle.
+
+👉 il reconstruit une version locale de ce modèle
+
+---
+
+Et c’est là que commencent les dérives :
+
+- duplication des types  
+- validation incohérente  
+- logique dispersée  
+- bugs difficiles à détecter  
+
+---
+
+Et surtout :
+
+👉 une illusion dangereuse
+
+---
+
+👉 croire que le client peut garantir la validité des données
+
+---
+
+Alors que :
+
+👉 seule la validation serveur compte réellement
+
+---
+
+<Callout type="warning">
+Avec React classique, le contrat natif est cassé :
+
+- ❌ plus de soumission automatique du navigateur  
+- ❌ gestion manuelle du réseau (`fetch`)  
+- ❌ duplication de la validation (client + serveur)  
+- ❌ divergence possible avec le modèle serveur  
+
+👉 le formulaire ne respecte plus naturellement le système
+
+Il devient une implémentation locale…  
+potentiellement incohérente avec la réalité.
+</Callout>
+
+---
+
+## ⚔️ Avant / Après — Ce qui change vraiment
+
+### ❌ React classique (client centré)
+
+- `onSubmit`  
+- `preventDefault()`  
+- récupérer les valeurs  
+- construire un `fetch`  
+- gérer la réponse HTTP  
+- parser les erreurs  
+- mettre à jour le state  
+
+---
+
+👉 le client orchestre tout  
+👉 y compris ce qui ne devrait pas lui appartenir  
+
+---
+
+### ✅ App Router + Server Actions (modèle hybride)
+
+- `<form action={formAction}>`  
+- React orchestre automatiquement  
+- la Server Action s’exécute côté serveur  
+- retour structuré vers l’UI  
+
+---
+
+👉 le client déclenche  
+👉 le serveur décide  
+👉 **le modèle reste la source de vérité**
+
+---
+
+<Callout type="info">
+Différence clé :
+
+- dans React classique, nous simulons le web  
+- dans App Router, nous recommençons à nous appuyer sur lui  
+
+👉 et surtout : nous reconnectons le formulaire au modèle serveur
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** React a gagné quelque chose de réel — le contrôle fin de l’expérience utilisateur — mais il l’a payé en cassant un contrat silencieux. Le `<form>` ne sait plus soumettre tout seul, le navigateur ne fait plus le travail de transport, et c’est à JavaScript de tout orchestrer, y compris ce qu’il n’aurait jamais dû avoir à gérer. Reste à voir comment l’écosystème a tenté de réparer cette fracture — d’abord par des bibliothèques qui promettaient de remettre de l’ordre.
+
+---
+
+## 3 — Trying to fix the chaos: the rise of form libraries
+
+Face à cette complexité croissante, une évidence s’est imposée :
+
+👉 gérer un formulaire entièrement à la main devient vite ingérable.
+
+Chaque implémentation répétait les mêmes patterns :
+
+- gestion des inputs  
+- synchronisation des valeurs  
+- validation  
+- affichage des erreurs  
+- contrôle du submit  
+
+---
+
+Très vite, des bibliothèques sont apparues pour simplifier ce travail.
+
+Parmi elles, React Hook Form s’est imposée comme une solution particulièrement efficace.
+
+---
+
+## 🧩 Le rôle réel de React Hook Form
+
+Son objectif est clair :
+
+👉 redonner de la structure à la gestion des formulaires côté client
+
+---
+
+Avec React Hook Form, une grande partie de la mécanique est abstraite :
+
+- les champs sont enregistrés automatiquement  
+- les valeurs sont suivies sans re-render excessif  
+- la validation peut être centralisée (souvent avec Zod)  
+- les erreurs sont gérées de manière structurée  
+
+---
+
+Nous ne manipulons plus directement chaque input.  
+Nous déléguons leur gestion à un système pensé pour ça.
+
+---
+
+👉 RHF ne simplifie pas seulement le code
+
+👉 il structure le **comportement du formulaire côté client**
+
+---
+
+## ⚙️ Avant / Après — côté client uniquement
+
+<CodeSnippet
+  language="tsx"
+  title="React vs React Hook Form"
+  filename="LoginForm.tsx"
+  kind="comparison"
+  codeJson='"// ❌ sans RHF\nconst [email, setEmail] = useState(\"\")\nconst [error, setError] = useState(\"\")\n\n<input\n  value={email}\n  onChange={(e) => setEmail(e.target.value)}\n/>\n\n// ✅ avec RHF\nconst { register, handleSubmit } = useForm()\n\n<form onSubmit={handleSubmit((data) => console.log(data))}>\n  <input {...register(\"email\")} />\n</form>"'
+/>
+
+---
+
+Résultat :
+
+- moins de boilerplate  
+- moins de bugs liés aux états  
+- meilleure performance  
+- structure plus claire  
+
+---
+
+👉 côté développeur, c’est un énorme gain
+
+---
+
+## ⚠️ Mais le problème fondamental reste entier
+
+Et c’est ici que beaucoup de développeurs se trompent.
+
+---
+
+Même avec React Hook Form :
+
+👉 le modèle fondamental **ne change pas**
+
+---
+
+Le client reste responsable de :
+
+- la validation côté client  
+- la construction de la requête  
+- l’appel réseau (`fetch`)  
+- la gestion des réponses serveur  
+
+---
+
+Autrement dit :
+
+👉 RHF améliore l’expérience  
+👉 mais ne répare pas l’architecture
+
+---
+
+## 🧨 Le piège : une illusion de sécurité
+
+RHF donne une impression de solidité :
+
+- validation propre  
+- erreurs bien gérées  
+- code structuré  
+
+---
+
+Mais cette solidité est locale.
+
+---
+
+👉 elle ne garantit **rien** côté serveur
+
+👉 elle ne garantit **rien** vis-à-vis du modèle Prisma
+
+---
+
+Dans notre projet :
+
+👉 la source de vérité est le `schema.prisma`
+
+---
+
+Mais avec RHF seul :
+
+- les types peuvent diverger  
+- les validations peuvent différer  
+- les structures peuvent évoluer indépendamment  
+
+---
+
+👉 nous restons dans un système potentiellement incohérent
+
+---
+
+<Callout type="warning">
+React Hook Form structure le client…
+
+mais ne garantit pas la cohérence avec le serveur.
+
+- ❌ le modèle Prisma n’est pas directement impliqué  
+- ❌ la validation doit être dupliquée  
+- ❌ les règles métier restent côté serveur  
+
+👉 RHF améliore l’UX  
+👉 mais ne restaure pas le contrat du système
+</Callout>
+
+---
+
+## 🧠 Le bon positionnement mental
+
+Pour comprendre correctement RHF, il faut le remettre à sa place.
+
+---
+
+👉 ce n’est pas une solution complète  
+👉 c’est une couche spécialisée
+
+---
+
+👉 RHF est une **couche UX client**
+
+Son rôle :
+
+- capturer les inputs  
+- organiser les données  
+- améliorer l’expérience utilisateur  
+
+---
+
+Mais :
+
+👉 il ne décide pas  
+👉 il ne valide pas réellement  
+👉 il ne garantit rien  
+
+---
+
+👉 le serveur reste la source de vérité
+
+👉 et ce serveur s’appuie sur Prisma
+
+---
+
+<Callout type="info">
+React Hook Form est un excellent outil…
+
+👉 à condition de ne pas lui donner un rôle qu’il n’a pas
+
+- RHF gère l’expérience utilisateur  
+- le serveur applique les règles métier  
+- Prisma définit la structure réelle des données  
+
+👉 chaque couche a une responsabilité précise
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** React Hook Form a fait un travail honnête côté client — gestion des champs, validation locale, affichage des erreurs. Mais il n’a pas touché la fracture originale : le serveur reste contourné, la validation métier reste à refaire ailleurs, et le contrat entre le formulaire et le backend reste à réécrire à la main. Le confort est revenu ; la cohérence, non. Reste à trouver le pont qui réconcilie enfin ces deux mondes — et c’est là que commence le vrai mouvement.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons fait un détour historique, et trois idées en sont ressorties :
+
+- **Le contrat natif n’était pas naïf, il était juste.** Un `<form action>` et une méthode suffisaient à faire parler le navigateur et le serveur dans une langue commune, où chacun tenait son rôle. Nous avons perdu cette clarté, pas parce qu’elle était fausse, mais parce qu’elle ne répondait plus aux besoins d’expérience utilisateur que React allait permettre.
+- **React a gagné en flexibilité, mais il a fracturé l’architecture.** En interceptant le submit, il s’est rendu responsable de tout ce que le navigateur faisait silencieusement — transport, validation, orchestration — sans toujours mesurer ce qu’il prenait en charge. Le formulaire n’est plus un mécanisme, c’est devenu un pattern fragile.
+- **Les form libraries ont soigné le symptôme, pas la cause.** RHF a remis de l’ordre dans le chaos local du client, mais la fracture avec le serveur est restée entière. Nous avons gagné en confort ce que nous continuions de perdre en cohérence.
+
+Le Mouvement 2 va maintenant reconstruire le pont — en passant par `useActionState`, puis par App Router et les Server Actions, puis par un modèle hybride où chaque couche retrouve enfin sa place.
+
+---
+
+## Mouvement 2 — La réconciliation
+
+Comprendre la rupture ne suffit pas à la réparer. Ce mouvement est celui où nous allons reconnecter ce qui avait été séparé — le client et le serveur, l’expérience et la vérité, l’UX et le modèle. Pas en revenant en arrière, mais en combinant les outils modernes de React avec le contrat ancien du web.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 4** — Nous découvrons `useActionState`, ce pont discret qui reconnecte une fonction métier à un `<form>` sans redevenir un gestionnaire d’événement fragile.
+- **Section 5** — Nous voyons comment App Router change le paradigme : le serveur n’est plus « derrière une URL », il est directement la cible du formulaire, via les Server Actions.
+- **Section 6** — Nous combinons les trois pièces — RHF, `useActionState`, Server Actions — dans un modèle hybride confronté au réel, où chaque couche tient enfin son rôle.
+
+À la fin de ce mouvement, nous aurons un formulaire qui sait à nouveau parler au serveur sans trahir l’expérience utilisateur — et qui repose sur le modèle du web, augmenté, plutôt que contourné.
+
+---
+
+## 4 — A new bridge: `useActionState`
+
+À ce stade, une nouvelle brique apparaît : `useActionState`.
+
+Mais pour bien le comprendre, il faut éviter une confusion très fréquente :
+
+👉 la fonction métier que **nous écrivons** n’est pas la même chose que la fonction que le `<form>` **appelle réellement**
+
+---
+
+Autrement dit :
+
+- `submitLogin` ❌ n’est pas appelée directement par le DOM  
+- `formAction` ✅ est la fonction réellement branchée au `<form>`  
+- `useActionState` 👉 fabrique ce pont entre les deux  
+
+---
+
+👉 c’est ici que React commence à réconcilier son modèle avec le web
+
+---
+
+## 🧠 Le vrai modèle mental
+
+Un formulaire moderne n’est pas une simple fonction.
+
+C’est une chaîne :
+
+```txt
+<form> → formAction → useActionState → submitLogin → serveur
 ```
 
 ---
 
-# Mutation tRPC
+👉 le DOM ne parle pas à notre fonction métier  
+👉 il parle à une fonction orchestrée par React
 
-Pour envoyer les données au backend :
+---
 
-```ts
-const mutation = trpc.course.create.useMutation()
+Et cette distinction change tout.
+
+---
+
+### 4.1 — La fonction métier : `submitLogin`
+
+Nous commençons par la fonction métier.
+
+👉 son rôle n’est PAS de gérer le formulaire  
+👉 son rôle est de traiter des données
+
+<CodeSnippetWalkthrough
+  language="ts"
+  title="La fonction métier ne parle pas directement au DOM"
+  filename="login.action.ts"
+  kind="educational"
+  codeJson='"export type LoginState = {\n  status: \"idle\" | \"success\" | \"error\"\n  message?: string\n}\n\nexport const initialState: LoginState = {\n  status: \"idle\",\n}\n\nexport async function submitLogin(\n  _prevState: LoginState,\n  formData: FormData\n): Promise<LoginState> {\n  const response = await fetch(\"http://localhost:4000/login\", {\n    method: \"POST\",\n    body: JSON.stringify({\n      email: formData.get(\"email\"),\n      password: formData.get(\"password\"),\n    }),\n    headers: {\n      \"Content-Type\": \"application/json\",\n    },\n  })\n\n  const result = await response.json()\n\n  if (!response.ok) {\n    return {\n      status: \"error\",\n      message: result.message ?? \"Erreur inconnue\",\n    }\n  }\n\n  return {\n    status: \"success\",\n    message: \"Connexion réussie\",\n  }\n}"'
+  stepsJson='[
+    {
+      "title": "Un contrat d’état stable",
+      "body": "Le fichier commence par définir LoginState et initialState. C’est important, car useActionState a besoin d’un état initial et d’un format de retour cohérent.",
+      "scope": "1-8",
+      "focus": "1"
+    },
+    {
+      "title": "La fonction métier reçoit prevState et formData",
+      "body": "submitLogin reçoit deux choses : l’état précédent et le FormData brut. Cela montre bien que cette fonction est pensée pour être utilisée par useActionState, mais qu’elle ne sait encore rien du composant visuel qui la déclenchera.",
+      "scope": "10-14",
+      "focus": "10"
+    },
+    {
+      "title": "Le réseau reste manuel",
+      "body": "Le cœur de la fonction montre la limite du modèle classique : il faut encore appeler fetch, construire le JSON, choisir l’URL et poser les headers à la main.",
+      "scope": "14-23",
+      "focus": "14"
+    },
+    {
+      "title": "La fonction métier remappe elle-même succès et erreur",
+      "body": "Après la réponse du serveur, la fonction transforme elle-même le résultat HTTP en état d’interface. Elle fait donc à la fois le pont réseau et le pont métier.",
+      "scope": "26-37",
+      "focus": "26"
+    }
+  ]'
+/>
+
+Cette fonction :
+
+- reçoit des données (`FormData`)  
+- appelle un backend (ici via `fetch`)  
+- transforme la réponse  
+- retourne un état exploitable  
+
+---
+
+👉 elle ne connaît pas le DOM  
+👉 elle ne connaît pas React  
+👉 elle ne connaît pas le `<form>`
+
+---
+
+👉 elle est indépendante
+
+---
+
+<Callout type="info">
+À ce stade, nous sommes encore dans un modèle hybride :
+
+- le client appelle encore `fetch`
+- la logique métier est côté client
+
+👉 ce n’est PAS encore le modèle final
+</Callout>
+
+---
+
+## ⚠️ Important : ce modèle est transitoire
+
+Ce que nous voyons ici ressemble encore à du React classique :
+
+- appel réseau manuel  
+- transformation JSON  
+- mapping erreur / succès  
+
+---
+
+👉 c’est normal
+
+👉 nous préparons le terrain
+
+---
+
+Parce que dans le modèle final :
+
+👉 cette fonction deviendra une **Server Action**
+
+👉 et le `fetch` disparaîtra complètement
+
+---
+
+👉 le serveur sera appelé directement par le `<form>`
+
+---
+
+### 4.2 — Le composant client : là où la magie devient explicable
+
+C’est ici que tout se joue.
+
+<CodeSnippetWalkthrough
+  language="tsx"
+  title="Le composant ne relie pas directement le form à submitLogin"
+  filename="LoginForm.tsx"
+  kind="educational"
+  codeJson='"\"use client\"\n\nimport { useActionState } from \"react\"\nimport { useForm } from \"react-hook-form\"\nimport {\n  submitLogin,\n  initialState,\n  type LoginState,\n} from \"./login.action\"\n\ntype LoginValues = {\n  email: string\n  password: string\n}\n\nexport function LoginForm() {\n  const [state, formAction, isPending] = useActionState<LoginState, FormData>(\n    submitLogin,\n    initialState\n  )\n\n  const {\n    register,\n    formState: { errors },\n  } = useForm<LoginValues>({\n    mode: \"onBlur\",\n  })\n\n  return (\n    <form action={formAction}>\n      <input {...register(\"email\", { required: \"Email requis\" })} />\n      {errors.email && <p>{errors.email.message}</p>}\n\n      <input\n        type=\"password\"\n        {...register(\"password\", { required: \"Mot de passe requis\" })}\n      />\n      {errors.password && <p>{errors.password.message}</p>}\n\n      <button type=\"submit\" disabled={isPending}>\n        {isPending ? \"Connexion...\" : \"Se connecter\"}\n      </button>\n\n      {state.status === \"error\" && <p>{state.message}</p>}\n      {state.status === \"success\" && <p>{state.message}</p>}\n    </form>\n  )\n}"'
+  stepsJson='[
+    {
+      "title": "La fonction métier est importée, pas fusionnée au composant",
+      "body": "Le composant commence par importer submitLogin et initialState depuis un autre fichier. C’est une séparation importante : l’interface et la logique d’action ne sont pas confondues.",
+      "scope": "3-7",
+      "focus": "3"
+    },
+    {
+      "title": "useActionState fabrique formAction",
+      "body": "La ligne la plus importante du snippet est celle-ci : React reçoit submitLogin et initialState, puis fabrique state, formAction et isPending. Voilà le vrai pont. submitLogin n’est donc pas la formAction : elle en est la source.",
+      "scope": "16-20",
+      "focus": "17"
+    },
+    {
+      "title": "RHF garde la couche locale",
+      "body": "React Hook Form continue ici à porter la responsabilité locale : enregistrement des champs, validation immédiate et affichage des erreurs près des inputs.",
+      "scope": "22-27",
+      "focus": "22"
+    },
+    {
+      "title": "Le form appelle formAction, pas submitLogin",
+      "body": "Le point de bascule est visible ici : le <form> est branché à formAction. Le DOM ne connaît pas submitLogin directement. Il déclenche une fonction orchestrée par React, qui appellera ensuite submitLogin avec le bon contrat.",
+      "scope": "30-30",
+      "focus": "30"
+    },
+    {
+      "title": "L’interface lit ensuite state et isPending",
+      "body": "Le reste du composant s’appuie sur le résultat de cette orchestration : isPending pour le bouton, state pour les messages de succès ou d’erreur. Le formulaire devient donc lecteur d’un cycle d’action, pas simple gestionnaire de fetch.",
+      "scope": "39-45",
+      "focus": "39,42"
+    }
+  ]'
+/>
+
+La ligne clé :
+
+<CodeSnippet
+  language="ts"
+  title="La vraie ligne charnière"
+  filename="LoginForm.tsx"
+  kind="pattern"
+  codeJson='"const [state, formAction, isPending] = useActionState(...)"'
+/>
+
+---
+
+👉 React prend notre fonction métier  
+👉 et fabrique une fonction spéciale : `formAction`
+
+---
+
+👉 cette fonction :
+
+- est compatible avec le `<form>` HTML  
+- respecte le contrat du navigateur  
+- appelle ensuite notre fonction métier  
+
+---
+
+## 🔗 Le retour du modèle natif… augmenté
+
+Regarde cette ligne :
+
+<CodeSnippet
+  language="tsx"
+  title="Le form parle à formAction"
+  filename="LoginForm.tsx"
+  kind="pattern"
+  codeJson='"<form action={formAction}>"'
+/>
+
+---
+
+👉 ce n’est pas un hasard
+
+---
+
+Nous revenons à :
+
+<CodeSnippet
+  language="html"
+  title="Le contrat natif du web"
+  filename="demo.html"
+  kind="educational"
+  codeJson='"<form action=\"/login\">"'
+/>
+
+---
+
+Mais avec une différence énorme :
+
+👉 `formAction` n’est pas une URL  
+👉 c’est une fonction orchestrée par React
+
+---
+
+👉 nous retrouvons le web natif  
+👉 mais enrichi par React
+
+---
+
+<Callout type="info">
+Avec `useActionState`, React ne remplace plus le `<form>`.
+
+👉 il le prolonge
+
+- le navigateur gère toujours la soumission  
+- React orchestre ce qui se passe ensuite  
+- le serveur reste la destination finale  
+
+👉 nous ne simulons plus le web  
+👉 nous nous appuyons dessus
+</Callout>
+
+---
+
+## 🧩 Les responsabilités sont enfin claires
+
+À ce stade, nous pouvons découper proprement :
+
+- `submitLogin` → logique métier  
+- `useActionState` → orchestration  
+- `formAction` → interface avec le DOM  
+- `<form>` → déclencheur natif  
+
+---
+
+👉 chaque couche a un rôle précis
+
+---
+
+## ⚖️ Et React Hook Form dans tout ça ?
+
+RHF est toujours là :
+
+- validation locale  
+- UX  
+- gestion des inputs  
+
+---
+
+Mais :
+
+👉 il ne gère pas la soumission réelle  
+👉 il ne parle pas au serveur  
+
+---
+
+👉 il complète `useActionState`, il ne le remplace pas
+
+---
+
+## 🧠 Le point clé (et le plus souvent mal compris)
+
+Le `<form>` n’appelle pas notre fonction.
+
+👉 il appelle une fonction générée par React
+
+---
+
+Et cette fonction :
+
+👉 garantit le bon passage entre :
+
+- DOM  
+- React  
+- serveur  
+
+---
+
+👉 c’est ça, la vraie valeur de `useActionState`
+
+---
+
+## 🔥 Et maintenant, le vrai saut arrive
+
+À ce stade, nous avons :
+
+- un formulaire structuré  
+- une orchestration propre  
+- une séparation claire  
+
+---
+
+Mais il reste encore une incohérence :
+
+👉 le client fait encore un `fetch`
+
+---
+
+Dans la prochaine étape :
+
+👉 nous supprimons complètement ce `fetch`
+
+👉 et le serveur devient directement la cible du `<form>`
+
+---
+
+👉 c’est là que les Server Actions entrent en jeu
+
+---
+
+<Callout type="info">
+`useActionState` n’est pas la destination finale.
+
+👉 c’est un pont
+
+- entre React et le web natif  
+- entre le client et le serveur  
+- entre une fonction métier et un `<form>`  
+
+👉 il prépare le terrain pour les Server Actions
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** `useActionState` n’est pas un outil de plus — c’est un pont. Il prend une fonction métier et la rebranche sur un `<form>` réel, sans que nous ayons à jouer nous-mêmes le rôle du navigateur. Mais ce pont ne prend toute sa valeur que dans un monde où le serveur peut vraiment être au bout — pas derrière une URL à construire, mais directement là. Reste à voir ce que change App Router pour que cette promesse tienne.
+
+---
+
+## 5 — The paradigm shift: from Pages Router to App Router
+
+C’est précisément ici qu’App Router change la donne.
+
+Dans un modèle React classique — et dans Next.js avec le Pages Router — le client reste responsable de l’orchestration :
+
+- il déclenche l’événement
+- il construit la requête
+- il appelle une API (fetch)
+- il interprète la réponse
+
+👉 le serveur est toujours “derrière une URL”
+
+---
+
+## 🧨 Le problème réel
+
+Même en monorepo :
+
+- frontend et backend peuvent être proches
+- le code peut être partagé
+
+👉 mais le pont reste HTTP
+
+---
+
+👉 le `<form>` ne peut pas appeler directement une fonction serveur  
+👉 il doit passer par une API route  
+
+---
+
+## 🚀 Le vrai changement avec App Router
+
+Avec App Router, quelque chose de beaucoup plus profond devient possible :
+
+👉 le formulaire n’appelle plus une URL  
+👉 il appelle une fonction serveur
+
+---
+
+## 🧠 Nouveau modèle mental
+
 ```
-
-Soumission du formulaire :
-
-```ts
-const onSubmit = form.handleSubmit(async (data) => {
-  await mutation.mutateAsync(data)
-})
+<form> → formAction → Server Action → Prisma / DB
 ```
 
 ---
 
-# Gestion de l'état avec useActionState
+👉 plus de fetch manuel  
+👉 plus de route intermédiaire obligatoire  
+👉 plus de duplication client / serveur  
 
-React introduit `useActionState` pour gérer les états d'action.
+---
+
+## 🔗 Concrètement
+
+Avant :
+
+- `<form>` → onSubmit  
+- JS → fetch  
+- fetch → API route  
+- API → logique métier  
+
+---
+
+Maintenant :
+
+- `<form action={formAction}>`  
+- React → appelle Server Action  
+- Server Action → exécute la logique métier  
+
+---
+
+👉 le pont est intégré au framework
+
+---
+
+## ⚙️ Le rôle de useActionState dans ce nouveau monde
+
+Dans Pages Router :
+
+👉 useActionState = meilleure organisation  
+👉 MAIS toujours basé sur fetch
+
+---
+
+Dans App Router :
+
+👉 useActionState devient un vrai pont :
+
+- DOM → déclenchement  
+- React → orchestration  
+- Server → exécution  
+- UI → retour d’état  
+
+---
+
+👉 il connecte directement le formulaire au serveur
+
+---
+
+## ⚖️ RHF, useActionState, Server Actions — répartition finale
+
+- RHF → UX (inputs, validation locale)  
+- Server Action → logique métier + validation réelle  
+- useActionState → orchestration du cycle  
+- Prisma → source de vérité  
+
+---
+
+👉 chaque couche a enfin une responsabilité claire
+
+---
+
+## ⚠️ Pourquoi ce n’est PAS possible en Pages Router
+
+Dans Pages Router :
+
+- pas de Server Actions  
+- pas d’appel direct serveur  
+- fetch obligatoire  
+- client = coordinateur principal  
+
+---
+
+👉 le modèle reste client-centré
+
+---
+
+## ✅ Ce que App Router restaure
+
+Nous ne revenons pas au web pur.
+
+👉 nous faisons mieux
+
+---
+
+- le `<form>` redevient central  
+- le serveur redevient accessible directement  
+- React n’intercepte plus tout  
+- il orchestre intelligemment  
+
+---
+
+<Callout type="info">
+Le vrai changement ne vient pas de useActionState seul.
+
+👉 il vient du couple :
+
+- Server Actions  
+- App Router  
+
+---
+
+Ce duo permet enfin :
+
+- de supprimer le fetch manuel  
+- de reconnecter le formulaire au serveur  
+- de s’appuyer à nouveau sur le modèle du web  
+
+---
+
+👉 nous ne contournons plus le web  
+👉 nous construisons avec lui
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** App Router a redonné au serveur son statut — pas « derrière une URL » à construire, mais directement au bout du `<form>`, via les Server Actions. Combiné à `useActionState`, cela permet enfin de supprimer le fetch manuel et de reconnecter le formulaire au modèle natif du web, en version augmentée. Reste à voir ce qui se passe quand nous confrontons vraiment ce modèle au réel — aux contraintes d’architecture, aux compromis, et aux cas où la théorie rencontre la complexité d’un vrai projet.
+
+---
+
+## 6 — RHF + useActionState + Server Actions: Reconnecting with the Web’s Original Model
+
+Jusqu’ici, nous avons construit quelque chose de solide.
+
+Mais si nous sommes honnêtes — vraiment honnêtes — il reste une zone floue.
+
+👉 Nous avons présenté un modèle… mais nous ne l’avons pas encore confronté au réel.
+
+Et c’est exactement là que tout se joue.
+
+---
+
+## 🧠 Le moment où nous devenons rigoureux
+
+Nous pourrions nous arrêter ici et dire :
+
+👉 “voilà le bon modèle”
+
+Mais si nous faisons ça :
+
+👉 nous mentons un peu
+
+Parce que ce modèle :
+
+👉 **n’est pas universel**
+
+Et ça, c’est une bascule importante.
+
+---
+
+### ⚠️ 6.6 — Le cas réel : quand notre architecture nous contraint
+
+Reprenons ensemble.
+
+Jusqu’ici, nous avons travaillé dans un contexte très particulier :
+
+- monorepo
+- backend accessible
+- Server Actions possibles
+
+👉 donc nous pouvions faire :
+
+- logique métier côté serveur
+- accès direct à Prisma
+- zéro fetch manuel
+
+---
+
+Mais maintenant, posons-nous une vraie question.
+
+👉 **Et si nous n’avions PAS ce luxe ?**
+
+---
+
+### 🧠 Situation réelle (que nous avons tous rencontrée)
+
+Nous sommes dans un projet où :
+
+- le backend est externe
+- l’API est publique
+- le frontend est découplé
 
 Exemple :
 
-```ts
-const [state, submitAction, isPending] = useActionState(
-  async (_, formData) => {
-    await mutation.mutateAsync({
-      title: formData.get("title")
-    })
-  },
-  null
-)
-```
-
-Avantages :
-
-- gestion simple des états
-- meilleure intégration avec React Server Components
+- une API REST fournie par un service tiers
+- ou un backend maintenu par une autre équipe
 
 ---
 
-# Gestion des erreurs
+Et là, nous nous rendons compte de quelque chose de très concret :
 
-Les erreurs backend peuvent être affichées :
-
-```ts
-if (mutation.error) {
-  console.error(mutation.error.message)
-}
-```
-
-Ou affichées dans l'interface utilisateur.
+👉 nous ne pouvons PAS appeler une Server Action interne  
+👉 nous DEVONS passer par HTTP  
 
 ---
 
-# Bonnes pratiques
+### 🔥 Donc soyons clairs
 
-Quelques bonnes pratiques importantes :
-
-- toujours valider avec Zod
-- ne jamais faire confiance aux données utilisateur
-- afficher les erreurs clairement
-- garder les formulaires simples
+👉 `fetch` redevient normal  
+👉 `fetch` redevient nécessaire  
 
 ---
 
-# Résumé
+<Callout type="info">
+Le problème n’a jamais été `fetch`.
 
-Dans ce tutoriel nous avons vu comment :
-
-- créer un formulaire avec React Hook Form
-- valider avec Zod
-- envoyer les données via tRPC
-- gérer les états d'action
-
-Cela constitue la **base des interfaces d'administration du projet**.
+👉 Le problème commence quand le client devient une autorité métier.
+</Callout>
 
 ---
 
-# Prochaine étape
+## ⚔️ Mauvais modèle vs modèle contraint
 
-Le prochain tutoriel couvrira :
+Ici, il faut être très précis.
 
-👉 **Cloudinary Upload Pipeline**
+Parce que tout n’est pas “mauvais” ou “bon”.
+
+---
+
+### ❌ Mauvais modèle (ce que nous avons tous fait au début)
+
+Nous nous retrouvons avec un client qui :
+
+- valide des règles métier
+- décide de ce qui est correct ou non
+- reconstruit la vérité
+- interprète les erreurs serveur
+
+👉 autrement dit :
+
+👉 nous transformons le frontend en backend déguisé
+
+---
+
+### ⚠️ Modèle contraint (réalité propre)
+
+Dans un contexte API publique :
+
+👉 nous acceptons la contrainte
+
+Le client :
+
+- envoie les données (`fetch`)
+- affiche le résultat
+
+Le serveur :
+
+- valide
+- décide
+- persiste
+
+👉 le client reste un **consommateur**
+
+---
+
+Et là, tout devient plus clair.
+
+👉 le problème n’est pas l’outil  
+👉 c’est la répartition des responsabilités
+
+---
+
+### 6.7 — Réduire la casse (ce que nous ferions dans la vraie vie)
+
+Quand nous ne pouvons pas utiliser Server Actions, nous ne cherchons pas la perfection.
+
+👉 nous cherchons à **limiter la divergence**
+
+---
+
+### 1 — Partager un contrat
+
+<CodeSnippet
+  language="ts"
+  title="Contrat partagé (Zod + TS)"
+  filename="@acme/contracts/user.ts"
+  codeJson='"import { z } from "zod"
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+})
+
+export type LoginInput = z.infer<typeof LoginSchema>"'
+/>
+
+👉 frontend et backend parlent la même langue
+
+---
+
+Mais soyons lucides.
+
+👉 ce contrat :
+
+- n’exécute rien
+- ne valide rien côté serveur
+
+👉 c’est une **projection**
+
+---
+
+### 2 — Génération via OpenAPI
+
+<CodeSnippet
+  language="yaml"
+  title="Extrait OpenAPI"
+  filename="openapi.yaml"
+  codeJson='"paths:
+  /login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput""'
+/>
+
+👉 nous automatisons  
+👉 nous sécurisons le transport  
+
+---
+
+Mais encore une fois :
+
+👉 ça ne remplace PAS la logique serveur
+
+---
+
+### 3 — SDK backend
+
+- client npm
+- fonctions typées
+- fetch encapsulé
+
+👉 meilleure DX  
+👉 même contrainte fondamentale  
+
+---
+
+### 6.8 — Hiérarchie de vérité (le vrai déclic)
+
+C’est ici que nous devons être très clairs entre nous.
+
+---
+
+### 🧱 Cas Server Actions (idéal)
+
+- Prisma = vérité
+- Server Action = point d’entrée
+- client = interface
+
+---
+
+### 🌐 Cas API publique (contraint)
+
+- backend = vérité
+- contrat = projection
+- client = consommateur
+
+---
+
+👉 phrase que nous devons retenir ensemble :
+
+<Callout type="info">
+Le client ne doit jamais être la source de vérité métier.
+
+👉 il doit consommer une vérité définie ailleurs
+</Callout>
+
+---
+
+### 6.9 — Contre-exemple réel : quand nous dérapons
+
+Regardons un cas que nous avons tous écrit à un moment.
+
+<CodeSnippetWalkthrough
+  language="tsx"
+  title="Anti-pattern : le client devient backend"
+  filename="BadForm.tsx"
+  codeJson='"const handleSubmit = async () => {
+  if (!email.includes("@")) {
+    setError("Email invalide")
+    return
+  }
+
+  const res = await fetch("/api/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  })
+
+  if (res.status === 403) {
+    setError("Accès refusé")
+  }
+}"'
+  stepsJson='[
+    {
+      "title": "Validation métier côté client",
+      "body": "Nous décidons ici de ce qui est valide. C’est déjà une fuite de responsabilité.",
+      "focus": "2"
+    },
+    {
+      "title": "Logique dispersée",
+      "body": "Les règles sont noyées dans le composant.",
+      "focus": "6"
+    },
+    {
+      "title": "Mapping HTTP → métier",
+      "body": "Le client interprète des statuts HTTP comme des règles métier.",
+      "focus": "10"
+    }
+  ]'
+/>
+
+👉 ce code fonctionne  
+👉 mais il est instable structurellement  
+
+---
+
+## 🧠 Conclusion — version adulte (celle que nous gardons)
+
+Nous pourrions résumer ça simplement.
+
+Mais ce serait dommage.
+
+---
+
+👉 Ce n’est pas React qui est le problème  
+👉 Ce n’est pas `fetch` qui est le problème  
+
+---
+
+👉 Le vrai problème, c’est :
+
+👉 **où vit la vérité**
+
+---
+
+### Ce que nous gardons ensemble
+
+👉 Quand nous pouvons :
+
+- Server Actions  
+- logique serveur  
+- modèle centralisé  
+
+👉 nous le faisons
+
+---
+
+👉 Quand nous ne pouvons pas :
+
+- API publique  
+- backend séparé  
+
+👉 nous structurons :
+
+- contrats  
+- validation serveur  
+- client passif  
+
+---
+
+<Callout type="info">
+Un bon système ne dépend pas des outils.
+
+👉 il dépend de la bonne répartition des responsabilités
+</Callout>
+
+---
+
+Et si nous devions garder une seule idée de toute cette section :
+
+👉 ce n’est pas une question de “comment envoyer un formulaire”
+
+👉 c’est une question de :
+
+👉 **qui a le droit de décider**
+
+---
+
+👉 **Où nous en sommes :** le modèle hybride tient. Nous avons vu chaque pièce à sa place — RHF pour l’expérience, `useActionState` pour le pont, Server Actions pour la vérité — et nous avons confronté ce modèle aux contraintes du réel sans qu’il s’effondre. Mais un modèle qui fonctionne toujours n’apprend rien sur ses propres limites. Reste à changer de posture, et à regarder ce même modèle pour y trouver ce qui casse — parce que ce qui semble trop solide cache souvent ses pièges les plus dangereux.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons réparé la fracture. Trois idées en sont ressorties :
+
+- **`useActionState` est un pont, pas une destination.** Il ne remplace pas le contrat natif du web, il l’augmente — en permettant à une fonction métier de se brancher à un `<form>` sans reconstruire à la main tout ce que le navigateur faisait déjà. C’est le chaînon qui manquait pour reconnecter React au modèle ancien sans renoncer à ses forces.
+- **App Router change la nature du serveur dans le code.** Les Server Actions transforment le serveur d’une « URL à appeler » en une fonction directement référencée depuis le formulaire. Le fetch manuel disparaît, le formulaire retrouve sa cible naturelle, et la plomberie réseau sort du code applicatif.
+- **Le modèle hybride redistribue les responsabilités clairement.** RHF tient l’UX et la validation instantanée ; `useActionState` tient la traduction vers le `<form>` ; la Server Action tient la logique métier et revalide tout ce qui vient du client. Chacun fait ce qu’il fait le mieux — et surtout, plus rien ne fait ce qu’il ne devrait pas.
+
+Le Mouvement 3 va maintenant regarder ce modèle sous un autre angle : celui de ses limites. Parce qu’un pattern vraiment mature ne se juge pas sur ce qu’il permet de faire, mais sur ce qu’il nous interdit de faire mal — et sur ce qu’il ne peut pas du tout faire.
+
+---
+
+## Mouvement 3 — Les limites du modèle
+
+Jusqu’ici, nous avons construit. Ce mouvement change de posture : nous ne cherchons plus à faire tenir le modèle, nous cherchons à comprendre où il ne tient plus. Parce qu’un modèle que nous appliquons partout perd son sens ; seul un modèle que nous savons situer reste un bon modèle.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 7** — Nous regardons les pièges réels du modèle hybride : les détournements confortables, les fausses sécurités, les moments où l’UX ment à l’utilisateur. Tout ce qui donne l’impression que ça marche… jusqu’à ce que ça casse.
+- **Section 8** — Nous apprenons à situer le modèle : quand il est le bon choix, quand il ne l’est pas, et ce qui distingue un pattern utilisé à bon escient d’un pattern appliqué par réflexe.
+
+À la fin de ce mouvement, nous ne serons plus seulement capables d’utiliser RHF + `useActionState` + Server Actions — nous saurons aussi dire, avec lucidité, quand ne pas l’utiliser.
+
+---
+
+## 7 — Where the model breaks: les pièges réels du modèle hybride
+
+Jusqu’ici, tout tenait.
+
+Et c’est justement pour ça que c’est dangereux.
+
+Parce que le modèle hybride ne casse pas immédiatement.  
+Il fonctionne. Il donne confiance. Il donne même une sensation de maîtrise.
+
+👉 Et c’est exactement là que les erreurs commencent.
+
+---
+
+## 🧠 Changement de posture
+
+Jusqu’ici, nous avons construit.
+
+Maintenant, nous allons faire quelque chose de beaucoup plus important :
+
+👉 nous allons observer **comment ça casse dans la vraie vie**
+
+Pas en théorie.  
+Pas dans un slide.  
+
+👉 dans des situations qui arrivent réellement.
+
+---
+
+### ⚠️ 7.1 — Le faux sentiment de sécurité (le piège le plus dangereux)
+
+Nous construisons un formulaire.
+
+- RHF valide
+- les erreurs s’affichent
+- le bouton se désactive
+- tout semble propre
+
+👉 Et nous nous disons :
+
+👉 “ok, mes données sont clean”
+
+---
+
+Maintenant imagine.
+
+Un utilisateur contourne le client.  
+Ou une requête est rejouée.  
+Ou une valeur est modifiée.
+
+👉 Le serveur reçoit quelque chose d’invalide.
+
+---
+
+Et là :
+
+- soit il accepte → bug métier
+- soit il refuse → UX incohérente
+
+---
+
+👉 Ce moment-là, il arrive toujours.
+
+Et quand il arrive :
+
+👉 nous réalisons que le client n’a jamais été une barrière  
+👉 seulement un filtre UX
+
+---
+
+<Callout type="warning">
+Le client rassure.
+
+👉 Le serveur protège.
+</Callout>
+
+---
+
+### ⚠️ 7.2 — Le piège confortable : détourner useActionState
+
+Nous découvrons `useActionState`.
+
+Et très vite, nous nous disons :
+
+👉 “je peux tout faire avec ça”
+
+---
+
+Alors nous commençons à :
+
+- stocker des données
+- synchroniser des écrans
+- centraliser des appels
+
+---
+
+Et ça marche… au début.
+
+---
+
+Puis un jour :
+
+- deux composants dépendent du même état
+- une action modifie autre chose ailleurs
+- un refresh casse tout
+
+---
+
+👉 et là, nous comprenons :
+
+👉 ce n’est pas un state manager  
+👉 ce n’est pas un data layer  
+
+---
+
+👉 c’est un outil **local, contextuel, éphémère**
+
+---
+
+<Callout type="warning">
+`useActionState` ne structure pas notre app.
+
+👉 il structure une interaction
+</Callout>
+
+---
+
+### ⚠️ 7.3 — Le piège silencieux : FormData
+
+C’est ici que les bugs les plus vicieux apparaissent.
+
+Le serveur reçoit :
+
+<CodeSnippet
+  language="ts"
+  title="Entrée brute"
+  filename="server.action.ts"
+  codeJson='"formData: FormData"'
+/>
+
+---
+
+Ce que ça veut dire en réalité :
+
+- tout est string
+- rien n’est garanti
+- certaines valeurs peuvent être null
+
+---
+
+Maintenant imagine :
+
+Nous faisons :
+
+<CodeSnippet
+  language="ts"
+  title="Bug silencieux"
+  filename="server.action.ts"
+  codeJson='"const age = Number(formData.get("age"))"'
+/>
+
+---
+
+Si `age` est null :
+
+👉 `Number(null)` → 0
+
+---
+
+👉 Nous venons d’introduire un bug… sans aucune erreur
+
+---
+
+C’est ça, le danger.
+
+👉 pas un crash  
+👉 une dérive silencieuse
+
+---
+
+### Le vrai pipeline
+
+<CodeSnippet
+  language="ts"
+  title="Pipeline sûr"
+  filename="server.action.ts"
+  codeJson='"const raw = formData.get("age")
+
+const age = raw ? Number(raw) : undefined
+
+const parsed = schema.safeParse({ age })"'
+/>
+
+---
+
+<Callout type="info">
+FormData n’est pas une donnée.
+
+👉 c’est une matière première
+</Callout>
+
+---
+
+### ⚠️ 7.4 — Le moment où l’UX ment
+
+Scène réelle.
+
+Nous modifions notre profil.
+
+- le formulaire valide
+- la requête passe
+- nous mettons à jour le state local
+
+👉 tout semble OK
+
+---
+
+Puis :
+
+👉 nous rafraîchissons la page
+
+---
+
+Et là :
+
+👉 les données ne correspondent pas
+
+---
+
+Pourquoi ?
+
+- le serveur a normalisé
+- le serveur a modifié
+- le serveur a rejeté partiellement
+
+---
+
+👉 mais notre client ne le sait pas
+
+---
+
+👉 notre UI ment
+
+---
+
+<Callout type="warning">
+Un state local n’est jamais une vérité.
+
+👉 c’est une projection temporaire
+</Callout>
+
+---
+
+### ⚠️ 7.5 — La duplication inévitable (et saine)
+
+Oui, nous validons deux fois.
+
+Et non, ce n’est pas un problème.
+
+---
+
+Le problème serait :
+
+👉 de croire que ces validations doivent être identiques
+
+---
+
+- client → UX
+- serveur → vérité
+
+---
+
+👉 même forme  
+👉 même intention  
+
+👉 mais pas le même rôle
+
+---
+
+Le piège :
+
+👉 “je veux une seule validation”
+
+---
+
+Résultat :
+
+👉 soit UX dégradée  
+👉 soit sécurité fragile  
+
+---
+
+### ⚠️ 7.6 — Le piège d’over-application
+
+Nous découvrons un modèle puissant.
+
+Alors nous voulons tout faire avec.
+
+---
+
+Et nous commençons à l’utiliser pour :
+
+- dashboards
+- temps réel
+- polling
+- cache
+
+---
+
+👉 erreur
+
+---
+
+Parce que ce modèle est optimisé pour :
+
+👉 une action ponctuelle
+
+---
+
+Pas pour :
+
+👉 un flux continu
+
+---
+
+👉 chaque outil a un terrain
+
+---
+
+### ⚠️ 7.7 — Le vrai piège (le plus subtil)
+
+Ce modèle ne casse pas quand nous faisons une erreur.
+
+👉 il casse quand nous faisons quelque chose qui semble correct
+
+---
+
+- mettre à jour un state local
+- faire confiance à RHF
+- convertir un FormData directement
+
+---
+
+👉 tout fonctionne
+
+---
+
+👉 jusqu’au jour où ça ne fonctionne plus
+
+---
+
+Et ce jour-là :
+
+👉 le bug est difficile à comprendre  
+👉 parce qu’il vient d’une mauvaise hypothèse
+
+---
+
+## 🧠 Le point clé (celui que nous gardons vraiment)
+
+<Callout type="info">
+Le modèle hybride fonctionne…
+
+👉 uniquement si nous respectons la hiérarchie
+
+- client → interface
+- serveur → vérité
+- formulaire → passage
+</Callout>
+
+---
+
+## 🎯 Conclusion (version adulte)
+
+Un développeur junior cherche à faire fonctionner.
+
+Un développeur intermédiaire cherche à optimiser.
+
+Un développeur senior cherche à comprendre :
+
+👉 où ça casse  
+👉 et pourquoi
+
+---
+
+Et nous, ici :
+
+👉 nous ne voulons pas juste utiliser ce modèle
+
+👉 nous voulons savoir **quand il devient dangereux**
+
+---
+
+👉 **Où nous en sommes :** nous avons vu que le modèle hybride ne casse pas en hurlant — il casse discrètement, dans les moments où il donne l’impression de tenir. Les pièges les plus dangereux ne sont pas ceux qui produisent des bugs visibles, mais ceux qui installent une fausse sécurité : un détournement ici, un raccourci là, une UX qui ment à l’utilisateur sans que personne ne s’en aperçoive. Reste à franchir l’étape suivante — celle qui distingue le développeur qui fait marcher un pattern de celui qui sait le situer.
+
+---
+
+## 8 — Choosing the right communication model
+
+Après avoir construit le modèle hybride, une question importante apparaît.
+
+> Faut-il désormais tout faire avec RHF + `useActionState` + Server Actions ?
+
+La réponse est non.
+
+Et c’est une bonne nouvelle.
+
+Un bon modèle n’est pas un modèle que nous utilisons partout.  
+C’est un modèle que nous savons situer.
+
+Le pattern hybride montré dans ce tutoriel est extrêmement fort pour les cas suivants :
+
+- formulaires orientés modification de données côté serveur
+- flux utilisateur centrés sur une action
+- écrans où le serveur doit redevenir la source de vérité
+- besoins de validation locale + validation serveur
+- interfaces où nous voulons éviter la plomberie réseau manuelle
+
+Dans ces cas-là, ce modèle apporte beaucoup :
+
+- une meilleure séparation des responsabilités
+- moins de code réseau manuel
+- un retour structuré vers l’interface
+- une lecture plus naturelle du cycle du formulaire
+
+Mais dès que nous sortons du seul cadre du formulaire, les besoins changent.
+
+---
+
+### 8.1 — Quand le modèle hybride est le bon choix
+
+Ici, le mot **mutation** désigne simplement une action qui modifie un état côté serveur.
+
+Par exemple :
+
+- créer une ressource  
+- modifier un profil  
+- supprimer une donnée  
+- changer un mot de passe  
+
+Autrement dit, une mutation n’est pas une lecture de données.  
+C’est une opération qui transforme quelque chose dans le système.
+
+Le modèle RHF + `useActionState` + Server Actions est particulièrement adapté quand :
+
+- un utilisateur remplit puis soumet un formulaire
+- une action unique déclenche une logique métier claire
+- le serveur doit revalider et persister
+- l’interface a surtout besoin de refléter un succès, un échec, ou des erreurs de champ
+
+Autrement dit :
+
+👉 il est excellent pour les mutations pilotées par formulaire
+
+<Callout type="info">
+Quand le centre de gravité de l’écran est un formulaire,  
+ce modèle est souvent le plus naturel.
+
+👉 il épouse bien la mécanique du web
+</Callout>
+
+---
+
+### 8.2 — Quand ce modèle montre ses limites
+
+Dès que nous avons besoin de quelque chose de plus riche qu’une simple soumission, le paysage change.
+
+Par exemple :
+
+- lecture fréquente de données
+- invalidations fines
+- composition de multiples sources de données
+- synchronisation d’état
+- interactions fréquentes
+- dashboards complexes
+
+Dans ces situations, ce modèle seul devient moins adapté.
+
+Pourquoi ?
+
+Parce qu’il est conçu pour :
+
+👉 une action ponctuelle
+
+et non pour :
+
+👉 un flux continu de données
+
+---
+
+### 8.3 — Deux types de besoins différents
+
+Il est important de comprendre qu’il existe deux grandes catégories de besoins.
+
+#### 1. Les actions
+
+- soumettre un formulaire
+- modifier une ressource
+- déclencher une logique métier
+
+👉 le modèle hybride est idéal ici
+
+#### 2. Les flux de données
+
+- lire des données
+- les synchroniser
+- les partager entre composants
+- les rafraîchir intelligemment
+
+👉 ces besoins nécessitent une autre approche
+
+---
+
+### 8.4 — Vue comparative
+
+<div className="my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Modèle hybride formulaire</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Optimisé pour la soumission, la validation et les mutations.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Systèmes de gestion de données</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Optimisés pour la récupération, la synchronisation et l’invalidation des données.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Server Actions seules</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Adaptées à des cas simples centrés sur une action.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Approches classiques HTTP</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Plus verbeuses, mais universelles et toujours pertinentes selon le contexte.
+    </span>
+  </div>
+</div>
+
+---
+
+### 8.5 — Le vrai critère de choix
+
+Le bon critère n’est pas :
+
+> “quel outil est le plus moderne ?”
+
+Le bon critère est :
+
+> où se trouve le centre de gravité de l’écran ?
+
+👉 ce n’est pas une question d’outil  
+👉 c’est une question de responsabilité dominante
+
+#### Si le centre de gravité est :
+
+- la saisie
+- la soumission
+- le feedback utilisateur immédiat
+- la validation champ par champ
+
+👉 le modèle hybride est le meilleur choix
+
+#### Si le centre de gravité est :
+
+- la donnée
+- sa lecture
+- sa synchronisation
+- sa réutilisation
+
+👉 une approche orientée données devient plus adaptée
+
+<Callout type="info">
+Le bon outil n’est pas celui qui fait tout.
+
+C’est celui qui correspond le mieux à la responsabilité dominante du flux.
+</Callout>
+
+---
+
+### 8.6 — Ce que ce tutoriel nous a appris
+
+Ce tutoriel ne nous a pas seulement appris à construire un formulaire.
+
+Il nous a appris à :
+
+- répartir les responsabilités
+- distinguer client et serveur
+- construire un contrat clair
+- éviter les confusions d’architecture
+
+Et cela prépare directement la suite.
+
+---
+
+### 8.7 — Transition vers la suite
+
+Le formulaire était un excellent point d’entrée.
+
+Mais une application ne se limite pas à des formulaires.
+
+Très vite, il faut gérer :
+
+- des lectures de données
+- des listes
+- des synchronisations
+- des flux plus complexes
+
+👉 C’est précisément là que la suite intervient.
+
+<Callout type="info">
+Ce tutoriel nous a appris à penser une mutation.
+
+Le prochain nous apprendra à penser l’ensemble du système d’échange de données.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous savons maintenant situer le modèle hybride. Il est excellent pour les mutations pilotées par formulaire — mais il n’est pas fait pour tout, et c’est exactement pour cela qu’il reste un bon modèle. Un bon pattern se reconnaît à la fois à ce qu’il permet et à ce qu’il refuse de couvrir. Reste à regarder ce qui déborde de son cadre — les lectures, les listes, les flux plus complexes — et à comprendre pourquoi l’étape d’après n’est pas un nouvel outil, mais un changement de modèle d’échange.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons regardé notre propre travail avec lucidité. Trois idées en sont ressorties :
+
+- **Ce qui ne casse pas bruyamment casse silencieusement.** Les pièges du modèle hybride ne sont pas des erreurs de syntaxe — ce sont des détournements confortables, des fausses sécurités, des UX qui donnent l’illusion d’une cohérence que le backend ne garantit pas. Les voir, c’est déjà ne plus les commettre.
+- **Un bon pattern est un pattern situé, pas un pattern universel.** Le modèle RHF + `useActionState` + Server Actions est taillé pour un usage précis — les mutations pilotées par formulaire. L’appliquer partout, c’est le vider de son sens et le faire casser là où un autre modèle aurait tenu.
+- **La maturité se mesure à la reconnaissance des limites.** Savoir faire fonctionner un pattern est une étape. Savoir quand ne pas l’utiliser en est une autre, souvent plus exigeante — parce qu’elle demande de renoncer à un confort que le pattern offre, au profit d’une cohérence que seule une autre approche peut donner.
+
+La Section 9 va maintenant regarder ce qui déborde du formulaire — les lectures, les listes, les flux complexes — et montrer pourquoi, pour aller plus loin, il faut maintenant changer de modèle d’échange.
+
+---
+
+## 9 — Transition naturelle vers tRPC
+
+À ce stade, quelque chose de très important s’est produit.
+
+Nous avons appris à construire un formulaire.  
+Mais surtout :
+
+👉 nous avons appris à **penser une mutation correctement**
+
+---
+
+Nous savons désormais :
+
+- où commence le client  
+- où le serveur doit reprendre la main  
+- pourquoi la validation serveur est non négociable  
+- comment un contrat stabilise le système  
+- pourquoi une action doit être orchestrée, pas bricolée  
+
+---
+
+Et honnêtement ?
+
+👉 c’est déjà un énorme cap
+
+---
+
+Mais maintenant, faisons quelque chose de beaucoup plus honnête.
+
+---
+
+### ⚠️ 9.1 — Le moment où tout recommence à se compliquer
+
+Imagine.
+
+Nous construisons une vraie page.
+
+Pas un formulaire isolé.
+
+Une page réelle.
+
+---
+
+Par exemple :
+
+- une liste d’utilisateurs  
+- avec un détail sélectionnable  
+- un bouton de suppression  
+- une édition inline  
+- et une mise à jour automatique après modification  
+
+---
+
+Et là…
+
+👉 sans t’en rendre compte  
+👉 nous recommençons à écrire ça
+
+---
+
+<CodeSnippet
+  language="ts"
+  title="Multiplication des appels côté client"
+  filename="users.page.tsx"
+  kind="anti-pattern"
+  codeJson='"const users = await fetch(\"/api/users\").then((r) => r.json())\n\nconst user = await fetch(`/api/users/${id}`).then((r) => r.json())\n\nawait fetch(`/api/users/${id}`, {\n  method: \"DELETE\",\n})\n\nawait fetch(`/api/users/${id}`, {\n  method: \"PATCH\",\n  body: JSON.stringify(data),\n})"'
+/>
+
+---
+
+Au début, ça semble normal.
+
+👉 c’est juste du fetch  
+👉 rien de compliqué  
+
+---
+
+Mais très vite…
+
+👉 quelque chose commence à dériver
+
+---
+
+### 😬 9.2 — Les premiers signes de dérive
+
+Nous ajoutons :
+
+- du typage côté client  
+- des interfaces  
+- des mappings  
+- des helpers  
+
+---
+
+Et sans t’en rendre compte :
+
+👉 nous redéfinissons notre backend… côté frontend
+
+---
+
+### 🔁 Duplication invisible
+
+- types backend → dupliqués côté client  
+- validation backend → imitée côté client  
+- logique métier → interprétée côté client  
+
+---
+
+👉 rien ne casse immédiatement  
+
+👉 mais le système commence à diverger
+
+---
+
+<Callout type="warning">
+Ce moment est critique.
+
+👉 le système fonctionne encore  
+👉 mais il commence déjà à se désaligner
+</Callout>
+
+---
+
+### 🧠 9.3 — Le vrai problème (celui que nous ne voyons pas)
+
+Le problème n’est pas `fetch`.
+
+👉 Le problème, c’est ça :
+
+👉 **le client ne sait plus exactement à quoi il parle**
+
+---
+
+Parce que maintenant :
+
+- chaque appel est écrit à la main  
+- chaque réponse est interprétée localement  
+- chaque type est approximé  
+- chaque erreur est mappée différemment  
+
+---
+
+👉 il n’y a plus de contrat global
+
+---
+
+Et ça, c’est dangereux.
+
+Pas tout de suite.
+
+👉 mais inévitablement
+
+---
+
+### 🔥 9.4 — Le point de rupture
+
+Continue encore un peu.
+
+Ajoute :
+
+- une pagination  
+- un tri  
+- un filtre  
+- une invalidation après mutation  
+
+---
+
+Et là…
+
+👉 nous passons plus de temps à gérer les échanges  
+👉 qu’à écrire notre métier
+
+---
+
+Nous commençons à nous poser des questions :
+
+- “est-ce que ce type est à jour ?”
+- “est-ce que cette route renvoie bien ça ?”
+- “est-ce que je dois refetch ici ?”
+- “est-ce que je dois invalider ça ?”
+
+---
+
+👉 notre système devient flou
+
+---
+
+<Callout type="warning">
+Ce n’est pas un problème de code.
+
+👉 c’est un problème de modèle mental
+
+Nous n’avons plus une vision claire des échanges client ↔ serveur.
+</Callout>
+
+---
+
+### 🧠 9.5 — Ce que nous avons réellement appris avec les formulaires
+
+Revenons un instant en arrière.
+
+---
+
+Avec les formulaires, nous avons appris :
+
+👉 à **ne plus laisser le client inventer le système**
+
+---
+
+Nous avons :
+
+- redonné l’autorité au serveur  
+- structuré le retour  
+- imposé un contrat  
+- clarifié les responsabilités  
+
+---
+
+👉 le système est redevenu lisible
+
+---
+
+Mais ce que nous avons fait…
+
+👉 ne concerne encore qu’un seul type d’échange :
+
+👉 **la mutation**
+
+---
+
+### ⚠️ 9.6 — Le problème non résolu
+
+Une application réelle ne fait pas que muter.
+
+Elle :
+
+- lit  
+- compose  
+- synchronise  
+- partage  
+- invalide  
+- rafraîchit  
+
+---
+
+👉 et là, le modèle du formulaire ne suffit plus
+
+---
+
+Nous avons appris à gérer :
+
+👉 une action
+
+---
+
+Mais maintenant, il faut gérer :
+
+👉 **un système d’échange complet**
+
+---
+
+### 🚀 9.7 — Pourquoi tRPC devient inévitable
+
+C’est ici que tRPC entre en scène.
+
+Pas comme un outil “cool”.
+
+👉 comme une réponse à un problème devenu impossible à ignorer
+
+---
+
+tRPC permet de :
+
+- centraliser les échanges  
+- partager les types automatiquement  
+- supprimer la duplication  
+- structurer les appels  
+- rendre le système lisible  
+
+---
+
+👉 exactement ce que nous venons de perdre avec `fetch`
+
+---
+
+### 🔁 Ce que tRPC restaure
+
+Avec tRPC :
+
+- le client sait ce qu’il appelle  
+- le serveur expose un contrat réel  
+- les types sont partagés automatiquement  
+- les erreurs sont cohérentes  
+- les appels sont structurés  
+
+---
+
+👉 nous retrouvons ce que nous avions avec les formulaires  
+👉 mais à l’échelle de toute l’application
+
+---
+
+<Callout type="info">
+Les Server Actions ont restauré la cohérence pour les mutations.
+
+👉 tRPC va restaurer la cohérence pour tout le reste
+</Callout>
+
+---
+
+### 🧠 9.8 — Le lien profond entre les deux
+
+Ce n’est pas une rupture.
+
+👉 c’est une continuité
+
+---
+
+Le tutoriel forms t’a appris :
+
+- à penser une mutation  
+- à structurer un flux  
+- à respecter les responsabilités  
+
+---
+
+Le tutoriel tRPC va t’apprendre :
+
+- à généraliser cette discipline  
+- à structurer tous les échanges  
+- à typer tout le système  
+- à garder la cohérence à grande échelle  
+
+---
+
+👉 nous ne changeons pas de sujet  
+👉 nous élargissons le champ
+
+---
+
+### 🔥 9.9 — Le vrai déclic
+
+Si nous devons retenir une seule chose :
+
+---
+
+👉 les formulaires t’ont appris à ne plus bricoler une mutation
+
+👉 tRPC va t’apprendre à ne plus bricoler un système
+
+---
+
+<Callout type="info">
+Un formulaire bien conçu est déjà une architecture en miniature.
+
+tRPC va nous permettre de construire cette architecture à l’échelle de toute notre application.
+</Callout>
+
+---
+
+### 🚪 9.10 — La suite
+
+Nous sommes prêts.
+
+---
+
+Nous savons maintenant :
+
+- où doit vivre la vérité  
+- comment structurer une action  
+- pourquoi un contrat est indispensable  
+
+---
+
+👉 il ne reste plus qu’à répondre à la vraie question :
+
+---
+
+> comment faire circuler la donnée dans toute l’application  
+> sans perdre cette cohérence ?
+
+---
+
+👉 c’est exactement ce que nous allons voir avec tRPC

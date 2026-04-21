@@ -9,7 +9,7 @@
  */
 
 import type { DragSource, MoveTarget } from 'packages/contracts/src/cloudinary/move.types';
-import { canMove } from 'packages/backend/src/cloudinary/move.guards';
+import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
 
 type Preview =
   | { kind: 'file'; name: string; thumbUrl: string }

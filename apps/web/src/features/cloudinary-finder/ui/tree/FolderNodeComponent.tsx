@@ -12,14 +12,14 @@ import React, {
 } from 'react';
 import clsx from 'clsx';
 
-import type { FolderNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+import type { FolderNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import type { DragSource, MoveTarget } from 'packages/contracts/src/cloudinary/move.types';
 import type { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
 
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
 
-import { canMove } from 'packages/backend/src/cloudinary/move.guards';
+import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
 import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
 import Image from 'next/image';
 import {

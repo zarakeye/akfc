@@ -1,0 +1,137 @@
+---
+title: Domain model
+description: Présentation des entités métier et de leurs relations dans l’application.
+section: Domain
+order: 1
+---
+
+# Domain model
+
+Cette page décrit les **entités métier principales** du projet et leurs relations.
+
+L’objectif est de comprendre **ce que manipule réellement l’application**, indépendamment des détails techniques.
+
+---
+
+## Vue d’ensemble
+
+Le système repose sur trois grands axes :
+
+- **Gestion des utilisateurs et des permissions**
+- **Organisation des activités**
+- **Gestion des contenus (images)**
+
+---
+
+## User
+
+Représente un utilisateur de l’application.
+
+Un utilisateur peut :
+
+- se connecter
+- posséder un rôle
+- effectuer des actions selon ses permissions
+
+### Relations
+
+- appartient à un **Role**
+
+---
+
+## Role
+
+Définit un ensemble de permissions.
+
+Exemples :
+- admin
+- user
+
+### Relations
+
+- possède plusieurs **Permissions**
+- est attribué à plusieurs **Users**
+
+---
+
+## Permission
+
+Décrit une capacité spécifique dans le système.
+
+Exemples :
+- créer une catégorie
+- supprimer une image
+- gérer les utilisateurs
+
+### Relations
+
+- appartient à un **Role**
+
+---
+
+## Category
+
+Représente un **type d’activité**.
+
+Exemples :
+- courses
+- stages
+- events
+
+### Relations
+
+- contient plusieurs **Activities**
+
+---
+
+## Activity
+
+Représente une entité métier concrète liée à une catégorie.
+
+### Particularité importante
+
+Une activité peut être créée automatiquement lors d’un upload d’image.
+
+### Relations
+
+- appartient à une **Category**
+- contient plusieurs **Pictures**
+
+---
+
+## Picture
+
+Représente une image stockée dans Cloudinary.
+
+### Règle métier importante
+
+Une image **doit toujours appartenir à une Activity**.
+
+### Relations
+
+- appartient à une **Activity**
+
+---
+
+## Relations globales
+
+User → Role → Permission  
+Category → Activity → Picture
+
+---
+
+## Flux métier typique
+
+1. sélection d’une catégorie  
+2. choix ou création d’une activité  
+3. upload de l’image  
+4. association à l’activité  
+5. stockage Cloudinary  
+
+---
+
+## Ce qu’il faut retenir
+
+- les images ne sont jamais orphelines  
+- les activités sont centrales  
+- les catégories structurent le système  

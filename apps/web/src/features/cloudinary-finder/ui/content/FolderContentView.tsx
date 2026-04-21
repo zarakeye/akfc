@@ -3,17 +3,17 @@
 import React, { JSX, useEffect, useMemo } from 'react';
 import { skipToken } from '@tanstack/react-query';
 
-import { FolderNode, FileNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+import type { FolderNode, FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import { isFileNode, isFolderNode } from '@/features/cloudinary-finder/guards/finder.guards';
 
-import type { DragSource } from 'packages/contracts/src/cloudinary/move.types';
-import type { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
+import type { DragSource } from '@workspace/contracts/src/cloudinary/move.types';
+import type { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
 
 import GridFolderItem from '@/features/cloudinary-finder/ui/grid/GridFolderItem';
 import GridFileItem from '@/features/cloudinary-finder/ui/grid/GridFileItem';
 
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 
 import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
 import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
@@ -28,59 +28,33 @@ type Props = {
 };
 
 /**
- * Normalize a path by removing leading and trailing slashes.
- * @param {string} p Path to normalize
- * @returns {string} Normalized path
+ * Normalizes a given path by removing any leading or trailing forward slashes.
+ *
+ * @param {string} p - The path to be normalized.
+ * @returns {string} - The normalized path.
  */
 function normalizePath(p: string): string {
   return p.replace(/^\/+|\/+$/g, '');
 }
 
 /**
- * Check if a path is inside the bin tree.
- * The bin tree is represented by the "/bin" path.
- * A path is considered inside the bin tree if it ends with "/bin" or contains "/bin/".
- * @param {string} path Path to check
- * @returns {boolean} True if the path is inside the bin tree, false otherwise
+ * Checks if the given path is in a bin tree.
+ * @param {string} path - The path to check.
+ * @returns {boolean} - True if the path is in a bin tree, false otherwise.
  */
 function isInBinTree(path: string): boolean {
   const p = normalizePath(path);
   return p.endsWith('/bin') || p.includes('/bin/');
 }
 
-/**
- * Check if a path is the root of the bin tree.
- * The root of the bin tree is represented by the "/bin" path.
- * @param {string} path Path to check
- * @returns {boolean} True if the path is the root of the bin tree, false otherwise
- */
 function isBinRootPath(path: string): boolean {
   return normalizePath(path).endsWith('/bin');
 }
 
-/**
- * Returns the app root from a given path.
- * The app root is the first part of the normalized path.
- * If the normalized path is empty, returns an empty string.
- * @param {string} path Path to extract the app root from
- * @returns {string} App root
- */
 function getAppRootFromPath(path: string): string {
   return normalizePath(path).split('/')[0] ?? '';
 }
 
-/**
- * FolderContentView is a component that displays the content of a given folder.
- * It receives a folder object and some callbacks as props.
- * It renders a list of subfolders and a list of files.
- * If the folder is inside the bin tree, it renders a list of trash items instead.
- * It also handles some logic related to the multiselect feature.
- * @param {FolderNode} folder The folder to display the content of.
- * @param {function} onOpenFolder A callback to open a folder.
- * @param {function} onSelectFile A callback to select a file.
- * @param {function} onMove A callback to move an item.
- * @param {function} onOpenTrashEntry A callback to open a trash entry.
- */
 export default function FolderContentView({
   folder,
   onOpenFolder,
@@ -91,11 +65,9 @@ export default function FolderContentView({
   const subFolders = folder.children.filter(isFolderNode);
   const files = folder.children.filter(isFileNode);
 
-  // NORMAL
   const multiSelectActive = useSelectionStore((s) => s.multiSelectActive);
   const clearNormalSelection = useSelectionStore((s) => s.clearNormalSelection);
 
-  // BIN
   const binMultiSelectActive = useSelectionStore((s) => s.binMultiSelectActive);
   const binSelection = useSelectionStore((s) => s.binSelection);
   const clearBinSelection = useSelectionStore((s) => s.clearBinSelection);
@@ -108,13 +80,11 @@ export default function FolderContentView({
 
   const appRoot = useMemo(() => getAppRootFromPath(folder.fullPath), [folder.fullPath]);
 
-  // Anti-états résiduels
   useEffect(() => {
     if (inBin && multiSelectActive) clearNormalSelection();
     if (!inBin && binMultiSelectActive) clearBinSelection();
   }, [inBin, multiSelectActive, binMultiSelectActive, clearNormalSelection, clearBinSelection]);
 
-  // Bin: multiselect uniquement à la racine
   useEffect(() => {
     if (inBin && !isBinRoot && binMultiSelectActive) {
       clearBinSelection();
@@ -142,14 +112,10 @@ export default function FolderContentView({
     return listBin.data?.items ?? [];
   }, [inBin, listBin.data]);
 
-  // BIN actions
   const selectedTrashIds = useMemo(() => Array.from(binSelection), [binSelection]);
   const hasBinSelection = selectedTrashIds.length > 0;
 
   const deleteForever = trpc.trash.deleteForever.useMutation({
-    /**
-     * On success, invalidate the trash list and the cloudinary folder tree, and clear the bin selection.
-     */
     onSuccess: async () => {
       await utils.trash.listBin.invalidate();
       await utils.cloudinary.getFolderTree.invalidate();
@@ -158,13 +124,6 @@ export default function FolderContentView({
     onError: (err) => console.error('[trash.deleteForever] failed:', err),
   });
 
-  /**
-   * Vide la corbeille en supprimant définitivement tout son contenu.
-   *
-   * Affiche un popup de confirmation avant de supprimer.
-   *
-   * Si la corbeille est déjà vide, affiche un message d'erreur.
-   */
   async function handleEmptyBin() {
     const ok = confirm('⚠️ Vider la corbeille ?\n\nTout le contenu sera supprimé définitivement.');
     if (!ok) return;
@@ -202,7 +161,6 @@ export default function FolderContentView({
     deleteForever.mutate({ appRoot, ids: selectedTrashIds });
   }
 
-  // Normal (non-bin) drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
 
@@ -232,13 +190,11 @@ export default function FolderContentView({
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
       onMouseDownCapture={(e) => {
-        // ✅ sortir du multiselect en cliquant dans le vide
         if (!activeMultiSelect) return;
 
         const el = e.target as Element | null;
         if (!el) return;
 
-        // ✅ ne pas clear quand on clique sur les contrôles (toolbar etc)
         if (el.closest('[data-no-clear-multiselect="true"]')) return;
 
         const insideItem = el.closest('[data-content-item="true"]');
@@ -250,7 +206,6 @@ export default function FolderContentView({
     >
       {inBin ? (
         <>
-          {/* ✅ Toolbar (protégée du clear) */}
           <div className="mb-2 flex gap-2" data-no-clear-multiselect="true">
             <button
               onClick={handleEmptyBin}
@@ -300,7 +255,7 @@ export default function FolderContentView({
                       key={it.id}
                       trashId={it.id}
                       displayName={it.displayName}
-                      previewUrl={it.previewUrl ?? null}
+                      publicId={it.publicId ?? null}
                       canMultiSelect={canBinMultiSelect}
                       onOpen={(trashId) => onOpenTrashEntry?.(trashId)}
                     />

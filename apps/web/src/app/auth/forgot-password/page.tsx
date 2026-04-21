@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX, useMemo, useState } from "react";
-import { trpc } from "@/lib/trpcClient";
+import { trpc } from "@/core/trpc/trpcClient";
 
 /**
  * /auth/forgot-password

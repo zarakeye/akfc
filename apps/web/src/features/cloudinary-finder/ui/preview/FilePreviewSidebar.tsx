@@ -2,8 +2,9 @@
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { FileNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
-import { trpc } from '@/lib/trpcClient';
+import type { FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
+import { getMediaUrl } from '../../utils/getMediaUrl';
+import { trpc } from '@/core/trpc/trpcClient';
 
 type Props = {
   file: FileNode;
@@ -266,7 +267,7 @@ function FilePreviewSidebarInner({ file, onClose, readOnly }: Props): JSX.Elemen
 
       <div className="flex-1 flex items-center justify-center p-4">
         <Image
-          src={file.url}
+          src={getMediaUrl(file, "large")}
           alt={file.name}
           width={1200}
           height={1200}

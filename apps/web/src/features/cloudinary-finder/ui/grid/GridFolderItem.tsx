@@ -2,12 +2,13 @@
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { FolderNode, TreeNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+import type { FolderNode, TreeNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import { explorerNodeToDragSource } from '@/features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
 
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
 import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
+import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
 
 type Props = {
   folder: FolderNode;
@@ -238,11 +239,11 @@ export default function GridFolderItem({ folder, onOpenFolder, visibleNodes }: P
 
               const previews = nodesForGhost.map((n) => {
                 if (n.type === 'file') {
-                  const thumbUrl = n.url.replace(
-                    '/upload/',
-                    '/upload/w_128,h_128,c_fit,dpr_auto,f_auto/'
-                  );
-                  return { kind: 'file' as const, name: n.name, thumbUrl };
+                  return {
+                    kind: 'file' as const,
+                    name: n.name,
+                    thumbUrl: getMediaUrl(n, 'thumb'),
+                  };
                 }
                 return { kind: 'folder' as const, name: n.name };
               });

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import LoginForm from "@/features/auth-ui/LoginForm";
+import LoginForm from "@/features/auth/components/LoginForm";
 import UserMenu from "@/features/app-shell/UserMenu";
 import { Suspense, useState } from "react";
 import Image from "next/image";
@@ -61,7 +61,7 @@ export default function Header() {
           <span>Nos activités</span>
           <Image
             src="/chevron-white.svg"
-            alt='chevron'
+            alt=""
             aria-hidden="true"
             width={30}
             height={30}

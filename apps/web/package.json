@@ -16,6 +16,7 @@
     "minisearch": "^7.2.0",
     "next-mdx-remote": "^6.0.0",
     "radix-ui": "^1.4.3",
+    "react-ts-tab-lib": "^1.9.4",
     "remark-frontmatter": "^5.0.0",
     "remark-mdx": "^3.1.1",
     "remark-parse": "^11.0.0",

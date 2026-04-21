@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 
 import { TreeView } from '@/features/cloudinary-finder/ui/tree/TreeView';
 import FolderContentView from '@/features/cloudinary-finder/ui/content/FolderContentView';
@@ -9,12 +9,13 @@ import { FilePreviewSidebar } from '@/features/cloudinary-finder/ui/preview/File
 import BinRootView from '@/features/cloudinary-finder/ui/trash/bin/BinRootView';
 import TrashFolderView from '@/features/cloudinary-finder/ui/trash/navigator/TrashFolderView';
 import { injectStatusRoots } from '@/features/cloudinary-finder/utils/mapping/injectStatusRoots';
-import { FolderNode, FileNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
 
+import type { FolderNode, FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import { BreadCrumb } from '@/features/cloudinary-finder/ui/breadcrumb/BreadCrumb';
-import { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
+import type { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
+
 import AppTreeWrapper from '../tree/AppTreeWrapper';
-import { canMove } from 'packages/backend/src/cloudinary/move.guards';
+import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 import MultiSelectSidebar from '../multiSelect/MultiSelectSidebar';
 
@@ -23,21 +24,10 @@ import LoadingOverlay from '@/components/ui/LoadingOverlay';
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
 const INITIAL_PATH = `${APP_SHORT_NAME}`;
 
-/**
- * Normalize a path by removing leading and trailing slashes.
- * @param {string} p Path to normalize
- * @returns {string} Normalized path
- */
 function normalizePath(p: string): string {
   return p.replace(/^\/+|\/+$/g, '');
 }
 
-/**
- * Recursively search for a folder by its full path.
- * @param {FolderNode} node The node to start searching from
- * @param {string} path The full path of the folder to find
- * @returns {FolderNode | null} The found folder or null if not found
- */
 function findFolderByPath(node: FolderNode, path: string): FolderNode | null {
   if (!node) return null;
   if (node.fullPath === path) return node;
@@ -52,12 +42,6 @@ function findFolderByPath(node: FolderNode, path: string): FolderNode | null {
   return null;
 }
 
-/**
- * Checks if an element is editable.
- * This function checks if an element is an input, textarea, select, or if it has the contentEditable attribute set to true.
- * @param {EventTarget | null} el The element to check
- * @returns {boolean} True if the element is editable, false otherwise
- */
 function isEditableTarget(el: EventTarget | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
   const tag = el.tagName.toLowerCase();
@@ -66,15 +50,6 @@ function isEditableTarget(el: EventTarget | null): boolean {
   return false;
 }
 
-/**
- * FinderLayout component.
- *
- * @returns {JSX.Element} A JSX element representing the FinderLayout component.
- *
- * @remarks
- * This component is the main layout of the application. It contains the tree view, the explorer view, the file preview sidebar, and the multi-select sidebar.
- * It also handles the move operation and the selection of files and folders.
- */
 export default function FinderLayout() {
   const [currentPath, setCurrentPath] = useState(INITIAL_PATH);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
@@ -103,29 +78,17 @@ export default function FinderLayout() {
   const utils = trpc.useUtils();
 
   const move = trpc.cloudinary.move.useMutation({
-    /**
-     * Invalidate the folder tree and clear the normal and bin selections on success.
-     */
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
       clearNormalSelection();
       clearBinSelection();
     },
-    
-    /**
-     * Called when the move operation fails.
-     * @param {Error} err The error that occurred while moving the item.
-     */
     onError: (err) => {
       console.error('[move] failed:', err);
     },
   });
 
   const trashToBin = trpc.trash.trashToBin.useMutation({
-    /**
-     * Invalidate the folder tree and clear the normal and bin selections on success.
-     * It is called after a successful move operation.
-     */
     onSuccess: async () => {
       await utils.cloudinary.getFolderTree.invalidate();
       await utils.trash.listBin.invalidate();
@@ -156,11 +119,6 @@ export default function FinderLayout() {
     const active = multiSelectActive || binMultiSelectActive;
     if (!active) return;
 
-    /**
-     * Function to clear the selection when the user clicks outside of the tree,
-     * explorer and sidebar.
-     * @param {MouseEvent} event The click event.
-     */
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node | null;
       if (!target) return;
@@ -183,10 +141,6 @@ export default function FinderLayout() {
     const active = multiSelectActive || binMultiSelectActive;
     if (!active) return;
 
-    /**
-     * Clear the normal and bin selections when the Escape key is pressed.
-     * Does not clear the selections if the target is an editable element.
-     */
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return;
       if (isEditableTarget(e.target)) return;
@@ -203,12 +157,6 @@ export default function FinderLayout() {
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !tree) return <div>Erreur</div>;
 
-  /**
-   * Handle the open event of a folder/file.
-   * It sets the current path, clears the selected file, trash preview and context,
-   * and clears the normal and bin selections.
-   * @param {string} path The path of the folder/file to open.
-   */
   function handleOpen(path: string) {
     setCurrentPath(path);
     setSelectedFile(null);
@@ -219,17 +167,6 @@ export default function FinderLayout() {
     clearBinSelection();
   }
 
-  /**
-   * Handles a move intent.
-   * If the move is not allowed, it logs a warning and does nothing.
-   * If the target is a virtual folder with status 'bin', it moves the source to the trash.
-   * If the source is a file, it moves the file to the trash.
-   * If the source is a folder, it moves the folder to the trash.
-   * If the source is a selection, it moves the selection to the trash.
-   * If the target is not a virtual folder with status 'bin', it moves the source to the target.
-   * In all cases, it clears the selected file, trash preview and context.
-   * @param {MoveIntent} intent The move intent to handle.
-   */
   function handleMove(intent: MoveIntent) {
     if (!canMove(intent.source, intent.target)) {
       console.warn('[DnD] Move not allowed', intent);
@@ -329,12 +266,19 @@ export default function FinderLayout() {
                 clearNormalSelection();
                 clearBinSelection();
               }}
-              onSelectTrashFile={({ name, url, previousPath }) => {
-                if (!url) {
-                  alert('Preview indisponible (URL manquante).');
+              onSelectTrashFile={({ name, publicId, previousPath }) => {
+                if (!publicId) {
+                  alert('Preview indisponible (publicId manquant).');
                   return;
                 }
-                setSelectedFile({ type: 'file', name, fullPath: `${APP_SHORT_NAME}/bin/${name}`, url });
+
+                setSelectedFile({
+                  type: 'file',
+                  name,
+                  fullPath: `${APP_SHORT_NAME}/bin/${name}`,
+                  publicId,
+                });
+
                 setTrashPreviewMeta({ previousPath });
               }}
             />
@@ -356,7 +300,7 @@ export default function FinderLayout() {
                   type: 'file',
                   name: file.name,
                   fullPath: `${APP_SHORT_NAME}/bin/${trashCtx.displayName}/${trashCtx.relativePath}/${file.name}`,
-                  url: file.url,
+                  publicId: file.publicId,
                 });
                 setTrashPreviewMeta({ previousPath: file.previousPath });
               }}

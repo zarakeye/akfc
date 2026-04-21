@@ -7,20 +7,16 @@ order: 1
 
 # Project architecture
 
-Cette page présente la structure globale du projet.
+Cette page présente l’architecture globale du projet.
 
-Le repository est organisé comme un **monorepo** séparant clairement :
+L’objectif n’est pas seulement de décrire des dossiers, mais de comprendre **comment les différentes couches collaborent** pour construire une application complète.
 
-- l’interface utilisateur
-- la logique backend
+Le projet est organisé comme un **monorepo**, permettant de regrouper :
+
+- le frontend
+- le backend
 - les contrats partagés
 - la documentation
-
-Cette séparation permet :
-
-- une architecture plus claire
-- un partage de types sécurisé
-- une évolution indépendante des différentes couches.
 
 ---
 
@@ -28,9 +24,9 @@ Cette séparation permet :
 
 <ProjectArchitectureTree />
 
-Cette vue montre l’organisation générale du repository.
+Cette vue donne une représentation concrète du repository.
 
-Chaque dossier a un rôle spécifique dans l’architecture du projet.
+Chaque dossier correspond à une **responsabilité claire**, ce qui permet de structurer le projet de manière scalable.
 
 ---
 
@@ -38,7 +34,12 @@ Chaque dossier a un rôle spécifique dans l’architecture du projet.
 
 <ProjectArchitectureLayers />
 
-Cette organisation permet de séparer clairement les responsabilités.
+L’architecture repose sur une séparation forte entre :
+
+- **présentation (frontend)**
+- **transport (tRPC)**
+- **logique métier (backend modules)**
+- **accès aux données (Prisma / Cloudinary / email)**
 
 ---
 
@@ -48,25 +49,22 @@ Cette organisation permet de séparer clairement les responsabilités.
   steps={[
     "Client React",
     "tRPC Router",
-    "Services métier",
-    "Prisma",
-    "Database",
+    "Modules métier",
+    "Services",
+    "Prisma / Cloudinary / Email",
   ]}
 />
 
 Lorsqu’un utilisateur effectue une action :
 
 1. le **client React** déclenche une requête
-2. la requête est traitée par un **router tRPC**
-3. le router délègue la logique à un **service métier**
-4. le service interagit avec **Prisma**
-5. Prisma communique avec la **base de données**
-
-Cette organisation permet de garder :
-
-- des routers légers
-- une logique métier centralisée
-- un accès aux données bien structuré.
+2. la requête est envoyée au **router tRPC**
+3. le router appelle un **module métier**
+4. le module délègue la logique à des **services**
+5. les services interagissent avec :
+   - la base de données via **Prisma**
+   - le stockage via **Cloudinary**
+   - ou des services externes comme **email**
 
 ---
 
@@ -76,90 +74,173 @@ Cette organisation permet de garder :
 
 Application frontend basée sur Next.js.
 
-Elle contient :
+Elle est structurée par **features**, ce qui permet de regrouper :
 
-- l’interface utilisateur
-- les pages de documentation
-- les composants UI
-- les hooks React
-- les stores Zustand
+- les composants
+- les formulaires
+- les hooks
+- les actions serveur
 
-C’est également ici que se trouve la documentation pédagogique du projet.
+Chaque feature correspond à un **domaine fonctionnel** (auth, admin, pictures, etc.).
+
+La documentation MDX est également intégrée ici, ce qui permet de créer une **doc vivante directement connectée au code**.
 
 ---
 
 ### packages/backend
 
-Contient la logique serveur.
+Le backend est organisé autour d’un dossier central :
 
-On y trouve notamment :
+```text
+modules/
+```
 
-- les **routers tRPC**
-- les **services métier**
-- la **gestion des sessions**
-- l’intégration **Prisma**
+Chaque module représente un domaine métier :
 
-Le backend n’est pas directement exposé comme une API REST, mais via **tRPC**.
+- `auth`
+- `users`
+- `roles`
+- `permissions`
+- `categories`
+- `courses`
+- `trash`
+- `uploads`
+- `cloudinary`
+
+Chaque module contient généralement :
+
+- un **router tRPC**
+- éventuellement des **services métier**
+- des utilitaires liés au domaine
+
+#### Exemple
+
+```text
+modules/trash/
+  router.ts
+  services/
+  utils.ts
+```
+
+Cette approche permet :
+
+- une forte cohérence métier
+- une meilleure scalabilité
+- une maintenance facilitée
+
+---
+
+### Infrastructure backend
+
+En dehors des modules, le backend contient aussi des couches transverses :
+
+#### `trpc/`
+
+- définition du contexte
+- middlewares
+- configuration des procédures
+
+#### `lib/`
+
+- utilitaires techniques (auth, sécurité, session)
+
+#### `email/`
+
+- templates
+- services d’envoi
+
+#### `middlewares/`
+
+- middlewares globaux (ex: `requireAdmin`)
 
 ---
 
 ### packages/contracts
 
-Ce package contient les éléments partagés entre client et serveur.
-
-Principalement :
+Ce package centralise :
 
 - les **schémas Zod**
 - les **types TypeScript**
 - les **contrats d’API**
 
-Cela garantit que :
+Il garantit que :
 
-- le frontend et le backend utilisent exactement les mêmes types
-- les validations sont centralisées.
+- le frontend et le backend partagent exactement les mêmes types
+- les validations sont unifiées
+
+👉 C’est un élément clé pour éviter les erreurs de synchronisation.
 
 ---
 
 ### prisma
 
-Contient le **modèle de données** et les migrations.
-
-On y trouve :
+Contient le modèle de données :
 
 - `schema.prisma`
 - les migrations
-- la configuration de la base de données
+- la configuration de la base
 
-Prisma agit comme couche d’accès aux données pour les services backend.
+Prisma est utilisé comme **couche d’accès aux données** par les services backend.
 
 ---
 
 ## Pourquoi cette architecture ?
 
-Cette architecture apporte plusieurs avantages :
+### Séparation claire des responsabilités
 
-### séparation claire des responsabilités
+Chaque couche a un rôle précis :
 
-Chaque couche a un rôle précis.
+- UI → frontend
+- transport → tRPC
+- logique → modules backend
+- données → Prisma / Cloudinary
 
-### partage de types sécurisé
+---
 
-Grâce au package `contracts`, le client et le serveur partagent les mêmes schémas.
+### Architecture modulaire
 
-### meilleure maintenabilité
+Les modules backend permettent de :
 
-La logique métier n’est pas mélangée avec :
+- isoler chaque domaine métier
+- ajouter facilement de nouvelles fonctionnalités
+- éviter les dépendances croisées
 
-- l’interface utilisateur
-- la couche réseau
-- la base de données.
+---
+
+### Partage de types sécurisé
+
+Grâce à `packages/contracts` :
+
+- aucune duplication de types
+- validation cohérente entre client et serveur
+
+---
+
+### Scalabilité
+
+Cette architecture permet :
+
+- d’ajouter de nouveaux modules sans casser l’existant
+- de faire évoluer le projet vers un SaaS complet
+
+---
+
+## Ce qu’il faut retenir
+
+- le projet est structuré autour des **domaines métier**
+- tRPC agit comme **couche de transport typée**
+- Prisma gère l’accès aux données
+- les modules backend centralisent la logique
+- le frontend est organisé par **features**
+
+👉 L’ensemble forme une architecture cohérente, maintenable et évolutive.
 
 ---
 
 ## Navigation dans l’architecture
 
-Pour explorer plus en détail chaque partie :
+Pour approfondir :
 
 - voir la section **Domain**
 - voir la section **Patterns**
-- voir les **Tutorials**
+- suivre les **Tutorials**

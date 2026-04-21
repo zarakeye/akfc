@@ -1,0 +1,3113 @@
+---
+title: tRPC / Backend
+description: Comprendre pourquoi tRPC devient une évidence dans une architecture monorepo TypeScript avec Next.js App Router.
+section: Tutorials
+order: 3
+---
+
+## Introduction — Quand se brise la continuité
+
+Nous sortons de **Prisma** avec une base enfin propre.  
+Pas seulement des tables, mais une structure : une donnée **claire**, **cohérente**, **partagée**.
+
+Puis viennent les **forms**.  
+Nous apprenons à capter une intention utilisateur, à la valider, à la transformer correctement pour l’intégrer dans le système.
+
+Tout semble alors s’aligner.
+
+**Prisma** donne une forme.  
+Les **forms** donnent une entrée.  
+La suite paraît évidente : *la donnée circule*.
+
+Et pourtant, c’est précisément ici que quelque chose se fissure.
+
+---
+
+Dans un flux classique, rien d’alarmant.
+
+Nous saisissons une donnée,  
+nous l’envoyons,  
+le serveur la reçoit,  
+la traite,  
+puis répond.
+
+Tout fonctionne.
+
+Mais si nous regardons **ce qui se passe entre le frontend et le backend**, une incohérence apparaît.
+
+---
+
+🧠 Nous avons construit une **donnée typée**.
+
+Et malgré cela, nous la faisons passer par ceci :
+
+<ArchitectureDiagram
+  steps="Frontend typé | JSON | API | Backend | Prisma"
+/>
+
+---
+
+💥 Ce passage crée une rupture.
+
+👉 Une donnée typée  
+👉 devient JSON  
+👉 puis est reconstruite  
+
+---
+
+Pour bien sentir cette rupture, imaginons une scène simple.
+
+Nous avons préparé un plat minutieux dans notre cuisine. Chaque ingrédient a sa place, chaque ustensile est à portée de main, chaque texture est contrôlée. Puis, pour servir ce plat à la table voisine — à deux mètres — nous le passons au mixeur.
+
+Le plat arrive. Il est encore nutritif. Il est même mangeable. Mais sa forme a disparu.
+
+C’est exactement ce qui se passe entre notre frontend typé et notre backend typé quand nous les faisons communiquer via JSON. Nous avons construit une structure riche côté client, nous la transmettons à deux mètres logiques, et pour ce trajet minuscule nous la mixons.
+
+---
+
+<Callout type="warning">
+⚠️ Le problème n’est pas l’appel réseau.
+
+Le problème, c’est la transformation d’une donnée typée en **JSON intermédiaire**, qui **brise sa continuité**.
+</Callout>
+
+---
+
+💡 Une question apparaît alors :
+
+> **pourquoi traduire en JSON une donnée que le système connaît déjà ?**
+
+---
+
+Dans ce projet, cette question devient centrale.
+
+Nous sommes dans **Next.js App Router** :
+
+- frontend et backend cohabitent  
+- ils partagent les mêmes types  
+- ils manipulent déjà la même donnée  
+
+---
+
+👉 Dans ce contexte, le JSON n’est plus une nécessité.
+
+Il devient une **habitude héritée** d’une époque où frontend et backend vivaient réellement sur des serveurs séparés, dans des langages différents, avec des équipes différentes.
+
+Nous n’avons plus aucune de ces frontières.  
+Et pourtant nous payons encore leur coût.
+
+---
+
+<Callout type="insight">
+🧠 La vraie fracture n’est pas entre frontend et backend.
+
+Elle apparaît lorsque la donnée est **forcée de changer de nature** pour circuler.
+</Callout>
+
+---
+
+## 🎯 Ce que nous allons faire
+
+Nous n’allons pas simplement apprendre tRPC.
+
+Nous allons reconstruire, étape par étape, une compréhension fine de ce qui se passe entre le moment où l’utilisateur clique quelque part et le moment où la base de données répond.
+
+---
+
+👉 Nous allons comprendre :
+
+- comment une donnée entre dans le système  
+- comment elle circule  
+- comment elle est validée  
+- comment elle est sécurisée  
+- comment elle est transformée  
+- comment elle ressort  
+
+---
+
+👉 Et surtout :
+
+> **comment préserver sa continuité du début à la fin**
+
+---
+
+## 🚀 Le changement de modèle
+
+Nous ne verrons plus :
+
+- des requêtes  
+- des routes  
+- du JSON  
+
+---
+
+Nous verrons :
+
+👉 un **flux structuré**
+
+---
+
+Un système dans lequel :
+
+- la donnée reste typée  
+- le contexte est reconstruit  
+- l’intention est explicite  
+- chaque couche a un rôle clair  
+
+---
+
+Et c’est exactement ce que nous allons construire.
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement empiler des notions. Nous allons construire une compréhension progressive, en trois mouvements, puis recomposer le tout à la fin.
+
+- **Mouvement 1 — Comprendre la fracture.** Nous regardons le modèle REST en face, nous identifions où et pourquoi il devient incohérent dans un monorepo TypeScript, et nous découvrons la forme que prend sa remplaçante : un flux structuré, où le contexte et l’intention sont séparés.
+- **Mouvement 2 — Composer une procédure.** Nous ouvrons un vrai router métier, nous voyons comment la logique se répartit entre procédure, guard, service et Prisma, et nous apprenons à fabriquer une procédure dans le bon ordre.
+- **Mouvement 3 — Durcir chaque étape.** Nous reprenons chaque couche pour la solidifier : protéger finement (RBAC), valider l’entrée (Zod), gérer les erreurs (TRPCError), maîtriser la sortie (DTO).
+
+La **Section 11** reprendra ensuite le flux complet, pour le lire d’un seul regard.
+
+---
+
+## Mouvement 1 — Comprendre la fracture
+
+Avant d’écrire quoi que ce soit, nous devons comprendre pourquoi le modèle que nous connaissons tous — frontend, API, JSON, backend — commence à craquer dans notre stack. Et surtout : ce qui prend sa place, et sous quelle forme.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 1** — Nous reprenons le même projet, la même donnée, et nous posons la question qui change tout : *et si nous arrêtions de traduire la donnée ?*
+- **Section 2** — Nous redessinons la carte du système pour y faire apparaître le vrai point d’ancrage — le fichier `core.ts` où naît le contexte.
+- **Section 3** — Nous séparons proprement deux choses que REST mélange : l’environnement d’une requête (le contexte) et son intention (la procédure).
+
+À la fin de ce mouvement, nous saurons lire un appel tRPC non plus comme « une requête qui part et revient », mais comme une intention nommée, exécutée dans un contexte déjà prêt.
+
+---
+
+## 1 — Et si le problème venait du modèle lui-même ?
+
+Nous reprenons exactement le même point de départ.
+
+Même projet.  
+Même stack.  
+Même donnée.
+
+Rien n’a changé.
+
+Et pourtant… quelque chose a bougé.
+
+Pas dans le code.  
+🧠 Dans la manière de regarder le système.
+
+---
+
+Jusqu’ici, nous fonctionnions avec un réflexe presque automatique :
+
+> “frontend → API → backend → base de données”
+
+Un enchaînement logique. Familier. Rassurant.
+
+C’est ce que nous avons appris dans les tutoriels de REST. C’est ce que nous retrouvons dans la plupart des projets. C’est même ce que proposent les templates de démarrage.
+
+Mais maintenant que la fracture est visible…
+
+ce modèle commence à poser problème.
+
+---
+
+💥 Le point de friction n’est plus abstrait.
+
+Nous savons exactement où cela casse :
+
+👉 au moment où la donnée typée devient du **JSON**.
+
+---
+
+Donc la question change.
+
+Nous ne cherchons plus :
+
+> “comment faire une meilleure API ?”
+
+Nous commençons à nous demander :
+
+> **et si nous arrêtions de traduire la donnée ?**
+
+---
+
+Nous reprenons un cas simple : créer un utilisateur.
+
+Mais cette fois, nous imposons une contrainte :
+
+👉 la donnée ne doit **jamais perdre sa nature typée** pendant le trajet.
+
+---
+
+Dans ce cadre, écrire ceci devient immédiatement suspect :
+
+<CodeSnippet
+  title="Réflexe REST classique"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="await fetch(&quot;/api/user&quot;, {\n  method: &quot;POST&quot;,\n  headers: {\n    &quot;Content-Type&quot;: &quot;application/json&quot;,\n  },\n  body: JSON.stringify(data),\n})"
+/>
+
+---
+
+Parce que cette ligne contient déjà le problème :
+
+👉 `JSON.stringify`
+
+Ce n’est pas une fonction neutre. C’est un sérialiseur — un appareil qui prend une structure riche et la traduit en une chaîne de caractères aplatie.
+
+Pendant cette traduction, plusieurs informations disparaissent :
+
+- une `Date` devient une string  
+- un `BigInt` ne survit même pas (il jette une erreur)  
+- une instance de classe perd son prototype  
+- un `Map` ou un `Set` deviennent un objet générique ou un tableau  
+- et surtout : **tous les types TypeScript s’évaporent**  
+
+Côté serveur, quand nous récupérons ce body, nous recevons un `unknown`. Nous devons parser, valider, reconstruire. Nous devons deviner.
+
+---
+
+💡 Nous tentons alors autre chose.
+
+Pas une implémentation complète.  
+Juste une idée.
+
+---
+
+Et si, au lieu d’envoyer une requête…
+
+nous appelions directement une capacité du backend ?
+
+---
+
+<CodeSnippet
+  title="Idée (pseudo-code)"
+  language="ts"
+  kind="educational"
+  codeJson="await backend.user.create({\n  email,\n  password,\n})"
+/>
+
+---
+
+Ce n’est pas encore une solution.
+
+Mais c’est suffisant pour provoquer un déclic.
+
+---
+
+🧠 Immédiatement, plusieurs choses changent :
+
+- plus de route à construire  
+- plus de JSON à fabriquer  
+- plus de contrat implicite à deviner  
+
+👉 et surtout, nous restons **dans le monde typé**
+
+Parce qu’une fonction, contrairement à une URL, porte son contrat dans sa signature. TypeScript sait ce qu’elle attend. TypeScript sait ce qu’elle retourne. Il n’y a plus rien à reconstruire.
+
+---
+
+<Callout type="insight">
+Ce que nous cherchons ici, ce n’est pas une nouvelle syntaxe.
+
+C’est une façon de laisser la donnée circuler **sans jamais quitter son contexte typé**.
+</Callout>
+
+---
+
+## La bascule mentale
+
+À ce stade, quelque chose se transforme.
+
+Nous cessons de penser :
+
+> “frontend → API → backend”
+
+Et nous commençons à penser :
+
+> **client → système**
+
+---
+
+Ce n’est pas un simple changement de mots.
+
+C’est un changement de modèle.
+
+---
+
+Dans une approche REST classique, nous aurions :
+
+<ArchitectureDiagram
+  steps="Client | JSON | API | Backend | Database"
+/>
+
+La frontière est forte.  
+Elle est assumée.
+
+Elle est même documentée : on écrit une spec OpenAPI, on génère des clients, on maintient les deux côtés synchronisés à la main.
+
+---
+
+Mais dans notre contexte **Next.js App Router**, cette frontière commence à devenir artificielle.
+
+En effet :
+
+- frontend et backend cohabitent  
+- ils partagent les mêmes types  
+- ils manipulent la même donnée  
+
+👉 Nous ne sommes pas face à deux systèmes éloignés.  
+Nous sommes face à **un seul système, fragmenté artificiellement**.
+
+---
+
+💥 Et c’est précisément ici que le modèle REST commence à montrer ses limites.
+
+Le coût qu’il fait payer — sérialisation, duplication de types, reconstruction des structures, validation manuelle — était justifié quand les deux côtés étaient réellement séparés. Ici, ce coût n’a plus de contrepartie.
+
+---
+
+## Ce qui commence à émerger
+
+Nous ne parlons pas encore de tRPC en détail, mais quelque chose devient visible.
+
+Nous voulons :
+
+- appeler une capacité backend sans passer par une route manuelle  
+- conserver le typage de bout en bout  
+- centraliser la validation  
+- éviter toute reconstruction  
+
+---
+
+👉 En une phrase :
+
+> **arrêter de traduire**
+
+---
+
+<Callout type="concept">
+Le problème n’est pas “comment mieux appeler une API”.
+
+Le problème est : pourquoi cette API existe encore comme frontière dans un système qui n’en a plus réellement besoin ?
+</Callout>
+
+---
+
+Et à ce stade, quelque chose devient évident.
+
+Pas brutalement.
+
+Mais progressivement.
+
+---
+
+💡 Ce que nous cherchons existe déjà.
+
+---
+
+Une couche qui :
+
+- remplace les endpoints  
+- transporte les appels  
+- conserve les types  
+- respecte la continuité  
+
+---
+
+Et c’est exactement ici que **tRPC** entre en jeu.
+
+Pas comme une nouveauté  
+👉 mais comme une conséquence logique.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi tRPC porte ce nom
+
+Le nom tRPC signifie *TypeScript Remote Procedure Call*. Ce n’est pas un hasard : RPC est un paradigme plus ancien que REST, dans lequel le client appelle directement des fonctions qui s’exécutent ailleurs, comme si elles étaient locales. REST a longtemps dominé parce que le web exigeait un découplage fort et des protocoles stables entre systèmes hétérogènes.
+
+tRPC ne réinvente rien. Il remet au goût du jour une idée éprouvée, en l’adaptant à une situation précise : celle où frontend et backend parlent déjà la même langue — TypeScript — et partagent déjà leur code.
+
+Dans ce contexte, le RPC redevient plus naturel que REST.
+
+---
+
+Nous n’allons pas encore plonger dans son implémentation.
+
+Parce qu’il reste une chose à comprendre. Une chose essentielle :
+
+> 🧠 Si tRPC fonctionne aussi bien ici, ce n’est pas par magie.  
+C’est parce que l’architecture du projet le rend possible.
+
+Et c’est exactement ce que nous allons explorer maintenant.
+
+---
+
+👉 **Où nous en sommes :** nous avons vu que la fracture n’est pas un accident, mais la conséquence d’une frontière artificielle que notre stack a rendue inutile. tRPC n’est donc pas une nouveauté à apprendre — c’est la suite logique d’un système qui n’a plus besoin de traduire la donnée pour qu’elle circule. Reste à ouvrir la carte : voir où, concrètement, dans le code, cette continuité prend corps.
+
+---
+
+## 2 — La carte du système (avec le vrai point d’ancrage)
+
+Nous avons posé le problème, identifié la fracture et fait émerger une contrainte simple :
+
+👉 **la donnée ne doit plus être traduite en JSON pour circuler**
+
+---
+
+Maintenant, nous entrons dans le système réel — non pas pour accumuler du code,  
+🧠 mais pour comprendre **où et comment la continuité est garantie**.
+
+---
+
+## Une nouvelle carte (claire)
+
+Avant :
+
+<ArchitectureDiagram
+  steps="Client | JSON | API (routes) | Backend | Prisma | Database"
+/>
+
+Maintenant :
+
+<ArchitectureDiagram
+  steps="Client | tRPC call | tRPC Context | tRPC Procedure | Prisma | Database"
+/>
+
+💥 Le point clé :
+
+👉 **l’API disparaît comme frontière forte**  
+👉 elle est remplacée par **un flux structuré**
+
+Attention : l’API ne disparaît pas physiquement. Il existe toujours une route HTTP qui reçoit la requête — tRPC passe par le réseau, comme REST. Ce qui disparaît, c’est la frontière **mentale** et **architecturale**. Nous ne pensons plus en endpoints. Nous ne maintenons plus de contrat externe. Le réseau devient un détail d’implémentation, non plus un élément de conception.
+
+---
+
+## Étape 1 — L’appel (sans sérialisation JSON)
+
+Côté client, nous ne “fabriquons plus une requête”.
+
+Nous appelons une capacité du système :
+
+<CodeSnippet
+  title="Appel (pseudo-code)"
+  language="ts"
+  kind="educational"
+  codeJson="await trpc.user.create({\n  email,\n  password,\n})"
+/>
+
+💡 Immédiatement :
+
+- pas de `fetch`  
+- pas de `JSON.stringify`  
+- pas de route à construire  
+
+👉 nous restons **dans le typé**
+
+Et ce “rester dans le typé” n’est pas seulement confortable pour le développeur. C’est ce qui permet à l’autocomplétion de fonctionner, au compilateur de détecter les erreurs avant l’exécution, et aux refactorings d’être sûrs. Le jour où nous renommons un champ dans le schéma Prisma, TypeScript nous indique immédiatement tous les endroits — côté serveur et côté client — où ce champ est utilisé.
+
+Nous ne découvrons plus les erreurs seulement en production. Nous les découvrons durant le développement, pendant que nous tapons.
+
+---
+
+## Étape 2 — Le contexte (introduit tôt, ancré dans le code)
+
+Avant toute logique métier, le système ne traite pas directement la donnée.
+
+🧠 Il commence par reconstruire **le cadre dans lequel cette donnée va prendre du sens**.
+
+Pour bien saisir ce concept de *contexte*, une image aide. Imaginons une salle de réunion où se tient chaque jour une nouvelle délibération. Avant chaque réunion, un concierge silencieux prépare la salle : il place les dossiers sur la table, vérifie qui a le badge d’accès, s’assure que la cafetière fonctionne, note l’heure et la liste des participants.
+
+Quand les participants entrent, ils n’ont rien à préparer. Tout est déjà là. Ils peuvent se concentrer entièrement sur la délibération.
+
+Le contexte tRPC, c’est ce concierge. Il travaille silencieusement, **avant chaque procédure**, pour que la procédure n’ait plus à se soucier de qui est connecté, de quelle est la session, ou d’où se trouve la base de données.
+
+---
+
+Dans une API classique, chaque requête arrive seule.  
+La route qui la reçoit doit reconstruire le contexte à partir de rien :
+
+- lire le body  
+- retrouver la session  
+- vérifier l’utilisateur  
+- accéder à la base de données  
+
+👉 chaque route répète ce travail.
+
+Et c’est exactement ce que nous voulons éviter. Pas seulement pour des raisons de performance ou de duplication de code, mais pour une raison plus profonde : chaque fois qu’un développeur doit se souvenir de faire ces vérifications, il peut les oublier. Et dans un backend, oublier une vérification, c’est ouvrir une faille.
+
+---
+
+Ici, ce travail est **centralisé une fois pour toutes**… dans `core.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="1-50"
+  snippetHighlight="8-14,36-50"
+  snippetTitle="createTRPCContext : le contexte défini une fois"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du fichier `core.ts`
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="1-72"
+  title="Comment le contexte est défini, typé et injecté"
+  stepsJson="[{&quot;title&quot;:&quot;Le type TRPCContext décrit ce qui sera toujours disponible&quot;,&quot;body&quot;:&quot;Ce type est la promesse du système. Chaque procédure sait qu'elle aura accès à un sessionClient (potentiellement null), à prisma, à l'IP de la requête, et au user agent. Cette définition explicite, écrite une fois, gouverne tout le backend.&quot;,&quot;scope&quot;:&quot;1-14&quot;,&quot;focus&quot;:&quot;8-13&quot;},{&quot;title&quot;:&quot;AuthenticatedTRPCContext est un type plus fort, pour les procédures protégées&quot;,&quot;body&quot;:&quot;Une fois authentifié, le sessionClient ne peut plus être null. Le type requalifié évite d'avoir à écrire partout des vérifications défensives. TypeScript devient complice de l'architecture.&quot;,&quot;scope&quot;:&quot;1-22&quot;,&quot;focus&quot;:&quot;16-22&quot;},{&quot;title&quot;:&quot;createTRPCContext est la fabrique appelée à chaque requête&quot;,&quot;body&quot;:&quot;Cette fonction prend la requête, en extrait la session via getSessionFromRequest, ajoute l'accès à prisma, l'IP et le user-agent, puis renvoie un objet typé. Elle ne contient aucune logique métier — elle prépare le terrain.&quot;,&quot;scope&quot;:&quot;36-50&quot;,&quot;focus&quot;:&quot;36-49&quot;},{&quot;title&quot;:&quot;initTRPC crée l'instance tRPC avec superjson comme transformer&quot;,&quot;body&quot;:&quot;C'est ici que la magie du typage continu se joue. superjson remplace JSON.stringify par un encodage plus riche capable de préserver les Date, BigInt, Map, Set et plus encore. Sans superjson, une Date envoyée par le serveur arriverait comme string côté client. Avec superjson, elle reste une Date.&quot;,&quot;scope&quot;:&quot;51-58&quot;,&quot;focus&quot;:&quot;51-55&quot;},{&quot;title&quot;:&quot;isAuthed est le middleware qui construit protectedProcedure&quot;,&quot;body&quot;:&quot;Ce middleware vérifie la présence d'un user dans sessionClient. S'il est absent, il jette UNAUTHORIZED. S'il est présent, il requalifie le contexte vers AuthenticatedTRPCContext. Tout le reste du backend en profite sans y penser.&quot;,&quot;scope&quot;:&quot;60-72&quot;,&quot;focus&quot;:&quot;60-71&quot;}]"
+/>
+
+---
+
+👉 Ce qu’il faut comprendre tout de suite :
+
+- le contexte est **défini une seule fois**  
+- il est **reconstruit à chaque requête**  
+- il est **injecté automatiquement dans chaque procédure**
+
+---
+
+💡 Concrètement, ce contexte contient déjà :
+
+- la session (et donc l’utilisateur éventuel)  
+- ses permissions  
+- l’accès à Prisma  
+- des informations fiables sur la requête (IP, user-agent)  
+
+---
+
+👉 Ce que cela change est fondamental.
+
+Une procédure ne reçoit plus :
+
+- une donnée brute à traiter  
+
+Elle reçoit :
+
+- une donnée  
+- **dans un environnement déjà reconstruit et cohérent**
+
+---
+
+## 🔭 Pour aller plus loin — le transformer superjson
+
+Nous avons mentionné en passant `superjson`. Il mérite un arrêt, parce qu’il est la pièce discrète qui rend possible le typage continu dont nous parlons depuis le début.
+
+Le problème concret : `JSON.stringify` ne sait pas encoder tout ce que TypeScript sait exprimer. Un objet `Date`, après un aller-retour JSON, devient une string. Un `Map`, un `Set`, un `BigInt`, une valeur `undefined` dans un champ — tous perdent leur nature.
+
+Ce que fait `superjson` : il sérialise les données en deux parties. D’un côté, les valeurs elles-mêmes, encodées de manière à préserver leur forme. De l’autre, une petite annotation qui décrit quels types spéciaux existent dans la structure. À la réception, il reconstruit tout fidèlement.
+
+Résultat : quand le backend renvoie une `Date`, le client reçoit une `Date`. Quand le backend renvoie un `BigInt`, le client reçoit un `BigInt`. Le typage n’est plus une promesse qui se brise au passage du réseau — il est respecté jusqu’à la réception.
+
+C’est le chaînon qui rend crédible la phrase que nous répétons : *la donnée reste elle-même du début à la fin*.
+
+---
+
+<Callout type="insight">
+Dans tRPC, nous ne traitons jamais une requête isolée.
+
+Nous traitons une requête **déjà comprise par le système**.
+</Callout>
+
+💥 Résultat :
+
+- plus de duplication de logique  
+- plus de vérifications répétées  
+- plus d’incohérences entre routes  
+
+👉 Le backend ne devine plus le contexte.  
+👉 Il le **possède déjà**.
+
+---
+
+🧠 Mais une question reste en suspens :
+
+> quand est-ce que ce contexte est réellement créé ?
+
+---
+
+Il ne suffit pas de définir `createTRPCContext`.
+
+Encore faut-il comprendre **qui l’appelle**.
+
+Parce qu’une fonction, tant qu’elle n’est pas appelée, n’existe pas vraiment. Elle attend.
+
+---
+
+Dans ce projet, ce rôle est assuré par la route App Router dédiée à tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
+  filename="route.ts"
+  snippetRange="1-19"
+  snippetHighlight="10-16"
+  snippetTitle="Le point d’entrée tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du point d’entrée
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
+  filename="route.ts"
+  snippetRange="1-19"
+  title="Comment une requête tRPC entre dans le système"
+  stepsJson="[{&quot;title&quot;:&quot;Le segment dynamique [trpc] capture toutes les procédures&quot;,&quot;body&quot;:&quot;Le dossier /api/trpc/[trpc] définit une route unique qui intercepte tous les chemins commençant par /api/trpc. Une procédure user.create sera appelée via /api/trpc/user.create. tRPC parse ce chemin et sait quelle procédure exécuter.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;1-6&quot;},{&quot;title&quot;:&quot;runtime: nodejs garantit l'accès au client Prisma&quot;,&quot;body&quot;:&quot;Par défaut, Next.js peut déployer les routes sur l'edge runtime, qui ne supporte pas Prisma. Forcer runtime nodejs assure que la route tourne dans un environnement Node complet, avec tout ce dont le backend a besoin.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;7-7&quot;},{&quot;title&quot;:&quot;dynamic force-dynamic empêche le caching agressif&quot;,&quot;body&quot;:&quot;Les appels tRPC dépendent des cookies (session) et ne doivent jamais être servis depuis un cache statique. Cette directive dit explicitement à Next.js : chaque requête est unique, ne tente pas de mutualiser.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;8-8&quot;},{&quot;title&quot;:&quot;fetchRequestHandler est le pont officiel entre Next et tRPC&quot;,&quot;body&quot;:&quot;Cette fonction fournie par @trpc/server/adapters/fetch sait parler le langage des Request/Response du web standard. Elle reçoit la requête Next, la transmet au router tRPC, récupère la réponse, et la renvoie. C'est l'adaptateur qui relie les deux mondes.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;10-16&quot;},{&quot;title&quot;:&quot;createContext est la fonction qui fabrique le sac à dos du concierge&quot;,&quot;body&quot;:&quot;À chaque requête, fetchRequestHandler appelle cette fonction pour obtenir le contexte. Ici, nous lui passons notre createTRPCContext avec la requête. Le résultat sera ensuite injecté automatiquement dans la procédure cible.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;15-15&quot;},{&quot;title&quot;:&quot;handler est exporté à la fois comme GET et POST&quot;,&quot;body&quot;:&quot;tRPC utilise GET pour les queries (lecture) et POST pour les mutations (écriture). Les deux méthodes HTTP passent par le même handler. Cette symétrie simplifie la configuration et respecte les conventions REST sur les verbes.&quot;,&quot;scope&quot;:&quot;1-19&quot;,&quot;focus&quot;:&quot;19-19&quot;}]"
+/>
+
+---
+
+👉 C’est ici que tout s’assemble.
+
+À chaque requête :
+
+- la route `/api/trpc` reçoit l’appel  
+- `fetchRequestHandler` prend la main  
+- et appelle automatiquement `createTRPCContext(req)`  
+
+---
+
+💡 Autrement dit :
+
+> le contexte n’est pas appelé manuellement  
+> il est injecté **systématiquement à chaque requête tRPC**
+
+Il n’y a pas d’exception possible. Aucune procédure ne peut s’exécuter sans contexte. Aucune procédure ne peut contourner cette étape. C’est une garantie architecturale, pas une convention.
+
+---
+
+Et c’est exactement ce qui garantit :
+
+- une cohérence globale  
+- aucune duplication  
+- un backend toujours exécuté dans un environnement fiable  
+
+<Callout type="insight">
+Chaque appel tRPC déclenche :
+
+👉 création du contexte → exécution de la procédure
+
+Le contexte n’est jamais oublié.  
+Il fait partie du flux.
+</Callout>
+
+---
+
+## Étape 3 — La procédure (pas une route)
+
+Une fois le contexte prêt, nous entrons dans une procédure.
+
+<CodeSnippet
+  title="Procédure (pseudo-code)"
+  language="ts"
+  kind="educational"
+  codeJson="const createUser = procedure({\n  input,\n  ctx,\n}) => {\n  return ctx.prisma.user.create(input)\n}"
+/>
+
+💡 Différence majeure :
+
+- ❌ ce n’est pas une URL  
+- ❌ ce n’est pas une route  
+
+👉 c’est une **capacité du système**
+
+Pour bien sentir la différence, comparons deux façons de décrire la même chose.
+
+Avec REST, nous décrivons une **action sur une ressource** : `POST /api/users` signifie “ajouter un utilisateur à la collection des utilisateurs”. C’est une pensée géographique — il y a une ressource quelque part, et nous agissons dessus.
+
+Avec tRPC, nous décrivons une **capacité** : `user.create(data)` signifie “le système sait créer un utilisateur à partir de ces données”. C’est une pensée fonctionnelle — il y a une compétence dans le système, et nous l’invoquons.
+
+Ce déplacement mental est important. Il déplace notre attention de la topologie du réseau vers les intentions métier.
+
+---
+
+Chaque procédure :
+
+- reçoit une donnée validée  
+- reçoit un contexte fiable  
+- exécute la logique métier  
+- retourne une réponse typée  
+
+---
+
+## Le flux complet (sans rupture)
+
+<ArchitectureDiagram
+  steps="Client | tRPC call | Context (session + prisma) | Procedure | Prisma | Database | Réponse typée"
+/>
+
+🧠 Ce qu’il faut voir :
+
+- plus de JSON intermédiaire  
+- plus de reconstruction manuelle  
+- plus de perte de typage  
+
+👉 **la donnée reste elle-même du début à la fin**
+
+---
+
+## Le vrai changement
+
+Ce n’est pas juste une autre façon d’appeler un backend.
+
+💥 C’est une autre façon de le structurer.
+
+<Callout type="concept">
+tRPC remplace le modèle “API + JSON” par  
+👉 “contexte (core.ts) + procédures + données typées”.
+</Callout>
+
+---
+
+## Où regarder ensuite
+
+À ce stade, nous avons :
+
+- une carte claire  
+- un flux continu  
+- un point d’ancrage concret : **core.ts**
+
+🚀 Prochaine étape :
+
+👉 comprendre **en détail** comment `core.ts` :
+- crée le contexte  
+- distingue `publicProcedure` et `protectedProcedure`  
+- requalifie le type du contexte
+
+C’est là que le backend prend vraiment forme.
+
+---
+
+👉 **Où nous en sommes :** nous avons redessiné la carte, et le backend a maintenant un point d’ancrage clair — `core.ts`, traversé à chaque requête par `fetchRequestHandler`. Mais cette carte reste encore géographique : elle montre où les choses se trouvent. Il nous manque la sémantique — ce que chaque pièce *est*, par opposition à ce que les autres sont.
+
+---
+
+## 3 — Le cœur tRPC (contexte + intention)
+
+Nous avons vu en section 2 :
+
+- où le contexte est défini → `core.ts`  
+- quand il est créé → à chaque requête via `/api/trpc`  
+- qu’il est injecté automatiquement dans chaque procédure  
+
+Mais une ambiguïté importante reste à lever.
+
+Et cette ambiguïté touche à la façon même dont tRPC pense une requête.
+
+---
+
+## 🧠 Le point clé : une requête contient deux choses
+
+Une requête HTTP ne transporte pas seulement des données.
+
+Elle contient toujours :
+
+- un **environnement** (cookies, headers, IP, session…)  
+- une **intention** (ce que nous voulons faire)
+
+Cette distinction est facile à rater parce que dans REST, les deux sont mélangés. L’URL porte l’intention (`POST /users`), mais aussi parfois l’environnement (`/admin/users` change selon qui appelle). Les headers portent parfois de l’environnement (auth), parfois de l’intention (`X-Delete-After`). Le body porte principalement les données de l’intention. Tout est mélangé.
+
+Dans ce mélange, chaque route finit par devoir reconstruire les deux dimensions à la main. Chaque route devient un petit programme qui démêle l’environnement de l’intention avant de pouvoir agir.
+
+---
+
+👉 Et tRPC fait quelque chose de très important :
+
+💥 il **sépare ces deux dimensions**
+
+Cette séparation n’est pas cosmétique. Elle a des conséquences profondes sur la façon dont nous écrivons, testons et sécurisons notre backend.
+
+---
+
+## 🔥 Le vrai modèle tRPC
+
+👉 Ce n’est PAS :
+
+requête → traitement
+
+👉 C’est :
+
+requête → (contexte + procédure)
+
+Cette écriture est importante. Elle dit explicitement que le traitement a deux entrées distinctes, chacune ayant son rôle.
+
+---
+
+## 1) Le contexte = l’environnement
+
+Le contexte répond à :
+
+> “dans quel cadre cette action est exécutée ?”
+
+Il contient :
+
+- session  
+- utilisateur  
+- permissions  
+- accès Prisma  
+- informations liées à la requête  
+
+<CodeSnippet
+  title="Contexte (simplifié)"
+  language="ts"
+  kind="educational"
+  codeJson="type Context = {\n  sessionClient: SessionClient | null\n  prisma: PrismaClient\n}"
+/>
+
+---
+
+👉 Le contexte ne porte **aucune intention**
+
+Le contexte ne sait pas ce que nous allons faire. Il ne décide pas. Il est à la disposition de la procédure, comme un set d’outils posé sur la table. Si la procédure veut créer un utilisateur, elle utilisera `prisma`. Si elle veut vérifier les permissions, elle utilisera `sessionClient`. Mais le contexte lui-même ne fait rien.
+
+Reprenons notre analogie du concierge. Le contexte est le sac à dos préparé avant la réunion. Il contient des outils. Les participants décideront lesquels utiliser selon ce qu’ils veulent accomplir.
+
+---
+
+## 2) La procédure = l’intention
+
+La procédure répond à :
+
+> “qu’est-ce que nous voulons faire ?”
+
+<CodeSnippet
+  title="Procédure = intention"
+  language="ts"
+  kind="educational"
+  codeJson="trpc.user.create({ email, password })"
+/>
+
+---
+
+Une procédure exprime une action précise, nommée, typée. Son nom indique exactement ce qu’elle fait. Elle n’a pas besoin de décoder un verbe HTTP ou une URL pour savoir qui elle est.
+
+`user.create` crée un utilisateur.  
+`user.getAll` récupère tous les utilisateurs.  
+`post.delete` supprime un post.
+
+Pas d’ambiguïté.
+
+---
+
+## ⚠️ Un mot qui peut piéger : “router”
+
+Le mot “router” dans tRPC peut induire en erreur. En REST ou en Express, un router est lié aux URL : il enregistre des handlers pour des chemins spécifiques.
+
+Dans tRPC, ce n’est pas ce que fait un router.
+
+👉 Un router tRPC est simplement :
+
+> un **regroupement de procédures liées à un même domaine métier**
+
+<CodeSnippet
+  title="Router tRPC (regroupement de procédures)"
+  language="ts"
+  kind="educational"
+  codeJson="export const userRouter = router({\n  create: publicProcedure.mutation(...),\n  getAll: protectedProcedure.query(...),\n})"
+/>
+
+---
+
+👉 Ici :
+
+- `userRouter` ≠ `/user`
+- `create` ≠ `POST /user`
+
+Le router est une structure de namespace, pas un système de routing HTTP. Il permet de dire : “toutes ces procédures concernent les utilisateurs, regroupons-les”.
+
+Ensuite, ces routers se composent entre eux. Dans notre projet, il existe un router principal `appRouter` qui assemble tous les routers métier :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/index.ts"
+  filename="index.ts"
+  snippetRange="1-25"
+  snippetHighlight="13-23"
+  snippetTitle="appRouter : la composition des routers métier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce fichier révèle tout de suite la structure fonctionnelle du backend. Nous ne voyons pas une liste d’URL. Nous voyons une carte des domaines métier : authentification, utilisateurs, rôles, sessions, médias, corbeille, permissions, catégories, cours.
+
+C’est cette carte que le développeur utilise pour s’orienter dans le système. Et c’est aussi cette carte que TypeScript utilise pour exposer l’autocomplétion côté client : `trpc.user.*`, `trpc.role.*`, `trpc.cloudinary.*`.
+
+---
+
+## 🔥 REST vs tRPC
+
+<DocsTable
+  title="REST vs tRPC : où vivent les responsabilités"
+  columnsJson='["Concept","REST","tRPC"]'
+  rowsJson='[["Intention","URL + méthode HTTP","procédure"],["Organisation","routes","routers"],["Environnement","reconstruit dans chaque handler","contexte partagé"],["Typage","perdu via JSON","conservé via superjson"]]'
+/>
+
+---
+
+## 🧠 Relecture correcte du flux
+
+<ArchitectureDiagram
+  steps="Client | intention (procedure) | contexte (createContext) | exécution | Prisma"
+/>
+
+---
+
+<Callout type="insight">
+Le backend traite :
+
+👉 une intention (procédure)  
+👉 dans un contexte (environnement)
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+- contexte = environnement  
+- procédure = intention  
+- router = organisation  
+
+👉 séparation claire, backend propre
+
+Et cette séparation prépare tout ce qui suit. Parce que maintenant que nous savons distinguer l’environnement de l’intention, nous allons pouvoir lire un vrai router métier sans nous perdre — en gardant en tête ce qui se passe à chaque étape.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons basculé de modèle mental. Trois idées en sont ressorties :
+
+- **La fracture n’est pas réseau, elle est structurelle.** Ce qui coûte, ce n’est pas l’appel HTTP — c’est la traduction d’une donnée typée en JSON, qui impose une reconstruction à l’arrivée. Dans un monorepo où frontend et backend parlent la même langue, cette traduction n’a plus de contrepartie.
+- **Le flux a désormais un point d’ancrage concret.** Le fichier `core.ts` porte la définition du contexte ; `fetchRequestHandler` le déclenche à chaque requête ; chaque procédure le reçoit sans avoir à le reconstruire. Le contexte n’est plus un concept abstrait, c’est un emplacement dans le code.
+- **Une requête se lit en deux dimensions.** L’environnement (contexte) dit *dans quel cadre* l’action s’exécute ; l’intention (procédure) dit *ce que nous voulons faire*. tRPC sépare ces deux dimensions proprement — là où REST les mélangeait dans l’URL, les headers et le body.
+
+Le Mouvement 2 va maintenant prendre ces couches séparées et les composer : ouvrir un vrai router, voir comment la logique se répartit entre procédure, service et guard, puis apprendre à fabriquer une procédure dans le bon ordre.
+
+---
+
+## Mouvement 2 — Composer une procédure
+
+Savoir que l’environnement et l’intention sont deux choses distinctes, c’est un début. Mais dans un backend réel, une procédure n’est jamais seule : elle vit au milieu d’autres couches, chacune avec son rôle. Ce mouvement est celui de la composition — apprendre qui fait quoi, et dans quel ordre.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 4** — Nous ouvrons un vrai router métier et nous clarifions une ambiguïté qui piège beaucoup de débutants : d’où vient réellement `ctx` ?
+- **Section 5** — Nous sortons la logique de la procédure pour la placer dans un service, nous déplaçons la sécurité dans des guards, et nous voyons ce que tRPC apporte vraiment — et ce qu’il n’apporte pas.
+- **Section 6** — Nous apprenons à fabriquer une procédure concrète, dans le bon ordre, avec les bonnes contraintes, pour qu’elle se lise d’un seul regard.
+
+À la fin de ce mouvement, nous saurons non seulement *comprendre* une procédure existante, mais aussi en *écrire* une nouvelle, dans un backend réel, sans mélanger les responsabilités.
+
+---
+
+## 4 — Le router métier (là où l’intention devient action)
+
+Maintenant que le contexte est clarifié, nous pouvons enfin ouvrir un vrai router métier.
+
+Mais avant d’aller plus loin, un point doit être verrouillé.
+
+Parce que c’est le point où la plupart des développeurs débutants se perdent.
+
+---
+
+## 🧠 D’où vient réellement `ctx` ?
+
+En lisant une procédure pour la première fois, nous pourrions croire que `ctx` est créé ici.
+
+Ce n’est pas le cas.
+
+👉 `ctx` est produit **en amont** par `createTRPCContext`.
+
+Et surtout :
+
+👉 il n’est jamais appelé manuellement dans le router.
+
+Il serait même impossible de l’appeler manuellement : le router n’a pas accès à la requête HTTP. La requête vit à un niveau supérieur, dans la route App Router. Le router ne connaît que le résultat — l’objet `ctx` déjà construit, qui lui est remis.
+
+---
+
+## Le vrai flux
+
+<ArchitectureDiagram
+  steps="Client | /api/trpc | fetchRequestHandler | createTRPCContext(req) | ctx | procédure"
+/>
+
+---
+
+👉 Concrètement :
+
+- la requête arrive dans `/api/trpc`  
+- `fetchRequestHandler` prend la main  
+- `createTRPCContext(req)` est appelé  
+- un objet `ctx` est construit  
+- ce `ctx` est injecté dans la procédure  
+
+---
+
+<Callout type="insight">
+Une procédure ne construit jamais le contexte.
+
+Nous recevons toujours un environnement déjà reconstruit.
+</Callout>
+
+---
+
+## Ce que nous venons réellement observer ici
+
+Nous n’ouvrons pas ce fichier pour voir “une route utilisateur”.
+
+Nous l’ouvrons pour observer comment tRPC articule :
+
+- une **intention** (procédure)  
+- un **contexte** déjà prêt (`ctx`)  
+- une **exécution** (Prisma)  
+
+---
+
+## Un vrai router métier
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="1-60"
+  snippetHighlight="21-50"
+  snippetTitle="Le router d'authentification, un cas réel"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## 🧠 Lecture guidée du router auth
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="1-62"
+  title="Anatomie d'un router métier"
+  stepsJson="[{&quot;title&quot;:&quot;Les imports disent déjà beaucoup&quot;,&quot;body&quot;:&quot;Le router importe publicProcedure et protectedProcedure depuis core, des services métier (loginService, sendPasswordResetEmail), et prisma. Cette liste d'imports dessine déjà l'architecture : la sécurité vient d'en haut (core), la logique métier vient de côté (services), les données viennent d'en bas (prisma).&quot;,&quot;scope&quot;:&quot;1-16&quot;,&quot;focus&quot;:&quot;1-11&quot;},{&quot;title&quot;:&quot;authRouter est un objet, pas une liste de routes&quot;,&quot;body&quot;:&quot;router({...}) prend un objet dont les clés sont les noms des procédures. C'est exactement ainsi qu'on définit un namespace en TypeScript. Et c'est exactement ainsi que le client pourra y accéder : trpc.auth.login, trpc.auth.logout, etc.&quot;,&quot;scope&quot;:&quot;17-62&quot;,&quot;focus&quot;:&quot;21-22&quot;},{&quot;title&quot;:&quot;login est une publicProcedure parce qu'un utilisateur non connecté doit pouvoir l'appeler&quot;,&quot;body&quot;:&quot;C'est le choix architectural le plus évident : si login exigeait d'être déjà connecté, personne ne pourrait jamais se connecter. publicProcedure est donc nécessaire ici. Mais ce choix est explicite — c'est une décision, pas une omission.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;22-22&quot;},{&quot;title&quot;:&quot;.input valide l'entrée avant toute exécution&quot;,&quot;body&quot;:&quot;Le schéma Zod impose email valide et mot de passe d'au moins 12 caractères. Ces règles vivent ici, à la frontière. Si l'utilisateur envoie des données invalides, tRPC lève BAD_REQUEST automatiquement — le code de .mutation ne sera jamais exécuté.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;23-28&quot;},{&quot;title&quot;:&quot;.mutation reçoit input typé et délègue immédiatement&quot;,&quot;body&quot;:&quot;La procédure ne fait pas elle-même le travail. Elle appelle loginService, qui vit dans un fichier séparé. Ce choix est stratégique : la logique métier est testable sans tRPC, réutilisable par d'autres procédures, et le router reste lisible.&quot;,&quot;scope&quot;:&quot;29-50&quot;,&quot;focus&quot;:&quot;29-33&quot;},{&quot;title&quot;:&quot;logout est protectedProcedure parce qu'on ne peut pas se déconnecter si on n'est pas connecté&quot;,&quot;body&quot;:&quot;La logique inverse de login. Ici, protectedProcedure garantit que ctx.sessionClient.user existe. La procédure peut alors appeler deleteSessionFromCookie en toute confiance.&quot;,&quot;scope&quot;:&quot;52-58&quot;,&quot;focus&quot;:&quot;52-52&quot;},{&quot;title&quot;:&quot;getSession est publicProcedure mais lit quand même le contexte&quot;,&quot;body&quot;:&quot;Cette procédure est un cas intéressant. Elle est publique — pas besoin d'être connecté pour l'appeler. Mais elle lit ctx.sessionClient, qui peut être null. Le client obtient ainsi toujours une réponse : soit un sessionClient, soit null. C'est la procédure que le frontend appelle au démarrage pour savoir 'qui suis-je, maintenant ?'.&quot;,&quot;scope&quot;:&quot;60-62&quot;,&quot;focus&quot;:&quot;60-62&quot;}]"
+/>
+
+---
+
+## 1) L’intention vit dans la procédure
+
+👉 ici, nous ne définissons pas une route HTTP
+
+👉 nous exprimons une intention métier :
+
+- créer  
+- lire  
+- mettre à jour  
+- supprimer  
+
+<DocsTable
+  title="Où vit l’intention ?"
+  columnsJson='["Lecture","REST","tRPC"]'
+  rowsJson='[["Support principal","URL + méthode HTTP","nom de procédure"],["Exemple","POST /users","user.create(...)"],["Effet mental","il faut interpréter","l’intention est explicite"]]'
+/>
+
+---
+
+## 2) Le contexte est déjà prêt
+
+Quand la procédure s’exécute :
+
+👉 `ctx` est déjà disponible
+
+Donc nous pouvons directement :
+
+- accéder à Prisma via `ctx.prisma`  
+- lire l’utilisateur via `ctx.sessionClient.user`  
+- appliquer la logique métier  
+
+---
+
+👉 Nous ne faisons pas :
+
+- lire les cookies  
+- reconstruire la session  
+- deviner l’utilisateur  
+
+Toute cette plomberie a été faite en amont par le middleware et `createTRPCContext`. Si nous nous retrouvions à écrire `req.headers.get("cookie")` dans une procédure, ce serait le signe d’une fuite architecturale — quelque chose devrait vivre dans `core.ts`, pas ici.
+
+---
+
+## 3) Prisma termine le flux
+
+Prisma n’est pas le début.
+
+👉 c’est la fin logique du flux
+
+- contexte construit  
+- intention définie  
+- action exécutée  
+
+Dans notre architecture, Prisma est toujours le dernier maillon. Quand nous voyons `ctx.prisma.user.create(...)`, c’est que toutes les étapes précédentes ont réussi : authentification, validation, autorisation. Si l’une d’elles avait échoué, nous ne serions jamais arrivés ici.
+
+---
+
+## 🔥 Le circuit complet
+
+<ArchitectureDiagram
+  steps="Client | procédure (intention) | contexte (ctx) | router | Prisma | réponse"
+/>
+
+---
+
+## 🚀 Conclusion
+
+- `ctx` vient de `createTRPCContext`  
+- il est injecté automatiquement  
+- la procédure porte l’intention  
+- Prisma exécute  
+
+👉 séparation claire → backend lisible
+
+---
+
+🧠 À ce stade, nous appelons encore Prisma directement pour simplifier la lecture.
+
+Mais dans un backend réel, cette logique est généralement extraite dans des services et protégée par des guards.
+
+👉 C’est ce que nous allons introduire juste après.
+
+---
+
+👉 **Où nous en sommes :** nous avons ouvert un vrai router et dissipé l’ambiguïté sur `ctx` — il vient toujours d’en amont, jamais de la procédure elle-même. Mais dans cette première lecture, nous avons simplifié : la procédure parle directement à Prisma. Reste à voir ce qui se glisse entre les deux dans un backend réel — la séparation qui fait qu’un router reste lisible même quand la logique métier grossit.
+
+---
+
+## 5 — Le backend réel (services, guards et auth)
+
+Jusqu’ici, nous avons volontairement simplifié.
+
+Dans les exemples précédents, la procédure appelait directement Prisma.
+
+C’est utile pour comprendre le flux.
+
+Mais dans un backend réel, ce n’est pas ce que nous faisons.
+
+Et il y a une raison profonde à cela.
+
+---
+
+## 🧠 Le problème d’un router “trop intelligent”
+
+Si nous écrivons :
+
+<CodeSnippet
+  title="Logique métier directement dans la procédure"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="protectedProcedure.mutation(({ ctx, input }) => {\n  return ctx.prisma.user.create({ data: input })\n})"
+/>
+
+👉 nous mélangeons plusieurs responsabilités :
+
+- intention (procédure)  
+- logique métier  
+- accès base de données  
+
+---
+
+💥 Résultat :
+
+- duplication quand plusieurs procédures font la même chose  
+- code difficile à tester parce que dépendant de tRPC  
+- logique dispersée dans les routers  
+
+Et surtout, un effet pernicieux : quand une règle métier change — disons, “nous devons désormais envoyer un email de bienvenue lors de la création d’un utilisateur” — nous devons la répliquer partout où `user.create` apparaît. Y compris dans les scripts de seed, les tâches CRON, les tests. Et si nous en oublions un endroit, l’incohérence s’installe silencieusement.
+
+---
+
+## 🔥 La séparation des responsabilités
+
+Dans un backend propre, nous introduisons une séparation explicite :
+
+- **procédure** → intention  
+- **guard / middleware** → autorisation  
+- **service** → logique métier  
+- **Prisma** → accès aux données  
+
+Chaque couche a un rôle unique. Et chaque couche peut changer sans affecter les autres.
+
+---
+
+## 🧱 Nouvelle structure
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+## 1) Le service : la vraie logique métier
+
+Nous extrayons la logique dans un fichier séparé :
+
+<CodeSnippet
+  title="Service métier"
+  language="ts"
+  kind="pattern"
+  codeJson="export const userService = {\n  async createUser(ctx, input) {\n    return ctx.prisma.user.create({ data: input })\n  }\n}"
+/>
+
+---
+
+👉 Le service :
+
+- contient la logique métier, isolée  
+- peut être testé sans tRPC  
+- peut être réutilisé par plusieurs procédures, des scripts, des jobs  
+
+Regardons un vrai service du projet :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-52"
+  snippetHighlight="8-51"
+  snippetTitle="loginService : la logique métier extraite du router"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce service fait un travail précis : il cherche l’utilisateur par email, vérifie le hash du mot de passe, normalise les permissions, puis crée un JWT de session. Aucune trace de tRPC. Aucune trace de requête HTTP. Juste de la logique métier pure.
+
+C’est cette pureté qui le rend testable, réutilisable, et maintenable.
+
+---
+
+## 2) La procédure devient simple
+
+<CodeSnippet
+  title="Procédure orchestratrice"
+  language="ts"
+  kind="pattern"
+  codeJson="protectedProcedure.mutation(({ ctx, input }) => {\n  return userService.createUser(ctx, input)\n})"
+/>
+
+---
+
+👉 Elle :
+
+- reçoit l’intention  
+- délègue au service approprié  
+- ne contient plus de logique lourde  
+
+Cette légèreté n’est pas une perte — c’est un gain. Quand nous lisons un router, nous devons pouvoir embrasser en un coup d’œil toutes les intentions qu’il expose. Si chaque procédure fait trente lignes de logique métier, la carte du système devient illisible.
+
+---
+
+## 3) Les guards : sécuriser le flux
+
+Avant, nous écrivions peut-être ceci :
+
+<CodeSnippet
+  title="Vérification manuelle"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="if (!ctx.session.user) {\n  throw new Error('Unauthorized')\n}"
+/>
+
+---
+
+Dans chaque procédure. À chaque fois. Avec le risque d’oublier une fois sur cent.
+
+Avec tRPC :
+
+👉 cette logique est déplacée dans :
+
+- `protectedProcedure` (un middleware attaché globalement)  
+- ou un middleware spécialisé (`requirePermission`, `isAdmin`)  
+
+---
+
+<Callout type="insight">
+La sécurité ne doit pas être répétée dans chaque procédure.
+
+Elle doit être centralisée.
+</Callout>
+
+---
+
+## 🔥 Le rôle de protectedProcedure
+
+👉 `protectedProcedure` fait deux choses :
+
+- bloque l’accès si l’utilisateur n’est pas authentifié (jette `UNAUTHORIZED`)  
+- garantit que `ctx.sessionClient.user` existe (requalification TypeScript)  
+
+---
+
+💡 Donc dans le service appelé par une `protectedProcedure` :
+
+👉 nous pouvons supposer que l’utilisateur est présent, sans vérifier
+
+TypeScript le garantit. Le middleware `isAuthed` a requalifié `ctx.sessionClient` de `SessionClient | null` vers `AuthenticatedSessionClient`. Quand le service lit `ctx.sessionClient.user.id`, aucun `?` n’est nécessaire. La garantie est portée par les types.
+
+---
+
+## 🧠 Vue finale
+
+<DocsTable
+  title="Responsabilités dans le backend"
+  columnsJson='["Couche","Rôle"]'
+  rowsJson='[["procédure","porte l’intention"],["guard","sécurise l’accès"],["service","implémente la logique métier"],["Prisma","exécute sur la base de données"]]'
+/>
+
+---
+
+## 🚀 Le vrai flux final
+
+<ArchitectureDiagram
+  steps="Client | procédure (intention) | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+## 💥 Ce que tRPC apporte vraiment
+
+Il faut être précis ici, parce qu’il y a souvent une incompréhension.
+
+👉 tRPC ne remplace pas le backend
+
+tRPC ne contient pas notre logique métier. Il ne gère pas nos règles d’autorisation complexes. Il ne persiste pas nos données.
+
+👉 Il organise :
+
+- le flux (comment une requête traverse le système)  
+- le typage (comment les types circulent sans rupture)  
+- l’injection du contexte (comment chaque procédure hérite d’un environnement)  
+
+tRPC est une couche d’**orchestration**. Comme un chef d’orchestre, il ne joue pas lui-même les instruments. Il s’assure que chaque musicien entre au bon moment, dans la bonne tonalité.
+
+---
+
+<Callout type="concept">
+tRPC est une couche d’orchestration.
+
+Le cœur métier reste dans les services.
+</Callout>
+
+---
+
+## 🎯 Conclusion
+
+Nous avons maintenant une vision complète :
+
+- requête → contexte  
+- intention → procédure  
+- sécurité → guard  
+- logique → service  
+- données → Prisma  
+
+👉 chaque responsabilité est à sa place
+
+---
+
+🚀 Nous obtenons une architecture backend claire, testable et scalable.
+
+Et surtout : lisible. Un développeur qui rejoint le projet peut ouvrir un router et comprendre, en quelques minutes, ce que fait chaque procédure, ce qui la protège, et où chercher la logique métier associée.
+
+---
+
+👉 **Où nous en sommes :** nous avons les quatre couches — procédure, guard, service, Prisma — et nous savons pourquoi chacune doit rester à sa place. Reste à apprendre comment les **composer** dans l’écriture concrète d’une procédure : dans quel ordre, avec quelles contraintes, et surtout, comment faire en sorte que cette composition se lise d’un seul regard.
+
+---
+
+## 6 — Fabriquer une procédure
+
+Jusqu’ici, nous avons compris le système de l’extérieur :
+
+- la fracture créée par le **JSON**
+- la proximité réelle offerte par **App Router**
+- le rôle du **contexte**
+- la distinction entre **intention** et **environnement**
+- la place du **router**, des **services**, des **guards** et de **Prisma**
+
+Il manque maintenant une pièce très concrète :
+
+👉 **comment fabriquons-nous réellement une procédure tRPC ?**
+
+Pas une procédure abstraite.  
+Pas une “fonction qui ressemble à tRPC”.  
+
+Une vraie procédure, pensée correctement dans un backend réel.
+
+---
+
+## Une procédure n’est pas juste une fonction
+
+C’est le premier réflexe à corriger.
+
+Nous pourrions croire qu’une procédure, c’est simplement :
+
+<CodeSnippet
+  title="Vision trop simpliste"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="const createUser = (input) =&gt; {\n  return prisma.user.create({ data: input })\n}"
+/>
+
+Ce n’est pas complètement faux.
+
+Mais ce n’est pas encore une **procédure tRPC**.
+
+Une procédure tRPC, dans ce projet, est en réalité une composition de couches :
+
+- un **niveau d’accès**
+- une **validation d’entrée**
+- une **forme d’intention** (`query` ou `mutation`)
+- un **contexte déjà injecté**
+- une **délégation vers le métier**
+
+💡 Autrement dit, nous ne “déclarons” pas juste une procédure.
+
+👉 nous **la construisons**.
+
+Et cette construction suit un ordre. Pas un ordre arbitraire de style d’écriture, mais un ordre logique qui reflète la hiérarchie des responsabilités dans le système.
+
+---
+
+## La forme canonique d’une procédure
+
+Si nous réduisons la structure au squelette essentiel :
+
+<CodeSnippet
+  title="Squelette d’une procédure tRPC"
+  language="ts"
+  kind="educational"
+  codeJson="protectedProcedure\n  .input(z.object({\n    email: z.string().email(),\n    password: z.string().min(12),\n  }))\n  .mutation(async ({ ctx, input }) =&gt; {\n    return userService.createUser(ctx, input)\n  })"
+/>
+
+---
+
+🧠 Ce squelette dit déjà presque tout :
+
+- `protectedProcedure` → qui a le droit d’entrer ?
+- `.input(...)` → qu’a-t-on le droit de fournir ?
+- `.mutation(...)` → quelle intention exécute-t-on ?
+- `ctx` → dans quel environnement cela s’exécute-t-il ?
+- `userService.createUser(...)` → où vit réellement la logique métier ?
+
+Chaque partie répond à une question distincte. Et chaque question doit être répondue avant la suivante. C’est cette logique qui dicte l’ordre d’écriture.
+
+---
+
+## Une procédure se construit dans un ordre précis
+
+<DocsTable
+  title="Ordre de construction d’une procédure"
+  columnsJson='["Étape","Question traitée","Couche concernée"]'
+  rowsJson='[["1","Qui peut entrer ?","publicProcedure / protectedProcedure"],["2","Quelle entrée est acceptée ?",".input(zodSchema)"],["3","Que veut-on faire ?",".query(...) ou .mutation(...)"],["4","Dans quel environnement ?","ctx injecté par tRPC"],["5","Où vit la logique ?","service métier"]]'
+/>
+
+👉 Cet ordre matérialise une **hiérarchie de responsabilités**.
+
+Et cette hiérarchie a une propriété importante : **elle va du moins permissif au plus permissif**. Nous commençons par refuser tout le monde (choix du niveau d’accès), puis nous refusons les mauvaises entrées (validation), puis nous acceptons l’intention, puis nous exécutons. À chaque étape, nous pouvons encore dire non. Une fois dans le service, nous disons oui.
+
+---
+
+## Query vs Mutation — une distinction qui compte
+
+Avant d’entrer dans les exemples, il faut clarifier le choix entre `.query(...)` et `.mutation(...)`.
+
+La différence semble minime, mais elle porte une sémantique réelle :
+
+- `.query(...)` → **lecture**, idempotente, sans effet de bord. Peut être mise en cache.  
+- `.mutation(...)` → **écriture**, non idempotente, change l’état du système. Ne doit jamais être mise en cache.
+
+Côté HTTP, cela se traduit aussi : les queries passent en GET, les mutations en POST. Mais ce n’est qu’une conséquence. La distinction importante est sémantique : *est-ce que cette procédure modifie quelque chose ?*
+
+---
+
+## Premier exemple : une procédure publique
+
+Pour bien sentir cette construction, nous commençons par une procédure publique.
+
+Le bon candidat, c’est le router d’authentification. Il montre très bien qu’une procédure n’a pas besoin d’être protégée pour être structurée.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="22-50"
+  snippetHighlight="22-30,31-50"
+  snippetTitle="Une procédure publique bien construite"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="22-50"
+  title="Anatomie d'une procédure publique avec gestion d'erreur"
+  stepsJson="[{&quot;title&quot;:&quot;publicProcedure : un choix explicite, pas un défaut&quot;,&quot;body&quot;:&quot;Nous ne commençons pas par protectedProcedure. Ce choix est délibéré : un utilisateur non connecté doit pouvoir se connecter. Écrire publicProcedure est une façon de déclarer cette décision architecturale explicitement.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;22-22&quot;},{&quot;title&quot;:&quot;.input valide la forme AVANT toute exécution&quot;,&quot;body&quot;:&quot;Le schéma Zod est évalué par tRPC avant même que .mutation ne soit appelée. Si l'email n'est pas valide, ou si le mot de passe fait moins de 12 caractères, tRPC lève BAD_REQUEST automatiquement. Le code métier ne s'exécute jamais sur des données invalides.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;23-28&quot;},{&quot;title&quot;:&quot;.mutation reçoit input typé&quot;,&quot;body&quot;:&quot;Grâce à Zod, input est strictement typé : { email: string, password: string }. TypeScript le sait. L'autocomplétion fonctionne. Aucun cast n'est nécessaire.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;29-29&quot;},{&quot;title&quot;:&quot;La procédure délègue immédiatement au service&quot;,&quot;body&quot;:&quot;loginService fait le vrai travail : retrouver l'utilisateur, vérifier le hash, créer la session. Le router ne duplique pas cette logique — il l'invoque.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;32-33&quot;},{&quot;title&quot;:&quot;Le try/catch transforme une erreur technique en résultat métier&quot;,&quot;body&quot;:&quot;Ici, la procédure fait quelque chose d'inhabituel : elle capture l'erreur de loginService et la transforme en objet { success: false, error: 'INVALID_CREDENTIALS' }. C'est un choix pragmatique pour le login : au lieu de faire remonter TRPCError au client via une exception, nous renvoyons un résultat lisible. Pour d'autres procédures, nous laisserons l'erreur remonter naturellement (section 9).&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;37-47&quot;}]"
+/>
+
+---
+
+<Callout type="insight">
+Une procédure bien construite ne commence jamais par Prisma.
+
+Elle commence par un **contrat d’accès**, un **contrat d’entrée**, puis une **intention**.
+</Callout>
+
+---
+
+## Deuxième exemple : une procédure protégée
+
+Maintenant, nous ajoutons une contrainte supplémentaire.
+
+La procédure ne doit plus seulement être valide. Elle doit aussi être réservée à un utilisateur authentifié.
+
+C’est ici que `protectedProcedure` change vraiment de dimension.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="118-130"
+  snippetHighlight="118-130"
+  snippetTitle="Une procédure protégée : updateProfile"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée d'updateProfile
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="118-130"
+  title="Une procédure où le ctx est réellement exploité"
+  stepsJson="[{&quot;title&quot;:&quot;protectedProcedure garantit un user authentifié&quot;,&quot;body&quot;:&quot;Contrairement à login, updateProfile exige que l'utilisateur soit déjà connecté. protectedProcedure bloque l'accès aux anonymes et requalifie le contexte : ctx.sessionClient.user devient non-nullable.&quot;,&quot;scope&quot;:&quot;118-130&quot;,&quot;focus&quot;:&quot;118-118&quot;},{&quot;title&quot;:&quot;Le schéma vient de packages/contracts&quot;,&quot;body&quot;:&quot;updateMeFormSchema est un contrat partagé entre frontend et backend. Le formulaire côté client utilise le même schéma pour sa validation. Zéro duplication, zéro divergence possible.&quot;,&quot;scope&quot;:&quot;118-130&quot;,&quot;focus&quot;:&quot;119-119&quot;},{&quot;title&quot;:&quot;userId vient du contexte, pas de l'input&quot;,&quot;body&quot;:&quot;C'est un détail de sécurité crucial. L'utilisateur ne peut pas spécifier quel profil modifier via l'input — cela permettrait de modifier le profil de quelqu'un d'autre. Le userId est lu dans ctx.sessionClient.user.id, garanti par protectedProcedure. L'utilisateur ne peut modifier que SA fiche.&quot;,&quot;scope&quot;:&quot;118-130&quot;,&quot;focus&quot;:&quot;121-121&quot;},{&quot;title&quot;:&quot;Le spread combine input validé et données dérivées&quot;,&quot;body&quot;:&quot;data reçoit ...input (les champs du formulaire, validés) plus isFirstLogin: false (une conséquence métier : dès qu'on met à jour son profil pour la première fois, on n'est plus dans l'état premier login).&quot;,&quot;scope&quot;:&quot;118-130&quot;,&quot;focus&quot;:&quot;123-127&quot;}]"
+/>
+
+---
+
+## Ce que `protectedProcedure` change réellement
+
+Le gain n’est pas seulement :
+
+> “il faut être connecté”
+
+Le gain est plus profond.
+
+👉 La procédure est construite sur un **contexte requalifié**.  
+👉 Le backend n’a plus à se demander à chaque ligne si l’utilisateur existe.
+
+Cela change immédiatement la lecture du code.
+
+Nous passons de :
+
+- logique défensive (`if (!ctx.user) throw...`)  
+- vérifications répétées  
+- accès dispersés  
+
+à :
+
+- hypothèses plus fortes  
+- code plus lisible  
+- responsabilité mieux répartie  
+
+---
+
+## Authentification, rôle, permission : trois niveaux différents
+
+Il faut être très net sur ces trois termes. Ils sont souvent confondus, et cette confusion mène à des backends fragiles.
+
+<DocsTable
+  title="Trois niveaux à ne pas confondre"
+  columnsJson='["Niveau","Question posée","Où cela pèse sur la procédure ?"]'
+  rowsJson='[["Authentification","Qui es-tu ?","protectedProcedure / session"],["Rôle","Quelle place occupes-tu ?","middleware / règle d’accès"],["Permission","As-tu le droit précis d’agir ?","guard / RBAC"],["Procédure","Quelle intention veux-tu exécuter ?","query / mutation"]]'
+/>
+
+🧠 Si nous mélangeons ces niveaux, le backend devient vite confus. Si nous les séparons, la procédure devient au contraire très lisible :
+
+- d’abord nous savons **qui** agit (authentification)  
+- ensuite nous savons **s’il a le droit** (rôle / permission)  
+- enfin nous exécutons **ce qu’il veut faire** (intention)
+
+---
+
+## Le vrai but : alléger la procédure, pas la gonfler
+
+Nous pourrions être tentés d’empiler toujours plus dans la procédure : validation, sécurité, logique métier, Prisma, gestion d’erreur, mapping. 
+
+Mais une bonne procédure ne doit pas tout absorber.
+
+👉 Elle doit surtout **orchestrer**.
+
+C’est pour cela que, dans un backend propre :
+
+- la validation est décrite à l’entrée (Zod)  
+- l’accès est centralisé par middleware / guard  
+- la logique métier est déplacée dans un service  
+- Prisma reste le dernier maillon  
+
+<Callout type="concept">
+Fabriquer une procédure, ce n’est pas écrire toute la logique au même endroit.
+
+C’est composer proprement :
+👉 accès → validation → intention → contexte → délégation métier
+</Callout>
+
+---
+
+## Le modèle final d’une bonne procédure
+
+À ce stade, nous pouvons résumer la forme canonique d’une procédure tRPC dans ce projet :
+
+<ArchitectureDiagram
+  steps="Niveau d’accès | Validation Zod | Intention (query/mutation) | ctx injecté | service métier | Prisma"
+/>
+
+Et cette fois, la lecture devient très stable.
+
+Une bonne procédure :
+
+- ne recrée pas le contexte  
+- ne disperse pas la sécurité  
+- ne fait pas porter toute la logique au router  
+- ne commence pas par Prisma  
+
+👉 elle reçoit un cadre, affirme une intention, puis délègue correctement.
+
+---
+
+## Ce que la suite doit maintenant approfondir
+
+Nous savons désormais **fabriquer** une procédure.
+
+La suite logique consiste à descendre plus profondément dans chacune des couches qui la composent :
+
+- **protéger** finement une procédure (RBAC, permissions, guards)
+- **valider** l’entrée avec Zod sans bruit inutile
+- **gérer** les erreurs sans casser la lisibilité du flux
+- **mapper** correctement les sorties vers des DTO stables
+
+🚀 Autrement dit : nous avons le squelette.
+
+La suite va montrer comment le rendre vraiment robuste.
+
+---
+
+👉 **Où nous en sommes :** nous savons désormais composer une procédure — intention d’abord, validation, contexte, sécurité, délégation au service, retour. Le squelette tient. Reste à durcir chaque articulation, une par une, pour qu’il résiste à la vie réelle d’un backend en production.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons pris les pièces séparées du Mouvement 1 et nous les avons articulées. Trois idées en sont ressorties :
+
+- **Le router orchestre, mais ne fait pas.** Une procédure nomme une intention, vérifie son cadre, et délègue. Si nous voyons de la logique métier lourde à l’intérieur d’une procédure, c’est qu’elle est au mauvais endroit.
+- **Les services portent la logique, isolément de tRPC.** Ils ne connaissent ni les routes, ni les cookies, ni le protocole — ils travaillent sur un `ctx` et des données déjà validées. C’est cette ignorance qui les rend testables, réutilisables, et stables dans le temps.
+- **Une procédure se compose dans un ordre précis.** Guard, validation, règle métier, service, réponse — chaque étape apparaît une fois, à sa place, et peut être lue indépendamment des autres. C’est cet ordre qui transforme une procédure de « bloc de code » en « document lisible ».
+
+Le Mouvement 3 va maintenant reprendre ces couches une par une, pour les solidifier : la sécurité, la validation, les erreurs, la sortie.
+
+---
+
+## Mouvement 3 — Durcir chaque étape
+
+Le squelette tient. Mais un squelette n’est pas encore un backend robuste. Chaque couche que nous avons posée doit maintenant être durcie — pas pour faire plus, mais pour faire mieux : plus précisément, plus lisiblement, plus fidèlement.
+
+Voici les quatre étapes que nous allons traverser :
+
+- **Section 7** — Nous descendons dans la sécurité : distinguer authentification et autorisation, déplacer les règles RBAC dans un middleware centralisé, et comprendre pourquoi certaines vérifications ne sont pas de la sécurité mais des règles métier.
+- **Section 8** — Nous plaçons Zod comme frontière du backend : valider une fois, au bon endroit, avec un contrat qui peut rester local à la procédure ou monter dans `packages/contracts`.
+- **Section 9** — Nous apprenons à lever des `TRPCError` avec les bons codes, à laisser les erreurs remonter sans les transformer en résultats, et à garder le flux lisible même dans le cas non favorable.
+- **Section 10** — Nous maîtrisons la sortie via des DTO : filtrer avec `select`, stabiliser avec `satisfies`, et décider où vit le mapping selon sa portée.
+
+À la fin de ce mouvement, chaque articulation du flux sera explicite, contrôlée et documentée par le code lui-même.
+
+---
+
+## 7 — Protéger une procédure (auth, rôle, permission, RBAC)
+
+Nous savons maintenant fabriquer une procédure.
+
+Mais quelque chose résiste encore.
+
+Une procédure peut être parfaitement construite — contexte injecté, validation en place, délégation propre — et rester fondamentalement poreuse.
+
+Parce qu’une procédure bien construite n’est pas nécessairement une procédure bien protégée.
+
+---
+
+## 🧠 Là où une confusion s’installe facilement
+
+Si nous ne faisons pas attention, plusieurs notions commencent à se mélanger.
+
+L’utilisateur est-il connecté ?  
+A-t-il un rôle ?  
+A-t-il la bonne permission ?  
+Peut-il exécuter cette intention précise ?
+
+Tout finit par s’appeler “auth”.
+
+Et à ce moment-là, une chose imperceptible se produit.
+
+👉 Le système commence à perdre sa lisibilité.
+
+Pas dans le code exécuté — dans le code lu. Parce que quand un mot unique désigne trois concepts distincts, le lecteur doit recharger le contexte à chaque ligne pour deviner duquel on parle.
+
+---
+
+## 🔥 Reposer les niveaux clairement
+
+Nous avons en réalité trois couches distinctes, qui ne répondent pas à la même question :
+
+<DocsTable
+  title="Trois niveaux à ne pas confondre"
+  columnsJson='["Niveau","Question posée","Ce que cela change"]'
+  rowsJson='[["Authentification","Qui agit ?","Le contexte est garanti non-nul"],["Autorisation","A-t-il le droit ?","L’action est filtrée"],["Intention","Que veut-il faire ?","La procédure s’exécute"]]'
+/>
+
+Ces trois niveaux sont liés — mais ils ne se substituent pas l’un à l’autre.
+
+👉 Nous n’exécutons jamais une intention sans savoir qui agit et avec quel droit.
+
+---
+
+## 1) `protectedProcedure` : un premier seuil, pas une protection complète
+
+À ce stade, il serait tentant de croire que `protectedProcedure` suffit.
+
+Lisons ce qu’il fait réellement dans `core.ts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="60-72"
+  snippetHighlight="60-72"
+  snippetTitle="isAuthed : ce que protectedProcedure garantit vraiment"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce middleware fait deux choses précises.
+
+Il vérifie que `sessionClient.user` existe.  
+Et s’il existe, il **requalifie le contexte** : `ctx.sessionClient` devient `AuthenticatedSessionClient`, un type plus fort dans lequel `user` n’est plus nullable.
+
+---
+
+👉 Ce que cela change est immédiat.
+
+Dans toute procédure construite sur `protectedProcedure`, nous n’avons plus à écrire ceci :
+
+<CodeSnippet
+  title="Vérification redondante (anti-pattern)"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="if (!ctx.sessionClient?.user) {\n  throw new TRPCError({ code: 'UNAUTHORIZED' })\n}"
+/>
+
+👉 TypeScript le sait déjà.  
+👉 Le contexte le garantit.
+
+---
+
+Mais nous ne savons toujours pas si cet utilisateur a le droit d’agir.
+
+<Callout type="insight">
+`protectedProcedure` répond à "qui agit ?"
+
+Il ne répond pas encore à "a-t-il le droit d’agir ici ?"
+</Callout>
+
+---
+
+## 2) L’erreur naturelle : disperser la sécurité dans les procédures
+
+Sans structure claire, voilà ce qui finit par s’écrire :
+
+<CodeSnippet
+  title="Sécurité dispersée (anti-pattern)"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="protectedProcedure\n  .input(z.object({ id: z.string() }))\n  .mutation(async ({ ctx, input }) => {\n    const permissions = ctx.sessionClient.user.role?.permissions ?? []\n    if (!permissions.includes('manage_users')) {\n      throw new TRPCError({ code: 'FORBIDDEN' })\n    }\n    return ctx.prisma.user.delete({ where: { id: input.id } })\n  })"
+/>
+
+Ce code fonctionne.
+
+Mais en le lisant, quelque chose dérange.
+
+La vérification d’autorisation vit dans la logique d’exécution.  
+Le service ne peut pas être lu sans croiser la sécurité.  
+Et si dix procédures font la même chose, nous avons dix endroits où la règle peut dériver silencieusement.
+
+---
+
+💥 La sécurité est devenue un bruit diffus.
+
+Et le bruit diffus, en sécurité, est plus dangereux que l’absence totale. Parce qu’il donne l’illusion d’être protégé.
+
+---
+
+## 3) Le middleware : déplacer la sécurité au bon endroit
+
+Dans ce projet, la sécurité vit dans `middleware.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/middleware.ts"
+  filename="middleware.ts"
+  snippetRange="1-47"
+  snippetHighlight="3-24,26-46"
+  snippetTitle="requirePermission et isAdmin : deux guards distincts"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/trpc/middleware.ts"
+  filename="middleware.ts"
+  snippetRange="1-47"
+  title="Lecture guidée du middleware RBAC"
+  stepsJson="[{&quot;title&quot;:&quot;requirePermission : un guard paramétrable&quot;,&quot;body&quot;:&quot;requirePermission prend un nom de permission en argument et renvoie un middleware. Ce n'est pas une règle fixe — c'est une fabrique de règles. On peut l'appliquer différemment selon la procédure, sans dupliquer la logique.&quot;,&quot;scope&quot;:&quot;3-24&quot;,&quot;focus&quot;:&quot;3-5&quot;},{&quot;title&quot;:&quot;La vérification en deux temps&quot;,&quot;body&quot;:&quot;Le middleware commence par vérifier que l'utilisateur existe, puis qu'il possède la permission demandée. Ces deux vérifications sont intentionnellement séparées : elles produisent des codes d'erreur différents (UNAUTHORIZED vs FORBIDDEN), ce qui compte pour le client.&quot;,&quot;scope&quot;:&quot;3-24&quot;,&quot;focus&quot;:&quot;7-23&quot;},{&quot;title&quot;:&quot;isAdmin : un guard à sémantique explicite&quot;,&quot;body&quot;:&quot;isAdmin vérifie directement le nom du rôle. Ce n'est pas une permission — c'est un accès réservé à un profil administrateur. La distinction est importante : certaines actions ne sont pas une question de permission configurable, mais d'identité de rôle.&quot;,&quot;scope&quot;:&quot;26-46&quot;,&quot;focus&quot;:&quot;26-46&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi séparer permission et rôle ?
+
+Cette distinction n’est pas cosmétique.
+
+Un **rôle** est une étiquette large : ADMIN, COACH, MEMBRE. Il groupe un ensemble de droits sous un nom.
+
+Une **permission** est une capacité précise : `manage_users`, `edit_posts`, `delete_media`.
+
+Un rôle est composé de plusieurs permissions. Le lien se fait via la table de jointure `RolePermissions` que nous avons vue dans le schéma Prisma.
+
+Pourquoi avoir les deux ?
+
+- Les **permissions** permettent une granularité fine. Si demain nous voulons qu’un nouveau rôle puisse éditer les posts sans être ADMIN, nous lui donnons la permission `edit_posts` sans toucher au code.
+- Les **rôles** permettent une identité stratégique. Certaines actions ne sont pas négociables — être admin ou ne pas l’être est une décision structurelle, pas configurable.
+
+Un backend mature utilise les deux, pour des raisons différentes. `requirePermission("manage_users")` dit : *cette action est une capacité configurable*. `isAdmin` dit : *cette action est réservée au rôle administrateur, point*.
+
+---
+
+## 4) Ce que cela change dans le router
+
+Voyons maintenant comment ces guards s’appliquent dans un router réel.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="12-30"
+  snippetHighlight="13-15"
+  snippetTitle="Deux niveaux de protection dans le même router"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce que nous lisons ici est très instructif.
+
+`getAll`, `getById`, `create`, `delete` utilisent tous `.use(requirePermission("manage_users"))`.  
+`getProfileById`, lui, utilise `.use(isAdmin)`.
+
+---
+
+👉 Ce n’est pas la même chose.
+
+`requirePermission("manage_users")` dit : "cette action est accessible à quiconque possède cette permission, quel que soit son rôle."
+
+`isAdmin` dit : "cette action est réservée au rôle ADMIN, sans nuance."
+
+---
+
+<Callout type="concept">
+`requirePermission` → logique RBAC fine, configurable  
+`isAdmin` → accès stratégique, non délégable
+
+Ces deux patterns coexistent dans un même système parce qu’ils ne répondent pas au même besoin.
+</Callout>
+
+---
+
+## 5) Une règle métier qui ne ressemble pas à de la sécurité
+
+Il existe un cas particulièrement révélateur dans ce router.
+
+`updateUserRoleById` est protégée par `requirePermission("manage_users")`.  
+Mais elle contient aussi ceci :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="133-155"
+  snippetHighlight="139-143"
+  snippetTitle="Une règle métier au cœur de la protection"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un administrateur a le droit de modifier le rôle des autres utilisateurs.  
+Mais il ne peut pas modifier le sien.
+
+---
+
+👉 Ce n’est pas une question de permission.  
+👉 Ce n’est pas une question d’authentification.
+
+C’est une **règle métier** — une contrainte propre au domaine.
+
+Et elle vit ici, dans la procédure, parce que c’est exactement sa place. Le middleware ne peut pas la porter : il ne connaît pas l’input. C’est seulement quand la procédure reçoit `input.userId` qu’elle peut comparer avec `ctx.sessionClient.user.id` et détecter l’auto-modification.
+
+---
+
+<Callout type="insight">
+La sécurité RBAC filtre les accès.  
+Les règles métier filtrent les cas limites.
+
+Ces deux niveaux sont complémentaires — mais ils ne doivent pas être confondus.
+</Callout>
+
+---
+
+## 🔥 Le vrai bénéfice
+
+Le gain n’est pas seulement la sécurité.
+
+C’est la **lisibilité du contrat**.
+
+Quand nous lisons une procédure protégée correctement :
+
+<CodeSnippet
+  title="Procédure protégée, lisible d'un coup d'œil"
+  language="ts"
+  kind="pattern"
+  codeJson="getAll: protectedProcedure\n  .use(requirePermission('manage_users'))\n  .query(async ({ ctx }) => {\n    return ctx.prisma.user.findMany({ ... })\n  })"
+/>
+
+Nous savons immédiatement :
+
+- qui peut entrer → `protectedProcedure`
+- avec quel droit → `requirePermission("manage_users")`
+- ce qui est fait → `findMany`
+
+---
+
+👉 Trois lignes. Trois questions répondues.
+
+Et c’est cette lisibilité qui fait la différence quand un développeur arrive sur le projet. Il n’a pas besoin de chercher la logique de sécurité ailleurs. Elle est là, compactée en une ligne, au sommet de la procédure.
+
+---
+
+## 🧠 Le flux devient stable
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard (.use) | règle métier | service | Prisma | réponse"
+/>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne dispersons plus la sécurité dans les procédures.
+
+Nous la **composons en amont**, là où elle devient visible.
+
+<Callout type="concept">
+Une procédure bien protégée dit en une lecture :
+— qui peut entrer  
+— avec quel droit  
+— et ce qu’elle fait
+
+Le reste du code n’a plus à le deviner.
+</Callout>
+
+---
+
+La suite est naturelle.
+
+Nous savons construire une procédure.  
+Nous savons la protéger.
+
+👉 Il reste à garantir que ce qui entre est toujours valide.
+
+---
+
+👉 **Où nous en sommes :** la sécurité a trouvé sa place — dans des middlewares (`protectedProcedure`, `requirePermission`, `isAdmin`) qui vérifient une fois, au bon endroit, avec un type requalifié pour la suite. Et nous avons distingué ce qui est de la sécurité de ce qui est une règle métier. Reste à verrouiller l’autre frontière : l’entrée elle-même, avant que quoi que ce soit ne la touche.
+
+---
+
+## 8 — Valider l’entrée (Zod, au bon endroit)
+
+Nous avons structuré le flux, le contexte, la sécurité.
+
+Mais une faille potentielle subsiste.
+
+Une faille silencieuse — parce qu’elle n’empêche pas le code de tourner. Elle le laisse tourner sur des données incertaines.
+
+---
+
+## 🧠 La question que nous devons maintenant poser
+
+Que se passe-t-il si l’entrée est invalide ?
+
+---
+
+Sans cadre clair, plusieurs dérives apparaissent naturellement :
+
+- la validation vit côté client, et le serveur fait confiance  
+- la validation est dispersée dans les services, couche par couche  
+- chaque procédure vérifie les champs à sa façon  
+- des données incohérentes finissent par atteindre Prisma  
+
+---
+
+💥 Et à ce moment-là, le backend redevient fragile.
+
+Non pas parce qu’il casse — mais parce qu’il accepte des états qu’il ne devrait pas accepter. Et dans un backend, accepter un état invalide silencieusement, c’est créer une bombe à retardement. Nous ne le saurons que plus tard, quand quelque chose d’autre échouera parce qu’il compte sur une invariante que nous n’avons pas garantie.
+
+---
+
+## 🔥 Le principe fondamental
+
+Une procédure ne devrait jamais recevoir une donnée incertaine.
+
+Elle devrait recevoir :
+
+👉 une donnée **déjà validée, fiable, exploitable**
+
+---
+
+C’est exactement ici que **Zod** entre en jeu.
+
+Pas comme une librairie de validation parmi d’autres.  
+Mais comme la **frontière formelle** entre ce qui vient du monde extérieur et ce qui circule dans le système.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi Zod et pas autre chose
+
+Zod n’est pas la seule librairie de validation. Il existe Yup, Joi, Valibot, ArkType, et d’autres. Pourquoi Zod dans ce projet ?
+
+Une raison principale : **l’inférence de types**.
+
+Avec Zod, nous écrivons un schéma. Et de ce schéma, nous pouvons dériver automatiquement le type TypeScript correspondant :
+
+```ts
+const schema = z.object({ email: z.string().email() });
+type Input = z.infer<typeof schema>;
+// Input = { email: string }
+```
+
+Cette inférence est la pierre angulaire du typage continu. Quand une procédure déclare `.input(schema)`, tRPC infère automatiquement le type de `input` dans la fonction de mutation. Aucun type n’est écrit à la main. Aucune divergence n’est possible entre le schéma de validation et le type utilisé.
+
+Et cette inférence voyage jusqu’au client : quand le frontend appelle `trpc.user.create({...})`, TypeScript sait exactement ce qui est attendu, parce qu’il remonte jusqu’au schéma Zod déclaré côté serveur.
+
+---
+
+## Où vit la validation ?
+
+C’est la vraie question.
+
+Nous pourrions être tentés de valider dans le frontend, dans le service, ou un peu partout.
+
+Dans une architecture propre :
+
+👉 la validation vit **à l’entrée de la procédure**, dans `.input(...)`
+
+Et elle produit deux effets simultanés.
+
+Si la donnée est invalide → une erreur est levée immédiatement, avant toute logique.  
+Si la donnée est valide → `input` devient un type TypeScript garanti.
+
+---
+
+## Deux cas à distinguer : inline et contrat partagé
+
+Dans ce projet, les schémas Zod vivent à deux endroits différents — et ce n’est pas par hasard.
+
+---
+
+### Le schéma inline : décrit à la procédure
+
+Certaines validations appartiennent directement à la procédure qui les utilise.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="88-102"
+  snippetHighlight="90-95"
+  snippetTitle="Validation inline dans la procédure create"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Le schéma décrit exactement ce que cette procédure attend.
+
+Pas plus.  
+Pas moins.
+
+👉 Il est à sa place parce qu’il ne sert qu’ici.
+
+C’est un principe général : tant qu’un artefact n’est utilisé qu’à un seul endroit, le garder à côté de son utilisateur est la décision la plus simple. La question du partage ne se pose que lorsque l’artefact doit être utilisé à plusieurs endroits.
+
+---
+
+### Le contrat partagé : défini en dehors du router
+
+D’autres schémas ont une portée plus large.
+
+`updateMeFormSchema` est défini dans `packages/contracts`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/schemas/forms/updateMeForm.schema.ts"
+  filename="updateMeForm.schema.ts"
+  snippetRange="1-50"
+  snippetHighlight="3-45"
+  snippetTitle="Un schéma partagé entre frontend et backend"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — pourquoi ce schéma mérite d’être partagé
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/schemas/forms/updateMeForm.schema.ts"
+  filename="updateMeForm.schema.ts"
+  snippetRange="1-65"
+  title="Un contrat qui traverse la frontière frontend / backend"
+  stepsJson="[{&quot;title&quot;:&quot;Le schéma vit dans packages/contracts, pas dans le backend&quot;,&quot;body&quot;:&quot;Ce choix n'est pas anodin. En plaçant le schéma dans un package partagé, nous disons explicitement que ce contrat appartient au système, pas à une couche. Le backend l'importe. Le frontend l'importe aussi. Aucune des deux couches n'est propriétaire.&quot;,&quot;scope&quot;:&quot;1-3&quot;,&quot;focus&quot;:&quot;1-3&quot;},{&quot;title&quot;:&quot;Les règles portent les messages d'erreur en français&quot;,&quot;body&quot;:&quot;firstName exige au moins 1 caractère, lastName au moins 2. Les messages sont définis ici, une seule fois. Ils remonteront tels quels à l'utilisateur, que l'erreur soit détectée côté client par react-hook-form ou côté serveur par la procédure tRPC.&quot;,&quot;scope&quot;:&quot;3-12&quot;,&quot;focus&quot;:&quot;5-11&quot;},{&quot;title&quot;:&quot;Les champs optionnels utilisent un pattern expressif&quot;,&quot;body&quot;:&quot;pseudo, aboutMe et avatar combinent .optional() avec .or(z.literal('')). Cela distingue explicitement deux états : le champ absent et le champ vide. Une subtilité qui évite des bugs classiques dans les formulaires web, où un input non rempli envoie une chaîne vide et non undefined.&quot;,&quot;scope&quot;:&quot;14-24&quot;,&quot;focus&quot;:&quot;14-24&quot;},{&quot;title&quot;:&quot;Les validations complexes sont exprimées avec refine&quot;,&quot;body&quot;:&quot;Pour le numéro de téléphone, Zod ne se contente pas de vérifier une chaîne. Il nettoie les espaces et tirets, puis applique une regex française. Cette logique vit dans le contrat — ce qui signifie qu'un formulaire frontend et une procédure backend ne peuvent jamais diverger sur ce qu'est un numéro valide.&quot;,&quot;scope&quot;:&quot;28-40&quot;,&quot;focus&quot;:&quot;28-40&quot;},{&quot;title&quot;:&quot;Le type FormValues est inféré, pas dupliqué&quot;,&quot;body&quot;:&quot;La dernière ligne est celle qui rend tout cela viable. z.infer produit automatiquement le type TypeScript correspondant au schéma. Aucun type n'est écrit à la main. Aucune interface ne risque de diverger du schéma de validation. Les deux sont indissociables par construction.&quot;,&quot;scope&quot;:&quot;60-65&quot;,&quot;focus&quot;:&quot;63-63&quot;}]"
+/>
+
+---
+
+Ce fichier est ensuite importé à deux endroits :
+
+- dans la procédure `updateProfile` côté backend  
+- dans le formulaire de profil côté frontend  
+
+---
+
+👉 Le même schéma.  
+👉 Le même contrat.  
+👉 Le même type TypeScript.  
+👉 Zéro divergence possible.
+
+---
+
+<Callout type="insight">
+Un schéma inline protège une procédure.  
+Un schéma partagé protège un système entier contre la divergence.
+
+Le choix entre les deux n’est pas esthétique — il est architectural.
+</Callout>
+
+---
+
+## Ce que la validation change dans le service
+
+C’est ici que l’effet devient concret.
+
+Dans `updateProfile`, la procédure reçoit `input` validé par `updateMeFormSchema`.  
+Le service n’a rien à vérifier :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="118-130"
+  snippetHighlight="118-130"
+  snippetTitle="La procédure reçoit une donnée déjà valide"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+`input` est typé.  
+`ctx.prisma.user.update` reçoit exactement ce qu’il attend.  
+Aucune vérification défensive dans le service.
+
+---
+
+👉 C’est ce que la validation en entrée permet : **écrire un service qui fait confiance à ce qu’il reçoit**.
+
+Et cette confiance n’est pas de la naïveté. Elle repose sur une garantie architecturale explicite : toute donnée qui atteint le service est passée par `.input(schema)`, donc toute donnée qui atteint le service est valide. Si un jour cette garantie devient fausse, ce sera qu’un développeur a enlevé le `.input(...)` — ce qui est visible en une lecture.
+
+---
+
+## ⚠️ Le piège classique
+
+Quand la validation est absente ou déplacée, nous finissons par écrire ceci dans le service :
+
+<CodeSnippet
+  title="Validation déplacée dans le service (anti-pattern)"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="if (!input.email || !input.email.includes('@')) {\n  throw new Error('Invalid email')\n}\nif (!input.password || input.password.length < 12) {\n  throw new Error('Password too short')\n}"
+/>
+
+---
+
+Cela fonctionne.
+
+Mais cela signifie que :
+
+- le service doute de ce qu’il reçoit  
+- la logique métier se mêle à la validation  
+- les messages d’erreur sont définis au mauvais endroit  
+- la responsabilité est floue  
+
+---
+
+## 🔥 Le bon découpage
+
+<DocsTable
+  title="Qui valide quoi ?"
+  columnsJson='["Couche","Responsabilité"]'
+  rowsJson='[["Frontend","UX — retour immédiat à l’utilisateur"],[".input(zodSchema)","Frontière officielle — données fiables à partir d’ici"],["Service","Règles métier — jamais de vérification de forme"],["Prisma","Contraintes base — dernier rempart structurel"]]'
+/>
+
+---
+
+## 🧠 Le flux avec validation
+
+<ArchitectureDiagram
+  steps="Client | validation Zod (.input) | procédure | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+À partir du `.input(...)`, aucune donnée invalide ne circule.  
+Aucune couche ne doute.  
+Aucune logique n’est répétée.
+
+---
+
+<Callout type="concept">
+Zod n’est pas une "librairie de validation".
+
+C’est la frontière formelle qui protège le backend.  
+
+👉 En amont : données incertaines  
+👉 En aval : données exploitables
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne validons plus partout.
+
+Nous validons **une fois, au bon endroit**, avec un contrat explicite.
+
+---
+
+Et selon la portée de ce contrat :
+
+- il reste dans la procédure s’il lui appartient  
+- il monte dans `packages/contracts` s’il doit être partagé  
+
+---
+
+👉 Dans les deux cas, le service peut faire confiance à ce qu’il reçoit.
+
+---
+
+👉 **Où nous en sommes :** Zod garde désormais la porte d’entrée — un schéma par procédure, validé avant toute logique, avec une portée choisie selon que le contrat appartient au backend seul ou doit être partagé avec le frontend. Le service reçoit des données sur lesquelles il peut s’appuyer sans les suspecter. Reste à prévoir ce qui se passe quand, malgré tout, quelque chose échoue — et comment le dire proprement.
+
+---
+
+## 9 — Gérer les erreurs (sans casser le flux)
+
+Nous avons maintenant un système propre.
+
+Une entrée validée, un contexte fiable, une sécurité centralisée, une logique déléguée.
+
+Mais ce système est encore décrit dans son "happy path".
+
+Et un backend réel ne vit pas uniquement dans le cas favorable.
+
+---
+
+## 🧠 La vraie question
+
+Que se passe-t-il quand quelque chose échoue ?
+
+---
+
+Sans cadre clair, les dérives sont prévisibles.
+
+Des `try/catch` apparaissent partout.  
+Des `return { success: false }` remplacent de vraies erreurs.  
+Chaque couche formate les messages à sa façon.  
+Le client reçoit des réponses incohérentes selon où l’erreur s’est produite.
+
+---
+
+💥 Le flux devient illisible.
+
+Pas parce que ça casse — parce que ça ne casse plus de façon prévisible. Une erreur identifiable est une ressource, pas un problème. Un échec silencieux, ou masqué, ou déformé, est bien pire : il se propage sans être remarqué, jusqu’à provoquer un effet inattendu loin de sa cause.
+
+---
+
+## 🔥 Le principe fondamental
+
+Une erreur doit être :
+
+- **lancée au bon endroit**, par la couche qui sait pourquoi elle échoue  
+- **expressive**, avec un code et un message exploitables  
+- **propagée sans être déformée**  
+
+---
+
+Et surtout : elle ne doit pas être transformée en pseudo-succès.
+
+---
+
+## 1) Ne pas transformer une erreur en résultat
+
+<CodeSnippet
+  title="Anti-pattern : masquer l'erreur"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="try {\n  const user = await service.createUser(ctx, input)\n  return { success: true, user }\n} catch (e) {\n  return { success: false, message: 'Something went wrong' }\n}"
+/>
+
+---
+
+En retournant `{ success: false }`, nous perdons :
+
+- la cause réelle de l’erreur  
+- le code HTTP approprié  
+- la possibilité pour le client de distinguer une erreur métier d’une erreur réseau  
+
+---
+
+👉 Le client ne peut plus réagir intelligemment.  
+👉 Il sait juste que "ça a échoué".
+
+Et "ça a échoué" n’est pas une information exploitable. Le client ne peut pas distinguer "l’utilisateur n’a pas les droits" de "le serveur est tombé" de "les données sont invalides". Les trois méritent pourtant des réactions UX très différentes.
+
+---
+
+## 2) Laisser l’erreur exister — avec `TRPCError`
+
+Dans ce projet, les erreurs sont des signaux explicites.
+
+Voyons comment elles vivent dans le router réel :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="100-122"
+  snippetHighlight="105-110"
+  snippetTitle="TRPCError : une erreur métier claire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — anatomie d'une erreur métier
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="88-122"
+  title="Du contrôle de cohérence à l'erreur propagée"
+  stepsJson="[{&quot;title&quot;:&quot;Le contrôle précède l'écriture&quot;,&quot;body&quot;:&quot;Avant toute tentative de création, la procédure interroge la base pour vérifier qu'aucun utilisateur n'existe déjà avec cet email. Ce contrôle n'est pas une validation de forme — c'est une vérification d'état. Zod ne peut pas le faire, parce qu'il faut consulter la base pour le savoir.&quot;,&quot;scope&quot;:&quot;88-122&quot;,&quot;focus&quot;:&quot;97-99&quot;},{&quot;title&quot;:&quot;Le code CONFLICT porte une sémantique précise&quot;,&quot;body&quot;:&quot;Le choix de CONFLICT n'est pas arbitraire. Il correspond exactement au code HTTP 409 : la requête est valide, l'utilisateur a le droit d'agir, mais l'état actuel de la ressource rend l'opération impossible. Ce n'est pas un BAD_REQUEST (l'entrée était correcte), ni un FORBIDDEN (le droit existait).&quot;,&quot;scope&quot;:&quot;88-122&quot;,&quot;focus&quot;:&quot;101-106&quot;},{&quot;title&quot;:&quot;Le message reste exploitable côté client&quot;,&quot;body&quot;:&quot;'User already exists' n'est pas un message d'implémentation. C'est un message métier que le frontend peut afficher tel quel, traduire, ou utiliser comme clé pour un toast. L'erreur n'est pas un accident technique — c'est un signal exploitable.&quot;,&quot;scope&quot;:&quot;88-122&quot;,&quot;focus&quot;:&quot;103-103&quot;},{&quot;title&quot;:&quot;Après le throw, la procédure continue naturellement&quot;,&quot;body&quot;:&quot;Une fois la vérification passée, le code poursuit son flux normal : hash du mot de passe, création de l'utilisateur, retour de succès. Pas de if/else défensif qui enveloppe toute la logique. L'erreur, en étant lancée, interrompt le flux et remonte proprement jusqu'au client via tRPC.&quot;,&quot;scope&quot;:&quot;88-122&quot;,&quot;focus&quot;:&quot;110-121&quot;}]"
+/>
+
+---
+
+<Callout type="insight">
+Une erreur n’est pas un résultat alternatif.
+
+C’est un signal qui porte une sémantique précise.
+</Callout>
+
+---
+
+## 3) Les codes d’erreur tRPC ne sont pas arbitraires
+
+<DocsTable
+  title="Codes d’erreur et leur sémantique"
+  columnsJson='["Code","Signification","Lancé par"]'
+  rowsJson='[["UNAUTHORIZED","Utilisateur non authentifié","guard isAuthed / middleware"],["FORBIDDEN","Utilisateur authentifié mais sans le droit","requirePermission / règle métier"],["NOT_FOUND","Ressource inexistante","service"],["CONFLICT","État incompatible avec la ressource existante","service"],["BAD_REQUEST","Entrée invalide ou incohérente","procédure / service"]]'
+/>
+
+---
+
+Chaque couche a ses codes.
+
+Zod lève `BAD_REQUEST` automatiquement si `.input()` échoue.  
+`isAuthed` lève `UNAUTHORIZED`.  
+`requirePermission` lève `FORBIDDEN`.  
+Le service lève `NOT_FOUND`, `CONFLICT`, ou `BAD_REQUEST` selon la règle violée.
+
+---
+
+👉 Le flux d’erreur suit exactement le flux d’exécution.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ces codes sont des codes HTTP
+
+Les codes que tRPC utilise (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, etc.) correspondent à des codes HTTP standardisés. Ce n’est pas une coïncidence.
+
+tRPC transporte ses erreurs via HTTP. Quand le serveur lève `TRPCError({ code: "NOT_FOUND" })`, la réponse HTTP est bien un 404. Cela signifie que les outils standards du web — devtools, logs de proxy, outils de monitoring — voient les erreurs comme des codes HTTP conventionnels.
+
+C’est une bonne pratique : s’intégrer aux conventions existantes plutôt que réinventer un vocabulaire propriétaire. Un développeur qui connaît HTTP peut lire un log d’erreur tRPC sans formation supplémentaire.
+
+---
+
+## 4) Une règle métier peut produire une erreur inattendue
+
+Il existe un cas particulièrement instructif dans ce projet.
+
+`updateUserRoleById` est protégée par `requirePermission("manage_users")`.  
+L’utilisateur a donc le droit d’agir.
+
+Et pourtant :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="137-150"
+  snippetHighlight="139-143"
+  snippetTitle="FORBIDDEN levé par une règle métier, pas par un guard"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+`FORBIDDEN` est levé ici — non pas parce que l’utilisateur n’a pas le droit en général, mais parce qu’une règle métier spécifique l’empêche dans ce cas précis.
+
+---
+
+👉 Le code d’erreur est le même.  
+👉 La cause est différente.
+
+C’est intentionnel.
+
+Le client ne voit pas "qui" a lancé l’erreur.  
+Il voit "quelle erreur s’est produite".  
+Et c’est tout ce dont il a besoin pour réagir correctement.
+
+---
+
+## 5) Le flux complet avec erreurs
+
+<ArchitectureDiagram
+  steps="Client | validation Zod | guard | procédure | règle métier | service | erreur ou succès | réponse"
+/>
+
+---
+
+Une erreur traverse le système comme une réussite.
+
+Elle suit le même chemin, remonte proprement, reste lisible.
+
+---
+
+<Callout type="concept">
+Un bon backend ne "gère" pas les erreurs partout.
+
+Il les laisse exister au bon endroit, avec le bon signal.
+
+tRPC les transporte ensuite sans les déformer.
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne masquons plus les erreurs.  
+Nous ne les dispersons plus.
+
+---
+
+👉 Chaque couche lance ce qu’elle sait lancer.  
+👉 tRPC se charge du reste.
+
+---
+
+La dernière question reste entière.
+
+Le système produit des erreurs propres.  
+Mais que renvoie-t-il quand tout se passe bien ?
+
+---
+
+👉 **Où nous en sommes :** les erreurs ne sont plus des accidents à étouffer — elles sont des signaux, levés avec un code, captés par tRPC, et transformés en réponses HTTP cohérentes sans que la procédure n’ait à s’en occuper. Reste le dernier maillon, celui qui ferme la boucle : ce que le backend choisit de renvoyer, et comment il s’assure que cette sortie reste stable dans le temps.
+
+---
+
+## 10 — Mapper la sortie (DTO, stabilité et exposition)
+
+Nous avons construit quelque chose de solide.
+
+Entrée validée, contexte fiable, sécurité centralisée, erreurs structurées.
+
+Mais une dernière question reste ouverte.
+
+---
+
+## 🧠 Que renvoyons-nous réellement au client ?
+
+---
+
+Sans réflexion, le réflexe naturel est de faire ceci :
+
+<CodeSnippet
+  title="Retour direct du modèle Prisma (anti-pattern)"
+  language="ts"
+  kind="anti-pattern"
+  codeJson="return ctx.prisma.user.findMany()"
+/>
+
+---
+
+Cela fonctionne.
+
+Mais quelque chose pose un problème silencieux.
+
+Nous exposons directement :
+
+- tous les champs du modèle — y compris `password`  
+- des relations parfois non voulues  
+- une structure intimement liée à la base  
+
+---
+
+💥 Le client devient dépendant de la structure interne du backend.
+
+Et le jour où Prisma évolue — un champ renommé, une relation ajoutée — le frontend peut casser sans que le backend ait "changé" du point de vue métier.
+
+Plus grave : des données sensibles peuvent fuir. Le hash du mot de passe, des métadonnées d’audit, des identifiants internes — tout ce qui vit dans le modèle Prisma traverse silencieusement la frontière.
+
+---
+
+## 🔥 Le principe fondamental
+
+Le backend ne doit jamais exposer directement ses modèles internes.
+
+Il doit exposer :
+
+👉 une **forme contrôlée, stable, pensée pour le client**
+
+---
+
+## 1) La première forme de contrôle : `select`
+
+Avant même de parler de DTO explicite, il existe une façon très directe de contrôler la sortie : ne demander à Prisma que ce dont nous avons besoin.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="132-160"
+  snippetHighlight="141-153"
+  snippetTitle="select comme premier filtre de sortie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+`password`, `createdAt`, `updatedAt`, les logs d’audit — rien de tout cela ne sort.
+
+Prisma ne les charge même pas.
+
+---
+
+👉 Ce n’est pas encore un DTO formel.  
+👉 Mais c’est déjà une décision d’exposition.
+
+Et cette décision a un double bénéfice : sécurité (les champs sensibles n’atteignent jamais la mémoire du backend au-delà de ce qui est nécessaire) et performance (Prisma génère des requêtes SQL plus ciblées, transférant moins de données).
+
+---
+
+## 2) Le DTO : une forme nommée, partageable
+
+Pour les données qui doivent être stables dans le temps — et partagées avec le frontend — nous allons plus loin.
+
+Dans ce projet, `UserProfile` est défini dans `packages/contracts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/users/user-profile.types.ts"
+  filename="user-profile.types.ts"
+  snippetRange="1-12"
+  snippetHighlight="1-12"
+  snippetTitle="UserProfile : un contrat stable entre backend et frontend"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce type ne ressemble pas au modèle Prisma.
+
+`birthDate` est une `string | null`, pas un `Date`.  
+`password` n’existe pas.  
+`role` n’existe pas.
+
+---
+
+👉 Ce n’est pas un modèle de données.  
+👉 C’est une **représentation métier pensée pour le consommateur**.
+
+---
+
+## 🔭 Pour aller plus loin — le sens du sigle DTO
+
+DTO signifie *Data Transfer Object*. Le terme est ancien — il vient des architectures Java d’entreprise — mais l’idée est intemporelle.
+
+Un DTO est un objet conçu **uniquement pour le transport**. Il ne contient pas de logique. Il ne persiste pas. Il sert d’intermédiaire entre deux couches.
+
+Dans notre cas, le DTO est la forme que prend la donnée quand elle sort du backend vers le frontend. Il est distinct du modèle de base (ce que Prisma manipule) et de la vue (ce que React affiche). Il est la forme du contrat.
+
+Cette distinction porte un nom en architecture : le **pattern Boundary**. La donnée change de forme aux frontières du système, et chaque forme est adaptée à son contexte.
+
+---
+
+## 3) Le `satisfies` : relier le service au contrat
+
+Voyons maintenant comment ce contrat est utilisé dans la procédure :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="155-175"
+  snippetHighlight="160-172"
+  snippetTitle="satisfies UserProfile : le contrat appliqué à la sortie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — anatomie d'un mapping contrôlé
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="140-175"
+  title="De la requête Prisma au DTO partagé"
+  stepsJson="[{&quot;title&quot;:&quot;select définit la surface exposée, pas findUnique&quot;,&quot;body&quot;:&quot;La requête ne demande pas l'utilisateur complet. Elle demande explicitement les champs qui vont sortir. password, createdAt, updatedAt, memberSince : rien de tout cela ne sera chargé par Prisma, donc rien ne pourra fuiter. La sécurité d'exposition commence ici, avant même le mapping.&quot;,&quot;scope&quot;:&quot;140-175&quot;,&quot;focus&quot;:&quot;143-156&quot;},{&quot;title&quot;:&quot;La vérification d'existence précède la transformation&quot;,&quot;body&quot;:&quot;Si l'utilisateur n'existe pas, la procédure lève NOT_FOUND immédiatement. Aucune tentative de mapping sur null. La sortie ne sera construite que si la donnée existe réellement.&quot;,&quot;scope&quot;:&quot;140-175&quot;,&quot;focus&quot;:&quot;157-162&quot;},{&quot;title&quot;:&quot;Le spread construit l'objet à partir de Prisma, mais sans aveuglément le copier&quot;,&quot;body&quot;:&quot;userProfile est assemblé avec ...user, puis birthDate est explicitement remplacé. Ce n'est pas un retour direct du modèle Prisma — c'est une projection, construite pour respecter un contrat précis. Le Date de Prisma devient une string ISO, parce que c'est ce que le contrat UserProfile attend.&quot;,&quot;scope&quot;:&quot;140-175&quot;,&quot;focus&quot;:&quot;164-170&quot;},{&quot;title&quot;:&quot;satisfies UserProfile est le filet de sécurité final&quot;,&quot;body&quot;:&quot;C'est ici que tout se joue. satisfies n'est pas un cast. TypeScript vérifie que userProfile respecte EXACTEMENT la forme de UserProfile — chaque champ, chaque type. Si demain UserProfile gagne un champ displayName et que nous oublions de le fournir, la compilation casse. Le contrat est vivant : il protège contre la dérive silencieuse entre ce que le backend promet et ce qu'il livre.&quot;,&quot;scope&quot;:&quot;140-175&quot;,&quot;focus&quot;:&quot;172-172&quot;}]"
+/>
+
+---
+
+<Callout type="insight">
+`satisfies` ne ment pas au compilateur.
+
+Il lui demande de vérifier que ce que nous produisons respecte ce que nous avons promis.
+
+C’est la différence entre un cast aveugle et un contrat honnête.
+</Callout>
+
+---
+
+## 🔭 Pour aller plus loin — satisfies vs as vs type annotation
+
+TypeScript offre trois façons différentes de déclarer le type d’une valeur, et `satisfies` est le plus récent (TS 4.9).
+
+- `const x = value as Type` → **cast aveugle**. TypeScript fait confiance, ne vérifie pas. Dangereux.
+- `const x: Type = value` → **annotation**. TypeScript vérifie que `value` respecte `Type`, mais perd le type concret de `value` : `x` aura le type `Type`, pas la forme réelle de `value`.
+- `const x = value satisfies Type` → **vérification avec préservation**. TypeScript vérifie la conformité, et garde le type concret de `value`.
+
+Dans le cas du DTO, `satisfies` est le bon choix. Nous voulons vérifier que la projection respecte `UserProfile`, mais nous voulons aussi garder le type exact pour l’inférence côté client (tRPC remonte le type concret jusqu’au frontend).
+
+---
+
+## 4) Où vit le mapping ?
+
+Dans une architecture propre :
+
+<DocsTable
+  title="Responsabilité du mapping selon le contexte"
+  columnsJson='["Approche","Où vit le mapping","Quand l’utiliser"]'
+  rowsJson='[["select Prisma","dans la query","filtrage simple, pas de transformation"],["transformation inline","dans la procédure","transformation légère (ex: Date → string)"],["mapper dédié","dans packages/backend/mappers","logique complexe, réutilisable"],["DTO partagé","dans packages/contracts","contrat frontend/backend, stable dans le temps"]]'
+/>
+
+---
+
+## 🔥 Le vrai bénéfice
+
+Avant :
+
+- le frontend lit directement la structure de la base  
+- chaque évolution du schéma Prisma peut casser l’interface  
+- des données sensibles peuvent fuir sans que personne le remarque  
+
+---
+
+Après :
+
+- le frontend consomme un contrat stable  
+- Prisma peut évoluer sans impacter le client si le DTO reste compatible  
+- la sortie est maîtrisée dès la procédure  
+
+---
+
+## 🔁 Le flux complet
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard | service | Prisma | select / mapping | DTO (satisfies) | réponse"
+/>
+
+---
+
+<Callout type="concept">
+Le backend ne renvoie pas "la donnée".
+
+Il renvoie une **version maîtrisée de la donnée** — filtrée, transformée, validée par un contrat.
+
+Et ce contrat peut être partagé avec le frontend.
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne renvoyons plus les modèles internes.
+
+Nous exposons des **contrats stables**, pensés pour le consommateur.
+
+---
+
+Nous avons maintenant un système complet :
+
+- entrée validée (Zod, inline ou partagé)  
+- contexte fiable (createTRPCContext)  
+- intention claire (procédure)  
+- sécurité centralisée (guard, RBAC)  
+- logique métier isolée (service)  
+- erreurs structurées (TRPCError)  
+- sortie maîtrisée (select, DTO, satisfies)  
+
+---
+
+👉 Le flux est désormais cohérent de bout en bout.
+
+Pas seulement dans sa mécanique — dans sa lisibilité.
+
+Chaque couche dit ce qu’elle fait.  
+Chaque erreur dit ce qui a échoué.  
+Chaque réponse dit exactement ce qu’elle promet.
+
+---
+
+🎯 C’est ce qui transforme un backend fonctionnel en backend **compréhensible**.
+
+---
+
+👉 **Où nous en sommes :** le DTO ferme le flux — la sortie est filtrée, structurée, ancrée à un contrat que le frontend peut consommer sans trembler. Chaque couche du backend a désormais sa propre façon d’être stricte. Reste à prendre du recul et à regarder le système dans son ensemble — parce qu’un backend ne se comprend vraiment qu’une fois que toutes ses couches fonctionnent ensemble.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons durci chaque articulation du flux. Quatre idées en sont ressorties :
+
+- **La sécurité est centralisée, pas dispersée.** `protectedProcedure`, `requirePermission`, `isAdmin` : les règles d’accès vivent dans des middlewares composables, une fois pour toutes. Le reste du code peut faire confiance aux types, parce que les vérifications ont déjà eu lieu — et TypeScript requalifie le contexte pour le prouver.
+- **Zod est la frontière du backend.** Toute donnée qui entre passe par un schéma explicite, dont la portée dépend de l’usage : local à la procédure, ou hissé dans `packages/contracts` pour être partagé avec le frontend. Entre la requête et la logique métier, il y a toujours ce seuil — et le service peut travailler sans défiance.
+- **`TRPCError` est un signal, pas un incident à cacher.** Chaque couche lève ce qu’elle sait lever, avec le bon code, et laisse tRPC transformer ce signal en réponse HTTP cohérente. Le *happy path* et le chemin d’erreur coexistent sans que la lisibilité du code en souffre.
+- **Le DTO contrôle ce qui sort.** `select` filtre à la source, le mapping transforme, `satisfies` relie le service à un contrat vérifiable. La sortie n’est plus le reflet brut du modèle Prisma — c’est une forme choisie, stable, et partageable.
+
+La Section 11 va maintenant reprendre tout ce que nous avons construit — du premier appel client jusqu’à la réponse typée — pour le lire d’un seul trait.
+
+---
+
+## 11 — Le circuit complet (vision d’ensemble)
+
+Nous avons avancé étape par étape.
+
+Nous avons isolé chaque pièce :
+
+- le contexte  
+- la procédure  
+- la validation  
+- la sécurité  
+- le service  
+- Prisma  
+- les erreurs  
+- le mapping DTO  
+
+Mais à ce stade, une dernière chose devient nécessaire.
+
+---
+
+## 🧠 Recomposer le système
+
+Jusqu’ici, nous avons zoomé.
+
+👉 Maintenant, nous devons **reprendre du recul**.
+
+---
+
+Parce qu’un backend ne se comprend vraiment que lorsque :
+
+> toutes ses couches fonctionnent **ensemble**
+
+Chaque couche prise isolément a son rôle, mais c’est leur articulation qui fait la qualité du système. Un contexte sans procédures ne sert à rien. Des procédures sans guards sont vulnérables. Des guards sans services deviennent des fourre-tout. Des services sans DTO exposent trop. Chaque pièce a besoin des autres pour exister pleinement.
+
+---
+
+## 🔥 Le circuit complet
+
+<ArchitectureDiagram
+  steps="Client | App Router (/api/trpc) | createTRPCContext | procédure (intention) | validation Zod | guard / RBAC | service métier | Prisma | mapping DTO | réponse typée"
+ />
+
+---
+
+## 🧠 Lecture du flux (sans rupture)
+
+Nous pouvons maintenant suivre une requête du début à la fin.
+
+---
+
+### 1) Le client exprime une intention
+
+Le frontend n’envoie plus une requête HTTP brute.
+
+👉 Il appelle une capacité :
+
+- `trpc.user.create(...)`
+
+Cet appel est typé. L’autocomplétion fonctionne. Les erreurs de compilation arrivent avant même que le code ne tourne.
+
+---
+
+### 2) App Router reçoit la requête
+
+La route `/api/trpc/[trpc]` agit comme point d’entrée unique.
+
+👉 Elle ne contient pas de logique métier.
+
+👉 Elle délègue à `fetchRequestHandler`, qui à son tour parle au router tRPC.
+
+---
+
+### 3) Le contexte est reconstruit
+
+`createTRPCContext(req)` est appelé.
+
+👉 Le système reconstruit :
+
+- la session (via `getSessionFromRequest`)  
+- l’utilisateur (s’il existe)  
+- ses permissions (via la relation role/permissions)  
+- l’accès à Prisma  
+- l’IP et le user-agent de la requête  
+
+---
+
+### 4) La procédure est sélectionnée
+
+L’intention est identifiée à partir du chemin URL :
+
+- `/api/trpc/user.create` → procédure `create` du router `user`
+- `/api/trpc/auth.login` → procédure `login` du router `auth`
+
+👉 La procédure correspondante est exécutée.
+
+---
+
+### 5) L’entrée est validée
+
+Zod intervient immédiatement.
+
+👉 Si invalide → `BAD_REQUEST` automatique  
+👉 Sinon → `input` devient un type TypeScript garanti  
+
+---
+
+### 6) La sécurité est appliquée
+
+- `protectedProcedure` vérifie l’authentification  
+- `requirePermission("...")` vérifie la permission  
+- `isAdmin` vérifie le rôle  
+
+👉 En cascade, jusqu’à ce que toutes les contraintes soient satisfaites — ou qu’une d’elles lève une erreur.
+
+---
+
+### 7) La règle métier filtre les cas limites
+
+Certaines contraintes ne sont pas de la sécurité — elles sont des règles du domaine.  
+Exemple : un admin ne peut pas modifier son propre rôle.
+
+👉 Ces règles vivent dans la procédure elle-même, entre la sécurité et la délégation au service.
+
+---
+
+### 8) Le service exécute la logique
+
+👉 La procédure délègue au service métier.
+
+👉 Le service :
+
+- applique les règles métier  
+- orchestre les opérations  
+- interagit avec Prisma  
+
+---
+
+### 9) Prisma exécute
+
+👉 Accès base de données via le client typé.
+
+Requêtes optimisées grâce à `select`, relations chargées explicitement avec `include`.
+
+---
+
+### 10) Le mapping transforme la sortie
+
+👉 DTO :
+
+- filtre (via `select` ou mapping explicite)  
+- structure (via transformation)  
+- stabilise (via `satisfies` contre un contrat)  
+
+---
+
+### 11) La réponse remonte
+
+👉 Succès ou erreur.
+
+👉 Toujours cohérente, toujours typée, transportée fidèlement par `superjson`.
+
+---
+
+## 💥 Ce que nous avons réellement construit
+
+Ce n’est pas une API.
+
+---
+
+👉 C’est un **flux maîtrisé**.
+
+---
+
+Un système dans lequel :
+
+- la donnée entre proprement  
+- elle circule sans rupture  
+- elle est contrôlée à chaque étape  
+- elle sort sous une forme stable  
+
+---
+
+<Callout type="concept">
+Nous ne manipulons plus :
+
+→ des requêtes HTTP  
+
+Nous manipulons :
+
+→ un **pipeline de traitement typé et structuré**
+</Callout>
+
+---
+
+## 🧱 Lecture finale (résumé condensé)
+
+<DocsTable
+  title="Le pipeline complet"
+  columnsJson='["Étape","Responsabilité"]'
+  rowsJson='[["Client","exprime une intention"],["App Router","point d’entrée"],["Context","reconstruit l’environnement"],["Procédure","porte l’intention"],["Zod","valide l’entrée"],["Guard","authentifie"],["RBAC","autorise"],["Règle métier","filtre les cas limites"],["Service","exécute la logique"],["Prisma","accède aux données"],["DTO","contrôle la sortie"],["Réponse","renvoyée au client"]]'
+/>
+
+---
+
+## 🚀 Conclusion globale
+
+Nous avons complètement changé de modèle.
+
+---
+
+Avant :
+
+- JSON  
+- routes  
+- duplication  
+- incertitude  
+
+---
+
+Maintenant :
+
+- typage continu  
+- contexte centralisé  
+- responsabilités séparées  
+- flux lisible  
+
+---
+
+👉 Et surtout :
+
+> chaque étape du système a un rôle clair
+
+---
+
+🎯 C’est ce qui transforme un backend :
+
+de fonctionnel  
+→ en **robuste, maintenable et compréhensible**
+
+---
+
+## Ce qui vient ensuite
+
+Ce tutoriel a posé les fondations d’un backend tRPC. Les tutoriels suivants appliquent cette architecture à des domaines métier spécifiques :
+
+- **Authentification avec tRPC** : comment le système construit et reconstruit une session, et comment `protectedProcedure` s’appuie sur cette session.  
+- **Gestion des médias avec Cloudinary** : comment une procédure tRPC orchestre un upload signé, la vérification des métadonnées, et la persistance en base.  
+- **Le Finder Cloudinary** : comment un arbre de médias est exposé via tRPC, avec pagination, tri, et invalidation.  
+- **La corbeille** : comment le pattern soft-delete coexiste avec tRPC pour garantir la récupération.
+
+Chacun de ces tutoriels repose sur les mêmes principes que nous venons de construire. Ce que nous avons appris ici est la grammaire commune. Ce qui suit, ce sont les dialectes métier.

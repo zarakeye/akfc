@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import UserCard from "./users/UserCard";
+import UserCard from "@/features/admin/users/components/UserCard";
 import { useSessionStore } from "@/lib/stores/useSessionStore";
 
 export default function DashboardHome(): JSX.Element {

@@ -322,4 +322,14 @@ input[type="range"]::-moz-range-thumb {
   .docs-codeblock .line:empty {
     min-height: 1.25em;
   }
+
+  .docs-codeblock .snippet-focus-line {
+    background: rgba(59, 130, 246, 0.28) !important;
+  }
+
+  .docs-content {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+  }
 }

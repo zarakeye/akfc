@@ -39,6 +39,7 @@ model User {
   auditLogsAsActor      AuditLog[]           @relation("AuditActor")
   auditLogsAsTargetUser AuditLog[]           @relation("AuditTargetUser")
   passwordResetTokens   PasswordResetToken[]
+  uploadedMediaAssets   MediaAsset[]
 }
 
 model Permission {
@@ -80,7 +81,6 @@ model Session {
   userId    String
   createdAt DateTime @default(now())
   expiresAt DateTime
-  role      String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -111,6 +111,56 @@ model AuditLog {
   @@index([actorUserId])
   @@index([targetUserId])
   @@index([action, createdAt])
+}
+
+model MediaAsset {
+  id                   String   @id @default(cuid())
+
+  // --- Cloudinary
+  publicId             String   @unique
+  secureUrl            String
+  resourceType         String
+  mimeType             String
+  format               String?
+
+  // --- Fichier
+  originalFileName     String
+  displayName          String?
+  description          String?
+
+  bytes                Int
+  width                Int?
+  height               Int?
+  duration             Float?
+
+  // --- Métier
+  appRoot              String
+  status               String
+
+  categoryId           Int
+  activityId           Int?
+  proposedActivityName String?
+
+  eventDate            DateTime?
+  uploadedAt           DateTime @default(now())
+
+  // --- Provenance
+  uploaderUserId       String
+
+  // --- Timestamps
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // --- Relations
+  category             Category  @relation(fields: [categoryId], references: [id])
+  activity             Activity? @relation(fields: [activityId], references: [id])
+  uploader             User      @relation(fields: [uploaderUserId], references: [id])
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([activityId])
+  @@index([uploaderUserId])
+  @@index([uploadedAt])
 }
 
 enum AuditAction {
@@ -159,11 +209,13 @@ model Activity {
   description  String?
   instructor   User     @relation("UserActivities", fields: [instructorId], references: [id])
   slots        Slot[]
+  mediaAssets MediaAsset[]
 }
 
 model Category {
   id   Int    @id @default(autoincrement())
   type String @unique
+  mediaAssets MediaAsset[]
 }
 
 model MartialArt {

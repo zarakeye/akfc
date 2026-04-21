@@ -1,6 +1,6 @@
-import { appRouter } from "packages/backend/src/trpc";
+import { appRouter } from "./index";
 import type { NextRequest } from "next/server";
-import { createTRPCContext } from "packages/backend/src/trpc/core";
+import { createTRPCContext } from "./core";
 
 /**
  * trpcCaller.ts
@@ -15,6 +15,6 @@ import { createTRPCContext } from "packages/backend/src/trpc/core";
  */
 
 export async function createTRPCCaller(req: NextRequest) {
-  const ctx = await createTRPCContext(req);
+  const ctx = await createTRPCContext({ req });
   return appRouter.createCaller(ctx);
 }

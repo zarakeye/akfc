@@ -3,12 +3,13 @@
 import { JSX, useRef, useState } from 'react';
 import Image from 'next/image';
 
-import type { FileNode, TreeNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+import type { FileNode, TreeNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import { explorerNodeToDragSource } from '@/features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
 
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
 import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
+import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
 
 type Props = {
   file: FileNode;
@@ -80,10 +81,6 @@ export default function GridFileItem({ file, onSelect, visibleNodes }: Props): J
     startSelection(file.fullPath);
   });
 
-  function toThumb(url: string) {
-    return url.replace('/upload/', '/upload/w_128,h_128,c_fit,dpr_auto,f_auto/');
-  }
-
   return (
     <div
       data-content-item="true"
@@ -119,7 +116,7 @@ export default function GridFileItem({ file, onSelect, visibleNodes }: Props): J
 
         const previews = nodesForGhost.map((n) => {
           if (n.type === 'file') {
-            return { kind: 'file' as const, name: n.name, thumbUrl: toThumb(n.url) };
+            return { kind: 'file' as const, name: n.name, thumbUrl: getMediaUrl(n, "thumb") };
           }
           return { kind: 'folder' as const, name: n.name };
         });
@@ -157,7 +154,7 @@ export default function GridFileItem({ file, onSelect, visibleNodes }: Props): J
         />
       )}
 
-      <Image src={toThumb(file.url)} alt={file.name} fill className="object-contain" />
+      <Image src={getMediaUrl(file, 'thumb')} alt={file.name} fill className="object-contain" />
 
       <div className="absolute bottom-0 w-full bg-white/70 text-xs truncate text-center px-1">
         {file.name}

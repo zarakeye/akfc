@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { trpc, getTrpcClient } from '@/lib/trpcClient';
+import { trpc, getTrpcClient } from '@/core/trpc/trpcClient';
 import { JSX, useState } from 'react';
 
 /**

@@ -13,7 +13,7 @@ import type { SelectionState } from '@/features/cloudinary-finder/model/selectio
 import type {
   TreeNode,
   RootNode,
-} from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+} from '@workspace/contracts/src/cloudinary/finder-ui.types';
 import type {
   DragSource,
   MoveTarget,

@@ -12,31 +12,35 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    // "ignoreDeprecations": "6.0",
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    // baseUrl supprimé (déprécié en TS 5, supprimé en TS 7).
+    // Avec moduleResolution: "bundler", les paths se résolvent
+    // relativement à l'emplacement de ce tsconfig.base.json.
     "paths": {
       "@/*": [
-        "apps/web/src/*"
+        "./apps/web/src/*"
       ],
       "@web/*": [
-        "apps/web/src/*"
+        "./apps/web/src/*"
       ],
-      "@akfc/backend/*": [
-        "packages/backend/src/*"
+      "@mobile/*": [
+        "./apps/mobile/src/*"
       ],
-      "@akfc/contracts/*": [
-        "packages/contracts/src/*"
+      "@workspace/backend/*": [
+        "./packages/backend/src/*"
       ],
+      "@workspace/contracts/*": [
+        "./packages/contracts/*"
+      ]
     }
   },
   "include": [
@@ -44,10 +48,10 @@
     "apps/web/src/**/*.ts",
     "apps/web/src/**/*.tsx",
     "apps/web/src/cropper-elements.d.ts",
+    "apps/web/src/content/**/*.mdx",
+    "**/*.mdx",
     "**/*.ts",
     "**/*.tsx",
-    // ".next/types/**/*.ts",
-    // ".next/dev/types/**/*.ts",
     "**/*.mts",
     "prisma/seed.js",
     "prisma.config.ts",

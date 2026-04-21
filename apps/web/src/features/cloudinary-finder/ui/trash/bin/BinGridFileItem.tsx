@@ -5,11 +5,12 @@ import Image from 'next/image';
 
 import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
+import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
 
 type Props = {
   trashId: string;
   displayName: string;
-  previewUrl?: string | null;
+  publicId?: string | null;
 
   /**
    * Bin: multiselect uniquement à la racine (/bin)
@@ -27,15 +28,10 @@ type Props = {
   onOpen: (trashId: string) => void;
 };
 
-function toThumb(url: string) {
-  // ✅ même logique que GridFileItem
-  return url.replace('/upload/', '/upload/w_128,h_128,c_fit,dpr_auto,f_auto/');
-}
-
 export default function BinGridFileItem({
   trashId,
   displayName,
-  previewUrl,
+  publicId,
   canMultiSelect,
   title,
   onOpen,
@@ -57,21 +53,36 @@ export default function BinGridFileItem({
 
   const showCheckbox = canMultiSelect && binMultiSelectActive;
 
+  const thumbSrc = publicId
+    ? getMediaUrl(
+        {
+          type: 'file',
+          name: displayName,
+          fullPath: publicId,
+          publicId,
+        },
+        'thumb'
+      )
+    : null;
+
   return (
     <div
       data-content-item="true"
       title={title}
       className={[
-        // ✅ EXACTEMENT le gabarit de GridFileItem
         'relative w-32 h-32 rounded border cursor-pointer flex items-center justify-center',
         'transition-colors duration-150',
         selected && showCheckbox ? 'bg-slate-200/70 border-slate-300' : 'bg-gray-50 border-gray-200',
         'hover:shadow-md',
       ].join(' ')}
-      onMouseDown={canMultiSelect ? (e) => {
-        e.stopPropagation();
-        longPress.onMouseDown();
-      } : undefined}
+      onMouseDown={
+        canMultiSelect
+          ? (e) => {
+              e.stopPropagation();
+              longPress.onMouseDown();
+            }
+          : undefined
+      }
       onMouseUp={canMultiSelect ? () => longPress.onMouseUp() : undefined}
       onMouseLeave={canMultiSelect ? () => longPress.onMouseLeave() : undefined}
       onClick={() => {
@@ -105,14 +116,12 @@ export default function BinGridFileItem({
         />
       )}
 
-      {/* ✅ thumbnail / fallback */}
-      {previewUrl ? (
-        <Image src={toThumb(previewUrl)} alt={displayName} fill className="object-contain" />
+      {thumbSrc ? (
+        <Image src={thumbSrc} alt={displayName} fill className="object-contain" />
       ) : (
         <div className="text-2xl">🖼️</div>
       )}
 
-      {/* ✅ label bas identique */}
       <div className="absolute bottom-0 w-full bg-white/70 text-xs truncate text-center px-1">
         {displayName}
       </div>

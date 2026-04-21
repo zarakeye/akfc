@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { trpcClient } from "@/lib/trpcClient";
+import { trpcClient } from "@/core/trpc/trpcClient";
 import type { Permission } from "@prisma/client";
 
 interface PermissionState {

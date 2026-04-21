@@ -38,7 +38,6 @@ export type TrashEntryDTO = {
   /**
    * Métadonnées Cloudinary utiles à la comparaison.
    * Pour un folder: peut représenter un agrégat (somme des bytes + min(createdAt) ou max(createdAt)).
-   * ➜ À définir côté backend (voir commentaire).
    */
   sizeBytes?: number;
 
@@ -49,10 +48,10 @@ export type TrashEntryDTO = {
   createdAt?: string; // ISO string
 
   /**
-   * Optionnel: preview pour file (thumbnail)
-   * Pour folder: généralement absent.
+   * Identité Cloudinary du fichier.
+   * Pour folder: absent.
    */
-  previewUrl?: string;
+  publicId?: string;
 };
 
 export type ListBinInput = {

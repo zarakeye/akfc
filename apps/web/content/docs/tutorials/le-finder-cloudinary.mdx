@@ -1,0 +1,1186 @@
+---
+title: "Le Finder Cloudinary — reconstruire une arborescence depuis un sac plat d’identifiants"
+slug: "le-finder-cloudinary"
+description: "Comprendre pourquoi un service sans dossiers physiques exige, pour être navigable, deux sources de vérité — Cloudinary et la DB — et comment un builder côté backend fusionne les deux en un arbre cohérent."
+section: "Tutorials"
+order: 6
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeExample } from "@/features/docs/ui/CodeExample"
+import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { DocsTable } from "@/features/docs/ui/DocsTable"
+
+## Quand il faut donner à voir ce qui n’a pas de forme
+
+Jusqu’ici, nous avons fait entrer des choses dans le système.
+
+Des données, des relations, des fichiers. Chaque tutoriel précédent a ajouté une pièce à la chaîne qui va de l’intention de l’utilisateur jusqu’à l’inscription en base. Et nous avons, au terme du tutoriel précédent, une chorégraphie d’upload aboutie — le client signe, Cloudinary stocke, le backend revérifie, la DB reçoit. Des assets arrivent chez Cloudinary, sous le préfixe `pending/`, avec une ligne correspondante dans `MediaAsset`.
+
+Le problème, c’est que **rien de tout cela ne se voit**.
+
+Un admin qui ouvre l’interface d’administration veut regarder les assets qui attendent validation. Il veut cliquer sur un dossier, voir ses enfants, glisser-déposer une photo vers `/published`, renommer une catégorie, supprimer une activité entière. Il veut un Finder — au sens de macOS, au sens de l’explorateur Windows, au sens banal et familier d’un arbre qu’on parcourt à la souris.
+
+Et c’est là que nous allons rencontrer, de plein fouet, une vérité que le tutoriel précédent avait déjà posée mais sans en tirer toutes les conséquences.
+
+<Callout type="info">
+Cloudinary ne stocke pas de dossiers.
+
+👉 ce que nous avons déposé, ce sont des chaînes de caractères préfixées  
+👉 ce que l’admin attend, c’est une arborescence navigable
+</Callout>
+
+## Un sac plat face à une attente d’arbre
+
+Rappelons-nous la Section 1.6 du tutoriel précédent. Chez Cloudinary, il n’y a pas de système de fichiers. Il n’y a qu’une collection plate d’identifiants uniques. Le `public_id` `my-app/pending/karate/12/photo-001` n’appartient à aucun dossier — il est juste une chaîne qui commence par trente-trois caractères partagés avec d’autres chaînes. Le `/` n’est qu’une convention typographique.
+
+Cette vérité était, au tutoriel précédent, un **prérequis architectural**. Elle nous permettait de comprendre pourquoi la vérification de chemin se faisait avec un `startsWith`, pourquoi signer un « dossier » n’avait pas de sens au sens strict, pourquoi le backend n’avait pas besoin d’interroger Cloudinary pour savoir si un dossier existait.
+
+Dans ce tutoriel, cette même vérité devient le **sujet principal**.
+
+Parce que si nous voulons donner à voir nos assets sous la forme d’un arbre, et que notre source de vérité n’a pas la notion d’arbre, alors nous allons devoir construire cet arbre nous-mêmes — en mémoire, à chaque requête, à partir de matériaux que nous allons nous-mêmes assembler.
+
+## Et quand un dossier n’a rien dedans ?
+
+Il y a pire. Un admin qui arrive sur l’interface veut pouvoir **créer un dossier avant d’y déposer quoi que ce soit**. Il veut préparer la structure d’un stage qui aura lieu dans deux mois, en créant dès aujourd’hui `my-app/published/karate/stage-juin-2026/`, pour que ses collègues sachent où déposer leurs photos quand le moment viendra.
+
+Ce besoin, parfaitement naturel dans un vrai système de fichiers, est **invisible pour Cloudinary**. Tant qu’aucun asset ne porte ce préfixe, il n’existe littéralement pas. Si nous construisions notre arbre uniquement à partir de ce que Cloudinary contient, ce dossier disparaîtrait à la première requête de rafraîchissement.
+
+---
+
+👉 un arbre qui ne retient que les dossiers peuplés oublie ceux que l’admin a voulu préparer  
+👉 un arbre qui ne retient que les dossiers déclarés oublie ceux que Cloudinary contient vraiment
+
+---
+
+Deux sources, donc, sont indispensables — et aucune n’est suffisante seule. C’est cette dualité qui va structurer tout le module.
+
+## Ce que nous allons faire dans ce tutoriel
+
+Nous n’allons pas « afficher l’arbre Cloudinary ». Nous allons regarder un module complet qui **fabrique** cet arbre, avec son builder en mémoire, sa table DB dédiée, ses procédures tRPC de lecture et de mutation, ses gardes de chemin, et ses transactions croisées entre Cloudinary et Prisma. Et nous allons comprendre pourquoi chacun de ces éléments existe précisément parce que Cloudinary, seul, ne suffit pas.
+
+L’objectif n’est pas d’apprendre une recette d’implémentation. L’objectif est de comprendre une philosophie :
+
+👉 **un Finder ne trouve jamais, il reconstruit — à partir de matériaux qu’il doit lui-même assembler, à chaque lecture.**
+
+À la fin de ce tutoriel, nous ne verrons plus un explorateur de fichiers comme une simple vue. Nous verrons un objet construit en deux passes, nourri par deux sources, et dont chaque mutation est une double écriture explicitement orchestrée.
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement « brancher un composant d’arbre sur une API ». Nous allons comprendre, étape par étape, pourquoi cet arbre doit exister en tant qu’objet construit, pourquoi il a besoin de deux sources pour être complet, et comment chacune des opérations du Finder — lire, créer, renommer, déplacer — doit composer avec le fait que Cloudinary n’a pas de topologie native. Trois mouvements, puis une section finale qui recompose le tout.
+
+- **Mouvement 1 — Pourquoi un Finder ne peut pas se contenter de Cloudinary.** Nous commençons par démonter l’illusion qu’il suffirait de demander à Cloudinary de nous rendre un arbre. Nous voyons ensuite pourquoi la notion de dossier vide — anodine sur un disque dur — impose une seconde source. Puis nous posons la règle de fusion qui va gouverner tout le reste.
+- **Mouvement 2 — La mécanique du builder : deux passes pour un arbre.** Nous regardons d’abord l’anatomie des nœuds que l’arbre manipule, puis nous lisons en deux temps — DB d’abord, Cloudinary ensuite — la fonction qui fait le travail. Et nous comprenons pourquoi l’ordre des passes n’est pas interchangeable.
+- **Mouvement 3 — Les opérations du Finder : comment on mute un univers qui n’a pas de dossiers.** Nous traversons les procédures tRPC qui lisent et modifient l’arbre. Chacune révèle que, dans un monde sans topologie, **déplacer** et **renommer** sont le même geste, et que la cohérence entre Cloudinary et la DB doit être reconstruite explicitement à chaque opération.
+
+La **Section 13** recomposera ensuite l’ensemble, et ouvrira vers ce qui suivra — la corbeille, la validation admin, et la suite du cycle de vie `pending → published → bin`.
+
+---
+
+## Mouvement 1 — Pourquoi un Finder ne peut pas se contenter de Cloudinary
+
+Avant d’écrire une ligne de builder, nous devons comprendre pourquoi ce builder existe. Deux questions se posent dans l’ordre. Cloudinary peut-il nous rendre directement un arbre ? Et si nous devions dériver cet arbre de ce qu’il nous rend, serait-ce suffisant pour l’admin ? À chacune de ces questions, la réponse est non — et la raison du non est instructive.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 1** — Nous regardons honnêtement ce que Cloudinary nous rend quand nous l’interrogeons, et pourquoi ce qu’il rend ne ressemble pas, même de loin, à un arbre.
+- **Section 2** — Nous identifions le cas limite — le dossier vide — qui à lui seul condamne toute architecture « Cloudinary-only » pour un Finder. Et nous introduisons la table DB qui va combler ce manque.
+- **Section 3** — Nous posons la règle de fusion : DB pour la charpente, Cloudinary pour les feuilles. Cette règle va guider tout le Mouvement 2.
+
+À la fin de ce mouvement, nous aurons compris pourquoi notre Finder ne peut pas reposer sur une source unique, et pourquoi la question n’est pas « quelle source choisir ? » mais « comment fusionner deux sources de nature différente ? ».
+
+---
+
+## 1 — L’illusion de l’arbre natif
+
+Le premier réflexe, quand on se retrouve face à un service de stockage, est de chercher son endpoint de listing. On ouvre la doc, on cherche quelque chose qui ressemble à `listFolders` ou à `getTree`, et on espère trouver, en retour, une structure qu’on pourra relayer telle quelle au client.
+
+Cloudinary propose bien une API de listing. Mais ce qu’elle rend n’est pas un arbre.
+
+---
+
+### 1.1 — Ce que Cloudinary nous rend vraiment
+
+Le helper qui sert de point d’entrée pour nos listings est court — et c’est dans sa brièveté que se lit toute l’histoire.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/services/cloudinary.service.ts"
+  filename="cloudinary.service.ts"
+  snippetRange="36-47"
+  snippetHighlight="37-46"
+  snippetTitle="Le helper de listing — et ce qu’il rend vraiment"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Regardons attentivement ce que cette fonction produit. Elle appelle `cloudinary.api.resources` avec un préfixe, et elle retourne un tableau. Pas un arbre. Pas une hiérarchie. Un tableau plat d’objets `{ publicId, url }`, chacun portant un `public_id` qui ressemble à un chemin mais qui, rappelons-le, n’en est pas un.
+
+Ce qu’il faut voir, c’est que **il n’y a pas d’autre forme disponible**. Cloudinary n’a pas d’endpoint qui rendrait une structure imbriquée. Même si nous l’appelions de mille façons différentes, nous retomberions sur cette même réalité : un tableau de `public_id` avec leurs métadonnées.
+
+---
+
+### 1.2 — Le réflexe naïf : relayer ce tableau au client
+
+Puisque Cloudinary nous rend un tableau, pourquoi ne pas simplement le renvoyer au client et laisser celui-ci se débrouiller pour l’afficher ?
+
+<CodeSnippet
+  language="ts"
+  title="Relayer brutalement — l’anti-pattern que nous allons démonter"
+  filename="naive-list.ts"
+  kind="anti-pattern"
+  codeJson='"// ❌ anti-pattern : renvoyer le sac plat tel quel au client\nexport const listRaw = adminProcedure.query(async () => {\n  const resources = await cloudinary.api.resources({\n    type: \"authenticated\",\n    prefix: \"my-app/\",\n    max_results: 500,\n  })\n\n  return resources.resources // ← un tableau plat de public_id\n})"'
+/>
+
+À première vue, cela marche. Le client reçoit deux cents objets, il écrit une fonction qui les regroupe par préfixe, il affiche un arbre. Mission accomplie.
+
+Mais nous venons de déporter côté client deux responsabilités qui n’ont rien à y faire.
+
+La première, c’est la **reconstitution de la topologie**. Transformer un sac plat en arbre est un travail de synthèse qui doit être fait **une fois**, au bon endroit, pas répété par chaque consommateur du tableau. Si demain nous avons une app mobile qui consomme la même API, elle réécrira la même logique de regroupement. Et comme deux implémentations ne sont jamais exactement identiques, l’arbre que le web affiche divergera tôt ou tard de celui que le mobile affiche.
+
+La deuxième, et c’est la plus grave, c’est la **mémoire des dossiers vides**. Un sac plat de `public_id` ne contient, par définition, que des dossiers peuplés — puisqu’un dossier sans asset n’existe pas chez Cloudinary. Un arbre reconstitué depuis ce sac ne contiendra jamais de branches sans feuilles. C’est une amnésie structurelle que le client, à lui seul, ne peut pas corriger.
+
+---
+
+### 1.3 — La vraie nature du problème
+
+Il faut nommer, à ce stade, ce que le problème n’est pas — et ce qu’il est vraiment.
+
+Le problème n’est pas que Cloudinary soit « mal conçu ». Son design — un grand espace plat de `public_id` uniques — est parfaitement cohérent avec sa vocation : stocker et servir des médias à l’échelle d’un CDN mondial. Un système de fichiers véritable, avec ses verrous, ses inodes et ses permissions par dossier, serait un frein pour un service qui doit répliquer des assets sur des centaines d’edges.
+
+Le problème n’est pas non plus que l’admin veuille « autre chose ». Un Finder est une attente humaine parfaitement légitime, et c’est même probablement la seule forme d’interface qui lui permette de manipuler plusieurs dizaines d’assets sans se perdre.
+
+Le problème est que **deux modèles mentaux se rencontrent** dans notre application — celui de Cloudinary, qui est plat, et celui de l’admin, qui est arborescent — et qu’il n’y a aucun mécanisme automatique pour traduire l’un en l’autre. Cette traduction, nous devons l’assumer. C’est notre backend, et personne d’autre, qui va la porter.
+
+<Callout type="concept">
+Un Finder n’est pas une vue — c’est une traduction.
+
+👉 Cloudinary parle plat, l’admin pense arborescence  
+👉 entre les deux, notre backend invente une topologie qui n’existe nulle part
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous savons maintenant pourquoi nous ne pouvons pas simplement relayer ce que Cloudinary nous rend. Le sac plat est ce que nous avons de plus proche d’une source de vérité sur le contenu stocké — mais à lui seul, il ne suffit pas à nourrir un Finder. Une autre limite, plus subtile, reste à regarder en face : celle des dossiers que Cloudinary ne peut littéralement pas représenter.
+
+---
+
+## 2 — La DB n’est pas un cache, elle est une source
+
+Admettons, pour un instant, que nous acceptions de fabriquer l’arbre côté backend plutôt que côté client. Nous aurions au moins réglé le problème de la responsabilité mal placée. Mais un cas reste orphelin, et c’est lui qui va nous forcer à introduire une seconde source.
+
+---
+
+### 2.1 — Le cas du dossier vide
+
+Reprenons notre exemple. Un responsable de section veut préparer les photos d’un stage qui aura lieu dans deux mois. Il ouvre l’interface d’administration. Il clique sur « Nouveau dossier ». Il tape `stage-juin-2026`. Il valide.
+
+Que doit-il se passer ensuite ?
+
+Dans un système de fichiers normal, la réponse est évidente : un répertoire est créé, vide, et il apparaît immédiatement dans l’explorateur. Ce dossier est une **entité** — il a un inode, il est inscrit dans l’arborescence du système, et il persistera tant qu’on ne l’aura pas supprimé explicitement.
+
+Chez Cloudinary, cette logique n’a pas de sens. Créer un dossier vide reviendrait à **quoi, exactement** ? Il n’y a pas d’opération disponible pour « créer un préfixe ». Un préfixe n’existe qu’à partir du moment où un asset le porte. Tant que `my-app/published/karate/stage-juin-2026/` n’est le prefix d’aucun `public_id`, cette chaîne n’a aucune existence dans l’univers Cloudinary.
+
+---
+
+👉 créer un dossier vide côté Cloudinary n’est pas « difficile »  
+👉 c’est **impossible au sens strict** — il n’y a rien à créer
+
+---
+
+Ce n’est pas un détail technique, c’est un blocage conceptuel. Et il ne disparaîtra pas si on le contourne — il reviendra sous d’autres formes.
+
+---
+
+### 2.2 — Pourquoi on pourrait être tenté de tricher
+
+Plusieurs contournements viennent spontanément à l’esprit. Chacun mérite un instant d’attention, parce que chacun échoue pour une raison différente.
+
+On pourrait, par exemple, uploader un fichier **placeholder** — un minuscule PNG transparent nommé `.keep` — à chaque création de dossier, pour que Cloudinary enregistre au moins un asset sous ce préfixe. C’est une astuce connue de certains systèmes qui reposent sur des stockages plats. Elle a plusieurs défauts. Elle consomme du quota Cloudinary. Elle pollue nos listings avec des fichiers fantômes qu’il faudra ensuite filtrer à l’affichage. Elle devient problématique dès qu’on veut renommer ou déplacer le dossier, puisque le placeholder doit suivre sans faute. Et elle introduit une cohérence implicite — « ce dossier existe parce qu’un certain fichier existe » — qui est exactement le genre d’invariant fragile qu’on cherche à éviter.
+
+On pourrait aussi garder les dossiers vides **en mémoire**, côté backend, entre les requêtes. C’est tout de suite éliminatoire dans notre contexte. Nous déployons en environnement serverless, comme nous l’avons vu au tutoriel précédent. Il n’y a pas de « mémoire partagée entre requêtes » fiable. Un dossier créé à une requête aurait toutes les chances d’avoir disparu à la requête suivante, sur une autre instance lambda.
+
+On pourrait enfin demander au client de **se souvenir lui-même** des dossiers qu’il a créés. Ce serait une catastrophe de synchronisation : chaque navigateur aurait son propre état, aucun utilisateur ne verrait ce qu’un autre a préparé, et la notion même de « structure partagée » s’évaporerait.
+
+Il ne reste qu’une voie. Les dossiers vides doivent être **persistés dans notre base de données**. Pas comme un cache de Cloudinary — Cloudinary n’a littéralement rien à en dire — mais comme une **source de vérité autonome** sur des entités que Cloudinary ignore.
+
+---
+
+### 2.3 — La table `CloudinaryFolder`
+
+Voici le modèle Prisma qui matérialise cette décision.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="278-295"
+  snippetHighlight="278-289"
+  snippetTitle="La table qui matérialise les dossiers que Cloudinary ne matérialise pas"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Lisons ce modèle comme un document architectural, pas comme un schéma technique. Quatre champs portent toute la logique.
+
+Le champ `appRoot` nomme la racine du projet. Il vaut, dans notre cas, la même chaîne que celle que nous avons signée dans la Section 5 du tutoriel précédent — la valeur de `APP_SHORT_NAME`. Cette séparation est ce qui permettrait, si besoin, de faire cohabiter deux applications dans le même compte Cloudinary sans que leurs arborescences se marchent dessus.
+
+Le champ `fullPath` contient le chemin complet du dossier, dans sa forme canonique — `my-app/published/karate/12` par exemple. Ce champ n’est **pas** un `public_id` Cloudinary. C’est un chemin logique, qui sert d’identifiant unique à la paire `(appRoot, fullPath)` via la contrainte `@@unique`. Deux dossiers ne peuvent pas avoir le même chemin complet sous le même projet — ce qui, rappelons-le, n’est absolument pas garanti par Cloudinary seul.
+
+Le champ `status` prend la valeur `pending`, `published` ou `bin`. Cette énumération n’est pas un détail — c’est la même que celle qui gouverne le cycle de vie côté `MediaAsset`. Un dossier sous `pending/` a le statut `pending`. Un dossier sous `published/` a le statut `published`. Cette cohérence entre le préfixe du chemin et le `status` du dossier est maintenue par une fonction utilitaire que nous verrons plus loin — `statusFromPath`.
+
+Les deux timestamps `createdAt` et `updatedAt` suivent, sans rien de remarquable, la convention Prisma habituelle.
+
+---
+
+### 2.4 — Ce que cette table change
+
+L’arrivée de `CloudinaryFolder` n’est pas un ajout cosmétique. Elle redistribue complètement la carte des sources.
+
+<ArchitectureDiagram
+  steps="Admin crée dossier vide | CloudinaryFolder DB | Admin upload fichier | Cloudinary stocke asset | Admin ouvre Finder | Backend fusionne DB + Cloudinary | Arbre complet"
+/>
+
+Regardons ce schéma pour ce qu’il raconte. La ligne du haut — la création d’un dossier vide — ne touche jamais Cloudinary. La ligne du milieu — l’upload d’un asset — ne touche pas directement `CloudinaryFolder`, mais nous verrons plus tard qu’elle peut y laisser une trace. Et la ligne du bas — la lecture du Finder — est la seule qui consomme les deux.
+
+C’est précisément parce que chaque source a une zone d’écriture différente qu’elles doivent être fusionnées à la lecture. Aucun mécanisme automatique ne garantit qu’elles disent exactement la même chose. C’est notre builder qui va le garantir — et encore, pas par magie, mais par un ordre de passes soigneusement choisi.
+
+<Callout type="insight">
+`CloudinaryFolder` n’est pas un cache de Cloudinary.
+
+👉 Cloudinary connaît les assets, il ignore les dossiers  
+👉 la DB connaît les dossiers, elle ignore les assets  
+👉 aucune des deux n’est subordonnée à l’autre — elles sont complémentaires
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons posé les deux sources. Cloudinary, qui contient les assets et rien d’autre. La DB, qui contient les dossiers — y compris les vides — et rien d’autre. Chacune est autoritative dans son domaine. Reste à formuler la règle qui va nous permettre de les fusionner en un seul arbre cohérent.
+
+---
+
+## 3 — La règle de fusion : DB pour la charpente, Cloudinary pour les feuilles
+
+Nous connaissons maintenant nos deux matériaux. Il nous faut un principe d’assemblage.
+
+---
+
+### 3.1 — Un modèle mental de la fusion
+
+Représentons ce que chacune de nos deux sources contient, indépendamment de l’autre.
+
+<CodeSnippet
+  language="txt"
+  title="Les deux sources, avant fusion"
+  filename="sources.txt"
+  kind="pattern"
+  codeJson='"# DB — table CloudinaryFolder (registered folders)\n[\n  \"my-app/pending\",\n  \"my-app/pending/karate\",\n  \"my-app/pending/karate/12\",\n  \"my-app/published\",\n  \"my-app/published/karate\",\n  \"my-app/published/karate/stage-juin-2026\"   # ← dossier vide, préparé par l’admin\n]\n\n# Cloudinary — sac plat de resources (public_id + url)\n[\n  { publicId: \"my-app/pending/karate/12/photo-001\", url: \"...\" },\n  { publicId: \"my-app/pending/karate/12/photo-002\", url: \"...\" },\n  { publicId: \"my-app/pending/judo/7/video-004\",   url: \"...\" }   # ← dossier jamais enregistré en DB\n]"'
+/>
+
+Chaque source comporte un cas intéressant. La DB contient `stage-juin-2026`, un dossier que l’admin a préparé mais qui n’a encore reçu aucune photo. Cloudinary, de son côté, contient un asset sous `judo/7/`, un dossier dont aucune ligne DB ne garde la trace — peut-être parce qu’un upload est passé sans que la sync ne le rattrape, peut-être parce que l’asset a été importé par une autre voie.
+
+L’arbre final doit refléter ces deux cas. Le dossier vide doit apparaître, même sans enfants. Le dossier non enregistré doit apparaître aussi, reconstruit à partir des segments de son `public_id`.
+
+---
+
+### 3.2 — L’ordre des passes
+
+Il y a, en théorie, deux façons de composer l’arbre.
+
+On pourrait partir des assets Cloudinary, construire l’arbre par remontée des segments de chaque `public_id`, et **ensuite** venir y ajouter les dossiers DB manquants. C’est une approche envisageable. Elle a un défaut : elle sépare mentalement « ce qui vient de Cloudinary » et « ce qui manque côté DB », alors que les deux doivent être fusionnés également.
+
+On peut aussi partir de la DB, construire la charpente complète des dossiers connus, puis venir y injecter les feuilles Cloudinary — en créant au passage les dossiers intermédiaires qui n’auraient pas été enregistrés. C’est l’ordre que le projet retient, et c’est celui qui donne le code le plus simple à lire.
+
+Pourquoi cet ordre plutôt que l’autre ? Parce qu’il **privilégie l’intention déclarée sur la réalité observée**. Quand un admin a pris la peine de créer un dossier, ce geste est un acte d’intention que nous voulons préserver, même si Cloudinary n’en sait rien. En commençant par la DB, nous disons au builder : « voici la charpente qu’il faut garantir — maintenant, garnis-la ». En commençant par Cloudinary, nous dirions l’inverse : « voici ce qui existe vraiment — rajoute les intentions oubliées ». La première formulation est plus fidèle à l’esprit du Finder.
+
+---
+
+### 3.3 — Vue d’ensemble du flux
+
+Avant d’entrer dans le code du builder au Mouvement suivant, posons le schéma complet de ce qui se passe à chaque ouverture du Finder.
+
+<ArchitectureDiagram
+  steps="Client ouvre Finder | Backend liste assets Cloudinary | Backend lit dossiers DB | Passe 1 : charpente depuis DB | Passe 2 : injection des fichiers | Arbre serialisable | Mapper vers contrat client | Client affiche arbre"
+/>
+
+Huit étapes, pour ce qui ressemble — du point de vue de l’admin — à un simple clic. Chaque étape a sa raison d’être, et aucune n’est redondante. Nous allons, dans le Mouvement 2, nous concentrer sur les deux étapes centrales — les deux passes du builder. Et dans le Mouvement 3, sur les étapes qui composent les opérations d’écriture, symétriques à celles de lecture.
+
+<Callout type="concept">
+La règle d’assemblage tient en deux lignes.
+
+👉 la DB fournit la **charpente** — tous les dossiers connus, même vides  
+👉 Cloudinary fournit les **feuilles** — les assets, qui complètent l’arbre au vol
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le problème est posé, les sources sont nommées, la règle d’assemblage est énoncée. Il nous reste à regarder, ligne par ligne, comment cette règle se traduit en code — et pourquoi sa traduction tient en une seule fonction de quatre-vingts lignes, lisible en deux passes successives.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons posé les fondations conceptuelles du Finder. Trois idées en sont ressorties :
+
+- **Cloudinary, seul, ne peut pas nourrir un Finder.** Il rend un sac plat de `public_id`, pas un arbre. Transformer ce sac en arbre est un travail de traduction qui doit être fait par notre backend — une fois, au bon endroit, pas délégué à chaque consommateur de l’API.
+- **Les dossiers vides sont le cas qui force une seconde source.** Un dossier sans asset n’existe pas chez Cloudinary — au sens strict, pas même comme concept. La table `CloudinaryFolder` existe pour donner une existence à cette entité que Cloudinary ignore. Ce n’est pas un cache, c’est une source autonome.
+- **La fusion se fait DB d’abord, Cloudinary ensuite.** Cet ordre n’est pas arbitraire — il privilégie l’intention déclarée sur la réalité observée. La DB pose la charpente, Cloudinary la garnit, et les dossiers intermédiaires manquants sont créés au vol lors de l’injection des feuilles.
+
+Le Mouvement 2 va maintenant nous emmener dans le code du builder, et montrer comment ces trois idées se concrétisent en une fonction unique, lisible en deux temps, dont chaque ligne porte une décision architecturale précise.
+
+---
+
+## Mouvement 2 — La mécanique du builder : deux passes pour un arbre
+
+C’est ici que nos principes deviennent du code. Nous allons regarder, de très près, la fonction qui produit l’arbre — ses nœuds, ses passes, son ordre. Et nous allons voir que l’intelligence de cette fonction ne réside pas dans sa complexité, mais dans la discipline avec laquelle elle respecte la règle d’assemblage posée au Mouvement précédent.
+
+Voici les quatre étapes que nous allons traverser :
+
+- **Section 4** — Nous regardons l’anatomie des nœuds que l’arbre manipule. Pourquoi un dossier porte un `path` mais un fichier un `publicId` — et ce que cette asymétrie révèle.
+- **Section 5** — Nous lisons la première passe : comment la charpente DB est déposée, dossier par dossier, avant toute injection de contenu.
+- **Section 6** — Nous lisons la deuxième passe : comment les assets Cloudinary viennent se greffer sur la charpente, en créant au passage ce qu’ils rencontrent d’inconnu.
+- **Section 7** — Nous comprenons pourquoi deux passes séparées — et pourquoi l’ordre n’est pas commutatif.
+
+À la fin de ce mouvement, nous saurons lire et expliquer, ligne à ligne, la fonction qui est au cœur du module — et nous aurons compris pourquoi sa simplicité n’est pas une économie de moyens, mais le résultat d’une règle bien choisie.
+
+---
+
+## 4 — L’anatomie du nœud Finder
+
+Avant de regarder la fonction qui assemble l’arbre, il faut connaître la forme des briques qu’elle manipule. Ces briques sont définies dans un contrat versionné, et ce contrat est aussi éloquent qu’une page de documentation.
+
+---
+
+### 4.1 — Le contrat V1
+
+Voici les types qui décrivent un nœud de l’arbre Finder.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/cloudinary/tree.contract.v1.ts"
+  filename="tree.contract.v1.ts"
+  snippetRange="1-60"
+  snippetHighlight="23-58"
+  snippetTitle="Les nœuds de l’arbre — un dossier, un fichier, et une asymétrie intentionnelle"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois types, dont deux principaux. `CloudinaryFolderNode` représente un dossier. `CloudinaryFileNode` représente un fichier. L’union `CloudinaryNode` combine les deux via un discriminant `type` — le même pattern de discriminated union que nous avons utilisé dans les contrats d’upload, et pour les mêmes raisons : il permet à TypeScript de restreindre automatiquement les champs disponibles selon le type courant, sans qu’un `as` soit jamais nécessaire.
+
+---
+
+### 4.2 — Pourquoi `path` côté dossier, `publicId` côté fichier
+
+Regardons une asymétrie que le code met en évidence sans la commenter. Un dossier porte un champ `path`. Un fichier porte un champ `publicId`. Pourquoi pas le même champ, puisque dans les deux cas c’est un chemin ?
+
+Parce que **ce ne sont pas les mêmes objets**.
+
+Le `path` d’un dossier est une chaîne que **nous fabriquons nous-mêmes**. Elle n’a pas d’existence ailleurs. Elle sert d’identifiant logique dans l’arbre, et elle est ce qui nous permet de comparer deux sous-arbres, de retrouver un dossier, d’en construire les enfants. Mais Cloudinary ne connaît pas cette chaîne. Si nous demandions à Cloudinary « existe-t-il un objet dont le chemin est `my-app/pending/karate/12` ? », la question n’aurait aucun sens — il n’y a pas d’objet « dossier » chez Cloudinary.
+
+Le `publicId` d’un fichier, au contraire, est une chaîne que **Cloudinary reconnaît**. C’est son identifiant réel. C’est ce qui permet de le relire, de le renommer, de le supprimer. C’est aussi la clé qui a servi, au tutoriel précédent, à la vérification de la Section 7 — le `publicId.startsWith(expectedFolder + "/")` qui garantissait qu’un asset prétendu était bien dans le dossier attendu.
+
+---
+
+👉 un `path` est une convention interne — utile pour notre arbre, opaque pour Cloudinary  
+👉 un `publicId` est un identifiant externe — que Cloudinary possède et reconnaît
+
+---
+
+Cette asymétrie est discrète, mais elle **encode dans le type** le fait que les dossiers vivent dans notre monde et que les fichiers vivent dans celui de Cloudinary. Les deux se rencontrent dans l’arbre — mais leur nature d’origine n’est pas identique.
+
+---
+
+### 4.3 — Un second contrat, orienté client
+
+Il existe, dans le package `@workspace/contracts`, un second fichier de types — `finder.types.ts` — qui décrit la version **destinée au client**.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/cloudinary/finder.types.ts"
+  filename="finder.types.ts"
+  snippetRange="1-46"
+  snippetHighlight="11-34"
+  snippetTitle="La forme côté client — avec fullPath uniforme"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les différences sont légères mais significatives. Le client ne voit plus `path` / `publicId` séparés — il reçoit un `fullPath` uniforme, que le nœud soit un dossier ou un fichier. Cette uniformisation côté client est le travail d’un mapper dédié, que nous regarderons rapidement en Section 8. Pourquoi uniformiser ? Parce que le client, lui, manipule l’arbre pour des gestes d’interface — naviguer, sélectionner, glisser-déposer — et ces gestes n’ont pas besoin de distinguer l’origine du chemin. Le backend, lui, doit garder la distinction pour savoir quelles opérations sont possibles sur quel nœud.
+
+Le client connaît aussi un troisième type, `VirtualFolderNode`, avec son statut `pending | published | bin`. Ces dossiers virtuels sont les racines logiques du Finder — `/pending`, `/published`, `/bin` — qui ne sont pas de « vrais » dossiers même au sens DB, mais des points d’entrée d’interface qu’on peut sélectionner comme cible d’un drop. Nous les recroiserons en section 11, quand nous lirons le move.
+
+<Callout type="concept">
+Deux contrats, deux vocations.
+
+👉 le contrat V1 côté backend garde la distinction path / publicId — parce que les opérations en dépendent  
+👉 le contrat client uniformise en fullPath — parce que les interactions n’en dépendent pas
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous savons quelle forme les nœuds de l’arbre prennent, et pourquoi cette forme encode la dualité des sources jusque dans ses champs. Regardons maintenant comment ces nœuds sont produits — une passe après l’autre.
+
+---
+
+## 5 — Première passe : la charpente DB
+
+La première passe du builder est la plus discrète. Elle ne lit aucun asset, elle n’appelle jamais Cloudinary, elle n’utilise que la liste des chemins DB reçue en entrée. Mais c’est elle qui garantit la présence des dossiers vides, et c’est donc elle qui justifie à elle seule l’existence du module.
+
+---
+
+### 5.1 — La signature de la fonction
+
+La fonction `buildCloudinaryTree` — exportée depuis la façade sous le nom `buildCloudinaryTreeV1` — prend trois paramètres.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/tree/finder.tree.v1.ts"
+  filename="finder.tree.v1.ts"
+  snippetRange="25-35"
+  snippetHighlight="25-35"
+  snippetTitle="La signature, et la racine posée en premier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois arguments, et aucun n’est dérivé. Les `resources` sont la liste plate des assets Cloudinary, exactement telle que nous l’avons récupérée au Mouvement 1. Les `registeredFolderPaths` sont les `fullPath` lus dans la table `CloudinaryFolder`. Le `rootPath` est la racine logique à partir de laquelle nous voulons construire l’arbre — `my-app/pending` ou `my-app/published` selon l’endroit où le Finder a été ouvert.
+
+Notons le détail important de la racine. Elle n’est pas découverte, elle est **reçue**. Son nom est extrait par un simple `split("/").pop()` — le dernier segment. Ses enfants sont initialisés à un tableau vide. C’est le squelette sur lequel tout le reste va se greffer.
+
+---
+
+### 5.2 — La primitive `ensureFolder`
+
+Avant de lire la boucle principale, il faut comprendre la fonction interne qui fait tout le travail : `ensureFolder`. Elle prend un chemin absolu et garantit qu’à la fin de son exécution, ce chemin existe dans l’arbre — en créant, si nécessaire, tous les dossiers intermédiaires.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/tree/finder.tree.v1.ts"
+  filename="finder.tree.v1.ts"
+  snippetRange="45-70"
+  snippetHighlight="45-70"
+  snippetTitle="ensureFolder — la descente segment par segment"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La logique tient en quelques lignes. Le chemin absolu est converti en chemin relatif à la racine — en enlevant le préfixe `${rootPath}/`. Le relatif est découpé en segments. Puis la fonction descend, segment par segment, à partir de la racine. Pour chaque segment, elle cherche s’il existe déjà un enfant de même nom et de type `folder`. S’il existe, elle descend dedans. Sinon, elle le crée, l’ajoute aux enfants du nœud courant, et descend dedans.
+
+Deux détails méritent d’être soulignés.
+
+Premier détail : la fonction crée récursivement **tous** les dossiers manquants le long du chemin. Demander `ensureFolder("my-app/pending/karate/12")` alors que seul `my-app/pending` existe produira, en une seule invocation, `my-app/pending/karate` puis `my-app/pending/karate/12`. Chaque palier est matérialisé. Cela nous évitera, plus tard, d’avoir à pré-dédupliquer ou pré-trier la liste d’entrée.
+
+Deuxième détail : la découverte d’un nœud existant se fait via `find` sur les `children` avec une garde de type (`c is CloudinaryFolderNode`). Cette garde est nécessaire parce qu’à cette étape du builder, les `children` peuvent déjà contenir d’autres dossiers — mais pas des fichiers, puisque la passe 2 n’a pas encore eu lieu. Néanmoins, le contrat du champ `children` autorise les deux types, donc le typage force la discrimination.
+
+---
+
+### 5.3 — La boucle qui pose la charpente
+
+Une fois `ensureFolder` défini, la première passe tient en cinq lignes.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/tree/finder.tree.v1.ts"
+  filename="finder.tree.v1.ts"
+  snippetRange="72-77"
+  snippetHighlight="72-77"
+  snippetTitle="La boucle DB — la charpente d’abord"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pour chaque chemin enregistré en DB, deux filtres rapides. Si le chemin est la racine elle-même, on saute — la racine est déjà là. Si le chemin ne commence pas par la racine, on saute aussi — c’est une ligne DB qui concerne un autre sous-arbre et qui n’a rien à faire ici. Sinon, on appelle `ensureFolder` qui fait le reste.
+
+Ce qui est remarquable ici, c’est ce qui **n’est pas fait**. Nous ne vérifions pas que le chemin est « cohérent » avec Cloudinary. Nous ne demandons pas à Cloudinary si ce dossier existe. Nous faisons **entièrement confiance à la DB** sur la question « ce dossier doit-il exister ? ». Parce que nous avons posé, au Mouvement 1, que la DB est autoritative sur les dossiers — et cette confiance se paie en lignes de code économisées.
+
+<Callout type="insight">
+La première passe ne voit pas Cloudinary.
+
+👉 elle ne connaît que ce que la DB lui dit  
+👉 elle dépose cette vérité dans l’arbre, sans demander à personne
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** la charpente est posée. L’arbre contient, à ce stade, exactement les dossiers que la DB déclare — ni plus, ni moins. Les dossiers vides sont présents, visibles, et ils survivront au reste de l’opération même si Cloudinary ne dit rien à leur sujet. Il ne manque plus qu’à les peupler.
+
+---
+
+## 6 — Deuxième passe : l’injection des feuilles
+
+La seconde passe est symétrique à la première dans sa forme, mais radicalement différente dans sa nature. Elle lit les assets Cloudinary et les injecte dans l’arbre déjà ébauché — en créant au passage les dossiers intermédiaires qu’elle rencontre et qui n’avaient pas été déclarés en DB.
+
+---
+
+### 6.1 — Lecture guidée
+
+Voici la deuxième passe complète, lue étape par étape.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/tree/finder.tree.v1.ts"
+  filename="finder.tree.v1.ts"
+  snippetRange="79-121"
+  title="La deuxième passe — injection des feuilles et complétion de l’arbre"
+  stepsJson='[
+    {
+      "title": "Chaque resource devient un chemin relatif",
+      "body": "Pour chaque asset retourné par Cloudinary, on convertit son publicId en chemin relatif à la racine, puis on le découpe en segments. Ce découpage est le point de départ de toute la logique — il traduit une chaîne plate en une suite de paliers à visiter.",
+      "scope": "80-84",
+      "focus": "81-82"
+    },
+    {
+      "title": "La descente, segment par segment",
+      "body": "La descente repart de la racine, segment par segment. Pour chaque segment, une décision : est-ce le dernier ? Si oui, c est un fichier. Sinon, c est un dossier — éventuellement à créer.",
+      "scope": "84-90",
+      "focus": "86-87"
+    },
+    {
+      "title": "Le cas feuille — création du nœud fichier",
+      "body": "Au dernier segment, la fonction vérifie d abord qu un enfant fichier de même publicId n existe pas déjà — protection contre les doublons qui pourraient apparaître si la liste Cloudinary en contenait. Si c est nouveau, elle crée un nœud file avec le publicId complet et l url secure, et le pousse dans les children.",
+      "scope": "87-103",
+      "focus": "89-102"
+    },
+    {
+      "title": "Le cas dossier intermédiaire — création au vol si absent",
+      "body": "Pour chaque segment intermédiaire, la fonction cherche un enfant dossier de même nom. S il existe déjà — ce qui sera le cas pour tous les dossiers que la passe 1 a créés — elle descend simplement dedans. S il n existe pas, elle le crée à la volée, l ajoute aux enfants du nœud courant, et descend dedans. C est ce qui permet aux dossiers Cloudinary jamais enregistrés en DB d apparaître quand même dans l arbre.",
+      "scope": "105-120",
+      "focus": "109-118"
+    }
+  ]'
+/>
+
+Deux points méritent d’être développés hors du walkthrough.
+
+Premier point : la **déduplication légère** au cas feuille. La condition `already = current.children.find(...)` regarde si, dans les enfants du nœud courant, il existe déjà un fichier avec exactement le même `publicId`. C’est une sécurité peu coûteuse contre un cas rare — Cloudinary qui nous retournerait deux fois le même asset dans sa réponse. Cela peut arriver en théorie, sous charge ou en cas de double listing entre cursors de pagination. La déduplication ici protège l’arbre sans nous obliger à pré-traiter la liste.
+
+Deuxième point : la **création au vol des dossiers intermédiaires** est ce qui permet à l’arbre de rester complet même quand la sync DB a raté. Un admin qui uploaderait un fichier sans que `upsertFolders` ne termine avec succès — pour une raison ou une autre — verrait quand même son dossier apparaître dans le Finder, parce que la passe 2 le reconstruirait à partir du segment du `publicId`. C’est une propriété précieuse de robustesse.
+
+---
+
+### 6.2 — Pourquoi la passe 2 est destructrice d’information — et pourquoi ce n’est pas grave
+
+Regardons attentivement ce qui se passe quand la passe 2 crée un dossier intermédiaire au vol. Ce dossier apparaît dans l’arbre. Il a un `path`, un `name`, et des enfants. Mais **il n’est pas dans la DB**. Il n’y a pas de ligne `CloudinaryFolder` qui le mentionne.
+
+Autrement dit, l’arbre construit en mémoire contient plus d’information que la DB ne peut en retrouver. À la prochaine requête, si rien ne change, le même dossier sera à nouveau reconstruit par la passe 2 — mais pas de façon persistante. Il n’est pas *mémorisé*, il est *reproduit à chaque lecture*.
+
+On pourrait voir là une lacune. En réalité, c’est une propriété tout à fait cohérente avec notre règle d’assemblage. Les deux sources ont des rôles différents, et la passe 2 n’a pas mandat pour écrire en DB. Si nous voulons que ce dossier soit mémorisé de façon durable, c’est à une **autre couche** — la sync opportuniste que nous verrons en Section 8 — d’assumer cette responsabilité. Le builder, lui, reste strictement en lecture.
+
+<Callout type="concept">
+La passe 2 peut produire un arbre plus riche que la DB ne peut retrouver.
+
+👉 parce qu’elle fait confiance à Cloudinary sur « ce qui existe »  
+👉 et qu’elle reconstruit la structure manquante à partir des segments
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** l’arbre est complet. Charpente DB, feuilles Cloudinary, dossiers intermédiaires créés au vol pour couvrir les cas où la sync DB n’a pas été faite. Il nous reste à comprendre pourquoi, en théorie comme en pratique, ces deux passes ne peuvent pas être fusionnées en une seule.
+
+---
+
+## 7 — Pourquoi deux passes — et pourquoi l’ordre n’est pas commutatif
+
+À première vue, on pourrait croire que les deux passes sont un artifice stylistique, et qu’on pourrait tout aussi bien les fondre en une seule boucle. Il n’en est rien. Les deux passes traitent deux sources qui n’ont ni la même forme, ni la même sémantique, ni le même contrat. Les séparer est ce qui rend le code lisible. Et les ordonner dans cet ordre-là est ce qui garantit que notre règle d’assemblage est respectée.
+
+---
+
+### 7.1 — Le test de la commutativité
+
+Imaginons l’ordre inverse. La passe Cloudinary d’abord, la passe DB ensuite. Que se passerait-il ?
+
+La passe Cloudinary construirait l’arbre à partir des `publicId`. Elle produirait, pour chaque asset, une chaîne de dossiers intermédiaires — créés au vol, puisqu’ils n’auraient pas été posés préalablement. À la fin de cette passe, l’arbre contiendrait tous les dossiers peuplés, et seulement ceux-ci. Pas de dossier vide.
+
+La passe DB arriverait ensuite. Pour chaque chemin en DB, elle appellerait `ensureFolder`. Cette fonction, dans sa forme actuelle, ferait son travail sans se poser de question — elle descendrait dans l’arbre, créerait les paliers manquants, et s’arrêterait au dernier. Résultat : les dossiers vides apparaîtraient bien, à la fin.
+
+En apparence, le résultat est identique. Alors pourquoi privilégier l’ordre actuel ?
+
+---
+
+### 7.2 — Ce que l’ordre actuel garantit, que l’ordre inverse ne garantit pas
+
+La réponse tient dans la **confiance implicite** qui gouverne la passe 2.
+
+Dans l’ordre actuel — DB puis Cloudinary — la passe 2 peut faire une hypothèse utile : tous les dossiers déclarés par la DB sont **déjà présents** dans l’arbre. Quand elle descend segment par segment et qu’elle trouve un dossier existant, elle peut supposer que ce dossier vient de la passe 1, c’est-à-dire d’une **source autoritative**. Quand elle crée un dossier au vol, elle sait qu’elle est en train de compléter ce qui manquait — pas de reconstruire quelque chose qui aurait pu, en parallèle, être déjà connu.
+
+Dans l’ordre inverse, cette distinction s’effondre. La passe Cloudinary ne saurait pas si le dossier qu’elle crée est une *découverte* (nouveau dossier, absent de la DB) ou une *duplication involontaire* (dossier que la DB aurait posé ensuite). Si un jour on voulait, dans la passe Cloudinary, faire quelque chose de différent selon que le dossier existe déjà ou non — par exemple, alimenter un compteur, ou décorer le nœud — cette distinction deviendrait cruciale. Et elle ne serait pas disponible.
+
+L’ordre actuel préserve donc une **propriété architecturale** que l’ordre inverse détruirait : la possibilité de raisonner sur chaque passe en supposant que la précédente a fini. C’est une discipline, même quand elle n’est pas activement utilisée.
+
+---
+
+### 7.3 — La table des cas de fusion
+
+Pour fixer les idées, résumons ce que produit chaque cas de figure dans l’arbre final.
+
+<DocsTable
+  columnsJson='["Situation","Présent en DB ?","Présent sur Cloudinary ?","Résultat dans l’arbre Finder"]'
+  rowsJson='[["Dossier peuplé et enregistré","oui","oui (via ses assets)","dossier affiché, avec ses fichiers"],["Dossier vide, créé dans l’UI","oui","non","dossier affiché, sans enfants"],["Dossier jamais enregistré en DB, mais présent via ses assets","non","oui (via ses assets)","dossier affiché, reconstruit par la passe 2"],["Ni en DB ni sur Cloudinary","non","non","n’apparaît pas — rien n’existe"]]'
+/>
+
+Lisons cette table pour ce qu’elle dit vraiment. Chaque ligne correspond à un invariant que notre Finder garantit — ou explicitement ne garantit pas. Les trois premières lignes sont les trois cas où un dossier *mérite* d’apparaître, pour une raison ou une autre. La quatrième est le seul cas où un dossier n’a aucune raison d’exister dans l’arbre — et, effectivement, il n’y existe pas.
+
+Un détail mérite d’être souligné sur la troisième ligne. Elle représente un **désalignement** entre la DB et Cloudinary : un dossier connu de Cloudinary mais ignoré de la DB. Ce désalignement peut se produire — le plus souvent, après un upload qui aurait bien abouti côté Cloudinary sans que la sync DB n’ait été faite. Dans cet état, l’arbre reste lisible, le dossier apparaît, les assets sont visibles. Mais l’information manquante en DB le restera tant qu’une opération ne viendra pas la matérialiser. La Section 8 va nous montrer comment, justement, la lecture de l’arbre est l’endroit où nous **refermons silencieusement ce désalignement**.
+
+<Callout type="warning">
+L’ordre des passes n’est pas un détail de style.
+
+👉 DB d’abord, Cloudinary ensuite — la charpente repose sur l’intention déclarée  
+👉 l’inverse produirait le même arbre dans les cas simples  
+👉 mais il briserait la propriété « la passe 1 est terminée quand la passe 2 commence »
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons lu en entier le builder, et nous avons compris pourquoi sa structure en deux passes est à la fois le reflet de deux sources distinctes et un outil de raisonnement. L’arbre que produit cette fonction est ensuite transmis au router, qui va l’exposer — mais pas sans passer par un mapping vers le contrat client. C’est là que commence le Mouvement 3.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons traversé la mécanique du builder, et quatre idées en sont ressorties :
+
+- **Les nœuds de l’arbre encodent, dans leurs champs, la dualité des sources.** Un dossier porte un `path` (convention interne) parce que Cloudinary ne reconnaît aucun dossier. Un fichier porte un `publicId` (identifiant externe) parce que Cloudinary le reconnaît. Cette asymétrie est intentionnelle.
+- **La première passe dépose la charpente DB sans jamais consulter Cloudinary.** Elle suppose que la DB est autoritative sur les dossiers, et cette supposition lui permet de tenir en cinq lignes.
+- **La seconde passe injecte les feuilles et complète la charpente au vol.** Elle fait confiance à Cloudinary sur « ce qui existe » et elle reconstruit les dossiers intermédiaires manquants — ce qui rend l’arbre résilient aux désynchronisations transitoires.
+- **L’ordre des deux passes n’est pas commutatif.** Dans l’ordre actuel, la seconde passe peut raisonner en supposant que la première est terminée. L’ordre inverse produirait le même arbre dans les cas simples, mais il briserait cette propriété.
+
+Le Mouvement 3 va maintenant s’attaquer à l’autre moitié du module — celle où le Finder n’est plus seulement lu, mais modifié. Et c’est là que la cohérence entre nos deux sources deviendra un travail explicite, à chaque opération.
+
+---
+
+## Mouvement 3 — Les opérations du Finder : comment on mute un univers qui n’a pas de dossiers
+
+Lire un arbre est une chose. Le modifier en est une autre. À chaque fois qu’un admin crée un dossier, renomme, ou glisse-dépose un asset, nos deux sources doivent être mises à jour — et aucune n’est subordonnée à l’autre. Chacune a sa propre écriture, son propre timing, son propre risque d’échec. Et parce que Cloudinary ne connaît pas les dossiers, beaucoup d’opérations qui sembleraient triviales dans un vrai système de fichiers deviennent ici des chorégraphies explicites.
+
+Voici les cinq étapes que nous allons traverser :
+
+- **Section 8** — Nous lisons la query `getFolderTree` qui compose les deux sources en lecture — avec un détail discret mais essentiel : la **sync opportuniste** qui répare en silence les désynchronisations rencontrées.
+- **Section 9** — Nous regardons `createFolder`, l’unique procédure du module qui ne touche jamais Cloudinary — et nous comprenons pourquoi cette singularité est légitime.
+- **Section 10** — Nous entrons dans `renameFolderPrefix`, la procédure la plus riche, celle où les deux univers doivent être renommés en parallèle, avec détection de collision.
+- **Section 11** — Nous lisons le move, qui révèle que dans un monde sans dossiers, **déplacer et renommer sont le même geste**.
+- **Section 12** — Nous refermons sur l’immuabilité de `bin/.trash/`, cet exclave du router qui obéit à un contrat différent.
+
+À la fin de ce mouvement, nous comprendrons pourquoi chaque opération d’écriture est une double écriture, et pourquoi la cohérence entre Cloudinary et la DB n’est jamais acquise — elle est reconstruite à chaque mutation, sous la discipline des gardes de chemin que nous avons posées au tutoriel précédent.
+
+---
+
+## 8 — `getFolderTree` — lire l’arbre, et réparer au passage
+
+La procédure de lecture principale du Finder est celle qui assemble les deux sources et renvoie l’arbre complet. Elle fait trois choses — l’interrogation de Cloudinary, l’interrogation de la DB, la fusion — et elle en fait discrètement une quatrième : la sync opportuniste.
+
+---
+
+### 8.1 — La procédure, lue de bout en bout
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="340-373"
+  snippetHighlight="344-372"
+  snippetTitle="getFolderTree — lecture des deux sources, sync opportuniste, mapping"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Six étapes composent cette procédure, dans un ordre qui n’a rien d’arbitraire.
+
+Elle commence par normaliser le chemin reçu — un helper qui retire les `/` en début et fin. Puis elle appelle `assertSafePath`, la même discipline de garde que nous avons rencontrée au tutoriel précédent : le chemin doit commencer par `PROJECT_ROOT`, et il ne doit pas contenir `..`. Rien ici qui n’ait déjà été justifié.
+
+Elle liste ensuite les resources Cloudinary sous ce préfixe, via le helper `listAuthenticatedResources`. C’est la passe qui nous rend le sac plat.
+
+Puis elle calcule les **ancêtres** de chaque `publicId` rencontré. C’est le moment clé. Pour chaque asset, la fonction `folderAncestorsOfPublicId` extrait la liste de tous les dossiers qui, par convention de préfixage, contiennent cet asset. Par exemple, un `publicId` `my-app/pending/karate/12/photo-001` produit les quatre ancêtres `my-app`, `my-app/pending`, `my-app/pending/karate`, `my-app/pending/karate/12`.
+
+Ces ancêtres sont ensuite passés à `upsertFolders`, qui insère en DB ceux qui manquent. C’est la **sync opportuniste** que nous avons annoncée dans le Mouvement 1.
+
+Puis elle relit la table `CloudinaryFolder`, filtrée sur les chemins qui commencent par `normalizedPath`. Elle passe tout ça — la liste des resources et la liste des chemins DB — au builder que nous avons lu en Section 5 et 6.
+
+Enfin, elle mappe l’arbre produit vers le contrat client, via `mapCloudinaryFolderToClient`.
+
+---
+
+### 8.2 — La sync opportuniste, lue pour ce qu’elle est vraiment
+
+Arrêtons-nous sur l’appel à `upsertFolders`. Pourquoi ce upsert se fait-il à la **lecture**, et pas à l’écriture ?
+
+Dans un système idéal, chaque upload produirait immédiatement un `upsert` des dossiers ancêtres. Et c’est effectivement ce qu’on peut lire, au tutoriel précédent, dans les gardes du module d’upload — quand `registerUploadedAssets` se termine, les ancêtres du nouveau `publicId` sont normalement matérialisés en DB. Donc en théorie, à chaque lecture, la DB devrait déjà contenir tout ce que Cloudinary laisse deviner.
+
+En pratique, cette cohérence n’est pas garantie. Un upload a pu passer par une autre voie — un import de démo, une migration, un script d’admin. Un `upsert` a pu échouer silencieusement. Une transaction a pu être partiellement rejouée. Autant de raisons pour lesquelles l’état de la DB peut être en retard sur celui de Cloudinary.
+
+La sync opportuniste regarde ce problème avec pragmatisme. **À chaque lecture**, elle prend ce que Cloudinary contient, elle en déduit la liste des dossiers ancêtres, et elle les upsert en DB. Si la DB était déjà à jour, l’opération est un no-op. Si elle était en retard, elle rattrape — sans bloquer, sans alerter, sans interrompre la lecture. La DB converge vers Cloudinary, naturellement, à chaque requête.
+
+---
+
+👉 pas besoin d’un cron de sync — chaque lecture fait le travail  
+👉 pas besoin d’une transaction distribuée — l’`upsert` est idempotent
+
+---
+
+Cette approche a un coût. Elle écrit en DB à chaque lecture de Finder, même quand rien ne change. Sur des volumes modestes — ce qui est le cas dans un projet d’association — ce coût est négligeable. Sur des volumes plus lourds, il faudra une approche plus fine. Pour l’instant, la simplicité de la sync opportuniste a plus de valeur que son optimisation.
+
+---
+
+### 8.3 — Les helpers discrets : `folderAncestorsOfPublicId`, `statusFromPath`
+
+Deux helpers tiennent ensemble le dispositif d’upsert, et ils méritent chacun un regard.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="65-103"
+  snippetHighlight="65-77,94-103"
+  snippetTitle="Les helpers qui tiennent la sync opportuniste"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`folderAncestorsOfPublicId` produit la liste cumulative des préfixes d’un `publicId`. Notons un détail : si le `publicId` n’a pas au moins deux segments — c’est-à-dire s’il n’est pas dans un dossier — la fonction retourne un tableau vide. Pas d’ancêtre, pas d’`upsert`. La racine du projet seule n’est pas enregistrée comme dossier à matérialiser.
+
+`statusFromPath` déduit, à partir du chemin, le `status` à inscrire en DB. Convention projet : le deuxième segment est toujours `pending`, `published` ou `bin`. Si ce n’est pas le cas — chemin bizarre, préfixe non conforme — la fonction retombe sur `"pending"` par défaut. Ce fallback n’est pas une concession ; c’est un choix prudent. Un dossier dont le statut serait ambigu mérite de rester en zone de quarantaine.
+
+L’`upsert` lui-même, que nous avons aperçu en passant, tient en peu de lignes et repose sur la contrainte `@@unique([appRoot, fullPath])` du modèle Prisma. Chaque chemin est upserté indépendamment, dans une transaction unique — ce qui empêche qu’une liste partielle soit inscrite si une ligne échoue.
+
+<Callout type="insight">
+La sync opportuniste n’est pas une garantie, c’est une convergence.
+
+👉 à chaque lecture, la DB se rapproche de Cloudinary  
+👉 la cohérence n’est jamais instantanée — elle est atteinte à la prochaine requête
+</Callout>
+
+---
+
+### 8.4 — Le mapping vers le contrat client
+
+Un dernier point sur cette procédure : le mapping final.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/mappers/cloudinary/tree.v1.mapper.ts"
+  filename="tree.v1.mapper.ts"
+  snippetRange="1-40"
+  snippetHighlight="12-32"
+  snippetTitle="Le mapper qui uniformise path et publicId en fullPath"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce mapper fait, à peu de lignes près, ce que nous avions annoncé en Section 4. Il traduit les nœuds backend — avec leur distinction `path` / `publicId` — en nœuds client — avec leur `fullPath` uniforme. La récursivité est assurée par la fonction dispatcher `mapCloudinaryNodeToClient`, qui choisit le bon mapper selon le type du nœud.
+
+Ce passage par un mapper n’est pas une pure conversion de forme — c’est une **frontière contractuelle**. Le backend peut évoluer librement son format interne, tant que le mapper continue de produire la forme que le client attend. Inversement, le client peut évoluer son rendu tant qu’il consomme cette forme stable. Ce sont deux versions — V1 côté backend, client stable — liées par un seul fichier. Exactement le genre de découplage que `packages/contracts` est fait pour porter.
+
+---
+
+👉 **Où nous en sommes :** nous savons lire l’arbre. Nous savons aussi que chaque lecture répare discrètement la DB. Il nous reste à regarder ce qui se passe quand l’admin *veut* modifier l’arbre — en commençant par le cas le plus singulier de tous, celui où Cloudinary n’est jamais appelé.
+
+---
+
+## 9 — Créer un dossier vide — la seule opération sans Cloudinary
+
+Parmi toutes les procédures du router, une seule ne touche **jamais** Cloudinary. C’est celle qui crée un dossier vide. Et c’est cette singularité qui la rend, à elle seule, la justification vivante de tout ce que nous avons construit.
+
+---
+
+### 9.1 — La procédure
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="421-435"
+  snippetHighlight="424-434"
+  snippetTitle="createFolder — une écriture DB, et seulement DB"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois étapes, et aucune ne sort du monde Prisma. Normalisation du chemin. Gardes de sécurité — `assertSafePath` pour bloquer tout chemin hors racine, `assertNotInTrashStorage` pour rappeler que `bin/.trash/` est un exclave. Puis un `upsertFolders` sur la liste des ancêtres, calculée par `folderAncestorsOfFolderPath`.
+
+Ce qui est remarquable, c’est tout ce qui **n’est pas fait**. Aucun appel à `cloudinary.uploader`. Aucun appel à `cloudinary.api.resources`. Aucune interaction avec le service externe. Cette procédure est intégralement interne.
+
+---
+
+### 9.2 — Pourquoi Cloudinary n’est pas appelé — et pourquoi c’est cohérent
+
+Il est tentant de voir cette absence comme une omission. Ce serait passer à côté de l’essentiel. Cloudinary n’est pas appelé parce que **rien n’est à stocker**. Un dossier vide n’a pas d’asset à déposer, pas de `public_id` à créer, pas de binaire à transférer. Le demander à Cloudinary n’aurait littéralement aucun sens — il n’y a pas d’endpoint `createFolder`, parce qu’il n’y a pas de concept de dossier.
+
+Cette procédure est le miroir exact du Callout que nous avons posé en Section 2.3 : `CloudinaryFolder` n’est pas un cache. Si elle était un cache, la création d’un dossier vide devrait se propager à Cloudinary d’une manière ou d’une autre, même si c’était artificiel. Parce qu’elle est une source autonome, la création d’un dossier vide s’arrête en DB — et cet arrêt n’est pas une mutilation, c’est une **cohérence architecturale**.
+
+---
+
+👉 le vide n’est pas un rien — c’est un état que seule la DB peut porter  
+👉 et c’est pour cela que `createFolder` est la procédure la plus DB-pure du module
+
+---
+
+### 9.3 — Les ancêtres, encore une fois
+
+Un détail de `createFolder` mérite une loupe. L’upsert ne concerne pas seulement le dossier demandé — il concerne **tous ses ancêtres**. Si l’admin demande la création de `my-app/published/karate/stage-juin-2026`, la procédure upsert en DB :
+
+- `my-app` — la racine du projet
+- `my-app/published`
+- `my-app/published/karate`
+- `my-app/published/karate/stage-juin-2026`
+
+Pourquoi tous les ancêtres, et pas seulement le dernier ? Parce que si nous n’insérions que le dernier, et qu’aucune ligne n’existait pour `my-app/published/karate`, la lecture suivante du Finder aurait un comportement étrange : le dossier `stage-juin-2026` serait déclaré en DB, mais son parent immédiat ne le serait pas. Le builder s’en sortirait — la passe 2 créerait les parents au vol si un asset les remplissait, ou la passe 1 les produirait via `ensureFolder` qui descend segment par segment — mais la DB, elle, porterait une ligne orpheline au sens de la hiérarchie.
+
+En upsertant tous les ancêtres, `createFolder` maintient l’invariant « si un dossier est en DB, tous ses ancêtres le sont aussi ». Cet invariant n’est pas strictement nécessaire au fonctionnement du builder, mais il rend la table DB **auto-cohérente** et lisible à l’œil nu.
+
+<Callout type="concept">
+Créer un dossier vide, c’est le seul cas où la DB écrit seule.
+
+👉 parce que Cloudinary ne peut rien écrire pour nous  
+👉 et parce que le vide lui-même est une information que seule la DB peut porter
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons vu l’opération la plus simple du module — une écriture pure en DB, sans aucun appel à Cloudinary. Passons maintenant à la plus riche, celle qui nous obligera à orchestrer une double écriture en préservant la cohérence entre les deux sources.
+
+---
+
+## 10 — Renommer un dossier — la double écriture orchestrée
+
+La procédure `renameFolderPrefix` est la plus riche du router. Elle touche les deux univers à la fois, elle gère la pagination Cloudinary, elle détecte les collisions côté DB, et elle englobe tout cela dans une transaction. C’est ici que la discipline de cohérence devient visible au grand jour.
+
+---
+
+### 10.1 — Vue d’ensemble de la procédure
+
+Avant de lire ligne par ligne, regardons le flux.
+
+<ArchitectureDiagram
+  steps="Client demande rename | Normalisation et gardes | No-op si fromPrefix égal toPrefix | Rename Cloudinary paginé image/video/raw | Recherche DB des lignes impactées | Détection de collisions | Transaction : upsert ancêtres + update lignes | Retour success"
+/>
+
+Huit étapes. Chacune est nécessaire, et chacune rattrape un cas que les autres ne couvriraient pas. Lisons-les en détail.
+
+---
+
+### 10.2 — Lecture guidée
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="440-524"
+  title="renameFolderPrefix — la chorégraphie de la double écriture"
+  stepsJson='[
+    {
+      "title": "Normalisation et gardes",
+      "body": "Même discipline de chemin qu au Mouvement 5 du tutoriel précédent. Les deux chemins — source et cible — passent par normalizePath, puis par assertSafePath et assertNotInTrashStorage. Rien ici qui n ait déjà été justifié, mais la répétition est intentionnelle : chaque procédure de mutation repose sur ses propres gardes, il n y a pas de vérification globale en amont.",
+      "scope": "442-449",
+      "focus": "442-449"
+    },
+    {
+      "title": "Le no-op silencieux",
+      "body": "Si fromPrefix et toPrefix sont identiques, la procédure s arrête immédiatement en renvoyant un success. Ce n est pas un cas théorique — c est un cas pratique, qui arrive quand l UI rafraîchit un rename qui a déjà eu lieu ou que l admin valide un rename sans changer le nom. Autoriser ce no-op évite une erreur inutile et garde l API tolérante aux doubles appels.",
+      "scope": "451-453",
+      "focus": "451-453"
+    },
+    {
+      "title": "Le rename Cloudinary paginé",
+      "body": "Cette seule ligne appelle renameFolderPrefixOnCloudinary — un helper qui boucle sur les trois resource types image, video, raw, pagine par 500, et renomme chaque asset individuellement via cloudinary.uploader.rename. Cloudinary n a pas de rename de dossier — il renomme des public_id, un par un. Nous simulons le rename de dossier en renommant tous les assets préfixés.",
+      "scope": "455-455",
+      "focus": "455-455"
+    },
+    {
+      "title": "Recherche des lignes DB impactées",
+      "body": "Une fois Cloudinary renommé, la procédure cherche en DB toutes les lignes CloudinaryFolder dont le fullPath est soit égal à fromPrefix, soit commence par fromPrefix suivi d un /. Ces lignes sont celles qu il va falloir mettre à jour — elles représentent soit le dossier renommé lui-même, soit ses sous-dossiers, soit ses dossiers vides déclarés dans l UI.",
+      "scope": "457-463",
+      "focus": "457-463"
+    },
+    {
+      "title": "Le cas — aucune ligne DB impactée",
+      "body": "Si la recherche ne trouve rien, c est que le dossier n avait jamais été enregistré en DB. Dans ce cas, on se contente d upserter les ancêtres de la cible — pour que les lectures suivantes voient la nouvelle arborescence — et on retourne. Pas de update, pas de transaction lourde : il n y avait rien à renommer côté DB.",
+      "scope": "465-468",
+      "focus": "465-468"
+    },
+    {
+      "title": "La détection de collisions DB",
+      "body": "Avant de renommer en masse, la procédure calcule les chemins cibles de chaque ligne impactée, puis elle cherche en DB s il existe déjà des lignes — autres que celles qu elle renomme — portant ces mêmes chemins cibles. Si oui, c est une collision : la destination est occupée par une entité DB qui n a rien à voir avec notre rename. La procédure lève une erreur CONFLICT. Cette vérification est ce qui protège contre les écritures DB divergentes.",
+      "scope": "470-493",
+      "focus": "477-493"
+    },
+    {
+      "title": "La transaction finale",
+      "body": "Dans une seule transaction Prisma, on fait deux choses : d abord, on upsert tous les ancêtres de la cible — pour garantir l invariant — puis on update chaque ligne impactée en remplaçant fromPrefix par toPrefix dans son fullPath et en recalculant son status via statusFromPath. Si une seule de ces opérations échoue, l ensemble est rollback — la DB reste exactement comme avant.",
+      "scope": "495-521",
+      "focus": "495-521"
+    }
+  ]'
+/>
+
+---
+
+### 10.3 — Pourquoi Cloudinary d’abord, DB ensuite
+
+Il est intéressant de remarquer l’ordre. On commence par renommer Cloudinary, et **ensuite** on met à jour la DB. Ce n’est pas anodin.
+
+Cloudinary est le système externe. Ses opérations peuvent échouer pour des raisons hors de notre contrôle — quota dépassé, latence réseau, asset verrouillé par une autre opération. Si nous commencions par la DB, et que Cloudinary échouait ensuite, notre DB pointerait vers un univers Cloudinary qui n’a pas encore été transformé. Les lectures suivantes donneraient un arbre incohérent.
+
+En commençant par Cloudinary, nous acceptons un autre risque symétrique : que Cloudinary réussisse et que la DB échoue. Dans ce cas, la DB reste en retard — les assets ont bien été renommés chez Cloudinary, mais notre table `CloudinaryFolder` continue de les déclarer sous l’ancien chemin. C’est un désalignement gênant, mais pas catastrophique : la lecture suivante du Finder, via la sync opportuniste que nous avons vue en Section 8, rattrapera la situation. La DB convergera vers Cloudinary à la prochaine requête.
+
+Entre deux risques, nous avons choisi celui que la sync opportuniste peut réparer. C’est une décision de conception, et elle se lit dans l’ordre des appels.
+
+---
+
+### 10.4 — Pourquoi une transaction pour la DB seule
+
+La transaction Prisma englobe l’upsert des ancêtres et les updates des lignes impactées. Pourquoi une transaction ? Parce que les deux opérations sont sémantiquement un seul geste. Si l’upsert des ancêtres réussissait mais qu’un update échouait — ou l’inverse — nous aurions une DB partiellement transformée, avec des ancêtres présents mais des lignes filles encore dans l’ancien monde.
+
+La transaction garantit que, du point de vue de la DB, le rename est **atomique** : soit l’ensemble des lignes impactées passe dans le nouveau monde, soit la DB reste exactement comme avant. Cette atomicité est locale — elle ne couvre pas Cloudinary, qui a été appelé en dehors de la transaction — mais elle est la seule disponible.
+
+<Callout type="warning">
+La cohérence DB ↔ Cloudinary n’est pas transactionnelle — elle est convergente.
+
+👉 Cloudinary est renommé en premier, pour que la DB puisse toujours rattraper son retard  
+👉 la DB est transactionnelle en interne, pour ne pas se contredire elle-même  
+👉 entre les deux, la sync opportuniste ferme les écarts à la lecture suivante
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons lu l’opération la plus riche du router. Deux univers à renommer, des collisions à détecter, une transaction pour la DB, un ordre soigneusement choisi. Passons au cas plus général — le move — dont nous allons voir qu’il n’est, au fond, qu’une variante de ce que nous venons de lire.
+
+---
+
+## 11 — Le move, ou : déplacer c’est renommer
+
+La procédure `move` du router prend un `MoveIntent` — un couple (source, target) — et l’exécute. Elle orchestre des renames Cloudinary, des mises à jour DB, et elle s’appuie sur un jeu de guards côté contrat. Nous allons la lire moins en détail que `renameFolderPrefix`, parce que son fonctionnement repose sur ce que nous avons déjà appris — et parce que sa vraie leçon est conceptuelle.
+
+---
+
+### 11.1 — Le contrat du move
+
+Avant le code, la forme. Un `MoveIntent` est un discriminated union — encore.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/schemas/cloudinary/move.schema.ts"
+  filename="move.schema.ts"
+  snippetRange="1-55"
+  snippetHighlight="7-54"
+  snippetTitle="Le contrat Zod du move — trois sources possibles, deux cibles"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La source peut être un `file`, un `folder`, ou une `selection` (multi-sélection). La cible peut être un `folder` (un vrai dossier existant) ou un `virtual-folder` (une des racines logiques `pending`, `published`, `bin`). Cette grammaire couvre les principaux gestes d’un Finder : glisser un fichier dans un dossier, déplacer un dossier entier vers `/published`, sélectionner plusieurs assets et les déplacer en masse.
+
+Les guards associés à ce contrat — dans `move.guards.ts` — expriment les règles de légalité. On ne peut pas déposer un dossier dans ses propres descendants. On ne peut pas déposer un dossier sur lui-même. Une sélection ne peut pas contenir des racines qui sont ancêtres de la cible. Ces règles sont vérifiées côté frontend pour guider l’UI, et re-vérifiables côté backend pour sécuriser l’écriture.
+
+---
+
+### 11.2 — La primitive cachée : `replaceStatusSegment`
+
+Regardons maintenant le cœur du move, qui se cache dans un utilitaire d’une dizaine de lignes.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/utils/cloudinary.utils.ts"
+  filename="cloudinary.utils.ts"
+  snippetRange="12-26"
+  snippetHighlight="12-26"
+  snippetTitle="replaceStatusSegment — la primitive qui transforme un déplacement en renommage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette fonction prend un chemin complet et une nouvelle valeur de statut. Elle découpe le chemin, remplace le **deuxième segment** — celui qui vaut `pending`, `published` ou `bin` selon notre convention — et recolle. C’est tout.
+
+Ce que cette fonction encode, en cinq lignes, c’est la décision architecturale la plus profonde du module.
+
+Dans un vrai système de fichiers, déplacer un asset de `pending/` à `published/` serait une opération native — `mv`, ou un `rename` au sens système. Chez Cloudinary, qui n’a pas de dossiers, la même opération n’existe pas. Alors nous la simulons. Nous prenons le `publicId` de l’asset, nous changeons son préfixe, et nous demandons à Cloudinary de renommer l’asset vers ce nouveau `publicId`. Du point de vue de l’utilisateur, l’asset s’est déplacé. Du point de vue de Cloudinary, **une chaîne a été remplacée par une autre**.
+
+---
+
+👉 dans un monde sans dossiers, déplacer c’est renommer  
+👉 `replaceStatusSegment` est la trace, dans le code, de cette équivalence
+
+---
+
+C’est exactement cette primitive que la procédure `validatePictures` — aperçue à la Section 8.3 du tutoriel précédent — utilise pour faire passer un asset de `pending/` à `published/`. Un rename, pas un déplacement.
+
+---
+
+### 11.3 — La procédure `move`, en survol
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="594-647"
+  snippetHighlight="596-646"
+  snippetTitle="La procédure move — orchestration des deux univers"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Quatre moments structurent cette procédure.
+
+Elle commence par un refus **catégorique** : si la cible est un `virtual-folder` de statut `bin`, la procédure rejette l’opération. Le move vers la corbeille n’est pas autorisé depuis le router principal — il passe par un `trashRouter` dédié. Nous y reviendrons en Section 12.
+
+Elle appelle ensuite `moveService`, qui gère tout le côté Cloudinary — y compris la pagination, les trois resource types, et la distinction entre selection, folder et file. Cette fonction mérite un tutoriel à elle seule ; pour notre propos, il suffit de savoir qu’elle applique, sur Cloudinary, l’équivalent d’un `mv` — en réalité, une série de `rename` sur chaque asset concerné.
+
+Elle passe ensuite à la **synchronisation DB des dossiers vides**. C’est le cas le plus subtil du move. Si un admin déplace un dossier vide de `pending/` à `published/`, Cloudinary ne voit rien passer — il n’y a pas d’asset à renommer. Mais notre DB, elle, contient une ligne pour ce dossier. Cette ligne doit être mise à jour pour refléter le nouveau chemin. C’est ce que fait `moveDbFoldersPrefix` — en parallèle de ce que `moveService` a fait côté Cloudinary.
+
+Elle retourne enfin un `success`.
+
+---
+
+### 11.4 — Le tableau des mutations
+
+Résumons, pour chaque opération de mutation du Finder, ce qui se passe dans chaque univers.
+
+<DocsTable
+  columnsJson='["Opération UI","Effet Cloudinary","Effet DB"]'
+  rowsJson='[["Créer un dossier vide","aucun (rien à stocker)","upsert des ancêtres et du dossier"],["Renommer un dossier peuplé","rename paginé de tous les assets préfixés","update des lignes et upsert des ancêtres cibles"],["Renommer un dossier vide","aucun (pas d’assets)","update de la seule ligne DB concernée"],["Déplacer un fichier vers /published","rename du publicId (replaceStatusSegment)","upsert des ancêtres du nouveau chemin (sync opportuniste)"],["Déplacer un dossier vide vers /bin","aucun","moveDbFoldersPrefix réécrit les lignes"],["Supprimer un dossier","delete_resources_by_prefix","la DB ne purge pas — on accepte le résidu"]]'
+/>
+
+Cette table est probablement la synthèse la plus éclairante du Mouvement. Elle dit, ligne par ligne, que la cohérence entre nos deux univers n’est **jamais gratuite**. À chaque mutation correspond une paire d’effets — un côté Cloudinary, un côté DB — et cette paire est orchestrée explicitement par la procédure qui la déclenche.
+
+On y lit aussi un choix discret mais significatif sur la dernière ligne. Quand on supprime un dossier, les assets sont détruits côté Cloudinary par `delete_resources_by_prefix`. La DB, elle, **n’est pas purgée**. La ligne `CloudinaryFolder` correspondante reste. Est-ce un oubli ? Non — c’est une décision : la DB peut porter des dossiers vides, donc un dossier dont on a supprimé tous les assets devient simplement un dossier vide côté DB, et il réapparaîtra comme tel à la prochaine lecture. Si on veut le supprimer pour de bon, il faut un geste explicite séparé.
+
+<Callout type="insight">
+La cohérence DB ↔ Cloudinary est une chorégraphie à deux voix.
+
+👉 chaque mutation précise, pour chaque univers, ce qui doit se passer  
+👉 aucune ligne du tableau n’est « aucun des deux » — tout geste a au moins une trace  
+👉 et le Finder est cohérent parce que ce tableau est pensé explicitement, pas parce qu’un système magique le garantirait
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons vu tout ce que le Finder peut faire en mutation — créer, renommer, déplacer. Chaque opération orchestre nos deux univers avec une discipline précise. Il nous reste une zone à regarder, une zone qui échappe délibérément à toute cette logique : la corbeille.
+
+---
+
+## 12 — L’immuabilité de `bin/.trash/`
+
+Dès qu’on lit les gardes du router, un appel revient partout : `assertNotInTrashStorage`. Il protège toutes les opérations du module contre la moindre incursion dans le sous-arbre `bin/.trash/`. Cette interdiction n’est pas arbitraire, et elle mérite qu’on lui consacre une section — courte, mais nécessaire.
+
+---
+
+### 12.1 — Le garde, lu pour ce qu’il est vraiment
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="54-63"
+  snippetHighlight="54-63"
+  snippetTitle="assertNotInTrashStorage — le garde qui protège l’exclave"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Quatre lignes, et une décision architecturale forte. Tout chemin qui commencerait par `${PROJECT_ROOT}/bin/.trash/` est rejeté par le router principal. Pas de nuance, pas d’exception — `FORBIDDEN`, et fin de l’histoire.
+
+Le message d’erreur est explicite : `Use trashRouter`. Il existe un router dédié — `trashRouter`, que nous ne traiterons pas dans ce tutoriel — qui porte l’intégralité des opérations sur la corbeille : lister, restaurer, supprimer définitivement. Le router principal n’y a aucune voix.
+
+---
+
+### 12.2 — Pourquoi deux routers
+
+La corbeille a une sémantique radicalement différente du reste du Finder. Dans `pending/` et `published/`, les opérations sont **mutables au sens large** — un admin peut renommer, déplacer, créer, organiser. Dans `bin/.trash/`, les opérations sont **immuables** au sens fort — un élément jeté est figé dans l’état où il a été jeté, jusqu’à sa restauration ou sa suppression définitive. On ne renomme pas un élément dans la corbeille. On ne déplace pas un élément d’un sous-dossier de la corbeille à un autre. On ne crée pas un dossier vide sous `bin/.trash/`.
+
+Séparer cette logique dans un router dédié n’est pas une commodité — c’est une **protection par construction**. Tant que les opérations destructives de la corbeille sont isolées, elles ne risquent pas d’être appelées par accident depuis une procédure qui n’a pas été pensée pour les gérer. Le garde `assertNotInTrashStorage` est la clôture physique entre les deux territoires.
+
+---
+
+### 12.3 — Une leçon plus large
+
+Ce qu’on apprend dans cette section, au-delà du cas particulier de la corbeille, c’est que **tous les sous-arbres ne se valent pas**. Le Finder manipule une arborescence unique, mais cette arborescence contient des zones dont la sémantique diffère. La règle générale de mutabilité ne s’y applique pas.
+
+Plutôt que de multiplier les conditions dans chaque procédure — « sauf si c’est la corbeille », « sauf si c’est un asset déjà validé » — le projet choisit de **matérialiser ces zones par des routers distincts**. Chaque router porte sa propre cohérence interne, ses propres gardes, sa propre philosophie. Et les gardes-frontières — comme `assertNotInTrashStorage` — sont les seules choses qui se rappellent mutuellement de leur existence.
+
+<Callout type="warning">
+Une zone d’immutabilité, dans un Finder par ailleurs mutant, se protège par un router à part.
+
+👉 pas par des conditions éparpillées dans chaque procédure  
+👉 mais par une clôture, nette, que le router principal refuse de franchir
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons visité toutes les zones du module. Les lectures, les écritures, les sous-arbres immuables. Il nous reste à prendre de la hauteur et à regarder ce que ces pièces racontent ensemble — et comment elles préparent la suite du parcours.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons traversé toutes les opérations du Finder. Quatre idées en sont ressorties :
+
+- **Chaque lecture fait converger la DB vers Cloudinary.** La sync opportuniste de `getFolderTree` ne garantit pas une cohérence instantanée — elle garantit que, à chaque requête suivante, le décalage diminue. C’est un choix pragmatique, qui évite d’avoir à maintenir un cron de synchronisation ou des transactions distribuées.
+- **Créer un dossier vide est la seule opération qui n’appelle pas Cloudinary.** Cette singularité n’est pas une exception, c’est la preuve que `CloudinaryFolder` est bien une source autonome — capable de porter une information que Cloudinary ignore.
+- **Le rename et le move sont des doubles écritures explicitement orchestrées.** Cloudinary d’abord, DB ensuite, avec une transaction pour la seule partie qu’on peut rendre atomique. L’ordre n’est pas neutre : il privilégie le cas où la sync opportuniste peut réparer le désalignement transitoire.
+- **Déplacer, c’est renommer.** Cette équivalence, triviale dans un monde de préfixes, irrigue tout le module. Elle se matérialise dans la primitive `replaceStatusSegment`, qui transforme un geste d’interface (déplacer vers `/published`) en une opération de chaîne (remplacer le deuxième segment).
+
+La Section 13 va maintenant recomposer l’ensemble, et montrer comment ce module — avec sa dualité des sources, sa fusion en deux passes et ses mutations à double écriture — n’est pas une fin en soi, mais une étape vers un cycle de vie plus vaste que nous continuerons d’explorer.
+
+---
+
+## 13 — Un Finder qui ne trouve jamais — il reconstruit
+
+Nous avons regardé le module en deux temps. D’abord les fondations conceptuelles, puis la mécanique du builder, puis les opérations du router. Il est temps, maintenant, de voir l’ensemble comme une seule architecture — parce que c’est à cette échelle qu’on comprend vraiment ce que ce module raconte.
+
+---
+
+### 13.1 — L’architecture complète, en une seule lecture
+
+Voici, pour finir, le flux complet du Finder, de l’ouverture d’une vue jusqu’au retour des données mutables.
+
+<ArchitectureDiagram
+  steps="Admin ouvre une vue | getFolderTree | Liste Cloudinary | Calcul ancêtres | Upsert DB opportuniste | Lecture DB registered folders | Passe 1 charpente | Passe 2 injection | Mapping V1 vers contrat client | Arbre affiché | Admin drag and drop | move ou renameFolderPrefix | Cloudinary rename | DB transaction | Nouveau arbre"
+/>
+
+Quinze étapes, pour ce qui ressemble, de l’extérieur, à un simple Finder. Chaque étape est là pour une raison qui tient en une phrase. Certaines existent parce que Cloudinary est plat — les deux passes, `replaceStatusSegment`, le mapping V1. D’autres existent parce que la DB porte l’information que Cloudinary ignore — `createFolder`, `moveDbFoldersPrefix`, l’upsert des ancêtres. D’autres enfin existent parce que les deux sources doivent converger — la sync opportuniste, la transaction DB, l’ordre Cloudinary-puis-DB du rename.
+
+Prendre du recul sur ce flux, c’est voir que **notre backend ne transmet jamais un arbre** — il en **produit un**, à chaque lecture, à partir de matériaux qu’il va chercher dans deux endroits différents. Le Finder n’est pas un miroir de ce que Cloudinary contient. Ce n’est pas non plus un miroir de ce que la DB déclare. C’est une troisième chose — une **synthèse recalculée à la demande**, qui respecte une règle d’assemblage explicite.
+
+---
+
+### 13.2 — Ce que cette architecture ouvre pour la suite
+
+Le Finder tel que nous l’avons parcouru n’est pas le dernier chapitre du parcours Cloudinary. Plusieurs choses le prolongent, et nous allons les croiser dans les prochains tutoriels.
+
+**Les médias et le domaine métier.** Au-delà de sa position dans l’arbre, un `MediaAsset` porte des champs qui le raccrochent aux entités du domaine — `categoryId`, `activityId`, `proposedActivityName`, `eventDate` — et à travers elles aux `Course` et `Stage` qui structurent la vie de l’association. `validatePictures`, qu’on a aperçue au détour du router, n’est qu’une pièce de cette jonction — elle classe un asset dans une taxonomie au moment où il passe de `pending` à `published`, mais elle laisse ouvertes d’autres questions qu’on explorera ensemble : le champ `proposedActivityName` qui permet à un uploader de proposer une activité inexistante pour qu’un admin la crée, le couplage Prisma qui matérialise la jonction, et les formulaires d’administration qui manipulent tout cela. C’est le sujet du prochain tutoriel.
+
+**La corbeille** — que nous avons vue comme un exclave, avec son `trashRouter` dédié et son sous-arbre `bin/.trash/` immuable — est un sous-système conceptuellement distinct du Finder. Elle rompt avec l’arborescence pour devenir une liste plate. Elle introduit un storage caché avec UUID, une entité `TrashEntry` qui vit en parallèle des `CloudinaryFolder`, et un trio de chemins — `previousPath`, `displayName`, `storageRoot` — qui jouent chacun un rôle distinct. Elle porte enfin une chorégraphie de restauration avec détection de collision à deux niveaux et auto-rename suffixé. Ce sera le tutoriel suivant — et il reposera sur ce que le tutoriel métier aura posé, puisque le `previousPath` d’un élément jeté garde mémoire de sa taxonomie.
+
+**Le cycle de vie complet** de l’asset — `pending` → `published` → `bin` — se lit désormais à travers tout ce que nous avons posé. `pending → published` est un move au sens de la section 11, habillé d’une dimension métier. `published → bin` est un `trashToBin`. `bin → previousPath` est un `restoreFromBin` avec collision detection. Et `bin → suppression définitive` est un `deleteForever`. Chacune de ces transitions est, sous le capot, une des opérations que nous venons de traverser — enrichie de sa propre sémantique.
+
+Tout cela s’appuie, silencieusement, sur ce que ce tutoriel a construit. La dualité des sources. Le builder en deux passes. La double écriture orchestrée. L’équivalence entre déplacer et renommer. Si ces fondations sont claires, la suite du parcours ne sera plus un empilement d’opérations techniques — ce sera la lecture cohérente d’un cycle de vie d’asset, structuré de bout en bout par les conventions que nous avons posées ici.
+
+---
+
+### 13.3 — Ce qu’il faut retenir de ce tutoriel
+
+<Callout type="info">
+Un Finder sur Cloudinary n’est pas une vue, c’est une architecture.
+
+👉 c’est une traduction permanente entre un sac plat et une arborescence
+
+Retenons :
+
+- Cloudinary ne stocke pas de dossiers — seulement des `public_id` qui partagent des préfixes  
+- un Finder ne peut pas reposer sur Cloudinary seul : les dossiers vides exigent une seconde source  
+- la table `CloudinaryFolder` est une source autonome, pas un cache  
+- le builder fusionne en deux passes : DB d’abord (charpente), Cloudinary ensuite (feuilles)  
+- l’ordre des passes n’est pas commutatif — il préserve la propriété « passe 1 terminée quand passe 2 commence »  
+- les nœuds backend portent `path` ou `publicId` selon leur nature ; le client uniformise en `fullPath`  
+- la sync opportuniste à la lecture fait converger la DB vers Cloudinary sans cron ni transaction distribuée  
+- créer un dossier vide est la seule opération qui n’appelle pas Cloudinary  
+- les mutations sont des doubles écritures explicites, avec Cloudinary d’abord et la DB ensuite  
+- déplacer c’est renommer — `replaceStatusSegment` est la trace de cette équivalence  
+- la corbeille est un exclave, protégé par `assertNotInTrashStorage` et confié au `trashRouter`
+
+👉 un Finder sur Cloudinary n’est pas un miroir d’une source — c’est une **synthèse recalculée** à chaque requête, à partir de deux sources dont aucune n’est suffisante seule
+</Callout>
+
+---
+
+### 13.4 — Et maintenant
+
+Nous avons franchi une étape importante. Pour la première fois dans le parcours, notre système donne à voir ce qu’il contient — pas sous la forme d’une donnée à requêter, mais sous la forme d’un objet navigable, manipulable, mutable. Le Finder est la première interface complète du projet, au sens où il offre à l’admin une prise directe sur la matière même du contenu stocké.
+
+Tout ce que nous avons construit dans les tutoriels précédents nous y avait préparés. Prisma nous a donné un modèle de données typé. tRPC nous a donné un transport sans perte. L’authentification et les rôles nous ont donné un contexte d’autorisation. Le module d’upload nous a donné la discipline de préfixage et la convention `pending/published/bin`. Il manquait encore cette dernière pièce — celle qui **rend visible** tout ce que les précédentes avaient rendu possible.
+
+👉 maintenant, l’admin peut naviguer ce que le système contient  
+👉 et il peut le faire sans que la réalité plate de Cloudinary transpire dans l’interface
+
+C’est à partir d’ici que notre application cesse d’être une plateforme qui reçoit du contenu — pour devenir une plateforme qui **donne prise** sur ce contenu. Les prochains tutoriels continueront à tirer ce fil, en ajoutant les opérations qui orchestrent le cycle de vie complet : valider, mettre à la corbeille, restaurer, supprimer pour de bon.
+
+Mais ça, c’est pour la suite.

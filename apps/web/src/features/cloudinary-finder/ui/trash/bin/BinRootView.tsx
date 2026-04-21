@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useMemo } from 'react';
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 
 import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
@@ -10,7 +10,7 @@ import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFi
 type Props = {
   appRoot: string;
   onOpenTrashFolder: (params: { trashId: string; displayName: string }) => void;
-  onSelectTrashFile: (params: { id: string; name: string; url?: string; previousPath: string }) => void;
+  onSelectTrashFile: (params: { id: string; name: string; publicId: string; previousPath: string }) => void;
 };
 
 /**
@@ -106,20 +106,17 @@ export default function BinRootView({
     <div
       className="space-y-4 min-h-full"
       onMouseDownCapture={(e) => {
-        // ✅ click dans le vide => sortir du multiselect bin
         if (!binMultiSelectActive) return;
 
         const el = e.target as Element | null;
         if (!el) return;
 
-        // ✅ ne pas clear si clic sur toolbar
         if (el.closest('[data-no-clear-multiselect="true"]')) return;
 
         const insideItem = el.closest('[data-content-item="true"]');
         if (!insideItem) clearBinSelection();
       }}
     >
-      {/* Toolbar */}
       <div className="flex gap-2" data-no-clear-multiselect="true">
         {binMultiSelectActive ? (
           <button
@@ -152,7 +149,7 @@ export default function BinRootView({
                 <BinGridFolderItem
                   trashId={it.id}
                   displayName={it.displayName}
-                  canMultiSelect={true} // BinRootView = racine du bin => autorisé
+                  canMultiSelect={true}
                   onOpen={(trashId) => onOpenTrashFolder({ trashId, displayName: it.displayName })}
                 />
               </div>
@@ -164,16 +161,21 @@ export default function BinRootView({
               <BinGridFileItem
                 trashId={it.id}
                 displayName={it.displayName}
-                previewUrl={it.previewUrl ?? null}
-                canMultiSelect={true} // BinRootView = racine du bin => autorisé
-                onOpen={(trashId) =>
+                publicId={it.publicId ?? null}
+                canMultiSelect={true}
+                onOpen={(trashId) => {
+                  if (!it.publicId) {
+                    alert('Preview indisponible (publicId manquant).');
+                    return;
+                  }
+                
                   onSelectTrashFile({
                     id: trashId,
                     name: it.displayName,
-                    url: it.previewUrl,
+                    publicId: it.publicId,
                     previousPath: it.previousPath,
                   })
-                }
+                }}
               />
             </div>
           );

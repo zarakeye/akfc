@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 
 import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
 import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
@@ -11,7 +11,7 @@ type Props = {
   trashId: string;
   relativePath: string;
   onOpenRelativeFolder: (nextRelativePath: string) => void;
-  onSelectTrashFile: (file: { name: string; url: string; previousPath: string }) => void;
+  onSelectTrashFile: (file: { name: string; publicId: string; previousPath: string }) => void;
 };
 
 /**
@@ -57,7 +57,7 @@ export default function TrashFolderView({
           return (
             <BinGridFolderItem
               key={n.fullPath}
-              trashId={n.fullPath} // read-only
+              trashId={n.fullPath}
               displayName={n.name}
               canMultiSelect={false}
               title={title}
@@ -71,15 +71,15 @@ export default function TrashFolderView({
         return (
           <BinGridFileItem
             key={n.fullPath}
-            trashId={n.fullPath} // read-only
+            trashId={n.fullPath}
             displayName={n.name}
-            previewUrl={n.url}
+            publicId={n.publicId}
             canMultiSelect={false}
             title={title}
             onOpen={() => {
               onSelectTrashFile({
                 name: n.name,
-                url: n.url,
+                publicId: n.publicId,
                 previousPath: n.meta?.previousPath ?? '',
               });
             }}

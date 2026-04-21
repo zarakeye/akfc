@@ -2,7 +2,7 @@
 
 import { JSX, useMemo, useState } from 'react';
 
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 import type { FolderStatus } from 'packages/contracts/src/cloudinary/folder.types';
 

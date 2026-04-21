@@ -1,0 +1,1114 @@
+---
+title: "Signer et persister un upload : Cloudinary comme tiers de confiance"
+slug: "signer-et-persister-un-upload-cloudinary"
+description: "Comprendre comment un backend délivre une autorisation d’upload bornée à un client sans jamais exposer son secret — et pourquoi, après coup, revérifier reste indispensable."
+section: "Tutorials"
+order: 5
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeExample } from "@/features/docs/ui/CodeExample"
+import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { DocsTable } from "@/features/docs/ui/DocsTable"
+
+## Quand le fichier est plus lourd que l’API
+
+Jusqu’ici, nous avons construit un système qui manipule des données.
+
+Des identifiants, des chaînes de caractères, des dates, des relations.
+
+Tout ce que tRPC transporte tient dans quelques kilo-octets.
+
+Et puis, un jour, l’utilisateur veut faire quelque chose de radicalement différent. Il veut envoyer une photo de son dernier passage de grade, la vidéo d’un kata, une affiche de stage en haute résolution. Et là, notre architecture change de nature. Parce qu’un fichier n’est pas une donnée parmi d’autres. Un fichier, c’est un poids. C’est quelques mégas — parfois quelques dizaines — qui doivent traverser le réseau, puis être stockés, puis être servis, puis être retrouvés.
+
+Notre backend n’a pas été pensé pour ça.
+
+Il a été pensé pour prendre des décisions, pas pour transporter des binaires.
+
+Et pourtant, l’upload est là, en face de nous, avec sa question très simple : **comment faire passer ce fichier du navigateur à un stockage durable, sans étouffer notre API ni trahir nos secrets ?**
+
+<Callout type="info">
+Dans ce projet, l’upload n’est pas un cas particulier.
+
+👉 c’est une chorégraphie en plusieurs actes  
+👉 où le backend ne fait jamais confiance à ce qu’il voit
+</Callout>
+
+## Et où stocker ce fichier ?
+
+Avant même de se demander comment autoriser un upload, une question plus simple se pose. Où ce fichier va-t-il atterrir ?
+
+Dans notre propre projet, à côté de notre code ? Sur un disque attaché à notre serveur ? Ou chez un service externe, conçu pour ça ?
+
+Cette question semble anodine. Elle ne l’est pas. Elle détermine à elle seule si notre architecture va tenir sur un vrai déploiement — ou s’effondrer à la première mise en production.
+
+Pour ce projet, nous avons choisi **Cloudinary**, un service de gestion de médias qui stocke, transforme et diffuse images et vidéos. Nous verrons en détail, dans la Section 1, pourquoi ce choix n’est pas un confort de développeur mais une réponse technique à plusieurs contraintes simultanées — le déploiement serverless, le besoin d’un CDN, les transformations d’images, et la protection des contenus.
+
+Mais adopter un service externe ouvre immédiatement une nouvelle question — et c’est dans cette question que se joue toute l’architecture du module d’upload.
+
+## Le secret qui ne peut pas voyager
+
+Cloudinary, comme la plupart des services sérieux, fonctionne avec une paire d’identifiants. Une `API_KEY`, que tout le monde peut voir. Et une `API_SECRET`, que personne d’autre que notre serveur ne doit jamais voir.
+
+Et le client, lui, a besoin des deux pour parler à Cloudinary.
+
+---
+
+👉 si le secret reste côté serveur, comment le client upload-t-il ?  
+👉 s’il passe côté client, n’importe qui peut uploader n’importe quoi
+
+---
+
+Cette question n’est pas théorique. C’est exactement ce qu’un projet sérieux doit trancher avant d’écrire la première ligne d’un module d’upload.
+
+Et la réponse que nous allons découvrir ensemble n’est pas un compromis. C’est une mécanique assez élégante pour concilier les deux contraintes sans en sacrifier aucune.
+
+## Ce que nous allons faire dans ce tutoriel
+
+Nous n’allons pas simplement “brancher Cloudinary”. Nous allons regarder un module complet, avec sa paire de procédures tRPC, ses services de signature, ses utilitaires de validation, ses garde-fous, et ses transactions Prisma. Et nous allons comprendre pourquoi chacun de ces éléments existe.
+
+L’objectif n’est pas d’apprendre une commande. L’objectif est de comprendre une philosophie :
+
+👉 **à chaque frontière, le backend ne fait confiance à personne — pas même au client qu’il vient lui-même d’autoriser.**
+
+À la fin de ce tutoriel, nous ne verrons plus l’upload comme un simple `POST` avec un fichier attaché. Nous verrons une chorégraphie en deux temps, traversée de quatre couches de défense, et orchestrée par un backend qui signe sans faire confiance, et qui persiste sans croire.
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement “uploader un fichier”. Nous allons reconstruire, étape par étape, la chorégraphie qui permet à un client de parler directement à un stockage tiers sans que notre backend ne perde jamais le contrôle. Trois mouvements, puis une section finale qui recompose le tout.
+
+- **Mouvement 1 — Le paradoxe de l’upload direct.** Nous commençons par regarder où stocker nos fichiers, et pourquoi le premier réflexe — les garder dans notre propre projet — ne tient pas en conditions réelles. Puis nous voyons pourquoi, une fois Cloudinary adopté, il faut refuser la solution facile qui consisterait à faire transiter le fichier par notre backend — et comment cette décision crée un problème de secret que seule une signature bornée peut résoudre.
+- **Mouvement 2 — Signer sans jamais faire confiance.** Nous regardons comment le backend résout seul la destination légitime, puis construit une autorisation cryptographique limitée à un dossier précis, un nom précis, un horodatage précis.
+- **Mouvement 3 — Persister : revérifier avant d’inscrire.** Entre “le fichier est signé” et “l’asset est en base”, un intervalle s’ouvre dans lequel le client peut mentir. Nous découvrons les quatre couches de défense qui empêchent tout mensonge d’y passer.
+
+La **Section 8** recomposera ensuite la chorégraphie complète, et ouvrira vers ce qui viendra après — la validation admin, le cycle de vie `pending → published → bin`, le Finder.
+
+---
+
+## Mouvement 1 — Le paradoxe de l’upload direct
+
+Avant même d’écrire une signature ou de toucher à Cloudinary, nous devons faire plusieurs choix d’architecture. Où stockons-nous les fichiers ? Pourquoi pas chez nous ? Et une fois le stockage externe adopté, comment notre backend garde-t-il la main sur ce qui se passe ? Ces trois questions se posent dans cet ordre, et chacune prépare la suivante.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Section 1** — Nous regardons le premier choix, celui du lieu de stockage. Nous voyons pourquoi l’idée spontanée — garder les fichiers dans notre propre projet — s’effondre dès qu’on déploie en conditions réelles, et pourquoi un service managé comme Cloudinary devient, non pas un luxe, mais la réponse la plus économique à un vrai problème technique.
+- **Section 2** — Nous examinons le deuxième réflexe — une fois Cloudinary adopté, faire quand même passer le fichier par notre backend — et nous comprenons pourquoi ce réflexe, même bien intentionné, renonce à la valeur même du service que nous venons de choisir.
+- **Section 3** — Nous identifions le dilemme que cette nouvelle architecture introduit immédiatement : le secret Cloudinary ne peut pas voyager côté client, et pourtant le client a besoin d’une autorisation pour uploader. La signature d’upload sera notre réponse.
+
+À la fin de ce mouvement, nous aurons posé le problème exact que tout le reste du module va résoudre — et nous aurons compris qu’une architecture d’upload n’est pas un choix technique isolé, mais une chaîne de décisions où chaque choix en appelle un autre.
+
+---
+
+## 1 — Le choix du stockage : pourquoi Cloudinary, et pas notre propre projet
+
+Avant de parler signature, autorisation ou procédure tRPC, nous devons poser une question qui précède toutes les autres. Quand un utilisateur upload un fichier, où ce fichier atterrit-il réellement ?
+
+Il y a, à ce moment, deux familles de réponses.
+
+Soit le fichier reste dans le périmètre de notre projet — stocké sur le disque du serveur, ou dans un dossier versionné avec le code. Soit il part vers un service tiers spécialisé, dédié au stockage et à la diffusion de médias.
+
+Cette question n’est pas un détail d’implémentation. C’est un **choix d’architecture** dont les conséquences vont se faire sentir partout — dans la charge serveur, dans les déploiements, dans les backups, dans la performance perçue par les utilisateurs, et jusque dans notre facture mensuelle.
+
+Regardons-la sérieusement.
+
+---
+
+### 1.1 — Le premier réflexe : stocker les fichiers dans notre propre projet
+
+Quand on débute, la tentation est forte de garder la maîtrise de tout ce qu’on peut. Une photo uploadée ? On la sauvegarde dans `public/uploads/`. Un PDF ? Dans un dossier `storage/`. Et tout le reste du projet y accède comme à n’importe quel fichier statique.
+
+<CodeSnippet
+  language="ts"
+  title="Stocker en local — le réflexe naïf"
+  filename="local-upload.ts"
+  kind="anti-pattern"
+  codeJson='"// ❌ anti-pattern : écrire directement sur le disque du serveur\nimport { writeFile } from \"fs/promises\"\nimport path from \"path\"\n\nexport async function saveUpload(file: File) {\n  const buffer = Buffer.from(await file.arrayBuffer())\n  const target = path.join(process.cwd(), \"public\", \"uploads\", file.name)\n\n  await writeFile(target, buffer)\n\n  return `/uploads/${file.name}`\n}"'
+/>
+
+À première vue, c’est la solution la plus simple. Pas de dépendance externe. Pas de compte à créer. Pas de variables d’environnement supplémentaires. Le fichier est là, sur notre disque, et notre serveur Next.js le sert comme n’importe quel asset statique.
+
+Et tant que nous restons en dev, sur notre propre machine, cela fonctionne parfaitement.
+
+Puis nous déployons.
+
+---
+
+### 1.2 — Pourquoi ce réflexe s’effondre en conditions réelles
+
+Déployer aujourd’hui, ce n’est presque plus jamais “copier un dossier sur un serveur Linux qui tourne H24”. C’est pousser notre code vers une plateforme qui va l’exécuter dans des conditions très spécifiques — et ces conditions sont, pour la plupart, **incompatibles avec un stockage local**.
+
+Prenons Vercel, Cloudflare Workers, AWS Lambda ou Netlify. Toutes ces plateformes partagent une caractéristique : elles sont **serverless**. Notre code ne tourne pas sur un serveur persistant — il est exécuté dans des conteneurs éphémères qui ne conservent aucun fichier entre deux requêtes. Le système de fichiers existe, mais il est jetable.
+
+👉 un fichier écrit à la requête N n’existe plus à la requête N+1  
+👉 un upload réussi serait perdu avant même d’être relu
+
+Et même sur un VPS classique qui persiste son disque, d’autres problèmes apparaissent très vite.
+
+À chaque redéploiement, le contenu du dossier versionné est remplacé. Pour conserver les uploads, il faut les extraire du répertoire contrôlé par Git et les maintenir dans un volume séparé — ce qui revient à réinventer un service de stockage, en moins robuste.
+
+Si nous voulons scaler horizontalement — plusieurs instances de notre backend derrière un load balancer — chaque instance aurait son propre disque, et un upload reçu par l’instance A serait invisible pour l’instance B.
+
+Les sauvegardes deviennent une responsabilité manuelle : penser à exporter régulièrement, stocker ailleurs, tester la restauration.
+
+La bande passante sortante se fait depuis notre serveur à chaque consultation de la galerie — nous payons deux fois, pour le stockage et pour la diffusion.
+
+Les transformations d’images — miniatures, formats responsive, compression adaptative — doivent être codées à la main, avec une bibliothèque comme Sharp, et chaque variante doit être générée puis stockée.
+
+Pour la vidéo, c’est encore pire : transcodage, streaming adaptatif, HLS, génération de thumbnails… autant de chantiers techniques qui, isolément, valent chacun un projet à part entière.
+
+<Callout type="warning">
+Stocker les médias dans son propre projet, ce n’est pas “garder le contrôle”.
+
+👉 c’est signer pour maintenir une dizaine de micro-services  
+👉 que d’autres ont déjà faits mieux, et pour beaucoup moins cher
+</Callout>
+
+---
+
+### 1.3 — Le choix d’un service managé spécialisé
+
+La bonne nouvelle, c’est que ce problème a été résolu plusieurs fois par l’industrie, et qu’un véritable marché existe aujourd’hui. Trois grandes philosophies s’y distinguent.
+
+Le **stockage objet brut**, incarné par Amazon S3, Cloudflare R2 ou MinIO. Ces services offrent un stockage à très bas coût, avec une disponibilité excellente, mais aucune intelligence particulière autour des médias. Pour obtenir des thumbnails, un CDN, ou des URLs signées, il faut empiler d’autres services par-dessus (CloudFront, Lambda@Edge, Cloudflare Images, etc.). C’est la solution la plus flexible — aussi la plus technique à mettre en place.
+
+Les **services d’upload tout-en-un**, comme Uploadthing ou Uploadcare. Ils cachent la complexité en enveloppant S3 ou équivalent derrière une API simplifiée. L’intégration Next.js est souvent excellente. En contrepartie, nous perdons du contrôle sur les transformations, sur les conventions de nommage, et sur les modes d’accès fins.
+
+Les **services de gestion de médias**, dont Cloudinary est l’un des pionniers. Ils ne se contentent pas de stocker — ils comprennent ce qu’est une image ou une vidéo. Ils offrent des transformations à la volée via l’URL, un CDN global intégré, des modes de stockage protégés, des SDKs d’upload direct. Pour un projet orienté médias — galerie, portfolio, association comme le nôtre — ils représentent le meilleur rapport entre fonctionnalité et effort.
+
+Le choix, finalement, dépend du projet. Pour un SaaS B2B qui stocke quelques PDF de temps en temps, S3 ou Uploadthing feront parfaitement l’affaire. Pour un projet où les médias sont au cœur de l’expérience, un service spécialisé comme Cloudinary se révèle payant très vite.
+
+---
+
+### 1.4 — Pourquoi Cloudinary pour ce projet
+
+Dans le cas d’une association d’arts martiaux, les médias ne sont pas un à-côté — ce sont eux qui font vivre la vitrine. Photos de stages, vidéos de démonstrations, affiches d’événements : tout ce qui raconte l’activité du club passe par des images et des vidéos. Choisir un service spécialisé, ici, n’est pas un luxe. C’est une décision structurante.
+
+Cloudinary apporte concrètement quatre choses que nous n’aurons pas à coder nous-mêmes.
+
+**Un CDN global intégré.** Chaque asset servi par Cloudinary l’est depuis l’edge le plus proche du visiteur. Un membre qui consulte la galerie depuis la Réunion reçoit les photos aussi vite qu’un membre à Chambéry — sans aucune configuration de notre part. Notre serveur n’envoie jamais un seul octet d’image.
+
+**Des transformations dans l’URL.** Pour afficher la même photo en miniature, en format carré, en version WebP optimisée pour mobile, il suffit de paramétrer l’URL : `/upload/w_400,f_auto,q_auto/...`. Cloudinary génère la variante à la volée, la met en cache, la sert. Nous ne stockons que l’original. La galerie responsive, le lazy-loading, les formats modernes deviennent triviaux.
+
+**Un mode `authenticated` pour les contenus protégés.** Un asset en mode `authenticated` n’est pas accessible par URL publique directe. Pour le servir, il faut une URL signée à durée de vie limitée — générée par notre backend au moment où un utilisateur légitime demande à le voir. C’est précisément ce mode que nous utiliserons pour tous nos uploads, parce qu’ils contiennent des photos de membres qui ne doivent pas être indexables par les moteurs de recherche.
+
+**Des signatures d’upload.** C’est le mécanisme qui permet à un client d’uploader directement chez Cloudinary sans passer par notre backend, et sans jamais voir notre secret. C’est exactement ce que la suite de ce tutoriel va explorer en détail.
+
+À cela s’ajoute un **plan free généreux** — 25 crédits par mois, largement suffisant pour un projet d’association — qui rend l’adoption sans risque, et laisse le temps de voir si le choix tient la route avant de sortir la carte bleue.
+
+---
+
+### 1.5 — Ce que ce choix implique : un backend qui n’est plus sur la route du fichier
+
+Choisir Cloudinary, c’est gagner beaucoup. Mais c’est aussi accepter une nouvelle réalité architecturale, et cette réalité va orienter tout le reste du tutoriel.
+
+Le fichier ne va plus passer par notre backend.
+
+Il va voyager directement du navigateur de l’utilisateur vers Cloudinary, sans que notre serveur n’ait à transporter un seul octet. C’est précisément la valeur du service — et c’est aussi, instantanément, la source de deux questions.
+
+👉 si le backend ne transporte plus le fichier, comment autorise-t-il l’upload ?  
+👉 comment garantit-il que ce qui atterrit chez Cloudinary respecte les règles de notre système ?
+
+Ces deux questions sont, au fond, les seules que ce tutoriel va traiter. Tout ce que nous allons construire — signatures bornées, re-résolution serveur de la destination, quatre couches de défense à la persistance — existe parce que nous avons accepté de déléguer le transport du fichier, et que nous devons regagner, par la discipline architecturale, le contrôle que cette délégation semble nous faire perdre.
+
+<Callout type="concept">
+Le choix du stockage n’est jamais neutre.
+
+👉 Cloudinary nous offre un CDN, des transformations, et un mode protégé  
+👉 en échange, notre backend perd la main sur le chemin du fichier  
+👉 c’est ce troc que toute l’architecture d’upload vient rééquilibrer
+</Callout>
+
+---
+
+### 1.6 — Un dernier malentendu à lever : il n’y a pas de dossiers chez Cloudinary
+
+Avant d’entrer dans le code du module, il faut lever un malentendu qui, s’il n’est pas posé maintenant, rendra plusieurs décisions architecturales incompréhensibles dans la suite.
+
+Quand nous parlons de dossiers sur un disque dur, nous parlons d’une **structure physique**. Un dossier existe en tant que tel. On peut le créer vide. On peut le déplacer, et tout ce qu’il contient suit. On peut lister son contenu comme une vérité objective portée par le système de fichiers.
+
+Cloudinary ne fonctionne pas comme ça.
+
+Dans sa philosophie native, Cloudinary n’est **qu’un grand sac plat d’assets**. Chaque asset possède un identifiant unique, son `public_id`, et c’est tout. Il n’y a pas de système de fichiers derrière. Il n’y a pas d’entité “dossier” qu’on pourrait créer ou supprimer. Il y a juste une collection d’identifiants.
+
+<CodeSnippet
+  language="txt"
+  title="Ce que Cloudinary stocke réellement — un sac plat d’identifiants"
+  filename="cloudinary-storage.txt"
+  kind="pattern"
+  codeJson='"# Ce que nous voyons mentalement (une arborescence) :\nmy-app/\n├── pending/\n│   ├── karate/12/\n│   │   ├── photo-001\n│   │   └── photo-002\n│   └── judo/7/\n│       └── video-004\n└── published/\n    └── karate/12/\n        └── photo-001\n\n# Ce que Cloudinary stocke réellement (un sac plat) :\n[\n  \"my-app/pending/karate/12/photo-001\",\n  \"my-app/pending/karate/12/photo-002\",\n  \"my-app/pending/judo/7/video-004\",\n  \"my-app/published/karate/12/photo-001\"\n]\n\n# Aucun dossier, aucune hiérarchie, juste des public_id uniques."'
+/>
+
+Ce que nous percevons comme un dossier n’est rien d’autre qu’**un préfixe partagé par plusieurs identifiants**. Quand deux assets s’appellent `my-app/pending/karate/12/photo-001` et `my-app/pending/karate/12/photo-002`, ils ne sont pas “dans le même dossier” — ils **partagent juste les mêmes trente-trois premiers caractères de leur identifiant**. Le `/` n’est qu’une convention typographique qui nous aide à lire ces identifiants comme des chemins.
+
+Cette vérité a une conséquence immédiate : **un dossier vide n’existe pas chez Cloudinary**. Si aucun asset ne commence par `my-app/pending/karate/12/`, alors aux yeux de Cloudinary, ce “dossier” n’a jamais existé. Il n’y a littéralement rien à interroger.
+
+---
+
+Pourquoi est-ce que nous mentionnons ça ici, avant même d’avoir touché à une ligne de code ?
+
+Parce que cette absence de dossiers physiques **irrigue silencieusement toute la suite du tutoriel**.
+
+Quand nous signerons un upload vers `my-app/pending/karate/12/`, nous ne signerons pas une autorisation à déposer un fichier dans un dossier — nous signerons une autorisation à créer un asset dont le `public_id` commence par cette chaîne précise. Quand nous vérifierons, à la persistance, qu’un asset arrive bien là où il devait arriver, nous n’écrirons pas une vérification de dossier — nous écrirons un `publicId.startsWith(...)`, **qui est la seule frontière topologique qui ait du sens dans un système sans topologie**.
+
+Et quand, plus tard, nous aborderons le Finder dans un autre tutoriel, cette même vérité deviendra le sujet principal. Parce que l’enjeu du Finder, c’est de reconstruire une arborescence mentale à partir d’un sac plat d’identifiants — et de compléter cette arborescence avec une table `CloudinaryFolder` côté DB, précisément pour matérialiser ce que Cloudinary ne matérialise pas : les dossiers vides, les dossiers en attente, les dossiers qu’on veut pouvoir nommer avant qu’ils ne contiennent quoi que ce soit.
+
+<Callout type="concept">
+Chez Cloudinary, un dossier n’est pas une entité — c’est un préfixe.
+
+👉 `my-app/pending/karate/12/` n’est pas un conteneur  
+👉 c’est juste la chaîne que partagent les `public_id` des assets qu’on veut voir ensemble
+
+Cette vérité est ce qui justifie toute notre logique de préfixage. Et c’est aussi ce qui permettra au Finder, dans un tutoriel à venir, d’exister.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le choix du stockage est posé, et il n’est pas arbitraire — notre projet est orienté médias, nos contraintes de déploiement sont modernes, et Cloudinary résout en un seul service plusieurs problèmes que nous aurions eu à coder séparément. Nous avons aussi levé un malentendu fondamental : chez Cloudinary, un dossier n’est qu’un préfixe partagé, pas une entité de stockage. Mais ce choix a une conséquence immédiate : notre backend n’est plus sur la route du fichier. Reste à comprendre pourquoi il ne faut surtout pas céder à la tentation de l’y remettre par la petite porte — ce qui nous amène au deuxième réflexe à démonter.
+
+---
+
+## 2 — Pourquoi nous ne relayons pas les fichiers par le backend
+
+Cloudinary adopté, une nouvelle tentation apparaît immédiatement. Puisque notre backend sait parler à Cloudinary — il a la clé, il a le secret, il a le SDK — pourquoi ne serait-il pas le passeur ? Le client envoie le fichier au backend, le backend l’envoie à Cloudinary, Cloudinary répond, le backend répond au client. C’est symétrique. C’est propre. C’est ce que nous avons fait avec toutes les autres données du projet.
+
+Mais avec un fichier, cette symétrie devient un piège.
+
+---
+
+### 2.1 — Le deuxième réflexe : faire passer le fichier par notre API
+
+Regardons à quoi ressemble cette approche dans une version naïve. Le client envoie un `FormData`, notre endpoint l’intercepte, le bufferise en mémoire, puis le pousse vers Cloudinary avec notre secret côté serveur.
+
+<CodeSnippet
+  language="ts"
+  title="L’approche proxy — tentante, mais piégée"
+  filename="proxy-upload.ts"
+  kind="anti-pattern"
+  codeJson='"// ❌ anti-pattern : le backend devient un tuyau pour les binaires\nexport async function POST(request: Request) {\n  const formData = await request.formData()\n  const file = formData.get(\"file\") as File\n\n  const buffer = Buffer.from(await file.arrayBuffer())\n\n  const result = await cloudinary.uploader.upload_stream({\n    folder: \"my-app/pending\",\n    type: \"authenticated\",\n  })\n\n  return Response.json({ publicId: result.public_id })\n}"'
+/>
+
+À première vue, ça fonctionne. L’utilisateur envoie un fichier. Le backend le reçoit. Cloudinary le stocke. Le client reçoit un `publicId`. Tout le monde est content.
+
+Le problème, c’est que chaque octet du fichier vient de traverser notre API deux fois.
+
+Une fois à la montée, du client vers notre backend. Une fois à la descente, de notre backend vers Cloudinary. Nous avons doublé le trafic que notre serveur doit encaisser — pour un service que nous n’avons pas rendu nous-mêmes, puisque c’est Cloudinary qui stocke réellement.
+
+---
+
+### 2.2 — Ce que coûte vraiment un proxy binaire
+
+Sur un projet d’association avec quelques photos, ce coût semble invisible. Mais dès que nous imaginons un cas d’usage réaliste — la galerie complète d’un stage, plusieurs dizaines de photos uploadées en rafale par un même utilisateur, en haute résolution — le coût devient immédiatement concret.
+
+👉 notre bande passante sortante double  
+👉 nos timeouts deviennent plus serrés  
+👉 notre mémoire serveur est occupée inutilement  
+👉 notre fonction serverless peut échouer si le fichier dépasse sa limite
+
+Et tout cela pour faire transiter des données que Cloudinary est parfaitement capable de recevoir en direct.
+
+Il y a aussi un coût plus silencieux. Un coût architectural. Parce que le proxy mélange deux préoccupations dans le même endpoint : **autoriser** un upload, et **transporter** un upload. Tant qu’elles sont mélangées, il est impossible de faire évoluer l’une sans toucher à l’autre.
+
+<Callout type="warning">
+Relayer un fichier par son backend, c’est renoncer à ce que Cloudinary apporte vraiment.
+
+👉 ce n’est pas une erreur de code  
+👉 c’est une erreur de modélisation des responsabilités
+</Callout>
+
+---
+
+### 2.3 — La décision : Cloudinary reçoit directement
+
+La bonne architecture inverse le flux. Le fichier ne passe plus par notre backend. Il va directement du navigateur au stockage. Notre backend, lui, ne transporte plus rien — il **autorise**.
+
+<ArchitectureDiagram
+  steps="Client | Backend (signe) | Client | Cloudinary (reçoit)"
+/>
+
+Ce schéma est très pauvre en apparence. Le client discute avec le backend pour obtenir une autorisation, puis discute directement avec Cloudinary pour envoyer son fichier. Mais cette pauvreté graphique cache une richesse architecturale réelle : **nous avons séparé la décision du transport**.
+
+Le backend décide qui a le droit d’uploader, où, sous quel nom, et pour combien de temps. Il ne s’occupe plus de transporter les octets — ce n’est pas son travail.
+
+---
+
+### 2.4 — Une nouvelle question apparaît
+
+Seulement voilà. En retirant notre backend du flux, nous venons d’ouvrir une question que le proxy cachait soigneusement.
+
+👉 si le backend ne transporte plus le fichier  
+👉 comment le client prouve-t-il à Cloudinary qu’il a le droit de le déposer ?
+
+Cloudinary ne connaît pas nos utilisateurs. Il ne connaît pas nos rôles. Il ne connaît pas notre base de données. Tout ce qu’il connaît, c’est une clé et un secret.
+
+Et le secret, nous ne pouvons pas le donner au client.
+
+C’est précisément ce dilemme que nous allons regarder dans la section suivante.
+
+---
+
+👉 **Où nous en sommes :** le proxy est derrière nous. Nous avons pris la décision d’architecture qui permet à Cloudinary d’être utile — laisser les fichiers voyager directement du navigateur au stockage. Mais cette décision ouvre un problème immédiat : le client doit prouver son droit d’uploader, sans jamais voir le secret qui donnerait ce droit. C’est ce paradoxe que nous allons démonter maintenant.
+
+---
+
+## 3 — Le dilemme du secret : ce que le client ne doit jamais voir
+
+Nous venons de décider que le client parle directement à Cloudinary. C’est notre meilleur choix sur la charge serveur. C’est aussi, immédiatement, notre pire problème sur la sécurité.
+
+Parce que Cloudinary, lui, ne sait pas qui est derrière le navigateur.
+
+---
+
+### 3.1 — L’asymétrie API_KEY / API_SECRET
+
+Dans le projet, la configuration Cloudinary tient en très peu de lignes, et c’est dans ces lignes que tout se joue.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/cloudinary.client.ts"
+  filename="cloudinary.client.ts"
+  snippetRange="1-10"
+  snippetHighlight="3-8"
+  snippetTitle="Le client Cloudinary, initialisé côté serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois variables d’environnement. Trois rôles très différents.
+
+Le `CLOUDINARY_CLOUD_NAME` identifie notre compte. Il est publiable — il apparaîtra d’ailleurs dans chaque URL servie par Cloudinary.
+
+La `CLOUDINARY_API_KEY` identifie notre application. Elle est semi-publique. Elle peut voyager côté client parce qu’elle n’ouvre aucun accès à elle seule.
+
+Le `CLOUDINARY_API_SECRET`, lui, est d’une toute autre nature. C’est la clé qui permet de signer les requêtes à Cloudinary. Qui possède ce secret **peut uploader, déplacer, renommer, supprimer** n’importe quoi dans notre espace Cloudinary. Sans condition.
+
+👉 la `API_KEY` dit qui nous sommes  
+👉 le `API_SECRET` prouve que c’est bien nous
+
+Et cette distinction change absolument tout.
+
+---
+
+### 3.2 — Ce qui se passe si le secret fuit
+
+Imaginons une seconde que nous cédions à la facilité. Nous mettons le secret dans une variable d’environnement exposée côté client, accessible dans le bundle JavaScript. Le client signe lui-même ses uploads. Tout semble marcher. Pendant un temps.
+
+Puis quelqu’un ouvre les outils de développement de son navigateur.
+
+Il trouve le secret en quelques secondes.
+
+Et à partir de cet instant, il peut uploader ce qu’il veut, dans le dossier qu’il veut, en écrasant les fichiers qu’il veut. Il peut renommer les assets existants. Il peut les supprimer. Il peut remplir notre espace de stockage jusqu’à la limite de notre plan. Sans jamais passer par notre application.
+
+Le secret, une fois côté client, n’est plus un secret.
+
+<Callout type="warning">
+Un secret qui voyage n’est plus un secret.
+
+👉 ce n’est pas un problème “potentiel”  
+👉 c’est une certitude qui se matérialise dès le premier navigateur curieux
+</Callout>
+
+---
+
+### 3.3 — La signature : un ticket d’entrée borné
+
+Le paradoxe semble insoluble. Le client a besoin d’une autorisation, le secret ne peut pas voyager, et pourtant le fichier doit partir directement vers Cloudinary.
+
+La réponse tient dans un seul concept : **la signature d’upload**.
+
+Une signature, ce n’est pas un secret. C’est une **empreinte cryptographique** produite par le secret — mais qui ne contient pas le secret lui-même. Le backend prend un ensemble de paramètres précis (un dossier, un nom, un timestamp, un type), les concatène, les hache avec son secret, et obtient une chaîne de caractères. Cette chaîne est unique à cette combinaison de paramètres exacte. Changer un seul caractère dans les paramètres invalide la signature.
+
+<CodeSnippet
+  language="txt"
+  title="La signature, en une intuition"
+  filename="signature.txt"
+  kind="pattern"
+  codeJson='"SHA1(  folder=my-app/pending/karate/12\n     & public_id=photo-stage-001\n     & timestamp=1729344000\n     & type=authenticated\n     + CLOUDINARY_API_SECRET )\n= f3a9c8b7e1d2a5f0..."'
+/>
+
+Ce hash, lui, peut voyager. Il peut partir dans le navigateur du client sans aucun risque, parce qu’il ne permet pas de produire une autre signature. Il ne permet que de prouver, à Cloudinary, que **cette signature-là** a bien été émise par le détenteur du secret — pour **ces paramètres-là**, et aucun autre.
+
+---
+
+### 3.4 — Une autorisation n’est pas un accès
+
+Il faut bien mesurer le glissement que cette mécanique opère.
+
+Avec un secret côté client, nous donnerions **un accès**. Général. Durable. Non ciblé.
+
+Avec une signature, nous donnons **une autorisation**. Précise. Ciblée. Vérifiable. Éphémère.
+
+👉 le client ne peut pas signer un autre upload  
+👉 le client ne peut pas signer un autre dossier  
+👉 le client ne peut même pas signer le même upload dans une heure
+
+Il peut seulement présenter la signature que nous lui avons remise, telle quelle, à Cloudinary — pour l’upload exact que nous avons autorisé.
+
+<Callout type="concept">
+Une signature n’est pas un accès, c’est une autorisation bornée.
+
+👉 elle dit “tu peux faire cet upload-là, et rien d’autre”  
+👉 elle est scellée par le secret, mais ne contient pas le secret
+
+C’est cette asymétrie qui rend l’upload direct viable.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le paradoxe est dénoué. Nous savons pourquoi le fichier doit voyager directement du navigateur à Cloudinary, pourquoi le secret ne peut jamais quitter le serveur, et comment la signature réconcilie ces deux contraintes en délivrant une autorisation bornée plutôt qu’un accès général. Reste à rendre tout cela concret — à voir qui décide de la destination, comment la signature est construite en pratique, et ce qu’elle couvre exactement.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons posé le terrain. Quatre idées en sont ressorties :
+
+- **Stocker les médias dans son propre projet est un faux confort.** Le stockage local semble simple jusqu’au moment où l’on déploie — serverless éphémère, absence de CDN, redéploiements qui écrasent, transformations à coder à la main. Ce qui semblait garder le contrôle oblige en réalité à ré-implémenter, en moins bien, ce que des services managés font déjà très bien.
+- **Cloudinary n’est pas un service de stockage parmi d’autres.** Face à des alternatives comme S3 (stockage brut) ou Uploadthing (upload simplifié), Cloudinary se distingue par une compréhension native des médias : transformations dans l’URL, CDN global intégré, mode `authenticated`, signatures d’upload. Pour un projet orienté médias, ces capacités ne sont pas des bonus — elles sont ce qui rend l’architecture viable.
+- **Relayer un fichier par son backend, c’est renoncer à Cloudinary.** Une fois le service adopté, la tentation de garder notre backend dans le flux double le trafic serveur pour un travail que Cloudinary peut absorber directement. La valeur d’un service de stockage tiers, c’est précisément de soulager notre backend du poids des binaires — y renoncer, c’est se priver de la raison même de l’utiliser.
+- **Le secret Cloudinary ne peut jamais voyager, et la signature le traduit en autorisation bornée.** `CLOUDINARY_API_SECRET` est une frontière infranchissable : qui le possède peut uploader, déplacer, renommer, supprimer sans condition. La signature d’upload est produite par ce secret mais ne le contient pas — elle ne peut autoriser qu’un upload précis, dans un dossier précis, à un instant précis. Ce n’est pas un compromis entre sécurité et praticité : c’est la forme normale d’une délégation d’autorité dans un système où les acteurs n’ont pas tous les mêmes droits.
+
+Le Mouvement 2 va maintenant entrer dans la mécanique concrète de cette signature — qui décide de sa portée, comment elle est construite, et pourquoi chaque paramètre qu’elle couvre a été choisi.
+
+---
+
+## Mouvement 2 — Signer sans jamais faire confiance
+
+Nous savons qu’il faut signer. Nous ne savons pas encore ce que nous signons, ni qui décide de cette forme. Ce mouvement est celui où l’architecture du module d’upload se révèle — avec une règle simple et radicale : **à aucun moment le backend ne signe ce que le client lui demande**. Il signe ce qu’il décide lui-même, après avoir traduit une intention métier en chemin de stockage.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 4** — Nous voyons comment le client peut exprimer une intention (catégorie + activité) sans jamais pouvoir dicter un chemin. Le backend résout seul le dossier légitime, en relisant la base de données, et interdit tout ce qui sortirait du sas `pending/`.
+- **Section 5** — Nous lisons pas à pas la fonction qui produit la signature. Nous comprenons pourquoi ses paramètres sont choisis, pourquoi ils sont triés alphabétiquement, pourquoi un timestamp est indispensable, et ce que la signature autorise — mais surtout ce qu’elle n’autorise pas.
+
+À la fin de ce mouvement, nous aurons vu la première procédure tRPC de bout en bout, et nous saurons pourquoi elle est construite comme ça — pas juste comment elle est construite.
+
+---
+
+## 4 — Résoudre la destination côté serveur : le vrai sas de sécurité
+
+Avant même de parler de signature, il faut regarder quelque chose de beaucoup plus fondamental. Une question qu’on oublie souvent, parce qu’elle semble triviale : **qui décide du dossier de destination ?**
+
+Dans un système naïf, c’est le client. Il envoie “je veux uploader dans tel dossier”. Le backend signe ce qui lui est demandé.
+
+Dans un système sérieux, c’est l’inverse.
+
+---
+
+### 4.1 — Ce que le client a le droit de demander (et seulement ça)
+
+Regardons le contrat d’entrée de notre première procédure. Il est défini dans les schemas Zod partagés entre frontend et backend.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/schemas/cloudinary/upload.schema.ts"
+  filename="upload.schema.ts"
+  snippetRange="1-25"
+  snippetHighlight="3-14"
+  snippetTitle="Le contrat d’intention d’upload"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Prenons une seconde pour regarder ce que ce schéma **interdit** aussi clairement que ce qu’il permet.
+
+Un client qui veut uploader peut dire deux choses, et **seulement** deux choses. Soit “je veux uploader dans cette catégorie et cette activité qui existent déjà”. Soit “je veux uploader dans cette catégorie, mais sous une nouvelle activité qui n’existe pas encore”.
+
+Il ne peut pas dire “je veux uploader dans le dossier `my-app/admin/secrets/`”. Il ne peut pas dire “je veux uploader dans le dossier de l’utilisateur 42”. Il ne peut même pas dire “je veux uploader dans `pending/`”. Le mot “dossier” n’existe pas dans son vocabulaire. Il exprime une **intention métier** — une catégorie, une activité — et c’est tout.
+
+👉 le contrat Zod n’encadre pas la destination  
+👉 il rend la destination impossible à exprimer
+
+Cette distinction est fondamentale. Une validation sur un champ “path” rejetterait les mauvaises valeurs. Un contrat sans champ “path” rend les mauvaises valeurs impensables.
+
+---
+
+### 4.2 — Un discriminated union qui prépare la suite du système
+
+Le schéma ne se contente pas d’encadrer l’intention. Il encode déjà une décision métier très forte, à travers son `z.union` discriminé.
+
+Si l’activité existe, le client envoie un `activityId` numérique. Si l’activité n’existe pas, le client envoie un `newActivityName` textuel. Ce choix n’est pas un détail technique — c’est ce qui permet au système de distinguer, plus tard, un upload lié à un enseignement connu d’un upload qui propose une nouvelle offre encore à valider.
+
+Cette distinction, nous allons la retrouver jusque dans la création du `MediaAsset` en base, où elle se traduira en deux champs différents. Mais à ce stade, le point important est qu’elle est **posée dans le contrat** — donc dans le typage — avant même d’être manipulée par le code.
+
+<Callout type="insight">
+Un bon contrat Zod ne valide pas juste des formats.
+
+👉 il encode les décisions métier dans le type lui-même  
+👉 et rend les situations impossibles à exprimer pour le client
+</Callout>
+
+---
+
+### 4.3 — La résolution serveur : du besoin métier au chemin réel
+
+Une fois que le client a exprimé son intention, le backend doit la traduire en un chemin de stockage concret. Et cette traduction est entièrement sous la responsabilité du serveur. Le client n’y a aucune voix — ni directe, ni indirecte.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/services/resolvePendingUploadFolder.service.ts"
+  filename="resolvePendingUploadFolder.service.ts"
+  snippetRange="24-61"
+  snippetHighlight="31-37,41-54,58-60"
+  snippetTitle="La résolution du dossier, strictement serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Regardons attentivement ce que ce service fait.
+
+Il part d’un `categoryId`. Il relit la catégorie en base. Si elle n’existe pas, il lève une erreur — nous n’allons pas deviner un dossier pour une catégorie fantôme. Ensuite, dans le cas d’une activité existante, il relit aussi l’activité en base, et il vérifie **explicitement** que l’activité appartient bien à la catégorie demandée (`activity.martialArt !== category.type`). Ce n’est pas une vérification décorative. C’est ce qui empêche un client malveillant — ou simplement un bug client — de prétendre qu’une activité X appartient à une catégorie Y alors que ce n’est pas le cas en base.
+
+Et seulement après ces vérifications, il construit le chemin :
+
+`${appRoot}/pending/${categorySegment}/${activity.id}`
+
+Dans le cas d’une nouvelle activité, le chemin prend une forme légèrement différente — `${appRoot}/pending/${categorySegment}/new/${slug}` — pour matérialiser le fait qu’il s’agit d’une proposition encore à valider. Dans les deux cas, le préfixe est imposé : nous sommes **toujours** sous `pending/`, et jamais ailleurs.
+
+👉 le chemin ne vient pas du client  
+👉 il est **dérivé** de la base, après re-lecture et validation
+
+Le client peut nous envoyer n’importe quel `activityId`. Si cet ID n’existe pas, ou s’il n’appartient pas à la catégorie déclarée, la procédure échoue avant même d’avoir signé quoi que ce soit.
+
+---
+
+### 4.4 — Le sas `pending/` : une frontière avant l’autorisation
+
+Il faut prendre une seconde pour mesurer ce que signifie le préfixe `pending/` dans la structure des dossiers.
+
+<CodeSnippet
+  language="txt"
+  title="Le layout de dossiers Cloudinary du projet"
+  filename="cloudinary-tree.txt"
+  kind="pattern"
+  codeJson='"my-app/\n├── pending/          ← tout upload atterrit ici\n│   ├── karate/\n│   │   ├── 12/       ← activité existante (activityId)\n│   │   └── new/\n│   │       └── ...   ← nouvelle activité proposée (slug)\n│   └── judo/\n│       └── ...\n├── published/        ← validé par un admin, visible publiquement\n│   └── ...\n└── bin/\n    └── .trash/      ← corbeille, immuable depuis ce router"'
+/>
+
+Ce ne sont pas trois dossiers symétriques. Ce sont **trois zones distinctes**, avec des règles de passage strictes entre elles.
+
+Un upload ne peut arriver que dans `pending/`. Un asset ne passe dans `published/` que par une action admin explicite. Un asset supprimé part dans `bin/.trash/` et devient immuable depuis ce router — il ne peut plus être renommé ni déplacé ailleurs que par le `trashRouter` dédié.
+
+Cette discipline n’est pas une convention esthétique. C’est une **frontière** qui structure tout le cycle de vie des assets, et qui permet au backend de vérifier d’un coup d’œil, à n’importe quelle étape, qu’une opération n’essaie pas de sortir du cadre.
+
+D’ailleurs, le backend a un utilitaire spécifiquement dédié à faire respecter cette frontière — un utilitaire que nous allons retrouver plus tard dans l’enregistrement des assets.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/utils/path-validation.utils.ts"
+  filename="path-validation.utils.ts"
+  snippetRange="22-36"
+  snippetHighlight="23-28"
+  snippetTitle="La frontière pending/, formulée en une assertion"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux lignes. Une règle : si le chemin ne commence pas par `appRoot/pending/`, la requête est rejetée. Le `..` est interdit (pour empêcher les traversées de répertoire). Le `.trash/` est interdit (pour réserver la corbeille à son router dédié). Trois conditions, et nous avons couvert la quasi-totalité des tentatives d’évasion.
+
+---
+
+👉 **Où nous en sommes :** la destination est verrouillée. Le client exprime une intention métier (catégorie + activité), le contrat Zod lui interdit toute mention de dossier, et le backend résout seul le chemin légitime en relisant la base et en vérifiant la cohérence catégorie/activité. Le résultat est un chemin sous `pending/`, dérivé d’informations que le backend a lui-même lues, jamais reçues. Maintenant que nous savons **quoi** signer, nous pouvons regarder **comment** la signature elle-même est construite.
+
+---
+
+## 5 — Construire la signature : sceller une autorisation bornée
+
+Nous arrivons au cœur mécanique du Mouvement 2. Tout ce que nous avons vu jusqu’ici — la résolution serveur du dossier, l’interdiction du client à dicter son chemin, la discipline du préfixe `pending/` — n’avait qu’un seul but : produire un ensemble de paramètres à **signer**. C’est maintenant que cette signature se fabrique.
+
+---
+
+### 5.1 — La procédure tRPC : protectedProcedure, pas adminProcedure
+
+Avant même de regarder la fonction de signature, il faut observer un détail qui dit beaucoup sur la philosophie du module.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="296-314"
+  snippetHighlight="305-314"
+  snippetTitle="La procédure de signature, réservée aux connectés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La procédure est une `protectedProcedure`. Pas une `adminProcedure`. Cela signifie que **tout utilisateur connecté** peut demander la signature d’un upload.
+
+C’est un choix métier intentionnel. Sur un site d’association, n’importe quel membre identifié peut légitimement vouloir proposer une photo ou une vidéo pour une galerie. Restreindre l’upload aux admins reviendrait à centraliser la contribution — ce qui contredirait l’esprit même d’un site d’association. En revanche, la **publication** est restreinte aux admins, et c’est ce qui justifie que tout upload atterrisse sous `pending/` en attendant une validation humaine.
+
+👉 uploader est un droit de membre  
+👉 publier est un pouvoir d’admin
+
+Cette séparation, déjà visible dans le choix du décorateur tRPC, irrigue toute la suite.
+
+Regardons aussi la forme exacte de la procédure. Elle valide son input avec `createUploadSignaturesSchema`, puis délègue entièrement au service `createUploadSignatures` qui reçoit, notons-le, **un `appRoot` calculé à partir de la variable d’environnement `APP_SHORT_NAME`** — jamais un `appRoot` venu du client. Le client, encore une fois, n’a aucune voix dans ce paramètre.
+
+---
+
+### 5.2 — La fonction clé, lue pas à pas
+
+Voici le service complet. C’est la pièce centrale du mouvement.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/services/createUploadSignatures.service.ts"
+  filename="createUploadSignatures.service.ts"
+  snippetRange="11-61"
+  title="createUploadSignatures — la fabrique de signatures, en six étapes"
+  stepsJson='[
+    {
+      "title": "La résolution du dossier ne vient pas de l’input",
+      "body": "Avant même de toucher à la signature, le service appelle resolvePendingUploadFolder. Le dossier qui sera signé n’est pas celui que le client a demandé — c’est celui que le backend a dérivé de la base de données. Toute la discipline de sécurité établie en section 3 passe par cette ligne.",
+      "scope": "9-13",
+      "focus": "9-13"
+    },
+    {
+      "title": "Le timestamp est calculé une seule fois pour le lot",
+      "body": "Nous capturons l’instant présent en secondes Unix. Un unique timestamp est partagé par toutes les signatures du lot — ce qui simplifie la validation côté Cloudinary et garantit que le client ne peut pas rejouer une vieille signature d’il y a six heures.",
+      "scope": "15-15",
+      "focus": "15-15"
+    },
+    {
+      "title": "Le publicId est dérivé du fileName, sans extension",
+      "body": "Nous enlevons l’extension du fichier pour former le publicId — c’est Cloudinary qui gère l’extension à travers le format détecté. Ce publicId sera concaténé au dossier pour former l’identifiant complet de l’asset, et il fera partie des paramètres signés.",
+      "scope": "17-18",
+      "focus": "17-18"
+    },
+    {
+      "title": "L’objet toSign capture exactement ce qui sera immuable",
+      "body": "Quatre paramètres, et seulement quatre. Le dossier, le timestamp, le publicId, et le type authenticated. Tout ce qui n’est pas dans cet objet n’est pas signé — donc tout ce que le client pourrait tenter de changer en dehors de ces quatre champs invalidera la signature aux yeux de Cloudinary.",
+      "scope": "20-25",
+      "focus": "20-25"
+    },
+    {
+      "title": "Le hash SHA1 trie les clés alphabétiquement",
+      "body": "Le tri alphabétique n’est pas un détail de style — c’est le protocole de signature imposé par Cloudinary. Les clés sont triées, concaténées en paires k=v séparées par &, puis le secret est ajouté en fin de chaîne avant hachage. Toute inversion d’ordre produirait une signature différente que Cloudinary ne reconnaîtrait pas.",
+      "scope": "27-35",
+      "focus": "27-35"
+    },
+    {
+      "title": "Le client reçoit tout sauf le secret",
+      "body": "La réponse contient la signature, les paramètres qu’elle couvre, la cloudName et l’apiKey (publiables). Le secret, lui, n’apparaît nulle part. Le client a maintenant tout ce qu’il faut pour construire un POST direct vers Cloudinary — et rien de ce qu’il faudrait pour fabriquer sa propre signature.",
+      "scope": "37-49",
+      "focus": "37-49"
+    }
+  ]'
+/>
+
+Un point mérite d’être souligné sur la structure de `toSign`. Le `type: "authenticated"` n’est pas un mode d’accès par défaut de Cloudinary — c’est un mode délibérément choisi. Les assets en `authenticated` ne sont **pas accessibles par URL publique directe**. Pour les servir, il faut une URL signée à durée de vie limitée. C’est cette discipline qui permet, plus tard, de protéger les galeries de membres ou les contenus réservés.
+
+Un second point, plus subtil, concerne la séparation entre `folder` et `public_id` dans les paramètres signés. Rappelons-le : chez Cloudinary, il n’y a pas de dossier. L’identifiant final de l’asset sera la concaténation `folder + "/" + public_id`. Cette dualité est une commodité offerte par l’API Cloudinary — elle nous permet d’exprimer séparément la partie préfixe (le “dossier” logique) et la partie nom — mais elle ne crée aucune structure côté stockage. Ce que nous signons, au bout du compte, c’est l’autorisation de créer un asset dont l’identifiant complet sera `my-app/pending/karate/12/photo-001`, point final.
+
+---
+
+### 5.3 — Ce que la signature couvre, ce qu’elle ne couvre pas
+
+La signature n’est pas une autorisation générale. Elle est définie par ce qu’elle inclut — et tout ce qui reste à l’extérieur de sa portée doit être géré autrement.
+
+<DocsTable
+  columnsJson='["Paramètre","Couvert par la signature ?","Conséquence"]'
+  rowsJson='[["folder","✅ oui","Le client ne peut pas uploader ailleurs que dans le dossier résolu côté serveur"],["public_id","✅ oui","Le client ne peut pas renommer le fichier en chemin à Cloudinary"],["timestamp","✅ oui","La signature est horodatée et devient invalide après un court délai"],["type: authenticated","✅ oui","Le client ne peut pas basculer l’upload en mode public"],["Contenu du fichier","❌ non","Cloudinary accepte l’octet que le client envoie — c’est pourquoi nous revérifions après coup"],["Taille","❌ non","À borner par les limites de compte Cloudinary ou par une policy"],["Mime type réel","❌ non","À revérifier au moment de la registration, par cohérence avec le resourceType annoncé"]]'
+/>
+
+La lecture de ce tableau est plus instructive qu’il n’y paraît. Ce que la signature couvre, c’est l’**emplacement** et le **mode** du dépôt. Ce qu’elle ne couvre pas, c’est le **contenu** de ce dépôt. Le client peut uploader n’importe quel binaire dans le dossier autorisé — il ne peut pas uploader ailleurs.
+
+Cette observation est cruciale, parce qu’elle dessine déjà le travail qui attend le Mouvement 3 : **revérifier le contenu après coup**, puisque la signature ne l’a pas fait.
+
+---
+
+### 5.4 — Pourquoi le timestamp est une borne, pas un détail
+
+Il est tentant de voir le `timestamp` comme une simple métadonnée, utile pour le debug. Ce serait une erreur.
+
+Sans timestamp, une signature volée resterait valable éternellement. Un attaquant qui mettrait la main sur une réponse `createUploadSignatures` — en l’interceptant, en consultant l’historique du navigateur d’un utilisateur, en exploitant un log mal anonymisé — pourrait rejouer l’upload des mois plus tard, avec n’importe quel contenu, dans le dossier qu’elle autorisait.
+
+Avec un timestamp, Cloudinary refuse automatiquement toute signature dont l’horodatage dépasse une fenêtre de validité (quelques dizaines de minutes par défaut). La signature cesse de valoir quelque chose peu après avoir été émise.
+
+<Callout type="warning">
+Le timestamp n’est pas un confort — c’est une borne temporelle.
+
+👉 sans lui, une signature vole éternellement  
+👉 avec lui, elle expire avec la requête qu’elle accompagnait
+</Callout>
+
+Et ce détail, banal en apparence, est ce qui fait d’une signature une autorisation vraiment bornée — bornée dans l’espace (un dossier, un nom), mais aussi bornée dans le temps.
+
+---
+
+👉 **Où nous en sommes :** la première procédure est complète. Le client a remis une intention métier au backend, le backend a résolu seul un dossier sous `pending/`, puis il a scellé cette destination dans une signature cryptographique limitée à un publicId, un timestamp et un mode authenticated. Le client repart avec un ticket d’upload qu’il ne peut ni modifier, ni réutiliser ailleurs, ni faire durer. Mais dès qu’il aura présenté ce ticket à Cloudinary, et que Cloudinary aura accepté son fichier, il reviendra nous dire “c’est fait” — et c’est là que la véritable difficulté commence.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons regardé la première procédure de bout en bout. Trois idées en sont ressorties :
+
+- **La destination est une décision serveur, jamais une donnée client.** Le contrat Zod interdit au client de même parler de dossier — il ne peut qu’exprimer une intention métier. Le backend dérive seul le chemin légitime en relisant la base et en vérifiant la cohérence catégorie/activité. Le `resolvePendingUploadFolder` est le vrai pare-feu de ce module, bien plus que la signature elle-même.
+- **La signature est une promesse cryptographique strictement bornée.** Elle couvre quatre paramètres — folder, publicId, timestamp, type — et rien d’autre. Toute tentative de modifier l’un d’eux à l’envoi invalide la signature aux yeux de Cloudinary. Elle ne dépense pas notre secret, elle en produit une empreinte à usage unique.
+- **Le contrat Zod encode des décisions métier, pas juste des formats.** Le discriminated union `existing-activity` / `new-activity` n’est pas un confort d’API — c’est la trace, dans le type, de la distinction entre “contribuer à une offre connue” et “proposer une nouvelle offre à valider”. Cette distinction irriguera jusqu’à la création du `MediaAsset` en base.
+
+Le Mouvement 3 va maintenant s’attaquer à la deuxième moitié de la chorégraphie — celle où le client, fort de sa signature, est allé parler à Cloudinary, et revient vers nous pour enregistrer le résultat. Et c’est précisément à ce moment-là que la confiance doit être intégralement reconstruite.
+
+---
+
+## Mouvement 3 — Persister : revérifier avant d’inscrire
+
+Entre le moment où nous signons et le moment où le `MediaAsset` entre en base, Cloudinary a reçu un fichier de la main du client. Le backend n’a pas assisté à cet échange. Il ne sait pas ce qui a été déposé, ni où exactement, ni si le dépôt a seulement eu lieu. Le client revient nous dire “c’est fait, voici ce qui a été stocké”. C’est la phrase la plus dangereuse qu’un backend puisse entendre sans vérifier.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 6** — Nous regardons honnêtement le trou qui s’ouvre entre “signé” et “persisté”, et nous voyons ce qu’un client malveillant — ou simplement bugué, ou en transit manipulé — pourrait tenter de glisser dans cet intervalle.
+- **Section 7** — Nous lisons pas à pas la procédure `registerUploadedAssets`, et nous découvrons les quatre couches de défense qui empêchent tout mensonge de traverser jusqu’à la base. Chaque couche attrape une catégorie d’attaque différente — et chacune existe parce que les autres ne suffisent pas.
+
+À la fin de ce mouvement, nous aurons compris pourquoi la persistance d’un upload n’est jamais “faire confiance au callback” — et pourquoi le backend doit, littéralement, reconstruire la vérité de ce qui s’est passé avant d’accepter de la transcrire en base.
+
+---
+
+## 6 — Le trou entre « signé » et « en base »
+
+Nous avons laissé le client avec une signature entre les mains. Il est allé la présenter à Cloudinary. Il a uploadé son fichier. Cloudinary lui a répondu avec un `publicId` et un `secureUrl`. Il nous renvoie ces informations via une seconde procédure tRPC pour qu’on enregistre un `MediaAsset` en base.
+
+C’est à cet instant précis que tout peut basculer.
+
+---
+
+### 6.1 — Le retour du client : « C’est fait »
+
+Voyons d’abord l’anti-pattern qu’il faut éviter. Dans une version naïve, nous prenons le payload client, nous créons un `MediaAsset` avec les champs tels quels, et nous passons à la suite.
+
+<CodeSnippet
+  language="ts"
+  title="L’erreur : croire le client sur ce qu’il a uploadé"
+  filename="register-naif.ts"
+  kind="anti-pattern"
+  codeJson='"// ❌ anti-pattern : on fait confiance au callback client\nexport async function register({ publicId, secureUrl, folder, bytes, ... }) {\n  return prisma.mediaAsset.create({\n    data: {\n      publicId,\n      secureUrl,\n      folder,\n      bytes,\n      status: \"pending\",\n    }\n  })\n}"'
+/>
+
+Tout a l’air raisonnable. Le client est authentifié. Il vient d’uploader. Il renvoie les informations que Cloudinary lui a données. Pourquoi ne pas le croire ?
+
+Parce qu’entre l’instant où Cloudinary lui a répondu et l’instant où il nous parle, **tout a pu se passer**.
+
+---
+
+### 6.2 — Ce qui peut se glisser dans cet intervalle
+
+Listons honnêtement les scénarios, du plus anodin au plus hostile.
+
+Le client peut **se tromper**. Un bug dans sa logique, une race condition, une réponse Cloudinary mal parsée — et il nous renvoie un `publicId` qui ne correspond à rien.
+
+Le client peut **bricoler**. Il veut déclarer un fichier avec une taille différente, un nom différent, ou dans un dossier différent de celui qu’il a réellement uploadé — pour contourner une règle métier qui n’existe pas encore mais existera un jour.
+
+Le client peut **mentir délibérément**. Il peut envoyer un `publicId` qui pointe vers un asset qu’il n’a jamais uploadé — un asset déposé par quelqu’un d’autre, dans un dossier qu’il a le droit de lire mais pas d’exploiter.
+
+Le client peut être **compromis**. Sa requête peut être manipulée en transit, ou son SDK peut avoir été altéré par une extension, ou son navigateur peut être infecté.
+
+Dans tous ces cas, les données qui arrivent à notre deuxième procédure ne décrivent pas la réalité de ce que Cloudinary a stocké. Et si nous les inscrivons en base telles quelles, notre DB contiendra un mensonge dont nous n’avons aucun moyen de sortir.
+
+<Callout type="warning">
+Ce que Cloudinary a accepté ne suffit pas à ce que notre base accepte.
+
+👉 nous ne stockons pas “ce que Cloudinary stocke”  
+👉 nous stockons “ce que notre domaine reconnaît”
+</Callout>
+
+Ces deux choses peuvent sembler identiques. Elles ne le sont pas. Et tout l’enjeu de la section suivante est de montrer comment, concrètement, nous fermons l’écart entre elles.
+
+---
+
+### 6.3 — Une chorégraphie en deux procédures, liées mais indépendantes
+
+Il est utile, avant de plonger dans les garde-fous, de se représenter visuellement où nous en sommes dans la chorégraphie globale.
+
+<ArchitectureDiagram
+  steps="createUploadSignatures | Upload direct Cloudinary | registerUploadedAssets | Vérifications | Relecture Cloudinary | MediaAsset en DB"
+/>
+
+Ce que nous avons construit en Mouvement 2, ce sont les deux premières étapes. Ce que nous allons construire en Mouvement 3, ce sont les quatre suivantes. Et elles ne reprennent **aucune** information de l’étape 2 en confiance. Chacune des vérifications va soit re-dériver cette information côté serveur, soit la confronter à une source externe (Cloudinary lui-même).
+
+Le point architectural important, c’est que les deux procédures tRPC sont **indépendantes**. Entre `createUploadSignatures` et `registerUploadedAssets`, le backend n’a rien mémorisé. Il n’a pas stocké un “upload en cours”. Il n’a pas créé un enregistrement provisoire. Il ne sait pas qu’un client s’apprête à revenir — et s’il ne revient jamais, aucun rollback n’est nécessaire, parce qu’il n’y avait rien à défaire.
+
+Cette indépendance est précieuse. Elle évite au backend d’avoir à maintenir un état intermédiaire fragile. Mais elle a un prix : à l’arrivée du deuxième appel, le backend doit **tout reconstruire** depuis zéro. Et c’est exactement ce que fait `registerUploadedAssets`.
+
+---
+
+👉 **Où nous en sommes :** nous avons regardé en face le trou qui s’ouvre entre la signature et la persistance. Nous savons maintenant que ce trou n’est pas théorique — il est la conséquence naturelle d’une architecture où les deux procédures sont indépendantes et où le fichier voyage sans jamais passer par notre backend. Reste à voir comment, concrètement, la deuxième procédure reconstruit la vérité de ce qui s’est passé, au lieu de la prendre pour acquise.
+
+---
+
+## 7 — Les quatre couches de défense de `registerUploadedAssets`
+
+C’est ici que toute la philosophie du module se cristallise. La deuxième procédure n’est pas un simple `prisma.mediaAsset.create`. C’est une **fonction d’admission** — une frontière à travers laquelle seules les informations vérifiables peuvent passer jusqu’à la base.
+
+---
+
+### 7.1 — La procédure tRPC : userId depuis la session, pas depuis l’input
+
+Regardons d’abord la procédure elle-même dans le router.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/router.ts"
+  filename="router.ts"
+  snippetRange="316-338"
+  snippetHighlight="325-338"
+  snippetTitle="La procédure registerUploadedAssets"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux détails méritent d’être soulignés avant même de plonger dans le service.
+
+Premier détail : `userId` est lu dans `ctx.sessionClient.user.id`, **jamais dans l’input**. Le client n’a aucune voix sur qui il est déclaré uploader. C’est l’auth tRPC qui tranche cette question, et elle l’a déjà tranchée au moment où la procédure a été appelée.
+
+Deuxième détail : le service reçoit `appRoot`, `destination`, `assets`, `eventDate`. Mais il reçoit aussi `userId`, et `userId` est passé **en paramètre séparé** — pas en étalant l’input. Cette séparation n’est pas cosmétique : elle reflète la nature des deux catégories de données qui arrivent au service. Les données client (`input.*`) sont à considérer comme suspectes par défaut. Les données session (`ctx.*`) sont à considérer comme autoritatives.
+
+👉 `userId` ne se négocie pas  
+👉 `input` se vérifie
+
+---
+
+### 7.2 — Lecture guidée du service complet
+
+Voici le service entier. C’est le deuxième `CodeWalkthrough` central du tutoriel — aussi important que le premier, parce que c’est celui qui matérialise les garde-fous.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/services/registerUploadedAssets.service.ts"
+  filename="registerUploadedAssets.service.ts"
+  snippetRange="37-142"
+  title="registerUploadedAssets — les quatre couches de défense, dans l’ordre"
+  stepsJson='[
+    {
+      "title": "Couche 1 — La destination est re-résolue côté serveur",
+      "body": "Avant même de regarder le premier asset, le service rappelle resolvePendingUploadFolder avec la destination métier reçue dans l’input. Le folder attendu (expectedFolder) est calculé à partir de la base de données, exactement comme dans la première procédure. Le folder que le client renvoie dans chaque asset sera comparé à cette vérité serveur, jamais pris pour argent comptant.",
+      "scope": "11-15",
+      "focus": "11-15"
+    },
+    {
+      "title": "Couche 2 — assertSafeCloudinaryPath impose le préfixe pending/",
+      "body": "Pour chaque asset, le chemin est confronté à une règle absolue : il doit commencer par ${appRoot}/pending/, ne pas contenir de .., ne pas contenir de .trash/. C’est la frontière de bas niveau, celle qui protège contre les tentatives de sortie de bac à sable même si les autres couches avaient été contournées.",
+      "scope": "21-21",
+      "focus": "21-21"
+    },
+    {
+      "title": "Couche 3 — Cohérence resource_type ↔ mime type",
+      "body": "assertResourceTypeMatchesMimeType vérifie qu’un asset déclaré image/* n’arrive pas en disant resourceType: video. Cette incohérence, qui paraît anodine, suffit à empêcher toute une catégorie de confusions de pipeline (miniatures générées, bannières affichées en élément video, etc.).",
+      "scope": "23-26",
+      "focus": "23-26"
+    },
+    {
+      "title": "Couche 4a — Le folder client doit strictement égaler l’expectedFolder",
+      "body": "La comparaison est stricte. Pas de startsWith, pas de normalisation permissive — une égalité stricte. Si le client renvoie un folder qui diffère d’un seul caractère de ce que le backend avait résolu, la requête est rejetée avec un FORBIDDEN. Le client ne peut pas détourner l’upload vers un autre dossier, même un dossier voisin légitime.",
+      "scope": "28-33",
+      "focus": "28-33"
+    },
+    {
+      "title": "Couche 4b — Le publicId doit hériter de l’expectedFolder",
+      "body": "Le publicId renvoyé par le client est vérifié pour qu’il commence bien par expectedFolder/. Cette vérification empêche un client de renvoyer un publicId qui pointe vers un asset déposé ailleurs — par exemple un asset uploadé par un autre utilisateur dans un autre dossier — en tentant de le rattacher à sa propre destination.",
+      "scope": "35-40",
+      "focus": "35-40"
+    },
+    {
+      "title": "Couche 5 — La relecture Cloudinary, la seule vérité externe",
+      "body": "Toutes les vérifications précédentes sont internes — elles confrontent le client à l’état de notre base. La cinquième couche confronte le client à Cloudinary lui-même. readUploadedAssetMetadata va lire les métadonnées réelles de l’asset sur Cloudinary, et deux comparaisons strictes suivent : publicId et secureUrl. Si l’un des deux diffère, c’est que l’asset prétendu n’existe pas, ou pas sous cette forme.",
+      "scope": "42-59",
+      "focus": "42-59"
+    },
+    {
+      "title": "Création du MediaAsset — avec les métadonnées Cloudinary, pas celles du client",
+      "body": "À la création, les champs bytes, format, width, height, duration viennent de cloudinaryAsset — donc de la relecture Cloudinary. Le status est forcé à pending. categoryId vient de la destination métier. activityId et proposedActivityName s’excluent mutuellement selon le discriminant du union. uploaderUserId, enfin, vient de la session. Le client n’a écrit aucun de ces champs sensibles.",
+      "scope": "61-90",
+      "focus": "61-90"
+    },
+    {
+      "title": "La transaction Prisma scelle l’opération",
+      "body": "Toutes les créations d’assets se font dans un prisma.$transaction. Si un seul asset échoue aux vérifications — et donc lève une erreur — aucun asset du lot n’est créé. Le client reçoit tout ou rien, et la base ne se retrouve jamais dans un état intermédiaire où certains assets d’un lot existeraient et d’autres non.",
+      "scope": "17-96",
+      "focus": "17-96"
+    }
+  ]'
+/>
+
+Un mot sur la couche 4b, parce qu’elle mérite une lecture en profondeur. La vérification `publicId.startsWith(expectedFolder + "/")` peut sembler, à première vue, être une sécurité parmi d’autres — un filet de plus dans une chaîne de filets. Ce serait passer à côté de sa vraie nature.
+
+Rappelons-nous ce que nous avons posé en Section 1.6 : chez Cloudinary, il n’y a pas de dossier. Il n’y a qu’un sac plat d’identifiants. Cela signifie que, du point de vue de Cloudinary, demander “cet asset est-il dans le dossier `my-app/pending/karate/12/` ?” **n’a littéralement aucun sens**. Il n’y a pas de dossier à interroger, pas d’appartenance à vérifier, pas de structure à remonter.
+
+La seule chose qu’on puisse demander à un `public_id`, c’est : **commence-t-il par cette chaîne ?**
+
+C’est exactement ce que fait `startsWith`. Ce n’est pas une vérification topologique parmi d’autres — c’est **la seule vérification topologique possible** dans un système sans topologie native. Toute notre discipline de préfixage `pending/published/bin` repose sur cette opération. C’est elle qui transforme une convention de nommage en frontière réelle.
+
+👉 sans dossiers physiques, `startsWith` n’est pas une option  
+👉 c’est la seule forme de frontière spatiale dont Cloudinary dispose
+
+Et dès qu’on le comprend, une chose apparaît clairement : si demain nous voulions déplacer un asset de `pending/` à `published/`, nous ne “déplacerions” rien au sens d’un système de fichiers. Nous renommerions son `public_id`, en remplaçant le préfixe par un autre. Ce que nous verrons dans les opérations du Finder n’est rien d’autre que la généralisation de ce principe — renommer des identifiants pour faire croire à un mouvement qui, littéralement, n’existe pas.
+
+---
+
+### 7.3 — La relecture Cloudinary : ne croire que ce qu’on peut confronter
+
+La cinquième couche mérite qu’on s’y arrête un instant. Elle est courte, mais elle est probablement la plus importante du module — parce que c’est la seule qui confronte le client à une **source de vérité externe**.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/cloudinary/services/readUploadedAssetMetadata.service.ts"
+  filename="readUploadedAssetMetadata.service.ts"
+  snippetRange="4-32"
+  snippetHighlight="10-15,17-25"
+  snippetTitle="La relecture Cloudinary, dernière ligne de défense"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce service fait une seule chose : il appelle `cloudinary.api.resource(publicId, ...)` et relit les métadonnées réelles de l’asset. Si Cloudinary n’a aucun asset à ce `publicId` (parce que le client mentait), l’appel échoue et la procédure entière s’arrête avec un `BAD_REQUEST`. Si Cloudinary répond, le service extrait les vrais champs — `public_id`, `secure_url`, `format`, `bytes`, `width`, `height`, `duration` — et les retourne.
+
+Ce sont **ces champs**, et uniquement ces champs, qui seront inscrits en base. Pas ceux que le client avait envoyés.
+
+Le glissement est subtil mais énorme. Le client nous envoie une description de l’asset. Le backend ne l’utilise que pour **localiser** l’asset (via le `publicId`). Une fois localisé, il en relit lui-même la description. La description client a servi de clé de recherche — elle n’a pas servi de contenu à inscrire.
+
+---
+
+### 7.4 — Ce que le client affirme, ce que le backend revérifie
+
+Pour fixer les idées, résumons en un tableau ce qui vient du client et ce que le backend reconstruit ou confronte. C’est probablement la meilleure synthèse du mouvement.
+
+<DocsTable
+  columnsJson='["Champ","Source finale","Mécanisme"]'
+  rowsJson='[["folder","Backend (resolvePendingUploadFolder)","Re-résolu depuis la DB, comparé strictement au folder client"],["publicId","Cloudinary (readUploadedAssetMetadata)","Le publicId client sert de clé, la valeur retenue vient de Cloudinary"],["secureUrl","Cloudinary","Relu et comparé au secureUrl client — divergence = rejet"],["resourceType","Client, mais contraint","Doit matcher le mime type (couche 3)"],["bytes / width / height / duration","Cloudinary","Relus, le client ne peut pas mentir sur la taille"],["format","Cloudinary","Relu, jamais pris du client"],["mimeType / originalFileName / displayName / description","Client","Champs purement déclaratifs, validés par Zod"],["categoryId / activityId / proposedActivityName","Destination métier (input + résolution DB)","Cohérence catégorie/activité revérifiée"],["uploaderUserId","Session (ctx.sessionClient)","Jamais lu depuis l’input"],["status","Forcé à pending","Valeur littérale, non négociable"]]'
+/>
+
+Lisons ce tableau comme un document de philosophie, pas comme une documentation technique. Il dit, pour chaque donnée qui finit en base, **pourquoi** nous avons le droit de la croire. Et il montre que trois sources seulement sont considérées comme dignes de confiance : notre propre base de données, Cloudinary lui-même, et la session authentifiée. Le client pur, lui, n’alimente en base que des champs descriptifs (nom d’affichage, description) qui ne portent aucune décision — et encore, encadrés par Zod.
+
+---
+
+### 7.5 — La transaction qui scelle le tout
+
+Un dernier point mérite d’être souligné avant de refermer. La création des `MediaAsset` se fait dans un `prisma.$transaction`. Ce n’est pas un réflexe Prisma paresseux — c’est un choix fort.
+
+Si un utilisateur upload quinze assets en une fois, et que le douzième échoue à une de nos vérifications, nous ne voulons pas que les onze premiers soient inscrits en base. Soit les quinze passent, soit aucun ne passe. Parce qu’une galerie partiellement enregistrée serait un état intermédiaire sournois — l’utilisateur ne saurait pas lesquels sont passés, notre interface d’administration mélangerait des assets validés et des assets orphelins sur Cloudinary, et nous n’aurions aucun moyen simple de revenir en arrière.
+
+La transaction garantit une règle : **à la sortie de la procédure, la base est soit enrichie d’un lot complet et vérifié, soit strictement identique à ce qu’elle était avant l’appel**.
+
+<Callout type="insight">
+Les quatre couches ne sont pas redondantes, elles sont complémentaires.
+
+👉 Zod attrape les formes invalides  
+👉 assertSafeCloudinaryPath attrape les sorties de bac à sable  
+👉 la re-résolution attrape les dérives de destination  
+👉 readUploadedAssetMetadata attrape les assets fantômes
+
+Chacune existe parce qu’aucune autre n’attrape sa catégorie d’attaque.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le trou est fermé. Entre le moment où le client nous dit “c’est uploadé” et le moment où le `MediaAsset` est inscrit en base, quatre couches de défense ont reconstruit la vérité de ce qui s’est passé — en re-résolvant la destination, en vérifiant le préfixe, en imposant la cohérence mime/resource, en relisant les métadonnées directement chez Cloudinary. À la sortie de la procédure, chaque champ de la base a soit été produit par le backend, soit confirmé par une source externe. La confiance n’a jamais été accordée — elle a été **reconstruite**, étape par étape.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons fermé la chorégraphie. Trois idées en sont ressorties :
+
+- **Revérifier n’est pas de la paranoïa, c’est la forme normale d’une frontière.** Dès qu’une donnée traverse un réseau, elle cesse d’être vraie par défaut. Elle redevient vraie seulement si le backend peut la reproduire (via sa DB) ou la confronter (via une source externe comme Cloudinary). Le backend ne défend pas contre des attaques imaginaires — il respecte simplement la nature du réseau qui le sépare de ses interlocuteurs.
+- **Les quatre couches ne sont pas redondantes, elles sont complémentaires.** Chacune attrape une catégorie de mensonge que les autres ne voient pas — la forme invalide, la sortie de bac à sable, la dérive de destination, l’asset fantôme. Retirer une couche laisse une catégorie entière sans réponse. Cette complémentarité est ce qui rend l’architecture robuste sans la rendre complexe — chaque couche est simple, et c’est leur composition qui devient puissante.
+- **Les champs qui finissent en base ont trois sources légitimes, et seulement trois.** La DB (relue), Cloudinary (relu), la session (ctx). Tout champ qui viendrait du client pur sans passer par l’une de ces trois sources doit être considéré comme décoratif — un nom d’affichage, une description — jamais comme un champ porteur de décision. Cette discipline de sourcing est ce qui rend notre base de données digne de confiance à long terme.
+
+La **Section 8** va maintenant recomposer toute la chorégraphie en une seule lecture, et montrer comment cette architecture d’upload n’est pas une fin — mais le point d’entrée d’un cycle de vie plus large, qui continuera à s’appuyer sur les conventions que nous venons de poser.
+
+---
+
+## 8 — Un upload n’est pas un évènement, c’est une chorégraphie
+
+Nous avons exploré le module en deux temps. D’abord la signature, qui donne au client une autorisation bornée. Ensuite la persistance, qui reconstruit la vérité de ce qui s’est passé avant d’accepter de l’inscrire en base. Il est temps, maintenant, de regarder les deux temps ensemble — parce que c’est seulement à cette échelle qu’on voit ce que l’architecture raconte vraiment.
+
+---
+
+### 8.1 — La chorégraphie complète, enfin assemblée
+
+Voici le flux complet, du clic utilisateur à la ligne en base.
+
+<ArchitectureDiagram
+  steps="Client choisit fichier | POST createUploadSignatures | Backend résout folder | Backend scelle signature | Client POST direct Cloudinary | Cloudinary stocke en pending | POST registerUploadedAssets | Backend re-résout folder | Backend revalide path | Backend relit Cloudinary | Transaction Prisma | MediaAsset status: pending"
+/>
+
+Douze étapes. Deux procédures tRPC seulement. Et entre ces deux procédures, un aller-retour direct entre le client et Cloudinary, que notre backend n’a pas observé mais qu’il est capable de reconstituer intégralement grâce aux garde-fous de la seconde procédure.
+
+Ce qu’il faut retenir, en prenant du recul, c’est que **le backend n’est jamais sur la route du fichier** — et pourtant il contrôle tout ce qui compte. Il contrôle l’autorisation d’uploader. Il contrôle le dossier de destination. Il contrôle le nom. Il contrôle le mode de stockage. Il contrôle la fenêtre temporelle. Il contrôle l’admission en base. Et il contrôle les métadonnées inscrites.
+
+Le seul chose qu’il ne contrôle pas, ce sont les octets qui transitent sur le câble entre le navigateur et Cloudinary. C’est précisément pour ça qu’il peut se permettre d’être léger — il a délégué ce qu’il pouvait déléguer, et il a gardé ce qu’il devait garder.
+
+---
+
+### 8.2 — Le `status: "pending"` comme promesse faite à l’admin
+
+Un détail, déjà rencontré plusieurs fois au fil du tutoriel, prend maintenant tout son sens. Le `MediaAsset` créé en base a un `status: "pending"`. Et cette valeur est forcée — elle n’est pas négociable, pas dérivable, pas configurable.
+
+👉 un asset qui vient d’être uploadé **n’est pas publié**  
+👉 il est en attente de validation humaine
+
+Pourquoi ? Parce que tout ce que nous avons mis en place dans ce tutoriel vérifie la **légitimité technique** d’un upload — le bon dossier, le bon nom, le bon uploader, le bon fichier. Mais aucune de ces couches ne vérifie la **légitimité éditoriale** du contenu. Elles ne savent pas si la photo proposée convient réellement à la galerie, si l’activité proposée a un sens métier, si le moment capturé est pertinent.
+
+Cette décision-là appartient à un humain. Et tant que cet humain n’a pas tranché, l’asset reste sous `pending/` dans Cloudinary et sous `status: "pending"` en base.
+
+<Callout type="concept">
+Notre architecture d’upload vérifie la légitimité technique.
+
+👉 la légitimité éditoriale reste humaine  
+👉 le `pending/` est la matérialisation de cette frontière
+</Callout>
+
+Ce choix n’est pas un manque d’automatisation. C’est une **humilité architecturale**. Nous n’avons pas essayé de coder du discernement humain dans le backend — nous avons seulement préparé le terrain pour que ce discernement puisse s’exercer sans risque.
+
+---
+
+### 8.3 — Ce que cette architecture ouvre pour la suite
+
+Le module d’upload, tel que nous l’avons parcouru, n’est que la première pièce d’un ensemble plus large. Plusieurs choses le prolongent naturellement, et nous allons les croiser dans les prochains tutoriels du parcours.
+
+**La validation admin** déplace un asset de `pending/` vers `published/`. Nous l’avons aperçue dans le router — `validatePictures` renomme l’asset côté Cloudinary et met à jour la DB. La convention `pending/published/bin` établie dans ce tutoriel est ce qui rend cette opération lisible : un renommage de chemin qui raconte, à lui seul, un changement de cycle de vie.
+
+**La corbeille** déplace un asset vers `bin/.trash/`. Nous l’avons croisée à travers `assertNotInTrashStorage` et `assertSafeCloudinaryPath`. La corbeille n’est pas juste un dossier de plus — c’est une zone **immuable depuis le router principal**, réservée à un `trashRouter` dédié. Cette séparation est ce qui rend la logique de restauration et de suppression définitive propre et vérifiable.
+
+**Le Finder** est l’interface qui donne à voir tout ça — un arbre de dossiers qui mélange ce que Cloudinary contient réellement et ce que notre table `CloudinaryFolder` référence côté DB. Il repose sur les mêmes conventions de chemins que nous avons posées ici.
+
+Tout cela s’appuie, silencieusement, sur ce que nous venons de construire. La convention `pending/published/bin`. La discipline du path-validation. La double lecture Cloudinary/DB. La transaction qui rend les opérations atomiques.
+
+Si cette fondation est claire, la suite du parcours ne sera plus un empilement d’opérations techniques — ce sera la lecture cohérente d’un cycle de vie d’asset, entièrement structuré par des frontières explicites.
+
+---
+
+### 8.4 — Ce qu’il faut retenir de ce tutoriel
+
+<Callout type="info">
+L’upload direct n’est pas un compromis entre performance et sécurité.
+
+👉 c’est une architecture où chaque responsabilité est à sa place
+
+Retenons :
+
+- le stockage local s’effondre en conditions réelles (serverless, CDN, transformations, backups)  
+- Cloudinary est un service de gestion de médias, pas juste un stockage brut  
+- le backend signe l’autorisation, il ne transporte pas le fichier  
+- le secret Cloudinary ne quitte jamais le serveur  
+- la destination est résolue côté serveur, jamais dictée par le client  
+- la signature est bornée dans l’espace et dans le temps  
+- la persistance reconstruit la vérité, elle ne la croit pas  
+- les quatre couches de défense sont complémentaires, pas redondantes  
+- chaque champ en base a une source explicitement légitime  
+- le `pending/` matérialise la frontière entre le technique et l’éditorial
+
+👉 un upload n’est pas un évènement — c’est une chorégraphie à deux temps, traversée de garde-fous qui rendent le client utile sans jamais le rendre maître
+</Callout>
+
+---
+
+### 8.5 — Et maintenant
+
+Nous avons franchi une étape importante. Pour la première fois dans le parcours, notre système accepte des données dont l’existence dépasse la durée d’une requête HTTP. Des fichiers. Des binaires. Des objets qui ont une vie propre, un cycle, une trajectoire.
+
+Tout ce que nous avons construit dans les tutoriels précédents nous y avait préparés. Prisma nous a donné un modèle de données typé. Les formulaires nous ont donné un point de contact avec l’intention utilisateur. tRPC nous a donné un transport sans perte. L’authentification nous a donné un contexte de confiance.
+
+Il manquait encore cette dernière brique — celle qui permet de faire entrer du contenu dans le système, pas juste de la donnée structurée.
+
+👉 maintenant, le système peut recevoir ce que l’utilisateur produit  
+👉 et il peut le faire sans jamais trahir sa propre intégrité
+
+C’est à partir d’ici que notre application cesse d’être un formulaire devant une base de données — pour devenir une plateforme qui héberge le contenu de ses membres. Le prochain tutoriel reprendra le fil à cet endroit précis, en regardant comment le Finder donne à voir ce contenu, et comment le cycle de vie `pending → published → bin` s’anime dans l’interface d’administration.
+
+Mais ça, c’est pour la suite.

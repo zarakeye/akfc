@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { trpcClient } from "../trpcClient";
+import { trpcClient } from "../../core/trpc/trpcClient";
 import type { Course } from "@prisma/client";
 
 export interface CourseStoreState {

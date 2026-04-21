@@ -1,5 +1,5 @@
 import { FolderStatus } from "packages/contracts/src/cloudinary/folder.types";
-import { FolderNode, VirtualFolderNode, RootNode } from "@/features/cloudinary-finder/model/explorer/finder-ui.types";
+import { FolderNode, VirtualFolderNode, RootNode } from "@workspace/contracts/src/cloudinary/finder.types";
 
 const STATUSES: FolderStatus[] = ["pending", "published", "bin"];
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';

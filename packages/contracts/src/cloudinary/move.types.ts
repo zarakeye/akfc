@@ -8,7 +8,7 @@
  * - Alignement total avec le nouveau move.schema basé sur Zod.
  */
 
-import type { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
+import type { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
 
 /**
  * ✅ Payload transporté par le Drag & Drop (UI)

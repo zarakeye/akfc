@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import UserCard from "../UserCard";
+import UserCard from "@/features/admin/users/components/UserCard";
 
 /**
  * Page pour afficher une carte utilisateur.

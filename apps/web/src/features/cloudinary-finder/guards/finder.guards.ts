@@ -3,7 +3,7 @@ import {
   FolderNode,
   FileNode,
   BaseNode,
-} from "@/features/cloudinary-finder/model/explorer/finder-ui.types";
+} from "@workspace/contracts/src/cloudinary/finder-ui.types";
 
 /**
  * Checks if a TreeNode is a FolderNode or a VirtualFolderNode.

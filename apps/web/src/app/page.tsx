@@ -2,7 +2,7 @@
 
 import { JSX } from "react";
 import { useSessionStore } from "@/lib/stores/useSessionStore";
-import UpdateUserForm from "@/features/admin-forms/components/UpdateMe.form";
+import UpdateUserForm from "@/features/admin/users/forms/update-me/UpdateMeForm";
 
 /**
  * Home component

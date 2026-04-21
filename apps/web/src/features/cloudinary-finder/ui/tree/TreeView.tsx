@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
-import type { RootNode, FolderNode } from '../../model/explorer/finder-ui.types';
+import type { RootNode, FolderNode } from '@workspace/contracts/src/cloudinary/finder.types';
 
 import VirtualFolderNodeComponent from '@/features/cloudinary-finder/ui/tree/VirtualFolderNodeComponent';
 import FolderNodeComponent from '@/features/cloudinary-finder/ui/tree/FolderNodeComponent';
@@ -9,7 +9,7 @@ import FolderNodeComponent from '@/features/cloudinary-finder/ui/tree/FolderNode
 import { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
 import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
 
-import { trpc } from '@/lib/trpcClient';
+import { trpc } from '@/core/trpc/trpcClient';
 
 import {
   basenamePath,

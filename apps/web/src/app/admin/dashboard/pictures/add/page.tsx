@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import PicturesDragNDropForm from '@/features/admin-forms/components/PicturesDragNDropForm';
+import PicturesDragNDropForm from '@/features/admin/pictures/forms/PicturesDragNDropForm';
  
 
 export default function AddPicturePage(): JSX.Element {

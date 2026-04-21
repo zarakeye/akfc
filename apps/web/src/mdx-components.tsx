@@ -1,15 +1,47 @@
 import type { MDXComponents } from "mdx/types"
-import { Children } from "react"
+import { Children, isValidElement } from "react"
+import type { ReactNode, ReactElement } from "react"
 
-import { Callout } from "@/components/docs/Callout"
-import { CodeBlock } from "@/components/docs/CodeBlock"
-import { FileTree, FileTreeItem } from "@/components/docs/FileTree"
-import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
-import { CodeExample } from "@/components/docs/CodeExample"
-import { CodeWalkthrough } from "@/components/docs/CodeWalkthrough"
-import { slugify } from "@/lib/docs/slugify"
-import { ProjectArchitectureTree } from "@/components/docs/ProjectArchitectureTree"
-import { ProjectArchitectureLayers } from "./components/docs/ProjectArchitectureLayers"
+import { Callout } from "@/features/docs/ui/Callout"
+import { CodeBlock } from "@/features/docs/ui/CodeBlock"
+import CodeSnippet from "@/features/docs/ui/CodeSnippet"
+import CodeSnippetWalkthrough from "@/features/docs/ui/CodeSnippetWalkthrough"
+import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
+import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { CodeExample } from "@/features/docs/ui/CodeExample"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import { slugifyHeading } from "@/features/docs/lib/slugifyHeading"
+import { ProjectArchitectureTree } from "@/features/docs/ui/ProjectArchitectureTree"
+import { ProjectArchitectureLayers } from "@/features/docs/ui/ProjectArchitectureLayers"
+import { AuthFlowDiagram } from "@/features/docs/diagrams/AuthFlowDiagram"
+import { TRPCFlowDiagram } from "@/features/docs/diagrams/TRPCFlowDiagram"
+import { Step } from "@/features/docs/ui/Step"
+import { SvgDiagram } from "@/features/docs/components/SvgDiagram"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+import PropsProbe from "@/features/docs/ui/PropsProbe"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+function extractHeadingText(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") {
+    return ""
+  }
+
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node)
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(extractHeadingText).join("")
+  }
+
+  if (isValidElement(node)) {
+    const element = node as ReactElement<{ children?: ReactNode }>
+    return extractHeadingText(element.props.children)
+  }
+
+  return ""
+}
 
 function getHeadingText(children: React.ReactNode): string {
   return Children.toArray(children).join("").trim()
@@ -32,11 +64,21 @@ export const mdxComponents: MDXComponents = {
   CodeBlock,
   CodeExample,
   CodeWalkthrough,
+  CodeSnippet,
+  CodeSnippetWalkthrough,
   FileTree,
   FileTreeItem,
   ArchitectureDiagram,
   ProjectArchitectureTree,
   ProjectArchitectureLayers,
+  AuthFlowDiagram,
+  TRPCFlowDiagram,
+  Step,
+  SvgDiagram,
+  PrismaCoreErdDiagram,
+  PrismaCoreMemoryDiagram,
+  PropsProbe,
+  DocsTable,
 
   h1: ({ children, ...props }) => (
     <h1
@@ -47,8 +89,9 @@ export const mdxComponents: MDXComponents = {
     </h1>
   ),
 
-  h2: ({ children, ...props }) => {
-    const id = slugify(getHeadingText(children))
+    h2: ({ children, ...props }) => {
+    const text = extractHeadingText(children).trim()
+    const id = slugifyHeading(text)
 
     return (
       <h2
@@ -63,7 +106,8 @@ export const mdxComponents: MDXComponents = {
   },
 
   h3: ({ children, ...props }) => {
-    const id = slugify(getHeadingText(children))
+    const text = extractHeadingText(children).trim()
+    const id = slugifyHeading(text)
 
     return (
       <h3

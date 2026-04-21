@@ -4,10 +4,10 @@ import { JSX, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import Image from 'next/image';
 
-import type { VirtualFolderNode } from '@/features/cloudinary-finder/model/explorer/finder-ui.types';
+import type { VirtualFolderNode } from '@workspace/contracts/src/cloudinary/finder.types';
 import type { DragSource } from 'packages/contracts/src/cloudinary/move.types';
 import type { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
-import { canMove } from 'packages/backend/src/cloudinary/move.guards';
+import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
 
 type Props = {
   node: VirtualFolderNode;

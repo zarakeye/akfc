@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import RoleCard from "../RoleCard";
+import RoleCard from "@/features/admin/roles/components/RoleCard";
 
 interface RolePageProps {
   params: {

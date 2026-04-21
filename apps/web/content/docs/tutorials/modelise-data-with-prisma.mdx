@@ -1,0 +1,1761 @@
+---
+title: "Avant l’API : construire un système cohérent avec Prisma"
+slug: "avant-l-api-construire-un-systeme-coherent-avec-prisma"
+description: "Comprendre comment Prisma transforme une base PostgreSQL en modèle typé et devient la fondation d’une architecture fullstack TypeScript cohérente."
+section: "Tutorials"
+order: 0
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+
+## Pourquoi tout commence par le modèle
+
+Quand on découvre une stack moderne, on a souvent envie d’aller vite.  
+De voir quelque chose s’afficher. De faire répondre une route. De connecter rapidement le frontend au backend, et sentir que “ça marche”.
+
+On pense immédiatement à construire une API, afficher des données, créer des formulaires, connecter le frontend au backend. C’est compréhensible. Mais dans un projet structuré, cette approche est une erreur, parce qu’elle saute une étape fondamentale : la définition du modèle de données.
+
+Une application ne commence pas par des routes. Elle ne commence pas non plus par une interface. Elle commence par une question beaucoup plus simple, mais beaucoup plus structurante : **qu’est-ce que votre système manipule réellement ?**
+
+Dans ce projet, cela signifie des utilisateurs, des rôles, des permissions, des sessions, des ressources métier — et surtout des relations entre toutes ces entités. Ces éléments existent déjà, quelque part : dans la base de données. Mais à ce stade, ils ne sont encore que des tables. Ils sont stockés, ils sont reliés… mais ils ne sont pas encore compréhensibles par le reste de l’application.
+
+C’est précisément ici que Prisma entre en jeu.
+
+Prisma ne sert pas uniquement à interroger la base. Il joue un rôle beaucoup plus structurant : il transforme la base de données en un modèle typé exploitable côté TypeScript. Autrement dit, il fait passer le système d’un état où la donnée est brute, où les relations sont implicites, et où le backend doit “deviner” la structure… à un état où les entités sont explicites, les relations modélisées, et les types réellement présents dans le code.
+
+Ce moment est un point de bascule.
+
+Parce que c’est ici que la donnée cesse d’être simplement stockée, et devient un langage partagé entre toutes les couches de l’application.
+
+Sans cette étape, le backend bricole ses types, le frontend redéfinit des structures, les incohérences apparaissent — et la duplication s’installe. Pas immédiatement. Pas de façon spectaculaire. Mais progressivement, à chaque évolution du modèle.
+
+Avec Prisma, le modèle est centralisé, les types sont générés, et la cohérence devient structurelle.
+
+<Callout type="info">
+Dans ce projet, Prisma n’est pas un simple ORM.
+
+👉 c’est la source de vérité du modèle de données côté TypeScript
+
+Tout ce qui suit — formulaires, tRPC, authentification — s’appuie sur ce socle.
+</Callout>
+
+## Une chaîne complète, du stockage à l’interface
+
+Pour comprendre l’importance de cette étape, il faut voir l’ensemble du système. Dans ce projet, les différentes couches s’enchaînent ainsi : PostgreSQL stocke les données, Prisma les structure et les typifie, les formulaires capturent l’intention utilisateur, tRPC transporte ces données sans casser le typage, et React les consomme côté interface.
+
+Ce point est essentiel parce qu’il renverse une idée reçue : le typage ne commence pas dans le frontend, il ne commence pas non plus dans l’API.
+
+👉 Il commence dans la modélisation des données.
+
+<Callout type="info">
+Si vous commencez directement par tRPC ou par les formulaires, vous verrez des types circuler…
+
+…sans savoir d’où ils viennent.
+
+Et à ce moment-là :
+
+👉 l’architecture devient magique  
+👉 au lieu de devenir compréhensible
+</Callout>
+
+## Ce que nous allons faire dans ce tutoriel
+
+Dans ce tutoriel, nous n’allons pas simplement “installer Prisma”. Nous allons intégrer Prisma dans un monorepo moderne, comprendre le rôle du `schema.prisma`, modéliser des entités réelles, analyser leurs relations, comprendre comment Prisma génère des types, puis voir comment ces types deviennent la base du backend.
+
+L’objectif n’est pas seulement technique.
+
+👉 L’objectif est de comprendre comment une application devient cohérente — et pourquoi tout le reste du projet dépend de cette étape.
+
+À la fin de ce tutoriel, vous ne verrez plus Prisma comme un outil isolé. Vous le verrez comme la fondation du système. Et c’est précisément pour cette raison que ce tutoriel vient avant les formulaires, tRPC et l’authentification.
+
+Parce qu’une fois la donnée correctement modélisée, une nouvelle question apparaît naturellement :
+
+👉 **comment l’utilisateur interagit-il avec ce modèle ?**
+
+C’est exactement ce que nous aborderons ensuite avec les formulaires.
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement « installer Prisma ». Nous allons reconstruire, étape par étape, la manière dont un modèle de données devient la fondation typée sur laquelle tout le reste de l’application se tient. Trois mouvements, puis une ouverture vers la suite.
+
+- **Mouvement 1 — Installer et lire.** Nous branchons Prisma au bon endroit dans le monorepo, puis nous apprenons à lire `schema.prisma` non plus comme un fichier technique, mais comme la carte d’un système.
+- **Mouvement 2 — Modéliser le système.** Nous regardons les entités cœur — utilisateurs, rôles, permissions, sessions — comme une architecture, puis nous voyons les relations pour ce qu’elles sont vraiment : des décisions qui engagent l’avenir du projet.
+- **Mouvement 3 — Rendre le modèle vivant.** Nous franchissons le pas qui transforme un schéma déclaratif en code exécutable, et nous voyons comment Prisma devient le moteur typé du système.
+
+La **Section 6** ouvrira ensuite la porte vers la suite du parcours — les formulaires, tRPC, l’authentification — pour montrer pourquoi tout cela repose, silencieusement, sur le modèle que nous allons construire.
+
+---
+
+## Mouvement 1 — Installer et lire
+
+Avant d’écrire une relation ou de générer un type, nous devons placer Prisma à sa juste place dans le projet et apprendre son langage. Ce mouvement n’est pas un simple setup : c’est le moment où la donnée change de statut — elle cesse d’être seulement stockée dans une base pour devenir décrite dans un fichier que tout le code partage.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 1** — Nous installons Prisma dans un monorepo moderne, au bon endroit, avec la bonne configuration, pour qu’il ne devienne pas « une dépendance de plus » mais bien le cœur partagé du projet.
+- **Section 2** — Nous ouvrons `schema.prisma` et apprenons à le lire comme une carte : datasource, generator, modèles, relations — chaque bloc dit quelque chose de précis sur l’architecture.
+
+À la fin de ce mouvement, nous aurons non seulement un Prisma branché, mais un schéma que nous saurons lire dans les yeux — en reconnaissant ce qu’il dit, et ce qu’il tait.
+
+---
+
+## 1 — Installer Prisma dans un monorepo moderne : brancher l’outil au bon endroit
+
+Quand on dit “installer Prisma”, beaucoup de tutoriels s’arrêtent à une commande. On installe deux paquets, on lance une initialisation, et on passe immédiatement au schéma. Techniquement, c’est suffisant pour démarrer.
+
+Mais dans un projet réel, ce n’est jamais là que les problèmes commencent.
+
+---
+
+Dans ce projet, Prisma n’est pas branché dans une petite application isolée. Il est branché dans un **monorepo fullstack** où plusieurs couches vivent déjà ensemble : le frontend Next.js, les packages partagés, le backend, les contrats, les scripts de seed, et les migrations.
+
+Et dès qu’on est dans ce type d’environnement, la question change de nature.
+
+👉 il ne s’agit plus seulement d’installer Prisma  
+👉 il s’agit de savoir **où il doit vivre pour ne pas devenir une dépendance de plus**
+
+---
+
+### 1.1 — Pourquoi Prisma est installé à la racine
+
+Dans ce projet, le dossier `prisma/` vit à la racine du workspace. Ce choix est loin d’être anodin. Il signifie que le schéma de données n’appartient pas à une seule application, ni à un seul package technique. Il appartient au système dans son ensemble.
+
+<CodeSnippet
+  language="txt"
+  title="La place de Prisma dans le monorepo"
+  filename="tree.txt"
+  kind="pattern"
+  highlightLines="1-8"
+  codeJson='"akfc/\n├── apps/\n│   ├── web/\n│   └── mobile/\n├── packages/\n│   ├── backend/\n│   └── contracts/\n├── prisma/\n│   ├── schema.prisma\n│   ├── seed.js\n│   └── migrations/\n└── prisma.config.ts"'
+/>
+
+Ce placement raconte déjà quelque chose d’important.
+
+Le modèle de données n’est pas caché dans `apps/web`, parce qu’il ne concerne pas seulement l’interface.  
+Il n’est pas non plus enfoui dans `packages/backend`, même si le backend est celui qui consomme directement le client Prisma.
+
+👉 Il est placé à la racine parce qu’il représente une couche plus fondamentale.
+
+Une couche sur laquelle toutes les autres vont venir s’appuyer.
+
+<Callout type="info">
+Dans ce monorepo, Prisma vit à la racine parce que la donnée précède les applications qui l’utilisent.
+
+👉 le schéma n’appartient pas à une page  
+👉 il appartient au système
+</Callout>
+
+---
+
+### 1.2 — Les dépendances : ce qu’on installe vraiment
+
+Sur un projet vierge, l’installation minimale de Prisma ressemble souvent à ceci :
+
+<CodeSnippetWalkthrough
+  language="bash"
+  title="L’installation minimale de Prisma"
+  filename="terminal.sh"
+  kind="educational"
+  startingLineNumber={1}
+  codeJson='"pnpm add -D prisma\npnpm add @prisma/client\npnpm prisma init"'
+  stepsJson='[
+    {
+      "title": "La CLI Prisma sert à piloter le schéma et les migrations",
+      "body": "Le paquet prisma fournit la commande qui permet d’initialiser le projet, de créer des migrations, de générer le client et de faire évoluer le schéma.",
+      "scope": "1",
+      "focus": "1"
+    },
+    {
+      "title": "Le client Prisma est la couche consommée par le backend",
+      "body": "Le paquet @prisma/client contient le client généré utilisé dans le code TypeScript.",
+      "scope": "2",
+      "focus": "2"
+    },
+    {
+      "title": "L’initialisation crée le point de départ du système de données",
+      "body": "La commande prisma init prépare le dossier prisma/ et le fichier schema.prisma.",
+      "scope": "3",
+      "focus": "3"
+    }
+  ]'
+/>
+
+Mais dans votre repo réel, l’histoire ne s’arrête pas là.
+
+Le workspace contient déjà `prisma`, `@prisma/client`, `pg`, `dotenv`, et même `@prisma/adapter-pg`. On n’est donc plus dans une démonstration abstraite. On est dans un environnement PostgreSQL réel, avec des scripts, des seeds, un client centralisé, et un backend qui dépend déjà de cette couche.
+
+👉 c’est exactement dans ce contexte que Prisma doit être compris
+
+---
+
+### 1.3 — `prisma.config.ts` : une configuration qui ancre Prisma dans le repo
+
+Dans les versions récentes de Prisma, la configuration ne vit plus seulement dans `schema.prisma`. Une partie essentielle peut être remontée dans `prisma.config.ts`. Et dans ce projet, c’est exactement ce qui a été fait.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="prisma.config.ts"
+  filename="prisma.config.ts"
+  snippetRange="1-15"
+  title="prisma.config.ts — relier Prisma au vrai environnement du monorepo"
+  stepsJson='[
+    {
+      "title": "Le fichier charge l’environnement dès l’entrée",
+      "body": "L’import de dotenv/config montre que Prisma ne travaille pas dans le vide. Il dépend directement de variables d’environnement réelles, disponibles avant toute exécution.",
+      "scope": "1-1",
+      "focus": "1-1"
+    },
+    {
+      "title": "La configuration explicite l’emplacement du schéma",
+      "body": "schema: \"prisma/schema.prisma\" ancre clairement le modèle de données à la racine du repo. Prisma sait donc où se trouve la source de vérité du domaine.",
+      "scope": "4-4",
+      "focus": "4-4"
+    },
+    {
+      "title": "Les URLs de connexion sont distinguées proprement",
+      "body": "Le fichier branche DATABASE_URL et DIRECT_DATABASE_URL. Cela prépare un usage sérieux de PostgreSQL, notamment quand on veut distinguer un chemin de connexion standard d’un accès direct pour certaines opérations Prisma.",
+      "scope": "5-8",
+      "focus": "5-8"
+    },
+    {
+      "title": "La configuration est déjà pensée comme une couche évolutive",
+      "body": "Même les blocs commentés generators et migrations racontent quelque chose : la configuration Prisma est traitée ici comme une vraie couche technique, prête à évoluer avec le projet.",
+      "scope": "9-14",
+      "focus": "9-14"
+    }
+  ]'
+/>
+
+Ce fichier est précieux pédagogiquement parce qu’il casse une idée fausse : Prisma ne se résume pas à un schéma.
+
+👉 il a besoin d’un ancrage dans l’environnement réel du projet
+
+---
+
+### 1.4 — Le schéma n’est pas encore le sujet, mais son emplacement compte déjà
+
+À ce stade, nous ne lisons pas encore les modèles.
+
+Mais le simple fait que `schema.prisma` existe déjà change quelque chose.
+
+👉 la donnée n’est plus implicite  
+👉 elle commence à être décrite  
+
+Et c’est ce basculement qui compte.
+
+---
+
+### 1.5 — Le client Prisma : brancher le schéma au backend réel
+
+Une fois Prisma installé et configuré, encore faut-il éviter un piège très classique : créer le client n’importe où, n’importe comment. Dans une application qui recharge souvent en développement, ou dans un backend structuré en plusieurs modules, ce genre d’improvisation finit vite par produire de l’instabilité.
+
+Dans ce projet, le client Prisma est centralisé dans `packages/backend/src/prisma.ts`.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/prisma.ts"
+  filename="prisma.ts"
+  snippetRange="1-10"
+  title="packages/backend/src/prisma.ts — centraliser le client pour stabiliser le backend"
+  stepsJson='[
+    {
+      "title": "Le backend importe le vrai client généré par Prisma",
+      "body": "Le fichier part de PrismaClient depuis @prisma/client. Cela montre bien que la génération du client n’est pas une abstraction théorique : elle produit une dépendance concrète du backend.",
+      "scope": "1-1",
+      "focus": "1-1"
+    },
+    {
+      "title": "Le global singleton évite les créations multiples",
+      "body": "globalForPrisma permet de réutiliser une instance existante au lieu d’en créer une nouvelle à chaque recharge. C’est particulièrement important en développement, où les hot reloads peuvent sinon multiplier les connexions.",
+      "scope": "3-4",
+      "focus": "3-4"
+    },
+    {
+      "title": "La création du client est centralisée et instrumentée",
+      "body": "La constante prisma construit le client une seule fois, avec des logs adaptés selon l’environnement. On obtient ainsi une source unique d’accès à la base dans tout le backend.",
+      "scope": "5-8",
+      "focus": "5-8"
+    },
+    {
+      "title": "Le mode développement conserve l’instance",
+      "body": "La dernière ligne réinjecte l’instance dans globalThis hors production. C’est ce petit détail qui protège l’expérience développeur sur un projet vivant.",
+      "scope": "10-10",
+      "focus": "10-10"
+    }
+  ]'
+/>
+
+Là encore, le point n’est pas seulement technique. Il est architectural. Centraliser le client Prisma, c’est reconnaître que l’accès aux données est une dépendance transversale du backend. Cela évite que chaque module s’organise dans son coin et renforce l’idée que Prisma n’est pas une petite dépendance utilitaire, mais une colonne vertébrale technique.
+
+### 1.6 — Ce que cette installation révèle déjà
+
+À ce stade, nous n’avons pas encore parlé des modèles eux-mêmes. Et pourtant, une grande partie de l’architecture se lit déjà.
+
+On voit que le schéma vit à la racine, que Prisma est configuré explicitement, que l’environnement PostgreSQL est branché proprement, que le client est centralisé côté backend, et que le monorepo traite la donnée comme une fondation commune.
+
+Autrement dit, avant même de modéliser `User`, `Role` ou `Session`, le projet dit déjà quelque chose de très fort :
+
+👉 la donnée est une couche de premier rang  
+👉 pas une conséquence tardive de l’API
+
+<Callout type="info">
+Installer Prisma proprement, ce n’est pas seulement rendre des commandes exécutables.
+
+C’est commencer à donner une place stable à la donnée dans l’architecture.
+</Callout>
+
+### 1.7 — Ce que cette section prépare
+
+Maintenant que Prisma est branché au bon endroit, une nouvelle question apparaît naturellement :
+
+👉 **que décrit exactement le schéma de ce projet ?**
+
+C’est là que le tutoriel devient vraiment intéressant. Parce qu’à partir de maintenant, nous n’allons plus seulement parler d’installation. Nous allons lire le `schema.prisma` comme une carte du système, comprendre les entités fondamentales, et voir comment les relations racontent déjà une grande partie de l’architecture.
+
+---
+
+👉 **Où nous en sommes :** Prisma n’est plus une dépendance parmi d’autres — il a trouvé sa place à la racine du monorepo, avec une configuration qui l’ancre dans le projet et un client prêt à être consommé côté backend. Nous savons désormais *où* vit la donnée et *par quoi* elle est décrite. Reste à apprendre à lire cette description — à ouvrir `schema.prisma` non comme un fichier de configuration, mais comme la carte d’un système.
+
+---
+
+## 2 — Lire le `schema.prisma` comme une carte du système
+
+Jusqu’ici, nous avons installé Prisma et compris où il s’insère dans le monorepo. Mais nous n’avons pas encore touché au cœur du sujet. Parce que le vrai point d’entrée de Prisma n’est pas une commande.
+
+👉 c’est le fichier `schema.prisma`
+
+Et ce fichier mérite d’être abordé avec beaucoup plus de sérieux que dans la plupart des tutoriels.
+
+### 2.1 — Un changement de perspective : on ne lit pas un fichier, on lit un système
+
+Quand on ouvre `schema.prisma` pour la première fois, il est très tentant de le lire comme une simple liste de modèles : un `User`, un `Role`, une `Session`, quelques relations.
+
+Mais très vite, cette lecture montre ses limites.
+
+---
+
+Parce que ce fichier n’est pas une collection de tables.
+
+👉 c’est une **description complète du système métier**
+
+---
+
+Chaque modèle représente une entité réelle du domaine.  
+Chaque champ porte une contrainte.  
+Chaque relation impose une manière de structurer la donnée.
+
+Et sans même s’en rendre compte, on est déjà en train de lire :
+
+👉 l’architecture du système
+
+---
+
+Lire le schéma, c’est comprendre l’application avant même d’avoir vu une seule route.
+
+<Callout type="info">
+Un bon schéma Prisma se lit comme un diagramme de domaine.
+
+👉 pas comme un fichier technique
+</Callout>
+
+---
+
+### 2.2 — Les blocs fondamentaux du schéma
+
+Avant d’entrer dans les modèles eux-mêmes, il est utile de prendre un instant pour regarder la structure globale du fichier.
+
+Non pas pour la mémoriser.
+
+👉 mais pour comprendre ce qu’elle sépare.
+
+---
+
+Un `schema.prisma` contient généralement trois grandes parties :
+
+- le `datasource`
+- le `generator`
+- les `models`
+
+Mais ce découpage n’est pas là pour être appris par cœur.
+
+👉 il est là pour rendre le système lisible
+
+---
+
+Il distingue :
+
+- **le lien au réel** (la base de données)  
+- **la transformation en code** (le client généré)  
+- **la description du système** (les modèles)
+
+---
+
+<CodeSnippet
+  language="prisma"
+  title="Structure minimale d’un schema Prisma"
+  filename="schema.prisma"
+  kind="educational"
+  codeJson='"datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\nmodel User {\n  id    String @id @default(uuid())\n  email String @unique\n}"'
+/>
+
+Ce qui est intéressant ici, ce n’est pas la syntaxe.
+
+👉 c’est la séparation des responsabilités
+
+---
+
+### 2.3 — Le datasource : connecter le modèle au réel
+
+
+Le bloc `datasource` indique à Prisma où se trouve la base.
+
+Mais surtout :
+
+👉 il relie le modèle à quelque chose de concret
+
+---
+
+Dans votre projet, cela pointe vers PostgreSQL, avec une URL injectée via l’environnement.
+
+Cela implique immédiatement :
+
+- une base relationnelle réelle  
+- des contraintes appliquées réellement  
+- des relations qui ne sont pas simulées  
+
+---
+
+👉 Prisma ne simule pas une base  
+👉 il s’appuie sur une base réelle
+
+---
+
+### 2.4 — Le generator : là où le modèle devient exploitable
+
+Le bloc `generator` passe souvent inaperçu.
+
+Et pourtant, c’est ici que quelque chose de décisif se produit.
+
+---
+
+Il dit simplement :
+
+👉 “à partir de ce schéma, génère-moi un client TypeScript”
+
+---
+
+Mais les conséquences sont énormes.
+
+Parce que ce client :
+
+- connaît les entités  
+- connaît les relations  
+- connaît les contraintes  
+- et surtout… expose tout cela en types  
+
+---
+
+C’est ici que la promesse “type-safe de bout en bout” commence réellement à prendre forme.
+
+<Callout type="info">
+Sans generator, Prisma resterait un DSL de base de données.
+
+Avec lui :
+
+👉 il devient une source de types pour tout le backend
+</Callout>
+
+---
+
+### 2.5 — Les modèles : là où le système prend forme
+
+C’est ici que tout devient tangible.
+
+Un modèle Prisma ressemble à une table.
+
+Mais il fait bien plus que cela.
+
+---
+
+<CodeSnippet
+  language="prisma"
+  title="Exemple de modèle User"
+  filename="schema.prisma"
+  kind="educational"
+  codeJson='"model User {\n  id        String   @id @default(uuid())\n  email     String   @unique\n  password  String\n  roleId    Int\n\n  role      Role     @relation(fields: [roleId], references: [id])\n}"'
+/>
+
+---
+
+À première vue, c’est simple.
+
+Mais en réalité, ce bloc contient déjà une grande partie du système :
+
+- une identité (`id`)  
+- une contrainte (`email` unique)  
+- une relation (`roleId`)  
+- un lien explicite (`role`)  
+
+---
+
+👉 ce n’est pas une structure  
+👉 c’est une décision d’architecture
+
+---
+
+### 2.6 — Les relations : là où tout est déjà en place
+
+Les relations sont souvent perçues comme un détail technique.
+
+En réalité, elles racontent presque tout.
+
+---
+
+Dans votre projet, les liens entre `User`, `Role`, `Permission` et `Session` ne sont pas accessoires.
+
+👉 ils définissent déjà :
+
+- le RBAC  
+- l’authentification  
+- la gestion des accès  
+
+---
+
+Autrement dit, avant même d’avoir écrit une route :
+
+👉 la logique de sécurité du système est déjà visible
+
+---
+
+<Callout type="info">
+Si vous voulez comprendre un système :
+
+👉 regardez ses relations avant de regarder ses routes
+</Callout>
+
+---
+
+### 2.7 — Ce que Prisma génère réellement
+
+Une fois le schéma écrit, Prisma génère un client.
+
+Mais ce mot est trompeur.
+
+---
+
+Parce qu’il ne génère pas simplement des fonctions.
+
+👉 il génère une projection complète du modèle dans le code
+
+---
+
+Par exemple :
+
+<CodeSnippet
+  language="ts"
+  title="Requête Prisma typée automatiquement"
+  filename="users.service.ts"
+  kind="pattern"
+  codeJson='"const user = await prisma.user.findUnique({\n  where: { id: \"123\" },\n  include: { role: true },\n})"'
+/>
+
+---
+
+Dans cet appel :
+
+- `user` est typé automatiquement  
+- `role` est typé automatiquement  
+- la structure complète est cohérente avec le schéma  
+
+---
+
+👉 aucun type n’est écrit à la main  
+👉 rien n’est dupliqué  
+
+---
+
+Le type vient du modèle.
+
+---
+
+### 2.8 — Pourquoi cette étape est critique pour la suite
+
+À ce stade, quelque chose d’important doit être clair. Quand vous arriverez sur les formulaires, tRPC ou l’authentification, vous verrez des types circuler partout. Mais ces types ne viennent pas de nulle part.
+
+Ils viennent :
+
+👉 du `schema.prisma`
+
+C’est pour ça que ce tutoriel vient avant les autres. Parce que sans cette compréhension, tRPC semble magique, les formulaires semblent découplés, et l’auth semble indépendante. Alors qu’en réalité, tout repose sur ce modèle.
+
+### 2.9 — Ce que nous allons faire ensuite
+
+Maintenant que vous savez lire un schema Prisma comme une carte du système, nous allons passer à une étape encore plus concrète :
+
+👉 analyser **les modèles réels du projet**
+
+- `User`
+- `Role`
+- `Permission`
+- `Session`
+
+Et surtout :
+
+👉 comprendre ce qu’ils racontent sur l’architecture globale
+
+C’est là que la théorie devient vraiment intéressante.
+
+---
+
+👉 **Où nous en sommes :** nous savons maintenant lire un `schema.prisma` comme une carte — repérer la datasource, comprendre le rôle du generator, reconnaître que les modèles décrivent un système plutôt que des tables. Mais lire la carte n’est pas encore lire le terrain. Reste à descendre dans les modèles réels de ce projet pour voir ce qu’ils racontent, ensemble, de l’architecture que nous construisons.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons posé le cadre. Trois idées en sont ressorties :
+
+- **Prisma a une place, et cette place compte.** Installer Prisma à la racine du monorepo, avec une configuration dédiée, ce n’est pas un détail d’outillage — c’est déclarer que le modèle de données est partagé par toutes les couches du projet, et pas seulement possédé par le backend.
+- **Le `schema.prisma` n’est pas un fichier de config.** C’est une carte du système, dont chaque bloc a une fonction précise : la datasource relie au réel, le generator produit les types, les modèles donnent forme aux entités, les relations dessinent les chemins entre elles.
+- **La cohérence part de la donnée, pas de l’API.** Tant que le modèle n’est pas explicite, le reste du projet devra bricoler des types. Une fois qu’il l’est, le typage devient structurel — et tout ce qui suivra pourra s’appuyer dessus sans redéfinition.
+
+Le Mouvement 2 va maintenant descendre dans ce modèle pour le lire comme une architecture, pas comme une liste d’entités.
+
+---
+
+## Mouvement 2 — Modéliser le système
+
+Savoir lire un schéma, c’est une chose. Comprendre ce que les entités et leurs relations disent de l’application, c’en est une autre — et c’est là que le vrai travail de modélisation commence. Dans ce mouvement, nous cessons de parler de Prisma « en général » pour regarder **ce projet** précisément, à travers ses choix.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 3** — Nous ouvrons les modèles cœur — `User`, `Role`, `Permission`, `Session` — non pas comme une liste de tables, mais comme une architecture qui raconte déjà la philosophie du système.
+- **Section 4** — Nous regardons les relations pour ce qu’elles sont vraiment : des décisions d’architecture, avec leurs contraintes, leurs libertés, et leur manière d’engager l’avenir du projet.
+
+À la fin de ce mouvement, le `schema.prisma` ne sera plus un document technique à lire : ce sera la photographie d’un système de pensée, où chaque relation dit ce que le projet se permet — et ce qu’il refuse.
+
+---
+
+## 3 — Lire les modèles cœur du projet comme une architecture, pas comme une liste de tables
+
+Jusqu’ici, vous avez posé le cadre. Prisma est installé, configuré, branché au bon endroit dans le monorepo, et vous savez déjà qu’un `schema.prisma` ne doit pas être lu comme un simple fichier technique. Mais tant que l’on reste à ce niveau, quelque chose manque encore.
+
+On sait où se trouve la donnée.  
+On sait comment Prisma s’intègre.  
+On sait même pourquoi cette étape précède les formulaires et tRPC.
+
+Mais on ne sait pas encore ce que le projet raconte réellement à travers ses entités.
+
+C’est précisément ici que le tutoriel devient intéressant.
+
+Parce qu’à partir de maintenant, nous n’allons plus parler de Prisma “en général”. Nous allons commencer à lire **votre système réel**. Non pas à travers ses pages, ni à travers ses routes, mais à travers ce qu’il manipule au plus profond : ses utilisateurs, ses rôles, ses permissions, ses sessions, et les relations qui font tenir tout cela ensemble.
+
+Autrement dit :
+
+👉 nous allons lire le système depuis son centre de gravité
+
+---
+
+### 3.1 — Première lecture : voir la structure technique réelle
+
+Avant d’entrer dans le détail des modèles, il est utile de prendre une vue d’ensemble. Non pas pour tout comprendre immédiatement, mais pour situer les forces en présence. Le diagramme ci-dessous représente la structure technique du noyau auth / RBAC / sessions tel qu’il est réellement pensé côté base et côté Prisma.
+
+<PrismaCoreErdDiagram />
+
+Ce schéma ne doit pas être lu comme une décoration. Il montre la vérité technique du système. On y voit immédiatement que `User` n’est pas une entité isolée. Il dépend d’un `Role`. Il peut porter plusieurs `Session`. Et la logique d’autorisation ne repose pas sur une propriété magique stockée quelque part dans le user, mais sur une chaîne relationnelle plus explicite, où le rôle devient l’intermédiaire entre l’utilisateur et ses permissions.
+
+Il y a ici un premier enseignement très important.
+
+Dans beaucoup de projets juniors, l’authentification et les droits sont pensés tardivement, parfois presque “rajoutés” au-dessus du métier. Ici, ce n’est pas le cas. Ils sont déjà visibles dans le modèle de données. Cela signifie que la sécurité ne viendra pas seulement de middlewares ou de conditions écrites dans le code. Elle est déjà préparée au niveau structurel.
+
+<Callout type="info">
+Le schéma relationnel raconte déjà une partie de l’architecture applicative.
+
+👉 si les rôles, permissions et sessions existent à ce niveau, c’est que la sécurité n’est pas un ajout tardif  
+👉 elle fait partie du système dès sa fondation
+</Callout>
+
+---
+
+### 3.2 — `User` : l’entité centrale, mais pas souveraine
+
+Commençons par `User`, parce que c’est presque toujours l’entité que l’on regarde en premier. C’est elle qui porte l’identité, l’email, le mot de passe, et le lien vers le rôle. Mais il faut faire attention à une erreur très fréquente : confondre “central” et “souverain”.
+
+Oui, `User` est au centre.  
+Mais non, `User` ne décide pas seul du système.
+
+Ce que montre déjà le modèle, c’est qu’un utilisateur ne contient pas directement toutes les règles qui le gouvernent. Il est relié à un rôle. Ce rôle, ensuite, ouvre l’accès aux permissions. En clair, l’utilisateur n’est pas défini uniquement par ce qu’il est, mais aussi par les relations qui l’entourent.
+
+C’est une excellente décision de modélisation, parce qu’elle évite un backend figé où tous les droits seraient câblés directement sur le user. Si un jour les rôles évoluent, si les permissions se raffinent, ou si la logique d’accès devient plus subtile, le système pourra respirer. Il n’aura pas besoin d’être recousu à coups de champs bricolés.
+
+---
+
+### 3.3 — `Role` : la charnière entre identité et autorisation
+
+Le rôle est souvent sous-estimé quand on regarde un schéma rapidement. On le voit comme une simple étiquette : ADMIN, USER, MODERATOR. En réalité, c’est beaucoup plus structurant que ça.
+
+Dans votre modèle, `Role` joue un rôle de charnière. Il sépare deux préoccupations :
+
+- qui est l’utilisateur
+- ce qu’il a le droit de faire
+
+Cette séparation est extrêmement saine.
+
+Elle signifie que l’identité et l’autorisation ne sont pas confondues. Un utilisateur n’est pas “admin” par nature. Il occupe un rôle. Et ce rôle, lui, porte un certain niveau d’autorité dans le système. Cela rend la lecture plus propre, mais surtout l’évolution plus robuste.
+
+En pratique, cela prépare déjà très bien la suite du projet :
+
+- l’authentification pourra reconstruire un user
+- tRPC pourra lire son rôle dans le contexte
+- les middlewares RBAC pourront vérifier les permissions
+
+Tout cela devient naturel, précisément parce que le schéma a été pensé correctement.
+
+---
+
+### 3.4 — `Permission` : exprimer les capacités, pas les personnes
+
+La permission apporte un niveau de finesse que le rôle seul ne permet pas. Un rôle donne une vision large. Une permission, elle, exprime une capacité concrète.
+
+C’est ici que le système devient vraiment intéressant, parce qu’il cesse d’être binaire. On ne se contente plus de dire “cet utilisateur est admin” ou “cet utilisateur ne l’est pas”. On peut dire :
+
+- cet utilisateur peut gérer les users
+- ce rôle peut accéder à telle zone
+- telle action exige telle permission
+
+Et cela change beaucoup de choses dans l’architecture.
+
+Parce qu’au lieu d’écrire des règles massives et rigides, vous pouvez composer les accès plus finement. Le schéma relationnel devient alors le support d’un vrai système RBAC, pas d’une caricature de contrôle d’accès.
+
+---
+
+### 3.5 — La table de jointure : indispensable techniquement, secondaire mentalement
+
+Sur le plan technique, la relation entre `Role` et `Permission` ne peut pas rester implicite. Il faut la matérialiser. C’est le rôle de la table de jointure `RolePermission`. Côté base et côté Prisma, elle est indispensable, car elle transforme une relation conceptuelle many-to-many en structure relationnelle concrète.
+
+Mais il faut bien distinguer deux niveaux de lecture.
+
+Techniquement, la table de jointure est fondamentale.  
+Pédagogiquement, elle ne doit pas devenir le centre de l’attention.
+
+C’est exactement pour cela que nous avons deux diagrammes dans ce tutoriel. Le premier respecte la réalité technique. Le second, lui, va vous aider à retenir le système sans laisser la mécanique relationnelle prendre toute la place dans votre tête.
+
+---
+
+### 3.6 — `Session` : la présence persistée de l’utilisateur
+
+La session est un autre modèle très révélateur. Beaucoup de développeurs comprennent l’authentification uniquement à travers le prisme du JWT ou du cookie. Mais dans votre projet, le modèle de données montre autre chose : la session est aussi une entité en base.
+
+C’est essentiel, parce que cela signifie que l’auth n’est pas pensée comme un simple jeton flottant côté client. Elle a un ancrage serveur. Elle peut expirer. Elle peut être relue. Elle peut être invalidée. Elle devient un objet réel du système.
+
+Et cela prépare directement votre futur tuto auth. On voit déjà ici que l’authentification ne sera pas “juste un middleware”. Elle s’appuiera sur une structure de persistance explicite. Encore une fois, le schéma prépare la suite du système avant même que le code applicatif ne la déroule.
+
+---
+
+### 3.7 — Deuxième lecture : ce que vous devez retenir mentalement
+
+Maintenant que vous avez vu la structure technique réelle, on peut faire quelque chose de très utile : simplifier volontairement la représentation pour en extraire l’image mentale juste.
+
+Dans cette seconde vue, on supprime le bruit technique. On ne montre plus la table de jointure. On garde seulement les entités que vous devez réellement conserver dans votre tête lorsque vous raisonnez sur le système.
+
+<PrismaCoreMemoryDiagram />
+
+Ce diagramme n’est pas “moins vrai” que le premier. Il est simplement plus proche de la manière dont un développeur doit penser au quotidien. Quand vous travaillez sur vos formulaires, vos procédures tRPC ou votre système d’authentification, vous n’avez pas besoin de visualiser en permanence une table de jointure. Vous devez retenir trois idées simples :
+
+- un utilisateur appartient à un rôle
+- un rôle donne des permissions
+- un utilisateur possède des sessions
+
+Et, très honnêtement, si cette image mentale est claire, alors toute la suite du projet devient beaucoup plus lisible.
+
+<Callout type="info">
+Le premier diagramme vous aide à respecter la vérité technique.  
+Le second vous aide à stabiliser la vérité mentale.
+
+👉 un bon développeur doit être capable de passer de l’un à l’autre sans les confondre
+</Callout>
+
+---
+
+### 3.8 — Ce que ce noyau de modèles raconte déjà sur l’architecture globale
+
+À ce stade, vous n’avez encore lu ni les formulaires, ni tRPC, ni l’authentification détaillée. Et pourtant, une partie énorme du projet est déjà là.
+
+Ce petit noyau de modèles raconte déjà :
+
+- qu’il existe une authentification persistée
+- qu’il existe un vrai système de rôles
+- qu’il existe un RBAC fondé sur des permissions
+- que l’utilisateur est central, mais structuré par ses relations
+
+Autrement dit, la base ne stocke pas seulement des données. Elle stocke déjà une vision de l’application.
+
+C’est exactement pour cela que ce tutoriel vient en premier dans votre parcours pédagogique. Tant que ce socle n’est pas compris, les couches suivantes risquent de sembler “magiques”. Les types circuleront, les formulaires enverront des données, tRPC transportera des procédures, et l’auth reconstruira des sessions — mais sans fondation claire, tout cela sera vu comme une mécanique plus que comme un système.
+
+---
+
+### 3.9 — Ce que cette section prépare
+
+Maintenant que les modèles cœur sont posés, une question devient naturelle :
+
+👉 comment l’utilisateur entre-t-il en contact avec ce système déjà structuré ?
+
+C’est précisément là que le tutoriel sur les formulaires prend le relais.
+
+Parce qu’une fois la donnée modélisée, la prochaine étape n’est pas encore le transport. La prochaine étape, c’est l’interaction. Comment un utilisateur modifie-t-il son profil ? Comment transmet-il une intention ? Comment ses données sont-elles validées avant d’entrer dans le backend ?
+
+Autrement dit :
+
+👉 Prisma structure le monde  
+👉 les formulaires deviennent la première porte d’entrée dans ce monde
+
+---
+
+👉 **Où nous en sommes :** les entités cœur ne sont plus des tables abstraites — `User`, `Role`, `Permission`, `Session` racontent une philosophie claire : séparer l’identité, les rôles et les capacités pour que l’autorisation devienne composable plutôt que figée. Mais ces entités prises isolément ne sont qu’une partie de l’histoire. Ce qui fait réellement tenir un système, c’est la manière dont elles se relient entre elles — et c’est précisément là que les décisions d’architecture les plus engageantes sont prises.
+
+---
+
+## 4 — Les relations : là où les décisions d’architecture deviennent visibles
+
+Jusqu’ici, nous avons vu les relations à travers les modèles.
+
+Maintenant, nous allons les regarder pour ce qu’elles sont vraiment :
+
+👉 des décisions d’architecture.
+
+À ce stade, vous avez vu les entités du système.  
+Vous savez qu’il existe des utilisateurs, des rôles, des permissions, des sessions.
+
+Mais si vous vous arrêtez là, vous passez à côté de l’essentiel.
+
+---
+
+Un système ne tient pas parce qu’il possède des entités.
+
+👉 il tient parce que ces entités sont reliées entre elles d’une certaine manière
+
+---
+
+Et cette manière n’est jamais neutre.
+
+---
+
+### 4.1 — Une relation n’est jamais “juste technique”
+
+Quand on découvre Prisma (ou une base relationnelle en général), on apprend rapidement des mots comme :
+
+- one-to-many  
+- many-to-many  
+- relation explicite  
+- clé étrangère  
+
+Mais ces termes peuvent être trompeurs.
+
+Parce qu’ils donnent l’impression que la relation est un choix technique.
+
+---
+
+Dans la réalité, c’est l’inverse.
+
+👉 la relation est un choix de modélisation  
+👉 et ce choix a des conséquences directes sur tout le système
+
+---
+
+Prenons un exemple simple.
+
+Un utilisateur pourrait avoir un champ :
+
+isAdmin: boolean
+
+<CodeSnippet
+  language="ts"
+  title="Exemple de raccourci trop rigide"
+  filename="user.types.ts"
+  kind="anti-pattern"
+  codeJson='"type User = {\n  isAdmin: boolean\n}"'
+/>
+
+C’est simple.  
+C’est rapide.  
+Et ça “fonctionne”.
+
+Si vous avez déjà utilisé un simple `isAdmin`, vous avez probablement vu ce qui se passe ensuite.
+
+- un deuxième flag apparaît  
+- puis un troisième  
+- puis des conditions dans tous les sens  
+
+👉 et très vite, le système devient difficile à faire évoluer
+
+---
+
+Mais dans votre modèle, ce choix n’a pas été retenu.
+
+À la place, vous avez :
+
+👉 un `User` relié à un `Role`  
+👉 lui-même relié à des `Permission`
+
+---
+
+Ce choix change tout.
+
+---
+
+Il signifie que :
+
+- les droits ne sont pas figés dans le user  
+- ils peuvent évoluer indépendamment  
+- ils peuvent être composés  
+- ils peuvent être enrichis sans casser le système  
+
+---
+
+👉 une simple relation remplace une décision rigide par une structure évolutive
+
+---
+
+<Callout type="info">
+Une relation bien pensée remplace du code conditionnel par une structure de données.
+
+👉 on ne “vérifie” plus les droits  
+👉 on les lit dans le modèle
+</Callout>
+
+---
+
+### 4.2 — One-to-many : structurer sans rigidifier
+
+Dans votre modèle, un `User` appartient à un `Role`.
+
+Ce n’est pas juste une clé étrangère.
+
+---
+
+C’est une manière de dire :
+
+👉 “l’identité et l’autorisation sont deux choses différentes”
+
+---
+
+Cela permet :
+
+- de changer un rôle sans modifier l’utilisateur  
+- de faire évoluer les permissions sans toucher aux comptes  
+- de raisonner sur des groupes plutôt que sur des individus  
+
+---
+
+Mais ce choix a aussi une conséquence implicite.
+
+👉 un utilisateur ne peut avoir qu’un seul rôle
+
+Et ce n’est pas un détail technique.
+
+👉 c’est une décision forte sur la manière dont votre système va évoluer
+
+---
+
+Et cette contrainte est importante.
+
+Parce qu’elle vous force à poser une question :
+
+👉 est-ce suffisant pour mon système ?
+
+---
+
+Si demain vous avez besoin :
+
+- de rôles multiples  
+- de contextes différents  
+- de permissions dynamiques  
+
+👉 ce modèle devra évoluer
+
+---
+
+Autrement dit :
+
+👉 une relation n’est jamais “gratuite”  
+👉 elle encode une hypothèse sur le futur du système
+
+---
+
+### 4.3 — Many-to-many : introduire de la flexibilité… avec un coût
+
+La relation entre `Role` et `Permission` est différente.
+
+Ici, vous avez besoin de flexibilité.
+
+Un rôle peut avoir plusieurs permissions.  
+Une permission peut appartenir à plusieurs rôles.
+
+---
+
+Conceptuellement, c’est simple.
+
+Mais techniquement, cela implique une table de jointure.
+
+---
+
+Et cette table introduit quelque chose d’important :
+
+👉 une couche intermédiaire que vous ne voyez pas toujours
+
+---
+
+C’est là que beaucoup de développeurs se perdent.
+
+Ils voient la table de jointure comme un détail technique.
+
+---
+
+Mais en réalité :
+
+👉 elle matérialise une relation essentielle du système
+
+---
+
+Sans elle :
+
+- vous dupliquez les permissions  
+- vous rigidifiez les rôles  
+- vous perdez en cohérence  
+
+---
+
+Avec elle :
+
+- vous pouvez composer les accès  
+- vous pouvez faire évoluer les rôles  
+- vous gardez un système propre  
+
+---
+
+Mais elle a un coût.
+
+👉 elle complexifie la lecture  
+👉 elle complexifie les requêtes  
+👉 elle complexifie le modèle mental
+
+---
+
+C’est exactement pour cela que vous avez deux diagrammes :
+
+- un technique (complet)  
+- un mental (simplifié)  
+
+---
+
+<Callout type="info">
+Une bonne architecture accepte la complexité technique  
+pour simplifier la compréhension métier.
+
+👉 la table de jointure est complexe techniquement  
+👉 mais elle simplifie le système global
+</Callout>
+
+---
+
+### 4.4 — Nullable ou obligatoire : une décision silencieuse mais critique
+
+Dans Prisma, une relation peut être :
+
+- obligatoire  
+- optionnelle (`?`)
+
+---
+
+Ce choix semble anodin.
+
+Il ne l’est pas.
+
+---
+
+Dire qu’un `User` peut exister sans `Role`, c’est dire :
+
+👉 “un utilisateur peut exister sans cadre d’autorisation”
+
+---
+
+Dire que la relation est obligatoire, c’est dire :
+
+👉 “tout utilisateur appartient forcément à un rôle”
+
+---
+
+Ces deux modèles produisent des systèmes très différents.
+
+---
+
+Dans le premier :
+
+- vous devez gérer des cas incomplets  
+- vous multipliez les vérifications  
+- vous ouvrez la porte à des incohérences  
+
+---
+
+Dans le second :
+
+- le système est plus strict  
+- les règles sont plus claires  
+- le code devient plus simple  
+
+---
+
+👉 une simple `?` peut transformer profondément le comportement du système
+
+---
+
+### 4.5 — Lire les relations, c’est lire le futur du projet
+
+À ce stade, vous pouvez faire quelque chose de très puissant.
+
+---
+
+Vous pouvez regarder un schéma…  
+et anticiper le comportement du système.
+
+---
+
+Dans votre projet, les relations montrent déjà :
+
+- que l’authentification est persistée  
+- que le RBAC est structuré  
+- que les permissions sont composables  
+- que l’utilisateur n’est pas une entité isolée  
+
+---
+
+Autrement dit :
+
+👉 une grande partie de l’architecture est déjà écrite  
+👉 avant même d’avoir vu une seule ligne de code métier
+
+---
+
+### 4.6 — Ce que cette section change pour la suite
+
+Maintenant que vous comprenez les relations, une chose devient évidente.
+
+---
+
+Quand vous allez manipuler des données :
+
+- dans un formulaire  
+- dans une procédure tRPC  
+- dans un middleware  
+
+---
+
+👉 vous ne manipulez jamais une entité seule
+
+---
+
+Vous manipulez :
+
+- un utilisateur avec un rôle  
+- un rôle avec des permissions  
+- une session liée à un utilisateur  
+
+---
+
+Et tout cela est déjà défini ici.
+
+---
+
+<Callout type="info">
+Les relations ne sont pas une couche technique supplémentaire.
+
+👉 elles sont le cœur du système
+
+Tout ce qui suit — formulaires, tRPC, auth — s’appuie directement sur elles.
+</Callout>
+
+---
+
+### 4.7 — Ce que nous allons voir ensuite
+
+Maintenant que le modèle est structuré et que les relations sont claires, une dernière étape est nécessaire.
+
+👉 comprendre comment ce modèle devient réellement exploitable dans le code
+
+---
+
+C’est ici que Prisma révèle toute sa puissance.
+
+Parce qu’il ne se contente pas de décrire le système.
+
+👉 il le transforme en types utilisables partout
+
+---
+
+C’est exactement ce que nous allons voir dans la section suivante.
+
+---
+
+👉 **Où nous en sommes :** les relations ont révélé leur vraie nature — ce ne sont pas des liens techniques, ce sont des décisions qui disent ce que le système se permet et ce qu’il refuse. Nous savons désormais lire un one-to-many, un many-to-many, une colonne nullable ou obligatoire comme autant de choix qui engagent la suite du projet. Reste à franchir le dernier pas : faire passer ce modèle de son état déclaratif à un état vivant, utilisable par le code qui va le consommer.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons regardé le modèle pour ce qu’il est vraiment : une architecture. Trois idées en sont ressorties :
+
+- **Les entités cœur disent déjà la philosophie du système.** En séparant `User`, `Role` et `Permission`, le schéma affirme un choix structurant : les capacités ne sont pas attachées aux personnes, elles sont attachées aux rôles — et cette séparation est ce qui rend l’autorisation évolutive plutôt que figée dans les procédures.
+- **Une relation n’est jamais « juste technique ».** One-to-many, many-to-many, nullable ou obligatoire, cascade ou restriction : chaque choix porte une règle métier silencieuse. Lire une relation, c’est lire ce que le projet promet — et ce qu’il interdit — sans jamais avoir besoin de l’écrire en prose.
+- **Le modèle dessine le futur autant que le présent.** Ce qui est facile à ajouter, ce qui est douloureux à supprimer, ce qui pourra évoluer sans migration — tout cela est déjà inscrit dans la forme des relations que nous choisissons aujourd’hui. Le `schema.prisma` n’est pas seulement une photographie : c’est une trajectoire.
+
+Le Mouvement 3 va maintenant prendre ce modèle déclaratif et franchir la frontière qui le rend exécutable — là où Prisma cesse de décrire pour commencer à faire.
+
+---
+
+## Mouvement 3 — Rendre le modèle vivant
+
+Jusqu’ici, tout ce que nous avons construit reste statique. Le schéma est précis, les relations sont pensées, la philosophie est en place — mais rien ne tourne encore. Ce mouvement est celui du basculement : le moment où le déclaratif devient du code, où le modèle cesse d’être une intention pour devenir un outil que le backend peut manipuler.
+
+Voici l’étape unique mais décisive que nous allons traverser :
+
+- **Section 5** — Nous voyons comment Prisma transforme le schéma en types générés et en client typé, pourquoi cette bascule fait disparaître la duplication entre les couches, et comment le typage devient structurel plutôt que décoratif.
+
+À la fin de ce mouvement, le modèle ne vivra plus seulement dans un fichier — il vivra dans le code, exploitable par le backend, garant de la cohérence jusqu’à la bordure du frontend. Et c’est ce qui permettra, dans la suite, aux formulaires et à tRPC de s’appuyer sur lui sans jamais avoir à le redéfinir.
+
+---
+
+## 5 — Quand le modèle devient exécutable : Prisma comme moteur du système
+
+Jusqu’ici, nous avons construit quelque chose de solide.
+
+Nous avons défini des entités.  
+Nous avons structuré des relations.  
+Nous avons pris des décisions d’architecture.
+
+Mais à ce stade, tout cela reste… statique.
+
+Le modèle existe.  
+La base est prête.  
+Le schéma est lisible.
+
+👉 mais rien ne circule encore
+
+Et c’est exactement ici que Prisma change de nature.
+
+Jusqu’à maintenant, il nous aidait à **décrire le système**.  
+À partir de maintenant, il va nous permettre de **le faire vivre dans le code**.
+
+---
+
+### 5.1 — Le moment clé : transformer le schéma en code
+
+Un point est souvent mal compris.
+
+Modifier `schema.prisma` ne change rien immédiatement dans votre application.
+
+Le backend ne “voit” pas encore vos modèles.  
+TypeScript non plus.
+
+👉 le schéma n’est pas encore exploitable
+
+👉 il doit être transformé
+
+<CodeSnippet
+  language="bash"
+  title="Prisma — génération du client et des types"
+  filename="terminal.sh"
+  kind="pattern"
+  codeJson='"pnpm prisma generate"'
+/>
+
+Cette commande marque un basculement.
+
+Prisma va :
+
+- lire votre schéma  
+- comprendre vos relations  
+- interpréter vos contraintes  
+- générer un client  
+- produire des types TypeScript  
+
+Et à partir de là :
+
+👉 votre modèle devient utilisable par le code
+
+---
+
+### 5.2 — Ce que Prisma génère réellement (et pourquoi c’est décisif)
+
+Dire que Prisma génère “un client” est réducteur.
+
+En réalité, il fabrique un pont complet entre la base et TypeScript.
+
+Il génère :
+
+- des méthodes (`findUnique`, `findMany`, `create`, etc.)  
+- des types parfaitement alignés (`User`, `Role`, etc.)  
+- des types d’input (`UserCreateInput`, etc.)  
+- des structures relationnelles imbriquées  
+- des contraintes directement exploitables  
+
+👉 tout est dérivé du schéma
+
+Cela signifie une chose très importante :
+
+👉 il n’y a plus d’interprétation humaine entre la base et le code
+
+---
+
+### 5.3 — La fin d’un problème invisible : la duplication des types
+
+Dans une architecture classique, la donnée est définie plusieurs fois :
+
+- dans la base  
+- dans le backend  
+- dans le frontend  
+- parfois dans les formulaires  
+
+Au début, tout semble cohérent.
+
+Puis le projet évolue.
+
+Et très vite :
+
+- un champ est renommé  
+- un type change  
+- une relation évolue  
+
+👉 les couches divergent
+
+Et cette divergence est rarement visible immédiatement.
+
+👉 elle devient un bug plus tard
+
+Avec Prisma, ce problème disparaît presque entièrement.
+
+Parce que :
+
+👉 le type vient du schéma  
+👉 et le schéma est unique
+
+---
+
+### 5.4 — Lire une requête Prisma comme une projection du système
+
+Regardons cette requête :
+
+<CodeSnippet
+  language="ts"
+  title="Prisma — requête relationnelle typée"
+  filename="users.service.ts"
+  kind="pattern"
+  codeJson='"const user = await prisma.user.findUnique({\n  where: { id: \"123\" },\n  include: {\n    role: {\n      include: {\n        permissions: true,\n      },\n    },\n  },\n})"'
+/>
+
+Ce code n’est pas qu’une requête.
+
+Il est une projection directe du modèle :
+
+- il reflète les relations  
+- il reflète la structure des données  
+- il définit la forme du résultat  
+
+Et surtout :
+
+👉 TypeScript connaît exactement ce que cette requête retourne
+
+Pas parce que vous l’avez défini.
+
+👉 parce que Prisma l’a généré
+
+Dans ce modèle, un type incorrect n’est pas ignoré.
+
+👉 il devient impossible à écrire
+
+---
+
+### 5.5 — Le basculement : du typage décoratif au typage structurel
+
+Dans beaucoup de projets, les types sont ajoutés après coup.
+
+Ils servent à :
+
+- documenter  
+- aider à l’auto-complétion  
+- éviter certaines erreurs  
+
+Mais ils ne sont pas la source de vérité.
+
+👉 on parle de typage décoratif
+
+Avec Prisma, nous changeons complètement de logique.
+
+Les types ne sont pas ajoutés.
+
+👉 ils sont produits par la structure du système
+
+Nous passons à un typage structurel.
+
+Et cela change tout.
+
+Parce que maintenant :
+
+- une incohérence casse immédiatement le code  
+- une modification du schéma impacte toutes les couches  
+- une erreur ne peut plus rester silencieuse  
+
+👉 le système devient auto-cohérent
+
+---
+
+### 5.6 — Pourquoi cela simplifie tout le reste
+
+À ce stade, quelque chose devient évident.
+
+Nous n’avons plus besoin de :
+
+- redéfinir des types backend  
+- synchroniser des interfaces frontend  
+- maintenir des DTO manuellement  
+
+👉 le modèle fait tout le travail
+
+Et cela va avoir des conséquences directes :
+
+- sur les formulaires  
+- sur tRPC  
+- sur l’authentification  
+
+Parce que toutes ces couches vont s’appuyer sur cette base unique.
+
+---
+
+### 5.7 — Ce que nous avons réellement construit
+
+Si nous prenons du recul, nous voyons apparaître un système complet.
+
+- PostgreSQL stocke la donnée  
+- Prisma définit sa structure  
+- Prisma génère les types  
+- TypeScript les comprend  
+- le backend les utilise  
+
+👉 la donnée circule désormais sans rupture
+
+Et c’est exactement ce que nous cherchions depuis le début :
+
+👉 un système type-safe de bout en bout
+
+---
+
+### 5.8 — Ce qu’il faut retenir de cette section
+
+<Callout type="info">
+
+Prisma ne se contente pas de modéliser la donnée.
+
+👉 il transforme le modèle en code exécutable
+
+Retenons :
+
+- `prisma generate` est le point de bascule  
+- le schéma devient la source unique de vérité  
+- Prisma génère des types et des requêtes cohérentes  
+- la duplication des types disparaît  
+- le typage devient structurel  
+- le système devient auto-cohérent  
+
+👉 Prisma est la fondation du type-safe end-to-end
+
+</Callout>
+
+---
+
+### 5.9 — Ce que cette section prépare
+
+Maintenant que notre modèle vit dans le code, une nouvelle question apparaît.
+
+👉 comment transporter cette donnée jusqu’au frontend sans casser ce typage ?
+
+C’est exactement ce que nous allons explorer dans la section suivante.
+
+---
+
+👉 **Où nous en sommes :** la bascule a eu lieu. Le schéma ne vit plus seulement dans un fichier — il vit dans le code, sous forme de types générés et d’un client typé que le backend manipule sans jamais redéfinir la forme de ses entités. La duplication des types a disparu, le typage est devenu structurel, et la cohérence du système n’est plus un effort à maintenir manuellement : elle est garantie par la chaîne elle-même.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. Trois idées en sont ressorties :
+
+- **`prisma generate` n’est pas un détail d’outillage, c’est un basculement.** Cette commande prend un schéma déclaratif et en produit un client typé, parfaitement aligné avec les modèles et les relations. À partir de cet instant, le backend ne manipule plus « des objets qui ressemblent à des users » — il manipule des `User`, au sens strict du type.
+- **Le typage devient structurel, pas décoratif.** Les types ne sont plus des annotations ajoutées au-dessus du code pour rassurer l’IDE — ils sont générés à partir de la source de vérité, et chaque évolution du schéma les met à jour. Le code compile ou ne compile pas selon ce que la base permet réellement.
+- **La cohérence devient une propriété de la chaîne, pas un effort individuel.** Tant que tout le monde consomme les types générés par Prisma, il n’est plus nécessaire de vérifier à chaque couche que les structures correspondent. La fondation étant typée, les couches au-dessus peuvent se concentrer sur ce qu’elles font — capturer une intention, transporter une donnée, sécuriser un accès.
+
+La suite du parcours va maintenant ouvrir cette fondation vers l’utilisateur — et montrer pourquoi chaque couche qui vient après repose, silencieusement, sur ce que nous venons de construire.
+
+---
+
+## 6 — Et maintenant : faire entrer l’utilisateur dans le système
+
+À ce stade, le système est en place.
+
+La donnée est modélisée.  
+Les relations sont structurées.  
+Le typage est généré.  
+Le backend peut manipuler des entités cohérentes.
+
+---
+
+Mais quelque chose manque encore.
+
+---
+
+👉 rien de tout cela n’existe tant qu’un utilisateur ne peut pas interagir avec ce modèle
+
+C’est ici que les formulaires entrent en jeu.
+
+Les formulaires ne sont pas une couche UI.
+
+👉 ils sont la première traduction du modèle côté utilisateur
+
+---
+
+Jusqu’ici, nous avons construit un système qui tient.
+
+Maintenant, nous devons construire un système qui vit.
+
+---
+
+### 6.1 — Le prochain problème n’est plus la donnée, mais l’intention
+
+Une fois le modèle en place, une nouvelle question apparaît immédiatement.
+
+---
+
+👉 comment un utilisateur agit-il sur ce système ?
+
+---
+
+Comment crée-t-il un compte ?  
+Comment modifie-t-il ses informations ?  
+Comment envoie-t-il une intention au backend ?
+
+---
+
+Et surtout :
+
+👉 comment s’assurer que cette intention respecte le modèle que nous avons défini ?
+
+---
+
+C’est ici que beaucoup de projets commettent une erreur.
+
+Ils considèrent les formulaires comme une couche UI.
+
+---
+
+Mais en réalité :
+
+👉 un formulaire est le point de contact entre l’intention humaine et la structure du système
+
+---
+
+Et ce point de contact est critique.
+
+---
+
+### 6.2 — Le lien naturel entre Prisma et les formulaires
+
+Grâce à Prisma, nous avons déjà quelque chose de très puissant.
+
+👉 un modèle clair  
+👉 des types fiables  
+👉 une structure cohérente  
+
+---
+
+Cela signifie que les formulaires ne partent pas de zéro.
+
+Ils vont :
+
+- s’appuyer sur les types générés  
+- respecter les contraintes du modèle  
+- produire des données directement compatibles avec le backend  
+
+---
+
+Autrement dit :
+
+👉 les formulaires ne sont pas une couche indépendante
+
+👉 ils prolongent le modèle dans l’interface
+
+---
+
+<Callout type="info">
+Un bon formulaire ne “collecte” pas des données.
+
+👉 il traduit une intention utilisateur en une structure conforme au modèle
+
+Et ce modèle… vient directement de Prisma.
+</Callout>
+
+---
+
+### 6.3 — Une conséquence directe : moins de duplication, plus de cohérence
+
+Sans ce socle, chaque formulaire devient un cas particulier.
+
+- champs définis à la main  
+- validations bricolées  
+- types approximatifs  
+
+---
+
+Avec Prisma :
+
+- les structures sont connues  
+- les contraintes sont explicites  
+- les types sont déjà là  
+
+---
+
+👉 le frontend et le backend parlent déjà le même langage
+
+---
+
+Et cela va transformer complètement la manière dont nous allons construire nos formulaires.
+
+---
+
+### 6.4 — Et après les formulaires : transporter sans casser
+
+Une fois que l’utilisateur peut interagir avec le système, un autre problème apparaît.
+
+---
+
+👉 comment faire circuler cette donnée ?
+
+---
+
+Comment envoyer une structure typée :
+
+- depuis le formulaire  
+- vers le backend  
+- sans perdre la cohérence  
+- sans redéfinir des types  
+- sans casser le système  
+
+---
+
+C’est exactement là que tRPC entre en jeu.
+
+---
+
+Mais à ce stade, vous devez retenir une chose.
+
+---
+
+👉 tRPC n’est pas le point de départ
+
+---
+
+Si vous commencez par le transport sans comprendre :
+
+- le modèle  
+- les relations  
+- le typage  
+
+---
+
+👉 vous verrez des types circuler… sans savoir d’où ils viennent
+
+---
+
+Et vous retomberez dans une architecture “magique”.
+
+---
+
+### 6.5 — Ce que nous avons réellement construit
+
+Si nous prenons du recul sur tout ce tutoriel, nous voyons apparaître une progression très claire.
+
+---
+
+Nous sommes partis :
+
+👉 de la donnée brute en base
+
+---
+
+Pour construire :
+
+- un modèle explicite (Prisma)  
+- des relations structurantes  
+- un typage généré  
+- une cohérence globale  
+
+---
+
+Et maintenant :
+
+👉 nous sommes prêts à ouvrir le système vers l’utilisateur
+
+---
+
+<Callout type="info">
+
+Prisma ne marque pas la fin du travail.
+
+👉 il marque le début d’un système cohérent
+
+La suite du parcours est naturelle :
+
+- les formulaires pour capturer l’intention  
+- tRPC pour transporter la donnée  
+- l’authentification pour sécuriser les accès  
+
+👉 tout repose sur le modèle que vous venez de construire
+
+</Callout>
+
+---
+
+### 6.6 — La suite du parcours
+
+Nous allons maintenant changer de perspective.
+
+---
+
+👉 quitter le modèle  
+👉 entrer dans l’interaction  
+
+---
+
+Dans le prochain tutoriel, nous allons voir :
+
+- comment construire des formulaires alignés avec le modèle  
+- comment gérer la validation côté serveur  
+- comment relier React, Server Actions et TypeScript  
+- comment éviter la duplication entre frontend et backend  
+
+---
+
+Autrement dit :
+
+👉 comment faire entrer un utilisateur dans un système déjà cohérent
+
+---
+
+Et c’est à partir de là que le projet cesse d’être une architecture…
+
+👉 pour devenir une application vivante.

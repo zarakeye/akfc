@@ -35,8 +35,8 @@ export type TrashFileNode = {
   /** FullPath VIRTUEL */
   fullPath: string;
 
-  /** URL Cloudinary secure (authenticated) */
-  url: string;
+  /** Identité Cloudinary de lecture */
+  publicId: string;
 
   /**
    * Métadonnées utiles côté UI (facultatives mais pratiques)

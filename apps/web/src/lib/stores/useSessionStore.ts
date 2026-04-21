@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { trpcClient } from "@/lib/trpcClient";
+import { trpcClient } from "@/core/trpc/trpcClient";
 import { SessionClient } from "packages/contracts/src/auth/session.types";
 
 export type SessionStatus =

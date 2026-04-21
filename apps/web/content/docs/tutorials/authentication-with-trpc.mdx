@@ -1,287 +1,1593 @@
 ---
 title: Authentication with tRPC
-description: Comprendre comment l’authentification est structurée dans le projet avec tRPC, Zod, Prisma et la gestion de session.
+description: Comprendre comment l'authentification est tissée dans le projet — du clic utilisateur jusqu'au contexte tRPC injecté dans chaque procédure.
 section: Tutorials
-order: 2
+order: 4
 ---
 
-import { CodeExample } from "@/components/docs/CodeExample"
-import { CodeWalkthrough } from "@/components/docs/CodeWalkthrough"
-import { ArchitectureDiagram } from "@/components/docs/ArchitectureDiagram"
-import { Callout } from "@/components/docs/Callout"
+## Introduction — La question silencieuse
 
-# Authentication with tRPC
+Nous sortons de **tRPC** avec un backend structuré.
 
-Dans ce tutoriel, nous allons comprendre comment l’authentification est organisée dans le projet.
+Nous savons fabriquer une procédure. Nous savons la protéger. Nous savons valider son entrée, gérer ses erreurs, contrôler sa sortie.
 
-L’objectif n’est pas seulement de lire quelques fichiers, mais de bien visualiser le rôle de chaque couche :
+Et pourtant, à chaque fois que nous écrivons `protectedProcedure`, ou que nous lisons `ctx.sessionClient.user.id` dans un service, nous nous appuyons sur quelque chose que nous n'avons pas encore vraiment construit.
 
-- le **modèle de données**
-- la **validation**
-- le **router tRPC**
-- la **reconstruction de session**
-- le **contexte serveur**
+Une question silencieuse traverse tout le système :
+
+> **qui parle au backend en ce moment ?**
 
 ---
 
-## Vue d’ensemble du flux
+Cette question semble simple.
 
-<ArchitectureDiagram
-  steps={[
-    "Client",
-    "Validation Zod",
-    "Router tRPC",
-    "Session serveur",
-    "Contexte tRPC",
-    "Database",
-  ]}
-/>
+Mais elle contient en réalité plusieurs sous-questions, et chacune appelle une réponse différente.
 
-<Callout>
-Un bon système d’authentification repose rarement sur un seul fichier.  
-Il s’agit presque toujours d’une chaîne de responsabilités entre validation, accès aux données, logique métier et session.
+- Qui es-tu ? (identification)
+- Comment je te reconnais à la prochaine requête ? (persistance)
+- Comment je sais que tu n'as pas changé d'avis ? (révocabilité)
+- Comment je m'assure que tu es bien toi, et pas quelqu'un qui se fait passer pour toi ? (intégrité)
+
+---
+
+🧠 L'authentification, c'est l'ensemble des mécanismes qui répondent à ces questions.
+
+Et c'est précisément parce qu'elle répond à plusieurs questions distinctes qu'elle ne peut **jamais** se résumer à un seul fichier.
+
+---
+
+## Une chaîne, pas une fonction
+
+Dans beaucoup de projets juniors, l'auth est perçue comme un endpoint unique : `POST /login`. On envoie des identifiants, on reçoit un token, c'est terminé.
+
+Cette vision est dangereuse.
+
+Parce que ce qui se passe **après** le login est tout aussi important que le login lui-même : la session doit être stockée quelque part, transportée à chaque requête, vérifiée, révocable, expirable, nettoyable.
+
+---
+
+👉 L'authentification est une **chaîne de responsabilités**.
+
+Et chaque maillon doit être correctement compris pour que l'ensemble tienne.
+
+---
+
+## 🗺️ La feuille de route du tutoriel
+
+Ce tutoriel est dense. Pour ne pas nous y perdre, il est structuré en **trois mouvements** qui suivent la vie complète d'une session.
+
+**Mouvement 1 — La naissance d'une session.**  
+Nous partons du clic utilisateur et nous suivons son identifiant et son mot de passe jusqu'à ce qu'un cookie d'authentification soit posé dans son navigateur. Ce premier mouvement installe le décor : modèle de données, contrat partagé, validation, service de login, et création de la session elle-même.
+
+**Mouvement 2 — La vie d'une session.**  
+Le cookie est posé. Que se passe-t-il à la requête suivante ? Comment le backend reconstruit-il l'identité à chaque appel ? Comment cette identité est-elle injectée dans le contexte tRPC ? Comment la détruire au logout, la nettoyer quand elle expire, la révoquer en cas de reset password ? C'est le cœur battant du système.
+
+**Mouvement 3 — Les pièces périphériques.**  
+Nous bouclons la chaîne côté frontend (comment React sait "qui je suis"), côté réseau (le proxy Next.js qui filtre les requêtes avant même qu'elles n'atteignent le backend), et nous recomposons l'ensemble en une vue d'ensemble. Nous terminerons par les pièges subtils que le projet a évités sans les documenter explicitement.
+
+---
+
+👉 À la fin, nous saurons exactement comment, à chaque requête entrant dans le système, le backend reconstruit l'identité de l'utilisateur, et comment cette identité est ensuite mise à la disposition de toutes les procédures.
+
+Un fil conducteur nous suivra du début à la fin : nous n'inventerons rien. Nous lirons du **vrai code du projet**, ligne par ligne, pour comprendre comment chaque pièce s'assemble avec les autres.
+
+---
+
+<Callout type="concept">
+Un bon système d'authentification ne repose jamais sur un seul fichier.
+
+C'est une chaîne de responsabilités entre validation, accès aux données, persistance, mapping et injection de contexte.
 </Callout>
 
 ---
 
-## 1 — Validation des identifiants
+## Mouvement 1 — La naissance d'une session
 
-Avant toute chose, le backend doit vérifier la forme des données envoyées par le client.
+Dans ce premier mouvement, nous allons poser **toutes les fondations** de l'authentification et suivre le parcours complet d'une connexion réussie.
+
+Voici les sept étapes que nous allons traverser :
+
+- **Section 1** — Nous commencerons par clarifier les deux problèmes que toute authentification cherche à résoudre : identifier l'utilisateur, et le reconnaître ensuite. Deux questions distinctes qui appellent deux réponses distinctes.
+- **Section 2** — Nous présenterons les trois mécanismes complémentaires utilisés dans le projet — bcrypt, JWT, Session DB — et pourquoi aucun ne suffit seul.
+- **Section 3** — Nous ouvrirons le schéma Prisma pour observer comment la table `Session` est structurée, et pourquoi certains champs y sont volontairement absents.
+- **Section 4** — Nous regarderons le contrat `SessionClient`, la frontière formelle entre la base de données et le client.
+- **Section 5** — Nous poserons la première barrière du flux : la validation Zod des identifiants.
+- **Section 6** — Nous entrerons dans le service de login, qui contient la vraie logique métier de l'authentification.
+- **Section 7** — Nous finirons en construisant la session elle-même, avec tous les détails de sécurité qui accompagnent la pose d'un cookie.
+
+À la fin de ce mouvement, un utilisateur pourra s'être connecté avec succès. Son navigateur portera un cookie sécurisé, et le backend aura une trace persistante de sa session. Tout sera en place pour que la suite puisse reconnaître cette identité à chaque requête future.
+
+---
+
+## 1 — Les deux problèmes que toute auth doit résoudre
+
+Avant d'ouvrir le moindre fichier, il faut bien sentir les deux problèmes distincts que toute authentification cherche à résoudre.
+
+---
+
+## 🧠 Problème 1 — L'identification
+
+> "Qui es-tu ?"
+
+C'est ce que fait le **login**.
+
+L'utilisateur fournit deux preuves : son email (ce qu'il prétend être) et son mot de passe (ce qu'il sait). Le backend vérifie que ces deux preuves correspondent à un compte existant.
+
+Si oui, l'utilisateur est identifié.
+
+---
+
+## 🧠 Problème 2 — La persistance
+
+> "Comment je te reconnais à la prochaine requête ?"
+
+C'est ici que le piège se referme sur les développeurs débutants.
+
+Parce que HTTP est un protocole **sans état**. Chaque requête est indépendante. Le serveur n'a aucune mémoire entre deux requêtes du même utilisateur.
+
+Si nous nous arrêtions au login, l'utilisateur devrait fournir email + mot de passe à chaque clic. Inacceptable.
+
+---
+
+👉 Il faut donc fabriquer **un mécanisme de persistance** qui survit entre les requêtes.
+
+---
+
+## L'analogie du club
+
+Imaginons un club privé.
+
+À l'entrée, le portier nous demande notre carte d'adhérent (login). Il vérifie notre identité, puis nous tamponne la main avec une encre invisible (création de session).
+
+Tant que le tampon est lisible sous la lampe UV, nous pouvons entrer et sortir librement. Le portier passe simplement notre main sous la lampe à chaque visite (vérification de session).
+
+Si le tampon s'efface (expiration), il faut repasser par la case identification.
+
+Et si le club décide que nous ne sommes plus le bienvenu, il peut nous **bannir** — notre tampon ne sera plus reconnu, même s'il est encore visible (révocation).
+
+---
+
+👉 Login + session + révocation : c'est exactement le triptyque que nous allons construire.
+
+---
+
+<Callout type="insight">
+Identification et persistance sont deux problèmes distincts.
+
+L'un répond à "qui es-tu ?". L'autre répond à "comment je te reconnais ensuite ?".
+
+Confondre les deux mène à des systèmes fragiles.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons posé le cadre conceptuel. Deux problèmes, deux réponses distinctes. Il est temps maintenant de découvrir les mécanismes concrets qui vont les résoudre dans notre projet.
+
+---
+
+## 2 — L'arsenal du projet : trois mécanismes complémentaires
+
+Pour résoudre ces deux problèmes, le projet AKFC utilise trois mécanismes qui jouent chacun un rôle précis.
+
+<DocsTable
+  title="Les trois mécanismes de l’auth AKFC"
+  columnsJson='["Mécanisme","Rôle","Où il vit"]'
+  rowsJson='[["bcrypt","Hasher le mot de passe pour qu’il ne soit jamais stocké en clair","Service de login + reset password"],["JWT","Signer un jeton transportable dans un cookie, prouvant l’authenticité de la session","createSessionJWT + getSessionFromRequest"],["Session DB","Stocker la session côté serveur pour permettre la révocation","Table Session de Prisma"]]'
+/>
+
+---
+
+Cette combinaison n'est pas accidentelle. C'est un choix architectural précis.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi l'hybride JWT + Session DB ?
+
+Il existe trois grandes stratégies pour gérer la persistance d'une session :
+
+**Stratégie 1 — JWT pur (stateless)**  
+Toute l'information vit dans le JWT lui-même. Le backend ne stocke rien. À chaque requête, il vérifie la signature et fait confiance au contenu.
+
+- Avantage : très scalable, pas de lookup DB
+- Inconvénient majeur : **impossible de révoquer un JWT avant son expiration**. Si l'utilisateur clique "logout", ou si l'admin veut bannir un compte, le JWT reste valide jusqu'à sa date d'expiration
+
+**Stratégie 2 — Session DB pure**  
+Le serveur génère un identifiant aléatoire, le stocke en base, et le renvoie au client (souvent dans un cookie). À chaque requête, il fait un lookup DB.
+
+- Avantage : révocation immédiate (suppression de la ligne en base)
+- Inconvénient : aucune information dans le cookie lui-même — un attaquant peut tenter du brute-force sur les IDs
+
+**Stratégie 3 — Hybride JWT + Session DB (le choix d'AKFC)**  
+On combine les deux. Le JWT contient seulement un `sessionId`, signé. La session est stockée en base.
+
+- Avantage 1 : signature cryptographique → impossible de forger un JWT valide sans connaître `JWT_SECRET`
+- Avantage 2 : présence en base → révocable instantanément en supprimant la ligne `Session`
+- Avantage 3 : on peut faire expirer côté serveur indépendamment du JWT
+
+C'est le compromis le plus robuste pour un backend qui veut à la fois la solidité cryptographique et le contrôle serveur.
+
+---
+
+## bcrypt — pourquoi le hash compte
+
+`bcrypt` est utilisé pour hasher le mot de passe **avant** de le stocker en base.
+
+Le principe : nous ne stockons jamais un mot de passe en clair. Nous en stockons une empreinte (le hash), conçue pour être impossible à inverser.
+
+À la connexion, nous hashons le mot de passe fourni par l'utilisateur, et comparons le hash résultant avec celui stocké. Les deux hashes correspondent → mot de passe correct.
+
+`bcrypt` ajoute deux protections supplémentaires :
+
+- un **salt** aléatoire intégré à chaque hash (deux utilisateurs avec le même mot de passe ont des hashes différents)
+- un **coût configurable** qui rend volontairement le hashing lent (12 itérations dans le projet — soit ~250ms, ce qui rend les attaques par force brute irréalistes)
+
+---
+
+👉 **Où nous en sommes :** nous avons identifié les trois outils du coffre. Pour vraiment comprendre comment ils coopèrent, nous devons maintenant descendre dans la base de données et regarder la structure qui porte tout cela.
+
+---
+
+## 3 — Le modèle de données : Session, User, Role, Permission
+
+Avant d'écrire la moindre ligne de code d'auth, regardons ce que la base de données nous offre.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="51-58"
+  snippetHighlight="51-58"
+  snippetTitle="Le modèle Session"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du modèle Session
+
+<CodeWalkthrough
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="51-58"
+  title="Anatomie d'une session persistée"
+  stepsJson="[{&quot;title&quot;:&quot;id : un cuid pour chaque session&quot;,&quot;body&quot;:&quot;Le cuid est un identifiant compact, URL-safe, et impossible à deviner. C'est cet id qui sera embarqué dans le payload du JWT et utilisé pour retrouver la session en base.&quot;,&quot;scope&quot;:&quot;51-58&quot;,&quot;focus&quot;:&quot;52-52&quot;},{&quot;title&quot;:&quot;userId : la relation vers l'utilisateur&quot;,&quot;body&quot;:&quot;Une session appartient toujours à un utilisateur. Le userId est la clé étrangère qui matérialise ce lien. C'est par ici que nous remonterons à toutes les informations de l'utilisateur (rôle, permissions, profil) à chaque requête.&quot;,&quot;scope&quot;:&quot;51-58&quot;,&quot;focus&quot;:&quot;53-53&quot;},{&quot;title&quot;:&quot;expiresAt : la durée de vie côté serveur&quot;,&quot;body&quot;:&quot;Cette date est posée à la création de la session (sept jours plus tard, dans notre projet). À chaque requête, le backend vérifie que cette date n'est pas dépassée. Si c'est le cas, la session est invalidée — même si le JWT lui-même est encore valide.&quot;,&quot;scope&quot;:&quot;51-58&quot;,&quot;focus&quot;:&quot;55-55&quot;},{&quot;title&quot;:&quot;onDelete: Cascade : la cohérence référentielle&quot;,&quot;body&quot;:&quot;Si un utilisateur est supprimé, toutes ses sessions sont automatiquement supprimées. Cette contrainte est posée au niveau de la base, pas du code. Aucun risque qu'une session orpheline survive à son utilisateur.&quot;,&quot;scope&quot;:&quot;51-58&quot;,&quot;focus&quot;:&quot;57-57&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi pas de roleId dans Session ?
+
+Une décision intéressante du projet AKFC : la table `Session` n'embarque **aucune information sur le rôle**. Elle ne fait que pointer vers le `User`.
+
+Une migration récente a même supprimé un champ `role` qui existait auparavant :
+
+<CodeExample
+  language="sql"
+  filepath="prisma/migrations/20260318083247_remove_session_role/migration.sql"
+  filename="migration.sql"
+  snippetRange="1-9"
+  snippetHighlight="1-9"
+  snippetTitle="La migration qui retire le rôle de Session"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi cette suppression ?
+
+Parce que **dénormaliser le rôle dans la session crée un problème de cohérence**. Si un admin change le rôle d'un utilisateur, toutes les sessions actives de cet utilisateur continueraient à porter l'ancien rôle jusqu'à leur expiration. Le changement n'aurait aucun effet immédiat.
+
+En supprimant `Session.role`, le projet impose que **le rôle soit toujours lu depuis la table User à chaque requête**. C'est un peu plus coûteux (un join supplémentaire), mais c'est cohérent : un changement de rôle est appliqué immédiatement sur toutes les sessions actives.
+
+C'est exactement ce que nous avons vu dans le tutoriel tRPC : l'autorité du système réside dans la base, pas dans des copies dispersées.
+
+---
+
+## La chaîne User → Role → Permission
+
+`Session` pointe vers `User`. Mais ce qui nous intéresse vraiment, c'est ce que `User` permet de récupérer en cascade :
+
+<ArchitectureDiagram
+  steps="Session | User | Role | Permission (via RolePermissions)"
+/>
+
+À chaque requête authentifiée, nous allons remonter cette chaîne pour obtenir, en un seul appel Prisma, toutes les informations dont le backend a besoin pour décider qui peut faire quoi.
+
+C'est cette chaîne qui rend possible l'écriture, dans n'importe quelle procédure, de :
+
+<CodeSnippet
+  title="L'aboutissement de la chaîne, dans une procédure"
+  language="ts"
+  kind="educational"
+  codeJson="ctx.sessionClient.user.role.permissions"
+/>
+
+Mais avant d'arriver là, nous devons d'abord construire la session.
+
+---
+
+👉 **Où nous en sommes :** la base est posée, normalisée, cohérente. La session pointe vers l'utilisateur, et l'utilisateur porte son rôle et ses permissions. Reste à décider ce que cette structure laissera sortir vers le client — c'est le rôle du contrat que nous allons ouvrir.
+
+---
+
+## 4 — Le contrat partagé : `SessionClient`
+
+Avant de manipuler la session, posons une frontière : que recevra exactement le client ?
+
+Le projet AKFC définit cette frontière dans `packages/contracts`, partagé entre frontend et backend.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/session.types.ts"
+  filename="session.types.ts"
+  snippetRange="1-16"
+  snippetHighlight="1-16"
+  snippetTitle="Le DTO SessionClient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du contrat
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/auth/session.types.ts"
+  filename="session.types.ts"
+  snippetRange="1-16"
+  title="Ce qui sort du backend, et ce qui n'en sort jamais"
+  stepsJson="[{&quot;title&quot;:&quot;Aucune trace du mot de passe&quot;,&quot;body&quot;:&quot;C'est la première chose à remarquer. Le hash bcrypt vit dans la table User, mais il n'apparaît nulle part dans SessionClient. Le contrat garantit qu'aucun mot de passe, même hashé, ne traverse la frontière vers le client.&quot;,&quot;scope&quot;:&quot;1-16&quot;,&quot;focus&quot;:&quot;3-15&quot;},{&quot;title&quot;:&quot;Aucune trace de structure DB brute&quot;,&quot;body&quot;:&quot;Pas de createdAt, pas de updatedAt, pas de roleId. Ces champs existent en base mais le client n'a pas à les connaître. Le DTO expose seulement ce qui est utile à l'interface.&quot;,&quot;scope&quot;:&quot;1-16&quot;,&quot;focus&quot;:&quot;5-12&quot;},{&quot;title&quot;:&quot;Les permissions sont des string[], pas des objets&quot;,&quot;body&quot;:&quot;En base, les permissions vivent dans une table de jointure complexe. Côté client, elles sont aplaties en un simple tableau de noms. Le frontend peut faire if (permissions.includes('manage_users')) sans rien comprendre à la mécanique relationnelle sous-jacente.&quot;,&quot;scope&quot;:&quot;1-16&quot;,&quot;focus&quot;:&quot;14-14&quot;},{&quot;title&quot;:&quot;user est nullable parce que getSession peut être appelé sans être connecté&quot;,&quot;body&quot;:&quot;Le client peut interroger sa session à tout moment. Si personne n'est connecté, user vaut null. Cette nullabilité est explicite dans le type, ce qui force le frontend à gérer ce cas — impossible d'oublier.&quot;,&quot;scope&quot;:&quot;1-16&quot;,&quot;focus&quot;:&quot;15-15&quot;}]"
+/>
+
+---
+
+<Callout type="concept">
+SessionClient est un contrat, pas une projection.
+
+Il décrit ce que le système promet d'exposer, et garantit qu'aucune information sensible ne fuit accidentellement.
+</Callout>
+
+---
+
+Cette définition gouverne tout ce qui suit. Quand nous écrirons `getSessionFromRequest`, le mapping `SessionDB → SessionClient` sera vérifié par TypeScript contre ce contrat.
+
+Si demain quelqu'un ajoute un champ sensible à `User` dans Prisma, ce champ ne sortira pas tant qu'il ne sera pas explicitement ajouté à `SessionClient`. C'est une protection passive — qui ne demande aucune vigilance répétée du développeur, parce qu'elle est portée par les types.
+
+---
+
+👉 **Où nous en sommes :** la frontière de sortie est définie, le contrat est clair. Nous pouvons maintenant nous placer à l'autre extrémité du flux — l'entrée — et regarder ce qui arrive du navigateur quand l'utilisateur soumet le formulaire de login.
+
+---
+
+## 5 — La validation des identifiants
+
+Maintenant que le terrain est posé, entrons dans le flux d'authentification.
+
+Tout commence par une frontière simple : valider la forme des identifiants envoyés par le client.
 
 <CodeExample
   language="ts"
   filepath="packages/contracts/schemas/auth/auth.schema.ts"
   filename="auth.schema.ts"
-  snippetRange="1-11"
+  snippetRange="1-12"
   snippetHighlight="3-9"
-  snippetTitle="Schéma Zod des identifiants"
+  snippetTitle="Le schéma Zod des identifiants"
   fullFileTitle="Voir le fichier complet"
 />
 
-Ce schéma impose deux choses :
+---
 
-- un email au bon format
-- un mot de passe d’au moins 12 caractères
+Ce schéma impose deux contraintes :
 
-C’est une première ligne de défense indispensable.
+- un email respectant le format standard (regex simple mais suffisante)
+- un mot de passe d'au moins 12 caractères
 
 ---
 
-## 2 — Vue d’ensemble du router d’authentification
+## Pourquoi 12 caractères ?
 
-Le cœur du flux se trouve dans le router tRPC.
+Ce nombre n'est pas arbitraire.
 
-<CodeExample
-  language="ts"
-  filepath="packages/backend/src/routers/auth.router.ts"
-  filename="auth.router.ts"
-  snippetRange="1-51"
-  snippetHighlight="16,38,44"
-  snippetTitle="Vue d’ensemble du router d’authentification"
-  fullFileTitle="Voir le fichier complet"
-/>
+Les recommandations actuelles (NIST, ANSSI) considèrent qu'un mot de passe de 8 caractères est cassable en quelques heures avec du matériel grand public. À partir de 12 caractères, l'effort devient significatif. À partir de 16, il devient prohibitif.
 
-Ce fichier ne se limite pas au login.  
-Il regroupe plusieurs procédures liées à l’authentification :
-
-- `login`
-- `logout`
-- `getSession`
-- la réinitialisation de mot de passe
-
-Pour bien comprendre le flux principal, nous allons maintenant nous concentrer sur la procédure `login`.
+Le projet AKFC se positionne au minimum acceptable pour un système moderne.
 
 ---
 
-## 3 — Lecture guidée de la procédure login
+## Pourquoi le schéma vit dans `packages/contracts` ?
 
-<CodeWalkthrough
-  language="ts"
-  filepath="packages/backend/src/routers/auth.router.ts"
-  filename="auth.router.ts"
-  snippetRange="16-35"
-  title="Lecture guidée de la procédure login"
-  stepsJson='[
-    {
-      "title": "Procédure publique",
-      "body": "Le login est exposé comme une procédure publique. C’est logique, car un utilisateur non connecté doit pouvoir appeler cette route.",
-      "scope": "1-1",
-      "focus": "1"
-    },
-    {
-      "title": "Validation inline avec Zod",
-      "body": "Le router définit ici directement un schéma Zod contenant un email valide et un mot de passe d’au moins 12 caractères.",
-      "scope": "2-5",
-      "focus": "2-5"
-    },
-    {
-      "title": "Extraction des données",
-      "body": "La mutation récupère ensuite les données validées depuis input avant de lancer la logique métier.",
-      "scope": "6-7",
-      "focus": "6-7"
-    },
-    {
-      "title": "Délégation au service métier",
-      "body": "Le router ne fait pas toute la logique lui-même. Il délègue l’authentification à loginService, ce qui garde une architecture plus propre.",
-      "scope": "8-19",
-      "focus": "9"
-    },
-    {
-      "title": "Réponse de succès",
-      "body": "Si le service ne lève pas d’erreur, la mutation retourne simplement un succès. Le router reste ici très léger.",
-      "scope": "8-19",
-      "focus": "11-13"
-    },
-    {
-      "title": "Gestion d’échec",
-      "body": "En cas d’erreur, la mutation renvoie un objet d’échec avec un message exploitable côté client.",
-      "scope": "8-19",
-      "focus": "14-18"
-    }
-  ]'
-/>
+C'est exactement le pattern que nous avons vu dans le tutoriel tRPC : un schéma utilisé à la fois côté client (validation immédiate du formulaire) et côté serveur (validation de la procédure) doit vivre dans le package partagé.
 
-<Callout>
-Ce bloc montre une bonne séparation des responsabilités : le router orchestre la requête, mais délègue la logique métier réelle à `loginService`.
+Aucune divergence possible entre les deux côtés. Si un jour la règle passe à 16 caractères, nous la modifions en un seul endroit, et les deux côtés s'alignent automatiquement.
+
+---
+
+<Callout type="insight">
+La validation est la première frontière du système.
+
+Elle ne résout aucun problème métier — mais elle empêche tous les problèmes en aval qui surviendraient sur des données malformées.
 </Callout>
 
 ---
 
-## 4 — La déconnexion
-
-Le logout montre une autre idée importante : certaines procédures doivent être protégées.
-
-<CodeExample
-  language="ts"
-  filepath="packages/backend/src/routers/auth.router.ts"
-  filename="auth.router.ts"
-  snippetRange="38-42"
-  snippetHighlight="1-3"
-  snippetTitle="Procédure de logout"
-  fullFileTitle="Voir le fichier complet"
-/>
-
-Ici, la procédure est définie avec `protectedProcedure`.
+👉 **Où nous en sommes :** la forme des identifiants est garantie. Le backend peut maintenant faire confiance à ce qu'il reçoit et entrer dans la vraie vérification — celle qui consulte la base pour déterminer si cet utilisateur existe vraiment et si son mot de passe est correct.
 
 ---
 
-## 5 — Lire la session courante
+## 6 — Le service de login : la vraie logique
 
-Le router expose aussi une procédure simple pour demander :
-
-> qui est connecté en ce moment ?
+C'est ici que se joue l'authentification proprement dite.
 
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/routers/auth.router.ts"
-  filename="auth.router.ts"
-  snippetRange="44-47"
-  snippetHighlight="1-3"
-  snippetTitle="Procédure getSession"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-52"
+  snippetHighlight="9-51"
+  snippetTitle="loginService : du mot de passe à la session"
   fullFileTitle="Voir le fichier complet"
 />
 
 ---
 
-## 6 — Reconstruction de la session depuis la requête
+## Lecture guidée du service de login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-52"
+  title="Anatomie complète du service de login"
+  stepsJson="[{&quot;title&quot;:&quot;findUnique avec include profond&quot;,&quot;body&quot;:&quot;Dès la première requête Prisma, nous chargeons l'utilisateur avec son rôle ET les permissions associées. Trois include imbriqués : user → role → permissions → permission. Cela évite plusieurs allers-retours en base lors des requêtes suivantes — toute l'information est récupérée d'un coup.&quot;,&quot;scope&quot;:&quot;9-23&quot;,&quot;focus&quot;:&quot;10-23&quot;},{&quot;title&quot;:&quot;Si l'utilisateur n'existe pas, INVALID_CREDENTIALS&quot;,&quot;body&quot;:&quot;Notez le message : INVALID_CREDENTIALS, pas USER_NOT_FOUND. C'est un choix de sécurité crucial. Voir l'encart ci-dessous pour comprendre pourquoi.&quot;,&quot;scope&quot;:&quot;25-30&quot;,&quot;focus&quot;:&quot;25-30&quot;},{&quot;title&quot;:&quot;bcrypt.compare et la même erreur pour un mot de passe invalide&quot;,&quot;body&quot;:&quot;bcrypt.compare gère lui-même la comparaison sécurisée — pas de bcrypt.hash + comparaison naïve, qui ouvrirait à des timing attacks. Et l'erreur renvoyée est exactement la même qu'au step précédent : impossible pour un attaquant de distinguer un email inconnu d'un mot de passe invalide.&quot;,&quot;scope&quot;:&quot;32-37&quot;,&quot;focus&quot;:&quot;32-37&quot;},{&quot;title&quot;:&quot;Normalisation des permissions : aplatir la table de jointure&quot;,&quot;body&quot;:&quot;Prisma renvoie les permissions imbriquées dans une structure complexe (rolePermission.permission). Le service les aplatit ici en un format plus directement exploitable. Cette projection prépare l'objet à être stocké en mémoire avant la création de session.&quot;,&quot;scope&quot;:&quot;39-47&quot;,&quot;focus&quot;:&quot;39-47&quot;},{&quot;title&quot;:&quot;createSessionJWT : la suite délègue à un autre service&quot;,&quot;body&quot;:&quot;Le service de login ne crée pas lui-même le JWT ni le cookie. Il délègue cette responsabilité à createSessionJWT. Cette séparation permet de tester le login indépendamment du mécanisme de session, et inversement.&quot;,&quot;scope&quot;:&quot;49-51&quot;,&quot;focus&quot;:&quot;49-49&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi le même message pour deux erreurs ?
+
+Quand l'email n'existe pas en base, et quand le mot de passe est faux, le service renvoie **exactement la même erreur** : `INVALID_CREDENTIALS`.
+
+À première vue, cela semble peu utile pour l'utilisateur. Pourquoi ne pas dire "cet email n'existe pas" ? Ce serait plus pédagogique.
+
+C'est précisément pour cela que c'est une mauvaise idée.
+
+Si le message diffère, un attaquant peut **énumérer les comptes** existants en testant des emails au hasard :
+
+- "cet email n'existe pas" → l'email n'est pas dans la base
+- "mot de passe invalide" → l'email est dans la base
+
+L'attaquant construit ainsi une liste d'emails valides du système, qu'il peut ensuite cibler par phishing, brute-force, ou ré-utilisation de mots de passe fuités d'autres services.
+
+Renvoyer le même message dans les deux cas — `INVALID_CREDENTIALS` — empêche cette énumération. L'attaquant ne peut pas distinguer un email inconnu d'un mot de passe faux.
+
+C'est un compromis assumé : un peu moins d'ergonomie, beaucoup plus de sécurité.
+
+---
+
+👉 **Où nous en sommes :** l'utilisateur est identifié. Nous tenons en mémoire son objet complet — user, rôle, permissions. Il ne reste plus qu'à transformer cette identification en une session qui survivra aux prochaines requêtes. C'est l'étape finale du premier mouvement.
+
+---
+
+## 7 — `createSessionJWT` : la naissance de la session
+
+Une fois l'utilisateur identifié, il faut **lui poser un tampon** sur la main.
+
+C'est le rôle de `createSessionJWT`.
 
 <CodeExample
   language="ts"
-  filepath="packages/backend/src/auth/getSessionFromRequest.ts"
-  filename="getSessionFromRequest.ts"
-  snippetRange="112-151"
-  snippetHighlight="4-9,11-22,24,26"
-  snippetTitle="Reconstruction de la session depuis la requête"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="1-44"
+  snippetHighlight="15-43"
+  snippetTitle="createSessionJWT : trois opérations essentielles"
   fullFileTitle="Voir le fichier complet"
 />
 
 ---
 
-## 7 — Lecture du token d’authentification
+## Lecture guidée de la création de session
 
-<CodeExample
+<CodeWalkthrough
   language="ts"
-  filepath="packages/backend/src/auth/getSessionFromRequest.ts"
-  filename="getSessionFromRequest.ts"
-  snippetRange="85-105"
-  snippetHighlight="3-6,9-14"
-  snippetTitle="Lecture du token depuis la requête"
-  fullFileTitle="Voir le fichier complet"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="1-44"
+  title="Du user authentifié au cookie posé sur le navigateur"
+  stepsJson="[{&quot;title&quot;:&quot;Calcul de la date d'expiration&quot;,&quot;body&quot;:&quot;SESSION_DURATION_MS vaut 7 jours dans les contracts. Cette constante est partagée — frontend et backend savent tous deux que les sessions durent une semaine.&quot;,&quot;scope&quot;:&quot;15-44&quot;,&quot;focus&quot;:&quot;16-16&quot;},{&quot;title&quot;:&quot;Création de la ligne Session en base&quot;,&quot;body&quot;:&quot;C'est ici que la session devient persistante. La table Session reçoit une nouvelle entrée avec userId et expiresAt. C'est cette ligne qui rendra la révocation possible plus tard : il suffira de la supprimer pour invalider la session.&quot;,&quot;scope&quot;:&quot;15-44&quot;,&quot;focus&quot;:&quot;18-23&quot;},{&quot;title&quot;:&quot;Construction du payload JWT minimal&quot;,&quot;body&quot;:&quot;Le payload ne contient QUE le sessionId. Pas d'email, pas de rôle, pas de permissions. C'est un choix architectural majeur : tout ce qui change (rôle, permissions) ne doit jamais vivre dans le JWT, parce qu'on ne peut pas le mettre à jour sans déconnecter l'utilisateur. Seul l'identifiant immuable y vit.&quot;,&quot;scope&quot;:&quot;15-44&quot;,&quot;focus&quot;:&quot;25-27&quot;},{&quot;title&quot;:&quot;Signature du JWT&quot;,&quot;body&quot;:&quot;jwt.sign produit le token signé avec JWT_SECRET. Sans ce secret, impossible de produire un JWT valide. Et expiresIn: 7d ajoute une expiration côté JWT — qui doublonne celle de la base, mais protège en cas de désynchronisation.&quot;,&quot;scope&quot;:&quot;15-44&quot;,&quot;focus&quot;:&quot;29-31&quot;},{&quot;title&quot;:&quot;Pose du cookie avec les bons flags de sécurité&quot;,&quot;body&quot;:&quot;C'est l'étape la plus dense. Quatre flags critiques : httpOnly empêche tout accès JavaScript, secure force HTTPS en prod, sameSite lax bloque les attaques CSRF cross-origin tout en permettant la navigation normale, et expires aligne la durée de vie du cookie sur celle de la session.&quot;,&quot;scope&quot;:&quot;15-44&quot;,&quot;focus&quot;:&quot;33-39&quot;}]"
 />
 
 ---
 
-## 8 — Création du contexte tRPC
+## 🔭 Pour aller plus loin — anatomie des flags de cookie
 
-<CodeExample
-  language="ts"
-  filepath="packages/backend/src/trpc/core.ts"
-  filename="core.ts"
-  snippetRange="23-35"
-  snippetHighlight="5-10"
-  snippetTitle="Création du contexte tRPC"
-  fullFileTitle="Voir le fichier complet"
-/>
+Chaque flag du cookie joue un rôle de sécurité précis. Les ignorer, c'est ouvrir des failles.
 
----
+**`httpOnly: true`**  
+Le cookie est invisible pour JavaScript côté client. `document.cookie` ne le voit pas. Cette protection rend impossible le vol du token via une faille XSS — si un attaquant injecte du JS malveillant dans la page, il ne pourra pas exfiltrer le cookie.
 
-## 9 — Protéger une procédure avec le contexte
+**`secure: process.env.NODE_ENV === "production"`**  
+Le cookie ne sera envoyé que sur des connexions HTTPS. En développement local (HTTP), nous désactivons cette contrainte sinon le cookie ne serait jamais transmis. En production, c'est non négociable.
 
-<CodeExample
-  language="ts"
-  filepath="packages/backend/src/trpc/core.ts"
-  filename="core.ts"
-  snippetRange="40-49"
-  snippetHighlight="3-7"
-  snippetTitle="Création de protectedProcedure"
-  fullFileTitle="Voir le fichier complet"
-/>
+**`sameSite: "lax"`**  
+C'est la protection CSRF. Avec `lax`, le cookie n'est pas envoyé lors de requêtes cross-origin déclenchées par un site tiers (POST, fetch). Il est envoyé uniquement lors de navigations classiques (clic sur un lien). C'est le bon compromis entre sécurité et expérience utilisateur.
+
+**`expires: expiresAt`**  
+Aligne la durée de vie du cookie sur celle de la session DB. Quand la session expire, le navigateur supprime automatiquement le cookie.
+
+**`path: "/"`**  
+Le cookie est envoyé pour toutes les routes du domaine. Sans cela, il ne serait envoyé que pour `/api/auth/...`.
+
+Oublier l'un de ces flags — surtout `httpOnly` ou `sameSite` — est une faille classique des projets juniors.
 
 ---
 
-## 10 — Résumé du flux complet
+<Callout type="insight">
+La création de session est triple :
 
-Si on remet tout dans l’ordre :
+👉 une ligne en base  
+👉 un JWT signé contenant son id  
+👉 un cookie sécurisé qui transporte le JWT
 
-1. le client envoie ses identifiants
-2. le schéma Zod valide les données
-3. le router tRPC déclenche la procédure `login`
-4. le router délègue la logique métier à un service
-5. une session est ensuite retrouvée ou reconstruite côté serveur
-6. le contexte tRPC injecte cette session dans les requêtes suivantes
-7. les procédures protégées peuvent alors s’appuyer sur cette identité
+Chacune de ces trois opérations est nécessaire. Aucune n'est suffisante seule.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** l'utilisateur a maintenant un cookie d'authentification dans son navigateur, et le backend possède une trace persistante de sa session. Le premier mouvement est complet.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Voilà le chemin parcouru depuis l'email tapé dans le formulaire jusqu'au cookie posé :
 
 <ArchitectureDiagram
-  steps={[
-    "login()",
-    "loginService",
-    "session/token",
-    "getSessionFromRequest",
-    "createTRPCContext",
-    "ctx.sessionClient",
-    "protectedProcedure",
-  ]}
+  steps="Email + password | Validation Zod | bcrypt.compare | Création Session DB | Signature JWT | Cookie posé"
+/>
+
+Chaque étape résout un problème spécifique :
+
+- **Zod** a garanti que les données avaient la bonne forme
+- **bcrypt.compare** a vérifié le mot de passe sans jamais le stocker en clair
+- **la création Session DB** a produit un identifiant unique, révocable, avec une date d'expiration
+- **la signature JWT** a transformé cet identifiant en un jeton infalsifiable
+- **le cookie** a posé ce jeton dans le navigateur avec tous les flags de sécurité
+
+Mais ce cookie seul ne sert à rien.
+
+Ce qui rend le système vivant, c'est ce qui va se passer **à la requête suivante** : comment le backend va-t-il lire ce cookie, vérifier le JWT, relire la session en base, et injecter cette identité dans le contexte de chaque procédure tRPC ?
+
+C'est tout l'objet du **Mouvement 2**.
+
+---
+
+## Mouvement 2 — La vie d'une session
+
+Nous avons construit la naissance d'une session.
+
+Mais une session qui naît et qui ne sait pas vivre est inutile.
+
+Comment, à la **prochaine requête** de l'utilisateur, le backend va-t-il reconstruire son identité ? Comment cette identité sera-t-elle exploitée par les procédures ? Comment la détruire proprement au logout ? Comment nettoyer les sessions abandonnées ? Et comment gérer le cas sensible du reset password ?
+
+C'est tout cela que nous allons construire dans ce second mouvement.
+
+---
+
+## 🗺️ Les huit étapes du Mouvement 2
+
+- **Section 8** — Nous commencerons par ouvrir le router auth dans son ensemble, pour voir comment il expose cinq procédures distinctes — chacune avec une responsabilité précise.
+- **Section 9** — Nous entrerons dans le cœur battant du système : `getSessionFromRequest`, la fonction qui reconstruit l'identité à chaque requête entrante, depuis le cookie jusqu'au `SessionClient`.
+- **Section 10** — Nous observerons de près le mapping `SessionDB → SessionClient`, la projection qui sépare la structure interne de la base de la forme exposée au client.
+- **Section 11** — Nous verrons comment `createTRPCContext` prend le relais pour injecter cette session dans le contexte de chaque procédure tRPC.
+- **Section 12** — Nous boucleront la boucle en observant comment `protectedProcedure` exploite cette session pour garantir des procédures métier "confiantes" — libres de toute logique défensive d'auth.
+- **Section 13** — Nous construirons le chemin inverse : comment détruire une session proprement au logout, avec ses deux opérations indissociables (DB + cookie).
+- **Section 14** — Nous ajouterons le cron de nettoyage, pour éviter que les sessions abandonnées s'accumulent indéfiniment en base.
+- **Section 15** — Nous finirons par le cas le plus sensible : le reset password, avec son pattern de token haché, son TTL court, son cooldown anti-spam, et la transaction atomique qui garantit la cohérence du changement.
+
+À la fin de ce mouvement, nous saurons exactement comment une session vit, comment elle est exploitée partout dans le backend, et comment elle meurt — volontairement, passivement, ou en cas de sécurité compromise.
+
+---
+
+## 8 — Le router auth : orchestration des intentions
+
+Nous avons vu le service. Voyons maintenant comment il est exposé via tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="20-62"
+  snippetHighlight="20-22,52-58,60-62"
+  snippetTitle="Vue d'ensemble du router d'authentification"
+  fullFileTitle="Voir le fichier complet"
 />
 
 ---
 
-## 11 — Ce qu’il faut retenir
+Le router auth expose **cinq procédures** :
 
-Voici les idées les plus importantes :
-
-- **Zod** protège l’entrée
-- **le router tRPC** orchestre la requête
-- **le service métier** porte la logique de connexion
-- **`getSessionFromRequest`** reconstruit l’état d’authentification
-- **`createTRPCContext`** distribue cet état au reste du backend
-- **`protectedProcedure`** bloque les requêtes non authentifiées
+- `login` (publique)
+- `logout` (protégée)
+- `getSession` (publique)
+- `requestPasswordReset` (publique)
+- `resetPassword` (publique)
 
 ---
 
-## 12 — Étape suivante
+## Pourquoi `login` est publique mais `logout` est protégée
 
-Le prolongement logique de ce tutoriel est la protection des routes :
+C'est une règle de bon sens, mais qui mérite d'être explicitée.
 
-- comment brancher `protectedProcedure`
-- comment utiliser `ctx.sessionClient`
-- comment aller ensuite vers rôles et permissions
+`login` doit être appelable par un utilisateur **non connecté** — sinon personne ne pourrait jamais se connecter. Donc `publicProcedure`.
+
+`logout` doit être appelable par un utilisateur **connecté** — un anonyme qui appelle logout, c'est suspect, et il n'y a rien à déconnecter. Donc `protectedProcedure`.
+
+Ces choix sont explicites dans le code, pas implicites.
+
+---
+
+## Pourquoi `getSession` est publique
+
+Cette procédure est intéressante. Elle est `publicProcedure` parce que **le frontend doit pouvoir l'appeler à tout moment, même quand personne n'est connecté**.
+
+Au démarrage de l'application, le frontend ne sait pas si un utilisateur est connecté. Il appelle `getSession` pour le découvrir. Si la réponse est `null`, il affiche le formulaire de login. Si la réponse contient un user, il hydrate son state.
+
+Si `getSession` était protégée, l'application ne pourrait jamais détecter qu'un utilisateur est anonyme — elle recevrait toujours une erreur d'auth, sans pouvoir distinguer "non connecté" de "vraiment cassé".
+
+---
+
+## Lecture guidée de la procédure login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="22-50"
+  title="login : du formulaire au résultat exploitable"
+  stepsJson="[{&quot;title&quot;:&quot;publicProcedure : un choix explicite&quot;,&quot;body&quot;:&quot;Le login DOIT être une procédure publique. Si nous écrivions protectedProcedure ici, personne ne pourrait jamais se connecter.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;22-22&quot;},{&quot;title&quot;:&quot;Validation Zod inline&quot;,&quot;body&quot;:&quot;Le router redéfinit ici un schéma Zod, plutôt que d'importer authSchema depuis contracts. C'est un choix discutable — l'idéal serait d'importer le contrat partagé pour garantir l'alignement frontend/backend. À noter pour une amélioration future.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;23-28&quot;},{&quot;title&quot;:&quot;Délégation immédiate à loginService&quot;,&quot;body&quot;:&quot;La procédure ne fait aucun travail métier elle-même. Elle reçoit input typé par Zod et le passe au service. Ce qui rend le router lisible en quelques lignes.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;31-33&quot;},{&quot;title&quot;:&quot;Le pattern de retour avec discriminated union&quot;,&quot;body&quot;:&quot;Le retour est un objet success true ou success false avec error. Le as const est crucial : il transforme la valeur littérale en type littéral, ce qui permet à TypeScript de générer une union discriminée. Côté frontend, if (res.success) restreint le type pour la suite — c'est ce qui permet à TypeScript de comprendre la branche d'erreur.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;35-37&quot;},{&quot;title&quot;:&quot;Capture de l'erreur INVALID_CREDENTIALS&quot;,&quot;body&quot;:&quot;Le router intercepte spécifiquement TRPCError avec message INVALID_CREDENTIALS pour le transformer en réponse exploitable côté client. Pourquoi ne pas laisser remonter l'erreur ? Parce qu'INVALID_CREDENTIALS n'est pas une erreur technique — c'est un retour métier attendu, qui mérite un affichage utilisateur normal, pas un toast d'erreur système.&quot;,&quot;scope&quot;:&quot;22-50&quot;,&quot;focus&quot;:&quot;38-46&quot;}]"
+/>
+
+---
+
+<Callout type="concept">
+Le router auth orchestre. Il ne fait pas la logique métier — il la délègue.
+
+Cinq procédures, quatre fichiers de service en arrière-plan. Le router reste lisible parce qu'il ne porte que les intentions, pas les implémentations.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le router est cartographié. Nous savons quelles procédures existent, et pourquoi chacune est publique ou protégée. Mais les procédures protégées reposent toutes sur une condition préalable : que `ctx.sessionClient` soit déjà reconstruit. Comment se produit cette reconstruction ? C'est la prochaine étape.
+
+---
+
+## 9 — Le retour : reconstruire la session à chaque requête
+
+Voici le cœur battant du système.
+
+À chaque requête entrante — qu'il s'agisse d'une page, d'un appel tRPC, d'une Server Action — le backend doit répondre à la même question : "qui parle, maintenant ?"
+
+C'est le rôle de `getSessionFromRequest`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="80-130"
+  snippetHighlight="80-130"
+  snippetTitle="getSessionFromRequest : du cookie à SessionClient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du retour de session
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="67-130"
+  title="Le voyage du cookie au SessionClient"
+  stepsJson="[{&quot;title&quot;:&quot;readAuthToken : deux sources possibles&quot;,&quot;body&quot;:&quot;readAuthToken essaie d'abord de lire le cookie depuis l'objet req (utile pour les middlewares ou le proxy). En fallback, il utilise next/headers cookies(). Cette double source rend la fonction utilisable depuis n'importe quel contexte d'exécution Next.js — App Router, Server Action, route handler.&quot;,&quot;scope&quot;:&quot;67-78&quot;,&quot;focus&quot;:&quot;67-78&quot;},{&quot;title&quot;:&quot;Sortie silencieuse si pas de token&quot;,&quot;body&quot;:&quot;Si aucun cookie n'est présent, on retourne null sans erreur. Ce n'est pas une faute — c'est juste que personne n'est connecté. Le contexte sera construit avec sessionClient null, et les procédures publiques fonctionneront normalement.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;82-83&quot;},{&quot;title&quot;:&quot;Vérification cryptographique du JWT&quot;,&quot;body&quot;:&quot;jwt.verify avec JWT_SECRET. Si la signature est invalide (token forgé, expiré côté JWT, ou JWT_SECRET incorrect), on retourne null. Encore une fois : pas d'erreur jetée, juste null. La logique est : on ne reconnaît pas ce visiteur, traitons-le comme anonyme.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;87-92&quot;},{&quot;title&quot;:&quot;Lookup en base avec include profond&quot;,&quot;body&quot;:&quot;Le payload JWT contient le sessionId. On va le chercher en base, avec tout l'arbre relationnel : session.user.role.permissions.permission. Un seul appel Prisma, mais qui charge toute la hiérarchie.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;94-108&quot;},{&quot;title&quot;:&quot;Vérification d'existence — révocation côté serveur&quot;,&quot;body&quot;:&quot;Si la session n'est pas trouvée en base, on retourne null. C'est exactement ce qui rend la révocation possible : si un admin a supprimé la ligne Session, ou si l'utilisateur a fait logout, le JWT est encore signé valide, mais la session n'existe plus en base.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;110-110&quot;},{&quot;title&quot;:&quot;Vérification d'expiration et nettoyage opportuniste&quot;,&quot;body&quot;:&quot;Si expiresAt est dépassé, on supprime la session expirée et on retourne null. C'est un nettoyage opportuniste : à chaque requête tentant d'utiliser une session expirée, celle-ci est purgée. Cela complète le cron de nettoyage qu'on verra plus tard.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;112-118&quot;},{&quot;title&quot;:&quot;Mapping vers le DTO et retour&quot;,&quot;body&quot;:&quot;Si tout s'est bien passé, on appelle mapSessionDBToSessionClient pour projeter la structure DB vers le DTO partagé. C'est ce SessionClient qui sera placé dans ctx.sessionClient et utilisable par toutes les procédures.&quot;,&quot;scope&quot;:&quot;80-130&quot;,&quot;focus&quot;:&quot;124-128&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — la double vérification (JWT + DB)
+
+Pourquoi vérifier à la fois la signature JWT **et** l'existence en base ? À première vue, c'est redondant. Si le JWT est signé valide, pourquoi ne pas faire confiance ?
+
+Voici trois scénarios concrets qui justifient la double vérification.
+
+**Scénario 1 — Logout immédiat**  
+Un utilisateur clique sur "Logout". Le backend supprime la ligne `Session` de la base, et le navigateur supprime le cookie. Mais imaginons qu'un attaquant ait copié le JWT du cookie quelques secondes avant le logout. Sans vérification DB, le JWT serait encore utilisable jusqu'à son expiration. Avec vérification DB, le lookup échoue immédiatement après le logout — l'attaquant n'a accès à rien.
+
+**Scénario 2 — Bannissement d'utilisateur**  
+Un admin décide de bannir un utilisateur. Il supprime toutes ses sessions actives en base. À la requête suivante, l'utilisateur banni présente son JWT — la signature est valide, mais la session n'existe plus. Accès refusé immédiatement.
+
+**Scénario 3 — Reset password forcé**  
+Quand un utilisateur reset son mot de passe, le service supprime toutes ses sessions actives (nous le verrons en section 15). C'est le pattern "déconnecter tous les appareils après changement de mot de passe" — essentiel si l'utilisateur a reset parce qu'il soupçonne une compromission.
+
+Sans la double vérification, aucun de ces trois scénarios ne serait possible. Le JWT seul ne donne aucune révocabilité.
+
+---
+
+👉 **Où nous en sommes :** le JWT est vérifié, la session est retrouvée en base, l'expiration est contrôlée. Il reste une dernière étape avant d'exposer cette session au reste du backend : la transformer en `SessionClient` — c'est-à-dire la projeter vers la forme contractuelle que nous avons définie en section 4.
+
+---
+
+## 10 — Le mapping `SessionDB → SessionClient`
+
+Nous avons vu le contrat `SessionClient`. Voyons maintenant comment la donnée brute de Prisma est projetée vers ce contrat.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="24-46"
+  snippetHighlight="24-46"
+  snippetTitle="mapSessionDBToSessionClient : la projection sécurisée"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du mapping
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="14-46"
+  title="De la structure DB au DTO partagé"
+  stepsJson="[{&quot;title&quot;:&quot;Le type SessionDB capture la structure complète&quot;,&quot;body&quot;:&quot;Avant le mapping, on définit explicitement le type SessionDB qui décrit ce que Prisma renvoie : Session avec user inclus, lui-même avec role inclus, lui-même avec permissions incluses. C'est la signature exacte du résultat de findUnique.&quot;,&quot;scope&quot;:&quot;14-22&quot;,&quot;focus&quot;:&quot;14-22&quot;},{&quot;title&quot;:&quot;On extrait expiresAt et reconstruit user à la main&quot;,&quot;body&quot;:&quot;Plutôt qu'un spread aveugle, le mapping construit le SessionClient champ par champ. Cette discipline garantit que tout nouveau champ ajouté à User en base ne sortira pas accidentellement vers le client.&quot;,&quot;scope&quot;:&quot;24-46&quot;,&quot;focus&quot;:&quot;27-36&quot;},{&quot;title&quot;:&quot;Aplatissement des permissions&quot;,&quot;body&quot;:&quot;C'est ici que la magie pédagogique opère. Prisma renvoie role.permissions comme un tableau de RolePermissions, chacun contenant un objet permission complet. Le mapping aplatit cette structure en role.permissions égal string array — juste les noms de permissions, exploitables directement par le frontend.&quot;,&quot;scope&quot;:&quot;24-46&quot;,&quot;focus&quot;:&quot;37-43&quot;},{&quot;title&quot;:&quot;Ce qui n'apparaît PAS&quot;,&quot;body&quot;:&quot;Notez tout ce qui manque : password, createdAt, updatedAt — tout absent. Le mapping est par construction restrictif : seul ce qui est explicitement copié sort.&quot;,&quot;scope&quot;:&quot;24-46&quot;,&quot;focus&quot;:&quot;28-36&quot;}]"
+/>
+
+---
+
+<Callout type="insight">
+Le mapping n'est pas une formalité technique.
+
+C'est la **garantie active** que le backend ne fuite jamais d'information par accident. Chaque champ qui sort doit être explicitement nommé.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le `SessionClient` est prêt, construit à partir de la base et projeté contre le contrat partagé. Il ne reste plus qu'à le placer à la disposition du reste du backend — dans le contexte tRPC.
+
+---
+
+## 11 — L'injection : `createTRPCContext` reprend le relais
+
+Nous avons construit `getSessionFromRequest`. Mais cette fonction est inerte tant que personne ne l'appelle.
+
+Qui l'appelle ? `createTRPCContext`, exactement comme nous l'avons vu dans le tutoriel tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="36-50"
+  snippetHighlight="40-49"
+  snippetTitle="Le pont entre la session et le contexte tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+À chaque requête tRPC :
+
+- la route `/api/trpc` reçoit la requête  
+- `fetchRequestHandler` appelle `createContext`  
+- `createContext` appelle `createTRPCContext({ req })`  
+- `createTRPCContext` appelle `getSessionFromRequest(req)`  
+- le résultat (`SessionClient | null`) est placé dans `ctx.sessionClient`  
+
+---
+
+## Le flux d'auth dans le contexte global de tRPC
+
+<ArchitectureDiagram
+  steps="Cookie | readAuthToken | jwt.verify | prisma.session.findUnique | mapSessionDBToSessionClient | ctx.sessionClient | procédure"
+/>
+
+---
+
+À partir de là, **toutes les procédures** du backend ont accès à `ctx.sessionClient`. Une procédure publique recevra `null` si l'utilisateur n'est pas connecté. Une procédure protégée bénéficiera du contexte requalifié et accédera à `ctx.sessionClient.user.id` sans vérification.
+
+C'est exactement ce que nous avons construit dans le tutoriel tRPC, mais maintenant nous savons précisément **d'où vient cette session** et **comment elle est reconstruite**.
+
+---
+
+👉 **Où nous en sommes :** la session est injectée partout où le backend en a besoin. Il nous reste à voir, concrètement, comment le code métier exploite cette injection — et pourquoi cela change radicalement sa lisibilité.
+
+---
+
+## 12 — Comment `protectedProcedure` exploite cette session
+
+Pour boucler la boucle, regardons comment `protectedProcedure` utilise concrètement la session reconstruite.
+
+Rappel rapide depuis `core.ts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="60-72"
+  snippetHighlight="60-72"
+  snippetTitle="Le middleware isAuthed et la requalification du contexte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce middleware fait deux choses :
+
+**1) Il bloque les requêtes anonymes.**  
+Si `ctx.sessionClient.user` est null, il jette `UNAUTHORIZED`. La procédure ne s'exécute jamais.
+
+**2) Il requalifie le type du contexte.**  
+Le `as AuthenticatedSessionClient` n'est pas un cast aveugle — il est justifié par la vérification précédente. À partir de ce point, `ctx.sessionClient.user` n'est plus nullable. TypeScript le sait.
+
+---
+
+## L'usage concret dans le code métier
+
+Regardons comment cela se traduit dans une procédure réelle :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="118-130"
+  snippetHighlight="121-121"
+  snippetTitle="ctx.sessionClient.user.id utilisé sans vérification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+<CodeSnippet
+  title="La confiance justifiée dans le service"
+  language="ts"
+  kind="pattern"
+  codeJson="const userId = ctx.sessionClient.user.id"
+/>
+
+Pas de `?`. Pas de vérification. Pas de TRPCError défensif.
+
+Tout cela est **garanti par la chaîne** :
+
+- le proxy a vérifié que le cookie existe et que le JWT est signé valide  
+- `getSessionFromRequest` a vérifié que la session existe en base et n'est pas expirée  
+- `createTRPCContext` a injecté le résultat dans `ctx.sessionClient`  
+- `protectedProcedure` a vérifié que `user` n'est pas null et a requalifié le type  
+
+Quand le service écrit `ctx.sessionClient.user.id`, il s'appuie sur **toute cette chaîne**.
+
+C'est ce qu'on appelle écrire du code "confiant" — non pas naïf, mais reposant sur des garanties architecturales explicites.
+
+---
+
+<Callout type="concept">
+Une procédure métier n'a aucune logique d'auth.
+
+Elle exploite simplement les garanties construites en amont : protectedProcedure → contexte requalifié → user toujours présent.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** la chaîne de lecture est bouclée. Le cookie arrive, le backend le transforme en identité, et les procédures métier s'en servent sans effort. Reste maintenant à construire le chemin inverse : casser cette chaîne quand l'utilisateur le demande.
+
+---
+
+## 13 — La déconnexion : casser le lien
+
+Nous savons construire une session. Voyons maintenant comment la détruire proprement.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="46-65"
+  snippetHighlight="46-65"
+  snippetTitle="deleteSessionFromCookie : double suppression"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la déconnexion
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="46-65"
+  title="Pourquoi un logout fait deux opérations distinctes"
+  stepsJson="[{&quot;title&quot;:&quot;Lecture du token depuis le cookie&quot;,&quot;body&quot;:&quot;On commence par récupérer le token. S'il n'existe pas, on sort immédiatement — il n'y a rien à déconnecter.&quot;,&quot;scope&quot;:&quot;46-65&quot;,&quot;focus&quot;:&quot;47-51&quot;},{&quot;title&quot;:&quot;Vérification du JWT et suppression de la session DB&quot;,&quot;body&quot;:&quot;On décode le JWT pour récupérer le sessionId, puis on supprime la ligne Session correspondante en base. Cette suppression est ce qui rend le logout révocateur immédiat — le JWT serait encore signé valide, mais la session n'existe plus.&quot;,&quot;scope&quot;:&quot;46-65&quot;,&quot;focus&quot;:&quot;53-58&quot;},{&quot;title&quot;:&quot;Le catch silencieux&quot;,&quot;body&quot;:&quot;Si le JWT est invalide (corrompu, expiré, signé avec un autre secret), on log mais on continue. Pourquoi ? Parce qu'on veut quand même supprimer le cookie côté client, même si la session est déjà cassée.&quot;,&quot;scope&quot;:&quot;46-65&quot;,&quot;focus&quot;:&quot;59-61&quot;},{&quot;title&quot;:&quot;Suppression du cookie côté navigateur&quot;,&quot;body&quot;:&quot;cookieStore.delete envoie une instruction au navigateur de supprimer le cookie. Cette opération est cruciale : sans elle, le navigateur continuerait à envoyer le token à chaque requête, et l'utilisateur verrait des erreurs partout sans comprendre pourquoi il n'arrive plus à se connecter.&quot;,&quot;scope&quot;:&quot;46-65&quot;,&quot;focus&quot;:&quot;63-63&quot;}]"
+/>
+
+---
+
+## Pourquoi les deux opérations sont nécessaires
+
+Imaginons que nous n'effacions que la session DB sans supprimer le cookie. À la prochaine requête :
+
+- le navigateur envoie toujours le cookie
+- `getSessionFromRequest` vérifie le JWT (signature valide)
+- `getSessionFromRequest` cherche la session en base (introuvable)
+- Retour `null`
+
+L'utilisateur est bien déconnecté **fonctionnellement**. Mais son navigateur continue d'envoyer un cookie inutile à chaque requête. Et surtout, il ne peut pas se reconnecter sans intervention manuelle, parce que le navigateur tente toujours d'utiliser cet ancien cookie.
+
+Inversement, si nous ne supprimions que le cookie sans toucher à la base : la session reste active en DB. Elle ne sera purgée que par le `expiresAt` ou par le cron. Pendant tout ce temps, la ligne occupe de l'espace et figure dans les stats de sessions actives.
+
+**Les deux suppressions sont complémentaires.** Aucune n'est suffisante seule.
+
+---
+
+<Callout type="warning">
+Quand un logout ne supprime pas le cookie, l'utilisateur est "déconnecté" côté DB mais "connecté" côté navigateur.
+
+Cet état incohérent est la source de bugs très difficiles à reproduire et à diagnostiquer.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le logout est propre. Mais toutes les sessions ne meurent pas par logout explicite — certaines sont simplement abandonnées. Sans cleanup, la table Session gonfle indéfiniment. C'est le problème qu'attaque la section suivante.
+
+---
+
+## 14 — Le cycle de vie : `sessionCleanup` (cron)
+
+Nous avons vu deux mécanismes de nettoyage des sessions expirées :
+
+- **lazy** dans `getSessionFromRequest` (nettoie quand on essaie d'utiliser une session expirée)
+- **explicite** au logout (suppression directe)
+
+Mais il manque un cas : les sessions abandonnées. L'utilisateur ferme son navigateur et ne revient jamais. Sa session expire, mais personne ne la lit pour déclencher le cleanup lazy.
+
+C'est le rôle du cron.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/session/sessionCleanup.ts"
+  filename="sessionCleanup.ts"
+  snippetRange="1-40"
+  snippetHighlight="11-40"
+  snippetTitle="sessionCleanup : un nettoyage périodique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du cron
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/lib/session/sessionCleanup.ts"
+  filename="sessionCleanup.ts"
+  snippetRange="1-40"
+  title="Le nettoyage automatique des sessions expirées"
+  stepsJson="[{&quot;title&quot;:&quot;cleanupExpiredSessions : la requête de purge&quot;,&quot;body&quot;:&quot;Une seule requête Prisma : deleteMany sur toutes les sessions dont expiresAt est dépassé. Atomique, efficace.&quot;,&quot;scope&quot;:&quot;11-26&quot;,&quot;focus&quot;:&quot;13-17&quot;},{&quot;title&quot;:&quot;Log conditionnel&quot;,&quot;body&quot;:&quot;On ne log que si des sessions ont été supprimées. Dans un projet en exploitation, ce log permet de détecter des anomalies : si soudainement on supprime des centaines de sessions, c'est peut-être qu'un bug dans la création empêche le cleanup en amont.&quot;,&quot;scope&quot;:&quot;11-26&quot;,&quot;focus&quot;:&quot;19-21&quot;},{&quot;title&quot;:&quot;startSessionCleanupCron : le démarrage périodique&quot;,&quot;body&quot;:&quot;Un setInterval qui rappelle cleanupExpiredSessions toutes les 10 minutes, et un appel immédiat au démarrage. Simple et efficace.&quot;,&quot;scope&quot;:&quot;33-40&quot;,&quot;focus&quot;:&quot;33-40&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — limites de setInterval côté serveur Next
+
+Cette implémentation fonctionne pour un projet déployé sur un serveur Node persistant (Docker, VPS, dédié).
+
+Mais elle a deux limites importantes :
+
+**1) Sur Vercel et autres environnements serverless, `setInterval` ne fonctionne pas.**  
+Les fonctions serverless démarrent à la demande et meurent rapidement. Aucun processus persistant ne peut maintenir un cron en mémoire.
+
+**2) Sur des déploiements multi-instances, le cron tournerait sur chaque instance.**  
+Plusieurs purges concurrentes — pas catastrophique pour un `deleteMany`, mais inutile.
+
+Pour un projet en production avec scaling, les alternatives sont :
+
+- **Cron externe** : un service comme Cron-job.org appelle une route HTTP dédiée (`/api/cron/cleanup-sessions`) à intervalles réguliers
+- **Vercel Cron Jobs** : si l'app est déployée sur Vercel, leur système de cron natif fait exactement cela
+- **Tâche planifiée DB** : PostgreSQL peut planifier ses propres `DELETE` via l'extension `pg_cron`
+
+Le cron actuel est suffisant pour le développement et un déploiement simple. À garder en tête pour la production.
+
+---
+
+## La triple défense contre les sessions fantômes
+
+Au total, le projet AKFC protège contre les sessions zombies par **trois mécanismes complémentaires** :
+
+<DocsTable
+  title="Les trois stratégies de nettoyage"
+  columnsJson='["Mécanisme","Quand","Ce qu’il couvre"]'
+  rowsJson='[["Cleanup lazy (getSessionFromRequest)","À chaque lecture d’une session expirée","Les sessions expirées d’utilisateurs encore actifs"],["Suppression explicite (logout)","À la demande de l’utilisateur","Les sessions volontairement terminées"],["Cron périodique (sessionCleanup)","Toutes les 10 minutes","Les sessions abandonnées sans logout"]]'
+/>
+
+Chaque mécanisme couvre un cas que les autres ne couvrent pas. Ensemble, ils garantissent que la table `Session` ne grossit jamais indéfiniment.
+
+---
+
+👉 **Où nous en sommes :** toute la mécanique normale de vie et de mort d'une session est en place. Reste le cas le plus sensible, celui qui concentre le plus de pièges de sécurité : le reset password.
+
+---
+
+## 15 — Le reset password : un sous-flux complet et sensible
+
+Le reset password est un mécanisme à part. Il mérite une attention particulière parce qu'il est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C'est donc une cible privilégiée pour les attaquants.
+
+Le projet AKFC implémente ce flux en deux procédures distinctes : `requestPasswordReset` (l'utilisateur demande un email de reset) et `resetPassword` (l'utilisateur clique sur le lien et change son mot de passe).
+
+Voyons d'abord le service qui les soutient.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetRange="1-22"
+  snippetHighlight="11-21"
+  snippetTitle="Le service de reset password : un token + son hash"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du service de reset
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetRange="1-22"
+  title="Pourquoi deux constantes et deux fonctions"
+  stepsJson="[{&quot;title&quot;:&quot;TTL court — 30 minutes&quot;,&quot;body&quot;:&quot;Le token de reset expire vite. Trente minutes laissent largement le temps à l'utilisateur de cliquer sur le lien dans son email, mais réduisent la fenêtre d'attaque si l'email est intercepté.&quot;,&quot;scope&quot;:&quot;1-22&quot;,&quot;focus&quot;:&quot;9-9&quot;},{&quot;title&quot;:&quot;Cooldown anti-spam — 2 minutes&quot;,&quot;body&quot;:&quot;Entre deux demandes consécutives, l'utilisateur doit attendre 2 minutes. Cette protection empêche un attaquant (ou un script) de spammer l'inbox d'un utilisateur ciblé avec des centaines d'emails de reset.&quot;,&quot;scope&quot;:&quot;1-22&quot;,&quot;focus&quot;:&quot;10-10&quot;},{&quot;title&quot;:&quot;createPasswordResetToken : génération aléatoire&quot;,&quot;body&quot;:&quot;crypto.randomBytes(32) produit 32 octets aléatoires (256 bits d'entropie), formatés en hexadécimal — soit 64 caractères imprévisibles. Cette quantité d'entropie rend le brute-force totalement irréalisable.&quot;,&quot;scope&quot;:&quot;1-22&quot;,&quot;focus&quot;:&quot;13-17&quot;},{&quot;title&quot;:&quot;hashResetToken : SHA-256 du token&quot;,&quot;body&quot;:&quot;Le token brut est hashé avant stockage. Pourquoi pas bcrypt ? Parce que bcrypt est conçu pour des secrets faibles (mots de passe humains). Notre token, lui, contient déjà 256 bits d'entropie — un simple SHA-256 suffit largement, et est beaucoup plus rapide.&quot;,&quot;scope&quot;:&quot;1-22&quot;,&quot;focus&quot;:&quot;19-21&quot;}]"
+/>
+
+---
+
+## Le pattern token brut + token hashé
+
+C'est un pattern de sécurité classique mais souvent mal compris.
+
+Le service génère **un seul token** initialement, puis en dérive deux représentations :
+
+- **Le token brut** est envoyé dans l'email à l'utilisateur. C'est lui qui apparaît dans le lien `?token=abc123...`
+- **Le hash du token** est stocké en base. C'est ce qui est dans la table `PasswordResetToken.tokenHash`
+
+Quand l'utilisateur clique sur le lien et que le backend reçoit le token brut, il le hashe à son tour et compare avec le hash stocké.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ne pas stocker le token brut ?
+
+Imaginons que nous stockions le token brut directement en base.
+
+Si la base est compromise (fuite de données, dump SQL), tous les tokens actifs deviennent immédiatement utilisables par l'attaquant. Il peut reset n'importe quel mot de passe en attente.
+
+En stockant **le hash uniquement**, même un attaquant qui obtient un dump de la base ne peut rien faire avec : SHA-256 est non réversible. Pour utiliser un token, il faudrait connaître la valeur originale, qui n'a jamais été stockée et n'existe plus que dans l'email envoyé à l'utilisateur.
+
+C'est exactement le même principe que pour les mots de passe : nous stockons le hash, jamais la valeur en clair.
+
+---
+
+## La procédure resetPassword et la transaction
+
+C'est ici que le pattern se révèle dans toute sa rigueur.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="113-165"
+  snippetHighlight="143-163"
+  snippetTitle="resetPassword : trois opérations atomiques"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la transaction de reset
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="113-165"
+  title="Pourquoi prisma.transaction est obligatoire ici"
+  stepsJson="[{&quot;title&quot;:&quot;Vérification de validité du token&quot;,&quot;body&quot;:&quot;Trois conditions doivent être remplies : le token existe en base, il n'a pas déjà été utilisé (usedAt null), il n'est pas expiré (expiresAt futur). Si une seule échoue, BAD_REQUEST.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;128-141&quot;},{&quot;title&quot;:&quot;Le hash du nouveau mot de passe&quot;,&quot;body&quot;:&quot;bcrypt.hash avec coût 12 — exactement comme à la création de compte. Cohérence dans toute la base de code.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;143-143&quot;},{&quot;title&quot;:&quot;prisma.transaction : l'atomicité absolue&quot;,&quot;body&quot;:&quot;Toutes les opérations qui suivent sont enveloppées dans une transaction. Soit elles réussissent toutes, soit aucune n'est appliquée. Pas d'état intermédiaire incohérent possible.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;145-145&quot;},{&quot;title&quot;:&quot;Mise à jour du mot de passe et reset isFirstLogin&quot;,&quot;body&quot;:&quot;Le hash est stocké et isFirstLogin est mis à false. C'est cohérent : reset password compte comme une vraie connexion, l'utilisateur n'est plus dans son état d'inscription initial.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;146-152&quot;},{&quot;title&quot;:&quot;Invalidation du token utilisé&quot;,&quot;body&quot;:&quot;On marque le token comme utilisé (usedAt = now). Sans cela, l'attaquant qui aurait obtenu le lien pourrait s'en servir plusieurs fois.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;154-157&quot;},{&quot;title&quot;:&quot;Suppression de toutes les sessions actives — étape critique&quot;,&quot;body&quot;:&quot;C'est l'opération la plus importante du flux. Si l'utilisateur reset son mot de passe parce qu'il pense avoir été compromis, il faut déconnecter immédiatement toute session que l'attaquant aurait ouverte. session.deleteMany sur tous les userId concernés règle cela en une instruction.&quot;,&quot;scope&quot;:&quot;113-165&quot;,&quot;focus&quot;:&quot;159-161&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi `prisma.$transaction` ?
+
+Sans transaction, imaginons que les opérations s'exécutent séquentiellement et qu'une erreur survienne au milieu.
+
+**Scénario d'horreur** : le mot de passe est mis à jour, puis le serveur crash juste avant l'invalidation du token. Conséquence : le token reste utilisable, et l'attaquant peut reset le mot de passe à nouveau. L'utilisateur perd définitivement le contrôle de son compte.
+
+Avec `prisma.$transaction`, soit **les trois opérations réussissent ensemble**, soit **aucune n'est appliquée**. Pas d'état intermédiaire fragile.
+
+Cette atomicité est garantie par PostgreSQL : la transaction est un mécanisme de la base de données elle-même, pas une convention applicative. Le moteur maintient un journal des opérations, et en cas d'interruption, il annule tout ce qui n'a pas été committé.
+
+C'est exactement ce qu'on attend d'un système qui touche à la sécurité — pas de zone grise possible.
+
+---
+
+<Callout type="warning">
+Quand plusieurs opérations doivent réussir ou échouer ensemble pour préserver la cohérence, prisma.$transaction n'est pas un bonus.
+
+C'est une obligation.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** toutes les façons dont une session peut naître, vivre, être lue, détruite, nettoyée ou révoquée sont désormais couvertes. Le second mouvement est complet.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+À la fin de ce deuxième mouvement, voilà ce qui se passe à chaque requête d'un utilisateur déjà authentifié :
+
+<ArchitectureDiagram
+  steps="Cookie reçu | JWT vérifié | Session DB relue | expiresAt validé | Mapping DTO | ctx.sessionClient | procédure exécutée"
+/>
+
+Et quand l'utilisateur décide de se déconnecter, de reset son mot de passe, ou que sa session expire, le système sait exactement comment nettoyer — en base, dans le cookie, ou en masse via le cron.
+
+Le **mouvement 3** va compléter la chaîne avec les pièces périphériques : le frontend (SessionLoader, LoginForm), le proxy Next.js à la frontière réseau, la vue d'ensemble du pipeline complet, et les pièges subtils que le projet AKFC a évités sans nécessairement les documenter explicitement.
+
+---
+
+## Mouvement 3 — Les pièces périphériques
+
+Nous avons construit la naissance d'une session (Mouvement 1), puis sa vie complète à travers tout le backend (Mouvement 2).
+
+Mais l'authentification n'est jamais purement backend. Elle touche au frontend, qui doit savoir "qui suis-je" pour afficher la bonne interface. Elle touche au réseau, où un pré-filtre peut rejeter les requêtes non authentifiées avant même qu'elles n'atteignent le serveur. Et elle comporte des décisions architecturales subtiles qui ne se voient pas dans le code, mais qui protègent contre des pièges bien connus.
+
+C'est tout cela que nous allons assembler dans ce dernier mouvement.
+
+---
+
+## 🗺️ Les cinq étapes du Mouvement 3
+
+- **Section 16** — Nous traverserons la frontière vers le frontend. Nous regarderons `SessionLoader`, le composant qui hydrate l'état d'authentification au démarrage de l'application, puis `LoginForm` pour observer comment le formulaire orchestre la mutation `login` et l'appel à `getSession` qui s'ensuit.
+- **Section 17** — Nous remonterons encore plus en amont, jusqu'à `proxy.ts`, le pré-filtre Next.js qui bloque les requêtes non authentifiées à la frontière réseau. Nous verrons pourquoi Next 16 l'a renommé depuis `middleware.ts`, et quel incident de sécurité a motivé ce changement.
+- **Section 18** — Nous recomposerons toutes les pièces en une vue d'ensemble unique, permettant enfin de voir le pipeline complet du clic utilisateur jusqu'à l'exécution d'une procédure protégée.
+- **Section 19** — Nous reviendrons sur les pièges subtils que le projet AKFC a évités sans les documenter explicitement. Cette section est précieuse pour un dev junior qui veut comprendre pourquoi certaines décisions sont faites de cette façon, et pas d'une autre.
+- **Section 20** — Nous conclurons en faisant le pont vers les tutoriels suivants, qui s'appuient tous sur les garanties que ce système d'auth fournit.
+
+À la fin de ce mouvement, nous aurons une vision complète et articulée de l'authentification dans AKFC — pas seulement les mécanismes isolés, mais la façon dont ils s'assemblent pour former un système cohérent et résistant.
+
+---
+
+## 16 — Le frontend : `SessionLoader` et `LoginForm`
+
+Côté client, deux composants jouent un rôle central dans l'orchestration de l'auth.
+
+`SessionLoader` hydrate la session au démarrage de l'application. Il répond à la question "qui suis-je ?" avant même que l'utilisateur n'interagisse avec quoi que ce soit.
+
+`LoginForm` déclenche la mutation de login, et récupère la session fraîchement créée pour l'injecter dans le state global.
+
+Commençons par `SessionLoader`.
+
+---
+
+## SessionLoader : l'hydratation au démarrage
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/SessionLoader.tsx"
+  filename="SessionLoader.tsx"
+  snippetRange="1-48"
+  snippetHighlight="22-45"
+  snippetTitle="SessionLoader : hydratation de la session au démarrage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du SessionLoader
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/auth/SessionLoader.tsx"
+  filename="SessionLoader.tsx"
+  snippetRange="1-48"
+  title="Comment le frontend découvre 'qui suis-je' au démarrage"
+  stepsJson="[{&quot;title&quot;:&quot;use client : composant client obligatoire&quot;,&quot;body&quot;:&quot;Ce composant utilise useEffect, donc il doit tourner côté client. La directive use client le marque explicitement comme tel. Sans cela, Next essaierait de l'exécuter côté serveur et échouerait.&quot;,&quot;scope&quot;:&quot;1-48&quot;,&quot;focus&quot;:&quot;1-1&quot;},{&quot;title&quot;:&quot;Récupération des actions du store Zustand&quot;,&quot;body&quot;:&quot;Le composant accède aux fonctions loginSuccess, resetStatus et setLoading du store de session. Il peut ainsi piloter l'état global d'authentification de l'app.&quot;,&quot;scope&quot;:&quot;1-48&quot;,&quot;focus&quot;:&quot;20-23&quot;},{&quot;title&quot;:&quot;Appel à trpc.auth.getSession au montage&quot;,&quot;body&quot;:&quot;C'est le moment clé. Au premier rendu, on appelle getSession pour découvrir si une session existe déjà — via le cookie envoyé automatiquement par le navigateur. Cette procédure est publique, donc elle ne lève jamais d'erreur même pour un anonyme.&quot;,&quot;scope&quot;:&quot;1-48&quot;,&quot;focus&quot;:&quot;31-31&quot;},{&quot;title&quot;:&quot;Hydratation conditionnelle du store&quot;,&quot;body&quot;:&quot;Si la session existe, on hydrate le store avec ses données via loginSuccess. Sinon, on remet le statut à zéro via resetStatus. Cette logique simple permet à l'app de toujours connaître son état d'auth dès le premier render.&quot;,&quot;scope&quot;:&quot;1-48&quot;,&quot;focus&quot;:&quot;33-38&quot;}]"
+/>
+
+---
+
+`SessionLoader` est généralement placé en haut de l'arbre React, dans le layout racine de l'application. Il s'exécute une fois au montage, et garantit que tous les composants enfants ont accès à un état d'authentification cohérent dès leur premier rendu.
+
+C'est le pendant client de `getSessionFromRequest` côté serveur : les deux répondent à la même question — "qui suis-je, maintenant ?" — mais à des moments différents du cycle de vie. Le backend le fait à chaque requête entrante. Le frontend le fait une fois au démarrage, puis s'appuie sur son state global pour la suite.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi Zustand plutôt que Context ?
+
+`SessionLoader` hydrate un store Zustand, pas un Context React. Ce choix n'est pas anodin.
+
+Le pattern Context est la solution "canonique" de React pour le state global. Mais il a une limitation importante : **chaque mise à jour du Context provoque un re-render de tous les consommateurs**, même ceux qui ne sont pas concernés par le champ qui a changé.
+
+Zustand contourne ce problème en permettant des **selectors fins** : un composant peut s'abonner uniquement au champ qu'il utilise. Quand `user.avatar` change, seuls les composants qui lisent `user.avatar` re-render. Les autres restent tranquilles.
+
+Dans une application où l'état de session est lu par des dizaines de composants différents (header, sidebar, permissions checks, menus, badges), cette granularité fait une vraie différence de performance.
+
+---
+
+## LoginForm : le cœur de la soumission
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filename="LoginForm.tsx"
+  snippetRange="53-85"
+  snippetHighlight="64-82"
+  snippetTitle="Le handler de soumission du formulaire de login"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du handler
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filename="LoginForm.tsx"
+  snippetRange="53-88"
+  title="Du submit à la redirection"
+  stepsJson="[{&quot;title&quot;:&quot;preventDefault et pré-validation&quot;,&quot;body&quot;:&quot;Le handler empêche la soumission HTML classique et vérifie encore une fois le formulaire. Cette double validation (déjà faite au fur et à mesure de la saisie) garantit qu'on n'envoie jamais de requête invalide.&quot;,&quot;scope&quot;:&quot;53-88&quot;,&quot;focus&quot;:&quot;54-60&quot;},{&quot;title&quot;:&quot;Mutation trpc.auth.login&quot;,&quot;body&quot;:&quot;L'appel tRPC typé. L'email est trimé, le mot de passe est envoyé tel quel. Côté backend, le schéma Zod et le loginService prennent le relais.&quot;,&quot;scope&quot;:&quot;53-88&quot;,&quot;focus&quot;:&quot;65-68&quot;},{&quot;title&quot;:&quot;Gestion de res.success false&quot;,&quot;body&quot;:&quot;Grâce au pattern de discriminated union que nous avons vu côté router, TypeScript sait que si success est false, alors error existe. Le frontend peut traduire l'erreur (INVALID_CREDENTIALS, LOGIN_FAILED) en message utilisateur via la map AUTH_ERRORS.&quot;,&quot;scope&quot;:&quot;53-88&quot;,&quot;focus&quot;:&quot;70-73&quot;},{&quot;title&quot;:&quot;Ré-appel à trpc.auth.getSession après login&quot;,&quot;body&quot;:&quot;C'est le détail architectural à remarquer. Login ne renvoie pas directement le SessionClient complet — il renvoie juste le succès. Pour obtenir les données de session, le frontend ré-appelle getSession. Cette séparation est volontaire, voir l'encart ci-dessous.&quot;,&quot;scope&quot;:&quot;53-88&quot;,&quot;focus&quot;:&quot;75-75&quot;},{&quot;title&quot;:&quot;Hydratation du store et redirection&quot;,&quot;body&quot;:&quot;Une fois la session récupérée, on hydrate le store Zustand via loginSuccess (la même fonction qu'utilise SessionLoader), puis on redirige vers la racine. L'app affiche maintenant l'interface connectée.&quot;,&quot;scope&quot;:&quot;53-88&quot;,&quot;focus&quot;:&quot;82-83&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ne pas renvoyer la session directement depuis login ?
+
+Cette séparation mérite d'être expliquée, car elle pourrait sembler redondante à première vue.
+
+`login` pourrait techniquement renvoyer le `SessionClient` directement dans sa réponse. Cela économiserait un aller-retour réseau. Alors pourquoi ne pas le faire ?
+
+Parce que cela mélangerait **deux responsabilités distinctes** :
+
+- `login` répond à : *"est-ce que ça a marché ?"* (booléen + erreur)
+- `getSession` répond à : *"qui es-tu ?"* (le SessionClient complet)
+
+En séparant ces deux rôles, nous obtenons plusieurs bénéfices :
+
+- `getSession` devient **réutilisable indépendamment** du login : au démarrage de l'app (SessionLoader), après une modification de profil (invalidation de cache), après un reset password, après n'importe quel événement qui pourrait modifier la session
+- `login` reste **focalisé sur sa seule responsabilité** — authentifier, pas projeter
+- Le contrat de retour de `login` reste **minimal et stable** : même si `SessionClient` évolue, la signature de `login` ne change pas
+
+C'est un principe de conception classique : **une fonction, une responsabilité**. Le coût d'un aller-retour réseau supplémentaire est négligeable comparé à la clarté architecturale gagnée.
+
+---
+
+<Callout type="concept">
+Le frontend miroite la discipline du backend.
+
+Deux appels, deux responsabilités. Le coût est imperceptible pour l'utilisateur, mais la clarté pour le développeur est immense.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le frontend sait dialoguer avec le backend pour connaître et créer une session. Mais il existe une couche encore plus en amont — avant même que le backend ne voie la requête. C'est le proxy Next.js, que nous ouvrons maintenant.
+
+---
+
+## 17 — Le proxy : pré-filtre à la frontière réseau
+
+Avant qu'une requête n'atteigne tRPC, elle passe par une couche encore plus en amont : `proxy.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/proxy.ts"
+  filename="proxy.ts"
+  snippetRange="1-54"
+  snippetHighlight="35-52"
+  snippetTitle="proxy.ts : pré-filtre d'authentification au niveau réseau"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du proxy
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/proxy.ts"
+  filename="proxy.ts"
+  snippetRange="1-54"
+  title="Le portier du club, à l'entrée de l'application"
+  stepsJson="[{&quot;title&quot;:&quot;PUBLIC_PATHS : la liste blanche&quot;,&quot;body&quot;:&quot;Certaines routes doivent rester accessibles sans authentification : la racine, les pages d'auth elles-mêmes, les routes API, les assets Next, les docs. Cette liste est la première décision du proxy — qu'est-ce qui passe sans vérification ?&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;7-14&quot;},{&quot;title&quot;:&quot;isPublicPath : matching par préfixe&quot;,&quot;body&quot;:&quot;La fonction accepte un chemin qui commence par n'importe lequel des PUBLIC_PATHS. Cela permet d'inclure automatiquement /auth/login, /auth/reset-password, /api/trpc/anything, etc. sans les lister individuellement.&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;27-31&quot;},{&quot;title&quot;:&quot;Cas nominal : chemin public, on laisse passer&quot;,&quot;body&quot;:&quot;Si la requête va vers un chemin public, le proxy ne fait rien : NextResponse.next() indique à Next de continuer normalement.&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;36-38&quot;},{&quot;title&quot;:&quot;Absence de cookie : redirection immédiate&quot;,&quot;body&quot;:&quot;Pour toute route protégée, la première vérification est la présence du cookie d'authentification. Absent ? Redirection vers la racine. On ne consulte même pas la base de données — c'est un rejet rapide au niveau réseau.&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;40-43&quot;},{&quot;title&quot;:&quot;Vérification de signature JWT uniquement&quot;,&quot;body&quot;:&quot;Si un cookie est présent, on vérifie sa signature cryptographique. C'est la deuxième et dernière vérification du proxy. Il ne consulte JAMAIS la base de données — ce serait bien trop coûteux à ce niveau.&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;49-52&quot;},{&quot;title&quot;:&quot;Silence sur les erreurs&quot;,&quot;body&quot;:&quot;Si jwt.verify jette, le catch redirige silencieusement. Pas d'erreur explicite exposée — juste un retour à la racine, comme si l'utilisateur n'avait jamais été connecté.&quot;,&quot;scope&quot;:&quot;1-54&quot;,&quot;focus&quot;:&quot;50-52&quot;}]"
+/>
+
+---
+
+## 🔭 Pour aller plus loin — proxy.ts en Next.js 16
+
+Next.js 16 a introduit `proxy.ts` pour remplacer l'ancienne convention `middleware.ts`. Le renommage n'est pas cosmétique.
+
+Le terme "middleware" prêtait à confusion avec Express.js, où un middleware peut porter beaucoup de logique applicative. En réalité, dans Next.js, ce fichier vit à la **frontière réseau** — entre le client et le serveur — et n'est PAS censé porter de logique métier.
+
+Le nouveau nom "proxy" rend cette intention explicite : c'est un proxy au sens classique du terme — un filtre qui intercepte les requêtes avant qu'elles n'atteignent l'application.
+
+Ce changement répond aussi à un incident de sécurité réel : en mars 2025, une vulnérabilité critique (**CVE-2025-29927**) a permis à des attaquants de bypasser totalement les vérifications d'autorisation effectuées dans le middleware Next.js, simplement en ajoutant un header HTTP `x-middleware-subrequest`. Cette faille a touché toutes les versions entre Next 11.1.4 et 15.2.2.
+
+L'enseignement de cet incident est central : **un proxy ne doit JAMAIS être la seule couche de sécurité**. Il filtre, il pré-rejette, il améliore les performances en bloquant tôt — mais la validation canonique doit toujours vivre plus en aval, dans le backend lui-même.
+
+C'est exactement le principe que le projet AKFC suit.
+
+---
+
+## Le rôle exact du proxy dans la chaîne d'auth
+
+`proxy.ts` fait deux choses, pas plus :
+
+- vérifie la **présence** du cookie d'authentification
+- vérifie la **signature** du JWT
+
+Il ne fait PAS :
+
+- de lookup en base de données (trop coûteux à ce niveau)
+- de lecture des permissions (ce n'est pas son rôle)
+- de chargement de l'utilisateur complet (c'est la responsabilité du backend)
+- de vérification de l'expiration côté serveur (le backend le fait mieux avec le cleanup lazy)
+
+---
+
+👉 **En cas d'échec**, le proxy redirige vers la racine. Pas d'erreur explicite. Pas de page d'erreur. Le proxy comme le vrai portier d'un club : il ne discute pas, il renvoie simplement.
+
+👉 **En cas de succès**, il laisse passer la requête. Mais son succès n'est qu'un feu vert préliminaire. La **validation canonique** est encore à venir, côté backend.
+
+---
+
+## La division du travail entre proxy et backend
+
+<DocsTable
+  title="Qui vérifie quoi ?"
+  columnsJson='["Couche","Ce qu’elle vérifie","Ce qu’elle ne fait pas"]'
+  rowsJson='[["proxy.ts","Présence du cookie, signature du JWT","Lookup DB, permissions, user complet"],["getSessionFromRequest","Tout ce qui précède + existence en base + expiration + mapping","Autorisation (laissée au middleware RBAC)"],["protectedProcedure","Tout ce qui précède + requalification du type","Règles métier spécifiques à la procédure"],["requirePermission / isAdmin","Tout ce qui précède + droit d’accès précis","Validation de l’input, exécution métier"]]'
+/>
+
+Chaque couche ajoute quelque chose que les précédentes n'ont pas fait. Aucune ne doublonne inutilement. Et surtout : **si une couche tombe**, les autres continuent de protéger. C'est la définition même de la défense en profondeur.
+
+---
+
+<Callout type="warning">
+Un proxy qui porte SEUL la sécurité est une bombe à retardement.
+
+La CVE-2025-29927 a montré qu'un bypass au niveau middleware peut compromettre toute une application. La seule protection fiable est de faire vivre la vérification canonique PLUS BAS dans la pile, là où elle ne peut pas être contournée.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** toutes les pièces sont sur la table. Frontière réseau avec le proxy, chaîne backend avec getSessionFromRequest et createTRPCContext, exposition métier avec protectedProcedure, frontend avec SessionLoader et LoginForm. Il est temps de tout recomposer en une vue d'ensemble.
+
+---
+
+## 18 — La vue d'ensemble : le cycle complet
+
+Mettons maintenant toutes les pièces côte à côte pour visualiser ce qui se passe, concrètement, quand un utilisateur utilise AKFC.
+
+---
+
+## Le parcours complet d'un clic
+
+Imaginons un utilisateur qui vient de se connecter et qui clique sur un lien menant à `/dashboard`. Voici ce que le système traverse :
+
+<ArchitectureDiagram
+  steps="Clic utilisateur | Navigateur | Cookie __session | proxy.ts | JWT verify | Next.js App Router | Page dashboard | Server Component | Appel tRPC | createTRPCContext | getSessionFromRequest | jwt.verify | prisma.session.findUnique | mapSessionDBToSessionClient | ctx.sessionClient | protectedProcedure | requirePermission | Service métier | Prisma | DTO | Réponse | SessionLoader | Store Zustand | Rendu React"
+/>
+
+---
+
+Cette chaîne n'est pas théorique. Chaque étape correspond à un fichier réel, à une fonction que nous avons lue ensemble.
+
+---
+
+## Qui fait quoi dans le pipeline
+
+<DocsTable
+  title="Cartographie complète des responsabilités"
+  columnsJson='["Pièce","Rôle","Mouvement"]'
+  rowsJson='[["LoginForm","Formulaire de connexion, orchestre login + getSession","3"],["auth.schema.ts (Zod)","Validation de la forme des identifiants","1"],["loginService","Vérification métier du mot de passe, normalisation","1"],["createSessionJWT","Création Session DB + signature JWT + pose cookie","1"],["Cookie __session","Transport httpOnly/secure du JWT","1"],["proxy.ts","Pré-filtre réseau — signature JWT uniquement","3"],["getSessionFromRequest","Reconstruction de la session à chaque requête","2"],["mapSessionDBToSessionClient","Projection DB vers DTO partagé","2"],["createTRPCContext","Injection de sessionClient dans ctx","2"],["protectedProcedure","Blocage des anonymes + requalification du type","2"],["requirePermission / isAdmin","Vérification RBAC","2"],["Service métier","Logique applicative qui exploite ctx.sessionClient","2"],["SessionClient (contrat)","Forme stable entre backend et frontend","1"],["SessionLoader","Hydratation de la session au démarrage frontend","3"],["useSessionStore","State global d’auth côté client","3"],["deleteSessionFromCookie","Révocation double (DB + cookie)","2"],["sessionCleanup (cron)","Nettoyage périodique des sessions expirées","2"],["passwordReset.service","Token brut + hash SHA-256 pour reset","2"]]'
+/>
+
+---
+
+## Le principe de défense en profondeur
+
+Une idée traverse toute cette architecture : **aucune couche ne fait confiance à celle qui la précède**. Chaque étape vérifie ce qu'elle doit vérifier, même si une étape antérieure a déjà vérifié quelque chose de similaire.
+
+Exemple concret : l'expiration de la session. Elle est vérifiée à trois niveaux :
+
+- le **JWT** a son propre `expiresIn` (7 jours)
+- la **Session DB** a son propre `expiresAt` (7 jours aussi)
+- `getSessionFromRequest` compare `expiresAt` avec `now()` à chaque requête
+
+Si le JWT expire avant la Session DB, `jwt.verify` échoue et retourne null. Si la Session DB expire avant le JWT, la vérification `expiresAt` échoue et retourne null. Si les deux sont synchronisées, peu importe — l'expiration est détectée quand même.
+
+Cette redondance n'est pas de la paranoïa. C'est la garantie que même en cas de désynchronisation (décalage d'horloge serveur, bug de création, intervention manuelle en base), le système se comporte de façon **sûre par défaut**.
+
+---
+
+<Callout type="concept">
+La défense en profondeur consiste à superposer des couches qui se protègent mutuellement.
+
+Une couche tombe ? Les autres continuent. C'est plus coûteux à mettre en place, mais infiniment plus résilient qu'une protection unique "parfaite".
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le système complet est visible. Mais certaines décisions architecturales méritent d'être regardées pour elles-mêmes — des pièges subtils que le projet a évités sans les documenter. C'est ce que nous faisons dans la prochaine section.
+
+---
+
+## 19 — Les pièges que nous avons évités sans le dire
+
+Nous avons lu beaucoup de code. Mais certaines décisions architecturales de AKFC ne sont pas visibles dans le code — elles sont visibles dans **ce qui n'y est pas**.
+
+Cette section liste les pièges que le projet a évités, pour qu'un dev junior puisse les reconnaître et ne jamais les reproduire ailleurs.
+
+---
+
+## Piège 1 — Dupliquer le rôle dans la Session
+
+**L'erreur** : Ajouter un champ `role` dans la table `Session` pour éviter le join à chaque requête.
+
+**Ce que ça casse** : quand un admin change le rôle d'un utilisateur, toutes les sessions actives continuent à porter l'ancien rôle jusqu'à leur expiration (7 jours dans ce projet). Le changement n'a aucun effet immédiat — ce qui est exactement l'inverse de ce qu'on attend d'un changement de rôle.
+
+**La solution AKFC** : la migration `remove_session_role` a explicitement retiré ce champ. Le rôle est toujours lu depuis `User` à chaque requête. Un changement de rôle est donc propagé **immédiatement** sur toutes les sessions actives de l'utilisateur concerné.
+
+---
+
+## Piège 2 — Exposer le mot de passe hashé côté client
+
+**L'erreur** : Faire `return user` depuis un endpoint, ou un `findUnique` sans `select`. Le hash bcrypt sort alors vers le client.
+
+**Ce que ça casse** : même si bcrypt est conçu pour résister au cracking, exposer le hash est une faute grave. Si la base est plus tard compromise et que les hashes sont déjà dans la nature via un endpoint buggé, les attaquants ont beaucoup plus de temps pour les cracker hors ligne. Et certains mots de passe courts ou faibles finiront toujours par tomber.
+
+**La solution AKFC** : le DTO `SessionClient` n'expose **aucun champ password**. Le mapping `mapSessionDBToSessionClient` ne le copie pas. Même si quelqu'un tente un `ctx.prisma.user.findUnique()` et retourne l'objet brut, TypeScript le signale via la vérification contre `SessionClient`. C'est une protection par construction, pas par vigilance.
+
+---
+
+## Piège 3 — Différencier "utilisateur inconnu" et "mot de passe incorrect"
+
+**L'erreur** : Renvoyer `USER_NOT_FOUND` quand l'email n'existe pas, et `INVALID_PASSWORD` quand le mot de passe est faux.
+
+**Ce que ça casse** : un attaquant peut **énumérer les comptes** du système en testant des emails. "User not found" → email pas dans la base. "Invalid password" → email présent. En quelques minutes de script, il obtient une liste d'emails valides, prête à être attaquée par phishing ou brute-force.
+
+**La solution AKFC** : `INVALID_CREDENTIALS` pour les deux cas. L'attaquant ne peut pas distinguer. C'est un petit sacrifice d'ergonomie (l'utilisateur légitime ne sait pas s'il s'est trompé d'email ou de mot de passe) pour un gain énorme en sécurité.
+
+---
+
+## Piège 4 — Stocker le token de reset password en clair
+
+**L'erreur** : stocker directement dans `PasswordResetToken.token` la valeur envoyée dans l'email.
+
+**Ce que ça casse** : si la base est compromise (dump SQL, fuite de données), tous les tokens actifs deviennent immédiatement utilisables par l'attaquant. Il peut reset n'importe quel mot de passe en attente.
+
+**La solution AKFC** : le token brut est envoyé dans l'email, mais seul son **hash SHA-256** est stocké en base. Un dump SQL donne des hashes non réversibles. Pour utiliser un token, il faudrait connaître la valeur originale — qui n'existe plus que dans l'email du destinataire.
+
+---
+
+## Piège 5 — Oublier de révoquer les sessions lors du reset password
+
+**L'erreur** : Mettre à jour le mot de passe, invalider le token, et s'arrêter là.
+
+**Ce que ça casse** : si l'utilisateur a reset son mot de passe parce qu'il pense avoir été compromis (mail de phishing, PC partagé, suspicion de hack), toute session ouverte par l'attaquant reste active. Le nouveau mot de passe ne sert à rien tant que l'attaquant a un cookie valide dans son navigateur.
+
+**La solution AKFC** : la transaction `resetPassword` exécute `session.deleteMany` sur toutes les sessions de l'utilisateur. Après le reset, plus aucun cookie existant n'est valide. L'attaquant, s'il y en a un, est déconnecté instantanément.
+
+---
+
+## Piège 6 — Oublier la transaction dans une opération composée
+
+**L'erreur** : Exécuter les opérations du reset password séquentiellement, sans enveloppe transactionnelle.
+
+**Ce que ça casse** : si une étape échoue au milieu (crash serveur, déconnexion réseau, erreur Prisma), certaines modifications sont appliquées et d'autres non. Le système se retrouve dans un état incohérent. Dans le pire scénario : le mot de passe est changé, mais le token de reset n'est pas invalidé — l'attaquant peut reset une deuxième fois.
+
+**La solution AKFC** : `prisma.$transaction` enveloppe les trois opérations critiques. Soit tout réussit, soit tout échoue. Pas d'état intermédiaire possible. PostgreSQL garantit cette atomicité au niveau moteur.
+
+---
+
+## Piège 7 — Faire confiance au proxy pour la sécurité canonique
+
+**L'erreur** : Écrire une authentification complète dans `middleware.ts` ou `proxy.ts`, considérant que si la requête arrive à la route, elle est déjà validée.
+
+**Ce que ça casse** : la CVE-2025-29927 a démontré que Next.js pouvait laisser passer des requêtes qui contournent le middleware, via un simple header HTTP `x-middleware-subrequest`. Toute application qui faisait reposer sa sécurité uniquement sur le middleware était vulnérable.
+
+**La solution AKFC** : le proxy ne fait que **deux choses** — présence du cookie, signature du JWT. La validation canonique (existence en base, expiration, permissions, règles métier) vit plus bas, dans `getSessionFromRequest`, `createTRPCContext`, `protectedProcedure`, et les middlewares RBAC. Le proxy est un filtre d'optimisation, pas un garde-fou unique.
+
+---
+
+<Callout type="insight">
+Ces sept pièges ne sont pas visibles dans le code du projet.
+
+Ils sont visibles dans **l'absence** de code — dans les décisions qui n'ont pas été prises, dans les raccourcis qui n'ont pas été empruntés.
+
+C'est ce qu'on appelle une architecture mature : pas seulement faire les bonnes choses, mais savoir ne pas faire les mauvaises.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous avons tout exploré. La mécanique, l'articulation des pièces, la vue d'ensemble, les pièges évités. Il est temps de boucler.
+
+---
+
+## 20 — Conclusion et bridge vers la suite
+
+Nous avons parcouru un chemin considérable.
+
+Parti d'une question silencieuse — *"qui parle au backend en ce moment ?"* — nous avons construit, couche par couche, un système d'authentification complet, résilient, et cohérent avec le reste de l'architecture du projet.
+
+---
+
+## Ce que nous avons appris
+
+Trois idées maîtresses traversent ce tutoriel :
+
+**1. L'auth est une chaîne de responsabilités.**  
+Aucun fichier ne porte à lui seul l'authentification. Elle vit dans le service de login, la création de JWT, le cookie, le proxy, `getSessionFromRequest`, le mapping, le contexte tRPC, `protectedProcedure`, le frontend, le cron de nettoyage, le reset password, et les règles métier. Chaque pièce a un rôle précis, et c'est leur articulation qui fait la qualité du système.
+
+**2. La sécurité est une affaire de défense en profondeur.**  
+Nous avons superposé des couches qui se protègent mutuellement. Le JWT est signé, mais la session est aussi en base. La session est en base, mais son expiration est vérifiée aussi dans le JWT. Le proxy filtre, mais le backend re-vérifie tout. Cette redondance n'est pas un gaspillage — c'est la condition pour qu'aucune faille unique ne puisse compromettre le système.
+
+**3. Un bon backend est un backend "confiant".**  
+Une fois que toutes les garanties sont en place en amont, le code métier peut s'écrire sans défenses. `ctx.sessionClient.user.id` sans `?`. Pas de `if (!user) throw`. Pas de vérification défensive. Parce que la chaîne a déjà fait son travail.
+
+---
+
+## Les prochaines étapes
+
+Tout ce que nous avons construit dans ce tutoriel est **utilisé** dans les tutoriels suivants. Voici comment :
+
+**Gestion des médias avec Cloudinary.**  
+Chaque upload est une `protectedProcedure` qui lit `ctx.sessionClient.user.id` pour associer le média à son propriétaire. La signature Cloudinary est générée côté serveur pour que l'utilisateur ne puisse jamais falsifier son identité au moment de l'upload.
+
+**Le Finder Cloudinary.**  
+Les permissions RBAC entrent en jeu : seuls les utilisateurs avec `manage_media` peuvent voir tous les médias. Les autres ne voient que les leurs. Cette logique de filtrage s'appuie intégralement sur `ctx.sessionClient.user.role.permissions`.
+
+**La corbeille.**  
+Le soft-delete enregistre qui a supprimé quoi via `ctx.sessionClient.user.id`. Le restore vérifie que l'utilisateur qui restaure a bien le droit de le faire. Toute cette traçabilité repose sur la fiabilité du contexte tRPC que nous avons construit ici.
+
+**L'éditeur Tiptap.**  
+Les sauvegardes automatiques passent par des `protectedProcedure`. Les conflits de version sont résolus en tenant compte de qui a modifié quoi, et quand. Encore une fois, `ctx.sessionClient` est le point de référence.
+
+---
+
+## La boucle est bouclée
+
+Nous avions commencé le tutoriel tRPC en construisant un backend typé, structuré, avec un contexte injecté. Nous ne savions pas encore d'où venait ce contexte.
+
+Nous savons maintenant.
+
+Et nous savons aussi pourquoi ce contexte est **fiable** — pas parce que TypeScript nous le garantit (il ne le peut pas), mais parce que toute une chaîne de vérifications, de mappings, de transactions, de middlewares et de filtres s'assure qu'il l'est.
+
+C'est cette fiabilité qui permet à tout le reste de l'application d'exister sans plier sous le poids de vérifications défensives répétées. C'est ce qui permet aux procédures métier de rester courtes, lisibles, et concentrées sur leur vraie responsabilité.
+
+---
+
+<Callout type="concept">
+L'authentification n'est pas une feature.
+
+C'est une infrastructure silencieuse, qui fait son travail en arrière-plan pour que tout le reste du code puisse être simple.
+
+Un système d'auth réussi, c'est un système qu'on ne remarque plus.
+</Callout>
+
+---
+
+🎯 La prochaine étape naturelle est le **tutoriel sur la gestion des médias avec Cloudinary**, qui va exploiter tout ce que nous venons de construire pour associer chaque fichier uploadé à son propriétaire, gérer les permissions de lecture, et préparer le terrain pour le Finder Cloudinary et la corbeille.
+
+Tout ce qui suit repose sur ce que nous avons bâti ici.
+
+Et ce qui était une question silencieuse — *"qui parle au backend en ce moment ?"* — a maintenant une réponse claire, précise, et reproductible, exactement comme doit l'être toute bonne architecture.
