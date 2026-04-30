@@ -1,4 +1,4 @@
-import { FolderStatus } from "packages/contracts/src/cloudinary/folder.types";
+import { FolderStatus } from "@contracts/cloudinary/folder.types";
 
 export type VirtualTarget = {
   type: 'virtual';

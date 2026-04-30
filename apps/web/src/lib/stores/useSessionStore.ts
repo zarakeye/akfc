@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { trpcClient } from "@/core/trpc/trpcClient";
-import { SessionClient } from "packages/contracts/src/auth/session.types";
+import { trpcClient } from "@trpc/trpcClient";
+import { SessionClient } from "@contracts/auth/session.types";
 
 export type SessionStatus =
   | "idle" // app faîchement ouverte, aucune action

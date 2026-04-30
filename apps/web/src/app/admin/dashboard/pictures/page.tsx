@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import FinderLayout from '@/features/cloudinary-finder/ui/layout/FinderLayout';
+import FinderLayout from '@features/cloudinary-finder/ui/layout/FinderLayout';
 
 /**
  * Page de gestionnaire de galerie.

@@ -1,6 +1,34 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["mdx"],
+    "paths": {
+      "@/*": ["./src/*"],  // indispensable pour shadcn/ui
+      "@web/*": ["./src/*"],
+      "@app/*": ["./src/app/*"],
+      "@contracts/*": ["../../packages/contracts/src/*"],
+      "@backend/*": ["../../packages/backend/src/*"],
+      "@features/*": ["./src/features/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@types/*": ["./src/types/*"],
+      "@trpc/*": ["./src/core/trpc/*"]
+    }
   },
-  "extends": "../../tsconfig.base.json",
+  "include": [
+    "next-env.d.ts",
+    "instrumentation.ts",                                                                                                                                                               
+    "src",
+    "app",
+    "components",
+    "features",
+    "hooks",
+    "lib",
+    "styles",
+    "types",
+    "../../packages/contracts/src/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import PermissionsList from '@/features/admin/permissions/components/PermissionsList';
+import PermissionsList from '@features/admin/permissions/components/PermissionsList';
 
 /**
  * Component displaying the list of all permissions in the application.

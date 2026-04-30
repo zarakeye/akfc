@@ -3,9 +3,9 @@
 import { JSX, useRef } from 'react';
 import Image from 'next/image';
 
-import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
+import { useLongPress } from '@features/cloudinary-finder/hooks/useLongPress';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import { getMediaUrl } from '@features/cloudinary-finder/utils/getMediaUrl';
 
 type Props = {
   trashId: string;

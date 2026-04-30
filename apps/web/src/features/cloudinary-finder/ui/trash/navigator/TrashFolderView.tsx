@@ -1,10 +1,10 @@
 'use client';
 
 import { JSX } from 'react';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
-import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
-import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
+import BinGridFolderItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
+import BinGridFileItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
 
 type Props = {
   appRoot: string;

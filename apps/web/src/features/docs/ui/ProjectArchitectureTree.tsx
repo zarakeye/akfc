@@ -1,5 +1,5 @@
-import { getArchitectureTree } from "@/features/docs/lib/getArchitectureTree"
-import type { TreeNode } from "@/features/docs/lib/projectTree"
+import { getArchitectureTree } from "@features/docs/lib/getArchitectureTree"
+import type { TreeNode } from "@features/docs/lib/projectTree"
 
 /**
  * A recursive component to display a tree view of the monorepo's file structure.

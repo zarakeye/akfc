@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX } from 'react';
-import { CreatePermissionForm } from "@/features/admin/permissions/forms/CreatePermissionForm";
+import { CreatePermissionForm } from "@features/admin/permissions/forms/CreatePermissionForm";
 
 /**
  * Page to create a new permission.

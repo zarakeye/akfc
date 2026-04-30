@@ -1,21 +1,21 @@
 import { z } from "zod";
 
-import { router, protectedProcedure } from "../../trpc/core";
-import { isAdmin } from "../../trpc/middleware";
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 
-import type { ListBinOutput } from "@workspace/contracts/src/trash/trash.dto";
-import type { ReadTrashFolderOutput } from "@workspace/contracts/src/trash/trash-node.types";
+import type { ListBinOutput } from "@contracts/trash/trash.dto";
+import type { ReadTrashFolderOutput } from "@contracts/trash/trash-node.types";
 import type {
   TrashToBinOutput,
   RestoreFromBinOutput,
   DeleteForeverOutput,
-} from "@workspace/contracts/src/trash/trash.mutations";
+} from "@contracts/trash/trash.mutations";
 
-import { listBin } from "./services/listBin.service";
-import { readTrashFolder } from "./services/readTrashFolder.service";
-import { trashToBin } from "./services/trashToBin.service";
-import { restoreFromBin } from "./services/restoreFromBin.service";
-import { deleteForever } from "./services/deleteForever.service";
+import { listBin } from "@backend/modules/trash/services/listBin.service";
+import { readTrashFolder } from "@backend/modules/trash/services/readTrashFolder.service";
+import { trashToBin } from "@backend/modules/trash/services/trashToBin.service";
+import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
+import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
 
 /**
  * trash.router.ts

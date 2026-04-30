@@ -1,24 +1,24 @@
 'use client';
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
-import type { RootNode, FolderNode } from '@workspace/contracts/src/cloudinary/finder.types';
+import type { RootNode, FolderNode } from '@contracts/cloudinary/finder.types';
 
-import VirtualFolderNodeComponent from '@/features/cloudinary-finder/ui/tree/VirtualFolderNodeComponent';
-import FolderNodeComponent from '@/features/cloudinary-finder/ui/tree/FolderNodeComponent';
+import VirtualFolderNodeComponent from '@features/cloudinary-finder/ui/tree/VirtualFolderNodeComponent';
+import FolderNodeComponent from '@features/cloudinary-finder/ui/tree/FolderNodeComponent';
 
-import { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
+import { MoveIntent } from '@contracts/cloudinary/move.schema';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
 
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
 import {
   basenamePath,
   type TrashMap,
   type TrashEntryUi,
-} from '@/features/cloudinary-finder/utils/binTrashUI';
+} from '@features/cloudinary-finder/utils/binTrashUI';
 
 import type { inferRouterOutputs } from '@trpc/server';
-import type { AppRouter } from 'packages/backend/src/trpc';
+import type { AppRouter } from '@backend/trpc';
 
 type Props = {
   roots: RootNode[];

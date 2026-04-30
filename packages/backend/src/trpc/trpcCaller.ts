@@ -1,6 +1,6 @@
-import { appRouter } from "./index";
+import { appRouter } from "@backend/trpc/index";
 import type { NextRequest } from "next/server";
-import { createTRPCContext } from "./core";
+import { createTRPCContext } from "@backend/trpc/core";
 
 /**
  * trpcCaller.ts

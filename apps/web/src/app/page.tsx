@@ -1,8 +1,8 @@
 'use client';
 
 import { JSX } from "react";
-import { useSessionStore } from "@/lib/stores/useSessionStore";
-import UpdateUserForm from "@/features/admin/users/forms/update-me/UpdateMeForm";
+import { useSessionStore } from "@lib/stores/useSessionStore";
+import UpdateUserForm from "@features/admin/users/forms/update-me/UpdateMeForm";
 
 /**
  * Home component

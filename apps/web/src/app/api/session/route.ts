@@ -1,8 +1,8 @@
 // api/session/route.ts
-import { prisma } from "packages/backend/src/prisma";
+import { prisma } from "@backend/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "packages/contracts/src/auth/constants";
+import { COOKIE_NAME } from "@contracts/auth/constants";
 
 /**
  * GET /api/session

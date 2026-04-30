@@ -1,8 +1,8 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { prisma } from "packages/backend/src/prisma";
-import { createRoleFormSchema } from "packages/contracts/schemas/forms/createRoleForm.schema";
+import { prisma } from "@backend/prisma";
+import { createRoleFormSchema } from "@contracts/forms/createRoleForm.schema";
 
 export type CreateRoleFormState = {
   success: boolean;

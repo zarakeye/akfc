@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { cloudinary } from "../cloudinary.client";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 
 export async function readUploadedAssetMetadata(params: {
   publicId: string;

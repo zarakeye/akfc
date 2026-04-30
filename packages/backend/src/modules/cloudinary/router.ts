@@ -2,21 +2,22 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 
-import { router, protectedProcedure } from "../../trpc/core";
-import { isAdmin } from "../../trpc/middleware";
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 
-import { moveSchema } from "@workspace/contracts/schemas/cloudinary/move.schema";
+import { moveSchema } from "@contracts/cloudinary/move.schema";
 
-import { listAuthenticatedResources, deleteByPrefix } from "./services/cloudinary.service";
-import { moveService } from "./services/move.service";
-import { buildCloudinaryTreeV1 } from "./tree";
-import { replaceStatusSegment } from "./utils/cloudinary.utils";
-import { cloudinary } from "./cloudinary.client";
+import { listAuthenticatedResources, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
+import { moveService } from "@backend/modules/cloudinary/services/move.service";
+import { buildCloudinaryTreeV1 } from "@backend/modules/cloudinary/tree";
+import { replaceStatusSegment } from "@backend/modules/cloudinary/utils/cloudinary.utils";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
+import { isRootFolder } from "@backend/modules/cloudinary/services/ensureRootFolders.service";
 
-import { mapCloudinaryFolderToClient } from "../../mappers/cloudinary/tree.v1.mapper";
-import { createUploadSignatures } from "./services/createUploadSignatures.service";
-import { registerUploadedAssets } from "./services/registerUploadedAssets.service";
-import { createUploadSignaturesSchema, registerUploadedAssetsSchema } from "@workspace/contracts/schemas/cloudinary/upload.schema";
+import { mapCloudinaryFolderToClient } from "@backend/mappers/cloudinary/tree.v1.mapper";
+import { createUploadSignatures } from "@backend/modules/cloudinary/services/createUploadSignatures.service";
+import { registerUploadedAssets } from "@backend/modules/cloudinary/services/registerUploadedAssets.service";
+import { createUploadSignaturesSchema, registerUploadedAssetsSchema } from "@contracts/cloudinary/upload.schema";
 
 const PROJECT_ROOT = process.env.APP_SHORT_NAME || "my-app";
 
@@ -58,6 +59,28 @@ function assertNotInTrashStorage(path: string): void {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Forbidden operation on trash storage. Use trashRouter.",
+    });
+  }
+}
+
+/**
+ * Interdit toute mutation d'un dossier racine immuable (`pending`, `published`,
+ * `bin`) ou de la racine du projet elle-même.
+ *
+ * Pourquoi :
+ * - Ces dossiers structurent l'architecture Cloudinary ; leur disparition ou
+ *   renommage briserait `assertSafePath`, `statusFromPath` et le routage de
+ *   tout upload.
+ * - Ils sont garantis présents par `ensureRootFolders` (au boot et au seed).
+ * - Leur existence étant acquise, l'UI ne doit jamais avoir besoin de les
+ *   créer ni les modifier.
+ */
+function assertRootFolder(path: string): void {
+  if (isRootFolder(PROJECT_ROOT, path)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "Forbidden operation on a root folder (pending / published / bin). Root folders are immutable.",
     });
   }
 }
@@ -293,7 +316,7 @@ export const cloudinaryRouter = router({
     .mutation(async ({ ctx, input }) => {
       return createUploadSignatures({
         prisma: ctx.prisma,
-        appRoot: process.env.APP_SHORT_NAME || "my-app",
+        appRoot: PROJECT_ROOT,
         destination: input.destination,
         assets: input.assets,
       });
@@ -307,6 +330,8 @@ export const cloudinaryRouter = router({
    * - le backend revalide la destination `pending`
    * - le backend relit les métadonnées réelles depuis Cloudinary
    * - création des MediaAsset en DB
+   * - `appRoot` est résolu côté serveur (jamais fourni par le client) afin
+   *   d'éviter qu'un client malveillant cible un autre projet
    */
   registerUploadedAssets: protectedProcedure
     .input(registerUploadedAssetsSchema)
@@ -315,7 +340,7 @@ export const cloudinaryRouter = router({
 
       return registerUploadedAssets({
         prisma: ctx.prisma,
-        appRoot: input.appRoot,
+        appRoot: PROJECT_ROOT,
         userId,
         destination: input.destination,
         assets: input.assets,
@@ -414,6 +439,7 @@ export const cloudinaryRouter = router({
 
       assertSafePath(fullPath);
       assertNotInTrashStorage(fullPath);
+      assertRootFolder(fullPath);
 
       await upsertFolders(ctx.prisma, folderAncestorsOfFolderPath(fullPath));
 
@@ -433,6 +459,8 @@ export const cloudinaryRouter = router({
       assertSafePath(toPrefix);
       assertNotInTrashStorage(fromPrefix);
       assertNotInTrashStorage(toPrefix);
+      assertRootFolder(fromPrefix);
+      assertRootFolder(toPrefix);
 
       if (fromPrefix === toPrefix) {
         return { success: true };
@@ -516,6 +544,7 @@ export const cloudinaryRouter = router({
 
       assertSafePath(normalizedPrefix);
       assertNotInTrashStorage(normalizedPrefix);
+      assertRootFolder(normalizedPrefix);
 
       await deleteByPrefix(normalizedPrefix);
 

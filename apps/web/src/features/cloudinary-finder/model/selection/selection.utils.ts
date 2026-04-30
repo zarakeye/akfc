@@ -1,4 +1,4 @@
-import { SelectionState } from "@/features/cloudinary-finder/model/selection/selection.types";
+import { SelectionState } from "@features/cloudinary-finder/model/selection/selection.types";
 
 function normalize(path: string): string {
   return path.replace(/^\/+|\/+$/g, "");

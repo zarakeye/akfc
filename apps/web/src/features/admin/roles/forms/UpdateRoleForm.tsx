@@ -1,24 +1,24 @@
 import { useForm, Controller } from "react-hook-form";
 import { JSX, useActionState } from 'react';
-import { updateRoleFormAction, type UpdateRoleFormState } from '@/features/admin/roles/actions/updateRoleForm.action';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Checkbox } from "@/components/ui/checkbox"
+import { updateRoleFormAction, type UpdateRoleFormState } from '@features/admin/roles/actions/updateRoleForm.action';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Label } from '@components/ui/Label';
+import { Checkbox } from "@components/ui/checkbox"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@components/ui/popover"
 // import { toast } from 'sonner';
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 import type { Permission } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateRoleFormSchema } from "packages/contracts/schemas/forms/updateRoleForm.schema";
+import { updateRoleFormSchema } from "@contracts/forms/updateRoleForm.schema";
 // import { AlertCircleIcon, BadgeCheckIcon, CheckIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge";
-import type { RoleWithPermissions } from "@/features/admin/roles/components/RoleCard";
+import { Badge } from "@components/ui/badge";
+import type { RoleWithPermissions } from "@features/admin/roles/components/RoleCard";
 
 interface UpdateRoleFormProps {
   role: RoleWithPermissions;

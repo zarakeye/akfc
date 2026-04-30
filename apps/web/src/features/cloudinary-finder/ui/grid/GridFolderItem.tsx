@@ -2,13 +2,21 @@
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { FolderNode, TreeNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import { explorerNodeToDragSource } from '@/features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
+import type { FolderNode, TreeNode } from '@contracts/cloudinary/finder.types';
+import { explorerNodeToDragSource } from '@features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
 
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
-import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
-import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import { useLongPress } from '@features/cloudinary-finder/hooks/useLongPress';
+import { startDragGhost } from '@features/cloudinary-finder/dnd/dragGhost.manager';
+import { getMediaUrl } from '@features/cloudinary-finder/utils/getMediaUrl';
+import { FolderContextMenu } from '@features/cloudinary-finder/ui/context-menus/FolderContextMenu';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu"
 
 type Props = {
   folder: FolderNode;

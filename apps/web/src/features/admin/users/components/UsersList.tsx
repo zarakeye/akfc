@@ -1,7 +1,7 @@
 'use client';
 
 import React, { JSX, useState, useEffect } from 'react';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import Image from 'next/image';
 import type { User, Role } from '@prisma/client';

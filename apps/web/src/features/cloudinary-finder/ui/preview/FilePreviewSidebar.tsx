@@ -2,9 +2,9 @@
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import type { FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import { getMediaUrl } from '../../utils/getMediaUrl';
-import { trpc } from '@/core/trpc/trpcClient';
+import type { FileNode } from '@contracts/cloudinary/finder.types';
+import { getMediaUrl } from '@features/cloudinary-finder/utils/getMediaUrl';
+import { trpc } from '@trpc/trpcClient';
 
 type Props = {
   file: FileNode;

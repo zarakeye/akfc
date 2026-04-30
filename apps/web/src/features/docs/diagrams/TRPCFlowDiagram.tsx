@@ -1,9 +1,9 @@
-import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { ArchitectureDiagram } from "@features/docs/ui/ArchitectureDiagram"
 
 export function TRPCFlowDiagram() {
   return (
     <ArchitectureDiagram
-      title="tRPC request flow"
+      // title="tRPC request flow"
       steps={[
         "Client (Web / React Native)",
         "tRPC Router",

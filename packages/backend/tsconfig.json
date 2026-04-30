@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // "outDir": "dist",
+    "paths": {
+      "@backend/*": ["./src/*"],
+      "@contracts/*": ["../contracts/src/*"],
+    },
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src", "../contracts/src/**/*.ts"]
+}

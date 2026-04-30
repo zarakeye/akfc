@@ -1,12 +1,12 @@
 import { useForm } from "react-hook-form";
 import { JSX, useActionState } from 'react';
-import { createCategoryAction } from '@/features/admin/categories/actions/createCategory.actions';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { createCategoryAction } from '@features/admin/categories/actions/createCategory.actions';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createCategoryFormSchema } from "packages/contracts/schemas/forms/createCategoryForm.schema";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CreateCategoryState } from "@/features/admin/categories/types/createCategoryState.types";
+import { createCategoryFormSchema } from "@contracts/forms/createCategoryForm.schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { CreateCategoryState } from "@features/admin/categories/types/createCategoryState.types";
 
 
 interface FormValues {

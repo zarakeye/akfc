@@ -1,4 +1,4 @@
-import type { FormActionState } from "@workspace/contracts/src/forms/form-action.types";
+import type { FormActionState } from "@contracts/forms/form-action.types";
 
 export type UpdateMeField =
   | "firstName"

@@ -4,7 +4,7 @@
 import { JSX, useMemo } from 'react';
 import Image from 'next/image';
 
-import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
+import BinGridFileItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
 
 type Props = {
   file: { name: string; url: string; previousPath: string };

@@ -1,12 +1,12 @@
 import { useForm } from "react-hook-form";
 import { JSX, useActionState } from 'react';
-import { createPermissionFormAction, type CreatePermissionFormState } from '@/features/admin/permissions/actions/createPermissionForm.action';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { createPermissionFormAction, type CreatePermissionFormState } from '@features/admin/permissions/actions/createPermissionForm.action';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
 // import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createPermissionFormSchema } from "packages/contracts/schemas/forms/createPermissionForm.schema";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { createPermissionFormSchema } from "@contracts/forms/createPermissionForm.schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 
 interface FormValues {
   name: string;

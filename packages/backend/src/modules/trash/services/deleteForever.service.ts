@@ -1,10 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@workspace/backend/modules/cloudinary/cloudinary.client";
-import type { DeleteForeverInput, DeleteForeverOutput } from "@workspace/contracts/src/trash/trash.mutations";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
+import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/trash.mutations";
 
-import { isTrashStoragePath, normalizePath } from "@workspace/backend//modules/trash/utils";
-import { getAssetInfo, deleteByPrefix } from "@workspace/backend/modules/cloudinary/services/cloudinary.service";
+import { isTrashStoragePath, normalizePath } from "@backend//modules/trash/utils";
+import { getAssetInfo, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /**
  * deleteForever.service.ts

@@ -9,6 +9,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// USER & AUTH
+// ============================================================================
+
 model User {
   id                    String               @id @default(cuid())
   firstName             String?
@@ -27,19 +31,28 @@ model User {
   aboutMe               String?
   pseudo                String?
   avatar                String?
-  Activities            Activity[]           @relation("UserActivities")
-  comments              Comment[]
-  Courses               Course[]             @relation("UserCourses")
-  likes                 Like[]
-  posts                 Post[]
+
+  // --- Auth & profil
+  role                  Role?                @relation(fields: [roleId], references: [id])
   preferences           Preferences?
   sessions              Session[]
-  Stage                 Stage[]              @relation("UserStages")
-  role                  Role?                @relation(fields: [roleId], references: [id])
+  passwordResetTokens   PasswordResetToken[]
+
+  // --- Audit
   auditLogsAsActor      AuditLog[]           @relation("AuditActor")
   auditLogsAsTargetUser AuditLog[]           @relation("AuditTargetUser")
-  passwordResetTokens   PasswordResetToken[]
-  uploadedMediaAssets   MediaAsset[]
+
+  // --- Posts/comments/likes
+  posts                 Post[]
+  comments              Comment[]
+  likes                 Like[]
+
+  // --- Domaine métier (nouvelles relations)
+  disciplinesAsInstructor   Discipline[]  @relation("DisciplineInstructor")
+  coursesAsInstructor       Course[]      @relation("CourseInstructor")
+  stagesAsPrimaryAnimator   Stage[]       @relation("StagePrimaryAnimator")
+  stagesAsAnimator          Stage[]       @relation("StageAnimators")
+  uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
 }
 
 model Permission {
@@ -84,14 +97,40 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  tokenHash String @unique
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  requestIp String?
+  userAgent String?
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+}
+
+// ============================================================================
+// AUDIT
+// ============================================================================
+
 /**
  * Audit Log (sécurité & support)
- * Objectif (minimal mais solide) :
- * - tracer les actions sensibles faites par un admin (ex: changement de rôle)
- * - conserver qui a fait quoi, sur qui, quand, + une meta JSON
- * Note :
- * - actorUserId/targetUserId sont nullable + onDelete:SetNull
- * pour conserver l'historique même si un compte est supprimé.
+ * - Trace des actions sensibles faites par un admin (ex: changement de rôle)
+ * - actorUserId/targetUserId nullable + onDelete:SetNull pour conserver l'historique
  */
 model AuditLog {
   id        String   @id @default(cuid())
@@ -113,167 +152,187 @@ model AuditLog {
   @@index([action, createdAt])
 }
 
-model MediaAsset {
-  id                   String   @id @default(cuid())
-
-  // --- Cloudinary
-  publicId             String   @unique
-  secureUrl            String
-  resourceType         String
-  mimeType             String
-  format               String?
-
-  // --- Fichier
-  originalFileName     String
-  displayName          String?
-  description          String?
-
-  bytes                Int
-  width                Int?
-  height               Int?
-  duration             Float?
-
-  // --- Métier
-  appRoot              String
-  status               String
-
-  categoryId           Int
-  activityId           Int?
-  proposedActivityName String?
-
-  eventDate            DateTime?
-  uploadedAt           DateTime @default(now())
-
-  // --- Provenance
-  uploaderUserId       String
-
-  // --- Timestamps
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  // --- Relations
-  category             Category  @relation(fields: [categoryId], references: [id])
-  activity             Activity? @relation(fields: [activityId], references: [id])
-  uploader             User      @relation(fields: [uploaderUserId], references: [id])
-
-  @@index([status])
-  @@index([categoryId])
-  @@index([activityId])
-  @@index([uploaderUserId])
-  @@index([uploadedAt])
-}
-
 enum AuditAction {
   USER_ROLE_CHANGED
 }
 
-model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+// ============================================================================
+// DOMAINE MÉTIER — Category → Discipline (modèle à 2 niveaux validé)
+// ============================================================================
+
+enum DisciplineType {
+  MARTIAL_ART
+  CALLIGRAPHY
 }
 
-model Course {
-  id         Int      @id @default(autoincrement())
-  beginTime  Int
-  endTime    Int
-  day        Day
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  content    Json
-  label      String   @unique
-  coachId    String
-  requisites String[]
-  coach      User     @relation("UserCourses", fields: [coachId], references: [id])
+enum Audience {
+  KIDS
+  TEENAGERS
+  ADULTS
+  ALL_AGES
 }
 
-model Slot {
-  id         Int       @id @default(autoincrement())
-  beginTime  Int
-  endTime    Int
-  activityId Int?
-  activity   Activity? @relation(fields: [activityId], references: [id])
-}
-
-model Activity {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  martialArt   String
-  instructorId String
-  origin       String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  description  String?
-  instructor   User     @relation("UserActivities", fields: [instructorId], references: [id])
-  slots        Slot[]
-  mediaAssets MediaAsset[]
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
 
 model Category {
   id   Int    @id @default(autoincrement())
-  type String @unique
+  type String @unique // "Cours", "Stage", "Démo", ...
+
+  disciplines Discipline[]
   mediaAssets MediaAsset[]
 }
 
-model MartialArt {
-  id          Int     @id @default(autoincrement())
-  name        String
-  style       String?
-  origin      String?
-  description String?
+model Discipline {
+  id             Int            @id @default(autoincrement())
+  name           String                     // "Taï-chi", "Taolu multi-styles", "Tchoy-Lee-Fut", "Kali Escrima"
+  type           DisciplineType             // MARTIAL_ART | CALLIGRAPHY
+  family         String?                    // "Kung-fu Wushu" pour les pratiques chinoises, null sinon
+  school         String?                    // "Chen" pour Taï-chi, sinon null
+  classification String?                    // "interne (yin)" | "externe (yang)" | null
+  origin         String?                    // "Chine du Sud", "Philippines", ...
+  description    String?
+  categoryId     Int                        // chaque discipline appartient à UNE catégorie
+  instructorId   String                     // OBLIGATOIRE — référent de la discipline
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  category    Category     @relation(fields: [categoryId], references: [id])
+  instructor  User         @relation("DisciplineInstructor", fields: [instructorId], references: [id])
+  courses     Course[]
+  stages      Stage[]
+  mediaAssets MediaAsset[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@index([instructorId])
+  @@index([type])
+}
+
+// ============================================================================
+// OCCURRENCES
+// ============================================================================
+
+model Course {
+  id           Int      @id @default(autoincrement())
+  disciplineId Int                          // ex: Discipline "Tchoy-Lee-Fut"
+  audience     Audience                     // KIDS | TEENAGERS | ADULTS | ALL_AGES
+  day          Day
+  beginTime    Int                          // minutes depuis minuit
+  endTime      Int
+  instructorId String?                      // si null, hérite de discipline.instructor
+  requisites   String[]
+  content      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  discipline Discipline @relation(fields: [disciplineId], references: [id])
+  instructor User?      @relation("CourseInstructor", fields: [instructorId], references: [id])
+
+  @@unique([disciplineId, day, beginTime, audience])
+  @@index([disciplineId])
+  @@index([instructorId])
 }
 
 model Stage {
-  id            Int      @id @default(autoincrement())
-  date          DateTime
-  beginTime     Int
-  endTime       Int
-  preRegistered String[]
-  animatorId    String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  label         String
-  program       Json
-  description   Json
-  animator      User     @relation("UserStages", fields: [animatorId], references: [id])
+  id                Int      @id @default(autoincrement())
+  disciplineId      Int                    // ex: Discipline "Tchoy-Lee-Fut" pour un stage de Tchoy-Lee-Fut
+  label             String                 // "Stage d'été — initiation aux bâtons"
+  audience          Audience
+  description       Json
+  program           Json
+  preRegistered     String[]
+  primaryAnimatorId String                 // OBLIGATOIRE — animateur principal (inclus dans `animators`)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  discipline      Discipline     @relation(fields: [disciplineId], references: [id])
+  primaryAnimator User           @relation("StagePrimaryAnimator", fields: [primaryAnimatorId], references: [id])
+  animators       User[]         @relation("StageAnimators")
+  sessions        StageSession[]
+
+  @@unique([disciplineId, label])
+  @@index([disciplineId])
+  @@index([primaryAnimatorId])
 }
 
-model Post {
-  id              Int       @id @default(autoincrement())
-  title           String
-  content         Json
-  authorId        String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  publicationDate DateTime?
-  comments        Comment[]
-  likes           Like[]
-  author          User      @relation(fields: [authorId], references: [id])
-}
-
-model Comment {
+model StageSession {
   id        Int      @id @default(autoincrement())
-  content   Json
-  authorId  String
-  articleId Int
+  stageId   Int
+  date      DateTime
+  beginTime Int
+  endTime   Int
+  location  String?
+  notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  postId    Int?
-  author    User     @relation(fields: [authorId], references: [id])
-  post      Post?    @relation(fields: [postId], references: [id])
+
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, date, beginTime])
+  @@index([stageId])
+  @@index([date])
 }
 
-model Like {
-  id     Int     @id @default(autoincrement())
-  postId Int
-  userId String
-  like   Boolean @default(false)
-  post   Post    @relation(fields: [postId], references: [id])
-  user   User    @relation(fields: [userId], references: [id])
+// ============================================================================
+// MEDIA
+// ============================================================================
+
+model MediaAsset {
+  id                     String   @id @default(cuid())
+
+  // --- Cloudinary
+  publicId               String   @unique
+  secureUrl              String
+  resourceType           String
+  mimeType               String
+  format                 String?
+
+  // --- Fichier
+  originalFileName       String
+  displayName            String?
+  description            String?
+  bytes                  Int
+  width                  Int?
+  height                 Int?
+  duration               Float?
+
+  // --- Métier
+  appRoot                String
+  status                 String                          // "pending" | "published" | ...
+  categoryId             Int
+  disciplineId           Int?                            // null si la Discipline est proposée mais pas encore créée
+  proposedDisciplineName String?                         // nom proposé si disciplineId null
+  eventDate              DateTime?
+
+  // --- Provenance
+  uploaderUserId         String
+  uploadedAt             DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  discipline Discipline? @relation(fields: [disciplineId], references: [id])
+  uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([disciplineId])
+  @@index([uploaderUserId])
+  @@index([uploadedAt])
 }
+
+// ============================================================================
+// CLOUDINARY FOLDERS & TRASH (inchangé)
+// ============================================================================
 
 model CloudinaryFolder {
   id        String                 @id @default(cuid())
@@ -296,13 +355,6 @@ enum CloudinaryFolderStatus {
 
 /**
  * Corbeille (bin) : une entrée = un "root" jeté (folder ou file).
- * IMPORTANT (design validé) :
- * - Le storage Cloudinary réel est caché : `${appRoot}/bin/.trash/${id}/...`
- * - L'utilisateur voit seulement displayName + provenance (previousPath).
- * - Restore = toujours vers previousPath, collision => auto-rename du contenu restauré.
- * Méta comparaison :
- * - sizeBytes = somme des bytes du sous-arbre (si calculé)
- * - cloudinaryCreatedAt = max(created_at) du sous-arbre (choix "a")
  */
 model TrashEntry {
   id      String           @id @default(uuid())
@@ -310,51 +362,17 @@ model TrashEntry {
   kind    TrashEntryKind
   status  TrashEntryStatus @default(IN_BIN)
 
-  /**
-   * Nom affiché dans la liste plate du bin
-   * ex: "cours1" ou "image.png"
-   */
-  displayName String
-
-  /**
-   * Chemin d'origine complet (tooltip et cible de restore)
-   * ex: "AKFC/pending/cours/cours1"
-   */
+  displayName  String
   previousPath String
+  storageRoot  String
 
-  /**
-   * Chemin de stockage réel dans Cloudinary (caché)
-   * ex:
-   * - folder: "AKFC/bin/.trash/<uuid>/cours1"
-   * - file:   "AKFC/bin/.trash/<uuid>/image.png" (ou public_id équivalent)
-   */
-  storageRoot String
-
-  /**
-   * Date de mise en corbeille (sert aussi au suffix de renommage en cas de collision au restore)
-   */
   trashedAt DateTime @default(now())
 
-  /**
-   * Rempli lors du restore.
-   * - restoredToPath == previousPath si pas de collision
-   * - sinon, chemin renommé (suffix "bin <date>")
-   */
   restoredAt     DateTime?
   restoredToPath String?
 
-  /**
-   * Si tu veux tracer la suppression définitive (audit).
-   * Si tu préfères supprimer la ligne, tu peux omettre ce champ,
-   * mais je recommande de le garder : ça aide énormément en debug/support.
-   */
   deletedAt DateTime?
 
-  /**
-   * Métadonnées Cloudinary utiles en UI sans ouvrir la preview.
-   * - Pour folder : agrégat du sous-arbre
-   * - Pour file   : valeur du fichier
-   */
   sizeBytes           BigInt?
   cloudinaryCreatedAt DateTime?
 
@@ -362,23 +380,6 @@ model TrashEntry {
   @@index([appRoot, status, trashedAt])
   @@index([appRoot, previousPath])
   @@index([appRoot, kind])
-}
-
-model PasswordResetToken {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now())
-  expiresAt DateTime
-  usedAt    DateTime?
-
-  tokenHash String @unique
-  userId    String
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  requestIp String?
-  userAgent String?
-
-  @@index([userId, createdAt])
-  @@index([expiresAt])
 }
 
 enum TrashEntryKind {
@@ -392,37 +393,42 @@ enum TrashEntryStatus {
   DELETED
 }
 
-enum Day {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
+// ============================================================================
+// CONTENU ÉDITORIAL (Posts/Comments/Likes — inchangé)
+// ============================================================================
+
+model Post {
+  id              Int       @id @default(autoincrement())
+  title           String
+  content         Json
+  authorId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  publicationDate DateTime?
+
+  author   User      @relation(fields: [authorId], references: [id])
+  comments Comment[]
+  likes    Like[]
 }
 
-enum WushuStyle {
-  CHOY_LI_FUT
-  TAI_CHI_CHUAN
-  TANG_LANG_QUAN
-  WING_CHUN
-  CHANG_QUAN
-  SHAOLIN_QUAN
-  FAN_ZI_QUAN
-  CHUO_JIAO
-  BA_JI_QUAN
-  HUNG_GAR
-  LAU_GAR
-  MOK_GAR
-  XING_YI_QUAN
-  BA_QUA_ZHANG
-  HOU_QUAN
-  SHE_QUAN
-  YING_QUAN
-  HU_QUAN
-  HE_QUAN
-  ZUI_QUAN
-  SHUAI_JIAO
-  QI_GONG
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   Json
+  authorId  String
+  articleId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    Int?
+
+  author User  @relation(fields: [authorId], references: [id])
+  post   Post? @relation(fields: [postId], references: [id])
+}
+
+model Like {
+  id     Int     @id @default(autoincrement())
+  postId Int
+  userId String
+  like   Boolean @default(false)
+  post   Post    @relation(fields: [postId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
 }

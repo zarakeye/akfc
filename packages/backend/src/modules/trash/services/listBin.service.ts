@@ -4,11 +4,11 @@ import type {
   ListBinInput,
   ListBinOutput,
   TrashEntryDTO,
-} from "@workspace/contracts/src/trash/trash.dto";
+} from "@contracts/trash/trash.dto";
 import {
   bigIntToSafeNumber,
   buildPreviousPathShort,
-} from "@workspace/backend/modules/trash/utils";
+} from "@backend/modules/trash/utils";
 
 /**
  * listBin.service.ts

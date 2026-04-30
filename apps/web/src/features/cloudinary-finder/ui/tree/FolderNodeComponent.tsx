@@ -12,22 +12,22 @@ import React, {
 } from 'react';
 import clsx from 'clsx';
 
-import type { FolderNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import type { DragSource, MoveTarget } from 'packages/contracts/src/cloudinary/move.types';
-import type { MoveIntent } from 'packages/contracts/schemas/cloudinary/move.schema';
+import type { FolderNode } from '@contracts/cloudinary/finder.types';
+import type { DragSource, MoveTarget } from '@contracts/cloudinary/move.types';
+import type { MoveIntent } from '@contracts/cloudinary/move.schema';
 
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import { useLongPress } from '@features/cloudinary-finder/hooks/useLongPress';
 
-import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
-import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
+import { canMove } from '@backend/modules/cloudinary/move.guards';
+import { startDragGhost } from '@features/cloudinary-finder/dnd/dragGhost.manager';
 import Image from 'next/image';
 import {
   type TrashMap,
   getTrashIdFromStoragePath,
   getBinTooltipTitle,
   normalizePath,
-} from '@/features/cloudinary-finder/utils/binTrashUI';
+} from '@features/cloudinary-finder/utils/binTrashUI';
 
 type Props = {
   folder: FolderNode;

@@ -1,7 +1,7 @@
 // middleware.ts ou proxy.ts
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "packages/contracts/src/auth/constants";
+import { COOKIE_NAME } from "@contracts/auth/constants";
 
 /**
  * Middleware qui vérifie si le cookie de session est présent et valide.

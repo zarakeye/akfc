@@ -3,20 +3,32 @@
 import React, { JSX, useEffect, useMemo } from 'react';
 import { skipToken } from '@tanstack/react-query';
 
-import type { FolderNode, FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import { isFileNode, isFolderNode } from '@/features/cloudinary-finder/guards/finder.guards';
+import type { FolderNode, FileNode } from '@contracts/cloudinary/finder.types';
+import { isFileNode, isFolderNode } from '@features/cloudinary-finder/guards/finder.guards';
 
-import type { DragSource } from '@workspace/contracts/src/cloudinary/move.types';
-import type { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
+import type { DragSource } from '@contracts/cloudinary/move.types';
+import type { MoveIntent } from '@contracts/cloudinary/move.schema';
 
-import GridFolderItem from '@/features/cloudinary-finder/ui/grid/GridFolderItem';
-import GridFileItem from '@/features/cloudinary-finder/ui/grid/GridFileItem';
+import GridFolderItem from '@features/cloudinary-finder/ui/grid/GridFolderItem';
+import GridFileItem from '@features/cloudinary-finder/ui/grid/GridFileItem';
 
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { trpc } from '@/core/trpc/trpcClient';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import { trpc } from '@trpc/trpcClient';
 
-import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
-import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
+import BinGridFolderItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
+import BinGridFileItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
+import { FolderContextMenu } from '@features/cloudinary-finder/ui/context-menus/FolderContextMenu';
+
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+} from "@components/ui/context-menu";
 
 type Props = {
   folder: FolderNode;
@@ -139,7 +151,7 @@ export default function FolderContentView({
         search: undefined,
       });
 
-      allIds.push(...res.items.map((x) => x.id));
+      allIds.push(...res.items.map((x: { id: string }) => x.id));
       if (!res.nextCursor) break;
       cursor = res.nextCursor;
     }
@@ -185,131 +197,141 @@ export default function FolderContentView({
   const activeMultiSelect = inBin ? binMultiSelectActive : multiSelectActive;
 
   return (
-    <div
-      className="space-y-6 min-h-full"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-      onMouseDownCapture={(e) => {
-        if (!activeMultiSelect) return;
+    <ContextMenu>
+      <ContextMenuTrigger className="w-full h-full">    
+      <div
+        className="space-y-6 min-h-full"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        onMouseDownCapture={(e) => {
+          if (!activeMultiSelect) return;
 
-        const el = e.target as Element | null;
-        if (!el) return;
+          const el = e.target as Element | null;
+          if (!el) return;
 
-        if (el.closest('[data-no-clear-multiselect="true"]')) return;
+          if (el.closest('[data-no-clear-multiselect="true"]')) return;
 
-        const insideItem = el.closest('[data-content-item="true"]');
-        if (insideItem) return;
+          const insideItem = el.closest('[data-content-item="true"]');
+          if (insideItem) return;
 
-        if (inBin) clearBinSelection();
-        else clearNormalSelection();
-      }}
-    >
-      {inBin ? (
-        <>
-          <div className="mb-2 flex gap-2" data-no-clear-multiselect="true">
-            <button
-              onClick={handleEmptyBin}
-              disabled={deleteForever.isPending}
-              className="px-4 py-2 rounded bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-              title="Vider la corbeille"
-            >
-              🧹 Vider la corbeille
-            </button>
-
-            {canBinMultiSelect && binMultiSelectActive && (
+          if (inBin) clearBinSelection();
+          else clearNormalSelection();
+        }}
+      >
+        {inBin ? (
+          <>
+            <div className="mb-2 flex gap-2" data-no-clear-multiselect="true">
               <button
-                onClick={handleDeleteSelection}
-                disabled={!hasBinSelection || deleteForever.isPending}
-                className="px-4 py-2 rounded bg-red-600/20 border border-red-600 hover:bg-red-600/20 disabled:opacity-50 cursor-pointer"
-                title="Supprimer la sélection"
+                onClick={handleEmptyBin}
+                disabled={deleteForever.isPending}
+                className="px-4 py-2 rounded bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+                title="Vider la corbeille"
               >
-                {deleteForever.isPending
-                  ? 'Suppression…'
-                  : `🗑️ Supprimer la sélection (${selectedTrashIds.length})`}
+                🧹 Vider la corbeille
               </button>
-            )}
-          </div>
 
-          <section>
-            <h3 className="font-medium mb-2">Corbeille</h3>
+              {canBinMultiSelect && binMultiSelectActive && (
+                <button
+                  onClick={handleDeleteSelection}
+                  disabled={!hasBinSelection || deleteForever.isPending}
+                  className="px-4 py-2 rounded bg-red-600/20 border border-red-600 hover:bg-red-600/20 disabled:opacity-50 cursor-pointer"
+                  title="Supprimer la sélection"
+                >
+                  {deleteForever.isPending
+                    ? 'Suppression…'
+                    : `🗑️ Supprimer la sélection (${selectedTrashIds.length})`}
+                </button>
+              )}
+            </div>
 
-            {listBin.isLoading ? (
-              <div className="text-gray-500 italic">Chargement…</div>
-            ) : trashItems.length > 0 ? (
-              <div className="grid grid-cols-3 gap-4">
-                {trashItems.map((it) => {
-                  if (it.kind === 'folder') {
+            <section>
+              <h3 className="font-medium mb-2">Corbeille</h3>
+
+              {listBin.isLoading ? (
+                <div className="text-gray-500 italic">Chargement…</div>
+              ) : trashItems.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4">
+                  {trashItems.map((it: { id: string; publicId: string | null; kind: string; displayName: string }) => {
+                    if (it.kind === 'folder') {
+                      return (
+                        <BinGridFolderItem
+                          key={it.id}
+                          trashId={it.id}
+                          displayName={it.displayName}
+                          canMultiSelect={canBinMultiSelect}
+                          onOpen={(trashId) => onOpenTrashEntry?.(trashId)}
+                        />
+                      );
+                    }
+
                     return (
-                      <BinGridFolderItem
+                      <BinGridFileItem
                         key={it.id}
                         trashId={it.id}
                         displayName={it.displayName}
+                        publicId={it.publicId ?? null}
                         canMultiSelect={canBinMultiSelect}
                         onOpen={(trashId) => onOpenTrashEntry?.(trashId)}
                       />
                     );
-                  }
+                  })}
+                </div>
+              ) : (
+                <div className="text-gray-500 italic">Corbeille vide</div>
+              )}
+            </section>
 
-                  return (
-                    <BinGridFileItem
-                      key={it.id}
-                      trashId={it.id}
-                      displayName={it.displayName}
-                      publicId={it.publicId ?? null}
-                      canMultiSelect={canBinMultiSelect}
-                      onOpen={(trashId) => onOpenTrashEntry?.(trashId)}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-gray-500 italic">Corbeille vide</div>
+            {deleteForever.error && (
+              <p className="text-sm text-red-600">{deleteForever.error.message || 'Erreur inconnue'}</p>
             )}
-          </section>
+          </>
+        ) : (
+          <>
+            {subFolders.length > 0 && (
+              <section>
+                <h3 className="font-medium mb-2">Dossiers</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {subFolders.map((subFolder) => (
+                    <FolderContextMenu key={subFolder.fullPath}>
+                      <GridFolderItem
+                        key={subFolder.fullPath}
+                        folder={subFolder}
+                        onOpenFolder={onOpenFolder}
+                        visibleNodes={folder.children}
+                      />
+                    </FolderContextMenu>
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {deleteForever.error && (
-            <p className="text-sm text-red-600">{deleteForever.error.message || 'Erreur inconnue'}</p>
-          )}
-        </>
-      ) : (
-        <>
-          {subFolders.length > 0 && (
-            <section>
-              <h3 className="font-medium mb-2">Dossiers</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {subFolders.map((subFolder) => (
-                  <GridFolderItem
-                    key={subFolder.fullPath}
-                    folder={subFolder}
-                    onOpenFolder={onOpenFolder}
-                    visibleNodes={folder.children}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+            {files.length > 0 && (
+              <section>
+                <h3 className="font-medium mb-2">Images</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {files.map((file) => (
+                    <GridFileItem
+                      key={file.fullPath}
+                      file={file}
+                      onSelect={onSelectFile}
+                      visibleNodes={folder.children}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {files.length > 0 && (
-            <section>
-              <h3 className="font-medium mb-2">Images</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {files.map((file) => (
-                  <GridFileItem
-                    key={file.fullPath}
-                    file={file}
-                    onSelect={onSelectFile}
-                    visibleNodes={folder.children}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {subFolders.length === 0 && files.length === 0 && (
-            <div className="text-gray-500 italic">Dossier vide</div>
-          )}
-        </>
-      )}
-    </div>
+            {subFolders.length === 0 && files.length === 0 && (
+              <div className="text-gray-500 italic">Dossier vide</div>
+            )}
+          </>
+        )}
+      </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onSelect={() => onNewFolder()}>Nouveau dossier</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onUploadFiles()}>Importer des images</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

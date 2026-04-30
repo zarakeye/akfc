@@ -1,10 +1,10 @@
 'use client';
 
 import { JSX, useMemo, useState, type FormEvent } from "react";
-import { trpcClient } from "@/core/trpc/trpcClient";
-import { useSessionStore } from "@/lib/stores/useSessionStore";
+import { trpcClient } from "@trpc/trpcClient";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
-import { AUTH_ERRORS } from "@/features/auth/errors/auth.errors";
+import { AUTH_ERRORS } from "@features/auth/errors/auth.errors";
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

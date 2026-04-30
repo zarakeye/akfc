@@ -1,8 +1,8 @@
 "use server";
 
-import { prisma } from "@workspace/backend/prisma";
-import { getSessionFromRequest } from "@workspace/backend/modules/auth/getSessionFromRequest";
-import { updateMeFormSchema } from "@workspace/contracts/schemas/forms/updateMeForm.schema";
+import { prisma } from "@backend/prisma";
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
 import { Prisma } from "@prisma/client";
 
 import type { UpdateMeFormState } from "./updateMeForm.types";

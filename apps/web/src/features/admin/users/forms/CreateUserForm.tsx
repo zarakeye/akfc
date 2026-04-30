@@ -2,9 +2,9 @@
 
 import { useForm } from "react-hook-form";
 import { JSX, useActionState } from 'react';
-import { createUserAction, type CreateUserFormState } from '@/features/admin/users/actions/createUserForm.action';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { createUserAction, type CreateUserFormState } from '@features/admin/users/actions/createUserForm.action';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
 // import { Label } from '@/components/ui/Label';
 import {
   Select,
@@ -14,13 +14,13 @@ import {
   // SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { trpc } from "@/core/trpc/trpcClient";
+} from "@components/ui/select";
+import { trpc } from "@trpc/trpcClient";
 import type { Role } from "@prisma/client";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createUserFormSchema } from "packages/contracts/schemas/forms/createUserForm.schema";
+import { createUserFormSchema } from "@contracts/forms/createUserForm.schema";
 // import { SelectGroup } from "@radix-ui/react-select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 
 interface FormValues {
   email: string;

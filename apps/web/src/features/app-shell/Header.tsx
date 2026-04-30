@@ -1,12 +1,12 @@
 'use client';
 
 import Link from "next/link";
-import LoginForm from "@/features/auth/components/LoginForm";
-import UserMenu from "@/features/app-shell/UserMenu";
+import LoginForm from "@features/auth/components/LoginForm";
+import UserMenu from "@features/app-shell/UserMenu";
 import { Suspense, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSessionStore } from "@/lib/stores/useSessionStore";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /**
  * Header component of the application.

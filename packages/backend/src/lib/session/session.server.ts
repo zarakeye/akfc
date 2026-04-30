@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import { prisma } from "@workspace/backend/prisma";
-import { COOKIE_NAME, SESSION_DURATION_MS } from "@workspace/contracts/src/auth/constants";
-import { UserEnhancedStrict } from "@workspace/backend/types/prisma-extended.types";
+import { prisma } from "@backend/prisma";
+import { COOKIE_NAME, SESSION_DURATION_MS } from "@contracts/auth/constants";
+import { UserEnhancedStrict } from "@backend/types/prisma-extended.types";
 import { Session } from "@prisma/client";
-import type { SessionJwtPayload } from "@workspace/backend/lib/session/session.types";
+import type { SessionJwtPayload } from "@backend/lib/session/session.types";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

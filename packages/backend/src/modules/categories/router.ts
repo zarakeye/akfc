@@ -1,5 +1,5 @@
-import { router, protectedProcedure, publicProcedure } from "@workspace/backend/trpc/core";
-import { requirePermission } from "@workspace/backend/trpc/middleware";
+import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
+import { requirePermission } from "@backend/trpc/middleware";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

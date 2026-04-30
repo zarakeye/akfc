@@ -1,4 +1,4 @@
-import type { FolderStatus } from "./folder.types";
+import type { FolderStatus } from "@contracts/cloudinary/folder.types";
 
 // 🔒 Type discriminant commun
 export type BaseNode = {

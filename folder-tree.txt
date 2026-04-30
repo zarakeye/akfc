@@ -1,0 +1,715 @@
+📁 akfc_2
+  ├── 📁 .prisma
+  │   └── 📁 seed-dist
+  │       ├── 📁 prisma
+  │       └── 📁 src
+  │           └── 📁 generated
+  ├── 📄 README.md
+  ├── 📁 apps
+  │   ├── 📄 README-MDX-DOCS-SETUP.txt
+  │   ├── 📁 mobile
+  │   │   ├── 📁 src
+  │   │   └── 📄 tsconfig.json
+  │   └── 📁 web
+  │       ├── 📁 .next
+  │       ├── 📄 components.json
+  │       ├── 📁 content
+  │       │   ├── 📁 docs
+  │       │   │   ├── 📁 architecture
+  │       │   │   │   ├── 📄 architecture-map.mdx
+  │       │   │   │   ├── 📄 authentication-architecture.mdx
+  │       │   │   │   ├── 📄 backend-architecture.mdx
+  │       │   │   │   ├── 📄 cloudinary-finder-architecture.mdx
+  │       │   │   │   ├── 📄 frontend-architecture.mdx
+  │       │   │   │   ├── 📄 mobile-readiness.mdx
+  │       │   │   │   ├── 📄 project-architecture.mdx
+  │       │   │   │   └── 📄 technology-stack.mdx
+  │       │   │   ├── 📁 domain
+  │       │   │   │   └── 📄 domain-model.mdx
+  │       │   │   ├── 📁 introduction
+  │       │   │   │   ├── 📄 learning-roadmap.mdx
+  │       │   │   │   └── 📄 project-overview.mdx
+  │       │   │   ├── 📁 patterns
+  │       │   │   │   └── 📄 hooks.mdx
+  │       │   │   ├── 📄 roadmap.mdx
+  │       │   │   └── 📁 tutorials
+  │       │   │       ├── 📄 authentication-with-trpc.mdx
+  │       │   │       ├── 📄 forms-with-useform-useactionstate.mdx
+  │       │   │       ├── 📄 le-finder-cloudinary.mdx
+  │       │   │       ├── 📄 modelise-data-with-prisma.mdx
+  │       │   │       ├── 📄 signer-et-persister-un-upload-cloudinary.mdx
+  │       │   │       ├── 📄 trpc_backend.mdx
+  │       │   │       └── 📄 tutorials-overview.mdx
+  │       │   └── 📄 docs.zip
+  │       ├── 📁 mdx
+  │       │   └── 📄 remark-flatten-mdx-attrs.mjs
+  │       ├── 📄 mdx.d.ts
+  │       ├── 📄 next.config.ts
+  │       ├── 📄 package-lock.json
+  │       ├── 📄 package.json
+  │       ├── 📄 postcss.config.mjs
+  │       ├── 📁 public
+  │       │   ├── 📄 AKFC_logo.svg
+  │       │   ├── 📄 account_circle_size40.svg
+  │       │   ├── 📄 add_circle.svg
+  │       │   ├── 📄 chevron-gray.svg
+  │       │   ├── 📄 chevron-white.svg
+  │       │   ├── 📄 email.svg
+  │       │   ├── 📄 empty_trash.svg
+  │       │   ├── 📄 file.svg
+  │       │   ├── 📄 full_trash.svg
+  │       │   ├── 📄 globe.svg
+  │       │   ├── 📄 mobilePhone.svg
+  │       │   ├── 📄 next.svg
+  │       │   ├── 📄 vercel.svg
+  │       │   └── 📄 window.svg
+  │       ├── 📁 src
+  │       │   ├── 📁 app
+  │       │   │   ├── 📁 (marketing)
+  │       │   │   │   └── 📁 docs
+  │       │   │   │       └── 📁 _debug
+  │       │   │   ├── 📁 admin
+  │       │   │   │   └── 📁 dashboard
+  │       │   │   │       ├── 📄 layout.tsx
+  │       │   │   │       ├── 📄 page.tsx
+  │       │   │   │       ├── 📁 permissions
+  │       │   │   │       │   ├── 📁 [id]
+  │       │   │   │       │   │   └── 📄 page.tsx
+  │       │   │   │       │   ├── 📁 create
+  │       │   │   │       │   │   └── 📄 page.tsx
+  │       │   │   │       │   └── 📄 page.tsx
+  │       │   │   │       ├── 📁 pictures
+  │       │   │   │       │   ├── 📁 add
+  │       │   │   │       │   │   └── 📄 page.tsx
+  │       │   │   │       │   └── 📄 page.tsx
+  │       │   │   │       ├── 📄 providers.tsx
+  │       │   │   │       ├── 📁 roles
+  │       │   │   │       │   ├── 📁 [id]
+  │       │   │   │       │   │   └── 📄 page.tsx
+  │       │   │   │       │   ├── 📁 create
+  │       │   │   │       │   │   └── 📄 page.tsx
+  │       │   │   │       │   └── 📄 page.tsx
+  │       │   │   │       └── 📁 users
+  │       │   │   │           ├── 📁 [id]
+  │       │   │   │           │   └── 📄 page.tsx
+  │       │   │   │           ├── 📁 create
+  │       │   │   │           │   └── 📄 page.tsx
+  │       │   │   │           └── 📄 page.tsx
+  │       │   │   ├── 📁 api
+  │       │   │   │   ├── 📁 auth
+  │       │   │   │   │   └── 📁 session
+  │       │   │   │   │       └── 📄 route.ts
+  │       │   │   │   ├── 📁 media
+  │       │   │   │   │   ├── 📁 by-public-id
+  │       │   │   │   │   │   └── 📁 [...publicId]
+  │       │   │   │   │   │       └── 📄 route.ts
+  │       │   │   │   │   └── 📁 crop
+  │       │   │   │   │       └── 📄 route.ts
+  │       │   │   │   ├── 📁 session
+  │       │   │   │   │   └── 📄 route.ts
+  │       │   │   │   └── 📁 trpc
+  │       │   │   │       └── 📁 [trpc]
+  │       │   │   │           └── 📄 route.ts
+  │       │   │   ├── 📁 auth
+  │       │   │   │   ├── 📁 forgot-password
+  │       │   │   │   │   └── 📄 page.tsx
+  │       │   │   │   └── 📁 reset-password
+  │       │   │   │       └── 📄 page.tsx
+  │       │   │   ├── 📁 docs
+  │       │   │   │   ├── 📁 [...slug]
+  │       │   │   │   │   └── 📄 page.tsx
+  │       │   │   │   ├── 📄 layout.tsx
+  │       │   │   │   └── 📄 page.mdx
+  │       │   │   ├── 📄 favicon.ico
+  │       │   │   ├── 📁 gallery
+  │       │   │   │   └── 📄 page.tsx
+  │       │   │   ├── 📄 globals.css
+  │       │   │   ├── 📄 layout.tsx
+  │       │   │   ├── 📄 page.tsx
+  │       │   │   ├── 📄 providers.tsx
+  │       │   │   └── 📁 simpleEditor
+  │       │   │       └── 📄 page.tsx
+  │       │   ├── 📁 components
+  │       │   │   └── 📁 ui
+  │       │   │       ├── 📄 Button.tsx
+  │       │   │       ├── 📄 Input.tsx
+  │       │   │       ├── 📄 Label.tsx
+  │       │   │       ├── 📄 LoadingOverlay.tsx
+  │       │   │       ├── 📄 badge.tsx
+  │       │   │       ├── 📄 calendar.tsx
+  │       │   │       ├── 📄 checkbox.tsx
+  │       │   │       ├── 📄 form.tsx
+  │       │   │       ├── 📄 popover.tsx
+  │       │   │       ├── 📄 select.tsx
+  │       │   │       └── 📄 tooltip.tsx
+  │       │   ├── 📁 core
+  │       │   │   ├── 📁 session
+  │       │   │   │   └── 📄 session.client.ts
+  │       │   │   └── 📁 trpc
+  │       │   │       └── 📄 trpcClient.ts
+  │       │   ├── 📄 cropper-elements.d.ts
+  │       │   ├── 📁 features
+  │       │   │   ├── 📁 admin
+  │       │   │   │   ├── 📁 categories
+  │       │   │   │   │   ├── 📁 actions
+  │       │   │   │   │   │   └── 📄 createCategory.actions.ts
+  │       │   │   │   │   ├── 📁 components
+  │       │   │   │   │   │   └── 📄 CategoriesTable.tsx
+  │       │   │   │   │   ├── 📁 forms
+  │       │   │   │   │   │   └── 📄 CreateCategoryForm.tsx
+  │       │   │   │   │   └── 📁 types
+  │       │   │   │   │       └── 📄 createCategoryState.types.ts
+  │       │   │   │   ├── 📁 courses
+  │       │   │   │   │   ├── 📁 actions
+  │       │   │   │   │   │   └── 📄 createCourseForm.action.ts
+  │       │   │   │   │   ├── 📁 components
+  │       │   │   │   │   └── 📁 forms
+  │       │   │   │   │       └── 📄 CreateCourseForm.tsx
+  │       │   │   │   ├── 📁 permissions
+  │       │   │   │   │   ├── 📁 actions
+  │       │   │   │   │   │   └── 📄 createPermissionForm.action.ts
+  │       │   │   │   │   ├── 📁 components
+  │       │   │   │   │   │   └── 📄 PermissionsList.tsx
+  │       │   │   │   │   └── 📁 forms
+  │       │   │   │   │       └── 📄 CreatePermissionForm.tsx
+  │       │   │   │   ├── 📁 pictures
+  │       │   │   │   │   ├── 📁 actions
+  │       │   │   │   │   │   └── 📄 picturesDragNDropForm.action.ts
+  │       │   │   │   │   ├── 📁 components
+  │       │   │   │   │   ├── 📁 forms
+  │       │   │   │   │   │   └── 📄 PicturesDragNDropForm.tsx
+  │       │   │   │   │   └── 📁 types
+  │       │   │   │   │       └── 📄 picturesDragNDropForm.types.ts
+  │       │   │   │   ├── 📁 roles
+  │       │   │   │   │   ├── 📁 actions
+  │       │   │   │   │   │   ├── 📄 createRoleForm.action.ts
+  │       │   │   │   │   │   └── 📄 updateRoleForm.action.ts
+  │       │   │   │   │   ├── 📁 components
+  │       │   │   │   │   │   ├── 📄 RoleCard.tsx
+  │       │   │   │   │   │   └── 📄 RolesList.tsx
+  │       │   │   │   │   └── 📁 forms
+  │       │   │   │   │       ├── 📄 CreateRoleForm.tsx
+  │       │   │   │   │       └── 📄 UpdateRoleForm.tsx
+  │       │   │   │   └── 📁 users
+  │       │   │   │       ├── 📁 actions
+  │       │   │   │       │   └── 📄 createUserForm.action.ts
+  │       │   │   │       ├── 📁 components
+  │       │   │   │       │   ├── 📄 UpdateUserRoleById.tsx
+  │       │   │   │       │   ├── 📄 UserCard.tsx
+  │       │   │   │       │   └── 📄 UsersList.tsx
+  │       │   │   │       └── 📁 forms
+  │       │   │   │           ├── 📄 CreateUserForm.tsx
+  │       │   │   │           └── 📁 update-me
+  │       │   │   │               ├── 📄 UpdateMeForm.tsx
+  │       │   │   │               ├── 📄 updateMeForm.action.ts
+  │       │   │   │               └── 📄 updateMeForm.types.ts
+  │       │   │   ├── 📁 app-shell
+  │       │   │   │   ├── 📄 ColorPickerButton.tsx
+  │       │   │   │   ├── 📄 ControlPanelSidebar.tsx
+  │       │   │   │   ├── 📄 Header.tsx
+  │       │   │   │   ├── 📄 UserMenu.tsx
+  │       │   │   │   └── 📄 editor.tsx
+  │       │   │   ├── 📁 auth
+  │       │   │   │   ├── 📄 SessionLoader.tsx
+  │       │   │   │   ├── 📁 components
+  │       │   │   │   │   └── 📄 LoginForm.tsx
+  │       │   │   │   └── 📁 errors
+  │       │   │   │       └── 📄 auth.errors.ts
+  │       │   │   ├── 📁 cloudinary-finder
+  │       │   │   │   ├── 📄 README.md
+  │       │   │   │   ├── 📁 adapters
+  │       │   │   │   │   └── 📁 mappers
+  │       │   │   │   │       └── 📄 explorer.move.mapper.ts
+  │       │   │   │   ├── 📁 dnd
+  │       │   │   │   │   └── 📄 dragGhost.manager.ts
+  │       │   │   │   ├── 📁 guards
+  │       │   │   │   │   └── 📄 finder.guards.ts
+  │       │   │   │   ├── 📁 hooks
+  │       │   │   │   │   └── 📄 useLongPress.ts
+  │       │   │   │   ├── 📁 model
+  │       │   │   │   │   ├── 📁 move
+  │       │   │   │   │   │   └── 📄 move.factories.ts
+  │       │   │   │   │   └── 📁 selection
+  │       │   │   │   │       ├── 📄 selection.types.ts
+  │       │   │   │   │       └── 📄 selection.utils.ts
+  │       │   │   │   ├── 📁 state
+  │       │   │   │   │   └── 📁 selection
+  │       │   │   │   │       └── 📄 useSelectionStore.ts
+  │       │   │   │   ├── 📁 ui
+  │       │   │   │   │   ├── 📁 breadcrumb
+  │       │   │   │   │   │   └── 📄 BreadCrumb.tsx
+  │       │   │   │   │   ├── 📁 content
+  │       │   │   │   │   │   └── 📄 FolderContentView.tsx
+  │       │   │   │   │   ├── 📁 context-menus
+  │       │   │   │   │   │   ├── 📄 FileConetxtMenu.tsx
+  │       │   │   │   │   │   └── 📄 FolderConetxtMenu.tsx
+  │       │   │   │   │   ├── 📁 grid
+  │       │   │   │   │   │   ├── 📄 GridFileItem.tsx
+  │       │   │   │   │   │   └── 📄 GridFolderItem.tsx
+  │       │   │   │   │   ├── 📁 layout
+  │       │   │   │   │   │   └── 📄 FinderLayout.tsx
+  │       │   │   │   │   ├── 📁 multiSelect
+  │       │   │   │   │   │   └── 📄 MultiSelectSidebar.tsx
+  │       │   │   │   │   ├── 📁 preview
+  │       │   │   │   │   │   └── 📄 FilePreviewSidebar.tsx
+  │       │   │   │   │   ├── 📁 trash
+  │       │   │   │   │   │   ├── 📁 bin
+  │       │   │   │   │   │   │   ├── 📄 BinGridFileItem.tsx
+  │       │   │   │   │   │   │   ├── 📄 BinGridFolderItem.tsx
+  │       │   │   │   │   │   │   └── 📄 BinRootView.tsx
+  │       │   │   │   │   │   └── 📁 navigator
+  │       │   │   │   │   │       ├── 📄 TrashFileView.tsx
+  │       │   │   │   │   │       ├── 📄 TrashFolderView.tsx
+  │       │   │   │   │   │       └── 📄 TrashNavigatorView.tsx
+  │       │   │   │   │   └── 📁 tree
+  │       │   │   │   │       ├── 📄 AppTreeWrapper.tsx
+  │       │   │   │   │       ├── 📄 FolderNodeComponent.tsx
+  │       │   │   │   │       ├── 📄 TreeView.tsx
+  │       │   │   │   │       └── 📄 VirtualFolderNodeComponent.tsx
+  │       │   │   │   └── 📁 utils
+  │       │   │   │       ├── 📄 binDisplayPath.ts
+  │       │   │   │       ├── 📄 binTrashUI.ts
+  │       │   │   │       ├── 📄 getMediaUrl.ts
+  │       │   │   │       ├── 📁 mapping
+  │       │   │   │       │   ├── 📄 injectStatusRoots.ts
+  │       │   │   │       │   └── 📄 tree.utils.ts
+  │       │   │   │       └── 📁 tri-state
+  │       │   │   │           └── 📄 triState.ts
+  │       │   │   ├── 📁 docs
+  │       │   │   │   ├── 📁 components
+  │       │   │   │   │   ├── 📄 Breadcrumbs.tsx
+  │       │   │   │   │   ├── 📄 DocsLayout.tsx
+  │       │   │   │   │   ├── 📄 DocsMainScrollControls.tsx
+  │       │   │   │   │   ├── 📄 DocsPagination.tsx
+  │       │   │   │   │   ├── 📄 DocsProgressRail.tsx
+  │       │   │   │   │   ├── 📄 DocsRightAside.tsx
+  │       │   │   │   │   ├── 📄 DocsRightAsideDrawer.tsx
+  │       │   │   │   │   ├── 📄 DocsSearch.tsx
+  │       │   │   │   │   ├── 📄 DocsSidebar.tsx
+  │       │   │   │   │   ├── 📄 DocsToc.tsx
+  │       │   │   │   │   └── 📄 SvgDiagram.tsx
+  │       │   │   │   ├── 📁 diagrams
+  │       │   │   │   │   ├── 📄 AuthFlowDiagram.tsx
+  │       │   │   │   │   ├── 📄 PrismaCoreErdDiagram.tsx
+  │       │   │   │   │   ├── 📄 PrismaCoreMemoryDiagram.tsx
+  │       │   │   │   │   └── 📄 TRPCFlowDiagram.tsx
+  │       │   │   │   ├── 📁 lib
+  │       │   │   │   │   ├── 📄 code.utils.ts
+  │       │   │   │   │   ├── 📄 docs.index.ts
+  │       │   │   │   │   ├── 📄 docs.navigation.ts
+  │       │   │   │   │   ├── 📄 docs.search.ts
+  │       │   │   │   │   ├── 📄 docs.source.ts
+  │       │   │   │   │   ├── 📄 docs.toc.ts
+  │       │   │   │   │   ├── 📄 docs.types.ts
+  │       │   │   │   │   ├── 📄 getArchitectureTree.ts
+  │       │   │   │   │   ├── 📄 parseMdxJsonString.ts
+  │       │   │   │   │   ├── 📄 projectTree.ts
+  │       │   │   │   │   ├── 📄 slugify.ts
+  │       │   │   │   │   ├── 📄 slugifyHeading.ts
+  │       │   │   │   │   └── 📄 symbolRegistry.ts
+  │       │   │   │   └── 📁 ui
+  │       │   │   │       ├── 📄 ArchitectureDiagram.tsx
+  │       │   │   │       ├── 📄 Callout.tsx
+  │       │   │   │       ├── 📄 CodeBlock.tsx
+  │       │   │   │       ├── 📄 CodeBlockFrame.tsx
+  │       │   │   │       ├── 📄 CodeExample.tsx
+  │       │   │   │       ├── 📄 CodeExampleClient.tsx
+  │       │   │   │       ├── 📄 CodeHeader.tsx
+  │       │   │   │       ├── 📄 CodePath.tsx
+  │       │   │   │       ├── 📄 CodeSnippet.tsx
+  │       │   │   │       ├── 📄 CodeSnippetWalkthrough.tsx
+  │       │   │   │       ├── 📄 CodeWalkthrough.tsx
+  │       │   │   │       ├── 📄 CodeWalktroughClient.tsx
+  │       │   │   │       ├── 📄 DocsTable.tsx
+  │       │   │   │       ├── 📄 FileIcon.tsx
+  │       │   │   │       ├── 📄 FileTree.tsx
+  │       │   │   │       ├── 📄 InlineTocText.tsx
+  │       │   │   │       ├── 📄 ProjectArchitectureLayers.tsx
+  │       │   │   │       ├── 📄 ProjectArchitectureTree.tsx
+  │       │   │   │       ├── 📄 PropsProbe.tsx
+  │       │   │   │       └── 📄 Step.tsx
+  │       │   │   ├── 📁 editor-tiptap
+  │       │   │   │   ├── 📁 components
+  │       │   │   │   │   ├── 📄 ContentViewer.tsx
+  │       │   │   │   │   └── 📄 TextEditor.tsx
+  │       │   │   │   ├── 📁 hooks
+  │       │   │   │   │   ├── 📁 headless
+  │       │   │   │   │   │   └── 📄 use-menu-navigation.ts
+  │       │   │   │   │   ├── 📄 use-cursor-visibility.ts
+  │       │   │   │   │   └── 📄 use-tiptap-editor.ts
+  │       │   │   │   ├── 📁 icons
+  │       │   │   │   │   ├── 📄 align-center-icon.tsx
+  │       │   │   │   │   ├── 📄 align-justify-icon.tsx
+  │       │   │   │   │   ├── 📄 align-left-icon.tsx
+  │       │   │   │   │   ├── 📄 align-right-icon.tsx
+  │       │   │   │   │   ├── 📄 arrow-left-icon.tsx
+  │       │   │   │   │   ├── 📄 ban-icon.tsx
+  │       │   │   │   │   ├── 📄 blockquote-icon.tsx
+  │       │   │   │   │   ├── 📄 bold-icon.tsx
+  │       │   │   │   │   ├── 📄 chevron-down-icon.tsx
+  │       │   │   │   │   ├── 📄 close-icon.tsx
+  │       │   │   │   │   ├── 📄 code-block-icon.tsx
+  │       │   │   │   │   ├── 📄 code2-icon.tsx
+  │       │   │   │   │   ├── 📄 corner-down-left-icon.tsx
+  │       │   │   │   │   ├── 📄 external-link-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-five-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-four-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-one-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-six-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-three-icon.tsx
+  │       │   │   │   │   ├── 📄 heading-two-icon.tsx
+  │       │   │   │   │   ├── 📄 highlighter-icon.tsx
+  │       │   │   │   │   ├── 📄 image-plus-icon.tsx
+  │       │   │   │   │   ├── 📄 italic-icon.tsx
+  │       │   │   │   │   ├── 📄 link-icon.tsx
+  │       │   │   │   │   ├── 📄 list-icon.tsx
+  │       │   │   │   │   ├── 📄 list-ordered-icon.tsx
+  │       │   │   │   │   ├── 📄 list-todo-icon.tsx
+  │       │   │   │   │   ├── 📄 moon-star-icon.tsx
+  │       │   │   │   │   ├── 📄 redo2-icon.tsx
+  │       │   │   │   │   ├── 📄 strike-icon.tsx
+  │       │   │   │   │   ├── 📄 subscript-icon.tsx
+  │       │   │   │   │   ├── 📄 sun-icon.tsx
+  │       │   │   │   │   ├── 📄 superscript-icon.tsx
+  │       │   │   │   │   ├── 📄 trash-icon.tsx
+  │       │   │   │   │   ├── 📄 underline-icon.tsx
+  │       │   │   │   │   └── 📄 undo2-icon.tsx
+  │       │   │   │   ├── 📁 node
+  │       │   │   │   │   ├── 📁 blockquote-node
+  │       │   │   │   │   │   └── 📄 blockquote-node.scss
+  │       │   │   │   │   ├── 📁 code-block-node
+  │       │   │   │   │   │   └── 📄 code-block-node.scss
+  │       │   │   │   │   ├── 📁 heading-node
+  │       │   │   │   │   │   └── 📄 heading-node.scss
+  │       │   │   │   │   ├── 📁 horizontal-rule-node
+  │       │   │   │   │   │   ├── 📄 horizontal-rule-node-extension.ts
+  │       │   │   │   │   │   └── 📄 horizontal-rule-node.scss
+  │       │   │   │   │   ├── 📁 image-node
+  │       │   │   │   │   │   └── 📄 image-node.scss
+  │       │   │   │   │   ├── 📁 image-upload-node
+  │       │   │   │   │   │   ├── 📄 image-upload-node-extension.ts
+  │       │   │   │   │   │   ├── 📄 image-upload-node.scss
+  │       │   │   │   │   │   ├── 📄 image-upload-node.tsx
+  │       │   │   │   │   │   └── 📄 index.tsx
+  │       │   │   │   │   ├── 📁 list-node
+  │       │   │   │   │   │   └── 📄 list-node.scss
+  │       │   │   │   │   └── 📁 paragraph-node
+  │       │   │   │   │       └── 📄 paragraph-node.scss
+  │       │   │   │   ├── 📁 templates
+  │       │   │   │   │   └── 📁 simple
+  │       │   │   │   │       ├── 📁 data
+  │       │   │   │   │       │   └── 📄 content.json
+  │       │   │   │   │       ├── 📄 simple-editor.scss
+  │       │   │   │   │       ├── 📄 simple-editor.tsx
+  │       │   │   │   │       └── 📄 theme-toggle.tsx
+  │       │   │   │   ├── 📁 ui
+  │       │   │   │   │   ├── 📁 blockquote-button
+  │       │   │   │   │   │   ├── 📄 blockquote-button.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-blockquote.ts
+  │       │   │   │   │   ├── 📁 code-block-button
+  │       │   │   │   │   │   ├── 📄 code-block-button.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-code-block.ts
+  │       │   │   │   │   ├── 📁 color-highlight-button
+  │       │   │   │   │   │   ├── 📄 color-highlight-button.scss
+  │       │   │   │   │   │   ├── 📄 color-highlight-button.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-color-highlight.ts
+  │       │   │   │   │   ├── 📁 color-highlight-popover
+  │       │   │   │   │   │   ├── 📄 color-highlight-popover.tsx
+  │       │   │   │   │   │   └── 📄 index.tsx
+  │       │   │   │   │   ├── 📁 heading-button
+  │       │   │   │   │   │   ├── 📄 heading-button.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-heading.ts
+  │       │   │   │   │   ├── 📁 heading-dropdown-menu
+  │       │   │   │   │   │   ├── 📄 heading-dropdown-menu.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-heading-dropdown-menu.ts
+  │       │   │   │   │   ├── 📁 image-upload-button
+  │       │   │   │   │   │   ├── 📄 image-upload-button.tsx
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   └── 📄 use-image-upload.ts
+  │       │   │   │   │   ├── 📁 link-popover
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   ├── 📄 link-popover.tsx
+  │       │   │   │   │   │   └── 📄 use-link-popover.ts
+  │       │   │   │   │   ├── 📁 list-button
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   ├── 📄 list-button.tsx
+  │       │   │   │   │   │   └── 📄 use-list.ts
+  │       │   │   │   │   ├── 📁 list-dropdown-menu
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   ├── 📄 list-dropdown-menu.tsx
+  │       │   │   │   │   │   └── 📄 use-list-dropdown-menu.ts
+  │       │   │   │   │   ├── 📁 mark-button
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   ├── 📄 mark-button.tsx
+  │       │   │   │   │   │   └── 📄 use-mark.ts
+  │       │   │   │   │   ├── 📁 text-align-button
+  │       │   │   │   │   │   ├── 📄 index.tsx
+  │       │   │   │   │   │   ├── 📄 text-align-button.tsx
+  │       │   │   │   │   │   └── 📄 use-text-align.ts
+  │       │   │   │   │   └── 📁 undo-redo-button
+  │       │   │   │   │       ├── 📄 index.tsx
+  │       │   │   │   │       ├── 📄 undo-redo-button.tsx
+  │       │   │   │   │       └── 📄 use-undo-redo.ts
+  │       │   │   │   └── 📁 ui-primitive
+  │       │   │   │       ├── 📁 badge
+  │       │   │   │       │   ├── 📄 badge-colors.scss
+  │       │   │   │       │   ├── 📄 badge-group.scss
+  │       │   │   │       │   ├── 📄 badge.scss
+  │       │   │   │       │   ├── 📄 badge.tsx
+  │       │   │   │       │   └── 📄 index.tsx
+  │       │   │   │       ├── 📁 button
+  │       │   │   │       │   ├── 📄 button-colors.scss
+  │       │   │   │       │   ├── 📄 button-group.scss
+  │       │   │   │       │   ├── 📄 button.scss
+  │       │   │   │       │   ├── 📄 button.tsx
+  │       │   │   │       │   └── 📄 index.tsx
+  │       │   │   │       ├── 📁 card
+  │       │   │   │       │   ├── 📄 card.scss
+  │       │   │   │       │   ├── 📄 card.tsx
+  │       │   │   │       │   └── 📄 index.tsx
+  │       │   │   │       ├── 📁 dropdown-menu
+  │       │   │   │       │   ├── 📄 dropdown-menu.scss
+  │       │   │   │       │   ├── 📄 dropdown-menu.tsx
+  │       │   │   │       │   └── 📄 index.tsx
+  │       │   │   │       ├── 📁 input
+  │       │   │   │       │   ├── 📄 index.tsx
+  │       │   │   │       │   ├── 📄 input.scss
+  │       │   │   │       │   └── 📄 input.tsx
+  │       │   │   │       ├── 📁 popover
+  │       │   │   │       │   ├── 📄 index.tsx
+  │       │   │   │       │   ├── 📄 popover.scss
+  │       │   │   │       │   └── 📄 popover.tsx
+  │       │   │   │       ├── 📁 separator
+  │       │   │   │       │   ├── 📄 index.tsx
+  │       │   │   │       │   ├── 📄 separator.scss
+  │       │   │   │       │   └── 📄 separator.tsx
+  │       │   │   │       ├── 📁 spacer
+  │       │   │   │       │   ├── 📄 index.tsx
+  │       │   │   │       │   └── 📄 spacer.tsx
+  │       │   │   │       ├── 📁 toolbar
+  │       │   │   │       │   ├── 📄 index.tsx
+  │       │   │   │       │   ├── 📄 toolbar.scss
+  │       │   │   │       │   └── 📄 toolbar.tsx
+  │       │   │   │       └── 📁 tooltip
+  │       │   │   │           ├── 📄 index.tsx
+  │       │   │   │           ├── 📄 tooltip.scss
+  │       │   │   │           └── 📄 tooltip.tsx
+  │       │   │   └── 📁 gallery-crop
+  │       │   │       ├── 📁 components
+  │       │   │       │   ├── 📄 Cropper.tsx
+  │       │   │       │   ├── 📄 cropGridOverlay.tsx
+  │       │   │       │   ├── 📄 cropMaskOverlay.tsx
+  │       │   │       │   └── 📄 untranformImageRect.ts
+  │       │   │       ├── 📁 hooks
+  │       │   │       │   └── 📄 useTransformWithUndo.ts
+  │       │   │       └── 📁 types
+  │       │   │           ├── 📄 cropper.types.ts
+  │       │   │           └── 📄 picture.types.ts
+  │       │   ├── 📁 hooks
+  │       │   │   ├── 📄 use-composed-ref.ts
+  │       │   │   ├── 📄 use-element-rect.ts
+  │       │   │   ├── 📄 use-is-breakpoint.ts
+  │       │   │   ├── 📄 use-scrolling.ts
+  │       │   │   ├── 📄 use-throttled-callback.ts
+  │       │   │   ├── 📄 use-unmount.ts
+  │       │   │   ├── 📄 use-window-size.ts
+  │       │   │   └── 📄 useActiveHeading.ts
+  │       │   ├── 📁 lib
+  │       │   │   ├── 📁 docs
+  │       │   │   │   └── 📁 docs
+  │       │   │   ├── 📁 stores
+  │       │   │   │   ├── 📄 useCategoryStore.ts
+  │       │   │   │   ├── 📄 useCourseStore.ts
+  │       │   │   │   ├── 📄 usePermissionStore.ts
+  │       │   │   │   └── 📄 useSessionStore.ts
+  │       │   │   ├── 📄 tiptap-utils.ts
+  │       │   │   └── 📁 utils
+  │       │   │       └── 📄 utils.ts
+  │       │   ├── 📄 mdx-components.tsx
+  │       │   ├── 📄 proxy.ts
+  │       │   └── 📁 styles
+  │       │       ├── 📄 _keyframe-animations.scss
+  │       │       ├── 📄 _variables.scss
+  │       │       └── 📄 cropper.css
+  │       └── 📄 tsconfig.json
+  ├── 📄 eslint.config.mjs
+  ├── 📄 generatedPrismaClient.txt
+  ├── 📄 mermaid-diagram_AKFC_Cloudinary_Finder.png
+  ├── 📄 mermaid-diagram_AKFC_Cloudinary_Flux_utilisateur.png
+  ├── 📄 package.json
+  ├── 📁 packages
+  │   ├── 📁 backend
+  │   │   ├── 📄 package.json
+  │   │   ├── 📁 src
+  │   │   │   ├── 📁 email
+  │   │   │   │   ├── 📁 services
+  │   │   │   │   │   └── 📄 sendPasswordResetEmail.ts
+  │   │   │   │   └── 📁 templates
+  │   │   │   │       └── 📄 welcomeEmailWithPassword.ts
+  │   │   │   ├── 📁 lib
+  │   │   │   │   ├── 📁 auth
+  │   │   │   │   │   └── 📄 password.ts
+  │   │   │   │   ├── 📁 security
+  │   │   │   │   │   └── 📄 generatePassword.ts
+  │   │   │   │   └── 📁 session
+  │   │   │   │       ├── 📄 session.server.ts
+  │   │   │   │       ├── 📄 session.types.ts
+  │   │   │   │       └── 📄 sessionCleanup.ts
+  │   │   │   ├── 📁 mappers
+  │   │   │   │   └── 📁 cloudinary
+  │   │   │   │       ├── 📄 README.md
+  │   │   │   │       └── 📄 tree.v1.mapper.ts
+  │   │   │   ├── 📁 middlewares
+  │   │   │   │   └── 📁 auth
+  │   │   │   │       └── 📄 requireAdmin.ts
+  │   │   │   ├── 📁 modules
+  │   │   │   │   ├── 📄 README.md
+  │   │   │   │   ├── 📁 auth
+  │   │   │   │   │   ├── 📄 getSessionFromRequest.ts
+  │   │   │   │   │   ├── 📄 router.ts
+  │   │   │   │   │   └── 📁 services
+  │   │   │   │   │       ├── 📄 auth.service.ts
+  │   │   │   │   │       └── 📄 passwordReset.service.ts
+  │   │   │   │   ├── 📁 categories
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 cloudinary
+  │   │   │   │   │   ├── 📄 cloudinary.client.ts
+  │   │   │   │   │   ├── 📄 move.guards.ts
+  │   │   │   │   │   ├── 📄 router.ts
+  │   │   │   │   │   ├── 📁 services
+  │   │   │   │   │   │   ├── 📄 cloudinary.moveFile.ts
+  │   │   │   │   │   │   ├── 📄 cloudinary.path.ts
+  │   │   │   │   │   │   ├── 📄 cloudinary.service.ts
+  │   │   │   │   │   │   ├── 📄 createUploadSignatures.service.ts
+  │   │   │   │   │   │   ├── 📄 delete.service.ts
+  │   │   │   │   │   │   ├── 📄 deleteAll.sevice.ts
+  │   │   │   │   │   │   ├── 📄 emptyBin.service.ts
+  │   │   │   │   │   │   ├── 📄 kill.service.ts
+  │   │   │   │   │   │   ├── 📄 move.service.ts
+  │   │   │   │   │   │   ├── 📄 readUploadedAssetMetadata.service.ts
+  │   │   │   │   │   │   ├── 📄 registerUploadedAssets.service.ts
+  │   │   │   │   │   │   ├── 📄 resolvePendingUploadFolder.service.ts
+  │   │   │   │   │   │   ├── 📄 restore.service.ts
+  │   │   │   │   │   │   ├── 📄 restoreAll.service.ts
+  │   │   │   │   │   │   └── 📄 upload.ts
+  │   │   │   │   │   ├── 📁 tree
+  │   │   │   │   │   │   ├── 📄 finder.tree.v1.ts
+  │   │   │   │   │   │   └── 📄 index.ts
+  │   │   │   │   │   ├── 📁 types
+  │   │   │   │   │   │   └── 📄 upload.types.ts
+  │   │   │   │   │   └── 📁 utils
+  │   │   │   │   │       ├── 📄 cloudinary.utils.ts
+  │   │   │   │   │       ├── 📄 createUploadSignatures.service.ts
+  │   │   │   │   │       ├── 📄 media-validation.utils.ts
+  │   │   │   │   │       ├── 📄 path-validation.utils.ts
+  │   │   │   │   │       └── 📄 readUploadedAssetMetadata.service.ts
+  │   │   │   │   ├── 📁 courses
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📄 index.ts
+  │   │   │   │   ├── 📁 media
+  │   │   │   │   │   └── 📄 media.service.ts
+  │   │   │   │   ├── 📁 permissions
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 posts
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 roles
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 session
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 stages
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   ├── 📁 trash
+  │   │   │   │   │   ├── 📄 router.ts
+  │   │   │   │   │   ├── 📁 services
+  │   │   │   │   │   │   ├── 📄 deleteForever.service.ts
+  │   │   │   │   │   │   ├── 📄 listBin.service.ts
+  │   │   │   │   │   │   ├── 📄 readTrashFolder.service.ts
+  │   │   │   │   │   │   ├── 📄 restoreFromBin.service.ts
+  │   │   │   │   │   │   └── 📄 trashToBin.service.ts
+  │   │   │   │   │   └── 📄 utils.ts
+  │   │   │   │   ├── 📁 uploads
+  │   │   │   │   │   └── 📄 router.ts
+  │   │   │   │   └── 📁 users
+  │   │   │   │       └── 📄 router.ts
+  │   │   │   ├── 📄 prisma.ts
+  │   │   │   ├── 📁 trpc
+  │   │   │   │   ├── 📄 core.ts
+  │   │   │   │   ├── 📄 index.ts
+  │   │   │   │   ├── 📄 middleware.ts
+  │   │   │   │   └── 📄 trpcCaller.ts
+  │   │   │   └── 📁 types
+  │   │   │       └── 📄 prisma-extended.types.ts
+  │   │   └── 📄 tsconfig.json
+  │   └── 📁 contracts
+  │       ├── 📄 package.json
+  │       ├── 📁 src
+  │       │   ├── 📁 auth
+  │       │   │   ├── 📄 auth.schema.ts
+  │       │   │   ├── 📄 constants.ts
+  │       │   │   └── 📄 session.types.ts
+  │       │   ├── 📁 cloudinary
+  │       │   │   ├── 📄 README.md
+  │       │   │   ├── 📄 finder.types.ts
+  │       │   │   ├── 📄 folder.types.ts
+  │       │   │   ├── 📄 move.schema.ts
+  │       │   │   ├── 📄 move.types.ts
+  │       │   │   ├── 📄 tree.contract.v1.ts
+  │       │   │   └── 📄 upload.schema.ts
+  │       │   ├── 📁 explorer
+  │       │   │   └── 📄 location.types.ts
+  │       │   ├── 📁 forms
+  │       │   │   ├── 📄 createCategoryForm.schema.ts
+  │       │   │   ├── 📄 createCourseForm.schema.ts
+  │       │   │   ├── 📄 createPermissionForm.schema.ts
+  │       │   │   ├── 📄 createRoleForm.schema.ts
+  │       │   │   ├── 📄 createUserForm.schema.ts
+  │       │   │   ├── 📄 form-action.types.ts
+  │       │   │   ├── 📄 picturesDragNDropForm.schema.ts
+  │       │   │   ├── 📄 updateMeForm.schema.ts
+  │       │   │   ├── 📄 updateRoleForm.schema.ts
+  │       │   │   └── 📄 updateUserRoleById.schema.ts
+  │       │   ├── 📄 index.ts
+  │       │   ├── 📁 preview
+  │       │   │   └── 📄 preview.types.ts
+  │       │   ├── 📁 trash
+  │       │   │   ├── 📄 capabilities.types.ts
+  │       │   │   ├── 📄 trash-node.types.ts
+  │       │   │   ├── 📄 trash.dto.ts
+  │       │   │   └── 📄 trash.mutations.ts
+  │       │   └── 📁 users
+  │       │       └── 📄 user-profile.types.ts
+  │       └── 📄 tsconfig.json
+  ├── 📄 pnpm-lock.yaml
+  ├── 📄 pnpm-workspace.yaml
+  ├── 📁 prisma
+  │   ├── 📁 migrations
+  │   │   ├── 📁 000000_baseline
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 000_init_baseline
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260220115321_add_cloudinary_folder_registry
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260222225726_add_trash_entry
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260223163308_add_password_reset_token
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260223190000_add_audit_log
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260318083247_remove_session_role
+  │   │   │   └── 📄 migration.sql
+  │   │   ├── 📁 20260318223326_add_media_asset
+  │   │   │   └── 📄 migration.sql
+  │   │   └── 📄 migration_lock.toml
+  │   └── 📄 schema.prisma
+  ├── 📄 prisma.config.ts
+  ├── 📄 reset-prisma.sh
+  ├── 📄 structure_converted_with_spaces.txt
+  ├── 📄 tree.txt
+  ├── 📄 trpc_tutorial_plan.md
+  └── 📄 tsconfig.base.json

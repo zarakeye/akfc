@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect } from "react";
-import { useSessionStore } from "@/lib/stores/useSessionStore";
-import { useCategoryStore } from "@/lib/stores/useCategoryStore";
+import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useCategoryStore } from "@lib/stores/useCategoryStore";
 // import { useActivityStore } from "@/lib/stores/useActivityStore";
-import { useCourseStore } from "@/lib/stores/useCourseStore";
+import { useCourseStore } from "@lib/stores/useCourseStore";
 // import { useStageStore } from "@/lib/stores/useStageStore";
 // import { useEventStore } from "@/lib/stores/useEventStore";
-import { trpcClient } from "@/core/trpc/trpcClient";
+import { trpcClient } from "@trpc/trpcClient";
 
 /**
  * A component that loads the user session on mount.

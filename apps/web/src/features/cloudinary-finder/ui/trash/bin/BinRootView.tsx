@@ -1,11 +1,11 @@
 'use client';
 
 import { JSX, useMemo } from 'react';
-import { trpc } from '@/core/trpc/trpcClient';
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
+import { trpc } from '@trpc/trpcClient';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
 
-import BinGridFolderItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
-import BinGridFileItem from '@/features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
+import BinGridFolderItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFolderItem';
+import BinGridFileItem from '@features/cloudinary-finder/ui/trash/bin/BinGridFileItem';
 
 type Props = {
   appRoot: string;

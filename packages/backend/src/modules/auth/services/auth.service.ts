@@ -1,8 +1,8 @@
 // @server/services/auth.service.ts
-import { prisma } from "@workspace/backend/prisma";
+import { prisma } from "@backend/prisma";
 import bcrypt from "bcryptjs";
-import { createSessionJWT } from "@workspace/backend/lib/session/session.server";
-import type { UserEnhancedStrict } from "@workspace/backend/types/prisma-extended.types";
+import { createSessionJWT } from "@backend/lib/session/session.server";
+import type { UserEnhancedStrict } from "@backend/types/prisma-extended.types";
 import { TRPCError } from "@trpc/server";
 
 

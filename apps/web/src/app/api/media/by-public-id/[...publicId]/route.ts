@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { fetchAuthenticatedAsset } from "@workspace/backend/modules/cloudinary/services/cloudinary.service";
+import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */

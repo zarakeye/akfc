@@ -1,4 +1,4 @@
-import type { FileNode } from "@workspace/contracts/src/cloudinary/finder.types";
+import type { FileNode } from "@contracts/cloudinary/finder.types";
 
 type Variant = "thumb" | "large" | "original";
 

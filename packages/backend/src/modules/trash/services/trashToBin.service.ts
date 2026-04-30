@@ -1,12 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 
-import { cloudinary } from "@workspace/backend/modules/cloudinary/cloudinary.client";
-import type { TrashToBinInput, TrashToBinOutput } from "@workspace/contracts/src/trash/trash.mutations";
-import type { TrashEntryDTO } from "@workspace/contracts/src/trash/trash.dto";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
+import type { TrashToBinInput, TrashToBinOutput } from "@contracts/trash/trash.mutations";
+import type { TrashEntryDTO } from "@contracts/trash/trash.dto";
 
-import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@workspace/backend/modules/trash/utils";
-import { getAssetInfo } from "@workspace/backend/modules/cloudinary/services/cloudinary.service";
+import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@backend/modules/trash/utils";
+import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /**
  * trashToBin.service.ts

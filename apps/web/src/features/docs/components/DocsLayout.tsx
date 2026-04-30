@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
-import { DocsSidebar } from "@/features/docs/components/DocsSidebar"
-import { generateDocsIndex } from "@/features/docs/lib/docs.index"
-import { DocsMainScrollControls } from "@/features/docs/components/DocsMainScrollControls"
+import { DocsSidebar } from "@features/docs/components/DocsSidebar"
+import { generateDocsIndex } from "@features/docs/lib/docs.index"
+import { DocsMainScrollControls } from "@features/docs/components/DocsMainScrollControls"
 
 export function DocsLayout({
   title,

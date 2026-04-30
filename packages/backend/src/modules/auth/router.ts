@@ -1,14 +1,14 @@
-import { router, publicProcedure, protectedProcedure } from "@workspace/backend/trpc/core";
-import { deleteSessionFromCookie } from "@workspace/backend/lib/session/session.server";
-import { loginService } from "@workspace/backend/modules/auth/services/auth.service";
+import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { deleteSessionFromCookie } from "@backend/lib/session/session.server";
+import { loginService } from "@backend/modules/auth/services/auth.service";
 import {
   createPasswordResetToken,
   hashResetToken,
   RESET_TOKEN_COOLDOWN_MS,
   RESET_TOKEN_TTL_MS,
-} from "@workspace/backend/modules/auth/services/passwordReset.service";
-import { sendPasswordResetEmail } from "@workspace/backend/email/services/sendPasswordResetEmail";
-import { prisma } from "@workspace/backend/prisma";
+} from "@backend/modules/auth/services/passwordReset.service";
+import { sendPasswordResetEmail } from "@backend/email/services/sendPasswordResetEmail";
+import { prisma } from "@backend/prisma";
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";

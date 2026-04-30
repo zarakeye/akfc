@@ -1,6 +1,6 @@
 "use client";
 
-import { useSessionStore } from "@/lib/stores/useSessionStore";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /**
  * session.client.ts

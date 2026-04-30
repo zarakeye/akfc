@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { useFormStatus } from "react-dom";
 
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 import {
   updateMeFormAction,
   initialUpdateMeFormState,

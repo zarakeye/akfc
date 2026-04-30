@@ -1,5 +1,5 @@
 import path from "node:path"
-import { readProjectTree, type TreeNode } from "@/features/docs/lib/projectTree"
+import { readProjectTree, type TreeNode } from "@features/docs/lib/projectTree"
 
 export function getArchitectureTree(): TreeNode[] {
   const repoRoot = path.resolve(process.cwd(), "..", "..")

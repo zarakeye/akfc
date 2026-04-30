@@ -3,8 +3,8 @@
 
 import { JSX, useState } from 'react';
 
-import TrashFolderView from '@/features/cloudinary-finder/ui/trash/navigator/TrashFolderView';
-import TrashFileView from '@/features/cloudinary-finder/ui/trash/navigator/TrashFileView';
+import TrashFolderView from '@features/cloudinary-finder/ui/trash/navigator/TrashFolderView';
+import TrashFileView from '@features/cloudinary-finder/ui/trash/navigator/TrashFileView';
 
 type Props = {
   appRoot: string;

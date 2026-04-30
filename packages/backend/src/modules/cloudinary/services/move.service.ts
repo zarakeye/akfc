@@ -1,10 +1,10 @@
-import { cloudinary } from '@workspace/backend/modules/cloudinary/cloudinary.client';
-import { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
+import { cloudinary } from '@backend/modules/cloudinary/cloudinary.client';
+import { MoveIntent } from '@contracts/cloudinary/move.schema';
 import {
   replaceStatusSegment,
   moveFileIntoFolder,
-} from '@workspace/backend/modules/cloudinary/utils/cloudinary.utils';
-import { getAssetInfo } from '@workspace/backend/modules/cloudinary/services/cloudinary.service';
+} from '@backend/modules/cloudinary/utils/cloudinary.utils';
+import { getAssetInfo } from '@backend/modules/cloudinary/services/cloudinary.service';
 
 /**
  * move.service.ts

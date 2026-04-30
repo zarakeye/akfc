@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 
-import type { DocPage } from "@/features/docs/lib/docs.types"
+import type { DocPage } from "@features/docs/lib/docs.types"
 
 type NavigationSection = {
   section: string

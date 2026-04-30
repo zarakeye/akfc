@@ -18,7 +18,7 @@ export default function LoadingOverlay({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 pointer-events-auto">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/30 pointer-events-auto">
       <div className="rounded-lg bg-white px-5 py-4 shadow-lg flex items-center gap-3">
         {/* Spinner simple Tailwind */}
         <div className="h-5 w-5 rounded-full border-2 border-gray-300 border-t-gray-800 animate-spin" />

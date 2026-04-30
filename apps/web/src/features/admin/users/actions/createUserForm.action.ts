@@ -1,12 +1,12 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { getUserFromSessionJWT } from "packages/backend/src/lib/session/session.server";
+import { getUserFromSessionJWT } from "@backend/lib/session/session.server";
 import bcrypt from "bcryptjs";
-import generateStrongPassword from "packages/backend/src/lib/security/generatePassword";
-import sendPasswordEmail from "packages/backend/src/email/templates/welcomeEmailWithPassword";
-import { prisma } from "packages/backend/src/prisma";
-import { createUserFormSchema } from "packages/contracts/schemas/forms/createUserForm.schema";
+import generateStrongPassword from "@backend/lib/security/generatePassword";
+import sendPasswordEmail from "@backend/email/templates/welcomeEmailWithPassword";
+import { prisma } from "@backend/prisma";
+import { createUserFormSchema } from "@contracts/forms/createUserForm.schema";
 
 export interface CreateUserFormState {
   success: boolean;

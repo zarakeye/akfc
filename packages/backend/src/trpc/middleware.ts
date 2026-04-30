@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { t } from "./core";
+import { t } from "@backend/trpc/core";
 
 export const requirePermission = (permissionName: string) =>
   t.middleware(({ ctx, next }) => {

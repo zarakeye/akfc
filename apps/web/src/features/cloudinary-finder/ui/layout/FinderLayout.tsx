@@ -1,25 +1,25 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
-import { TreeView } from '@/features/cloudinary-finder/ui/tree/TreeView';
-import FolderContentView from '@/features/cloudinary-finder/ui/content/FolderContentView';
-import { FilePreviewSidebar } from '@/features/cloudinary-finder/ui/preview/FilePreviewSidebar';
-import BinRootView from '@/features/cloudinary-finder/ui/trash/bin/BinRootView';
-import TrashFolderView from '@/features/cloudinary-finder/ui/trash/navigator/TrashFolderView';
-import { injectStatusRoots } from '@/features/cloudinary-finder/utils/mapping/injectStatusRoots';
+import { TreeView } from '@features/cloudinary-finder/ui/tree/TreeView';
+import FolderContentView from '@features/cloudinary-finder/ui/content/FolderContentView';
+import { FilePreviewSidebar } from '@features/cloudinary-finder/ui/preview/FilePreviewSidebar';
+import BinRootView from '@features/cloudinary-finder/ui/trash/bin/BinRootView';
+import TrashFolderView from '@features/cloudinary-finder/ui/trash/navigator/TrashFolderView';
+import { injectStatusRoots } from '@features/cloudinary-finder/utils/mapping/injectStatusRoots';
 
-import type { FolderNode, FileNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import { BreadCrumb } from '@/features/cloudinary-finder/ui/breadcrumb/BreadCrumb';
-import type { MoveIntent } from '@workspace/contracts/schemas/cloudinary/move.schema';
+import type { FolderNode, FileNode } from '@contracts/cloudinary/finder.types';
+import { BreadCrumb } from '@features/cloudinary-finder/ui/breadcrumb/BreadCrumb';
+import type { MoveIntent } from '@contracts/cloudinary/move.schema';
 
 import AppTreeWrapper from '../tree/AppTreeWrapper';
-import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import MultiSelectSidebar from '../multiSelect/MultiSelectSidebar';
+import { canMove } from '@backend/modules/cloudinary/move.guards';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import MultiSelectSidebar from '@features/cloudinary-finder/ui/multiSelect/MultiSelectSidebar';
 
-import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import LoadingOverlay from '@components/ui/LoadingOverlay';
 
 const APP_SHORT_NAME = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my-app';
 const INITIAL_PATH = `${APP_SHORT_NAME}`;

@@ -1,6 +1,6 @@
-import { readCodeFile } from "@/features/docs/lib/code.utils"
+import { readCodeFile } from "@features/docs/lib/code.utils"
 import { renderCodeBlockHtml } from "./CodeBlock"
-import { CodeWalkthroughClient } from "@/features/docs/ui/CodeWalktroughClient"
+import { CodeWalkthroughClient } from "@features/docs/ui/CodeWalktroughClient"
 
 interface WalkthroughStep {
   title: string

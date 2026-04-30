@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { router, protectedProcedure } from "../../trpc/core";
-import { isAdmin } from "../../trpc/middleware";
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 
 export const sessionRouter = router({
   getAll: protectedProcedure

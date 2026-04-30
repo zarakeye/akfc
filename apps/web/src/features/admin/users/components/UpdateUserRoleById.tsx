@@ -2,7 +2,7 @@
 
 import { JSX } from 'react';
 import type { Role } from '@prisma/client';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
 /**
  * UpdateUserRoleById

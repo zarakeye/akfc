@@ -1,7 +1,7 @@
 'use server';
 
-import { prisma } from "packages/backend/src/prisma";
-import { createPermissionFormSchema } from "../../../../../../../packages/contracts/schemas/forms/createPermissionForm.schema";
+import { prisma } from "@backend/prisma";
+import { createPermissionFormSchema } from "@contracts/forms/createPermissionForm.schema";
 
 export type CreatePermissionFormState = {
   success: boolean;

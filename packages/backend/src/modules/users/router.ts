@@ -1,12 +1,12 @@
-import { router, protectedProcedure } from "@workspace/backend/trpc/core";
-import { requirePermission, isAdmin } from "@workspace/backend/trpc/middleware";
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { requirePermission, isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 
-import type { UserProfile } from "@workspace/contracts/src/users/user-profile.types";
-import { updateMeFormSchema } from "@workspace/contracts/schemas/forms/updateMeForm.schema";
-import { updateUserRoleByIdSchema } from "@workspace/contracts/schemas/forms/updateUserRoleById.schema";
+import type { UserProfile } from "@contracts/users/user-profile.types";
+import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
+import { updateUserRoleByIdSchema } from "@contracts/forms/updateUserRoleById.schema";
 
 export const userRouter = router({
   getAll: protectedProcedure

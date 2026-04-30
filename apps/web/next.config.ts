@@ -13,7 +13,7 @@ const withMDX = createMDX({
     // next.config.ts est compilé en CommonJS, où import.meta n'existe pas.
     // process.cwd() pointe vers apps/web quand on lance `pnpm dev`.
     remarkPlugins: [
-      path.join(process.cwd(), "src/mdx/remark-flatten-mdx-attrs.mjs"),
+      path.join(process.cwd(), "src/../mdx/remark-flatten-mdx-attrs.mjs"),
     ],
   },
 })

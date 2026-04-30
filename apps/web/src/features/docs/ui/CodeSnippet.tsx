@@ -2,7 +2,7 @@ import { use } from "react"
 
 import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeBlockFrame } from "./CodeBlockFrame"
-import { parseMdxJsonString } from "@/features/docs/lib/parseMdxJsonString"
+import { parseMdxJsonString } from "@features/docs/lib/parseMdxJsonString"
 
 type CodeSnippetKind = "educational" | "pattern" | "anti-pattern"
 

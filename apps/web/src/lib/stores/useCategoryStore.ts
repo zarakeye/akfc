@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { trpcClient } from "@/core/trpc/trpcClient";
+import { trpcClient } from "@trpc/trpcClient";
 import type { Category } from "@prisma/client";
 
 export interface CategoryState {

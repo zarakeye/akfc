@@ -1,4 +1,4 @@
-import { cloudinary } from "@workspace/backend/modules/cloudinary/cloudinary.client";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import type { TransformationOptions } from "cloudinary";
 
 /* -------------------------------------------------------------------------- */

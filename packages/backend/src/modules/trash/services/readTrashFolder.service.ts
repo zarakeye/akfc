@@ -1,15 +1,15 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@workspace/backend/modules/cloudinary/cloudinary.client";
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import type {
   ReadTrashFolderInput,
   ReadTrashFolderOutput,
   TrashFileNode,
   TrashFolderNode,
   TrashMeta,
-} from "@workspace/contracts/src/trash/trash-node.types";
+} from "@contracts/trash/trash-node.types";
 
-import { normalizePath } from "@workspace/backend/modules/trash/utils";
+import { normalizePath } from "@backend/modules/trash/utils";
 
 /**
  * readTrashFolder.service.ts

@@ -3,13 +3,13 @@
 import { JSX, useRef, useState } from 'react';
 import Image from 'next/image';
 
-import type { FileNode, TreeNode } from '@workspace/contracts/src/cloudinary/finder.types';
-import { explorerNodeToDragSource } from '@/features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
+import type { FileNode, TreeNode } from '@contracts/cloudinary/finder.types';
+import { explorerNodeToDragSource } from '@features/cloudinary-finder/adapters/mappers/explorer.move.mapper';
 
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
-import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
-import { startDragGhost } from '@/features/cloudinary-finder/dnd/dragGhost.manager';
-import { getMediaUrl } from '@/features/cloudinary-finder/utils/getMediaUrl';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
+import { useLongPress } from '@features/cloudinary-finder/hooks/useLongPress';
+import { startDragGhost } from '@features/cloudinary-finder/dnd/dragGhost.manager';
+import { getMediaUrl } from '@features/cloudinary-finder/utils/getMediaUrl';
 
 type Props = {
   file: FileNode;

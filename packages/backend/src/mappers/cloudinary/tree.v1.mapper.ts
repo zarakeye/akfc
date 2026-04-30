@@ -2,12 +2,12 @@ import type {
   CloudinaryFolderNode,
   CloudinaryNode,
   CloudinaryFileNode,
-} from "@workspace/contracts/src/cloudinary/tree.contract.v1";
+} from "@contracts/cloudinary/tree.contract.v1";
 
 import type {
   FolderNode,
   FileNode,
-} from "@workspace/contracts/src/cloudinary/finder.types";
+} from "@contracts/cloudinary/finder.types";
 
 export function mapCloudinaryFolderToClient(
   folder: CloudinaryFolderNode

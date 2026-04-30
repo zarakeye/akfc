@@ -1,5 +1,5 @@
-import type { TocItem } from "@/features/docs/lib/docs.types"
-import { slugifyHeading } from "@/features/docs/lib/slugifyHeading"
+import type { TocItem } from "@features/docs/lib/docs.types"
+import { slugifyHeading } from "@features/docs/lib/slugifyHeading"
 
 function stripMarkdownForSlug(text: string): string {
   return text

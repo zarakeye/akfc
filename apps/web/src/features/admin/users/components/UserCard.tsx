@@ -2,7 +2,7 @@
 
 import { JSX } from 'react';
 import Image from 'next/image';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
 interface UserCardProps {
   userId: string;

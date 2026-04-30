@@ -1,8 +1,8 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { prisma } from "packages/backend/src/prisma";
-import { updateRoleFormSchema } from "packages/contracts/schemas/forms/updateRoleForm.schema";
+import { prisma } from "@backend/prisma";
+import { updateRoleFormSchema } from "@contracts/forms/updateRoleForm.schema";
 
 export interface UpdateRoleFormState {
   success: boolean;

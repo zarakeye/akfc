@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { uploadAssetRequestSchema, uploadDestinationSchema } from "@workspace/contracts/schemas/cloudinary/upload.schema";
+import { uploadAssetRequestSchema, uploadDestinationSchema } from "@contracts/cloudinary/upload.schema";
 
 export type UploadDestination = z.infer<typeof uploadDestinationSchema>;
 
@@ -14,6 +14,7 @@ export type UploadSignature = {
   folder: string;
   publicId: string;
   timestamp: number;
+  type: "authenticated";
   signature: string;
   apiKey: string;
   cloudName: string;

@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import type { DocPage } from "@/features/docs/lib/docs.types"
+import type { DocPage } from "@features/docs/lib/docs.types"
 
 export function DocsPagination({
   prev,

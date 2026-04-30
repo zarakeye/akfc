@@ -34,4 +34,4 @@
  *
  * No automatic version switching is performed by design.
  */
-export { buildCloudinaryTree as buildCloudinaryTreeV1 } from "@workspace/backend/modules/cloudinary/tree/finder.tree.v1";
+export { buildCloudinaryTree as buildCloudinaryTreeV1 } from "@backend/modules/cloudinary/tree/finder.tree.v1";

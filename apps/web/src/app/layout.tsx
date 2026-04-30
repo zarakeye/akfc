@@ -2,10 +2,10 @@ import { JSX } from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
-import "./globals.css"
-import { AppProviders } from "@/app/providers"
-import { SessionLoader } from "@/features/auth/SessionLoader"
-import Header from "@/features/app-shell/Header"
+import "./globals.css";
+import { AppProviders } from "@app/providers"
+import { SessionLoader } from "@features/auth/SessionLoader"
+import Header from "@features/app-shell/Header"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

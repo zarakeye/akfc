@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 
 interface PermissionPageProps {
   params: {

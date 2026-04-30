@@ -1,4 +1,4 @@
-import { extractLines, readCodeFile } from "@/features/docs/lib/code.utils"
+import { extractLines, readCodeFile } from "@features/docs/lib/code.utils"
 import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeExampleClient } from "./CodeExampleClient"
 

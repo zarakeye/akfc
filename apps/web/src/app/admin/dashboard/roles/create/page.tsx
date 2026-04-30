@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import { CreateRoleForm } from "@/features/admin/roles/forms/CreateRoleForm";
+import { CreateRoleForm } from "@features/admin/roles/forms/CreateRoleForm";
 
 /**
  * Page for creating a new role.

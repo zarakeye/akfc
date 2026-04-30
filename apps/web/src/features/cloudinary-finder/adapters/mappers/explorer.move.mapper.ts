@@ -8,16 +8,16 @@
  * - Garder explorerNodeToMoveTarget compatible avec RootNode (virtual-folder) et TreeNode (folder réel).
  */
 
-import type { SelectionState } from '@/features/cloudinary-finder/model/selection/selection.types';
+import type { SelectionState } from '@features/cloudinary-finder/model/selection/selection.types';
 
 import type {
   TreeNode,
   RootNode,
-} from '@workspace/contracts/src/cloudinary/finder-ui.types';
+} from '@contracts/cloudinary/finder.types';
 import type {
   DragSource,
   MoveTarget,
-} from 'packages/contracts/src/cloudinary/move.types';
+} from '@contracts/cloudinary/move.types';
 
 function normalizePath(p: string) {
   return p.replace(/^\/+|\/+$/g, '');

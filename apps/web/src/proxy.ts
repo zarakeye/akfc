@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { COOKIE_NAME } from "@workspace/contracts/src/auth/constants";
+import { COOKIE_NAME } from "@contracts/auth/constants";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

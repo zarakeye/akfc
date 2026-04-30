@@ -1,4 +1,4 @@
-import React from "react"
+import { JSX } from "react"
 
 export default function PrismaCoreMemoryDiagram(): JSX.Element {
   return (

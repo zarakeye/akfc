@@ -1,9 +1,9 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { prisma } from "packages/backend/src/prisma";
-import { createCategoryFormSchema } from "packages/contracts/schemas/forms/createCategoryForm.schema";
-import { CreateCategoryState } from "@/features/admin/categories/types/createCategoryState.types";
+import { prisma } from "@backend/prisma";
+import { createCategoryFormSchema } from "@contracts/forms/createCategoryForm.schema";
+import { CreateCategoryState } from "@features/admin/categories/types/createCategoryState.types";
 
 /**
  * 🧩 Action Server

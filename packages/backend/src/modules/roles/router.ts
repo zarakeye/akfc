@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { protectedProcedure, router } from "../../trpc/core";
-import { requirePermission } from "../../trpc/middleware";
+import { protectedProcedure, router } from "@backend/trpc/core";
+import { requirePermission } from "@backend/trpc/middleware";
 
 export const roleRouter = router({
   getAll: protectedProcedure

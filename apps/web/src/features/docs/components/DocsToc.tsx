@@ -1,9 +1,9 @@
 "use client"
 
-import { InlineTocText } from "@/features/docs/ui/InlineTocText"
-import { useActiveHeading } from "@/hooks/useActiveHeading"
+import { InlineTocText } from "@features/docs/ui/InlineTocText"
+import { useActiveHeading } from "@hooks/useActiveHeading"
 import clsx from "clsx"
-import type { TocItem } from "@/features/docs/lib/docs.types"
+import type { TocItem } from "@features/docs/lib/docs.types"
 
 export function DocsToc({ items }: { items: TocItem[] }) {
   const ids = items.map((item) => item.id)

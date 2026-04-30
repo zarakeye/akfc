@@ -1,4 +1,4 @@
-import type { FolderNode, TreeNode } from "@workspace/contracts/src/cloudinary/finder.types";
+import type { FolderNode, TreeNode } from "@contracts/cloudinary/finder.types";
 
 export type TriState = "checked" | "indeterminate" | "unchecked";
 

@@ -1,15 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
+    // "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -17,51 +13,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    // baseUrl supprimé (déprécié en TS 5, supprimé en TS 7).
-    // Avec moduleResolution: "bundler", les paths se résolvent
-    // relativement à l'emplacement de ce tsconfig.base.json.
-    "paths": {
-      "@/*": [
-        "./apps/web/src/*"
-      ],
-      "@web/*": [
-        "./apps/web/src/*"
-      ],
-      "@mobile/*": [
-        "./apps/mobile/src/*"
-      ],
-      "@workspace/backend/*": [
-        "./packages/backend/src/*"
-      ],
-      "@workspace/contracts/*": [
-        "./packages/contracts/*"
-      ]
-    }
-  },
-  "include": [
-    "next-env.d.ts",
-    "apps/web/src/**/*.ts",
-    "apps/web/src/**/*.tsx",
-    "apps/web/src/cropper-elements.d.ts",
-    "apps/web/src/content/**/*.mdx",
-    "**/*.mdx",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.mts",
-    "prisma/seed.js",
-    "prisma.config.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "dist"
-  ]
+    "plugins": [{ "name": "next" }]
+  }
 }

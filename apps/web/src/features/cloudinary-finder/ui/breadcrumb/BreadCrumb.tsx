@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useEffect, useMemo, useRef, useState } from 'react';
-import { trpc } from '@/core/trpc/trpcClient';
+import { trpc } from '@trpc/trpcClient';
 
 type Props = {
   path: string;

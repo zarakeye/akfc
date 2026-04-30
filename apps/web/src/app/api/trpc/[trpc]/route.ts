@@ -1,8 +1,8 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 import type { NextRequest } from "next/server"
 
-import { appRouter } from "@workspace/backend/modules"
-import { createTRPCContext } from "@workspace/backend/trpc"
+import { appRouter } from "@backend/modules"
+import { createTRPCContext } from "@backend/trpc"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

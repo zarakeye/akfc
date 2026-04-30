@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { DocsRightAside } from "./DocsRightAside"
-import type { TocItem } from "@/features/docs/lib/docs.types"
+import type { TocItem } from "@features/docs/lib/docs.types"
 
 export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
   const [open, setOpen] = useState(false)

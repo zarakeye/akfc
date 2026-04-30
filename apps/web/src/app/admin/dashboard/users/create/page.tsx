@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import { CreateUserForm } from "@/features/admin/users/forms/CreateUserForm";
+import { CreateUserForm } from "@features/admin/users/forms/CreateUserForm";
 
 /**
  * Page for creating a new user.

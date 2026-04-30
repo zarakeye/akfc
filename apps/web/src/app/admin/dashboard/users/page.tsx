@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from 'react';
-import UsersList from "@/features/admin/users/components/UsersList";
+import UsersList from "@features/admin/users/components/UsersList";
 
 /**
  * Page displaying the list of users.

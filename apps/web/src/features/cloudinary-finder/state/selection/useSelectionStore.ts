@@ -1,7 +1,7 @@
 // src/lib/stores/useSelectionStore.ts
 import { create } from 'zustand';
 
-import { SelectionState } from '@/features/cloudinary-finder/model/selection/selection.types';
+import { SelectionState } from '@features/cloudinary-finder/model/selection/selection.types';
 
 /**
  * useSelectionStore

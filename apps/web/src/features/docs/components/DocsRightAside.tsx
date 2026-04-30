@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { TocItem } from "@/features/docs/lib/docs.types"
-import { InlineTocText } from "@/features/docs/ui/InlineTocText"
+import type { TocItem } from "@features/docs/lib/docs.types"
+import { InlineTocText } from "@features/docs/ui/InlineTocText"
 
 function getCenterScrollContainer(): HTMLElement | null {
   return document.getElementById("docs-content-scroll")

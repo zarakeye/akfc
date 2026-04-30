@@ -1,12 +1,12 @@
 import crypto from "crypto";
 import type { PrismaClient } from "@prisma/client";
 
-import { resolvePendingUploadFolder } from "./resolvePendingUploadFolder.service";
+import { resolvePendingUploadFolder } from "@backend/modules/cloudinary/services/resolvePendingUploadFolder.service";
 import type {
   UploadDestination,
   UploadAssetRequest,
   CreateUploadSignaturesOutput,
-} from "../types/upload.types";
+} from "@backend/modules/cloudinary/types/upload.types";
 
 export async function createUploadSignatures(params: {
   prisma: PrismaClient;

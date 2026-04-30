@@ -1,6 +1,6 @@
 import { renderCodeBlockHtml } from "./CodeBlock"
-import { CodeWalkthroughClient } from "@/features/docs/ui/CodeWalktroughClient"
-import { parseMdxJsonString } from "@/features/docs/lib/parseMdxJsonString"
+import { CodeWalkthroughClient } from "@features/docs/ui/CodeWalktroughClient"
+import { parseMdxJsonString } from "@features/docs/lib/parseMdxJsonString"
 
 type CodeSnippetWalkthroughKind = "educational" | "pattern" | "anti-pattern"
 

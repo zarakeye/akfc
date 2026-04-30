@@ -2,8 +2,8 @@
 'use client';
 
 import { JSX, useRef } from 'react';
-import { useLongPress } from '@/features/cloudinary-finder/hooks/useLongPress';
-import { useSelectionStore } from '@/features/cloudinary-finder/state/selection/useSelectionStore';
+import { useLongPress } from '@features/cloudinary-finder/hooks/useLongPress';
+import { useSelectionStore } from '@features/cloudinary-finder/state/selection/useSelectionStore';
 
 type Props = {
   trashId: string;

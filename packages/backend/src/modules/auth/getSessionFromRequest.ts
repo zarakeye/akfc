@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-import { prisma } from "@workspace/backend/prisma";
-import { COOKIE_NAME } from "@workspace/contracts/src/auth/constants";
+import { prisma } from "@backend/prisma";
+import { COOKIE_NAME } from "@contracts/auth/constants";
 import type { Permission, Role, Session, User } from "@prisma/client";
-import type { SessionClient } from "@workspace/contracts/src/auth/session.types";
+import type { SessionClient } from "@contracts/auth/session.types";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

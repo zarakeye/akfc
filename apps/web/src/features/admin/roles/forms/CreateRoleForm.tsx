@@ -1,23 +1,23 @@
 import { useForm, Controller } from "react-hook-form";
 import { JSX, useActionState } from 'react';
-import { createRoleFormAction, type CreateRoleFormState } from '@/features/admin/roles/actions/createRoleForm.action';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Checkbox } from "@/components/ui/checkbox"
+import { createRoleFormAction, type CreateRoleFormState } from '@features/admin/roles/actions/createRoleForm.action';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Label } from '@components/ui/Label';
+import { Checkbox } from "@components/ui/checkbox"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@components/ui/popover"
 // import { toast } from 'sonner';
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 import type { Permission } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createRoleFormSchema } from "packages/contracts/schemas/forms/createRoleForm.schema";
+import { createRoleFormSchema } from "@contracts/forms/createRoleForm.schema";
 import { AlertCircleIcon, BadgeCheckIcon, CheckIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@components/ui/badge";
 
 interface FormValues {
   name: string;

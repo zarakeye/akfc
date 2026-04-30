@@ -1,4 +1,4 @@
-import type { DragSource, MoveTarget } from "packages/contracts/src/cloudinary/move.types";
+import type { DragSource, MoveTarget } from "@contracts/cloudinary/move.types";
 
 /**
  * ---------------------------------------------------------------------------

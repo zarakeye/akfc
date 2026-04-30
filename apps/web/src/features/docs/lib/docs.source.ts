@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import matter from "gray-matter"
 
-import type { DocFrontmatter, DocPage } from "@/features/docs/lib/docs.types"
+import type { DocFrontmatter, DocPage } from "@features/docs/lib/docs.types"
 
 function resolveDocsRoot(): string {
   const cwd = process.cwd()

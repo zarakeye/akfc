@@ -1,6 +1,6 @@
 // FlowAuthDiagram.tsx
 
-import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
+import { ArchitectureDiagram } from "@features/docs/ui/ArchitectureDiagram"
 
 export function AuthFlowDiagram() {
   return (

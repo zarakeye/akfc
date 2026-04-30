@@ -1,6 +1,6 @@
 import type {
   CloudinaryFolderNode,
-} from "packages/contracts/src/cloudinary/tree.contract.v1";
+} from "@contracts/cloudinary/tree.contract.v1";
 
 interface FlatResource {
   publicId: string;

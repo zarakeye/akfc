@@ -1,11 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@workspace/backend//modules/cloudinary/cloudinary.client";
+import { cloudinary } from "@backend//modules/cloudinary/cloudinary.client";
 import type {
   RestoreFromBinInput,
   RestoreFromBinOutput,
   RestoreResultItem,
-} from "@workspace/contracts/src/trash/trash.mutations";
+} from "@contracts/trash/trash.mutations";
 
 import {
   formatBinSuffix,
@@ -14,8 +14,8 @@ import {
   suffixFileName,
   suffixFilePath,
   suffixFolderPath,
-} from "@workspace/backend//modules/trash/utils";
-import { getAssetInfo, fileExists } from "@workspace/backend/modules/cloudinary/services/cloudinary.service";
+} from "@backend//modules/trash/utils";
+import { getAssetInfo, fileExists } from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /**
  * restoreFromBin.service.ts

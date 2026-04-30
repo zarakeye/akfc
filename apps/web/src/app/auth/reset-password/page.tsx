@@ -2,7 +2,7 @@
 
 import { JSX, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 
 /**
  * /auth/reset-password?token=...

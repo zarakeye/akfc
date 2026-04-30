@@ -8,8 +8,8 @@
  * - Badge pastel + shadow + icône SVG (traits arrondis)
  */
 
-import type { DragSource, MoveTarget } from 'packages/contracts/src/cloudinary/move.types';
-import { canMove } from '@workspace/backend/modules/cloudinary/move.guards';
+import type { DragSource, MoveTarget } from '@contracts/cloudinary/move.types';
+import { canMove } from '@backend/modules/cloudinary/move.guards';
 
 type Preview =
   | { kind: 'file'; name: string; thumbUrl: string }

@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX } from "react";
-import { useSessionStore } from "@/lib/stores/useSessionStore";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 

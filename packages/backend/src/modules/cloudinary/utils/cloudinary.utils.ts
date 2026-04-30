@@ -1,5 +1,5 @@
-import { FolderStatus } from "packages/contracts/src/cloudinary/folder.types";
-import { MoveIntent } from "packages/contracts/schemas/cloudinary/move.schema";
+import { FolderStatus } from "@contracts/cloudinary/folder.types";
+import { MoveIntent } from "@contracts/cloudinary/move.schema";
 
 /**
  * Replaces the status segment of a Cloudinary path with a new status.

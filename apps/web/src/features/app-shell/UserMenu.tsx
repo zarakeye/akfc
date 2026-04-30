@@ -3,7 +3,7 @@
 import { JSX, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useSessionStore } from '@/lib/stores/useSessionStore';
+import { useSessionStore } from '@lib/stores/useSessionStore';
 
 /**
  * UserMenu is a React component that displays a user menu when the user is connected.
