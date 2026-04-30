@@ -1,4 +1,4 @@
-export type NodeType = 'folder' | 'file' | 'virtual-folder';
+export type NodeType = 'folder' | 'file';
 
 export interface finderNode {
   id: string;             // unique (peut être path ou uuid selon adapter)
