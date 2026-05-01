@@ -1,77 +1,109 @@
-import { create } from "zustand";
-import type { FinderNode } from "@features/finder-core/types";
-import { APP_ROOT } from "@/config/app";
+import { create } from 'zustand';
+import { APP_ROOT } from '@/config/app';
 
-type SelectionMode = 'single' | 'multiple';
+/* -------------------------------------------------------------------------- */
+/*                                   TYPES                                    */
+/* -------------------------------------------------------------------------- */
 
-interface FinderState {
-  // navigation
+export type FinderFolder = {
+  id: string;
+  name: string;
+  path: string;
+};
+
+export type FinderFile = {
+  id: string;
+  name: string;
+  path: string;
+};
+
+type SelectionState = {
+  selectedIds: Set<string>;
+};
+
+type FinderState = {
+  /* -------------------------------------------------------------------------- */
+  /*                                  NAVIGATION                                */
+  /* -------------------------------------------------------------------------- */
+
   currentPath: string;
   setPath: (path: string) => void;
 
-  // currennt content
-  folders: FinderNode[];
-  files: FinderNode[];
-  setContent: (data: { folders: FinderNode[]; files: FinderNode[] }) => void;
+  /* -------------------------------------------------------------------------- */
+  /*                                   CONTENT                                  */
+  /* -------------------------------------------------------------------------- */
 
-  // selection
-  selectionMode: SelectionMode;
-  selected: Set<string>;
+  folders: FinderFolder[];
+  files: FinderFile[];
 
-  select: (id: string) => void;
+  setContent: (data: {
+    folders: FinderFolder[];
+    files: FinderFile[];
+  }) => void;
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  SELECTION                                 */
+  /* -------------------------------------------------------------------------- */
+
+  selection: SelectionState;
+  setSelection: (ids: string[]) => void;
   toggleSelect: (id: string) => void;
   clearSelection: () => void;
-
-  setSelectionMode: (mode: SelectionMode) => void;
 };
 
-export const useFinderStore = create<FinderState>((set, get) => ({
-  // navigation
-  currentPath: `${APP_ROOT}`, // point de départ configurable
-  setPath: (path) => set({ currentPath: path }),
+/* -------------------------------------------------------------------------- */
+/*                                   STORE                                    */
+/* -------------------------------------------------------------------------- */
 
-  // content
+export const useFinderStore = create<FinderState>((set) => ({
+  /* -------------------------------- NAV -------------------------------- */
+
+  currentPath: `${APP_ROOT}`,
+
+  setPath: (path) =>
+    set(() => ({
+      currentPath: path,
+      selection: { selectedIds: new Set() }, // reset sélection
+    })),
+
+  /* ------------------------------ CONTENT -------------------------------- */
+
   folders: [],
   files: [],
-  setContent: ({ folders, files }) => set({ folders, files }),
 
-  // selection
-  selectionMode: 'single',
-  selected: new Set(),
+  setContent: ({ folders, files }) =>
+    set(() => ({
+      folders,
+      files,
+    })),
 
-  select: (id) => {
-    const { selectionMode } = get();
+  /* ----------------------------- SELECTION -------------------------------- */
 
-    if (selectionMode === 'single') {
-      set({ selected: new Set([id]) });
-    } else {
-      set((state) => {
-        const next = new Set(state.selected);
-        next.add(id);
-        return { selected: next };
-      });
-    }
+  selection: {
+    selectedIds: new Set<string>(),
   },
 
-  toggleSelect: (id) => {
+  setSelection: (ids) =>
+    set(() => ({
+      selection: {
+        selectedIds: new Set(ids),
+      },
+    })),
+
+  toggleSelect: (id) =>
     set((state) => {
-      const next = new Set(state.selected);
+      const next = new Set(state.selection.selectedIds);
 
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        if (state.selectionMode === 'single') {
-          return { selected: new Set([id]) };
-        }
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
 
-      return { selected: next };
-    });
-  },
+      return {
+        selection: { selectedIds: next },
+      };
+    }),
 
-  clearSelection: () => set({ selected: new Set() }),
-
-  setSelectionMode: (mode) => set({ selectionMode: mode }),
+  clearSelection: () =>
+    set(() => ({
+      selection: { selectedIds: new Set() },
+    })),
 }));
-

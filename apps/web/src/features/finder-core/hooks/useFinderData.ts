@@ -10,7 +10,6 @@ type UseFinderDataResult = {
 export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
   const currentPath = useFinderStore((state) => state.currentPath);
   const setContent = useFinderStore((state) => state.setContent);
-  const clearSelection = useFinderStore((state) => state.clearSelection);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,14 +32,11 @@ export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
           folders: result.folders,
           files: result.files
         });
-
-        // 👉 reset sélection à chaque navigation (comportement Finder classique)
-        clearSelection();
       } catch (err) {
         if (cancelled) return;
 
         console.error('[useFinderData]', err);
-        setError('Failed to load data');
+        setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -51,7 +47,7 @@ export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
     return () => {
       cancelled = true;
     };
-  }, [currentPath, adapter, setContent, clearSelection]);
+  }, [currentPath, adapter, setContent]);
 
   return {
     loading,
