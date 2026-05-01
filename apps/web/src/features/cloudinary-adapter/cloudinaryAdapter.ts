@@ -1,55 +1,64 @@
-import type { FileAdapter, ListOptions, ListResult, FinderNode } from "@features/finder-core/types";
+import type {
+  FileAdapter,
+  ListOptions,
+  ListResult,
+  FinderNode,
+} from '@features/finder-core/types';
+import { trpcClient } from '@/core/trpc/trpcClient';
+import type { CloudinaryFolderTree } from '@features/cloudinary-adapter/types';
 
-type CloudinaryClient = {
-  media: {
-    list: (input: {
-      path: string;
-      cursor?: string | null;
-      limit?: number;
-    }) => Promise<{
-      folders: { name: string; fullPath: string }[];
-      assets: { publicId: string; format?: string }[];
-      nextCursor?: string | null;
-    }>;
-  };
-}; 
+/**
+ * 🔁 Helper : extraire enfants directs
+ */
+function extractChildren(tree: CloudinaryFolderTree): {
+  folders: FinderNode[];
+  files: FinderNode[];
+} {
+  if (!tree) return { folders: [], files: [] };
 
-export function createCloudinaryAdapter(client: CloudinaryClient): FileAdapter {
-  return {
-    async list(options: ListOptions): Promise<ListResult> {
-      const { path, cursor, limit } = options;
+  const folders: FinderNode[] = [];
+  const files: FinderNode[] = [];
 
-      const res = await client.media.list({
-        path,
-        cursor,
-        limit
-      });
-
-      // 👉 mapping folders
-      const folders: FinderNode[] = res.folders.map((f) => ({
-        id: f.fullPath,
-        name: f.name,
-        path: f.fullPath,
+  for (const child of tree.children ?? []) {
+    if (child.type === 'folder') {
+      folders.push({
+        id: child.fullPath,
+        name: child.name,
+        path: child.fullPath,
         type: 'folder',
-        hasChildren: true // Cloudinary folders sont lazy
-      }));
-
-      // 👉 mapping assets
-      const files: FinderNode[] = res.assets.map((a) => ({
-        id: a.publicId,
-        name: a.publicId.split('/').pop() || a.publicId,
-        path: a.publicId,
-        type: 'file',
-        meta: {
-          format: a.format
-        },
-      }));
-
-      return {
-        folders,
-        files,
-        nextCursor: res.nextCursor ?? null,
-      };
+        hasChildren: child.children && child.children.length > 0,
+      });
     }
-  };
+
+    if (child.type === 'file') {
+      files.push({
+        id: child.publicId,
+        name: child.name ?? child.publicId.split('/').pop(),
+        path: child.publicId,
+        type: 'file',
+      });
+    }
+  }
+
+  return { folders, files };
 }
+
+/**
+ * Adapter pour intégrer Cloudinary à notre finder générique.
+ * Seule la méthode `list` est implémentée pour l'instant, les autres sont optionnelles.
+ */
+export const cloudinaryAdapter: FileAdapter = {
+  async list(options: ListOptions): Promise<ListResult> {
+    const tree = await trpcClient.cloudinary.getFolderTree.query({
+      path: options.path,
+    });
+
+    const { folders, files } = extractChildren(tree);
+
+    return {
+      folders,
+      files,
+      nextCursor: null,
+    };
+  },
+};

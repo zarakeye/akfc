@@ -1,6 +1,6 @@
 export type NodeType = 'folder' | 'file';
 
-export interface finderNode {
+export interface FinderNode {
   id: string;             // unique (peut être path ou uuid selon adapter)
   name: string;
   path: string;           // chemin logique (source of truth)

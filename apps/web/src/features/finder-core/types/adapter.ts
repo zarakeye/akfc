@@ -1,4 +1,4 @@
-import type { finderNode } from "@features/finder-core/types/node";
+import type { FinderNode } from "@features/finder-core/types/node";
 
 export interface ListOptions {
   path: string;
@@ -7,13 +7,13 @@ export interface ListOptions {
 }
 
 export interface ListResult {
-  folders: finderNode[];
-  files: finderNode[];
+  folders: FinderNode[];
+  files: FinderNode[];
   
   nextCursor: string | null;
 }
 
-export interface FinderAdapter {
+export interface FileAdapter {
   /**
    * Liste le contenu d'un dossier donné par son chemin logique.
    * @param options
@@ -23,7 +23,7 @@ export interface FinderAdapter {
   /**
    * (optionnel) Récupérer un node précis
    */
-  getNode?(path: string): Promise<finderNode | null>;
+  getNode?(path: string): Promise<FinderNode | null>;
 
   /**
    * (optional) move
