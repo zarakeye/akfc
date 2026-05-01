@@ -15,6 +15,7 @@ export type FinderFile = {
   id: string;
   name: string;
   path: string;
+  url?: string; // URL d'accès au fichier (peut être signé ou public selon l'adapter)
 };
 
 type SelectionState = {
