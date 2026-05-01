@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { FinderNode } from "@features/finder-core/types";
+import { APP_ROOT } from "@/config/app";
 
 type SelectionMode = 'single' | 'multiple';
 
@@ -26,7 +27,7 @@ interface FinderState {
 
 export const useFinderStore = create<FinderState>((set, get) => ({
   // navigation
-  currentPath: '/',
+  currentPath: `${APP_ROOT}`, // point de départ configurable
   setPath: (path) => set({ currentPath: path }),
 
   // content

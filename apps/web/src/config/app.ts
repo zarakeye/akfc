@@ -1,0 +1,1 @@
+export const APP_ROOT = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my_app';
