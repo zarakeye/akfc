@@ -4,6 +4,7 @@ import { JSX, useEffect } from 'react';
 import type { FileAdapter } from '@features/finder-core/types';
 import { useFinderData } from '@features/finder-core/hooks/useFinderData';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import Breadcrumb from '@/features/finder-core/components/Breadcrumb';
 
 type Props = {
   adapter: FileAdapter;
@@ -23,7 +24,7 @@ export default function Finder({ adapter }: Props): JSX.Element {
     <div className='flex flex-col gap-4 border rounded'>
       {/* 🔝 Navigation */}
       <div className='flex items-center gap-2 text-sm'>
-        <span className='font-mono'>{currentPath}</span>
+        <Breadcrumb />
       </div>
 
       {/* ⚠️ états */}

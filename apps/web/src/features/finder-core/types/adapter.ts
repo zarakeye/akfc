@@ -38,3 +38,8 @@ export interface FileAdapter {
    */
   delete?(path: string): Promise<void>;
 }
+
+export interface PartSegment {
+  name: string;
+  path: string;
+}
