@@ -63,7 +63,8 @@ const useFinderStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_
         setPath: (path)=>set(()=>({
                     currentPath: path,
                     selection: {
-                        selectedIds: new Set(),
+                        roots: new Set(),
+                        excluded: new Set(),
                         anchorId: null
                     }
                 })),
@@ -74,49 +75,71 @@ const useFinderStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_
                     files
                 })),
         /* ----------------------------- SELECTION -------------------------------- */ selection: {
-            selectedIds: new Set(),
+            roots: new Set(),
+            excluded: new Set(),
             anchorId: null
         },
         setSelection: (ids, anchorId = null)=>set(()=>({
                     selection: {
-                        selectedIds: new Set(ids),
+                        roots: new Set(ids),
+                        excluded: new Set(),
                         anchorId
                     }
                 })),
         toggleSelect: (id)=>set((state)=>{
-                const next = new Set(state.selection.selectedIds);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
+                const { roots, excluded } = state.selection;
+                const nextRoots = new Set(roots);
+                const nextExcluded = new Set(excluded);
+                if (nextRoots.has(id)) {
+                    nextRoots.delete(id);
+                } else {
+                    nextRoots.add(id);
+                    nextExcluded.delete(id);
+                }
                 return {
                     selection: {
-                        selectedIds: next,
+                        roots: nextRoots,
+                        excluded: nextExcluded,
                         anchorId: id
                     }
                 };
             }),
         selectOnly: (id)=>set(()=>({
                     selection: {
-                        selectedIds: new Set([
+                        roots: new Set([
                             id
                         ]),
+                        excluded: new Set(),
                         anchorId: id
                     }
                 })),
         selectRange: (ids)=>set((state)=>{
-                const next = new Set(state.selection.selectedIds);
+                const nextRoots = new Set(state.selection.roots);
                 for (const id of ids){
-                    next.add(id);
+                    nextRoots.add(id);
                 }
                 return {
                     selection: {
-                        selectedIds: next,
+                        roots: nextRoots,
+                        excluded: new Set(),
                         anchorId: ids[ids.length - 1] ?? state.selection.anchorId
+                    }
+                };
+            }),
+        excludeItem: (id)=>set((state)=>{
+                const nextExcluded = new Set(state.selection.excluded);
+                nextExcluded.add(id);
+                return {
+                    selection: {
+                        ...state.selection,
+                        excluded: nextExcluded
                     }
                 };
             }),
         clearSelection: ()=>set(()=>({
                     selection: {
-                        selectedIds: new Set(),
+                        roots: new Set(),
+                        excluded: new Set(),
                         anchorId: null
                     }
                 }))

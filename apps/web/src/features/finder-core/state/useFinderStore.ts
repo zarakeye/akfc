@@ -19,7 +19,8 @@ export type FinderFile = {
 };
 
 type SelectionState = {
-  selectedIds: Set<string>;
+  roots: Set<string>;
+  excluded: Set<string>;
   anchorId: string | null; // 👈 pour shift+click
 };
 
@@ -53,6 +54,7 @@ type FinderState = {
   toggleSelect: (id: string) => void;
   selectOnly: (id: string) => void;
   selectRange: (ids: string) => void;
+  excludeItem: (id: string) => void;
   clearSelection: () => void;
 };
 
@@ -69,7 +71,8 @@ export const useFinderStore = create<FinderState>((set) => ({
     set(() => ({
       currentPath: path,
       selection: {
-        selectedIds: new Set(),
+        roots: new Set(),
+        excluded: new Set(),
         anchorId: null,
       },
     })),
@@ -88,28 +91,38 @@ export const useFinderStore = create<FinderState>((set) => ({
   /* ----------------------------- SELECTION -------------------------------- */
 
   selection: {
-    selectedIds: new Set<string>(),
+    roots: new Set<string>(),
+    excluded: new Set<string>(),
     anchorId: null,
   },
 
   setSelection: (ids, anchorId = null) =>
     set(() => ({
       selection: {
-        selectedIds: new Set(ids),
+        roots: new Set(ids),
+        excluded: new Set(),
         anchorId,
       },
     })),
 
   toggleSelect: (id) =>
     set((state) => {
-      const next = new Set(state.selection.selectedIds);
+      const { roots, excluded } = state.selection;
 
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const nextRoots = new Set(roots);
+      const nextExcluded = new Set(excluded);
+
+      if (nextRoots.has(id)) {
+        nextRoots.delete(id);
+      }else {
+        nextRoots.add(id);
+        nextExcluded.delete(id);
+      }
 
       return {
         selection: {
-          selectedIds: next,
+          roots: nextRoots,
+          excluded: nextExcluded,
           anchorId: id,
         },
       };
@@ -118,23 +131,38 @@ export const useFinderStore = create<FinderState>((set) => ({
   selectOnly: (id) =>
     set(() => ({
       selection: {
-        selectedIds: new Set([id]),
+        roots: new Set([id]),
+        excluded: new Set(),
         anchorId: id,
       },
     })),
 
   selectRange: (ids) =>
     set((state) => {
-      const next = new Set(state.selection.selectedIds);
+      const nextRoots = new Set(state.selection.roots);
 
       for (const id of ids) {
-        next.add(id);
+        nextRoots.add(id);
       }
 
       return {
         selection: {
-          selectedIds: next,
+          roots: nextRoots,
+          excluded: new Set(),
           anchorId: ids[ids.length - 1] ?? state.selection.anchorId,
+        },
+      };
+    }),
+
+  excludeItem: (id) =>
+    set((state) => {
+      const nextExcluded = new Set(state.selection.excluded);
+      nextExcluded.add(id);
+
+      return {
+        selection: {
+          ...state.selection,
+          excluded: nextExcluded,
         },
       };
     }),
@@ -142,7 +170,8 @@ export const useFinderStore = create<FinderState>((set) => ({
   clearSelection: () =>
     set(() => ({
       selection: {
-        selectedIds: new Set<string>(),
+        roots: new Set<string>(),
+        excluded: new Set<string>(),
         anchorId: null,
       },
     })),
