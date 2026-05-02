@@ -58,3 +58,18 @@
 [08:00:53.916] Server  LOG      ✓ Compiled in 324ms
 [08:18:24.523] Server  LOG      ✓ Compiled in 194ms
 [08:18:24.637] Browser ERROR   uncaughtError: TypeError: Cannot read properties of undefined (reading 'size')
+[08:28:54.108] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[08:28:54.116] Server  LOG      ✓ Compiled in 168ms
+[08:28:54.268] Browser ERROR   uncaughtError: ReferenceError: Modal is not defined
+[08:28:54.747] Server  ERROR    ⨯ ReferenceError: Modal is not defined
+[08:28:55.389] Browser ERROR   uncaughtError: ReferenceError: Modal is not defined
+[08:31:39.866] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[08:31:40.099] Server  LOG      ✓ Compiled in 155ms
+[08:31:40.594] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[08:31:40.594] Browser LOG     Fetching categories...
+[08:31:41.676] Browser LOG     categories: [object Object],[object Object],[object Object]
+[08:33:57.235] Server  LOG      ✓ Compiled in 203ms
+[08:38:35.083] Server  LOG      ✓ Compiled in 173ms
+[08:39:41.905] Server  LOG      ✓ Compiled in 214ms
+[08:43:13.805] Server  LOG      ✓ Compiled in 210ms
+[08:44:03.063] Server  LOG      ✓ Compiled in 185ms
