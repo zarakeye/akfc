@@ -53,7 +53,7 @@ type FinderState = {
   setSelection: (ids: string[], anchorId?: string | null) => void;
   toggleSelect: (id: string) => void;
   selectOnly: (id: string) => void;
-  selectRange: (ids: string) => void;
+  selectRange: (ids: string[]) => void;
   excludeItem: (id: string) => void;
   clearSelection: () => void;
 };
@@ -137,8 +137,10 @@ export const useFinderStore = create<FinderState>((set) => ({
       },
     })),
 
-  selectRange: (ids) =>
+  selectRange: (ids) => 
     set((state) => {
+      if (!ids.length) return state;
+      
       const nextRoots = new Set(state.selection.roots);
 
       for (const id of ids) {
@@ -147,8 +149,8 @@ export const useFinderStore = create<FinderState>((set) => ({
 
       return {
         selection: {
+          ...state.selection,
           roots: nextRoots,
-          excluded: new Set(),
           anchorId: ids[ids.length - 1] ?? state.selection.anchorId,
         },
       };
