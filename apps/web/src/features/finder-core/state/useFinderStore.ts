@@ -20,6 +20,7 @@ export type FinderFile = {
 
 type SelectionState = {
   selectedIds: Set<string>;
+  anchorId: string | null; // 👈 pour shift+click
 };
 
 type FinderState = {
@@ -47,8 +48,11 @@ type FinderState = {
   /* -------------------------------------------------------------------------- */
 
   selection: SelectionState;
-  setSelection: (ids: string[]) => void;
+
+  setSelection: (ids: string[], anchorId?: string | null) => void;
   toggleSelect: (id: string) => void;
+  selectOnly: (id: string) => void;
+  selectRange: (ids: string) => void;
   clearSelection: () => void;
 };
 
@@ -64,7 +68,10 @@ export const useFinderStore = create<FinderState>((set) => ({
   setPath: (path) =>
     set(() => ({
       currentPath: path,
-      selection: { selectedIds: new Set() }, // reset sélection
+      selection: {
+        selectedIds: new Set(),
+        anchorId: null,
+      },
     })),
 
   /* ------------------------------ CONTENT -------------------------------- */
@@ -82,12 +89,14 @@ export const useFinderStore = create<FinderState>((set) => ({
 
   selection: {
     selectedIds: new Set<string>(),
+    anchorId: null,
   },
 
-  setSelection: (ids) =>
+  setSelection: (ids, anchorId = null) =>
     set(() => ({
       selection: {
         selectedIds: new Set(ids),
+        anchorId,
       },
     })),
 
@@ -99,12 +108,42 @@ export const useFinderStore = create<FinderState>((set) => ({
       else next.add(id);
 
       return {
-        selection: { selectedIds: next },
+        selection: {
+          selectedIds: next,
+          anchorId: id,
+        },
+      };
+    }),
+
+  selectOnly: (id) =>
+    set(() => ({
+      selection: {
+        selectedIds: new Set([id]),
+        anchorId: id,
+      },
+    })),
+
+  selectRange: (ids) =>
+    set((state) => {
+      const next = new Set(state.selection.selectedIds);
+
+      for (const id of ids) {
+        next.add(id);
+      }
+
+      return {
+        selection: {
+          selectedIds: next,
+          anchorId: ids[ids.length - 1] ?? state.selection.anchorId,
+        },
       };
     }),
 
   clearSelection: () =>
     set(() => ({
-      selection: { selectedIds: new Set() },
+      selection: {
+        selectedIds: new Set<string>(),
+        anchorId: null,
+      },
     })),
 }));
