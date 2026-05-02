@@ -63,7 +63,8 @@ const useFinderStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_
         setPath: (path)=>set(()=>({
                     currentPath: path,
                     selection: {
-                        selectedIds: new Set()
+                        selectedIds: new Set(),
+                        anchorId: null
                     }
                 })),
         /* ------------------------------ CONTENT -------------------------------- */ folders: [],
@@ -73,11 +74,13 @@ const useFinderStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_
                     files
                 })),
         /* ----------------------------- SELECTION -------------------------------- */ selection: {
-            selectedIds: new Set()
+            selectedIds: new Set(),
+            anchorId: null
         },
-        setSelection: (ids)=>set(()=>({
+        setSelection: (ids, anchorId = null)=>set(()=>({
                     selection: {
-                        selectedIds: new Set(ids)
+                        selectedIds: new Set(ids),
+                        anchorId
                     }
                 })),
         toggleSelect: (id)=>set((state)=>{
@@ -86,13 +89,35 @@ const useFinderStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_
                 else next.add(id);
                 return {
                     selection: {
-                        selectedIds: next
+                        selectedIds: next,
+                        anchorId: id
+                    }
+                };
+            }),
+        selectOnly: (id)=>set(()=>({
+                    selection: {
+                        selectedIds: new Set([
+                            id
+                        ]),
+                        anchorId: id
+                    }
+                })),
+        selectRange: (ids)=>set((state)=>{
+                const next = new Set(state.selection.selectedIds);
+                for (const id of ids){
+                    next.add(id);
+                }
+                return {
+                    selection: {
+                        selectedIds: next,
+                        anchorId: ids[ids.length - 1] ?? state.selection.anchorId
                     }
                 };
             }),
         clearSelection: ()=>set(()=>({
                     selection: {
-                        selectedIds: new Set()
+                        selectedIds: new Set(),
+                        anchorId: null
                     }
                 }))
     }));
