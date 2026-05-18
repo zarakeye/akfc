@@ -96,6 +96,14 @@ export async function getSessionFromRequest(req?: Request): Promise<SessionClien
 
   const sessionDB = await prisma.session.findUnique({
     where: { id: payload.sessionId },
+    // 🚀 Force Prisma à produire un JOIN SQL au lieu de N SELECT séquentiels.
+    // Pour cette query qui traverse Session → User → Role → RolePermissions
+    // → Permission (4 niveaux d'include), le mode 'query' par défaut émettait
+    // 5 SELECT en cascade — soit 5 round-trips DB par requête HTTP. Avec
+    // 'join', Prisma émet 1 seul SELECT avec des LATERAL JOIN.
+    // C'est un findUnique (donc 0 ou 1 ligne), il n'y a aucun risque
+    // de multiplication de lignes liée aux relations 1-N.
+    relationLoadStrategy: "join",
     include: {
       user: {
         include: {

@@ -13,6 +13,7 @@ import { disciplineRouter } from "@backend/modules/disciplines/router";
 import { stageRouter } from "@backend/modules/stages/router";
 import { stageSessionRouter } from "@backend/modules/stageSessions/router";
 import { postRouter } from "@backend/modules/posts/router";
+import { storageRouter } from "@backend/modules/storage/router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -28,6 +29,7 @@ export const appRouter = router({
   stage: stageRouter,
   stageSession: stageSessionRouter,
   post: postRouter,
+  storage: storageRouter,
 });
 
 export type AppRouter = typeof appRouter;

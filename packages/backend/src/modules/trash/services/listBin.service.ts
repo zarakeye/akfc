@@ -63,6 +63,7 @@ export async function listBin(params: {
       trashedAt: true,
       sizeBytes: true,
       cloudinaryCreatedAt: true,
+      mediaKind: true,
     },
   });
 
@@ -81,6 +82,12 @@ export async function listBin(params: {
     sizeBytes: bigIntToSafeNumber(r.sizeBytes),
     createdAt: r.cloudinaryCreatedAt ? r.cloudinaryCreatedAt.toISOString() : undefined,
     publicId: r.kind === "file" ? r.storageRoot : undefined,
+    // mediaKind: stocké en String? côté DB, narrow vers le type strict du contrat.
+    // Les rows antérieures à la migration auront NULL → undefined.
+    mediaKind:
+      r.mediaKind === "image" || r.mediaKind === "video" || r.mediaKind === "document"
+        ? r.mediaKind
+        : undefined,
   }));
 
   return {

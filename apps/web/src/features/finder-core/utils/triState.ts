@@ -1,4 +1,4 @@
-type TriState = 'checked' | 'indeterminate' | 'unchecked';
+export type TriState = 'checked' | 'indeterminate' | 'unchecked';
 
 type Item = {
   id: string;

@@ -20,6 +20,13 @@ const withMDX = createMDX({
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@workspace/backend", "@workspace/contracts"],
+  // 🚀 Empêche Next/Turbopack de bundler `@prisma/client`. Le package est
+  // traité comme un module Node externe, donc require() le résout une seule
+  // fois → `globalThis.prisma` partage bien la même instance entre tous les
+  // chunks (Server Components, Route Handlers, Server Actions, etc.).
+  // Sans ça, chaque chunk a son propre module Prisma → multiples
+  // PrismaClient instanciés → cold start + DEALLOCATE ALL à chaque requête.
+  serverExternalPackages: ["@prisma/client"],
   images: {
     remotePatterns: [
       {

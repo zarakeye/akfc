@@ -37,6 +37,7 @@ export const roleRouter = router({
     .query(async ({ ctx, input }) => {
       const role = await ctx.prisma.role.findUnique({
         where: { id: input.id },
+        relationLoadStrategy: "join",
         include: {
           permissions: {
             include: {
@@ -87,6 +88,7 @@ export const roleRouter = router({
               }
             : undefined,
         },
+        relationLoadStrategy: "join",
         include: {
           permissions: {
             include: {
@@ -131,6 +133,7 @@ export const roleRouter = router({
             })),
           },
         },
+        relationLoadStrategy: "join",
         include: {
           permissions: {
             include: {

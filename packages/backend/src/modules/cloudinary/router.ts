@@ -9,12 +9,19 @@ import { moveSchema } from "@contracts/cloudinary/move.schema";
 
 import { listAuthenticatedResources, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { moveService } from "@backend/modules/cloudinary/services/move.service";
+import { getCloudinaryFolderTree } from "@backend/modules/cloudinary/services/getCloudinaryFolderTree.service";
 import { buildCloudinaryTreeV1 } from "@backend/modules/cloudinary/tree";
 import { replaceStatusSegment } from "@backend/modules/cloudinary/utils/cloudinary.utils";
+import {
+  folderAncestorsOfPublicId,
+  folderAncestorsOfFolderPath,
+  statusFromPath,
+  upsertFolders,
+} from "@backend/modules/cloudinary/utils/folder.utils";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import { isRootFolder } from "@backend/modules/cloudinary/services/ensureRootFolders.service";
 
-import { mapCloudinaryFolderToClient } from "@backend/mappers/cloudinary/tree.v1.mapper";
 import { createUploadSignatures } from "@backend/modules/cloudinary/services/createUploadSignatures.service";
 import { registerUploadedAssets } from "@backend/modules/cloudinary/services/registerUploadedAssets.service";
 import { createUploadSignaturesSchema, registerUploadedAssetsSchema } from "@contracts/cloudinary/upload.schema";
@@ -24,6 +31,26 @@ const PROJECT_ROOT = process.env.APP_SHORT_NAME || "my-app";
 const adminProcedure = protectedProcedure.use(isAdmin);
 
 type CloudinaryResourceType = "image" | "video" | "raw";
+
+/**
+ * Helper de déprécation pour les procédures du router Cloudinary qui ont
+ * un équivalent dans le router agnostique `storage.*` (chantier 1, statut B2).
+ *
+ * Loggué à chaque appel runtime pour rendre visible côté serveur les
+ * callsites front qui n'ont pas encore migré. La suppression effective
+ * de ces procédures interviendra quand un audit confirmera que plus
+ * aucun callsite n'appelle la version dépréciée.
+ *
+ * Garder un format de message stable facilite le grep côté logs de prod
+ * (`grep '\[deprecated cloudinary\]' logs/`) pour mesurer la migration.
+ */
+function logDeprecation(oldProcedure: string, newProcedure: string): void {
+  console.warn(
+    `[deprecated cloudinary] "${oldProcedure}" is deprecated. ` +
+      `Use "${newProcedure}" instead. ` +
+      `This procedure will be removed once all frontend callsites have migrated.`
+  );
+}
 
 function normalizePath(path: string): string {
   return path.replace(/^\/+|\/+$/g, "");
@@ -85,46 +112,6 @@ function assertRootFolder(path: string): void {
   }
 }
 
-function folderAncestorsOfPublicId(publicId: string): string[] {
-  const parts = normalizePath(publicId).split("/").filter(Boolean);
-  if (parts.length < 2) return [];
-
-  const folders = parts.slice(0, -1);
-  const out: string[] = [];
-
-  for (let i = 1; i <= folders.length; i++) {
-    out.push(folders.slice(0, i).join("/"));
-  }
-
-  return out;
-}
-
-function folderAncestorsOfFolderPath(folderPath: string): string[] {
-  const parts = normalizePath(folderPath).split("/").filter(Boolean);
-  const out: string[] = [];
-
-  for (let i = 1; i <= parts.length; i++) {
-    out.push(parts.slice(0, i).join("/"));
-  }
-
-  return out;
-}
-
-/**
- * Déduit le status à partir du path.
- * Convention: my-app/<status>/...
- */
-function statusFromPath(path: string): "pending" | "published" | "bin" {
-  const parts = normalizePath(path).split("/").filter(Boolean);
-  const status = parts[1];
-
-  if (status === "pending" || status === "published" || status === "bin") {
-    return status;
-  }
-
-  return "pending";
-}
-
 /**
  * Renommer un asset Cloudinary (authenticated) de manière robuste.
  * Cloudinary exige souvent le bon resource_type.
@@ -143,6 +130,8 @@ async function renameAuthenticatedResource(
         resource_type: resourceType,
         overwrite: true,
       });
+      // 🔁 Mutation Cloudinary réussie → purge le cache des resources.
+      invalidateResourcesCache();
       return;
     } catch (err) {
       lastError = err;
@@ -172,6 +161,8 @@ async function destroyAuthenticatedResource(publicId: string): Promise<void> {
         type: "authenticated",
         resource_type: resourceType,
       });
+      // 🔁 Mutation Cloudinary réussie → purge le cache des resources.
+      invalidateResourcesCache();
       return;
     } catch (err) {
       lastError = err;
@@ -224,31 +215,23 @@ async function renameFolderPrefixOnCloudinary(
       nextCursor = res.next_cursor;
     } while (nextCursor);
   }
+
+  // 🔁 Une seule invalidation en fin d'opération plutôt qu'à chaque rename :
+  // on évite les invalidations en rafale pendant un long batch. Le cache
+  // n'est pas lu pendant la boucle (seul `cloudinary.api.resources` est
+  // appelé directement, pas via le cache), donc c'est sans risque de stale.
+  invalidateResourcesCache();
 }
 
 /**
  * Upsert un ensemble de folders (ancêtres inclus).
  * Important pour “matérialiser” en DB des dossiers rencontrés via Cloudinary.
  */
-async function upsertFolders(db: PrismaClient, paths: string[]): Promise<void> {
-  const unique = Array.from(new Set(paths)).filter(Boolean);
-
-  await db.$transaction(
-    unique.map((fullPath) =>
-      db.cloudinaryFolder.upsert({
-        where: { appRoot_fullPath: { appRoot: PROJECT_ROOT, fullPath } },
-        create: {
-          appRoot: PROJECT_ROOT,
-          fullPath,
-          status: statusFromPath(fullPath),
-        },
-        update: {
-          status: statusFromPath(fullPath),
-        },
-      })
-    )
-  );
-}
+/**
+ * NOTE : `upsertFolders` est désormais importé depuis `folder.utils.ts`.
+ * Sa signature est `(db, paths, appRoot)` — `appRoot` doit être passé
+ * explicitement par chaque callsite (ici on utilise `PROJECT_ROOT`).
+ */
 
 /**
  * ✅ DB SYNC: déplacer/renommer des dossiers “DB-only” sous un préfixe.
@@ -310,10 +293,16 @@ export const cloudinaryRouter = router({
    * - tout user connecté peut uploader
    * - tout upload arrive obligatoirement sous `pending`
    * - la destination finale est résolue côté serveur
+   *
+   * @deprecated Use `storage.createUploadAuthorization` instead (router
+   *   storage agnostique, chantier 1.5 statut B2). Cette procédure est
+   *   conservée pour ne pas casser les callsites front qui ne sont pas
+   *   encore migrés. Sera supprimée après audit zéro-callsite.
    */
   createUploadSignatures: protectedProcedure
     .input(createUploadSignaturesSchema)
     .mutation(async ({ ctx, input }) => {
+      logDeprecation("cloudinary.createUploadSignatures", "storage.createUploadAuthorization");
       return createUploadSignatures({
         prisma: ctx.prisma,
         appRoot: PROJECT_ROOT,
@@ -332,10 +321,16 @@ export const cloudinaryRouter = router({
    * - création des MediaAsset en DB
    * - `appRoot` est résolu côté serveur (jamais fourni par le client) afin
    *   d'éviter qu'un client malveillant cible un autre projet
+   *
+   * @deprecated Use `storage.registerUploadedAsset` instead (router storage
+   *   agnostique, chantier 1.5 statut B2). Cette procédure est conservée
+   *   pour ne pas casser les callsites front qui ne sont pas encore migrés.
+   *   Sera supprimée après audit zéro-callsite.
    */
   registerUploadedAssets: protectedProcedure
     .input(registerUploadedAssetsSchema)
     .mutation(async ({ ctx, input }) => {
+      logDeprecation("cloudinary.registerUploadedAssets", "storage.registerUploadedAsset");
       const userId = ctx.sessionClient.user.id;
 
       return registerUploadedAssets({
@@ -351,36 +346,27 @@ export const cloudinaryRouter = router({
   /**
    * ✅ Tree Finder (DB folders + Cloudinary files)
    * - Sync opportuniste: on upsert en DB les folders rencontrés via Cloudinary.
+   *
+   * @deprecated Use `storage.getTree` instead (router storage agnostique,
+   *   chantier 1.5 statut B2). La nouvelle procédure prend un paramètre
+   *   `provider: 'cloudinary'` et un `depth` optionnel. Sera supprimée
+   *   après audit zéro-callsite.
    */
   getFolderTree: adminProcedure
     .input(z.object({ path: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
+      logDeprecation("cloudinary.getFolderTree", "storage.getTree");
       const normalizedPath = normalizePath(input.path);
       assertSafePath(normalizedPath);
 
-      const resources = await listAuthenticatedResources(normalizedPath);
-
-      const discoveredFolderPaths = resources.flatMap((r: { publicId: string }) =>
-        folderAncestorsOfPublicId(r.publicId)
-      );
-
-      await upsertFolders(ctx.prisma, discoveredFolderPaths);
-
-      const registered = await ctx.prisma.cloudinaryFolder.findMany({
-        where: {
-          appRoot: PROJECT_ROOT,
-          fullPath: { startsWith: normalizedPath },
-        },
-        select: { fullPath: true },
+      // Logique entière déléguée au service `getCloudinaryFolderTree`
+      // pour qu'elle soit aussi consommable par l'adapter du contrat
+      // agnostique. Comportement strictement identique à l'inline historique.
+      return getCloudinaryFolderTree({
+        prisma: ctx.prisma,
+        appRoot: PROJECT_ROOT,
+        normalizedPath,
       });
-
-      const finderTree = buildCloudinaryTreeV1(
-        resources,
-        registered.map((f) => f.fullPath),
-        normalizedPath
-      );
-
-      return mapCloudinaryFolderToClient(finderTree);
     }),
 
   getPendingTree: adminProcedure.query(async () => {
@@ -424,7 +410,7 @@ export const cloudinaryRouter = router({
       assertNotInTrashStorage(to);
 
       await renameAuthenticatedResource(from, to);
-      await upsertFolders(ctx.prisma, folderAncestorsOfPublicId(to));
+      await upsertFolders(ctx.prisma, folderAncestorsOfPublicId(to), PROJECT_ROOT);
 
       return { success: true };
     }),
@@ -441,7 +427,7 @@ export const cloudinaryRouter = router({
       assertNotInTrashStorage(fullPath);
       assertRootFolder(fullPath);
 
-      await upsertFolders(ctx.prisma, folderAncestorsOfFolderPath(fullPath));
+      await upsertFolders(ctx.prisma, folderAncestorsOfFolderPath(fullPath), PROJECT_ROOT);
 
       return { success: true };
     }),
@@ -477,7 +463,7 @@ export const cloudinaryRouter = router({
       });
 
       if (impacted.length === 0) {
-        await upsertFolders(ctx.prisma, folderAncestorsOfFolderPath(toPrefix));
+        await upsertFolders(ctx.prisma, folderAncestorsOfFolderPath(toPrefix), PROJECT_ROOT);
         return { success: true };
       }
 
@@ -596,7 +582,7 @@ export const cloudinaryRouter = router({
         assertNotInTrashStorage(newId);
 
         await renameAuthenticatedResource(oldId, newId);
-        await upsertFolders(ctx.prisma, folderAncestorsOfPublicId(newId));
+        await upsertFolders(ctx.prisma, folderAncestorsOfPublicId(newId), PROJECT_ROOT);
       }
 
       return { success: true };
@@ -605,10 +591,17 @@ export const cloudinaryRouter = router({
   /**
    * ✅ Move (DnD + multi-select)
    * IMPORTANT : move -> bin est interdit ici (trash.trashToBin).
+   *
+   * @deprecated Use `storage.move` instead (router storage agnostique,
+   *   chantier 1.5 statut B2). La nouvelle procédure prend un paramètre
+   *   `provider: 'cloudinary'` et un `intent: StorageMoveIntent` agnostique
+   *   (où `virtual-folder` est devenu `status-folder`). Sera supprimée
+   *   après audit zéro-callsite.
    */
   move: adminProcedure
     .input(moveSchema)
     .mutation(async ({ ctx, input }) => {
+      logDeprecation("cloudinary.move", "storage.move");
       if (input.target.type === "virtual-folder" && input.target.status === "bin") {
         throw new TRPCError({
           code: "BAD_REQUEST",

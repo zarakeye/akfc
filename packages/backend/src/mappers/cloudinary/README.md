@@ -52,7 +52,7 @@ import type { CloudinaryNode }
   from '@server/contracts/cloudinary/tree.contract.v1';
 
 import type { FolderNode, FileNode } 
-  from '@components/cloudinary-finder/types';
+  from '@contracts/finder';
 ```
 
 ---

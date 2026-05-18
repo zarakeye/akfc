@@ -7,6 +7,11 @@ import type { TrashEntryDTO } from "@contracts/trash/trash.dto";
 
 import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@backend/modules/trash/utils";
 import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
+import {
+  mediaKindFromCloudinaryResourceType,
+  type MediaKind,
+} from "@backend/modules/cloudinary/utils/mediaKind.utils";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 
 /**
  * trashToBin.service.ts
@@ -97,6 +102,7 @@ async function renameAsset(from: string, to: string, resourceType: CloudinaryRes
     resource_type: resourceType,
     overwrite: true,
   });
+  invalidateResourcesCache();
 }
 
 async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
@@ -236,20 +242,24 @@ export async function trashToBin(params: {
     // (bin navigable caché, collisions impossibles)
     const storageRoot = normalizePath(`${appRoot}/bin/.trash/${id}/${displayName}`);
 
-    // 1) Calcul des agrégats (sizeBytes + createdAt)
+    // 1) Calcul des agrégats (sizeBytes + createdAt) et du mediaKind
     let sizeBytes: bigint | undefined;
     let cloudinaryCreatedAt: Date | undefined;
+    let mediaKind: MediaKind | undefined;
 
     if (source.kind === "file") {
       const info = await getAssetInfo(normalized);
       sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
       cloudinaryCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
+      // mediaKind: dérivé du resource_type Cloudinary (image|video|raw → image|video|document)
+      mediaKind = mediaKindFromCloudinaryResourceType(info.resource_type);
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix (ex: cours1 vs cours10)
       const assets = await listAssetsByPrefix(`${normalized}/`);
       const agg = computeAggregateFromAssets(assets);
       sizeBytes = agg.sizeBytes;
       cloudinaryCreatedAt = agg.cloudinaryCreatedAt;
+      // mediaKind reste undefined pour un folder (pas de type unique applicable)
     }
 
     // 2) Création TrashEntry (avant move) : on "réserve" l'id et on garde la provenance.
@@ -265,6 +275,7 @@ export async function trashToBin(params: {
         trashedAt: new Date(),
         sizeBytes,
         cloudinaryCreatedAt,
+        mediaKind,
       },
     });
 
@@ -300,6 +311,7 @@ export async function trashToBin(params: {
       trashedAt: new Date().toISOString(),
       sizeBytes: bigIntToSafeNumber(sizeBytes),
       createdAt: cloudinaryCreatedAt ? cloudinaryCreatedAt.toISOString() : undefined,
+      mediaKind,
     });
   }
 

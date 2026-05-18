@@ -26,13 +26,13 @@ import {
 // --- Tiptap Node ---
 import { ImageUploadNode } from "@/features/editor-tiptap/node/image-upload-node/image-upload-node-extension"
 import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension"
-import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
-import "@/components/tiptap-node/code-block-node/code-block-node.scss"
-import "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss"
-import "@/components/tiptap-node/list-node/list-node.scss"
-import "@/components/tiptap-node/image-node/image-node.scss"
-import "@/components/tiptap-node/heading-node/heading-node.scss"
-import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
+import "@features/editor-tiptap/node/blockquote-node/blockquote-node.scss"
+import "@features/editor-tiptap/node/code-block-node/code-block-node.scss"
+import "@features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node.scss"
+import "@features/editor-tiptap/node/list-node/list-node.scss"
+import "@features/editor-tiptap/node/image-node/image-node.scss"
+import "@features/editor-tiptap/node/heading-node/heading-node.scss"
+import "@features/editor-tiptap/node/paragraph-node/paragraph-node.scss"
 
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/features/editor-tiptap/ui/heading-dropdown-menu"
@@ -72,7 +72,7 @@ import { ThemeToggle } from "@/features/editor-tiptap/templates/simple/theme-tog
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
 
 // --- Styles ---
-import "@/components/tiptap-templates/simple/simple-editor.scss"
+// simple-editor styles migrated to Tailwind classes in JSX
 
 import content from "@/features/editor-tiptap/templates/simple/data/content.json"
 
@@ -255,7 +255,7 @@ export function SimpleEditor() {
   }, [isMobile, mobileView])
 
   return (
-    <div className="simple-editor-wrapper">
+    <div className="w-screen h-screen overflow-auto">
       <EditorContext.Provider value={{ editor }}>
         <Toolbar
           ref={toolbarRef}
@@ -284,7 +284,7 @@ export function SimpleEditor() {
         <EditorContent
           editor={editor}
           role="presentation"
-          className="simple-editor-content"
+          className="max-w-[648px] w-full mx-auto h-full flex flex-col flex-1 pt-4 px-6 pb-[30vh] md:pt-12 md:px-12"
         />
       </EditorContext.Provider>
     </div>

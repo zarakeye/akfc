@@ -10,6 +10,10 @@ import type {
 } from "@contracts/trash/trash-node.types";
 
 import { normalizePath } from "@backend/modules/trash/utils";
+import {
+  mediaKindFromCloudinaryResourceType,
+  type CloudinaryResourceType,
+} from "@backend/modules/cloudinary/utils/mediaKind.utils";
 
 /**
  * readTrashFolder.service.ts
@@ -22,12 +26,15 @@ import { normalizePath } from "@backend/modules/trash/utils";
  * - On renvoie seulement les enfants directs (choix A validé)
  */
 
-type CloudinaryResourceType = "image" | "video" | "raw";
-
 type ListedAsset = {
   publicId: string;
   bytes?: number;
   createdAt?: string;
+  /**
+   * resource_type Cloudinary à la source : conservé pour qu'on puisse
+   * en dériver un mediaKind agnostique au moment de produire le TrashFileNode.
+   */
+  resourceType: CloudinaryResourceType;
 };
 
 /**
@@ -59,6 +66,7 @@ async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
           publicId: asset.public_id as string,
           bytes: typeof asset.bytes === "number" ? asset.bytes : undefined,
           createdAt: asset.created_at ? String(asset.created_at) : undefined,
+          resourceType: resource_type,
         });
       }
 
@@ -106,6 +114,7 @@ function computeDirectChildren(params: {
           publicId: a.publicId,
           sizeBytes: a.bytes,
           createdAt: a.createdAt,
+          mediaKind: mediaKindFromCloudinaryResourceType(a.resourceType),
           meta,
         });
       }

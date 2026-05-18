@@ -5,6 +5,15 @@ import type {
 interface FlatResource {
   publicId: string;
   url: string;
+  /**
+   * Format technique de l'asset (`jpg`, `mp4`, `pdf`, ...).
+   *
+   * Préservé depuis l'API Cloudinary pour pouvoir être posé sur le
+   * `CloudinaryFileNode` produit — c'est ce qui permet au front de
+   * calculer `kind` (image/video/document) et d'afficher la bonne
+   * vignette dans la grille du finder.
+   */
+  format?: string;
 }
 
 /**
@@ -97,6 +106,7 @@ export function buildCloudinaryTree(
             name: part,
             publicId: resource.publicId,
             url: resource.url,
+            format: resource.format,
           });
         }
         return;

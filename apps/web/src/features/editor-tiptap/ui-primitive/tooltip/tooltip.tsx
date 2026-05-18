@@ -6,10 +6,13 @@ import {
   forwardRef,
   isValidElement,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   version,
 } from "react"
+import type { MutableRefObject, Ref } from "react"
 import {
   useFloating,
   autoUpdate,
@@ -28,7 +31,6 @@ import {
   type ReferenceType,
   FloatingDelayGroup,
 } from "@floating-ui/react"
-import "@/components/tiptap-ui-primitive/tooltip/tooltip.scss"
 
 interface TooltipProviderProps {
   children: React.ReactNode
@@ -170,22 +172,49 @@ export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(
         : // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (children as any).ref
       : undefined
-    const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef])
+    const ownRef = useRef<HTMLElement | null>(null)
+    const ref = useMergeRefs([context.refs.setReference, propRef])
+
+    useEffect(() => {
+      const element = ownRef.current
+
+      const assign = (ref: Ref<HTMLElement> | undefined, value: HTMLElement | null) => {
+        if (!ref) return
+        if (typeof ref === "function") {
+          ref(value)
+        } else {
+          ;(ref as MutableRefObject<HTMLElement | null>).current = value
+        }
+      }
+
+      assign(propRef, element)
+      assign(childrenRef, element)
+      context.refs.setReference(element)
+
+      return () => {
+        assign(propRef, null)
+        assign(childrenRef, null)
+        context.refs.setReference(null)
+      }
+    }, [context.refs, propRef, childrenRef])
 
     if (asChild && isValidElement(children)) {
       const dataAttributes = {
         "data-tooltip-state": context.open ? "open" : "closed",
       }
 
-      return cloneElement(
-        children,
-        context.getReferenceProps({
-          ref,
+      const childProps =
+        typeof children.props === "object" ? { ...children.props } : {}
+      delete (childProps as { ref?: unknown }).ref
+
+      return cloneElement(children, {
+        ...context.getReferenceProps({
+          ...childProps,
           ...props,
-          ...(typeof children.props === "object" ? children.props : {}),
           ...dataAttributes,
-        })
-      )
+        }),
+        ref: ownRef,
+      })
     }
 
     return (

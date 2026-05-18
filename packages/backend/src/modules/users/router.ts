@@ -14,6 +14,7 @@ export const userRouter = router({
     .query(async ({ ctx }) => {
       return ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
+        relationLoadStrategy: "join",
         include: {
           role: {
             include: {
@@ -34,6 +35,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
+        relationLoadStrategy: "join",
         include: {
           role: {
             include: {
@@ -63,6 +65,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { email: input.email },
+        relationLoadStrategy: "join",
         include: {
           role: {
             include: {
@@ -212,6 +215,7 @@ export const userRouter = router({
       const user = await ctx.prisma.user.update({
         where: { id: input.userId },
         data: { roleId: input.roleId },
+        relationLoadStrategy: "join",
         include: {
           role: {
             include: {

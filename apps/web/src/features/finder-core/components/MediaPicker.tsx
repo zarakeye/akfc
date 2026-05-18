@@ -3,13 +3,20 @@ import Finder from '@features/finder-core/components/Finder';
 import { Modal } from '@components/ui/Modal';
 import { resolveSelection } from '@features/finder-core/utils/resolveSelection';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { FileAdapter } from '@features/finder-core/types';
+import { FileAdapter } from '@contracts/finder';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSubmit: (selectedPaths: string[]) => void;
   adapter: FileAdapter;
+  /**
+   * Chemin racine de l'arbre du finder embarqué dans le picker.
+   *
+   * Propagé tel quel au composant `<Finder>` pour alimenter sa TreeView.
+   * Pour AKFC, c'est typiquement l'`appRoot` du projet (ex: "AKFC").
+   */
+  rootPath: string;
 };
 
 export function MediaPicker({
@@ -17,6 +24,7 @@ export function MediaPicker({
   onClose,
   onSubmit,
   adapter,
+  rootPath,
 }: Props): JSX.Element {
   const { selection, folders, files } = useFinderStore();
 
@@ -45,7 +53,7 @@ export function MediaPicker({
       </div>
 
       <div className="flex-1 overflow-auto">
-        <Finder adapter={adapter} />
+        <Finder adapter={adapter} rootPath={rootPath} />
       </div>
 
       <div className="p-4 border-t flex justify-between items-center">

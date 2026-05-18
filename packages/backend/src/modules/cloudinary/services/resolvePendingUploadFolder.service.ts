@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
 
-import type { UploadDestination } from "@backend/modules/cloudinary/types/upload.types";
+import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 
 /**
  * resolvePendingUploadFolder.service.ts

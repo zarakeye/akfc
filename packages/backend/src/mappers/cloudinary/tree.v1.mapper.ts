@@ -20,6 +20,16 @@ export function mapCloudinaryFolderToClient(
   };
 }
 
+function resolveKind(format?: string): 'image' | 'video' | 'document' {
+  if (!format) return 'document';
+
+  if (/jpg|jpeg|png|webp|avif/.test(format)) return 'image';
+
+  if (/mp4|webm|mov/.test(format)) return 'video';
+
+  return 'document';
+}
+
 export function mapCloudinaryFileToClient(
   file: CloudinaryFileNode
 ): FileNode {
@@ -28,6 +38,9 @@ export function mapCloudinaryFileToClient(
     name: file.name,
     fullPath: file.publicId,
     publicId: file.publicId,
+    url: file.url,
+    format: file.format,
+    kind: resolveKind(file.format),
   };
 }
 

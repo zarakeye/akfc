@@ -9,6 +9,9 @@ import { TRPCError } from "@trpc/server";
 export async function loginService(email: string, password: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email },
+    // 🚀 JOIN SQL au lieu de SELECT en cascade (cf. note dans
+    // getSessionFromRequest pour le détail).
+    relationLoadStrategy: "join",
     include: {
       role: {
         include: {

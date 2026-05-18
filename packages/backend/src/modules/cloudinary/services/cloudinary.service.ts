@@ -1,5 +1,10 @@
 import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import type { TransformationOptions } from "cloudinary";
+import {
+  getCached,
+  setCached,
+  invalidate as invalidateResourcesCache,
+} from "@backend/modules/cloudinary/cache/resourcesCache";
 
 /* -------------------------------------------------------------------------- */
 /*                                  TYPES                                     */
@@ -8,9 +13,17 @@ import type { TransformationOptions } from "cloudinary";
 export type ResourceType = "image" | "video" | "raw";
 export type Variant = "thumb" | "small" | "medium" | "large" | "original";
 
-interface ListAuthenticatedResourcesResult {
+export interface ListAuthenticatedResourcesResult {
   publicId: string;
   url: string;
+  /**
+   * Format technique de l'asset (`jpg`, `png`, `mp4`, ...).
+   *
+   * L'API Cloudinary `resources` retourne ce champ pour chaque asset ;
+   * on le préserve ici pour qu'il puisse remonter jusqu'au `FileNode`
+   * du tree et au front (qui s'en sert pour calculer `kind` = image/video/document).
+   */
+  format?: string;
 }
 
 interface GetAssetInfoResult {
@@ -141,6 +154,9 @@ export async function fileExists(publicId: string): Promise<boolean> {
 
 /**
  * Supprime tous les assets d’un prefix (tous resource_type).
+ *
+ * Invalide le cache des resources après suppression — les entrées
+ * cachées sont stale dès que des assets disparaissent.
  */
 export async function deleteByPrefix(
   prefix: string
@@ -152,6 +168,8 @@ export async function deleteByPrefix(
     });
   }
 
+  invalidateResourcesCache();
+
   return { success: true };
 }
 
@@ -161,18 +179,38 @@ export async function deleteByPrefix(
 
 /**
  * Liste les assets authenticated sous un prefix.
+ *
+ * 🚀 Utilise un cache in-memory (`resourcesCache`) pour court-circuiter
+ * les appels répétés sur le même prefix — l'API admin Cloudinary mettant
+ * typiquement plusieurs secondes par appel, le cache rend la navigation
+ * du finder fluide en dehors du tout premier appel.
+ *
+ * Le cache est invalidé automatiquement lors de toute mutation
+ * (cf. `deleteByPrefix` ci-dessus, et les services move / register).
  */
 export async function listAuthenticatedResources(
   prefix: string
 ): Promise<ListAuthenticatedResourcesResult[]> {
+  const cached = getCached(prefix);
+  if (cached !== null) {
+    return cached;
+  }
+
   const result = await cloudinary.api.resources({
     type: "authenticated",
     prefix,
     max_results: 500,
   });
 
-  return result.resources.map((r: typeof result.resources[0]) => ({
-    publicId: r.public_id,
-    url: r.secure_url,
-  }));
+  const mapped: ListAuthenticatedResourcesResult[] = result.resources.map(
+    (r: typeof result.resources[0]) => ({
+      publicId: r.public_id,
+      url: r.secure_url,
+      format: r.format,
+    })
+  );
+
+  setCached(prefix, mapped);
+
+  return mapped;
 }

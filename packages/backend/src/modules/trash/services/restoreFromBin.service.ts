@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { cloudinary } from "@backend//modules/cloudinary/cloudinary.client";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import type {
   RestoreFromBinInput,
   RestoreFromBinOutput,
@@ -102,6 +103,7 @@ async function renameAsset(fromPublicId: string, toPublicId: string, resourceTyp
     resource_type: resourceType,
     overwrite: true,
   });
+  invalidateResourcesCache();
 }
 
 async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
