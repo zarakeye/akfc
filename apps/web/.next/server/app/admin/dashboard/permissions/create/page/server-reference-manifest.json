@@ -1,0 +1,20 @@
+{
+  "node": {
+    "7f7b209faaf75582e3bb82321f89dd781beb7bc01a": {
+      "workers": {
+        "app/admin/dashboard/permissions/create/page": {
+          "moduleId": 78758,
+          "async": false,
+          "exportedName": "createPermissionFormAction",
+          "filename": "apps/web/src/features/admin/permissions/actions/createPermissionForm.action.ts"
+        }
+      },
+      "layer": {
+        "app/admin/dashboard/permissions/create/page": "action-browser"
+      },
+      "exportedName": "createPermissionFormAction",
+      "filename": "apps/web/src/features/admin/permissions/actions/createPermissionForm.action.ts"
+    }
+  },
+  "edge": {}
+}

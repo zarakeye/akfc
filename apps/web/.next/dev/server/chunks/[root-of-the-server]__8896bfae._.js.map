@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/packages/backend/src/prisma.ts"],"sourcesContent":["import { PrismaClient } from \"@prisma/client\";\n\nconst globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };\n\nexport const prisma =\n  globalForPrisma.prisma ??\n  new PrismaClient({\n    log: process.env.NODE_ENV === \"development\" ? [\"error\", \"warn\"] : [\"error\"],\n  });\n\nif (process.env.NODE_ENV !== \"production\") globalForPrisma.prisma = prisma;"],"names":[],"mappings":";;;;AAAA;;AAEA,MAAM,kBAAkB;AAEjB,MAAM,SACX,gBAAgB,MAAM,IACtB,IAAI,6IAAY,CAAC;IACf,KAAK,uCAAyC;QAAC;QAAS;KAAO,GAAG;AACpE;AAEF,wCAA2C,gBAAgB,MAAM,GAAG","debugId":null}}]
+}

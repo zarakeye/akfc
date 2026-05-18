@@ -1,0 +1,20 @@
+{
+  "node": {
+    "7f1ad6dd3d68fe816e6f00a3de957e6f3291a2b0b0": {
+      "workers": {
+        "app/admin/dashboard/users/create/page": {
+          "moduleId": 73354,
+          "async": false,
+          "exportedName": "createUserAction",
+          "filename": "apps/web/src/features/admin/users/actions/createUserForm.action.ts"
+        }
+      },
+      "layer": {
+        "app/admin/dashboard/users/create/page": "action-browser"
+      },
+      "exportedName": "createUserAction",
+      "filename": "apps/web/src/features/admin/users/actions/createUserForm.action.ts"
+    }
+  },
+  "edge": {}
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  cloneElement,
+  
   createContext,
   forwardRef,
   isValidElement,
@@ -207,14 +207,17 @@ export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(
         typeof children.props === "object" ? { ...children.props } : {}
       delete (childProps as { ref?: unknown }).ref
 
-      return cloneElement(children, {
-        ...context.getReferenceProps({
-          ...childProps,
-          ...props,
-          ...dataAttributes,
-        }),
-        ref: ownRef,
-      })
+      const userProps = { ...childProps, ...props, ...dataAttributes }
+      delete (userProps as { ref?: unknown }).ref
+
+      const merged = context.getReferenceProps(userProps)
+      delete (merged as { ref?: unknown }).ref
+
+      return (
+        <span {...merged} ref={ownRef}>
+          {children}
+        </span>
+      )
     }
 
     return (
