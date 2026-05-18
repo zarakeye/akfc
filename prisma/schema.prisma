@@ -1,5 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
   binaryTargets = ["native"]
   engineType    = "binary"
 }
@@ -375,6 +376,15 @@ model TrashEntry {
 
   sizeBytes           BigInt?
   cloudinaryCreatedAt DateTime?
+
+  /**
+   * Catégorisation applicative du média ('image' | 'video' | 'document').
+   * Stocké en String (et non Enum) pour rester ouvert si on enrichit la palette
+   * sans forcer une migration à chaque ajout. La valeur est produite par
+   * l'adapter de stockage qui dépose l'entry — agnostique vis-à-vis du provider.
+   * NULL pour les folders et pour les entries antérieures à l'introduction du champ.
+   */
+  mediaKind String?
 
   @@index([appRoot])
   @@index([appRoot, status, trashedAt])

@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/apps/web/src/app/docs/layout.tsx"],"sourcesContent":["import type { ReactNode } from \"react\"\n\nexport default function DocsRootLayout({\n  children,\n}: {\n  children: ReactNode\n}) {\n  return <div className=\"h-full min-h-0 overflow-hidden\">{children}</div>\n}"],"names":[],"mappings":";;;;;;AAEe,SAAS,eAAe,EACrC,QAAQ,EAGT;IACC,qBAAO,oaAAC;QAAI,WAAU;kBAAkC;;;;;;AAC1D","debugId":null}}]
-}

@@ -1,16 +1,21 @@
 'use client';
 
 import { JSX } from 'react';
-import FinderLayout from '@features/cloudinary-finder/ui/layout/FinderLayout';
+import Finder from '@features/finder-core/components/Finder';
+import { cloudinaryAdapter } from '@features/finder-adapters/cloudinary/cloudinary.adapter';
+import { APP_ROOT } from '@config/app';
 
 /**
  * Page de gestionnaire de galerie.
- * 
- * Cette page affiche une layout de type gestionnaire de fichiers
- * qui permet de naviguer dans l'arborescence des pictures (photos et vidéos) de l'application.
- * 
- * Elle affiche un titre "Gestionnaire de galerie" et un composant FinderLayout
- * qui encapsule le layout de la page de gestionnaire.
+ *
+ * Affiche le finder agnostique (`finder-core`) configuré avec l'adapter
+ * Cloudinary, rooted sur l'app root du projet. C'est la page admin officielle
+ * pour gérer les pictures (photos et vidéos).
+ *
+ * Migration : le legacy `cloudinary-finder/ui/layout/FinderLayout` qui était
+ * utilisé ici précédemment a été supprimé en faveur du nouveau `Finder` qui
+ * supporte multi-modes d'affichage, drag-and-drop entre dossiers, vue
+ * corbeille intégrée, et cache unifié TreeView/GridView.
  */
 export default function GalleryPage(): JSX.Element {
   return (
@@ -19,7 +24,7 @@ export default function GalleryPage(): JSX.Element {
         Gestionnaire de galerie
       </h1>
 
-      <FinderLayout />
+      <Finder adapter={cloudinaryAdapter} rootPath={APP_ROOT} />
     </div>
   );
 }

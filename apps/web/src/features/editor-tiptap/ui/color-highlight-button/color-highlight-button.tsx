@@ -21,7 +21,7 @@ import { Button } from "@/features/editor-tiptap/ui-primitive/button"
 import { Badge } from "@/features/editor-tiptap/ui-primitive/badge"
 
 // --- Styles ---
-import "@/components/tiptap-ui/color-highlight-button/color-highlight-button.scss"
+// color-highlight-button styles migrated to Tailwind classes in JSX
 
 export interface ColorHighlightButtonProps
   extends Omit<ButtonProps, "type">,
@@ -152,12 +152,20 @@ export const ColorHighlightButton = forwardRef<
         {children ?? (
           <>
             <span
-              className="tiptap-button-highlight"
-              style={
-                { "--highlight-color": highlightColor } as React.CSSProperties
-              }
-            />
-            {text && <span className="tiptap-button-text">{text}</span>}
+              className="relative w-5 h-5 -mx-[0.175rem] rounded-(--tt-radius-xl)"
+              style={{ backgroundColor: "var(--highlight-color)" }}
+            >
+              <span
+                className={`absolute inset-0 rounded-inherit border border-(--highlight-color) mix-blend-multiply filter ${
+                  isActive
+                    ? "brightness-80 dark:brightness-180"
+                    : "brightness-95 dark:brightness-140"
+                } dark:mix-blend-lighten`}
+              />
+            </span>
+            {text && (
+              <span className="ml-2 text-sm text-current">{text}</span>
+            )}
             {showShortcut && (
               <ColorHighlightShortcutBadge shortcutKeys={shortcutKeys} />
             )}

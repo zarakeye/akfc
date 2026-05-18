@@ -1,5 +1,5 @@
 // src/lib/session/sessionCleanup.ts
-import { prisma } from "packages/backend/src/prisma";
+import { prisma } from "@backend/prisma";
 
 const CLEANUP_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 

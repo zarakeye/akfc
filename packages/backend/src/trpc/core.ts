@@ -4,12 +4,17 @@ import type { NextRequest } from "next/server";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { APP_ROOT } from "../../../config/app";
 
 export type TRPCContext = {
   sessionClient: Awaited<ReturnType<typeof getSessionFromRequest>>;
   prisma: typeof prisma;
   requestIp: string | null;
   userAgent: string | null;
+  appRoot: string;
+  user: {
+    id: string;
+  };
 };
 
 type SessionClient = NonNullable<TRPCContext["sessionClient"]>;
@@ -46,6 +51,10 @@ export async function createTRPCContext({
     prisma,
     requestIp: getIpFromRequest(req),
     userAgent: req.headers.get("user-agent"),
+    appRoot: APP_ROOT!,
+    user: {
+      id: sessionClient?.user?.id ?? "anonymous",
+    }
   };
 }
 

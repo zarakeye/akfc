@@ -5,6 +5,7 @@ import {
   moveFileIntoFolder,
 } from '@backend/modules/cloudinary/utils/cloudinary.utils';
 import { getAssetInfo } from '@backend/modules/cloudinary/services/cloudinary.service';
+import { invalidate as invalidateResourcesCache } from '@backend/modules/cloudinary/cache/resourcesCache';
 
 /**
  * move.service.ts
@@ -157,6 +158,12 @@ async function renameAsset(from: string, to: string, resourceType: CloudinaryRes
     resource_type: resourceType,
     overwrite: true,
   });
+
+  // 🔁 Le state Cloudinary vient de changer — purge le cache des resources
+  // pour que la prochaine lecture (tree, list) reflète l'état réel.
+  // C'est une purge totale par simplicité ; voir resourcesCache.ts pour
+  // les considérations sur une invalidation plus granulaire.
+  invalidateResourcesCache();
 }
 
 /**

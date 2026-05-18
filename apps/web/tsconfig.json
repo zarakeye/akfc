@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "moduleResolution": "bundler",
     "types": ["mdx"],
     "paths": {
       "@/*": ["./src/*"],  // indispensable pour shadcn/ui
@@ -14,11 +15,13 @@
       "@lib/*": ["./src/lib/*"],
       "@styles/*": ["./src/styles/*"],
       "@types/*": ["./src/types/*"],
-      "@trpc/*": ["./src/core/trpc/*"]
+      "@trpc/*": ["./src/core/trpc/*"],
+      "@config/*": ["../../packages/config/*"]
     }
   },
   "include": [
     "next-env.d.ts",
+    "src/global.d.ts",
     "instrumentation.ts",                                                                                                                                                               
     "src",
     "app",
@@ -28,7 +31,12 @@
     "lib",
     "styles",
     "types",
-    "../../packages/contracts/src/**/*.ts"
+    "**/*.ts",
+    "**/*.tsx",
+    "src/**/*.d.ts",
+    "../../packages/contracts/src/**/*.ts",
+    "../../packages/contracts/src/finder",
+    "../../packages/config"
   ],
   "exclude": ["node_modules"]
 }

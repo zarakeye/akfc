@@ -14,6 +14,11 @@ export type FileNode = BaseNode & {
   type: "file";
   publicId: string;
   mediaAssetId?: string;
+  name: string;
+  fullPath: string;
+  url?: string;
+  format?: string;
+  kind: 'image' | 'video' | 'document';
 };
 
 // ─────────────────────────────

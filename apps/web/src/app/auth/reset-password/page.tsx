@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
 
@@ -11,9 +11,14 @@ import { trpc } from "@trpc/trpcClient";
  * - L’utilisateur saisit un nouveau password (min 12)
  * - Appelle trpc.auth.resetPassword
  * - En cas de succès: message + redirection possible vers /auth/login
+ *
+ * Le formulaire utilise `useSearchParams()`, qui force un client-side
+ * bailout lors du prerender SSG. Next 15+ exige un `<Suspense>` autour
+ * de ce composant pour que la page reste prérenderable (le boundary
+ * sert de point où Next bascule en CSR pour cette partie).
  */
 
-export default function ResetPasswordPage(): JSX.Element {
+function ResetPasswordForm(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -139,5 +144,19 @@ export default function ResetPasswordPage(): JSX.Element {
         </div>
       )}
     </main>
+  );
+}
+
+export default function ResetPasswordPage(): JSX.Element {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-md p-6">
+          <p className="text-sm text-slate-500">Chargement…</p>
+        </main>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

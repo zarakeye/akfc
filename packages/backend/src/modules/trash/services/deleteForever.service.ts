@@ -5,6 +5,7 @@ import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/t
 
 import { isTrashStoragePath, normalizePath } from "@backend//modules/trash/utils";
 import { getAssetInfo, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 
 /**
  * deleteForever.service.ts
@@ -67,6 +68,12 @@ export async function deleteForever(params: {
       },
     });
   }
+
+  // 🔁 Une seule invalidation en fin de batch : on peut supprimer plusieurs
+  // entries en série, inutile de purger le cache à chaque iteration. Note
+  // que `deleteByPrefix` invalide déjà de son côté pour le cas folder ;
+  // ici on couvre aussi le cas file (cloudinary.uploader.destroy direct).
+  invalidateResourcesCache();
 
   return { deletedIds: entries.map((e) => e.id) };
 }

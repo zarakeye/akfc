@@ -5,15 +5,14 @@ import { resolvePendingUploadFolder } from "@backend/modules/cloudinary/services
 import type {
   UploadDestination,
   UploadAssetRequest,
-  CreateUploadSignaturesOutput,
-} from "@backend/modules/cloudinary/types/upload.types";
+} from "@contracts/cloudinary/upload.types";
 
 export async function createUploadSignatures(params: {
   prisma: PrismaClient;
   appRoot: string;
   destination: UploadDestination;
   assets: UploadAssetRequest[];
-}): Promise<CreateUploadSignaturesOutput> {
+}) {
   const { prisma, appRoot, destination, assets } = params;
 
   const folder = await resolvePendingUploadFolder({
@@ -59,3 +58,10 @@ export async function createUploadSignatures(params: {
     };
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* TYPE EXPORT PROPRE (inféré) */
+/* -------------------------------------------------------------------------- */
+export type CreateUploadSignaturesOutput = Awaited<
+  ReturnType<typeof createUploadSignatures>
+>;

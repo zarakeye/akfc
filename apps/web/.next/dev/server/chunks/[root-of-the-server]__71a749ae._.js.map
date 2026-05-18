@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/apps/web/src/app/api/trpc/%5Btrpc%5D/route.ts"],"sourcesContent":["import { fetchRequestHandler } from \"@trpc/server/adapters/fetch\"\nimport type { NextRequest } from \"next/server\"\n\nimport { appRouter } from \"@workspace/backend/modules\"\nimport { createTRPCContext } from \"@workspace/backend/trpc\"\n\nexport const runtime = \"nodejs\"\nexport const dynamic = \"force-dynamic\"\n\nconst handler = async (req: NextRequest): Promise<Response> => {\n  return fetchRequestHandler({\n    endpoint: \"/api/trpc\",\n    req,\n    router: appRouter,\n    createContext: async () => createTRPCContext({ req }),\n  })\n}\n\nexport { handler as GET, handler as POST }"],"names":[],"mappings":";;;;;;;;;;AAAA;;;;;;;;;;;;;;AAMO,MAAM,UAAU;AAChB,MAAM,UAAU;AAEvB,MAAM,UAAU,OAAO;IACrB,OAAO,IAAA,wRAAmB,EAAC;QACzB,UAAU;QACV;QACA,QAAQ;QACR,eAAe,UAAY,kBAAkB;gBAAE;YAAI;IACrD;AACF","debugId":null}}]
-}

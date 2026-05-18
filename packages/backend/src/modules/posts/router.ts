@@ -29,6 +29,7 @@ export const postRouter = router({
     .use(requirePermission("view_posts"))
     .query(async ({ ctx }) => {
       return ctx.prisma.post.findMany({
+        relationLoadStrategy: "join",
         include: {
           author: true,
         },
@@ -41,6 +42,7 @@ export const postRouter = router({
     .query(async ({ ctx, input }) => {
       const post = await ctx.prisma.post.findUnique({
         where: { id: input.id },
+        relationLoadStrategy: "join",
         include: {
           author: true,
         },
@@ -64,6 +66,7 @@ export const postRouter = router({
         where: {
           title: { contains: input.title, mode: "insensitive" },
         },
+        relationLoadStrategy: "join",
         include: {
           author: true,
         },

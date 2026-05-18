@@ -152,11 +152,18 @@ export default function PicturesDragNDropForm(): JSX.Element {
 
   // -------------------------------
   // Mutations tRPC
+  //
+  // Migré chantier "migration callsites" sous-phase A : les anciennes
+  // procédures `cloudinary.createUploadSignatures` et
+  // `cloudinary.registerUploadedAssets` sont dépréciées au profit de
+  // `storage.createUploadAuthorization` et `storage.registerUploadedAsset`.
+  // Le `provider: 'cloudinary'` est passé explicitement dans le payload
+  // d'appel.
   // -------------------------------
-  const createSignaturesMutation =
-    trpc.cloudinary.createUploadSignatures.useMutation();
-  const registerAssetsMutation =
-    trpc.cloudinary.registerUploadedAssets.useMutation();
+  const createUploadAuthMutation =
+    trpc.storage.createUploadAuthorization.useMutation();
+  const registerUploadedAssetMutation =
+    trpc.storage.registerUploadedAsset.useMutation();
 
   // -------------------------------
   // État fichiers (hors form RHF)
@@ -326,7 +333,8 @@ export default function PicturesDragNDropForm(): JSX.Element {
           };
 
     try {
-      const signatures = await createSignaturesMutation.mutateAsync({
+      const signatures = await createUploadAuthMutation.mutateAsync({
+        provider: 'cloudinary',
         destination,
         assets: toUpload.map((p) => ({
           fileName: p.file.name,
@@ -409,7 +417,8 @@ export default function PicturesDragNDropForm(): JSX.Element {
       if (successes.length > 0) {
         const pictureById = new Map(toUpload.map((p) => [p.id, p]));
 
-        const registered = await registerAssetsMutation.mutateAsync({
+        const registered = await registerUploadedAssetMutation.mutateAsync({
+          provider: 'cloudinary',
           destination,
           assets: successes.map((s) => {
             const pic = pictureById.get(s.pictureId)!;

@@ -1,7 +1,7 @@
 'use server';
 // export const runtime = 'nodejs';
 
-import { getUserFromSessionJWT } from "@backend/lib/session/session.server";
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
 import sendPasswordEmail from "@backend/email/templates/welcomeEmailWithPassword";
@@ -45,10 +45,10 @@ export const createUserAction = async (
   }
 
   try {
-    const me = await getUserFromSessionJWT();
+    const session = await getSessionFromRequest();
 
-    // ❌ Vérifie que l’email n’est pas celui du user connecté
-    if (me?.email === result.data.email) {
+    // ❌ Vérifie que l'email n'est pas celui du user connecté
+    if (session?.user?.email === result.data.email) {
       return {
         success: false,
         error: "Vous ne pouvez pas créer un compte avec votre propre email",

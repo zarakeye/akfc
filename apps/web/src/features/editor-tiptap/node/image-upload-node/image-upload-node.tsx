@@ -5,7 +5,7 @@ import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
 import { Button } from "@features/editor-tiptap/ui-primitive/button"
 import { CloseIcon } from "@features/editor-tiptap/icons/close-icon"
-import "@components/tiptap-node/image-upload-node/image-upload-node.scss"
+import clsx from "clsx"
 import { focusNextNode, isValidPosition } from "@lib/tiptap-utils"
 
 export interface FileItem {
@@ -217,7 +217,7 @@ const CloudUploadIcon: React.FC = () => (
     width="24"
     height="24"
     viewBox="0 0 24 24"
-    className="tiptap-image-upload-icon"
+    className="w-3.5 h-3.5"
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -238,7 +238,7 @@ const FileIcon: React.FC = () => (
     height="57"
     viewBox="0 0 43 57"
     fill="currentColor"
-    className="tiptap-image-upload-dropzone-rect-primary"
+    className="absolute inset-0 text-(--tiptap-image-upload-icon-doc-bg)"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
@@ -255,7 +255,7 @@ const FileCornerIcon: React.FC = () => (
   <svg
     width="10"
     height="10"
-    className="tiptap-image-upload-dropzone-rect-secondary"
+    className="absolute top-0 right-1 bottom-0 text-(--tiptap-image-upload-icon-doc-border)"
     viewBox="0 0 10 10"
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
@@ -326,7 +326,14 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({
 
   return (
     <div
-      className={`tiptap-image-upload-drag-area ${isDragActive ? "drag-active" : ""} ${isDragOver ? "drag-over" : ""}`}
+      className={clsx(
+        "py-8 px-6 border-dashed rounded-md text-center cursor-pointer relative overflow-hidden transition-all",
+        {
+              "border-(--tiptap-image-upload-border) hover:border-(--tiptap-image-upload-border-hover)": !isDragActive && !isDragOver,
+                "border-(--tiptap-image-upload-border-active) bg-[rgba(var(--tiptap-image-upload-active-rgb),0.05)]": isDragActive,
+                "border-(--tiptap-image-upload-border-active) bg-[rgba(var(--tiptap-image-upload-active-rgb),0.1)]": isDragOver,
+        }
+      )}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -364,31 +371,31 @@ const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
   }
 
   return (
-    <div className="tiptap-image-upload-preview">
+    <div className="relative rounded-md overflow-hidden">
       {fileItem.status === "uploading" && (
         <div
-          className="tiptap-image-upload-progress"
-          style={{ width: `${fileItem.progress}%` }}
+          className="absolute inset-0 transition-all"
+          style={{ backgroundColor: "var(--tiptap-image-upload-progress-bg)", width: `${fileItem.progress}%` }}
         />
       )}
 
-      <div className="tiptap-image-upload-preview-content">
-        <div className="tiptap-image-upload-file-info">
-          <div className="tiptap-image-upload-file-icon">
+      <div className="relative border rounded-md p-4 flex items-center justify-between border-(--tiptap-image-upload-border)">
+        <div className="flex items-center gap-3 h-8">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: "var(--tiptap-image-upload-icon-bg)" }}>
             <CloudUploadIcon />
           </div>
-          <div className="tiptap-image-upload-details">
-            <span className="tiptap-image-upload-text">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium" style={{ color: "var(--tiptap-image-upload-text-color)" }}>
               {fileItem.file.name}
             </span>
-            <span className="tiptap-image-upload-subtext">
+            <span className="text-xs font-semibold" style={{ color: "var(--tiptap-image-upload-subtext-color)" }}>
               {formatFileSize(fileItem.file.size)}
             </span>
           </div>
         </div>
-        <div className="tiptap-image-upload-actions">
+        <div className="flex items-center gap-2">
           {fileItem.status === "uploading" && (
-            <span className="tiptap-image-upload-progress-text">
+            <span className="text-xs font-semibold" style={{ color: "var(--tiptap-image-upload-border-active)" }}>
               {fileItem.progress}%
             </span>
           )}
@@ -400,7 +407,7 @@ const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
               onRemove()
             }}
           >
-            <CloseIcon className="tiptap-button-icon" />
+            <CloseIcon />
           </Button>
         </div>
       </div>
@@ -413,23 +420,25 @@ const DropZoneContent: React.FC<{ maxSize: number; limit: number }> = ({
   limit,
 }) => (
   <>
-    <div className="tiptap-image-upload-dropzone">
-      <FileIcon />
-      <FileCornerIcon />
-      <div className="tiptap-image-upload-icon-container">
-        <CloudUploadIcon />
+    <div className="relative w-12 h-14 inline-flex items-start justify-center select-none">
+        <FileIcon />
+        <FileCornerIcon />
+        <div
+          className="absolute bottom-0 right-0 w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: "var(--tiptap-image-upload-icon-bg)" }}
+        >
+          <CloudUploadIcon />
+        </div>
       </div>
-    </div>
 
-    <div className="tiptap-image-upload-content">
-      <span className="tiptap-image-upload-text">
-        <em>Click to upload</em> or drag and drop
-      </span>
-      <span className="tiptap-image-upload-subtext">
-        Maximum {limit} file{limit === 1 ? "" : "s"}, {maxSize / 1024 / 1024}MB
-        each.
-      </span>
-    </div>
+      <div className="flex flex-col items-center justify-center gap-1 select-none">
+        <span className="text-sm font-medium" style={{ color: "var(--tiptap-image-upload-text-color)" }}>
+          <em className="not-italic underline">Click to upload</em> or drag and drop
+        </span>
+        <span className="text-xs font-semibold" style={{ color: "var(--tiptap-image-upload-subtext-color)" }}>
+          Maximum {limit} file{limit === 1 ? "" : "s"}, {maxSize / 1024 / 1024}MB each.
+        </span>
+      </div>
   </>
 )
 
@@ -502,11 +511,7 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
   const hasFiles = fileItems.length > 0
 
   return (
-    <NodeViewWrapper
-      className="tiptap-image-upload"
-      tabIndex={0}
-      onClick={handleClick}
-    >
+    <NodeViewWrapper tabIndex={0} onClick={handleClick} className="my-8">
       {!hasFiles && (
         <ImageUploadDragArea onFile={handleUpload}>
           <DropZoneContent maxSize={maxSize} limit={limit} />
@@ -514,10 +519,10 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
       )}
 
       {hasFiles && (
-        <div className="tiptap-image-upload-previews">
+        <div className="flex flex-col gap-3">
           {fileItems.length > 1 && (
-            <div className="tiptap-image-upload-header">
-              <span>Uploading {fileItems.length} files</span>
+            <div className="flex items-center justify-between py-2 border-b mb-2 border-(--tiptap-image-upload-border)">
+              <span className="text-sm font-medium text-(--tiptap-image-upload-text-color)">Uploading {fileItems.length} files</span>
               <Button
                 type="button"
                 data-style="ghost"

@@ -5,8 +5,9 @@ import { assertResourceTypeMatchesMimeType } from "@backend/modules/cloudinary/u
 import { assertSafeCloudinaryPath } from "@backend/modules/cloudinary/utils/path-validation.utils";
 import { readUploadedAssetMetadata } from "@backend/modules/cloudinary/services/readUploadedAssetMetadata.service";
 import { resolvePendingUploadFolder } from "@backend/modules/cloudinary/services/resolvePendingUploadFolder.service";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 
-import type { UploadDestination } from "@backend/modules/cloudinary/types/upload.types";
+import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 
 /**
  * registerUploadedAssets.service.ts
@@ -149,6 +150,12 @@ export async function registerUploadedAssets(params: {
 
     return out;
   });
+
+  // 🔁 Les assets viennent d'être uploadés sur Cloudinary par le client
+  // (via signature) puis enregistrés en DB ici. Le cache backend ne sait
+  // pas qu'ils existent — purge pour que le prochain `listAuthenticatedResources`
+  // refasse l'appel API et les voie.
+  invalidateResourcesCache();
 
   return {
     success: true as const,

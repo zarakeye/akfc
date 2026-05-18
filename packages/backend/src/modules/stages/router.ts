@@ -186,6 +186,7 @@ export const stageRouter = router({
     .query(async ({ ctx, input }) => {
       const stage = await ctx.prisma.stage.findUnique({
         where: { id: input.id },
+        relationLoadStrategy: "join",
         include: {
           animators: { select: { id: true, firstName: true, lastName: true } },
           sessions: { orderBy: { date: "asc" } },
@@ -249,6 +250,7 @@ export const stageRouter = router({
               connect: allAnimatorIds.map((id) => ({ id })),
             },
           },
+          relationLoadStrategy: "join",
           include: {
             animators: {
               select: { id: true, firstName: true, lastName: true },
@@ -331,6 +333,7 @@ export const stageRouter = router({
                 }
               : {}),
           },
+          relationLoadStrategy: "join",
           include: {
             animators: {
               select: { id: true, firstName: true, lastName: true },

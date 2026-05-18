@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/apps/web/node_modules/react-ts-tab-lib/dist/index.css"],"sourcesContent":[".table-root [data-row]:hover div{background-color:#e8e8e8!important;color:#000!important}\n"],"names":[],"mappings":"AAAA","ignoreList":[0],"debugId":null}}]
-}

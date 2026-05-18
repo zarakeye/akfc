@@ -9,6 +9,7 @@ export const permissionRouter = router({
     .use(requirePermission("manage_permissions"))
     .query(async ({ ctx }) => {
       return ctx.prisma.permission.findMany({
+        relationLoadStrategy: "join",
         include: {
           roles: {
             include: { role: true },

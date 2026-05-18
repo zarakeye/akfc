@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/apps/web/src/app/admin/dashboard/pictures/page.tsx"],"sourcesContent":["'use client';\n\nimport { JSX } from 'react';\nimport FinderLayout from '@/features/cloudinary-finder/ui/layout/FinderLayout';\n\n/**\n * Page de gestionnaire de galerie.\n * \n * Cette page affiche une layout de type gestionnaire de fichiers\n * qui permet de naviguer dans l'arborescence des pictures (photos et vidéos) de l'application.\n * \n * Elle affiche un titre \"Gestionnaire de galerie\" et un composant FinderLayout\n * qui encapsule le layout de la page de gestionnaire.\n */\nexport default function GalleryPage(): JSX.Element {\n  return (\n    <div className=\"p-6 h-full\">\n      <h1 className=\"text-2xl font-semibold mb-6\">\n        Gestionnaire de galerie\n      </h1>\n\n      <FinderLayout />\n    </div>\n  );\n}"],"names":[],"mappings":";;;;;;;;;;AAAA;;;AAce,SAAS;IACtB,qBACE,mXAAC;QAAI,WAAU;;0BACb,mXAAC;gBAAG,WAAU;0BAA8B;;;;;;0BAI5C,mXAAC;;;;;;;;;;;AAGP;KAVwB","debugId":null}}]
-}
