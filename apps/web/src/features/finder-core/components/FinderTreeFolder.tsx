@@ -7,8 +7,17 @@ import clsx from 'clsx';
 import type { FinderNode } from '@contracts/finder';
 import type { FileAdapter } from '@contracts/finder';
 
+import { APP_ROOT } from '@config/app';
+import { trpc } from '@trpc/trpcClient';
+
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { useLongPress } from '@features/finder-core/hooks/useLongPress';
+import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
 import { useTrashMap } from '@features/finder-core/state/TrashMapContext';
+import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
+import ContextMenu, {
+  type ContextMenuItem,
+} from '@features/finder-core/components/ContextMenu';
 import {
   FINDER_DRAG_MIME,
   tryParsePayload,
@@ -61,6 +70,17 @@ type Props = {
    */
   openPaths: Set<string>;
   onToggleOpen: (path: string) => void;
+  /**
+   * Callback déclenché au début d'un drag depuis ce dossier. Optionnel —
+   * si non fourni, le dossier n'est pas drag-source (mais reste drop-target).
+   * Identique au handler passé aux `GridItem`.
+   */
+  onDragStart?: (e: React.DragEvent, node: FinderNode) => void;
+  /**
+   * Callback déclenché au long-press (>= 500ms) sur ce dossier.
+   * Active le mode multi-select dans le store partagé.
+   */
+  onLongPress?: (node: FinderNode) => void;
 };
 
 export default function FinderTreeFolder({
@@ -70,9 +90,65 @@ export default function FinderTreeFolder({
   onOpen,
   openPaths,
   onToggleOpen,
+  onDragStart,
+  onLongPress,
 }: Props) {
   const isOpen = openPaths.has(node.path);
   const isActive = node.path === currentPath;
+
+  // Détection : ce node est-il un dossier de statut (pending/published/bin) ?
+  // Si oui, il est exclu des actions destructives ET des actions de sélection
+  // (cf. doc dans utils/statusFolders.ts).
+  const isStatus = isStatusFolder(node.path);
+
+  // Hook longpress : instancié inconditionnellement (rules of hooks).
+  // Le callback no-op silencieusement si c'est un status folder OU si le
+  // parent n'a pas fourni `onLongPress`.
+  const longPress = useLongPress(() => {
+    if (isStatus) return;
+    if (onLongPress) onLongPress(node);
+  });
+
+  // Drag-source désactivé sur les status folders (intouchables).
+  const isDraggable = Boolean(onDragStart) && !isStatus;
+
+  // ─── Context menu (right-click) ─────────────────────────────────────────
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
+
+  function buildMenuItems(): ContextMenuItem[] {
+    const targetNodes = effectiveNodesFor(node);
+    return [
+      {
+        label: deleteLabel(targetNodes.length, targetNodes),
+        destructive: true,
+        onClick: () => {
+          void deleteNodes(targetNodes);
+        },
+      },
+    ];
+  }
+
+  // Mutation tRPC pour envoyer du contenu vers la corbeille.
+  //
+  // ─── Pourquoi cette mutation est définie ici ─────────────────────────
+  //
+  // Quand l'utilisateur drop un fichier sur le node `bin`, le comportement
+  // attendu n'est PAS un move "normal" (qui placerait juste le fichier
+  // dans `bin/`), mais le mécanisme **trashToBin** complet :
+  //   - Génère un uuid
+  //   - Move le fichier vers `bin/.trash/<uuid>/<filename>`
+  //   - Crée une `TrashEntry` en DB avec `previousPath`, `displayName`,
+  //     `sizeBytes`, `cloudinaryCreatedAt`, etc.
+  //
+  // Sans cette procédure dédiée, la TrashEntry n'est pas créée → la vue
+  // bin (FinderBinRootView) reste vide ou affiche des "dossiers uuids"
+  // sans displayName. Et la restauration depuis le bin devient impossible
+  // (pas de previousPath stocké).
+  //
+  // C'est exactement le pattern de la version legacy `cloudinary-finder`,
+  // qu'on récupère ici en câblant le UI au router trash.
+  const trashToBinMutation = trpc.trash.trashToBin.useMutation();
 
   // ─── Trash UI : skip `.trash` + rename uuids ──────────────────────────────
   //
@@ -102,6 +178,29 @@ export default function FinderTreeFolder({
 
   const inTrashStorage = node.path.includes('/.trash/') || node.path.endsWith('/.trash');
   const isTrashRootSkipNode = node.name === '.trash';
+
+  // ─── 🪟 Wrapper de TrashEntry : à skip aussi visuellement ────────────────
+  //
+  // Le storage Cloudinary structure la corbeille en `bin/.trash/<uuid>/...`.
+  // Le segment `<uuid>` est un **wrapper technique** : il existe seulement
+  // pour gérer les collisions de noms (2× `photo.jpg` trashés à des
+  // moments différents peuvent coexister sous deux uuids distincts).
+  //
+  // Côté UX, ce wrapper n'a aucune valeur : pour l'utilisateur, "un fichier
+  // est un fichier, un dossier est un dossier". Voir un dossier intermédiaire
+  // "Mon-fichier.jpg/" qui contient juste "Mon-fichier.jpg" est aberrant.
+  //
+  // La règle : tout node directement sous `.trash/` est un wrapper et doit
+  // être skip — on rend directement son contenu au niveau parent (= bin
+  // dans la TreeView, après skip du `.trash` lui-même).
+  //
+  // Détection : le path matche `<...>/bin/.trash/<uuid>` (rien après le uuid).
+  // Cette regex existe déjà ligne ~473 pour le fallback displayName, on la
+  // promote au niveau de la décision de skip.
+  const isTrashWrapperNode = Boolean(
+    node.path.match(/\/bin\/\.trash\/[^/]+$/),
+  );
+
   const trashEntryForName = trashMap.get(node.name);
 
   /**
@@ -117,31 +216,62 @@ export default function FinderTreeFolder({
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  /* ─── Auto-load des enfants du `.trash` ───────────────────────────────────
+  /* ─── Auto-load des enfants des nodes skippés ─────────────────────────────
    *
-   * Le node `.trash` est rendu invisible (skip pur), donc l'utilisateur ne
-   * peut pas cliquer dessus pour déclencher l'expansion. Or au chargement
-   * initial avec `getTree({ depth: 2 })`, on a `bin > .trash` mais PAS
-   * encore `bin > .trash > <uuids>` (depth 3).
+   * Le node `.trash` ET les wrappers uuid sont rendus invisibles (skip pur),
+   * donc l'utilisateur ne peut pas cliquer dessus pour déclencher l'expansion.
+   * Or au chargement initial avec `getTree({ depth: 2 })`, on a uniquement
+   * `bin > .trash` (et avec un coup de chance les uuids juste en dessous),
+   * mais pas le contenu des wrappers (depth 4+).
    *
-   * Sans ce useEffect, déplier `bin` rend les enfants de `.trash` (qui
-   * deviennent les enfants visuels de `bin`) MAIS ce tableau est vide
-   * tant qu'on n'a pas chargé. Donc `bin` apparaît vide même s'il y a
-   * du contenu dans la corbeille.
+   * Sans cet auto-load, les enfants du wrapper (le vrai fichier qu'on a
+   * mis à la corbeille) ne sont jamais chargés tant que personne ne clique
+   * sur le wrapper — sauf qu'on ne le rend même pas comme cible cliquable.
+   * Le bin apparaîtrait visuellement vide alors qu'il contient des items.
    *
-   * Solution : dès qu'on monte un `.trash` skip node, on déclenche
-   * automatiquement le chargement de ses enfants via `adapter.getTree`.
-   * L'utilisateur ne voit pas de spinner (puisque le node `.trash` lui-
-   * même n'est pas rendu), seulement le résultat final : les uuids
-   * (renommés via trashMap) apparaissent sous `bin`.
+   * Solution : dès qu'on monte un node skip (`.trash` OU wrapper uuid),
+   * on déclenche automatiquement le chargement de ses enfants via
+   * `adapter.getTree`. L'utilisateur ne voit pas de spinner (puisque le
+   * node skip lui-même n'est pas rendu), seulement le résultat final :
+   * le contenu du bin apparaît directement sous `bin/`.
    *
    * Guard `triggeredRef` pour éviter le re-trigger en boucle au cas où le
    * `node` change de référence (mais pas son path) après un re-render.
    */
+  /* ─── Invalidation TreeView au reloadKey ──────────────────────────────────
+   *
+   * Le store `useFinderStore` expose un `reloadKey` qui est incrémenté à
+   * chaque mutation (move, trashToBin, restore…) via `reloadFolderContent()`.
+   *
+   * Sans observation explicite, la TreeView garde son `loadedChildren`
+   * local et n'affiche pas les changements (un fichier déplacé reste
+   * visible à son ancien emplacement jusqu'au reload manuel de la page).
+   *
+   * Cet effet vide `loadedChildren` + reset le flag d'auto-load chaque
+   * fois que `reloadKey` change. Le useEffect d'auto-load (plus haut) se
+   * redéclenche alors si on est sur un node skip (`.trash` ou wrapper),
+   * et pour les autres folders ouverts, leur prochain rendu provoque
+   * un re-fetch via `loadChildrenLazy` au prochain toggle/expand.
+   *
+   * Note : on skip volontairement le PREMIER run du useEffect (au mount),
+   * pour ne pas casser le chargement initial. Le premier `reloadKey` n'est
+   * pas un signal d'invalidation, c'est juste la valeur de départ.
+   */
+  const reloadKey = useFinderStore((s) => s.reloadKey);
+  const isFirstReloadKeyRef = useRef(true);
   const autoLoadTriggeredRef = useRef(false);
 
   useEffect(() => {
-    if (!isTrashRootSkipNode) return;
+    if (isFirstReloadKeyRef.current) {
+      isFirstReloadKeyRef.current = false;
+      return;
+    }
+    setLoadedChildren(null);
+    autoLoadTriggeredRef.current = false;
+  }, [reloadKey]);
+
+  useEffect(() => {
+    if (!isTrashRootSkipNode && !isTrashWrapperNode) return;
     if (autoLoadTriggeredRef.current) return;
     if (node.children && node.children.length > 0) return; // déjà chargé
     if (loadedChildren !== null) return; // déjà chargé/en cours
@@ -167,13 +297,20 @@ export default function FinderTreeFolder({
         useFinderStore.getState().cacheChildrenAt(node.path, children);
       })
       .catch((err) => {
-        console.error('[FinderTreeFolder] auto-load .trash failed', err);
+        console.error('[FinderTreeFolder] auto-load skip-node failed', err);
         setLoadError('Erreur chargement contenu corbeille');
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, [isTrashRootSkipNode, node.path, node.children, loadedChildren, adapter]);
+  }, [
+    isTrashRootSkipNode,
+    isTrashWrapperNode,
+    node.path,
+    node.children,
+    loadedChildren,
+    adapter,
+  ]);
 
   /**
    * Surbrillance "drop target hover".
@@ -190,6 +327,14 @@ export default function FinderTreeFolder({
   // plus dans le dossier courant, garder leurs ids dans roots est incohérent
   // (et fausserait le compteur de la MultiSelectToolbar).
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
+  // Sélecteurs pour le comportement multi-select au click (cf. handleRowClick) :
+  // sans `multiSelectActive` qui branche sur `toggleSelect` plutôt que sur
+  // `onOpen`, le longpress dans la tree view serait écrasé instantanément
+  // par le click qui suit le mouseup (setPath → reset multiSelectActive).
+  const toggleSelect = useFinderStore((s) => s.toggleSelect);
+  const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
+  // Pour afficher la checkbox en feedback visuel quand multiSelectActive.
+  const selectedIds = useFinderStore((s) => s.selection.roots);
 
   /**
    * Source effective des enfants à afficher : priorité aux enfants
@@ -253,7 +398,33 @@ export default function FinderTreeFolder({
     onToggleOpen(node.path);
   }
 
+  /**
+   * Clic sur le LIBELLÉ du dossier — comportement dépendant du mode.
+   *
+   * ─── Avalage du click parasite post-longpress ────────────────────────
+   * `longPress.consumeJustFired()` retourne true UNE FOIS si le callback
+   * longpress vient juste de tirer. Dans ce cas on return immédiatement
+   * pour ne pas que ce click "fantôme" désélectionne le node qui vient
+   * tout juste d'être ajouté à la sélection par le longpress.
+   *
+   * ─── Mode normal ─────────────────────────────────────────────────────
+   * Navigation : on demande au parent d'ouvrir ce dossier dans la grille
+   * principale (`onOpen` = `setPath` du store).
+   *
+   * ─── Mode multi-select ───────────────────────────────────────────────
+   * On NE NAVIGUE PAS, on toggle juste l'appartenance du dossier à la
+   * sélection. **Sauf** pour les status folders (pending/published/bin)
+   * qui sont définitivement non-sélectionnables — on garde le click
+   * "no-op" plutôt que de naviguer pour rester cohérent avec le fait
+   * que les status folders n'ont pas de checkbox affichée.
+   */
   function handleRowClick() {
+    if (longPress.consumeJustFired()) return;
+    if (multiSelectActive) {
+      if (isStatus) return; // status folders non-sélectionnables
+      toggleSelect(node.id);
+      return;
+    }
     onOpen(node.path);
   }
 
@@ -275,6 +446,10 @@ export default function FinderTreeFolder({
   function handleDragEnter(e: React.DragEvent) {
     if (!isFinderDrag(e)) return;
     e.preventDefault();
+    // stopPropagation pour éviter que l'event bubble vers un FinderTreeFolder
+    // parent (qui aurait alors aussi marqué `isDragOver=true` à tort).
+    // Indispensable depuis l'extension de la drop zone au wrapper englobant.
+    e.stopPropagation();
     setIsDragOver(true);
   }
 
@@ -283,6 +458,7 @@ export default function FinderTreeFolder({
     // ⚠️ preventDefault est requis pour autoriser le drop sur cet élément.
     // Sans cet appel, onDrop ne se déclenchera jamais.
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     if (!isDragOver) setIsDragOver(true);
   }
@@ -297,6 +473,10 @@ export default function FinderTreeFolder({
 
   async function handleDrop(e: React.DragEvent) {
     e.preventDefault();
+    // stopPropagation : indispensable depuis l'extension de la drop zone
+    // au wrapper englobant. Sans cela, un drop sur un sous-folder serait
+    // catché par le sous-folder ET par son parent → double mutation.
+    e.stopPropagation();
     setIsDragOver(false);
 
     const raw = e.dataTransfer.getData(FINDER_DRAG_MIME);
@@ -312,6 +492,46 @@ export default function FinderTreeFolder({
     if (!isDropAllowed(targetPath, items)) return;
     if (!isDropEffective(targetPath, items)) return;
 
+    // ─── Cas spécial : drop sur la racine du bin ─────────────────────────
+    //
+    // Quand l'utilisateur drop des items sur le node `bin` (la racine de
+    // la corbeille), on ne fait PAS un move normal — on appelle la
+    // procédure dédiée `trash.trashToBin` qui :
+    //   1. Génère un uuid par item
+    //   2. Move chaque item vers `bin/.trash/<uuid>/...` côté Cloudinary
+    //   3. Crée une TrashEntry en DB avec previousPath + displayName,
+    //      indispensable pour la vue corbeille (FinderBinRootView) ET
+    //      pour la restauration ultérieure.
+    //
+    // Note : seul le path EXACT `${APP_ROOT}/bin` déclenche ce mode.
+    // Si l'utilisateur drop dans un sous-dossier de la corbeille (un
+    // `.trash/<uuid>/`), on tombe sur le `moveItems` standard — c'est
+    // un cas edge qu'on traite comme un move ordinaire, faute de
+    // sémantique métier claire pour "déplacer dans une entry existante".
+    const BIN_ROOT_PATH = `${APP_ROOT}/bin`;
+
+    if (targetPath === BIN_ROOT_PATH) {
+      try {
+        await trashToBinMutation.mutateAsync({
+          appRoot: APP_ROOT,
+          // Mapping DragItem → source attendu par trashToBinInputSchema.
+          // On utilise toujours kind 'folder' ou 'file' selon le type du
+          // DragItem ; pas de mode 'selection' ici puisque le payload du
+          // drag transporte déjà la liste explicite des items.
+          sources: items.map((it) => ({
+            kind: it.type === 'folder' ? ('folder' as const) : ('file' as const),
+            fullPath: it.path,
+          })),
+        });
+        reloadFolderContent();
+        exitMultiSelect();
+      } catch (err) {
+        console.error('[FinderTreeFolder] trashToBin failed', err);
+      }
+      return;
+    }
+
+    // ─── Cas normal : move agnostique via l'adapter ──────────────────────
     if (!adapter.moveItems) {
       console.warn('[FinderTreeFolder] adapter.moveItems unavailable, drop ignoré');
       return;
@@ -351,7 +571,28 @@ export default function FinderTreeFolder({
   //
   // L'indentation visuelle est PRÉSERVÉE : les uuids apparaîtront indentés
   // d'un niveau (celui de `bin`), pas deux. C'est exactement ce qu'on veut.
-  if (isTrashRootSkipNode) {
+  // ─── Skip visuel du `.trash` ET des wrappers uuid ────────────────────────
+  //
+  // Le node `.trash` lui-même est rendu invisible (skip pur) — voir détection
+  // `isTrashRootSkipNode`. À la place, on rend ses enfants au niveau parent.
+  //
+  // ➕ Depuis ce sous-chantier, on skip aussi les **wrappers uuid** (les
+  // dossiers techniques `bin/.trash/<uuid>/`). Comme `.trash`, ils sont
+  // techniques et sans valeur UX : leur contenu doit apparaître directement
+  // au niveau de `bin` dans la TreeView, pour respecter la sémantique
+  // "un fichier est un fichier, un dossier est un dossier".
+  //
+  // Les deux cas ont exactement le même traitement : on rend le contenu
+  // (`effectiveChildren`) tel quel, en propageant les handlers DnD/longpress
+  // pour qu'ils restent fonctionnels sur les enfants exposés.
+  //
+  // ⚠️ Côté GridView, le comportement est différent :
+  //   - À `${APP_ROOT}/bin` (root du bin), on affiche `FinderBinRootView`
+  //     (vue plate des TrashEntry, indépendante de la structure storage).
+  //   - À `${APP_ROOT}/bin/.trash/<uuid>` (drilldown), on affiche le
+  //     contenu réel du wrapper — utile si l'entry est un dossier avec
+  //     plusieurs fichiers (ex: dossier "Photos/" entier mis à la corbeille).
+  if (isTrashRootSkipNode || isTrashWrapperNode) {
     return (
       <>
         {effectiveChildren?.map((child) =>
@@ -364,9 +605,16 @@ export default function FinderTreeFolder({
               onOpen={onOpen}
               openPaths={openPaths}
               onToggleOpen={onToggleOpen}
+              onDragStart={onDragStart}
+              onLongPress={onLongPress}
             />
           ) : (
-            <FinderTreeFile key={child.path} node={child} />
+            <FinderTreeFile
+              key={child.path}
+              node={child}
+              onDragStart={onDragStart}
+              onLongPress={onLongPress}
+            />
           ),
         )}
       </>
@@ -391,14 +639,57 @@ export default function FinderTreeFolder({
   }
 
   return (
-    <div className="select-none">
-      {/* Ligne du dossier : chevron + icône + nom — c'est aussi la drop zone */}
+    <div
+      className="select-none"
+      // ─── Drop zone étendue ──────────────────────────────────────────────
+      //
+      // Les handlers sont posés sur ce wrapper englobant — qui couvre à la
+      // fois la ligne du folder (chevron + nom) ET le conteneur des enfants
+      // (sous-folders et fichiers). Ainsi un drop n'importe où dans ce
+      // sous-arbre est interprété comme un drop dans CE folder.
+      //
+      // Le bubble vers un FinderTreeFolder parent est bloqué via
+      // `e.stopPropagation()` dans chaque handler — sinon un drop sur un
+      // sous-folder serait catché par le sous-folder ET par son parent.
+      //
+      // ⚠️ Cette zone ne couvre PAS les fichiers de la GridView centrale
+      // (qui ont leurs propres drop zones via `data-finder-drop-path`).
+      // Ici on ne parle que de la TreeView.
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Ligne du dossier : chevron + icône + nom — surbrillance drop pose ICI */}
       <div
         onClick={handleRowClick}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onContextMenu={
+          isStatus
+            ? undefined
+            : (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuPos({ x: e.clientX, y: e.clientY });
+              }
+        }
+        // Drag-source (nouveau) : ce dossier peut être déplacé par DnD.
+        // Le folder reste drop-target pour les drops entrants — un même
+        // élément peut être à la fois source et cible (HTML5 DnD le permet).
+        draggable={isDraggable}
+        onDragStart={
+          onDragStart
+            ? (e) => {
+                longPress.onDragStart();
+                onDragStart(e, node);
+              }
+            : undefined
+        }
+        // Long-press → multi-select (nouveau, parité avec GridItem)
+        onMouseDown={longPress.onMouseDown}
+        onMouseUp={longPress.onMouseUp}
+        onMouseLeave={longPress.onMouseLeave}
+        onTouchStart={longPress.onTouchStart}
+        onTouchEnd={longPress.onTouchEnd}
         // Attribut lu par le ghost manager pour calculer le badge allowed/forbidden
         // via document.elementFromPoint pendant le tracking du drag.
         data-finder-drop-path={node.path}
@@ -432,6 +723,29 @@ export default function FinderTreeFolder({
           <span className="inline-block h-4 w-4" />
         )}
 
+        {/* ─── Checkbox multi-select (parité avec GridItem et FinderTreeFile) ─
+            Visible seulement quand `multiSelectActive`. C'est ce qui donne
+            le feedback visuel attendu après un longpress (qui sinon active
+            le mode silencieusement et laissait croire que rien ne s'est passé).
+            En `readOnly` : le toggle est fait via le `onClick` du div parent
+            (handleRowClick → toggleSelect en mode multi). Le clic sur la
+            checkbox elle-même bubble vers ce handler donc l'expérience est
+            cohérente. */}
+        {/* ─── Checkbox multi-select (parité avec GridItem et FinderTreeFile) ─
+            Visible seulement quand `multiSelectActive` ET que le node n'est
+            PAS un status folder (cf. utils/statusFolders.ts : pending,
+            published, bin sont définitivement non-sélectionnables).
+            En `readOnly` : le toggle est fait via le `onClick` du div parent
+            (handleRowClick → toggleSelect en mode multi). */}
+        {multiSelectActive && !isStatus && (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(node.id)}
+            readOnly
+            className="shrink-0"
+          />
+        )}
+
         {/* Icône dossier (ouvert / fermé) */}
         {isOpen ? (
           <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -463,12 +777,28 @@ export default function FinderTreeFolder({
                 onOpen={onOpen}
                 openPaths={openPaths}
                 onToggleOpen={onToggleOpen}
+                onDragStart={onDragStart}
+                onLongPress={onLongPress}
               />
             ) : (
-              <FinderTreeFile key={child.path} node={child} />
+              <FinderTreeFile
+                key={child.path}
+                node={child}
+                onDragStart={onDragStart}
+                onLongPress={onLongPress}
+              />
             ),
           )}
         </div>
+      )}
+
+      {menuPos && (
+        <ContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          items={buildMenuItems()}
+          onClose={() => setMenuPos(null)}
+        />
       )}
     </div>
   );

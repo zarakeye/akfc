@@ -134,7 +134,7 @@ async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullP
   const p = normalizePath(fullPath);
 
   // 1) Si on a un registre folder DB, c'est un folder.
-  const folder = await prisma.cloudinaryFolder.findFirst({
+  const folder = await prisma.folder.findFirst({
     where: { appRoot, fullPath: p },
     select: { id: true },
   });
@@ -289,8 +289,8 @@ export async function trashToBin(params: {
 
       // 4) Nettoyage registry DB des dossiers :
       //    Si tu jettes un dossier, il ne doit plus exister "à l'ancien endroit".
-      //    Donc on supprime les CloudinaryFolder dont le fullPath est dans ce sous-arbre.
-      await prisma.cloudinaryFolder.deleteMany({
+      //    Donc on supprime les Folder dont le fullPath est dans ce sous-arbre.
+      await prisma.folder.deleteMany({
         where: {
           appRoot,
           fullPath: {

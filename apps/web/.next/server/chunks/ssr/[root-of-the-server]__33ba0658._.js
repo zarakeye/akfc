@@ -1,3 +1,0 @@
-module.exports=[29173,(a,b,c)=>{b.exports=a.x("@prisma/client",()=>require("@prisma/client"))},874,(a,b,c)=>{b.exports=a.x("buffer",()=>require("buffer"))},88947,(a,b,c)=>{b.exports=a.x("stream",()=>require("stream"))},54799,(a,b,c)=>{b.exports=a.x("crypto",()=>require("crypto"))},22734,(a,b,c)=>{b.exports=a.x("fs",()=>require("fs"))},92509,(a,b,c)=>{b.exports=a.x("url",()=>require("url"))},21517,(a,b,c)=>{b.exports=a.x("http",()=>require("http"))},24836,(a,b,c)=>{b.exports=a.x("https",()=>require("https"))}];
-
-//# sourceMappingURL=%5Broot-of-the-server%5D__33ba0658._.js.map

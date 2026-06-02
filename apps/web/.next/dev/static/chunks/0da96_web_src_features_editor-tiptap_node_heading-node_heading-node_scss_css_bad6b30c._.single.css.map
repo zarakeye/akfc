@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///turbopack:///[project]/apps/web/src/features/editor-tiptap/node/heading-node/heading-node.scss"],"sourcesContent":[".tiptap.ProseMirror {\n  h1,\n  h2,\n  h3,\n  h4 {\n    position: relative;\n    color: inherit;\n    font-style: inherit;\n\n    &:first-child,\n    &:first-of-type {\n      margin-top: 0;\n    }\n  }\n\n  h1 {\n    font-size: 1.5em;\n    font-weight: 700;\n    margin-top: 3em;\n  }\n\n  h2 {\n    font-size: 1.25em;\n    font-weight: 700;\n    margin-top: 2.5em;\n  }\n\n  h3 {\n    font-size: 1.125em;\n    font-weight: 600;\n    margin-top: 2em;\n  }\n\n  h4 {\n    font-size: 1em;\n    font-weight: 600;\n    margin-top: 2em;\n  }\n}\n"],"names":[],"mappings":"AACE;;;;;;AAQE;;;;AAMF;;;;;;AAMA;;;;;;AAMA;;;;;;AAMA"}}]
+}

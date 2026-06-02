@@ -17,11 +17,11 @@ interface Props {
 export default function DashboardLayout({ children }: Props): JSX.Element {
   return (
     <Providers>
-      <div className="flex min-h-screen">
+      <div className="flex h-full overflow-hidden">
         <ControlPanelSidebar />
 
       {/* ⚠️ le main DOIT être relative */}
-      <main className="relative flex-1 p-10 overflow-hidden">
+      <main className="relative flex-1 overflow-y-auto p-10">
         {children}
       </main>
     </div>

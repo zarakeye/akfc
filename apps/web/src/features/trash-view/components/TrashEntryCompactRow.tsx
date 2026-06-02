@@ -9,6 +9,8 @@ type Props = {
   selected: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
+  /** Right-click — pass-through au parent (TrashEntriesList). */
+  onContextMenu?: (e: React.MouseEvent, entry: TrashEntryDTO) => void;
 };
 
 /**
@@ -22,6 +24,7 @@ export default function TrashEntryCompactRow({
   selected,
   onClick,
   onDoubleClick,
+  onContextMenu,
 }: Props): JSX.Element {
   const isFolder = entry.kind === 'folder';
   const Icon = isFolder ? Folder : FileText;
@@ -30,6 +33,14 @@ export default function TrashEntryCompactRow({
     <div
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={
+        onContextMenu
+          ? (e) => {
+              e.preventDefault();
+              onContextMenu(e, entry);
+            }
+          : undefined
+      }
       className={`
         cursor-pointer select-none
         flex items-center gap-3 px-3 py-1.5

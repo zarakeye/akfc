@@ -19,7 +19,7 @@ async function ensureRootFolders(prisma, appRoot) {
     let created = 0;
     for (const status of ROOT_FOLDER_STATUSES){
         const fullPath = `${appRoot}/${status}`;
-        const existing = await prisma.cloudinaryFolder.findUnique({
+        const existing = await prisma.folder.findUnique({
             where: {
                 appRoot_fullPath: {
                     appRoot,
@@ -31,7 +31,7 @@ async function ensureRootFolders(prisma, appRoot) {
             }
         });
         if (existing) continue;
-        await prisma.cloudinaryFolder.create({
+        await prisma.folder.create({
             data: {
                 appRoot,
                 fullPath,

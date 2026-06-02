@@ -267,4 +267,46 @@ export const userRouter = router({
 
       return userProfile satisfies UserProfile;
     }),
+
+  /**
+   * Liste tous les users qui sont **factuellement** instructeurs — c'est-à-dire
+   * qui ont au moins une relation d'animation dans le club : ils animent
+   * une discipline, un cours, ou un stage (en tant qu'animateur principal
+   * ou secondaire).
+   *
+   * Le club n'a pas de rôle "instructor" nominal en schéma ; cette
+   * définition factuelle permet de peupler les sélecteurs des forms admin
+   * (Course, Stage, etc.) sans dépendre d'un signal qui n'existe pas.
+   *
+   * Si un jour tu veux désigner un nouvel instructeur qui n'anime encore
+   * rien, il faudra introduire un autre signal (rôle dédié ou flag
+   * `isInstructor` sur User) — auquel cas cette query devra évoluer.
+   *
+   * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
+   * Tri par lastName puis firstName pour l'UX du select.
+   */
+  getInstructors: protectedProcedure
+    .query(async ({ ctx }) => {
+      return ctx.prisma.user.findMany({
+        where: {
+          OR: [
+            { disciplinesAsInstructor: { some: {} } },
+            { coursesAsInstructor: { some: {} } },
+            { stagesAsPrimaryAnimator: { some: {} } },
+            { stagesAsAnimator: { some: {} } },
+          ],
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          pseudo: true,
+          email: true,
+        },
+        orderBy: [
+          { lastName: "asc" },
+          { firstName: "asc" },
+        ],
+      });
+    }),
 });

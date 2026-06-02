@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///turbopack:///[project]/apps/web/src/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node.scss"],"sourcesContent":[".tiptap.ProseMirror {\n  --horizontal-rule-color: var(--tt-gray-light-a-200);\n\n  .dark & {\n    --horizontal-rule-color: var(--tt-gray-dark-a-200);\n  }\n}\n\n/* =====================\n     HORIZONTAL RULE\n     ===================== */\n.tiptap.ProseMirror {\n  hr {\n    border: none;\n    height: 1px;\n    background-color: var(--horizontal-rule-color);\n  }\n\n  [data-type=\"horizontalRule\"] {\n    margin-top: 2.25em;\n    margin-bottom: 2.25em;\n    padding-top: 0.75rem;\n    padding-bottom: 0.75rem;\n  }\n}\n"],"names":[],"mappings":"AAAA;;;;AAGE;;;;AASA;;;;;;AAMA"}}]
+}

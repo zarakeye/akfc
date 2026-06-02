@@ -1,44 +1,91 @@
-'use client';
+"use client";
 
-import { JSX } from "react";
+import type { JSX } from "react";
+import Link from "next/link";
+import { GraduationCap, Globe, Award, Calendar, PartyPopper } from "lucide-react";
+
+import UserCard from "@features/admin/users/components/UserCard";
 import { useSessionStore } from "@lib/stores/useSessionStore";
-import UpdateUserForm from "@features/admin/users/forms/update-me/UpdateMeForm";
 
-/**
- * Home component
- *
- * This component is the main page of the app. It displays a welcome message based on the user's session status.
- * If the user is logged in, it displays their first name or email address.
- * If the user just logged out, it displays a message indicating that they are disconnected.
- * If the user is not logged in, it displays a message inviting them to log in.
- *
- * If the user is logging in for the first time, it displays the UpdateUserForm component, which allows them to update their profile information.
- */
-export default function Home(): JSX.Element {
-  const session = useSessionStore(state => state.session);
-  const status = useSessionStore(state => state.status);
-  // const resetStatus = useSessionStore(state => state.resetStatus);
-
-  let message: string;
-
-  if (status === "justLoggedOut") {
-    message = "Vous êtes déconnecté";
-  } else if (session?.user) {
-    message = `Bienvenue ${session.user.firstName ?? session.user.email}`;
-  } else {
-    message = "Bienvenue invité !";
-  }
-
-  // Si c'est le premier login, afficher le formulaire
-  if (session?.user?.isFirstLogin) {
-    return <UpdateUserForm />;
-  }
+export default function DashboardHome(): JSX.Element {
+  const user = useSessionStore((state) => state.session?.user);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="max-w-3xl p-16 bg-white dark:bg-black">
-        <h1 className="text-3xl font-semibold">{message}</h1>
-      </main>
+    <div className="flex flex-col gap-6">
+      <div className="rounded-lg border p-10 shadow-lg">
+        <h2 className="mb-4 text-2xl font-bold">Mes informations</h2>
+        <UserCard userId={user?.id ?? ""} />
+      </div>
+
+      <div className="rounded-lg border p-6 shadow-lg">
+        <h2 className="mb-4 text-2xl font-bold">Contenus</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Link
+            href="/admin/dashboard/disciplines"
+            className="inline-flex items-center gap-3 rounded-md border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <Award className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium">Disciplines</p>
+              <p className="text-sm text-muted-foreground">
+                Arts enseignés par le club
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/dashboard/courses"
+            className="inline-flex items-center gap-3 rounded-md border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium">Cours</p>
+              <p className="text-sm text-muted-foreground">
+                Créneaux hebdomadaires
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/dashboard/stages"
+            className="inline-flex items-center gap-3 rounded-md border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <Calendar className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium">Stages</p>
+              <p className="text-sm text-muted-foreground">
+                Événements ponctuels et intensifs
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/dashboard/events"
+            className="inline-flex items-center gap-3 rounded-md border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <PartyPopper className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium">Événements</p>
+              <p className="text-sm text-muted-foreground">
+                Repas, conférences, ateliers culturels
+              </p>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/dashboard/origins"
+            className="inline-flex items-center gap-3 rounded-md border border-border bg-card p-4 transition-colors hover:bg-muted"
+          >
+            <Globe className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium">Origines</p>
+              <p className="text-sm text-muted-foreground">
+                Racines culturelles
+              </p>
+            </div>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import type {
   FinderNodeMetadata,
   MoveOptions,
 } from '@contracts/finder';
+import { pickBackendByExtension } from '@contracts/storage';
 import { trpcClient } from '@/core/trpc/trpcClient';
 import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from '@backend/modules';
@@ -123,16 +124,57 @@ function mapFileToFinderNode(
   file: Extract<StorageNodeFromTree, { type: 'file' }>,
 ): FinderNode {
   const fallbackName = file.path.split('/').pop() ?? 'file';
+  const name = file.name ?? fallbackName;
+  const format = file.metadata?.format;
+
+  // ─── Dispatch backend pour la preview ──────────────────────────────────
+  //
+  // Le contrat `StorageNode` ne transporte pas le provider d'origine — c'est
+  // intentionnel (l'UI doit être agnostique au backend). Mais pour calculer
+  // l'URL de preview, on a besoin de savoir si le fichier est sur Cloudinary
+  // (proxy `/api/media/by-public-id/...`) ou sur R2 (proxy `/api/media/r2/...`).
+  //
+  // On déduit le provider via `pickBackendByExtension` — mêmes règles que
+  // le dispatch d'upload :
+  //   - image/* + video/*  → Cloudinary (URL transformée)
+  //   - tout le reste      → R2 (URL via proxy presigned GET)
+  //
+  // ⚠️ Subtilité Cloudinary : les `name` issus de Cloudinary n'ont PAS
+  // d'extension (Cloudinary stocke le format séparément, exposé via
+  // `metadata.format` = "jpg", "mp4", etc.). Sans extension dans le nom,
+  // `pickBackendByExtension` fallback systématiquement sur R2, ce qui
+  // génère une URL proxy R2 fausse pour les fichiers Cloudinary →
+  // plus de thumbnail/preview/vidéo qui marche.
+  //
+  // Solution : on construit un "nom virtuel avec extension" pour le
+  // dispatch quand on dispose d'un `format` explicite. L'`name` réel
+  // affiché à l'UI reste inchangé.
+  //
+  // L'encodage du path pour le proxy R2 doit préserver les '/' structurels
+  // (les segments sont des dossiers virtuels), donc on encode segment par
+  // segment.
+
+  const nameForDispatch =
+    format && !name.toLowerCase().endsWith(`.${format.toLowerCase()}`)
+      ? `${name}.${format}`
+      : name;
+  const backend = pickBackendByExtension(nameForDispatch);
+
+  const url =
+    backend === 'cloudinary'
+      ? getMediaUrl({ publicId: file.path })
+      : `/api/media/r2/${file.path.split('/').map(encodeURIComponent).join('/')}`;
 
   return {
     id: file.path,
-    name: file.name ?? fallbackName,
+    name,
     path: file.path,
     type: 'file',
+    mimeType: file.metadata?.mimeType,
     meta: {
-      url: getMediaUrl({ publicId: file.path }),
-      format: file.metadata?.format,
-      kind: kindFromFormat(file.metadata?.format, file.name ?? fallbackName),
+      url,
+      format,
+      kind: kindFromFormat(format, name),
     },
   };
 }
@@ -190,38 +232,52 @@ function moveOptionsToTarget(target: MoveOptions['target']): StorageMoveTarget {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Adapter Cloudinary pour le finder générique.
+ * Adapter `FileAdapter` pour le finder agnostique — **multi-backend en lecture**.
  *
- * Implémente le contrat `FileAdapter` de `@contracts/finder` en s'appuyant
- * sur le router agnostique `storage.*` avec `provider: 'cloudinary'`. Toute
- * logique Cloudinary-spécifique côté UI (reconstruction d'URL, déduction
- * du kind depuis le format) est concentrée dans `./utils.ts`.
+ * Le nom `cloudinaryAdapter` est historique : à l'origine il appelait
+ * uniquement Cloudinary. Depuis 6.C, les méthodes de lecture passent par
+ * la façade `VirtualStorage` côté backend (interrogation parallèle de
+ * Cloudinary ET R2, fusion des résultats) — l'UI voit donc les items des
+ * deux backends mélangés, transparent.
+ *
+ * Côté `moveItems`, on reste sur `provider: 'cloudinary'` explicite —
+ * les mutations multi-backend sont un chantier distinct (la sémantique
+ * "move un dossier qui contient des items des deux backends" demande sa
+ * propre orchestration).
+ *
+ * ─── Détection du backend pour la preview ─────────────────────────────────
+ *
+ * Le contrat `StorageNode` ne transporte pas le provider d'origine. Pour
+ * calculer l'URL de preview, on déduit le backend depuis l'extension
+ * du nom de fichier via `pickBackendByExtension` — cohérent avec la règle
+ * de dispatch d'upload (image/video → Cloudinary, reste → R2).
  *
  * ─── Méthodes implémentées ─────────────────────────────────────────────────
  *
- *   - `list`        : listing plat des enfants directs d'un dossier.
- *   - `getTree`     : sous-arbre récursif jusqu'à `depth` (TreeView, DnD).
- *   - `getMetadata` : métadonnées riches d'un asset (sidebar de preview).
- *   - `moveItems`   : déplacement d'un ou plusieurs items, avec cibles
- *                     concrètes (`folder`) ou applicatives (`status-folder`).
+ *   - `list`        : listing plat des enfants directs (Cloudinary + R2)
+ *   - `getTree`     : sous-arbre récursif (TreeView, DnD) (Cloudinary + R2)
+ *   - `getMetadata` : métadonnées d'un asset (sidebar de preview)
+ *   - `moveItems`   : déplacement Cloudinary uniquement à ce stade
  *
  * Méthodes non implémentées :
  *
  *   - `getNode`     : non implémentée à ce chantier — l'usage UI n'en a
  *                     pas encore besoin et ça évite un round-trip de plus.
- *                     Sera ajoutée si un cas d'usage le demande.
- *   - `delete`      : reportée au chantier "corbeille agnostique" qui
- *                     décidera de la sémantique du soft-delete agnostique.
+ *   - `delete`      : reportée au chantier "corbeille agnostique".
  */
 export const cloudinaryAdapter: FileAdapter = {
   async list(options: ListOptions): Promise<ListResult> {
+    // `provider` absent → le router utilise `VirtualStorage` qui interroge
+    // Cloudinary ET R2 puis fusionne les résultats. Le finder voit donc
+    // les items des deux backends mélangés, transparent pour l'UI.
     const { root } = await trpcClient.storage.getTree.query({
-      provider: 'cloudinary',
       path: options.path,
       depth: 1,
     });
 
     const { folders, files } = mapStorageTreeToFinderNodes(root);
+
+     console.log('[cloudinaryAdapter.list]', { path: options.path, folderCount: folders.length, fileCount: files.length, files });
 
     return {
       folders,
@@ -232,7 +288,6 @@ export const cloudinaryAdapter: FileAdapter = {
 
   async getTree(options: GetTreeOptions): Promise<GetTreeResult> {
     const { root } = await trpcClient.storage.getTree.query({
-      provider: 'cloudinary',
       path: options.path,
       depth: options.depth ?? 1,
     });
@@ -242,7 +297,6 @@ export const cloudinaryAdapter: FileAdapter = {
 
   async getMetadata(path: string): Promise<FinderNodeMetadata | null> {
     const metadata = await trpcClient.storage.getMetadata.query({
-      provider: 'cloudinary',
       path,
     });
 
@@ -257,6 +311,9 @@ export const cloudinaryAdapter: FileAdapter = {
     const source = moveOptionsToSource(options.items);
     const target = moveOptionsToTarget(options.target);
 
+    // Move reste explicite sur Cloudinary pour l'instant — les items R2
+    // ne sont pas encore manipulables depuis le finder (cf. 6.C.2 pour
+    // les uploads R2 + 6.C.3+ pour les mutations multi-backend).
     await trpcClient.storage.move.mutate({
       provider: 'cloudinary',
       intent: { source, target },

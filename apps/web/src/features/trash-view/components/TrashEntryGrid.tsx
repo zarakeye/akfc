@@ -9,6 +9,13 @@ type Props = {
   selected: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
+  /**
+   * Right-click sur la card. Pass-through au parent (TrashEntriesList)
+   * qui gère le menu contextuel centralisé. Optionnel pour compat
+   * descendante — si absent, le clic droit conserve le menu natif du
+   * navigateur.
+   */
+  onContextMenu?: (e: React.MouseEvent, entry: TrashEntryDTO) => void;
 };
 
 /**
@@ -21,12 +28,15 @@ type Props = {
  * - Sélectionnée → bordure bleue + fond bleu-50
  *
  * Le double-clic sur un folder déclenche le drill-down (géré par le parent).
+ * Le right-click déclenche un menu contextuel (géré par le parent via
+ * `onContextMenu`).
  */
 export default function TrashEntryGrid({
   entry,
   selected,
   onClick,
   onDoubleClick,
+  onContextMenu,
 }: Props): JSX.Element {
   const isFolder = entry.kind === 'folder';
   const Icon = isFolder ? Folder : FileText;
@@ -35,6 +45,14 @@ export default function TrashEntryGrid({
     <div
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={
+        onContextMenu
+          ? (e) => {
+              e.preventDefault();
+              onContextMenu(e, entry);
+            }
+          : undefined
+      }
       className={`
         relative aspect-square rounded-lg border bg-white overflow-hidden
         cursor-pointer select-none p-2

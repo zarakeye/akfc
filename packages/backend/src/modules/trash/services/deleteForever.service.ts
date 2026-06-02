@@ -49,14 +49,47 @@ export async function deleteForever(params: {
     }
 
     if (entry.kind === "file") {
-      const info = await getAssetInfo(entry.storageRoot);
-      await cloudinary.uploader.destroy(entry.storageRoot, {
-        type: "authenticated",
-        resource_type: info.resource_type,
-      });
+      // ─── Tolérance aux assets orphelins ──────────────────────────────────
+      //
+      // Une TrashEntry peut être "orpheline" : la ligne DB existe mais
+      // l'asset Cloudinary à `storageRoot` a déjà disparu (suppression
+      // manuelle via dashboard, échec de move précédent, anciens artefacts
+      // du refacto storage…). Dans ces cas, `getAssetInfo` lance
+      // `Asset not found (any resource_type): <path>` et plantait tout le
+      // batch — empêchant en particulier le "Vider la corbeille" de
+      // s'exécuter.
+      //
+      // Politique : on **considère l'orphelin comme déjà supprimé**, on log
+      // et on continue. La TrashEntry DB est mise à jour normalement
+      // (status=DELETED) ce qui purge l'orpheline et débloque le flow.
+      //
+      // Cette tolérance est sûre : `deleteForever` est par nature
+      // destructive et idempotente côté résultat (l'asset doit ne plus
+      // exister à la fin) — donc un asset déjà absent est un état
+      // intermédiaire acceptable.
+      try {
+        const info = await getAssetInfo(entry.storageRoot);
+        await cloudinary.uploader.destroy(entry.storageRoot, {
+          type: "authenticated",
+          resource_type: info.resource_type,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.startsWith("Asset not found")) {
+          console.warn(
+            `[deleteForever] Orphan TrashEntry (asset already gone): id=${entry.id} path=${entry.storageRoot}`,
+          );
+          // continue : on supprime la ligne DB ci-dessous
+        } else {
+          throw err;
+        }
+      }
     } else {
       // Folder: supprime tout sous `${storageRoot}/`
       // (les assets n'existent pas comme dossiers réels)
+      // `deleteByPrefix` est déjà tolérant : si rien n'existe sous le
+      // préfixe, Cloudinary renvoie un dict vide sans erreur. Pas besoin
+      // de try/catch ici.
       await deleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
     }
 

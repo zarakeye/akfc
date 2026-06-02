@@ -1,0 +1,1 @@
+export * from "@backend/modules/storage/adapters/r2/r2StorageAdapter";

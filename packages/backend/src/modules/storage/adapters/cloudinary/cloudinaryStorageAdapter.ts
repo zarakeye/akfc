@@ -258,6 +258,39 @@ export function createCloudinaryStorageAdapter(
     /* ====================================================================== */
 
     async move(operation: StorageMoveOperation): Promise<void> {
+      // ─── Bug fix critique : double tail ─────────────────────────────────
+      //
+      // `operation.target.path` est le path **FINAL** attendu pour l'item
+      // après move (avec le nom du fichier/dossier concaténé par
+      // `resolveTargetPath` dans `resolveMoveIntent.service.ts`). C'est le
+      // contrat agnostique du module storage.
+      //
+      // Or le service Cloudinary `moveService` legacy attend
+      // `target.fullPath` = path du **DOSSIER PARENT** dans lequel placer
+      // l'item — il rajoute lui-même le nom dérivé du source via
+      // `moveFileIntoFolder` (pour les fichiers) ou un concat similaire
+      // (pour les folders).
+      //
+      // Sans cette correction, le rename Cloudinary final aboutit à un
+      // path dupliqué :
+      //   - source: `bin/.trash/<uuid>/trotinette`
+      //   - target.path attendu: `pending/cours/X/trotinette`
+      //   - target.fullPath envoyé à moveService: `pending/cours/X/trotinette`
+      //   - moveService rajoute `/trotinette` → `pending/cours/X/trotinette/trotinette`
+      //   - Cloudinary interprète comme un asset dans un "dossier" du même nom
+      //     → effet visuel "dossier wrapper qui contient le fichier".
+      //
+      // Le R2 adapter, lui, attend directement le path final (cf. son `move`
+      // qui passe `operation.target.path` à `moveFile` sans transformation).
+      // Cette divergence est purement Cloudinary-specific et héritée du
+      // moveService legacy qu'on n'a pas refactoré.
+      //
+      // Fix : on extrait le parent path AVANT de passer à moveService.
+      const targetParentPath = operation.target.path
+        .split("/")
+        .slice(0, -1)
+        .join("/");
+
       // On traduit l'opération atomique vers un MoveIntent Cloudinary
       // "pauvre" (pas de selection, pas de virtual-folder), puis on délègue
       // à moveService. Cette traduction est triviale parce que le contrat
@@ -268,7 +301,7 @@ export function createCloudinaryStorageAdapter(
           operation.source.type === "file"
             ? { type: "file", fullPath: operation.source.path }
             : { type: "folder", fullPath: operation.source.path },
-        target: { type: "folder", fullPath: operation.target.path },
+        target: { type: "folder", fullPath: targetParentPath },
       };
 
       await moveService(intent);

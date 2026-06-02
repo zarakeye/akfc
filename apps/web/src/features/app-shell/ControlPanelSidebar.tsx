@@ -248,15 +248,15 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/pictures');
+                    router.push('/admin/dashboard/library');
                   }}
                 >
-                  Banque d&apos;images
+                  Bibliothèque
                 </button>
                 <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/pictures/add');
+                    router.push('/admin/dashboard/library/add');
                   }}
                 >
                   <Image

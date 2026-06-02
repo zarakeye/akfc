@@ -1,8 +1,8 @@
 'use client';
 
-import { JSX } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FileSearch, Files, FileWarning } from 'lucide-react';
+import { FileSearch, Files, FileWarning, Maximize2 } from 'lucide-react';
 
 import type { FileAdapter, FinderNode, FinderNodeMetadata } from '@contracts/finder';
 
@@ -12,6 +12,8 @@ import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextConte
 import { resolveSelection } from '@features/finder-core/utils/resolveSelection';
 import { formatBytes } from '@features/finder-core/utils/formatBytes';
 import { formatDate } from '@features/finder-core/utils/formatDate';
+import PreviewModal from '@features/finder-core/components/PreviewModal';
+import DescriptionField from '@features/finder-core/components/DescriptionField';
 
 /* -------------------------------------------------------------------------- */
 /*                              PREVIEW KIND                                  */
@@ -26,30 +28,21 @@ import { formatDate } from '@features/finder-core/utils/formatDate';
  * plus fine (PDF distinct de document, audio distinct de video) qui
  * lui est propre.
  */
-type PreviewKind =
+export type PreviewKind =
   | 'image'
   | 'video'
   | 'pdf'
   | 'audio'
   | 'text'
   | 'markdown'
+  | 'docx'
   | 'unsupported';
 
-const AUDIO_FORMATS = new Set(['mp3', 'wav', 'ogg', 'm4a', 'flac']);
+const AUDIO_FORMATS = new Set(['mp3', 'wav', 'ogg', 'oga', 'm4a', 'opus', 'flac']);
 const TEXT_FORMATS = new Set(['txt']);
 const MARKDOWN_FORMATS = new Set(['md', 'markdown']);
+const DOCX_FORMATS = new Set(['docx']);
 
-/**
- * Détermine quel renderer utiliser pour un fichier donné.
- *
- * On combine deux sources d'information :
- *   - `file.meta.kind` : posé par l'adapter, fiable pour image/video.
- *   - `file.meta.format` ou `metadata.format` : extension/format technique,
- *     nécessaire pour distinguer pdf/audio/txt/md à l'intérieur du kind
- *     'document' (que le contrat ne subdivise pas).
- *
- * Priorité au `kind` quand il est explicite (image/video), puis au `format`.
- */
 function getPreviewKind(
   file: FinderNode,
   metadata: FinderNodeMetadata | null,
@@ -63,6 +56,7 @@ function getPreviewKind(
   if (AUDIO_FORMATS.has(format)) return 'audio';
   if (MARKDOWN_FORMATS.has(format)) return 'markdown';
   if (TEXT_FORMATS.has(format)) return 'text';
+  if (DOCX_FORMATS.has(format)) return 'docx';
 
   return 'unsupported';
 }
@@ -72,16 +66,12 @@ function getPreviewKind(
 /* -------------------------------------------------------------------------- */
 
 type Props = {
-  /**
-   * Adapter du finder, transmis depuis `Finder.tsx`. Nécessaire pour
-   * appeler `getMetadata` côté hook. Si l'adapter n'expose pas
-   * `getMetadata`, le bloc metadata est silencieusement omis.
-   */
   adapter: FileAdapter;
 };
 
 export default function PreviewPanel({ adapter }: Props): JSX.Element {
   const { selection, files } = useFinderStore();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const allItems = files.map((f) => ({ id: f.id, path: f.path }));
 
@@ -94,8 +84,6 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
   const ids = Array.from(resolved);
   const file = ids.length === 1 ? files.find((f) => f.id === ids[0]) ?? null : null;
 
-  // Hook metadata : appelé inconditionnellement (rules of hooks).
-  // Le `path: null` quand pas de single-selection court-circuite le fetch.
   const { metadata, loading: metadataLoading, error: metadataError } =
     useNodeMetadata(adapter, file?.path ?? null);
 
@@ -125,8 +113,6 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
   }
 
   /* -------------------------- SINGLE BUT NOT FOUND ------------------------ */
-  // Cas marginal : la sélection référence un id qui n'est plus dans `files`
-  // (ex: race entre un drop qui rafraîchit et le store de sélection).
 
   if (!file) {
     return (
@@ -140,16 +126,30 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
   /* -------------------------- SINGLE FILE PREVIEW ------------------------- */
 
   const kind = getPreviewKind(file, metadata);
+  const canExpand = kind !== 'unsupported' && Boolean(file.meta?.url);
 
   return (
     <div className="p-4 h-full flex flex-col gap-4 overflow-auto">
-      {/* Nom du fichier */}
-      <div className="text-sm font-medium truncate" title={file.name}>
-        {file.name}
+      {/* Header : nom du fichier + bouton "ouvrir en grand" */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-sm font-medium truncate flex-1" title={file.name}>
+          {file.name}
+        </div>
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            title="Ouvrir en grand"
+            aria-label="Ouvrir en grand"
+          >
+            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        )}
       </div>
 
-      {/* Renderer principal selon kind */}
-      <PreviewRenderer file={file} kind={kind} />
+      {/* Renderer principal selon kind (variant inline par défaut) */}
+      <PreviewRenderer file={file} kind={kind} variant="inline" />
 
       {/* Bloc metadata : silencieux si pas de support, sinon affiché */}
       {adapter.getMetadata && (
@@ -160,10 +160,24 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
         />
       )}
 
+      {/* Champ description éditable — toujours rendu pour les fichiers single
+          (Phase 3). Si le fichier n'est pas tracké en MediaAsset (orphelin
+          ou R2 pas encore couvert), la mutation backend retourne une erreur
+          gérée par le composant. */}
+      <DescriptionField file={file} />
+
       {/* Path complet en bas, muted, sélectionnable pour copier */}
       <div className="mt-auto pt-2 border-t border-gray-100 text-xs text-gray-400 break-all select-text">
         {file.path}
       </div>
+
+      {/* Modale fullscreen — montée toujours, masque/affiche via prop isOpen */}
+      <PreviewModal
+        file={file}
+        kind={kind}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   );
 }
@@ -172,19 +186,14 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
 /*                            PREVIEW RENDERER                                */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Dispatcher du renderer principal selon le kind détecté.
- *
- * Chaque branche est minimale et autonome. Les renderers async (text,
- * markdown) ont besoin de leur propre cycle de fetch et sont donc
- * extraits en sous-composants pour bénéficier de leur propre `useEffect`.
- */
-function PreviewRenderer({
+export function PreviewRenderer({
   file,
   kind,
+  variant = 'inline',
 }: {
   file: FinderNode;
   kind: PreviewKind;
+  variant?: 'inline' | 'fullscreen';
 }): JSX.Element {
   const url = file.meta?.url;
 
@@ -192,18 +201,33 @@ function PreviewRenderer({
     return <PreviewEmpty message="Pas de preview disponible" />;
   }
 
+  const isFullscreen = variant === 'fullscreen';
+
   switch (kind) {
     case 'image':
       return (
         <img
           src={url}
           alt={file.name}
-          className="max-h-[300px] object-contain rounded border"
+          className={
+            isFullscreen
+              ? 'max-w-full max-h-full object-contain mx-auto'
+              : 'max-h-[300px] object-contain rounded border'
+          }
         />
       );
 
     case 'video':
-      return (
+      return isFullscreen ? (
+        <div className="h-full w-full flex items-center justify-center bg-black">
+          <video
+            src={url}
+            controls
+            autoPlay
+            className="w-full h-full object-contain"
+          />
+        </div>
+      ) : (
         <video
           src={url}
           controls
@@ -212,12 +236,12 @@ function PreviewRenderer({
       );
 
     case 'audio':
-      return (
-        <audio
-          src={url}
-          controls
-          className="w-full"
-        />
+      return isFullscreen ? (
+        <div className="h-full w-full flex items-center justify-center p-8">
+          <audio src={url} controls autoPlay className="w-full max-w-2xl" />
+        </div>
+      ) : (
+        <audio src={url} controls className="w-full" />
       );
 
     case 'pdf':
@@ -225,17 +249,22 @@ function PreviewRenderer({
         <iframe
           src={url}
           title={file.name}
-          // Hauteur fixe : la sidebar n'a pas une hauteur garantie suffisante
-          // pour un PDF, on impose une fenêtre confortable avec scroll interne.
-          className="w-full h-[400px] rounded border"
+          className={
+            isFullscreen
+              ? 'w-full h-full border-0'
+              : 'w-full h-[400px] rounded border'
+          }
         />
       );
 
     case 'text':
-      return <TextPreview url={url} />;
+      return <TextPreview url={url} variant={variant} />;
 
     case 'markdown':
-      return <MarkdownPreview url={url} />;
+      return <MarkdownPreview url={url} variant={variant} />;
+
+    case 'docx':
+      return <DocxPreview url={url} variant={variant} />;
 
     case 'unsupported':
     default:
@@ -251,27 +280,29 @@ function PreviewEmpty({ message }: { message: string }): JSX.Element {
 /*                         TEXT / MARKDOWN PREVIEWS                           */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Preview de fichier texte brut (.txt).
- *
- * Le contenu est fetché via `useNodeTextContent`, tronqué si trop gros,
- * et affiché dans un `<pre>` avec scroll interne (pour ne pas exploser
- * la hauteur de la sidebar).
- */
-function TextPreview({ url }: { url: string }): JSX.Element {
+export function TextPreview({
+  url,
+  variant = 'inline',
+}: {
+  url: string;
+  variant?: 'inline' | 'fullscreen';
+}): JSX.Element {
   const { content, loading, error, truncated } = useNodeTextContent(url);
 
   if (loading) return <PreviewEmpty message="Chargement…" />;
   if (error) return <PreviewEmpty message="Impossible de charger le fichier" />;
   if (content === null) return <PreviewEmpty message="Fichier vide" />;
 
+  const containerClass =
+    variant === 'fullscreen'
+      ? 'h-full overflow-auto p-6 bg-gray-50 text-sm whitespace-pre-wrap break-words font-mono'
+      : 'max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-xs whitespace-pre-wrap break-words';
+
   return (
-    <div className="flex flex-col gap-1">
-      <pre className="max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-xs whitespace-pre-wrap break-words">
-        {content}
-      </pre>
+    <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
+      <pre className={containerClass}>{content}</pre>
       {truncated && (
-        <div className="text-xs text-gray-400 italic">
+        <div className="text-xs text-gray-400 italic px-3 py-1">
           Aperçu tronqué — fichier trop volumineux pour un affichage complet.
         </div>
       )}
@@ -279,34 +310,102 @@ function TextPreview({ url }: { url: string }): JSX.Element {
   );
 }
 
-/**
- * Preview markdown rendu en HTML via `react-markdown`.
- *
- * Sécurité : `react-markdown` ne passe PAS le HTML inline du markdown
- * par défaut (`skipHtml` est false mais `rehype-raw` n'est pas activé).
- * On est donc protégé contre l'injection de balises arbitraires depuis
- * un .md hostile — pas besoin de DOMPurify.
- *
- * Les classes `prose` de Tailwind Typography ne sont pas activées dans
- * le projet ; on stylise minimalement à la main pour rester sobre.
- */
-function MarkdownPreview({ url }: { url: string }): JSX.Element {
+export function MarkdownPreview({
+  url,
+  variant = 'inline',
+}: {
+  url: string;
+  variant?: 'inline' | 'fullscreen';
+}): JSX.Element {
   const { content, loading, error, truncated } = useNodeTextContent(url);
 
   if (loading) return <PreviewEmpty message="Chargement…" />;
   if (error) return <PreviewEmpty message="Impossible de charger le fichier" />;
   if (content === null) return <PreviewEmpty message="Fichier vide" />;
 
+  const containerClass =
+    variant === 'fullscreen'
+      ? 'h-full overflow-auto p-8 bg-white text-base markdown-preview max-w-4xl mx-auto'
+      : 'max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-sm markdown-preview';
+
   return (
-    <div className="flex flex-col gap-1">
-      <div className="max-h-[300px] overflow-auto p-3 rounded border bg-gray-50 text-sm markdown-preview">
+    <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
+      <div className={containerClass}>
         <ReactMarkdown>{content}</ReactMarkdown>
       </div>
       {truncated && (
-        <div className="text-xs text-gray-400 italic">
+        <div className="text-xs text-gray-400 italic px-3 py-1">
           Aperçu tronqué — fichier trop volumineux pour un affichage complet.
         </div>
       )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              DOCX PREVIEW                                  */
+/* -------------------------------------------------------------------------- */
+
+function DocxPreview({
+  url,
+  variant = 'inline',
+}: {
+  url: string;
+  variant?: 'inline' | 'fullscreen';
+}): JSX.Element {
+  const [state, setState] = useState<{
+    html: string | null;
+    loading: boolean;
+    error: string | null;
+  }>({ html: null, loading: true, error: null });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const mammoth = await import('mammoth');
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+
+        if (!cancelled) {
+          setState({ html: result.value, loading: false, error: null });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            html: null,
+            loading: false,
+            error: err instanceof Error ? err.message : 'Conversion failed',
+          });
+        }
+      }
+    }
+
+    setState({ html: null, loading: true, error: null });
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  if (state.loading) return <PreviewEmpty message="Conversion DOCX en cours…" />;
+  if (state.error) return <PreviewEmpty message="Impossible d'afficher le document" />;
+  if (!state.html) return <PreviewEmpty message="Document vide" />;
+
+  const containerClass =
+    variant === 'fullscreen'
+      ? 'h-full overflow-auto p-8 bg-white text-base docx-preview max-w-4xl mx-auto'
+      : 'max-h-[400px] overflow-auto p-3 rounded border bg-gray-50 text-sm docx-preview';
+
+  return (
+    <div className={variant === 'fullscreen' ? 'h-full flex flex-col' : 'flex flex-col gap-1'}>
+      <div className={containerClass} dangerouslySetInnerHTML={{ __html: state.html }} />
     </div>
   );
 }
@@ -315,16 +414,6 @@ function MarkdownPreview({ url }: { url: string }): JSX.Element {
 /*                              METADATA BLOCK                                */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Affiche les métadonnées riches en grid 2 colonnes (label : valeur).
- *
- * Comportement par état :
- *   - loading        → "Chargement…" muted
- *   - error          → "Métadonnées indisponibles" muted (silencieux)
- *   - metadata null  → "Métadonnées indisponibles" muted
- *   - metadata vide  → on n'affiche pas le bloc (toutes les valeurs absentes)
- *   - metadata présentes → tableau des champs renseignés uniquement
- */
 function MetadataBlock({
   metadata,
   loading,
@@ -350,8 +439,6 @@ function MetadataBlock({
     );
   }
 
-  // Construction de la liste des paires (label, value), en filtrant
-  // celles qui n'ont pas de valeur. Si tout est vide, on n'affiche rien.
   const rows: Array<{ label: string; value: string }> = [];
 
   if (metadata.format) rows.push({ label: 'Format', value: metadata.format });
@@ -372,8 +459,6 @@ function MetadataBlock({
     <div className="border-t border-gray-100 pt-3">
       <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         {rows.map((row) => (
-          // On utilise un Fragment avec key sur le label : les couples
-          // (label, value) sont stables et non interchangeables.
           <div key={row.label} className="contents">
             <div className="text-gray-500">{row.label}</div>
             <div className="text-gray-800 break-all">{row.value}</div>

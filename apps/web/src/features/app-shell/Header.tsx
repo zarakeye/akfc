@@ -20,6 +20,7 @@ export default function Header() {
   const pathname = usePathname();
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);
+  const [documentationHover, setDocumentationHover] = useState<boolean>(false);
 
   return (
     <header className="flex justify-between items-center bg-black shadow-md">
@@ -45,6 +46,7 @@ export default function Header() {
         >
           Accueil
         </Link>
+
         {user &&
           <Link
             href="/admin/dashboard"
@@ -53,6 +55,7 @@ export default function Header() {
             Dashboard
           </Link>
         }
+
         <div
           onMouseEnter={() => setActivitiesHover(true)}
           onMouseLeave={() => setActivitiesHover(false)}
@@ -128,6 +131,48 @@ export default function Header() {
         >
           Contacts
         </Link>
+
+        <div
+          onMouseEnter={() => setDocumentationHover(true)}
+          onMouseLeave={() => setDocumentationHover(false)}
+          className={`relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/activities" ? "active" : ""}`}
+        >
+          <span>Documentation</span>
+          <Image
+            src="/chevron-white.svg"
+            alt=""
+            aria-hidden="true"
+            width={30}
+            height={30}
+            className={`transition-transform duration-300 ${documentationHover ? 'rotate-180' : ''}`}
+          />
+          <div className={`${documentationHover ? 'block' : 'hidden'} absolute z-20 top-full left-1/2 transform -translate-x-1/2 w-40 bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}>
+            {/* <div
+              onMouseEnter={() => setDocumentationHover(true)}
+              onMouseLeave={() => setDocumentationHover(false)}
+              className="relative block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            > */}
+            <Link
+              href="/docs"
+              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            >
+              Doc utilisateur
+            </Link>
+            <Link
+              href="/docs/admin"
+              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            >
+              Doc admin
+            </Link>
+            <Link
+              href="/docs/dev"
+              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            >
+              Dev doc
+            </Link>
+            {/* </div> */}
+          </div>
+        </div>
       </nav>
 
       <Suspense fallback={<div>Chargement...</div>}>

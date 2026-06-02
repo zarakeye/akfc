@@ -106,7 +106,7 @@ export async function getCloudinaryFolderTree(
     // 3) Lire le registre DB filtré par préfixe — il contient à la fois les
     //    dossiers ancêtres qu'on vient d'upserter ET les dossiers vides
     //    déjà enregistrés (placeholders).
-    const registered = await prisma.cloudinaryFolder.findMany({
+    const registered = await prisma.folder.findMany({
       where: {
         appRoot,
         fullPath: { startsWith: normalizedPath },

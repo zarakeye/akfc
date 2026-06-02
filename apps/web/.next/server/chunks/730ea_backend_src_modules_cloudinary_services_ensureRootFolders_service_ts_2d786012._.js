@@ -1,3 +1,0 @@
-module.exports=[19076,e=>{"use strict";let t=["pending","published","bin"];async function r(e,r){let o=0;for(let l of t){let t=`${r}/${l}`;await e.cloudinaryFolder.findUnique({where:{appRoot_fullPath:{appRoot:r,fullPath:t}},select:{id:!0}})||(await e.cloudinaryFolder.create({data:{appRoot:r,fullPath:t,status:l}}),o+=1)}return{created:o,total:t.length}}function o(e,r){let o=r.replace(/^\/+|\/+$/g,"");if(o===e)return!0;for(let r of t)if(o===`${e}/${r}`)return!0;return!1}e.s(["ROOT_FOLDER_STATUSES",0,t,"ensureRootFolders",()=>r,"isRootFolder",()=>o])}];
-
-//# sourceMappingURL=730ea_backend_src_modules_cloudinary_services_ensureRootFolders_service_ts_2d786012._.js.map

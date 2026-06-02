@@ -155,7 +155,7 @@ export type StorageMoveOperation = {
  *
  * Cette enum est dans le contrat parce que les procédures tRPC du router
  * storage ont besoin de la valider à l'input (un client ne doit pas pouvoir
- * demander un provider inconnu). Ajouter R2 ou un autre provider demain
+ * demander un provider inconnu). Ajouter un nouveau provider demain
  * implique :
  *   1) Étendre cette enum avec sa nouvelle valeur.
  *   2) Implémenter son adapter (factory satisfaisant `StorageAdapter`).
@@ -163,6 +163,16 @@ export type StorageMoveOperation = {
  *
  * Le contrat ne dicte rien sur l'implémentation : il déclare juste quels
  * providers sont actuellement câblés.
+ *
+ * ─── Stratégie de dispatch (AKFC) ──────────────────────────────────────
+ *
+ * Le choix du provider pour un asset donné est fait par `pickBackend()`
+ * (cf. `virtual-path.ts`). Règle actuelle :
+ *   - cloudinary → image, vidéo  (besoin de transformations à la volée)
+ *   - r2         → audio, doc, archive, tout le reste (servi tel quel)
+ *
+ * Cette règle est centralisée pour qu'on puisse la changer en un seul
+ * endroit si les usages évoluent.
  */
-export const storageProviderSchema = z.enum(['cloudinary']);
+export const storageProviderSchema = z.enum(['cloudinary', 'r2']);
 export type StorageProvider = z.infer<typeof storageProviderSchema>;

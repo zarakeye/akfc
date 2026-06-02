@@ -1,50 +1,16 @@
 import { create } from "zustand";
+import type { inferRouterInputs } from "@trpc/server";
+
 import { trpcClient } from "@trpc/trpcClient";
-import type { Course, Audience, Day } from "@prisma/client";
+import type { Course } from "@prisma/client";
+import type { AppRouter } from "@backend/modules";
 
-/**
- * useCourseStore
- *
- * Cache local des `Course` (créneaux hebdomadaires d'une Discipline de
- * catégorie "Cours"), aligné sur le nouveau modèle 2-niveaux.
- *
- * Convention : les méthodes de mutation appellent tRPC puis mettent à jour
- * le cache en place. Les méthodes de lecture exploitent le cache si possible.
- */
+/* ----- Types d'input dérivés du router (source de vérité unique) ----- */
 
-/* ----- Type JSON compatible avec ce que Zod 4 attend pour `z.json()` ----- */
+type RouterInputs = inferRouterInputs<AppRouter>;
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-/* ----- Types d'input pour les mutations ----- */
-
-export type CreateCourseInput = {
-  disciplineId: number;
-  audience: Audience;
-  day: Day;
-  beginTime: number;
-  endTime: number;
-  instructorId?: string | null;
-  requisites?: string[];
-  content: JsonValue;
-};
-
-export type UpdateCourseInput = {
-  id: number;
-  audience?: Audience;
-  day?: Day;
-  beginTime?: number;
-  endTime?: number;
-  instructorId?: string | null;
-  requisites?: string[];
-  content?: JsonValue;
-};
+export type CreateCourseInput = RouterInputs["course"]["create"];
+export type UpdateCourseInput = RouterInputs["course"]["update"];
 
 /* ----- État du store ----- */
 

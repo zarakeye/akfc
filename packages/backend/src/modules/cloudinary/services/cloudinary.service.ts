@@ -153,14 +153,37 @@ export async function fileExists(publicId: string): Promise<boolean> {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Supprime tous les assets d’un prefix (tous resource_type).
+ * Supprime tous les assets ET tous les dossiers sous un prefix.
  *
- * Invalide le cache des resources après suppression — les entrées
- * cachées sont stale dès que des assets disparaissent.
+ * ─── Pourquoi 2 étapes ? ─────────────────────────────────────────────────
+ *
+ * Cloudinary distingue deux concepts indépendants :
+ *
+ *   1. **Assets** : les fichiers (images, vidéos, raw). Listés par
+ *      `api.resources`, supprimés par `api.delete_resources_by_prefix`.
+ *
+ *   2. **Folders** : les "dossiers" qui peuvent exister indépendamment
+ *      des assets — soit créés explicitement via `api.create_folder`,
+ *      soit créés implicitement quand un asset y est uploadé. Listés
+ *      par `api.sub_folders`, supprimés par `api.delete_folder` (qui
+ *      n'accepte QUE les dossiers vides).
+ *
+ * `delete_resources_by_prefix` ne touche pas aux dossiers. Donc après
+ * suppression des assets, des dossiers vides peuvent subsister sous le
+ * prefix → ils restent visibles dans la TreeView du finder (qui consomme
+ * `api.sub_folders` pour bâtir l'arbo), perçus comme des "vestiges".
+ *
+ * Cette fonction règle le problème en complétant la suppression des
+ * assets par une suppression récursive des sous-dossiers (depth-first,
+ * pour que les enfants soient vides avant qu'on supprime leur parent).
+ *
+ * Invalide le cache des resources à la fin — les entrées cachées sont
+ * stale dès qu'on a muté la structure.
  */
 export async function deleteByPrefix(
   prefix: string
 ): Promise<{ success: boolean }> {
+  // ─── Étape 1 : supprimer tous les assets sous le prefix ─────────────────
   for (const resourceType of ["image", "video", "raw"] as const) {
     await cloudinary.api.delete_resources_by_prefix(prefix, {
       type: "authenticated",
@@ -168,9 +191,122 @@ export async function deleteByPrefix(
     });
   }
 
+  // ─── Étape 2 : supprimer récursivement les sous-dossiers vides ──────────
+  //
+  // Une fois les assets supprimés, on peut tenter de supprimer le dossier
+  // racine `prefix` lui-même via `deleteCloudinaryFolderRecursive`. Cette
+  // helper descend en profondeur (DFS) pour vider les enfants avant le
+  // parent — sinon `delete_folder` échoue avec "folder not empty".
+  //
+  // On tolère silencieusement les erreurs : si le dossier n'existe pas
+  // (cas typique d'un `prefix` sans aucun asset historique), pas grave.
+  await deleteCloudinaryFolderRecursive(prefix);
+
   invalidateResourcesCache();
 
   return { success: true };
+}
+
+/**
+ * Helper interne — supprime récursivement un dossier Cloudinary et tous
+ * ses sous-dossiers, depth-first. À appeler APRÈS avoir supprimé les
+ * assets sous ce dossier (sinon `delete_folder` échoue).
+ *
+ * Tolère :
+ *   - Le dossier qui n'existe pas (ex: prefix orphelin) → no-op silencieux.
+ *   - Erreurs de listage d'un sous-dossier → log et continue (on supprime
+ *     ce qu'on peut, on ne bloque pas tout le batch sur un cas particulier).
+ */
+async function deleteCloudinaryFolderRecursive(
+  folderPath: string
+): Promise<void> {
+  // Liste les sous-dossiers directs.
+  let subFolders: Array<{ name: string; path: string }> = [];
+  try {
+    const result = await cloudinary.api.sub_folders(folderPath);
+    subFolders = (result.folders ?? []) as Array<{ name: string; path: string }>;
+  } catch (err) {
+    const desc = describeCloudinaryError(err);
+    // Le dossier n'existe pas → nothing to do, on retourne silencieusement.
+    // Cloudinary répond typiquement avec "Folder not found" ou HTTP 404.
+    if (
+      desc.message.toLowerCase().includes("not found") ||
+      desc.http_code === 404
+    ) {
+      return;
+    }
+    // Autre erreur : on log et on continue (on ne propage pas — la fonction
+    // est utilisée dans des batches où une erreur partielle ne doit pas
+    // bloquer le reste).
+    console.warn(
+      `[deleteCloudinaryFolderRecursive] sub_folders failed for '${folderPath}':`,
+      desc,
+    );
+    return;
+  }
+
+  // DFS : on vide d'abord les enfants pour pouvoir supprimer le parent.
+  for (const sub of subFolders) {
+    await deleteCloudinaryFolderRecursive(sub.path);
+  }
+
+  // Maintenant le dossier `folderPath` ne devrait plus avoir de sous-dossiers.
+  // On tente de le supprimer. Encore tolérant — si le dossier contient
+  // encore des assets cachés (par exemple resource_type pas couvert ailleurs),
+  // l'API renverra une erreur qu'on log mais sans bloquer.
+  try {
+    await cloudinary.api.delete_folder(folderPath);
+  } catch (err) {
+    const desc = describeCloudinaryError(err);
+    if (
+      desc.message.toLowerCase().includes("not found") ||
+      desc.http_code === 404
+    ) {
+      // Pas un échec — le dossier n'existait déjà plus.
+      return;
+    }
+    console.warn(
+      `[deleteCloudinaryFolderRecursive] delete_folder failed for '${folderPath}':`,
+      desc,
+    );
+  }
+}
+
+/**
+ * Helper pour extraire un message + http_code lisible depuis une erreur
+ * Cloudinary. L'API admin renvoie typiquement
+ *   { error: { message, http_code }, http_code, name, ... }
+ * — quand on fait `String(err)` ou `err.message` directement, on obtient
+ * `[object Object]` ou `undefined`. Ce helper sait dénormaliser.
+ */
+function describeCloudinaryError(err: unknown): {
+  message: string;
+  http_code?: number;
+} {
+  if (err instanceof Error) {
+    return { message: err.message };
+  }
+  if (typeof err === "string") {
+    return { message: err };
+  }
+  if (err && typeof err === "object") {
+    const obj = err as Record<string, unknown>;
+    const inner =
+      obj.error && typeof obj.error === "object"
+        ? (obj.error as Record<string, unknown>)
+        : null;
+    const message = String(
+      (inner?.message ?? obj.message ?? JSON.stringify(err)) ?? "<unknown>",
+    );
+    const http_code =
+      typeof inner?.http_code === "number"
+        ? inner.http_code
+        : typeof obj.http_code === "number"
+        ? obj.http_code
+        : undefined;
+    return { message, http_code };
+  }
+  return { message: String(err) };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -187,6 +323,33 @@ export async function deleteByPrefix(
  *
  * Le cache est invalidé automatiquement lors de toute mutation
  * (cf. `deleteByPrefix` ci-dessus, et les services move / register).
+ *
+ * ─── ⚠️ Subtilité Cloudinary : 3 resource_type distincts ─────────────────
+ *
+ * L'API `cloudinary.api.resources()` filtre **silencieusement** sur
+ * `resource_type=image` par défaut. Sans spécifier, les vidéos et les
+ * fichiers raw (PDF, ZIP, etc.) sont **ignorés** sans erreur.
+ *
+ * Cloudinary catégorise tous les assets en 3 buckets disjoints :
+ *   - `image` : JPG, PNG, WebP, AVIF, GIF…
+ *   - `video` : MP4, MOV, WebM, et — sans doute surprenant — les audios
+ *               (MP3, WAV, M4A) que Cloudinary range avec les vidéos
+ *   - `raw`   : PDF, ZIP, DOCX, TXT, tout le reste
+ *
+ * Pour avoir la liste complète, on doit faire **3 appels en parallèle**
+ * (un par resource_type) et merger les résultats. Coût latence : 0
+ * (parallélisé), coût quotas : 3 appels au lieu d'un.
+ *
+ * 💡 Dans notre archi AKFC :
+ *   - Cloudinary stocke image + video (cf. `pickBackendByExtension`)
+ *   - R2 stocke audio + raw (PDF, ZIP, MD, DOCX…)
+ * Mais on garde l'appel `raw` ici par robustesse : si jamais un fichier
+ * était poussé en raw sur Cloudinary historiquement (ou par un autre
+ * outil), on ne le perd pas du finder.
+ *
+ * Si l'un des 3 appels échoue, on garde les résultats des autres
+ * (Promise.allSettled) et on log l'erreur — un cas "tous les images
+ * mais pas les vidéos" est moins pire que "rien du tout".
  */
 export async function listAuthenticatedResources(
   prefix: string
@@ -196,19 +359,39 @@ export async function listAuthenticatedResources(
     return cached;
   }
 
-  const result = await cloudinary.api.resources({
-    type: "authenticated",
+  const baseArgs = {
+    type: "authenticated" as const,
     prefix,
     max_results: 500,
-  });
+  };
 
-  const mapped: ListAuthenticatedResourcesResult[] = result.resources.map(
-    (r: typeof result.resources[0]) => ({
-      publicId: r.public_id,
-      url: r.secure_url,
-      format: r.format,
-    })
-  );
+  const settled = await Promise.allSettled([
+    cloudinary.api.resources({ ...baseArgs, resource_type: "image" }),
+    cloudinary.api.resources({ ...baseArgs, resource_type: "video" }),
+    cloudinary.api.resources({ ...baseArgs, resource_type: "raw" }),
+  ]);
+
+  const mapped: ListAuthenticatedResourcesResult[] = [];
+  const labels = ["image", "video", "raw"] as const;
+
+  for (let i = 0; i < settled.length; i++) {
+    const outcome = settled[i];
+    if (outcome.status === "rejected") {
+      // On log mais on continue : mieux vaut une liste partielle qu'aucune.
+      console.error(
+        `[listAuthenticatedResources] resource_type=${labels[i]} failed for prefix '${prefix}':`,
+        outcome.reason
+      );
+      continue;
+    }
+    for (const r of outcome.value.resources) {
+      mapped.push({
+        publicId: r.public_id,
+        url: r.secure_url,
+        format: r.format,
+      });
+    }
+  }
 
   setCached(prefix, mapped);
 

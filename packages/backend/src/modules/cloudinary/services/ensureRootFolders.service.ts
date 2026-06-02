@@ -4,7 +4,7 @@ import type { PrismaClient } from "@prisma/client";
  * ensureRootFolders.service.ts
  *
  * Garantit que les 3 dossiers racines immuables (`pending`, `published`, `bin`)
- * existent dans la table `CloudinaryFolder` pour un `appRoot` donné.
+ * existent dans la table `Folder` pour un `appRoot` donné.
  *
  * Ces dossiers sont persistés en DB pour que le Finder les affiche dès le
  * premier rendu, indépendamment de toute présence d'asset sur Cloudinary.
@@ -30,7 +30,7 @@ export async function ensureRootFolders(
   for (const status of ROOT_FOLDER_STATUSES) {
     const fullPath = `${appRoot}/${status}`;
 
-    const existing = await prisma.cloudinaryFolder.findUnique({
+    const existing = await prisma.folder.findUnique({
       where: {
         appRoot_fullPath: { appRoot, fullPath },
       },
@@ -39,7 +39,7 @@ export async function ensureRootFolders(
 
     if (existing) continue;
 
-    await prisma.cloudinaryFolder.create({
+    await prisma.folder.create({
       data: {
         appRoot,
         fullPath,

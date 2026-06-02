@@ -1,0 +1,269 @@
+#!/usr/bin/env node
+
+import { PrismaClient } from "@prisma/client";
+import generatePassword from "generate-password";
+import bcrypt from "bcryptjs";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("🌱 Start seeding...");
+
+  // ==========================================================================
+  // 1. Permissions
+  // ==========================================================================
+  const PERMISSIONS = [
+    "manage_users",
+    "manage_roles",
+    "manage_permissions",
+    "manage_posts",
+    "manage_comments",
+    "manage_categories",
+    "manage_disciplines",
+    "manage_courses",
+    "manage_stages",
+    "view_posts",
+  ];
+
+  const permissionRecords = [];
+  for (const permission of PERMISSIONS) {
+    const perm = await prisma.permission.upsert({
+      where: { name: permission },
+      update: {},
+      create: { name: permission },
+    });
+    permissionRecords.push(perm);
+  }
+  console.log("✅ Permissions seeded:", permissionRecords.length);
+
+  // ==========================================================================
+  // 2. Roles
+  // ==========================================================================
+  // Le rôle ADMIN doit TOUJOURS détenir l'intégralité des permissions
+  // existantes — si on ajoute une permission plus tard, elle est
+  // automatiquement propagée à ADMIN au prochain seed (pas besoin de rejouer
+  // manuellement une query SQL).
+  const adminRole = await prisma.role.upsert({
+    where: { name: "ADMIN" },
+    update: {
+      description: "Administrateur — accès total",
+      permissions: {
+        // On écrase la liste : tous les liens actuels sont supprimés, puis
+        // recréés depuis `permissionRecords` pour coller à la liste à jour.
+        deleteMany: {},
+        create: permissionRecords.map((p) => ({ permissionId: p.id })),
+      },
+    },
+    create: {
+      name: "ADMIN",
+      description: "Administrateur — accès total",
+      permissions: {
+        create: permissionRecords.map((p) => ({ permissionId: p.id })),
+      },
+    },
+  });
+  console.log(
+    `✅ Role ADMIN seeded with ${permissionRecords.length} permission(s)`
+  );
+
+  const guestRole = await prisma.role.upsert({
+    where: { name: "GUEST" },
+    update: {},
+    create: {
+      name: "GUEST",
+      description:
+        "Intervenant extérieur — référencement nominal pour les stages, ne se connecte pas",
+    },
+  });
+  console.log("✅ Role GUEST seeded");
+
+  // ==========================================================================
+  // 3. Admin user (Stéphane) — password généré aléatoirement
+  // ==========================================================================
+  // NOTE: l'envoi par email (sendPasswordEmail) est désactivé tant qu'un loader
+  // TypeScript (tsx, ts-node/esm) n'est pas branché sur le seed. Le mot de
+  // passe est affiché en console ET écrit dans `.seed-credentials.txt` à la
+  // racine du projet (à gitignorer si pas déjà fait).
+  const ADMIN_EMAIL = "stephane.bazze@outlook.fr";
+
+  const password = generatePassword.generate({
+    length: 12,
+    numbers: true,
+    symbols: true,
+    uppercase: true,
+    lowercase: true,
+  });
+  const hash = await bcrypt.hash(password, 12);
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: {
+      password: hash,
+      roleId: adminRole.id,
+    },
+    create: {
+      email: ADMIN_EMAIL,
+      firstName: "Stéphane",
+      password: hash,
+      roleId: adminRole.id,
+      emailVerified: true,
+      isFirstLogin: false,
+    },
+  });
+  console.log("✅ Admin user seeded:");
+  console.log("   📧", adminUser.email);
+  console.log("   🔐 password:", password);
+
+  // Persiste le password dans un fichier local pour pouvoir le récupérer après
+  // (si la console est perdue dans le bruit). À gitignorer.
+  try {
+    await writeFile(
+      join(process.cwd(), ".seed-credentials.txt"),
+      `email: ${adminUser.email}\npassword: ${password}\nseededAt: ${new Date().toISOString()}\n`,
+      { encoding: "utf-8" }
+    );
+    console.log("   💾 credentials saved to .seed-credentials.txt");
+  } catch (err) {
+    console.warn(
+      "   ⚠️  could not write .seed-credentials.txt:",
+      err.message
+    );
+  }
+
+  // ==========================================================================
+  // 4. Catégories
+  // ==========================================================================
+  const CATEGORIES = ["Cours", "Stage", "Démo"];
+  const categoryByType = {};
+  for (const type of CATEGORIES) {
+    const cat = await prisma.category.upsert({
+      where: { type },
+      update: {},
+      create: { type },
+    });
+    categoryByType[type] = cat;
+  }
+  console.log("✅ Catégories seeded:", Object.keys(categoryByType).join(", "));
+
+  // ==========================================================================
+  // 4bis. Dossiers racines Cloudinary — immuables (pending / published / bin)
+  // ==========================================================================
+  // Ces 3 dossiers doivent exister constamment, vides ou non. On les persiste
+  // ici pour que le Finder les affiche dès le premier rendu, avant tout
+  // upload. Leur immutabilité (interdiction de les renommer ou supprimer) est
+  // garantie côté router Cloudinary par la garde `assertRootFolder`.
+  //
+  // Note : même logique exécutée au boot de l'app via `instrumentation.ts`,
+  // pour auto-cicatriser si une ligne vient à disparaître après le seed.
+  const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
+  const ROOT_FOLDERS = [
+    { fullPath: `${APP_ROOT}/pending`, status: "pending" },
+    { fullPath: `${APP_ROOT}/published`, status: "published" },
+    { fullPath: `${APP_ROOT}/bin`, status: "bin" },
+  ];
+
+  for (const f of ROOT_FOLDERS) {
+    await prisma.cloudinaryFolder.upsert({
+      where: {
+        appRoot_fullPath: {
+          appRoot: APP_ROOT,
+          fullPath: f.fullPath,
+        },
+      },
+      update: {},
+      create: {
+        appRoot: APP_ROOT,
+        fullPath: f.fullPath,
+        status: f.status,
+      },
+    });
+  }
+  console.log(
+    "✅ Root folders seeded:",
+    ROOT_FOLDERS.map((f) => f.fullPath).join(", ")
+  );
+
+  // ==========================================================================
+  // 5. Disciplines (catégorie "Cours" — modèle à 2 niveaux validé)
+  // ==========================================================================
+  // TODO: réviser `instructorId` quand de vrais coachs/référents auront été
+  //       créés en base. Pour l'instant, Stéphane est référent par défaut.
+  const courseCategoryId = categoryByType["Cours"].id;
+
+  const DISCIPLINES = [
+    {
+      name: "Taï-chi",
+      type: "MARTIAL_ART",
+      family: "Kung-fu Wushu",
+      school: "Chen",
+      classification: "interne (yin)",
+      origin: "Chine",
+      description:
+        "Apprentissage des taolus de l'école Chen. Pratique interne, lente et continue.",
+    },
+    {
+      name: "Taolu multi-styles",
+      type: "MARTIAL_ART",
+      family: "Kung-fu Wushu",
+      school: null,
+      classification: null,
+      origin: "Chine",
+      description: "Étude de divers taolus et de leurs applications.",
+    },
+    {
+      name: "Tchoy-Lee-Fut",
+      type: "MARTIAL_ART",
+      family: "Kung-fu Wushu",
+      school: null,
+      classification: "externe (yang)",
+      origin: "Chine du Sud",
+      description:
+        "Style externe du Sud de la Chine. Pratique adaptée selon le public (adultes / 12-16 ans).",
+    },
+    {
+      name: "Kali Escrima",
+      type: "MARTIAL_ART",
+      family: null,
+      school: null,
+      classification: null,
+      origin: "Philippines",
+      description: "Art martial philippin centré sur le travail des armes.",
+    },
+  ];
+
+  const disciplineByName = {};
+  for (const d of DISCIPLINES) {
+    const disc = await prisma.discipline.upsert({
+      where: {
+        categoryId_name: {
+          categoryId: courseCategoryId,
+          name: d.name,
+        },
+      },
+      update: {},
+      create: {
+        ...d,
+        categoryId: courseCategoryId,
+        instructorId: adminUser.id,
+      },
+    });
+    disciplineByName[d.name] = disc;
+  }
+  console.log(
+    "✅ Disciplines (Cours) seeded:",
+    Object.keys(disciplineByName).join(", ")
+  );
+
+  console.log("🌱 Seed completed");
+}
+
+main()
+  .catch((e) => {
+    console.error("❌ Seed failed:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

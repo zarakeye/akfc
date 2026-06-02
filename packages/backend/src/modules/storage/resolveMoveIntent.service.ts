@@ -60,8 +60,31 @@ export type ResolveMoveIntentParams = {
  *
  * Renvoie le tableau des opérations atomiques effectivement exécutées —
  * utile pour les caller qui veulent logger, auditer, ou rejouer.
+ *
+ * Wrapper rétrocompatible équivalent à `planMoveOperations` suivi de
+ * `executeMoveOperations`. Si tu as besoin d'insérer une garde ou un
+ * audit entre les deux phases (ex: le router `storage.move` qui refuse
+ * de sortir un asset référencé de published — sous-chantier 7), utilise
+ * les deux fonctions séparément plutôt que ce wrapper.
  */
 export async function resolveMoveIntent(
+  params: ResolveMoveIntentParams
+): Promise<StorageMoveOperation[]> {
+  const operations = await planMoveOperations(params);
+  await executeMoveOperations(params.adapter, operations);
+  return operations;
+}
+
+/**
+ * Phase 1 du pipeline : résout l'intention en N opérations atomiques,
+ * **sans rien exécuter**. Ne fait que lire (via l'adapter) et calculer.
+ *
+ * Permet d'insérer des gardes sur les opérations planifiées avant
+ * exécution. Utilisé par le router `storage.move` pour faire passer
+ * les opérations à `assertOperationsDontUnpublishReferencedAssets`
+ * avant l'appel à `executeMoveOperations`.
+ */
+export async function planMoveOperations(
   params: ResolveMoveIntentParams
 ): Promise<StorageMoveOperation[]> {
   const { adapter, appRoot, intent } = params;
@@ -78,19 +101,33 @@ export async function resolveMoveIntent(
 
   // 2) Pour chaque item, traduire la TARGET en path concret et produire
   //    une opération atomique.
-  const operations: StorageMoveOperation[] = items.map((item) => ({
+  return items.map((item) => ({
     source: item,
     target: { path: resolveTargetPath(item, intent.target, appRoot) },
   }));
+}
 
-  // 3) Exécuter les opérations séquentiellement via l'adapter.
-  //    Séquentiel et non parallèle : certains backends (Cloudinary notamment)
-  //    n'aiment pas les opérations concurrentes sur des prefixes voisins.
+/**
+ * Phase 2 du pipeline : exécute des opérations atomiques pré-planifiées
+ * via l'adapter.
+ *
+ * Séquentiel et non parallèle : certains backends (Cloudinary
+ * notamment) n'aiment pas les opérations concurrentes sur des prefixes
+ * voisins.
+ */
+export async function executeMoveOperations(
+  adapter: StorageAdapter,
+  operations: readonly StorageMoveOperation[]
+): Promise<void> {
+  if (!adapter.move) {
+    throw new Error(
+      "Adapter does not support move(). " +
+        "Cannot execute move operations on a read-only adapter."
+    );
+  }
   for (const operation of operations) {
     await adapter.move(operation);
   }
-
-  return operations;
 }
 
 /* -------------------------------------------------------------------------- */

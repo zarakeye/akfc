@@ -74,7 +74,7 @@ export function statusFromPath(path: string): "pending" | "published" | "bin" {
 }
 
 /**
- * Upsert dans la table `cloudinaryFolder` un ensemble de paths.
+ * Upsert dans la table `folder` un ensemble de paths.
  *
  * Cloudinary n'a pas de dossiers physiques — ce registre DB matérialise
  * les dossiers logiques pour qu'ils existent même vides (utile pour le
@@ -108,7 +108,7 @@ export async function upsertFolders(
   // s'en passer sans changement de comportement.
 
   // 1) Lecture en bulk des paths existants.
-  const existing = await db.cloudinaryFolder.findMany({
+  const existing = await db.folder.findMany({
     where: {
       appRoot,
       fullPath: { in: unique },
@@ -123,7 +123,7 @@ export async function upsertFolders(
 
   // 3) Création en bulk. `skipDuplicates` protège contre les races
   //    (deux requêtes parallèles qui voudraient créer le même path).
-  await db.cloudinaryFolder.createMany({
+  await db.folder.createMany({
     data: newOnes.map((fullPath) => ({
       appRoot,
       fullPath,

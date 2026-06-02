@@ -3,6 +3,7 @@
 import { JSX } from 'react';
 import { Loader2, Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { useTrashStore } from '../state/useTrashStore';
 import { useTrashListing } from '../hooks/useTrashListing';
@@ -34,6 +35,9 @@ import EmptyBinButton from './EmptyBinButton';
  *   3. Afficher le header global et la toolbar de sélection
  */
 export default function TrashView(): JSX.Element {
+  const pathname = usePathname();
+  const finderPagePartsArray = pathname.split('/');
+  const finderPage = finderPagePartsArray.length > 2 ? finderPagePartsArray[1] : '';
   const search = useTrashStore((s) => s.search);
   const setSearch = useTrashStore((s) => s.setSearch);
   const drilldown = useTrashStore((s) => s.drilldown);
@@ -48,7 +52,7 @@ export default function TrashView(): JSX.Element {
       {/* ─── Header global ──────────────────────────────────────────────── */}
       <div className="px-4 py-3 border-b flex items-center gap-3 flex-wrap">
         <Link
-          href="/test-finder"
+          href={'/' + finderPage}
           className="
             flex items-center gap-1 text-sm text-gray-600
             hover:text-gray-900 hover:underline
