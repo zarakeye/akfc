@@ -8,7 +8,8 @@
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm --filter web typecheck",
-    "lint": "pnpm --filter web lint"
+    "lint": "pnpm --filter web lint",
+    "postinstall": "pnpm prisma generate"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

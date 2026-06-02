@@ -88,7 +88,7 @@ async function upsertFolders(prisma: PrismaClient, appRoot: string, paths: strin
 
   await prisma.$transaction(
     unique.map((fullPath) =>
-      prisma.cloudinaryFolder.upsert({
+      prisma.folder.upsert({
         where: { appRoot_fullPath: { appRoot, fullPath } },
         create: { appRoot, fullPath, status: statusFromPath(fullPath) },
         update: { status: statusFromPath(fullPath) },
@@ -141,7 +141,7 @@ async function pathCollides(params: {
 
   // Collision DB (folder placeholder)
   if (kind === "folder") {
-    const folder = await prisma.cloudinaryFolder.findFirst({
+    const folder = await prisma.folder.findFirst({
       where: { appRoot, fullPath: t },
       select: { id: true },
     });

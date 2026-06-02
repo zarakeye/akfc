@@ -34,6 +34,13 @@ export * from '@contracts/forms/updateUserRoleById.schema';
 export * from '@contracts/upload/upload.schema';
 
 /* -------------------------------------------------------------------------- */
+/*                                   PAGE                                     */
+/*  Contrat versionné du contenu d'une page (composite de blocs typés).       */
+/*  Voir packages/contracts/src/page/README.md pour la philosophie.           */
+/* -------------------------------------------------------------------------- */
+export * from '@contracts/page';
+
+/* -------------------------------------------------------------------------- */
 /*                                   STORAGE                                  */
 /*  Contrat agnostique des adapters de stockage (Cloudinary, R2, S3, FS…).    */
 /*  Voir packages/contracts/src/storage/storage.adapter.ts pour les détails.  */

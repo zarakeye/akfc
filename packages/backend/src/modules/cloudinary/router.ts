@@ -249,7 +249,7 @@ async function moveDbFoldersPrefix(params: {
 }): Promise<void> {
   const { db, fromPrefix, toPrefix, nextStatus } = params;
 
-  const rows = await db.cloudinaryFolder.findMany({
+  const rows = await db.folder.findMany({
     where: {
       appRoot: PROJECT_ROOT,
       OR: [{ fullPath: fromPrefix }, { fullPath: { startsWith: `${fromPrefix}/` } }],
@@ -266,7 +266,7 @@ async function moveDbFoldersPrefix(params: {
           ? toPrefix
           : `${toPrefix}${row.fullPath.slice(fromPrefix.length)}`;
 
-      await tx.cloudinaryFolder.upsert({
+      await tx.folder.upsert({
         where: { appRoot_fullPath: { appRoot: PROJECT_ROOT, fullPath: newFullPath } },
         create: {
           appRoot: PROJECT_ROOT,
@@ -278,7 +278,7 @@ async function moveDbFoldersPrefix(params: {
         },
       });
 
-      await tx.cloudinaryFolder.delete({
+      await tx.folder.delete({
         where: { id: row.id },
       });
     }
@@ -454,7 +454,7 @@ export const cloudinaryRouter = router({
 
       await renameFolderPrefixOnCloudinary(fromPrefix, toPrefix);
 
-      const impacted = await ctx.prisma.cloudinaryFolder.findMany({
+      const impacted = await ctx.prisma.folder.findMany({
         where: {
           appRoot: PROJECT_ROOT,
           OR: [{ fullPath: fromPrefix }, { fullPath: { startsWith: `${fromPrefix}/` } }],
@@ -474,7 +474,7 @@ export const cloudinaryRouter = router({
 
       const targetPaths = Array.from(new Set(updates.map((u) => u.nextFullPath)));
 
-      const collisions = await ctx.prisma.cloudinaryFolder.findMany({
+      const collisions = await ctx.prisma.folder.findMany({
         where: {
           appRoot: PROJECT_ROOT,
           fullPath: { in: targetPaths },
@@ -496,7 +496,7 @@ export const cloudinaryRouter = router({
         const ancestors = folderAncestorsOfFolderPath(toPrefix);
 
         for (const fullPath of ancestors) {
-          await tx.cloudinaryFolder.upsert({
+          await tx.folder.upsert({
             where: { appRoot_fullPath: { appRoot: PROJECT_ROOT, fullPath } },
             create: {
               appRoot: PROJECT_ROOT,
@@ -510,7 +510,7 @@ export const cloudinaryRouter = router({
         }
 
         for (const update of updates) {
-          await tx.cloudinaryFolder.update({
+          await tx.folder.update({
             where: { id: update.id },
             data: {
               fullPath: update.nextFullPath,

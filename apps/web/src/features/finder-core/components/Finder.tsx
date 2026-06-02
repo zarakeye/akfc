@@ -10,7 +10,7 @@ import {
   useGroupRef,
   type Layout,
 } from 'react-resizable-panels';
-import { Loader2, AlertCircle, PanelRightClose, PanelRightOpen, Trash2 } from 'lucide-react';
+import { Loader2, AlertCircle, PanelRightClose, PanelRightOpen, Trash2, X } from 'lucide-react';
 import type { FileAdapter, FinderNode } from '@contracts/finder';
 import { APP_ROOT } from '@config/app';
 
@@ -25,8 +25,21 @@ import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import Breadcrumb from '@features/finder-core/components/Breadcrumb';
 import PreviewPanel from '@features/finder-core/components/PreviewPanel';
 import FinderTree from '@features/finder-core/components/FinderTree';
-import MultiSelectToolbar from '@features/finder-core/components/MultiSelectToolbar';
 import GridItem from '@features/finder-core/components/GridItem';
+import ContextMenu, {
+  type ContextMenuItem,
+} from '@features/finder-core/components/ContextMenu';
+
+import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import { useMediaAssetEnrichment } from '@features/finder-core/hooks/useMediaAssetEnrichment';
+import { useFinderSearch } from '@features/finder-core/hooks/useFinderSearch';
+
+import FinderSearchBar from '@features/finder-core/components/FinderSearchBar';
+import SearchResultsView from '@features/finder-core/components/SearchResultsView';
+
+import { sortNodes, groupNodes } from '@features/finder-core/utils/sortNodes';
+import type { SortField } from '@features/finder-core/state/useFinderStore';
+
 
 import { getTriState, type TriState } from '@features/finder-core/utils/triState';
 
@@ -106,10 +119,60 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
     selectRange,
     multiSelectActive,
     enterMultiSelect,
+    exitMultiSelect,
     viewMode,
+    sort,
+    setSortPrimary,
+    setSortSecondary,
+    toggleSortDirection,
+    resetSort,
   } = useFinderStore();
 
   const { loading, error } = useFinderData(adapter);
+
+  // Enrichissement silencieux des FinderNodes avec les metadata DB
+  // (createdAt, uploadedBy, dimensions, etc.) — cf. doc dans le hook.
+  // Le fetch se déclenche à chaque changement de contenu et merge les
+  // metas dans le store dès qu'elles arrivent.
+  useMediaAssetEnrichment();
+
+  // Recherche récursive : observe `search.query` + flags + currentPath et
+  // déclenche un fetch tRPC debouncé qui peuple `search.results` du store.
+  // Le hook est silencieux quand la query est vide.
+  useFinderSearch();
+
+  // Mode recherche actif : on switch la vue centrale en SearchResultsView
+  // dès que l'user a tapé quelque chose (loading ou non, résultats ou non).
+  const searchActive = useFinderStore((s) => s.search.query.trim().length > 0);
+
+  // Actions delete/trashToBin adaptatives selon contexte (cf. useNodeActions.ts).
+  // Utilisé par les boutons du header en mode multi-select.
+  const { deleteNodes, deleteLabel } = useNodeActions();
+
+  // ─── Tri + groupage des items ─────────────────────────────────────────
+  //
+  // On fusionne folders et files dans une seule liste triée pour pouvoir
+  // grouper de façon cohérente selon le critère primaire. Exemples :
+  //
+  //   - Tri par `name` : items mélangés alphabétiquement avec un header
+  //     par lettre initiale (A, B, C…), folders et files entremêlés.
+  //   - Tri par `type` : header "Dossiers" en premier (folders d'abord
+  //     car le comparateur le garantit), puis "Images", "Vidéos", etc.
+  //   - Tri par `size` : buckets fixes (< 1 MB, 1–10 MB, etc.).
+  //
+  // Pattern macOS Finder en mode "Groupé par".
+  //
+  // useMemo : on évite de re-trier et re-grouper à chaque render. Les clés
+  // couvrent tous les cas où le résultat peut changer.
+  const sortedAllItems = useMemo(
+    () => sortNodes([...folders, ...files], sort),
+    [folders, files, sort],
+  );
+
+  const groups = useMemo(
+    () => groupNodes(sortedAllItems, sort.primary),
+    [sortedAllItems, sort.primary],
+  );
 
   // Ref impératif sur le Panel preview pour le toggle collapse/expand depuis
   // le bouton du header. `usePanelRef` est exporté en v4 et donne un ref
@@ -278,13 +341,98 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
   // pour éviter le panneau central vide qui paraît "cassé".
   const showInitialLoadingOverlay = loading && allNodes.length === 0;
 
+  // ─── Menu contextuel de tri ─────────────────────────────────────────────
+  //
+  // Position du menu : `null` = menu fermé. Ouvert via `onContextMenu`
+  // sur le container de la grid view (cf. `<div className="p-4 overflow-auto …"`).
+  //
+  // Les right-clicks sur les GridItem ne bubblent PAS jusqu'à ce container
+  // (les items appellent `e.stopPropagation()` dans leur handler), donc
+  // pas de conflit entre les 2 menus.
+  const [sortMenuPos, setSortMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  /**
+   * Construit les items du menu de tri. Sections séparées par des `header`/
+   * `separator` (cf. ContextMenu.tsx : type discriminant).
+   *
+   * Pattern utilisé :
+   *   - Le tri primaire affiche un ✓ devant la field active
+   *   - Click sur une field déjà primary → toggle direction (asc ↔ desc)
+   *   - Click sur une autre field → devient primary, garde la direction
+   *   - Tri secondaire identique, avec "Aucun" pour le désactiver
+   *   - Date et Expéditeur grisés (disabled) car MediaMeta ne porte pas
+   *     encore ces champs ; l'infra est prête, l'enrichissement contract
+   *     activera ces options sans changer ce code.
+   */
+  function buildSortMenuItems(): ContextMenuItem[] {
+    // Définitions centralisées des fields visibles, dans l'ordre du menu.
+    // Tous activés : depuis la Phase 1 metadata, Date et Expéditeur sont
+    // exploitables (via useMediaAssetEnrichment qui peuple meta.createdAt
+    // et meta.uploadedBy). Pour les fichiers sans MediaAsset DB (orphelins),
+    // ils retombent dans les groupes "Date inconnue" / "Expéditeur inconnu".
+    const fields: Array<{ field: SortField; label: string; disabled?: boolean }> = [
+      { field: 'name', label: 'Nom' },
+      { field: 'type', label: 'Type' },
+      { field: 'size', label: 'Taille' },
+      { field: 'date', label: 'Date' },
+      { field: 'sender', label: 'Expéditeur' },
+    ];
+
+    const arrow = (dir: 'asc' | 'desc') => (dir === 'asc' ? ' ↑' : ' ↓');
+
+    return [
+      { type: 'header', label: 'Tri principal' },
+      ...fields.map<ContextMenuItem>((f) => ({
+        label: f.label + (sort.primary === f.field ? arrow(sort.primaryDirection) : ''),
+        checked: sort.primary === f.field,
+        disabled: f.disabled,
+        onClick: () => setSortPrimary(f.field),
+      })),
+
+      { type: 'separator' },
+      { type: 'header', label: 'Tri secondaire' },
+      {
+        label: 'Aucun',
+        checked: sort.secondary === null,
+        onClick: () => setSortSecondary(null),
+      },
+      ...fields.map<ContextMenuItem>((f) => ({
+        label: f.label + (sort.secondary === f.field ? arrow(sort.secondaryDirection) : ''),
+        checked: sort.secondary === f.field,
+        disabled: f.disabled,
+        onClick: () => setSortSecondary(f.field),
+      })),
+
+      { type: 'separator' },
+      { type: 'header', label: 'Ordre' },
+      {
+        label: `Inverser l'ordre principal`,
+        onClick: () => toggleSortDirection('primary'),
+      },
+      ...(sort.secondary !== null
+        ? [
+            {
+              label: `Inverser l'ordre secondaire`,
+              onClick: () => toggleSortDirection('secondary'),
+            } as ContextMenuItem,
+          ]
+        : []),
+
+      { type: 'separator' },
+      {
+        label: 'Réinitialiser le tri',
+        onClick: () => resetSort(),
+      },
+    ];
+  }
+
   return (
     <div className="flex flex-col h-full border rounded overflow-hidden">
 
-      {/* ──────────────────────── HEADER : breadcrumb + spinner + toggle ── */}
+      {/* ──────────────────────── HEADER : breadcrumb + actions ─────────── */}
       <div className="px-3 py-2 border-b text-sm flex items-center gap-2 min-h-[40px]">
         <div className="flex-1 min-w-0">
-          <Breadcrumb />
+          <Breadcrumb adapter={adapter} />
         </div>
 
         {/* Spinner discret, espace réservé pour éviter le shift */}
@@ -296,6 +444,83 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
             />
           )}
         </div>
+
+        {/* ─── Actions multi-select (intégrées dans la toolbar générale) ───
+            Au lieu d'une seconde toolbar empilée sous le header, on enrichit
+            le header lui-même avec compteur + bouton d'action adaptatif +
+            sortie du mode. Visible uniquement quand `multiSelectActive`.
+
+            Le bouton est rouge en bin (action destructive irréversible), neutre
+            ailleurs (mise à la corbeille, réversible). Le label vient de
+            `useNodeActions.deleteLabel` pour cohérence avec le menu contextuel.
+
+            `handleMultiDelete` reconstitue les nodes ciblés depuis la sélection
+            courante (folders + files filtrés sur `selection.roots`). */}
+        {multiSelectActive && (() => {
+          const selectedCount = selection.roots.size;
+          const selectedNodes = [...folders, ...files].filter((n) =>
+            selection.roots.has(n.id),
+          );
+          // On utilise les selectedNodes pour le label : `deleteLabel` détecte
+          // le contexte par le path du premier node (cf. useNodeActions.ts),
+          // pas par le currentPath global — ça garantit la cohérence
+          // label ↔ action même si la sélection est dans un sous-dossier.
+          const label = deleteLabel(selectedCount, selectedNodes);
+          const isBinAction =
+            selectedNodes.length > 0 &&
+            (selectedNodes[0].path === `${APP_ROOT}/bin` ||
+              selectedNodes[0].path.startsWith(`${APP_ROOT}/bin/`));
+
+          async function handleMultiDelete() {
+            await deleteNodes(selectedNodes);
+          }
+
+          return (
+            <>
+              <span className="text-xs text-gray-600 shrink-0">
+                {selectedCount} sélectionné{selectedCount > 1 ? 's' : ''}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleMultiDelete}
+                disabled={selectedCount === 0}
+                title={label}
+                className={
+                  isBinAction
+                    ? 'shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs'
+                    : 'shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs'
+                }
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                <span>{label}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={exitMultiSelect}
+                title="Quitter le mode sélection"
+                aria-label="Quitter le mode sélection"
+                className="
+                  shrink-0 rounded p-1 text-gray-500
+                  hover:text-gray-900 hover:bg-gray-100
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+                  transition-colors
+                "
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </>
+          );
+        })()}
+
+        {/* Searchbar — masquée en mode bin (recherche pas pertinente dans la
+            corbeille pour la v1 ; pourrait être étendue plus tard si besoin).
+            En multi-select mode, on la cache aussi pour laisser de la place
+            aux boutons d'action. */}
+        {currentPath !== `${APP_ROOT}/bin` && !multiSelectActive && (
+          <FinderSearchBar />
+        )}
 
         {/* Switcher des 3 modes d'affichage de la grille — caché en bin root
             où c'est `FinderBinRootView` qui rend son propre switcher (basé
@@ -382,6 +607,8 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
             rootPath={rootPath}
             currentPath={currentPath}
             onOpen={setPath}
+            onItemDragStart={handleDragStart}
+            onItemLongPress={handleLongPress}
           />
         </Panel>
 
@@ -421,11 +648,14 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
           */}
           {currentPath === `${APP_ROOT}/bin` ? (
             <FinderBinRootView />
+          ) : searchActive ? (
+            /* Mode recherche actif → vue plate des résultats, sans
+               groupage par tri ni navigation folder-by-folder. La barre
+               searchbar reste visible dans le header pour permettre la
+               modification de la query ou son effacement. */
+            <SearchResultsView />
           ) : (
             <>
-              {/* Toolbar multi-select : visible uniquement quand le mode est actif */}
-              <MultiSelectToolbar />
-
               {/* Overlay loading initial — uniquement quand on a vraiment rien à afficher.
                   Sinon le spinner discret du header suffit, on ne masque pas le contenu. */}
               {showInitialLoadingOverlay && (
@@ -437,52 +667,93 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
                 </div>
               )}
 
-              <div className="p-4 overflow-auto flex-1">
+              <div
+                className="p-4 overflow-auto flex-1"
+                onContextMenu={(e) => {
+                  // Le right-click sur un GridItem stopPropagation, donc on
+                  // n'arrive ici que pour la zone vide / les zones inter-items.
+                  // C'est exactement la sémantique souhaitée — l'utilisateur
+                  // veut le menu de tri quand il clique "ailleurs que sur un item".
+                  e.preventDefault();
+                  setSortMenuPos({ x: e.clientX, y: e.clientY });
+                }}
+              >
                 {folders.length === 0 && files.length === 0 && !loading ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-12 gap-2">
                     <span>Ce dossier est vide</span>
                   </div>
                 ) : viewMode === 'grid' ? (
               <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(110px,1fr))]">
-                {folders.map((folder) => {
-                  const triState = getTriState({
-                    item: folder,
-                    allItems,
-                    roots: selection.roots,
-                    excluded: selection.excluded,
-                  });
+                {groups.map((group, groupIndex) => {
+                  // Détecte les transitions de catégorie parent : si le
+                  // groupe actuel a un parentKey différent du précédent
+                  // (ou s'il est le premier), on rend un header parent
+                  // prominent au-dessus.
+                  const prevGroup = groupIndex > 0 ? groups[groupIndex - 1] : null;
+                  const showParentHeader =
+                    !!group.parentKey &&
+                    (!prevGroup || prevGroup.parentKey !== group.parentKey);
+                  // Si key === parentKey (cas folder où il n'y a pas de
+                  // subdivision par format), on ne rend que le parent header.
+                  const showChildHeader =
+                    !!group.label && group.key !== group.parentKey;
 
                   return (
-                    <GridItem
-                      key={folder.id}
-                      node={folder}
-                      isSelected={selection.roots.has(folder.id)}
-                      multiSelectActive={multiSelectActive}
-                      triState={triState}
-                      onClick={(e) => handleClick(folder, e)}
-                      onDoubleClick={() => handleDoubleClick(folder)}
-                      onLongPress={() => handleLongPress(folder)}
-                      onDragStart={(e) => handleDragStart(e, folder)}
-                    />
-                  );
-                })}
+                    <React.Fragment key={group.key}>
+                      {/* Header PARENT — séparateur fort, texte plus grand,
+                          fond gris discret. Rendu seulement au changement de
+                          catégorie pour éviter la duplication. */}
+                      {showParentHeader && (
+                        <div className="col-span-full mt-4 mb-1 pt-2 pb-2 px-2 border-b-2 border-gray-300 first:mt-0">
+                          <span className="text-sm font-bold text-gray-800">
+                            {group.parentLabel}
+                          </span>
+                        </div>
+                      )}
+                      {/* Header ENFANT (format) — discret, indenté pour
+                          signaler la subordination au parent. */}
+                      {showChildHeader && (
+                        <div className="col-span-full mt-2 mb-1 pb-1 px-1 pl-4 border-b border-gray-200">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            {group.label}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-400">
+                            ({group.nodes.length})
+                          </span>
+                        </div>
+                      )}
+                      {group.nodes.map((node) => {
+                      // Le tri-state n'a de sens que pour les folders (qui
+                      // peuvent être en `indeterminate` si une partie de leur
+                      // contenu est sélectionnée). Les files sont juste
+                      // checked/unchecked d'après leur appartenance aux roots.
+                      const isFolder = node.type === 'folder';
+                      const triState: TriState = isFolder
+                        ? getTriState({
+                            item: node,
+                            allItems,
+                            roots: selection.roots,
+                            excluded: selection.excluded,
+                          })
+                        : selection.roots.has(node.id)
+                        ? 'checked'
+                        : 'unchecked';
 
-                {files.map((file) => {
-                  const triState: TriState = selection.roots.has(file.id)
-                    ? 'checked'
-                    : 'unchecked';
-
-                  return (
-                    <GridItem
-                      key={file.id}
-                      node={file}
-                      isSelected={selection.roots.has(file.id)}
-                      multiSelectActive={multiSelectActive}
-                      triState={triState}
-                      onClick={(e) => handleClick(file, e)}
-                      onLongPress={() => handleLongPress(file)}
-                      onDragStart={(e) => handleDragStart(e, file)}
-                    />
+                      return (
+                        <GridItem
+                          key={node.id}
+                          node={node}
+                          isSelected={selection.roots.has(node.id)}
+                          multiSelectActive={multiSelectActive}
+                          triState={triState}
+                          onClick={(e) => handleClick(node, e)}
+                          onDoubleClick={isFolder ? () => handleDoubleClick(node) : undefined}
+                          onLongPress={() => handleLongPress(node)}
+                          onDragStart={(e) => handleDragStart(e, node)}
+                        />
+                      );
+                    })}
+                  </React.Fragment>
                   );
                 })}
               </div>
@@ -498,40 +769,76 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {folders.map((folder) => {
-                    const triState = getTriState({
-                      item: folder,
-                      allItems,
-                      roots: selection.roots,
-                      excluded: selection.excluded,
-                    });
+                  {groups.map((group, groupIndex) => {
+                    const prevGroup = groupIndex > 0 ? groups[groupIndex - 1] : null;
+                    const showParentHeader =
+                      !!group.parentKey &&
+                      (!prevGroup || prevGroup.parentKey !== group.parentKey);
+                    const showChildHeader =
+                      !!group.label && group.key !== group.parentKey;
+                    const span = multiSelectActive ? 5 : 4;
+
                     return (
-                      <FinderTableRow
-                        key={folder.id}
-                        node={folder}
-                        isSelected={selection.roots.has(folder.id)}
-                        multiSelectActive={multiSelectActive}
-                        triState={triState}
-                        onClick={(e) => handleClick(folder, e)}
-                        onDoubleClick={() => handleDoubleClick(folder)}
-                        onLongPress={() => handleLongPress(folder)}
-                        onDragStart={(e) => handleDragStart(e, folder)}
-                      />
-                    );
-                  })}
-                  {files.map((file) => {
-                    const triState: TriState = selection.roots.has(file.id) ? 'checked' : 'unchecked';
-                    return (
-                      <FinderTableRow
-                        key={file.id}
-                        node={file}
-                        isSelected={selection.roots.has(file.id)}
-                        multiSelectActive={multiSelectActive}
-                        triState={triState}
-                        onClick={(e) => handleClick(file, e)}
-                        onLongPress={() => handleLongPress(file)}
-                        onDragStart={(e) => handleDragStart(e, file)}
-                      />
+                      <React.Fragment key={group.key}>
+                        {/* Header PARENT — row qui span toutes les colonnes,
+                            fond plus marqué + texte plus gras pour visualiser
+                            la macro-catégorie. */}
+                        {showParentHeader && (
+                          <tr className="bg-gray-100">
+                            <td
+                              colSpan={span}
+                              className="px-3 py-2.5 border-t-2 border-gray-300"
+                            >
+                              <span className="text-sm font-bold text-gray-800">
+                                {group.parentLabel}
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                        {/* Header ENFANT (format) — discret avec indent. */}
+                        {showChildHeader && (
+                          <tr className="bg-gray-50">
+                            <td
+                              colSpan={span}
+                              className="px-3 py-1.5 pl-6 border-y border-gray-200"
+                            >
+                              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                {group.label}
+                              </span>
+                              <span className="ml-2 text-xs text-gray-400">
+                                ({group.nodes.length})
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                        {group.nodes.map((node) => {
+                        const isFolder = node.type === 'folder';
+                        const triState: TriState = isFolder
+                          ? getTriState({
+                              item: node,
+                              allItems,
+                              roots: selection.roots,
+                              excluded: selection.excluded,
+                            })
+                          : selection.roots.has(node.id)
+                          ? 'checked'
+                          : 'unchecked';
+
+                        return (
+                          <FinderTableRow
+                            key={node.id}
+                            node={node}
+                            isSelected={selection.roots.has(node.id)}
+                            multiSelectActive={multiSelectActive}
+                            triState={triState}
+                            onClick={(e) => handleClick(node, e)}
+                            onDoubleClick={isFolder ? () => handleDoubleClick(node) : undefined}
+                            onLongPress={() => handleLongPress(node)}
+                            onDragStart={(e) => handleDragStart(e, node)}
+                          />
+                        );
+                      })}
+                    </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -539,40 +846,63 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
             ) : (
               /* compact */
               <div className="divide-y divide-gray-100">
-                {folders.map((folder) => {
-                  const triState = getTriState({
-                    item: folder,
-                    allItems,
-                    roots: selection.roots,
-                    excluded: selection.excluded,
-                  });
+                {groups.map((group, groupIndex) => {
+                  const prevGroup = groupIndex > 0 ? groups[groupIndex - 1] : null;
+                  const showParentHeader =
+                    !!group.parentKey &&
+                    (!prevGroup || prevGroup.parentKey !== group.parentKey);
+                  const showChildHeader =
+                    !!group.label && group.key !== group.parentKey;
+
                   return (
-                    <FinderCompactRow
-                      key={folder.id}
-                      node={folder}
-                      isSelected={selection.roots.has(folder.id)}
-                      multiSelectActive={multiSelectActive}
-                      triState={triState}
-                      onClick={(e) => handleClick(folder, e)}
-                      onDoubleClick={() => handleDoubleClick(folder)}
-                      onLongPress={() => handleLongPress(folder)}
-                      onDragStart={(e) => handleDragStart(e, folder)}
-                    />
-                  );
-                })}
-                {files.map((file) => {
-                  const triState: TriState = selection.roots.has(file.id) ? 'checked' : 'unchecked';
-                  return (
-                    <FinderCompactRow
-                      key={file.id}
-                      node={file}
-                      isSelected={selection.roots.has(file.id)}
-                      multiSelectActive={multiSelectActive}
-                      triState={triState}
-                      onClick={(e) => handleClick(file, e)}
-                      onLongPress={() => handleLongPress(file)}
-                      onDragStart={(e) => handleDragStart(e, file)}
-                    />
+                    <React.Fragment key={group.key}>
+                      {/* Header PARENT — bandeau plus marqué pour la macro-catégorie. */}
+                      {showParentHeader && (
+                        <div className="px-3 py-2 bg-gray-100 border-t-2 border-gray-300 first:border-t-0">
+                          <span className="text-sm font-bold text-gray-800">
+                            {group.parentLabel}
+                          </span>
+                        </div>
+                      )}
+                      {/* Header ENFANT (format) — bandeau discret avec indent. */}
+                      {showChildHeader && (
+                        <div className="px-3 pl-6 py-1.5 bg-gray-50">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            {group.label}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-400">
+                            ({group.nodes.length})
+                          </span>
+                        </div>
+                      )}
+                      {group.nodes.map((node) => {
+                      const isFolder = node.type === 'folder';
+                      const triState: TriState = isFolder
+                        ? getTriState({
+                            item: node,
+                            allItems,
+                            roots: selection.roots,
+                            excluded: selection.excluded,
+                          })
+                        : selection.roots.has(node.id)
+                        ? 'checked'
+                        : 'unchecked';
+
+                      return (
+                        <FinderCompactRow
+                          key={node.id}
+                          node={node}
+                          isSelected={selection.roots.has(node.id)}
+                          multiSelectActive={multiSelectActive}
+                          triState={triState}
+                          onClick={(e) => handleClick(node, e)}
+                          onDoubleClick={isFolder ? () => handleDoubleClick(node) : undefined}
+                          onLongPress={() => handleLongPress(node)}
+                          onDragStart={(e) => handleDragStart(e, node)}
+                        />
+                      );
+                    })}
+                  </React.Fragment>
                   );
                 })}
               </div>
@@ -622,6 +952,18 @@ export default function Finder({ adapter, rootPath }: Props): JSX.Element {
         </Panel>
 
       </Group>
+
+      {/* Menu contextuel de tri — porté en root pour ne pas être clipé par
+          des `overflow-hidden` ancêtres. Position fixed via les coords
+          enregistrées dans sortMenuPos. */}
+      {sortMenuPos && (
+        <ContextMenu
+          x={sortMenuPos.x}
+          y={sortMenuPos.y}
+          items={buildSortMenuItems()}
+          onClose={() => setSortMenuPos(null)}
+        />
+      )}
     </div>
   );
 }

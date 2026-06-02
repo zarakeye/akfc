@@ -1,0 +1,679 @@
+import Callout from "@/components/mdx/Callout";
+import CodeSnippet from "@/components/mdx/CodeSnippet";
+import DocsTable from "@/components/mdx/DocsTable";
+import ArchitectureDiagram from "@/components/mdx/ArchitectureDiagram";
+
+export const metadata = {
+  title: "Comprendre le domaine d'AKFC",
+  description:
+    "Un voyage à travers le modèle de données métier du projet AKFC — ce que sont vraiment une discipline, un cours, un stage, un événement, et pourquoi le modèle a évolué en v2.",
+};
+
+# Comprendre le domaine d'AKFC
+
+Avant de continuer à construire des pages admin, des forms, des
+sélecteurs et des composants visuels, nous avons besoin de **savoir
+exactement ce que nous modélisons**. Sans ce socle, chaque décision
+technique flotte — quel champ exposer dans le form ? quelle relation
+filtrer ? quelle contrainte appliquer à la validation ? Toutes ces
+questions trouvent leur réponse dans la sémantique du domaine, pas
+dans l'inspection du schéma Prisma seul.
+
+Ce document est ce socle. Nous y construisons une compréhension
+**conceptuelle** des entités du club AKFC — pas une description
+technique des tables, mais une lecture de ce qu'elles représentent
+dans le monde réel d'un club d'arts martiaux et de pratiques
+culturelles asiatiques.
+
+Trois mouvements nous attendent. D'abord nous regardons ce que sont
+les entités centrales — `Discipline`, `Course`, `Stage`, `Event`,
+`Post` — et nous démêlons les confusions naturelles entre elles.
+Ensuite nous examinons les conventions transverses qui les
+structurent — le format HHMM des heures, le composite Json des
+contenus riches, le statut des MediaAssets, la gestion des deux
+instructeurs de Course. Enfin nous racontons pourquoi la migration v2
+a fait évoluer ce modèle, et ce que ça apporte concrètement.
+
+## Mouvement 1 — Ce que sont les entités centrales
+
+### 1. Une discipline n'est pas un cours, c'est un art
+
+Quand nous commençons à modéliser un club d'arts martiaux, la
+tentation est de partir des cours visibles sur le site — « Karaté
+adultes lundi 18h », « Aikido enfants mercredi 17h » — et d'en faire
+des entités. Cette approche capture ce qui se passe concrètement
+chaque semaine, mais elle confond deux niveaux d'abstraction qu'il
+faut distinguer.
+
+Une discipline est **un art enseigné**, au sens conceptuel. Le Karaté
+Shotokan existe en tant que tel — il a une histoire, des techniques,
+une école, une lignée de maîtres — indépendamment du fait qu'il soit
+enseigné le lundi à 18h ou le samedi à 10h. Si nous arrêtons les
+cours pendant l'été et qu'aucun créneau de Karaté Shotokan n'a lieu
+pendant trois mois, la discipline existe toujours.
+
+Un cours, lui, est un **créneau récurrent** dans lequel une
+discipline est enseignée à un public donné. Discipline plus jour plus
+heure plus audience. C'est concret, planifié, daté dans la semaine.
+
+Cette distinction guide tout le reste du modèle. Une `Discipline`
+porte les méta-informations conceptuelles : son nom, son école, sa
+classification, son origine culturelle, sa description riche, son
+instructeur principal. Un `Course` porte les méta-informations
+pratiques du créneau : son jour, ses heures, son audience, ses
+prérequis, son instructeur spécifique éventuel.
+
+<Callout type="concept">
+La discipline est l'**art** au sens conceptuel. Le cours est le
+**créneau** dans lequel cet art est enseigné. Une discipline peut
+n'avoir aucun cours actif et exister quand même (par exemple si le
+club arrête temporairement de l'enseigner). Un cours, à l'inverse, ne
+peut pas exister sans sa discipline.
+</Callout>
+
+👉 Où nous en sommes : nous avons posé la distinction fondamentale
+entre une discipline (conceptuelle) et un cours (créneau concret).
+Continuons avec ce qui se passe quand l'enseignement sort du cadre
+hebdomadaire.
+
+### 2. Un stage est un événement, pas un cours intensif
+
+À première vue, un stage ressemble à un cours plus long. Si nous
+nous arrêtons là, nous risquons de modéliser le stage comme une
+variante de `Course` avec quelques champs en plus pour la durée. Ce
+serait une erreur, et le schéma AKFC n'est pas tombé dedans.
+
+Un stage est **un événement ponctuel**, qui se déroule sur quelques
+jours et qui rassemble une communauté autour d'un thème précis. Il a
+une narration spécifique — qui anime, dans quel cadre, avec quels
+intervenants, sur quelles techniques particulières. Cette narration
+n'est pas celle d'un cours hebdomadaire, qui par nature se répète et
+qui peut se contenter d'une fiche descriptive stable.
+
+Conséquence : le `Stage` porte **deux composites séparés** —
+`description` et `program`. La description raconte ce qu'est le stage
+et pourquoi il existe ; le programme détaille ce qui va s'y passer,
+session par session. Cette dichotomie est intentionnelle. Sur un cours
+hebdomadaire, le contenu est plus uniforme et un seul composite
+suffit.
+
+Et puis un stage n'a pas de date directe — il a des `StageSession`,
+des séances individuelles avec chacune sa date et ses horaires. Un
+stage de weekend peut avoir quatre sessions : samedi matin, samedi
+après-midi, dimanche matin, dimanche après-midi. Le stage est un
+**container temporel**, pas un point dans le temps.
+
+<Callout type="concept">
+Le stage est un **container temporel** qui regroupe une ou plusieurs
+sessions concrètes. Il a sa propre narration en deux temps — sa
+**description** (ce qu'il est) et son **programme** (ce qu'on y fera).
+Les dates effectives vivent au niveau des `StageSession`, pas au
+niveau du `Stage` lui-même.
+</Callout>
+
+👉 Où nous en sommes : la distinction stage / cours est posée. Mais
+le club AKFC n'organise pas que des cours et des stages — il porte
+aussi des événements plus larges qui ne sont pas martiaux au sens
+strict. C'est ce que la v2 a introduit avec un nouveau modèle.
+
+### 3. Un événement est encore plus libre qu'un stage
+
+Si nous nous arrêtions au triptyque `Discipline` / `Course` / `Stage`,
+nous ne pourrions pas modéliser proprement le repas de fin d'année,
+la conférence sur le bouddhisme zen, la journée portes ouvertes, ou
+la projection d'un documentaire sur la culture okinawaïenne. Tous ces
+événements ont leur place dans la vie du club, mais ils ne sont ni
+des cours ni des stages.
+
+C'est pour ça que la v2 introduit le modèle `Event`. Un événement
+est volontairement **plus libre** qu'un stage :
+
+- Il n'a pas obligatoirement de rattachement à une discipline du
+  club. Une projection de documentaire culturel peut exister sans
+  être rattachée au Karaté ni à l'Aikido.
+- Il porte **un seul composite** (`content`), pas la dichotomie
+  description / programme. Sa structure narrative est plus simple,
+  plus tournée vers l'annonce et la présentation.
+- Il a un **organisateur unique** (`organizerId`), pas un animateur
+  principal plus des co-animateurs comme Stage. La logique
+  d'animation collective n'a pas de sens à ce niveau.
+- Il porte une **`publicationDate?`** qui permet de gérer brouillons
+  et publications programmées — cohérent avec ce qui se fait sur
+  `Post`.
+
+Comme Stage, un Event est un container temporel : ses dates concrètes
+vivent dans des `EventSession`, clones structurels des
+`StageSession`. Un événement à une seule date a un seul
+`EventSession` ; un événement en deux soirées en a deux.
+
+<Callout type="concept">
+L'événement est **l'entité la plus libre** du domaine. Pas
+obligatoirement martial, pas obligatoirement rattaché à une
+discipline du club, structure narrative simplifiée. Il porte la
+dimension culturelle large du club, celle qui ne rentre pas dans le
+cadre des disciplines enseignées.
+</Callout>
+
+👉 Où nous en sommes : nous avons maintenant les quatre entités
+centrales du quotidien du club. Reste une cinquième, plus
+transversale.
+
+### 4. Un post n'a rien à voir avec les quatre autres
+
+Le `Post` est volontairement à part. Ce n'est pas un cours, ni un
+stage, ni un événement, ni une discipline — c'est **un article
+éditorial**. Une actualité, un compte-rendu, une annonce. Il a un
+titre, un contenu riche, un auteur, une date de publication.
+
+Il n'est rattaché à **rien d'autre du domaine**. Pas de
+`disciplineId`, pas de `categoryId`, pas de `stageId`. Un post peut
+parler de la vie associative générale, d'un événement qui n'est même
+pas enregistré dans la base, d'une réflexion sur les arts martiaux,
+de ce qu'on veut. Cette indépendance est volontaire — si nous
+voulions plus tard structurer les posts en sections (« actualités »,
+« comptes-rendus », « culture »), nous ajouterions une catégorisation,
+mais aujourd'hui tout vit en un seul flux.
+
+Le post a en revanche une dimension **communautaire** que les autres
+entités n'ont pas : il porte des `Comment[]` et des `Like[]`. C'est
+le seul point d'entrée social du modèle actuel.
+
+<Callout type="insight">
+Le `Post` est l'**outil éditorial transversal** du club. Indépendant
+des disciplines, libre dans son contenu, et seul à porter une
+dimension sociale (commentaires, likes). Sa convention de publication
+— `publicationDate` null pour brouillon, non-null pour publié — est
+celle qui s'est généralisée ensuite à Event en v2.
+</Callout>
+
+👉 Où nous en sommes : nous avons fait le tour des cinq entités
+centrales — discipline, cours, stage, événement, post. Faisons un
+récapitulatif visuel avant de passer aux conventions qui les
+relient.
+
+<DocsTable columnsJson='["Entité","Nature","Récurrent ?","PageBuilder ?","Rattaché à une discipline ?"]' rowsJson='[["Discipline","Concept (l&apos;art)","Pas applicable","Oui (description)","N/A (c&aposest elle)"],["Course","Créneau hebdomadaire","Oui","Oui (content)","Oui, obligatoire"],["Stage","Événement intensif","Non","Oui (description + program)","Optionnel depuis v2"],["Event","Événement libre","Non","Oui (content)","Optionnel"],["Post","Article éditorial","Non","Oui (content)","Non, jamais"]]' />
+
+**Trois idées à retenir de ce premier mouvement** :
+
+1. **La discipline est conceptuelle, le cours est le créneau** —
+   distinction fondamentale qui structure tout le reste.
+2. **Stage et Event sont des containers temporels** : leurs dates
+   vivent dans des sessions, eux ne sont que les enveloppes.
+3. **Stage et Event acceptent désormais d'être détachés du club** —
+   c'est le découplage v2 qui ouvre la porte aux intervenants
+   externes et aux événements culturels larges.
+
+## Mouvement 2 — Les conventions qui les relient
+
+### 1. Le format HHMM pour les heures
+
+Quand nous devons stocker l'heure de début d'un cours, plusieurs
+options s'offrent à nous. Nous pourrions utiliser un `DateTime`
+Postgres et n'en garder que la partie heure — mais le `DateTime` traîne
+avec lui la notion de date et de timezone, dont nous n'avons pas
+besoin. Nous pourrions stocker un nombre de minutes depuis minuit (par
+exemple `1110` pour 18h30) — c'est compact, mais illisible quand on
+ouvre la DB.
+
+<CodeSnippet title="Anti-pattern : minutes depuis minuit">
+```sql
+SELECT id, "beginTime" FROM "Course";
+-- id | beginTime
+-- 1  | 1110
+-- 2  | 1140
+-- 3  | 600
+```
+Pour lire « 18h30 » à partir de `1110`, nous devons faire mentalement
+la division par 60 et le reste. Pas pratique en debug.
+</CodeSnippet>
+
+Le format HHMM résout ce problème en compactant l'heure dans un
+entier dont la lecture est **directe** :
+
+<CodeSnippet title="Pattern : HHMM compact">
+```sql
+SELECT id, "beginTime" FROM "Course";
+-- id | beginTime
+-- 1  | 1830     ← se lit immédiatement « 18h30 »
+-- 2  | 1900     ← « 19h00 »
+-- 3  | 1000     ← « 10h00 »
+```
+Les deux derniers digits sont les minutes (0-59), les autres sont les
+heures (0-23).
+</CodeSnippet>
+
+Validation côté router : nous ne pouvons pas nous contenter d'un
+`min(0).max(2359)` parce que la valeur `1860` (60 minutes
+inexistantes) passerait. Nous ajoutons donc un `.refine()` qui vérifie
+que la partie minutes est bien `< 60` :
+
+<CodeSnippet title="Validation Zod stricte">
+```ts
+const hhmmSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(2359)
+  .refine((v) => v % 100 < 60, {
+    message: "Minutes part must be 0-59 (e.g. 1860 is not valid).",
+  });
+```
+</CodeSnippet>
+
+Côté UI, un composant `TimeInput` expose deux inputs HH/MM séparés et
+recompose en HHMM via `hours * 100 + minutes`. Une fonction utility
+`formatHHMM(value)` fait la projection inverse pour l'affichage
+(« 18h30 »).
+
+<Callout type="insight">
+Le format HHMM est notre **convention universelle** pour toutes les
+heures de la journée — `Course.beginTime`, `StageSession.beginTime`,
+`EventSession.beginTime`, et leurs `endTime` correspondants. Compact,
+lisible en DB sans calcul mental, triable naturellement, validable
+strictement avec un `.refine()`. Pas de timezone — heure locale du
+club.
+</Callout>
+
+👉 Où nous en sommes : nous avons posé la convention temporelle.
+Passons à la convention de contenu riche, qui structure ce que les
+admins éditent au PageBuilder.
+
+### 2. Le composite Json pour les contenus riches
+
+Six champs de notre modèle portent un contenu riche éditable —
+`Course.content`, `Stage.description` et `Stage.program`,
+`Post.content`, `Discipline.description` (depuis v2), `Event.content`
+(depuis v2). Plutôt que de stocker chacun avec une structure
+particulière, nous utilisons une **convention unifiée** : tous sont
+des `PageContentV1`.
+
+Un `PageContentV1` est un **composite de blocs** : une enveloppe avec
+une version et une liste de blocs typés (discriminated union). Quatre
+types de blocs existent aujourd'hui : `tiptap` (texte enrichi avec
+images inline), `image-gallery`, `audio-collection`, `document-list`.
+
+<CodeSnippet title="La forme d'un PageContentV1">
+```ts
+{
+  version: 1,
+  blocks: [
+    { id: "abc...", type: "tiptap", content: { /* ProseMirror */ } },
+    {
+      id: "def...",
+      type: "image-gallery",
+      items: [{ mediaId: "cuid..." }, ...],
+      layout: "grid",
+    },
+    { id: "ghi...", type: "audio-collection", items: [...] },
+  ],
+}
+```
+</CodeSnippet>
+
+L'avantage de cette unification est immense — un seul PageBuilder, un
+seul PageRenderer, un seul système de sync des références médias,
+tous réutilisables sur les six champs concernés. Quand nous avons
+introduit `Discipline.description` en Json à la v2, il n'y avait
+strictement rien à inventer côté UI — le PageBuilder existant
+fonctionnait tel quel.
+
+Chaque bloc qui référence des médias le fait **par `mediaId`**, jamais
+par URL ni par chemin. Cette indirection est la clé de l'intégrité
+référentielle : une fonction `extractMediaIdsFromContent` parcourt
+un composite et retourne la liste de tous les ids référencés, ce qui
+permet de synchroniser la table `PageMediaReference` à chaque save.
+
+<Callout type="concept">
+Le `PageContentV1` est une **convention de structure** partagée par
+tous les champs de contenu riche. Une enveloppe versionnée plus une
+liste de blocs typés. Cette unification rend le PageBuilder et le
+PageRenderer **réutilisables sans adaptation** sur n'importe quelle
+entité qui adopte le format.
+</Callout>
+
+👉 Où nous en sommes : convention temporelle, convention de contenu.
+Reste la convention sur les médias eux-mêmes.
+
+### 3. Le statut MediaAsset
+
+Quand un fichier est uploadé dans la bibliothèque, il n'est pas
+immédiatement disponible pour être référencé par une page. Il passe
+d'abord par un statut `pending` — le temps que l'admin le valide et
+le déplace en `published`. Une fois publié, il devient référençable.
+
+Cette mécanique est portée par le champ `MediaAsset.status` (une
+`String` simple, pas un enum), et le statut **s'aligne au dossier de
+stockage** : un asset au statut `published` vit physiquement sous
+`appRoot/published/...`, un asset `pending` sous `appRoot/pending/...`.
+
+Cette double cohérence (statut applicatif et dossier physique) permet
+la garde du sous-chantier 7 — qui empêche de sortir un asset
+référencé de `published` même via une opération de move dans le
+finder. Sans elle, un admin pourrait casser sans le savoir une page
+qui pointe vers un asset déplacé.
+
+<Callout type="warning">
+Un asset référencé par une page **ne peut pas sortir de `published`**.
+La table `PageMediaReference` maintient l'intégrité au save (un
+composite qui référence un asset non-published roll-back), et la
+garde du sous-chantier 7 maintient l'intégrité côté finder (un move
+qui sortirait un asset référencé de `published` est refusé avec un
+diagnostic précis).
+</Callout>
+
+👉 Où nous en sommes : trois conventions transverses posées. Reste
+une subtilité qui se cache dans la relation entre Discipline et
+Course, et qui mérite une explication explicite.
+
+### 4. Les deux instructeurs de Course
+
+À la lecture du schéma, nous découvrons que **deux champs portent un
+instructeur** sur les entités liées à un cours. La `Discipline` a son
+`instructorId` NOT NULL, et le `Course` aussi a un `instructorId`,
+mais nullable. Pourquoi deux ?
+
+Parce qu'ils représentent deux choses différentes. Le
+`Discipline.instructorId` est l'**instructeur principal de la
+discipline** — celui qui en a la responsabilité pédagogique globale.
+Le sensei en chef du Karaté Shotokan, qui supervise tout ce que le
+club fait en Karaté.
+
+Le `Course.instructorId`, lui, est l'**instructeur spécifique de ce
+créneau hebdomadaire**, qui peut diverger du principal de la
+discipline. Cas typique : Sensei Tanaka est le référent du Karaté, et
+il anime lui-même le cours du mardi soir. Le jeudi soir, c'est son
+assistante Sophie qui prend le relais.
+
+<CodeSnippet title="Comment ça se traduit en DB">
+```ts
+// Le cours du mardi : pas d'instructeur spécifique, donc Tanaka par défaut
+{ id: 1, disciplineId: 5 /* Karaté */, day: "TUESDAY", instructorId: null }
+
+// Le cours du jeudi : explicitement Sophie
+{ id: 2, disciplineId: 5 /* Karaté */, day: "THURSDAY", instructorId: "sophie..." }
+```
+La résolution à l'affichage applique la règle : si `Course.instructorId`
+est null, on prend `Discipline.instructorId`. Sinon, on prend celui
+du Course.
+</CodeSnippet>
+
+Cette convention a une conséquence dans le composant
+`InstructorSelect` : l'option « Aucun » correspond à `null`, et
+signifie « par défaut, l'instructeur de la discipline ». Ce n'est pas
+« pas d'instructeur du tout » — un cours a toujours quelqu'un qui
+l'anime, par cascade depuis sa discipline.
+
+<Callout type="insight">
+La double présence de `instructorId` sur `Discipline` et `Course` n'est
+pas une duplication, c'est une **hiérarchie** : la discipline porte le
+référent par défaut, le cours peut le surcharger pour ce créneau-là.
+Si nous voyons `Course.instructorId === null`, nous lisons « par
+défaut, celui de la discipline », pas « personne ».
+</Callout>
+
+👉 Où nous en sommes : nous avons fait le tour des conventions
+transverses qui structurent le domaine. Avant de passer à la v2,
+faisons un récapitulatif.
+
+**Quatre idées à retenir de ce deuxième mouvement** :
+
+1. **HHMM est notre convention temporelle universelle** — un seul
+   format pour toutes les heures de la journée, lisible en DB,
+   validable strictement.
+2. **PageContentV1 est notre convention de contenu riche** — un seul
+   format pour tous les champs éditables au PageBuilder, ce qui rend
+   nos outils réutilisables.
+3. **Le statut MediaAsset s'aligne au dossier physique** — cohérence
+   entre l'état applicatif et l'état du stockage, ce qui permet
+   l'intégrité référentielle.
+4. **Les deux instructeurs de Course sont une hiérarchie**, pas une
+   duplication. Le `null` veut dire « par défaut ».
+
+## Mouvement 3 — Pourquoi la v2 a fait évoluer le modèle
+
+### 1. Le besoin métier qui a poussé
+
+Pendant un temps, le modèle initial nous a bien servi. Tant que le
+club proposait uniquement des cours hebdomadaires et des stages
+intensifs dans ses disciplines enseignées, tout rentrait dans les
+cases. La discipline était l'art, le cours le créneau, le stage
+l'événement intensif, et chaque entité avait son rattachement
+obligatoire à une discipline du club.
+
+Puis le club a voulu organiser un stage de **calligraphie chinoise**
+avec un calligraphe invité. Et là, nous nous sommes heurtés au modèle.
+Le `Stage` exigeait un `disciplineId` NOT NULL — mais la calligraphie
+chinoise n'était pas une discipline enregistrée. Le club n'enseignait
+pas la calligraphie en cours régulier, donc créer une `Discipline`
+juste pour ce stage aurait pollué les listes admin avec une discipline
+fantôme.
+
+Le problème s'est amplifié avec d'autres besoins : des stages
+ponctuels par des **intervenants externes** sur des disciplines que le
+club n'enseigne pas, des **événements culturels asiatiques** plus
+larges (un repas, une conférence sur le bouddhisme zen) qui ne se
+prêtent à aucune des cases existantes.
+
+<Callout type="warning">
+Le modèle initial supposait qu'**un événement est toujours rattaché
+à une discipline du club**. Cette hypothèse est devenue fausse à
+mesure que le club s'est ouvert aux intervenants externes et aux
+événements culturels larges. La v2 lève cette contrainte.
+</Callout>
+
+👉 Où nous en sommes : nous avons identifié le besoin. Voyons comment
+nous l'adressons, étape par étape.
+
+### 2. Pourquoi un modèle `Origin` dédié plutôt qu'un `String` libre
+
+La première brique de la v2 est le modèle `Origin`. Il remplace
+l'ancien champ `Discipline.origin: String?` qui était un texte libre.
+Pourquoi cette transformation ?
+
+Un texte libre laisse coexister des doublons orthographiques. « Japon »
+et « japon » et « Japan » et « JAPON » sont stockés comme des chaînes
+distinctes alors qu'ils désignent la même chose. Si nous voulons un
+jour grouper « tous les stages d'origine japonaise », nous sommes
+coincés — il faut faire un `LOWER(origin) = 'japon'` qui ne capture
+même pas « Japan ».
+
+<CodeSnippet title="Anti-pattern : origines en String libre">
+```sql
+SELECT DISTINCT origin FROM "Discipline";
+-- "Japon"
+-- "japon"
+-- "Japan"
+-- "JAPON"
+-- "Okinawa"  ← lié au Japon mais comment savoir ?
+```
+Aucune intégrité, aucune métadonnée, aucun regroupement possible.
+</CodeSnippet>
+
+Une entité dédiée résout tout ça d'un coup. `Origin` porte une
+contrainte d'unicité sur le nom et sur le slug, ce qui élimine les
+doublons par construction. Elle peut porter des métadonnées
+culturelles riches — `country`, `region`, `flag`, `historicalPeriod` —
+qui sont utiles à l'affichage et au pédagogique. Et elle permet le
+regroupement transverse : disciplines, stages et événements pointent
+vers la même `Origin`, ce qui rend possible un « voir tout ce qui
+concerne le Japon ».
+
+<CodeSnippet title="Pattern : Origin entité avec relations">
+```prisma
+model Origin {
+  id               Int     @id @default(autoincrement())
+  name             String  @unique
+  slug             String  @unique
+  description      String?
+  country          String?
+  region           String?
+  flag             String?
+  historicalPeriod String?
+  sortOrder        Int     @default(0)
+
+  disciplines      Discipline[]
+  stages           Stage[]
+  events           Event[]
+}
+```
+</CodeSnippet>
+
+Le découplage `name` / `country` / `region` permet une nuance utile :
+« Okinawa » peut être une `Origin` à part entière (`name: "Okinawa"`,
+`country: "Japon"`, `region: "Okinawa"`) tout en restant
+géographiquement liée au Japon. Cette granularité fine sera
+appréciable quand le club voudra présenter des contenus sur les arts
+martiaux d'Okinawa distincts de ceux du Japon continental.
+
+<Callout type="concept">
+Le passage de `String` libre à entité dédiée n'est pas juste une
+amélioration cosmétique — c'est ce qui rend possible **les
+regroupements transverses** et **les métadonnées riches**. Une fois
+qu'on a une `Origin` comme entité, on peut imaginer une page publique
+`/origines/japon` qui liste toutes les disciplines, stages et events
+qui y sont rattachés, sans aucune gymnastique de requête.
+</Callout>
+
+👉 Où nous en sommes : la première brique de la v2 est en place. Mais
+elle ne résout que le problème du regroupement culturel — pas celui
+de l'événement non rattaché à une discipline. C'est la deuxième
+brique.
+
+### 3. Pourquoi un `Event` distinct de `Stage`
+
+Quand le besoin d'événements culturels larges s'est présenté, nous
+avions deux options. La première : élargir `Stage` pour qu'il accepte
+tout — ajouter `externalDisciplineLabel`, ajouter `originId`, rendre
+`disciplineId` nullable, et appeler ça « Stage » même quand c'est un
+repas de fin d'année. La deuxième : créer un nouveau modèle `Event`
+distinct.
+
+Pourquoi nous avons choisi la deuxième ? Parce que **Stage et Event
+ont des sémantiques différentes**, même si leurs structures se
+ressemblent. Un Stage reste centré sur la **pratique** — il y a un
+animateur principal, des co-animateurs, un programme détaillé, des
+sessions intensives. Un Event est centré sur la **rencontre** — il y
+a un organisateur, un contenu de présentation, peut-être une ou
+plusieurs sessions, mais pas de programme structuré au sens de Stage.
+
+Concrètement, les différences se traduisent par :
+
+<DocsTable columnsJson='["Aspect","Stage","Event"]' rowsJson='[["Composites Json","Deux (description + program)","Un seul (content)"],["Animation","primaryAnimator + co-animators (many-to-many)","organizerId unique"],["Date de publication","Implicite (existe = visible)","publicationDate? (gère brouillons)"],["Sessions","StageSession[]","EventSession[]"],["Rattachement","Au moins un des trois (v2)","Idem"]]' />
+
+L'option « tout en un seul modèle » nous aurait donné un Stage avec
+deux composites dont l'un est rarement utilisé, deux niveaux
+d'animation dont l'un est rarement peuplé, et un cycle de publication
+qui serait soit toujours présent soit jamais. Pas de gain de
+simplicité, et une perte de clarté sémantique — l'admin ne saurait
+plus quand utiliser quel champ.
+
+<Callout type="insight">
+La règle de séparation que nous appliquons : **deux modèles distincts
+quand la sémantique métier diverge**, même si la structure technique
+se ressemble. Le coût de duplication structurelle est faible (un
+clone de quelques champs), le gain de clarté est élevé.
+</Callout>
+
+👉 Où nous en sommes : nous avons l'Origin pour le regroupement
+culturel et l'Event pour les événements libres. Reste à découpler
+Stage de sa contrainte historique.
+
+### 4. Le découplage de Stage
+
+Pour permettre au stage de calligraphie chinoise d'exister, nous
+devons lever la contrainte NOT NULL sur `Stage.disciplineId`. Mais
+ce n'est pas suffisant — un stage sans aucun rattachement, ce serait
+un container vide sans contexte. Nous devons donc accepter le
+détachement de la discipline du club, mais imposer **au moins un
+autre signal de contexte**.
+
+D'où la règle « **au moins un des trois** » : `disciplineId`,
+`externalDisciplineLabel`, `originId`. Au moins un doit être
+renseigné. Si la discipline n'est pas dans le club mais nous savons
+la nommer (« Calligraphie chinoise »), nous remplissons
+`externalDisciplineLabel`. Si nous ne savons pas même la nommer
+précisément mais nous savons la culture (« stage culturel japonais »),
+nous remplissons `originId`. Et nous pouvons bien sûr combiner les
+trois quand ça a du sens.
+
+<CodeSnippet title="Trois façons de rattacher un Stage en v2">
+```ts
+// Stage Karaté traditionnel : rattaché à la discipline du club
+{ disciplineId: 5, externalDisciplineLabel: null, originId: null }
+
+// Stage de calligraphie chinoise par un calligraphe invité
+{ disciplineId: null, externalDisciplineLabel: "Calligraphie chinoise", originId: 3 }
+
+// Stage culturel large sur la culture okinawaïenne
+{ disciplineId: null, externalDisciplineLabel: null, originId: 7 /* Okinawa */ }
+```
+</CodeSnippet>
+
+La validation de cette règle se fait à deux endroits. Au create, c'est
+un `.refine()` Zod sur le payload — toutes les valeurs sont
+connues, Zod peut décider. À l'update, c'est plus subtil : Zod ne
+connaît pas l'état actuel en DB, donc il ne peut pas valider que la
+combinaison après merge satisfait toujours la règle. La validation
+remonte alors côté router, qui lit l'état actuel, calcule la
+combinaison finale, et refuse si elle est vide.
+
+Le même découplage s'applique à `Event`, exactement avec les mêmes
+trois champs et la même règle. Cohérence du modèle.
+
+<Callout type="concept">
+Le découplage « au moins un des trois » est notre **règle de
+cohérence métier** pour les entités événementielles qui ne sont plus
+obligatoirement rattachées à une discipline du club. Validée
+strictement, à deux niveaux selon que l'on est en create (Zod) ou en
+update (router après merge).
+</Callout>
+
+👉 Où nous en sommes : nous avons décrit les trois briques majeures
+de la v2. Faisons le bilan.
+
+**Trois idées à retenir de ce troisième mouvement** :
+
+1. **Origin remplace un String libre par une entité** — élimine les
+   doublons, ajoute des métadonnées riches, permet les regroupements
+   transverses.
+2. **Event est distinct de Stage** parce que leurs sémantiques métier
+   divergent, même si leurs structures se ressemblent. Préserver la
+   clarté plutôt qu'unifier à tout prix.
+3. **Le découplage de Stage et Event** ouvre la porte aux intervenants
+   externes et aux événements culturels larges, sans renoncer à la
+   cohérence (règle « au moins un des trois »).
+
+## Pour finir — Le modèle de domaine, vu d'ensemble
+
+Nous avons fait un long voyage. Nous sommes partis de la distinction
+entre une discipline (le concept) et un cours (le créneau), nous avons
+posé les conventions transverses qui structurent toutes les entités
+(HHMM, PageContentV1, statut MediaAsset, double instructeur), et nous
+avons raconté la genèse de la v2 et ce qu'elle apporte.
+
+Ce que nous avons maintenant est un modèle de domaine **cohérent et
+flexible**. Cohérent parce que les conventions sont partagées et
+explicites — un développeur qui arrive sur le projet peut comprendre
+le format des heures en un coup d'œil sur n'importe quel
+`beginTime`, et un PageBuilder qu'il connaît sur Course fonctionne
+tel quel sur Discipline ou Event. Flexible parce que le découplage v2
+nous permet de modéliser ce qui ne rentrait pas dans les cases
+initiales — la calligraphie chinoise comme stage externe, la
+conférence sur le bouddhisme zen comme événement culturel, le
+regroupement transverse par origine japonaise ou chinoise.
+
+Ce socle nous donne maintenant tout ce qu'il faut pour construire les
+**pages admin** des entités introduites en v2. Une page admin
+`Discipline` qui exploite le nouveau PageBuilder sur sa description.
+Une page admin `Origin` pour créer et gérer les origines culturelles.
+Une page admin `Stage` qui propose le choix entre rattachement club,
+externe ou par origine. Une page admin `Event` qui couvre le nouveau
+domaine événementiel. Et la fusion `create/edit` du CourseForm dont
+nous parlions avant le pivot domaine.
+
+Ces pages, et la chaîne complète qui va du PageBuilder à la page
+publique en passant par le router et la sync transactionnelle des
+références médias, feront l'objet des prochains tutoriels. Le socle
+est posé.
+
+Bonne suite 🥋

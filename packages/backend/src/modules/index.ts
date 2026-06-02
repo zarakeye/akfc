@@ -12,8 +12,15 @@ import { courseRouter } from "@backend/modules/courses/router";
 import { disciplineRouter } from "@backend/modules/disciplines/router";
 import { stageRouter } from "@backend/modules/stages/router";
 import { stageSessionRouter } from "@backend/modules/stageSessions/router";
+import { eventRouter } from "@backend/modules/events/router";
+import { eventSessionRouter } from "@backend/modules/eventSessions/router";
 import { postRouter } from "@backend/modules/posts/router";
 import { storageRouter } from "@backend/modules/storage/router";
+import { mediaRouter } from "@backend/modules/media/router";
+import { originRouter } from "@backend/modules/origins/router";
+import { commentRouter } from "@backend/modules/comments/router";
+import { reactionRouter } from "@backend/modules/reactions/router";
+import { pollRouter } from "@backend/modules/polls/router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -26,10 +33,17 @@ export const appRouter = router({
   category: categoryRouter,
   course: courseRouter,
   discipline: disciplineRouter,
+  origin: originRouter,
   stage: stageRouter,
   stageSession: stageSessionRouter,
+  event: eventRouter,
+  eventSession: eventSessionRouter,
   post: postRouter,
   storage: storageRouter,
+  media: mediaRouter,
+  comment: commentRouter,
+  reaction: reactionRouter,
+  poll: pollRouter,
 });
 
 export type AppRouter = typeof appRouter;

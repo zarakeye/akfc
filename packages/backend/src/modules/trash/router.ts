@@ -16,6 +16,7 @@ import { readTrashFolder } from "@backend/modules/trash/services/readTrashFolder
 import { trashToBin } from "@backend/modules/trash/services/trashToBin.service";
 import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
 import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
+import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.service";
 
 /**
  * trash.router.ts
@@ -66,6 +67,14 @@ const deleteForeverInputSchema = z.object({
   ids: z.array(z.string().min(1)).min(1),
 });
 
+// `purge` accepte des **paths Cloudinary** (pas des TrashEntry ids) sous
+// `${appRoot}/bin/.trash/...`. Voir purge.service.ts pour la motivation
+// (gestion des vestiges absents en DB).
+const purgeInputSchema = z.object({
+  appRoot: z.string().min(1),
+  paths: z.array(z.string().min(1)).min(1),
+});
+
 export const trashRouter = router({
   listBin: adminProcedure
     .input(listBinInputSchema)
@@ -95,5 +104,11 @@ export const trashRouter = router({
     .input(deleteForeverInputSchema)
     .mutation(async ({ ctx, input }): Promise<DeleteForeverOutput> => {
       return deleteForever({ prisma: ctx.prisma, input });
+    }),
+
+  purge: adminProcedure
+    .input(purgeInputSchema)
+    .mutation(async ({ ctx, input }): Promise<PurgeOutput> => {
+      return purge({ prisma: ctx.prisma, input });
     }),
 });

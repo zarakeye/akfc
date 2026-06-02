@@ -1,13 +1,83 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder } from 'lucide-react';
+import { Folder, Music } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
 
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
+import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import ContextMenu, {
+  type ContextMenuItem,
+} from '@features/finder-core/components/ContextMenu';
+import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
+
+/* -------------------------------------------------------------------------- */
+/*                              FORMAT HELPERS                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Extensions reconnues comme "audio" pour affiner l'affichage GridItem.
+ *
+ * Le contrat `FinderNodeMeta.kind` ne distingue pas audio de document
+ * (les deux sont 'document'). Pour afficher une icône note de musique
+ * sur les fichiers audio, on fait la détection ici via l'extension du
+ * nom de fichier — c'est l'information dont on dispose toujours en UI.
+ *
+ * Doit rester aligné avec `AUDIO_FORMATS` dans PreviewPanel.tsx et la
+ * liste ACCEPTED_MIME_TYPES côté DragNDropForm.
+ */
+const AUDIO_EXTENSIONS = new Set([
+  'mp3', 'wav', 'ogg', 'oga', 'm4a', 'opus', 'flac',
+]);
+
+/**
+ * Extensions vidéo pour lesquelles on tente de générer une thumbnail
+ * Cloudinary. Les autres formats vidéos (rares) fallback sur l'emoji.
+ */
+const VIDEO_EXTENSIONS_FOR_THUMB = new Set([
+  'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'ogv',
+]);
+
+function getFileExtension(name: string): string | null {
+  const idx = name.lastIndexOf('.');
+  if (idx === -1 || idx === name.length - 1) return null;
+  return name.slice(idx + 1).toLowerCase();
+}
+
+function isAudioFile(extension: string | null): boolean {
+  return extension !== null && AUDIO_EXTENSIONS.has(extension);
+}
+
+/**
+ * Transforme une URL Cloudinary de vidéo en URL de thumbnail JPG.
+ *
+ * Pattern Cloudinary :
+ *   - URL vidéo :     https://res.cloudinary.com/<cloud>/video/upload/v123/path/foo.mp4
+ *   - URL thumbnail : https://res.cloudinary.com/<cloud>/video/upload/so_auto/v123/path/foo.jpg
+ *
+ * Le transformation `so_auto` (start_offset auto) demande à Cloudinary de
+ * sélectionner le frame le plus représentatif de la vidéo (algorithme
+ * "auto" qui évite les frames noirs en début/fin). Cloudinary calcule
+ * cette thumbnail à la volée et la cache sur son CDN.
+ *
+ * Retourne `null` si l'URL n'est pas une URL Cloudinary vidéo
+ * reconnaissable — dans ce cas, le caller fallback sur l'emoji vidéo.
+ */
+function getCloudinaryVideoThumbnail(url: string): string | null {
+  if (!url.includes('/video/upload/')) return null;
+  // Ne pas double-injecter so_auto si déjà présent (cas du re-render).
+  const withSoAuto = url.includes('/upload/so_auto/')
+    ? url
+    : url.replace('/upload/', '/upload/so_auto/');
+  // Replace extension par .jpg pour demander le format image à Cloudinary.
+  return withSoAuto.replace(
+    /\.(mp4|webm|mov|avi|mkv|m4v|ogv|flv|wmv)$/i,
+    '.jpg',
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  GRID ITEM                                 */
@@ -20,25 +90,26 @@ import type { TriState } from '@features/finder-core/utils/triState';
  * 🎨 Choix visuels :
  *
  * - **Card carrée** (`aspect-square`) plutôt que liste linéaire : rend la
- *   grille parcourable d'un coup d'œil, fidèle à l'esprit du legacy
- *   de l'ancienne implémentation Cloudinary-specific (depuis supprimée).
+ *   grille parcourable d'un coup d'œil.
  *
- * - **Image réelle pour les fichiers image** (object-cover sur la card
- *   entière) — c'est ce qu'attend l'utilisateur final dans un finder de
- *   médias. Pour les fichiers non-image, on affiche une icône typée
- *   (vidéo / audio / document) centrée.
+ * - **Vignette réelle** pour les images (object-cover sur la card entière)
+ *   et pour les vidéos Cloudinary (thumbnail générée via transformation).
+ *   Au hover sur une vidéo, on monte un <video> par-dessus la thumbnail
+ *   qui lit la vidéo muted+loop pour preview.
  *
- * - **Nom en overlay-bas semi-transparent** quand il y a une vignette
- *   image (sinon il masquerait le contenu visuel) ; nom en bloc classique
- *   pour folders et fichiers non-image.
+ * - **Icône Music** pour les fichiers audio (détection via extension),
+ *   emoji 📄 pour les autres documents non-affichables.
  *
- * - **Sélection** matérialisée par un `ring` bleu plutôt qu'un fond
- *   coloré — plus lisible quand le contenu de la card est lui-même
- *   coloré (cas d'une vignette).
+ * - **Badge type en haut à droite** : affiche l'extension du fichier
+ *   (MP4, PDF, MD…). Style adapté selon que la card a une vignette ou non.
  *
- * - **Checkbox visible uniquement en mode multi-select** (cohérent avec
- *   la décision 4.2). Posée en overlay en haut-gauche avec fond
- *   semi-transparent pour rester lisible sur n'importe quelle vignette.
+ * - **Nom en overlay-bas semi-transparent** quand vignette image/vidéo,
+ *   en bloc classique sinon.
+ *
+ * - **Sélection** : `ring` bleu (plus lisible sur vignette colorée).
+ *
+ * - **Checkbox visible uniquement en mode multi-select**, en overlay
+ *   haut-gauche (fond semi-transparent pour rester lisible).
  *
  * 🪝 Un sous-composant par item est nécessaire pour que `useLongPress`
  * soit appelé une fois par instance (rules of hooks).
@@ -64,35 +135,127 @@ export default function GridItem({
   onLongPress,
   onDragStart,
 }: GridItemProps): JSX.Element {
-  const longPress = useLongPress(onLongPress);
+  // Détection : ce node est-il un dossier de statut (pending/published/bin) ?
+  // Si oui, il est exclu du DnD, du longpress, de la checkbox et du menu
+  // contextuel — cf. doc dans utils/statusFolders.ts.
+  const isStatus = isStatusFolder(node.path);
 
-  // État local pour détecter si la vignette image a échoué à charger.
-  // Si oui, on fallback sur l'icône typée — meilleur que de laisser le
-  // placeholder broken-image natif du navigateur.
+  // Wrapper du callback longpress pour no-op silencieusement sur les
+  // status folders. Le hook est instancié inconditionnellement (rules of hooks).
+  const longPress = useLongPress(() => {
+    if (isStatus) return;
+    onLongPress();
+  });
+
+  // État local pour détecter si la vignette image/thumbnail a échoué.
+  // Fallback sur l'icône typée plutôt que le placeholder broken-image natif.
   const [imgFailed, setImgFailed] = useState(false);
+
+  // État de hover pour activer le preview vidéo au survol.
+  // Le <video> n'est monté qu'au hover pour économiser bande passante :
+  // chaque <video> mounté télécharge ses premiers KB pour préparer la
+  // lecture. À 50 items dans la grille, ça représenterait plusieurs MB
+  // de transfert inutile au mount.
+  const [isHovering, setIsHovering] = useState(false);
+
+  // ─── Context menu (right-click) ─────────────────────────────────────────
+  //
+  // Position du menu en coords viewport, ou null si menu fermé. La
+  // sémantique de l'action varie selon le contexte :
+  //   - Hors bin : "Mettre à la corbeille" (trashToBin)
+  //   - Dans bin : "Supprimer définitivement" (deleteForever)
+  //   - Si multi-select actif et le node est sélectionné : action sur
+  //     TOUTE la sélection (cohérent avec le DnD multi)
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
 
   const isFolder = node.type === 'folder';
   const kind = node.meta?.kind;
   const url = node.meta?.url;
+
+  // L'extension affichée comme badge et utilisée pour les heuristiques
+  // (détection audio…) peut venir de deux endroits :
+  //   - `node.meta.format` : présent quand le backend a stocké le format
+  //     séparément (cas Cloudinary, qui n'inclut pas l'extension dans le
+  //     publicId/name).
+  //   - L'extension du `node.name` : présent pour R2 où le nom contient
+  //     le fichier complet (ex: "foo.md", "bar.mp3").
+  //
+  // Ordre de préférence : `format` d'abord (plus fiable), `name` ensuite.
+  // Sans cela, les fichiers Cloudinary récents (sans ext dans name)
+  // n'auraient ni badge ni détection audio.
+  const extension = !isFolder
+    ? (node.meta?.format?.toLowerCase() ?? getFileExtension(node.name))
+    : null;
+  const isAudio = isAudioFile(extension);
+
+  // Vignette image : kind explicite + url + pas d'erreur de chargement
   const hasImageThumb = !isFolder && kind === 'image' && url && !imgFailed;
 
+  // Vignette vidéo : kind explicite + url Cloudinary transformable
+  const videoThumbnailUrl =
+    !isFolder && kind === 'video' && url ? getCloudinaryVideoThumbnail(url) : null;
+  const hasVideoThumb = Boolean(videoThumbnailUrl) && !imgFailed;
+
+  // "Visual thumb" générique pour ajuster le style du nom et du badge.
+  const hasVisualThumb = hasImageThumb || hasVideoThumb;
+
+  // Construit les items du menu contextuel pour ce node.
+  // L'action `Supprimer` agit soit sur le node seul, soit sur toute la
+  // sélection si on est en multi-select avec ce node dedans.
+  function buildMenuItems(): ContextMenuItem[] {
+    const targetNodes = effectiveNodesFor(node);
+    return [
+      {
+        label: deleteLabel(targetNodes.length, targetNodes),
+        destructive: true,
+        onClick: () => {
+          void deleteNodes(targetNodes);
+        },
+      },
+    ];
+  }
+
   return (
-    <div
-      draggable
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick(e);
-      }}
-      onDoubleClick={onDoubleClick}
-      onMouseDown={longPress.onMouseDown}
-      onMouseUp={longPress.onMouseUp}
-      onMouseLeave={longPress.onMouseLeave}
-      onTouchStart={longPress.onTouchStart}
-      onTouchEnd={longPress.onTouchEnd}
-      onDragStart={(e) => {
-        longPress.onDragStart();
-        onDragStart(e);
-      }}
+    <>
+      <div
+        draggable={!isStatus}
+        onClick={(e) => {
+          // Avale le click parasite qui suit immédiatement un longpress
+          // (cf. doc dans useLongPress.ts). Sans ce skip, le toggle dans
+          // le handler `onClick` du parent défait la sélection que le
+          // longpress vient juste d'ajouter.
+          if (longPress.consumeJustFired()) return;
+          e.stopPropagation();
+          onClick(e);
+        }}
+        onDoubleClick={onDoubleClick}
+        onContextMenu={
+          isStatus
+            ? undefined
+            : (e) => {
+                // Bloque le menu contextuel natif ; affiche le nôtre.
+                // Désactivé pour les status folders (pending/published/bin) :
+                // ils n'ont pas d'action "Supprimer" / "Mettre à la corbeille"
+                // donc le menu serait vide.
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuPos({ x: e.clientX, y: e.clientY });
+              }
+        }
+        onMouseDown={longPress.onMouseDown}
+        onMouseUp={longPress.onMouseUp}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => {
+          setIsHovering(false);
+          longPress.onMouseLeave();
+        }}
+        onTouchStart={longPress.onTouchStart}
+        onTouchEnd={longPress.onTouchEnd}
+        onDragStart={(e) => {
+          longPress.onDragStart();
+          onDragStart(e);
+        }}
       className={clsx(
         'relative aspect-square rounded-lg border bg-white overflow-hidden cursor-pointer select-none',
         'transition-shadow hover:shadow-md',
@@ -108,17 +271,44 @@ export default function GridItem({
           className="w-full h-full object-cover"
           onError={() => setImgFailed(true)}
         />
+      ) : hasVideoThumb ? (
+        <>
+          {/* Thumbnail toujours présente — fallback visuel pendant le load
+              de la vidéo au hover, et état affiché au repos. */}
+          <img
+            src={videoThumbnailUrl ?? undefined}
+            alt={node.name}
+            className="w-full h-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
+          {/* Preview vidéo monté UNIQUEMENT au hover.
+              - muted + autoPlay : essentiel pour que le navigateur autorise l'autoplay
+              - loop : la preview tourne en boucle tant qu'on hover
+              - playsInline : pas de plein écran forcé sur iOS Safari
+              - démonté au unhover : libère mémoire + arrête le DL */}
+          {isHovering && url && (
+            <video
+              src={url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              aria-hidden
+            />
+          )}
+        </>
       ) : (
-        <CardIcon node={node} />
+        <CardIcon node={node} isAudio={isAudio} />
       )}
 
       {/* ------------------------------ NOM ------------------------------- */}
-      {/* En overlay-bas si vignette image (pour ne pas masquer le visuel),
+      {/* En overlay-bas si vignette visuelle (pour ne pas masquer le visuel),
           en bloc classique sinon. */}
       <div
         className={clsx(
           'absolute bottom-0 left-0 right-0 px-2 py-1.5 text-xs truncate',
-          hasImageThumb
+          hasVisualThumb
             ? 'bg-gradient-to-t from-black/70 to-black/0 text-white'
             : 'bg-white border-t border-gray-100 text-gray-700',
         )}
@@ -126,11 +316,32 @@ export default function GridItem({
         {node.name}
       </div>
 
+      {/* --------------------------- BADGE TYPE --------------------------- */}
+      {/* En haut à droite, affiche l'extension du fichier. Visible sur tous
+          les fichiers (jamais sur les dossiers). Style adapté pour rester
+          lisible aussi bien sur fond image/vidéo que sur fond icône.
+
+          Pour les fichiers audio, on affiche aussi le badge — l'utilisateur
+          voit ainsi (Music icon centrale + badge MP3/WAV en coin) ce qui est
+          plus parlant que l'icône seule. */}
+      {!isFolder && extension && (
+        <div
+          className={clsx(
+            'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wide',
+            hasVisualThumb
+              ? 'bg-white/85 backdrop-blur-sm text-gray-700 shadow-sm'
+              : 'bg-gray-100 text-gray-600 border border-gray-200',
+          )}
+        >
+          {extension}
+        </div>
+      )}
+
       {/* ---------------------------- CHECKBOX ---------------------------- */}
       {/* Visible uniquement en mode multi-select. Posée en overlay
           en haut-gauche, fond semi-transparent pour rester lisible
           sur n'importe quelle vignette. */}
-      {multiSelectActive && (
+      {multiSelectActive && !isStatus && (
         <div className="absolute top-1.5 left-1.5 bg-white/80 backdrop-blur-sm rounded p-0.5">
           <input
             type="checkbox"
@@ -143,7 +354,20 @@ export default function GridItem({
           />
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Menu contextuel — rendu hors du `<div>` principal pour éviter
+          que ses clics/mousedown ne bubblent vers les handlers du div
+          (sélection, hover, etc.). Positionné en `fixed` viewport. */}
+      {menuPos && (
+        <ContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          items={buildMenuItems()}
+          onClose={() => setMenuPos(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -152,18 +376,36 @@ export default function GridItem({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Affiche l'icône centrale d'une card sans vignette image.
+ * Affiche l'icône centrale d'une card sans vignette image/vidéo.
  *
- * Pour les dossiers : icône Lucide `Folder` (cohérent avec la TreeView
- * qui utilise déjà Lucide). Pour les fichiers : emoji typé selon
- * `meta.kind` (vidéo / audio implicite / document). Les emojis sont
- * lisibles, accessibles, et n'ajoutent pas de dépendance.
+ * - **Dossier** : icône Lucide `Folder`.
+ * - **Audio** : icône Lucide `Music` (détectée par extension côté caller).
+ * - **Vidéo non-Cloudinary** (sans thumbnail générable) : emoji 🎬
+ * - **Autres** : emoji 📄
+ *
+ * Mix icônes Lucide / emojis : on garde les emojis pour les fallback
+ * génériques (déjà en place dans la version précédente), et on adopte
+ * Lucide pour les cas où on veut un look design plus précis (audio).
  */
-function CardIcon({ node }: { node: FinderNode }): JSX.Element {
+function CardIcon({
+  node,
+  isAudio,
+}: {
+  node: FinderNode;
+  isAudio: boolean;
+}): JSX.Element {
   if (node.type === 'folder') {
     return (
       <div className="w-full h-full flex items-center justify-center pb-6 text-blue-400">
         <Folder className="w-16 h-16" strokeWidth={1.5} />
+      </div>
+    );
+  }
+
+  if (isAudio) {
+    return (
+      <div className="w-full h-full flex items-center justify-center pb-6 text-purple-400">
+        <Music className="w-14 h-14" strokeWidth={1.5} />
       </div>
     );
   }

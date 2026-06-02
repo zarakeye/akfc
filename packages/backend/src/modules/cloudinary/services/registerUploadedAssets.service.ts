@@ -142,6 +142,7 @@ export async function registerUploadedAssets(params: {
               : null,
           eventDate: eventDate ?? null,
           uploaderUserId: userId,
+          fullPath: `${cloudinaryAsset.publicId}${cloudinaryAsset.format ? '.' + cloudinaryAsset.format : ''}`,
         },
       });
 

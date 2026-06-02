@@ -5,6 +5,7 @@ import { router, protectedProcedure } from "@backend/trpc";
 import {
   storageProviderSchema,
   storageMoveIntentSchema,
+  createR2UploadAuthorizationSchema,
 } from "@contracts/storage";
 
 import {
@@ -13,69 +14,91 @@ import {
 } from "@contracts/cloudinary/upload.schema";
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
-import { resolveMoveIntent } from "@backend/modules/storage/resolveMoveIntent.service";
+import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
+import {
+  planMoveOperations,
+  executeMoveOperations,
+} from "@backend/modules/storage/resolveMoveIntent.service";
+import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service";
 
 /**
- * storageRouter
+ * storageRouter — Phase 2 update
  *
- * Router tRPC qui expose le contrat agnostique `StorageAdapter` au client.
+ * Le seul changement par rapport à la version précédente est le schema
+ * d'input de `registerR2Upload`, qui doit maintenant transporter la
+ * destination métier (categoryId, disciplineId) et l'originalFileName
+ * pour créer la row MediaAsset côté adapter R2.
  *
- * ─── Le pattern "registry + délégation" ────────────────────────────────────
+ * Le schema legacy `registerR2UploadedAssetSchema` n'avait que
+ * `{ path, expectedBytes, expectedMimeType }` — insuffisant pour le
+ * tracking DB. On le redéfinit en inline dans ce router pour ne pas
+ * forcer une modif côté contracts (le contract est à jour côté Cloudinary
+ * via `registerUploadedAssetsSchema.destination`, on reproduit la même
+ * forme ici).
  *
- * Chaque procédure suit le même squelette :
- *
- *   1. Valider l'input (provider + payload).
- *   2. Résoudre l'adapter via `getAdapter(provider, deps)`.
- *   3. Déléguer à la méthode du contrat agnostique.
- *
- * Aucun `if (provider === 'cloudinary')` ici. Ajouter R2 demain consiste
- * à étendre `storageProviderSchema` côté contrat et à enregistrer une
- * factory dans `providerRegistry` — le router ne change pas.
- *
- * ─── Inputs upload spécifiques au provider ─────────────────────────────────
- *
- * Pour `createUploadAuthorization` et `registerUploadedAsset`, les schemas
- * d'input sont actuellement ceux de Cloudinary (le seul provider câblé).
- * Quand R2 sera ajouté, il faudra transformer ces inputs en
- * discriminated unions par provider :
- *
- *   z.discriminatedUnion('provider', [
- *     z.object({ provider: z.literal('cloudinary'), ...cloudinaryInput }),
- *     z.object({ provider: z.literal('r2'), ...r2Input }),
- *   ])
- *
- * Pour aujourd'hui, on garde la forme la plus simple — un seul provider,
- * un seul schema. La dette est documentée et limitée à ce fichier.
- *
- * ─── Compatibilité avec le router historique `cloudinary.*` ────────────────
- *
- * Le router cloudinary historique conserve ses procédures `createUploadSignatures`,
- * `registerUploadedAssets`, `move`, etc. Elles sont **dépréciées** au profit
- * de leurs équivalents `storage.*` (statut B2 du chantier 1). La suppression
- * effective viendra dans un sous-chantier de migration des callsites front.
+ * ⚠️ NOTE : si un autre endroit du code utilise `registerR2UploadedAssetSchema`
+ * importé depuis `@contracts/storage`, il faudra aussi l'aligner. À ce jour,
+ * seul ce router le consomme.
  */
+
+/* -------------------------------------------------------------------------- */
+/*  Schema R2 Phase 2 — inline                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Destination metier — discriminée pour gérer les deux cas :
+ *   - existing-discipline : on a categoryId + disciplineId direct
+ *   - new-discipline : on a categoryId + proposedDisciplineName (admin validera plus tard)
+ *
+ * Forme identique à ce que `DragNDropForm` construit déjà côté frontend
+ * pour Cloudinary — on réutilise.
+ */
+const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('existing-discipline'),
+    categoryId: z.number().int().positive(),
+    disciplineId: z.number().int().positive(),
+  }),
+  z.object({
+    kind: z.literal('new-discipline'),
+    categoryId: z.number().int().positive(),
+    proposedDisciplineName: z.string().min(1).max(120),
+  }),
+]);
+
+const registerR2UploadInputSchema = z.object({
+  path: z.string().min(1),
+  expectedBytes: z.number().int().positive(),
+  expectedMimeType: z.string().min(1),
+  // Phase 2 — nouveaux champs requis pour créer la row MediaAsset
+  destination: r2UploadDestinationSchema,
+  originalFileName: z.string().min(1).max(255),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Router                                                                    */
+/* -------------------------------------------------------------------------- */
 
 export const storageRouter = router({
   /* ====================================================================== */
-  /*  Lecture (couche 1 du contrat StorageAdapter)                          */
+  /*  Lecture (inchangé)                                                    */
   /* ====================================================================== */
 
   list: protectedProcedure
     .input(
       z.object({
-        provider: storageProviderSchema,
+        provider: storageProviderSchema.optional(),
         path: z.string().min(1),
         cursor: z.string().optional(),
         limit: z.number().int().positive().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
-
-      return adapter.list({
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const reader = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
+      return reader.list({
         path: input.path,
         cursor: input.cursor,
         limit: input.limit,
@@ -85,83 +108,59 @@ export const storageRouter = router({
   getTree: protectedProcedure
     .input(
       z.object({
-        provider: storageProviderSchema,
+        provider: storageProviderSchema.optional(),
         path: z.string().min(1),
         depth: z.number().int().positive().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
-
-      return adapter.getTree({
-        path: input.path,
-        depth: input.depth,
-      });
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const reader = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
+      return reader.getTree({ path: input.path, depth: input.depth });
     }),
 
   getNode: protectedProcedure
     .input(
       z.object({
-        provider: storageProviderSchema,
+        provider: storageProviderSchema.optional(),
         path: z.string().min(1),
       })
     )
     .query(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
-
-      if (!adapter.getNode) {
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const reader = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
+      if (!reader.getNode) {
         throw new Error(
-          `Provider "${input.provider}" does not support getNode().`
+          `Provider "${input.provider ?? "virtual"}" does not support getNode().`
         );
       }
-
-      return adapter.getNode(input.path);
+      return reader.getNode(input.path);
     }),
 
   getMetadata: protectedProcedure
     .input(
       z.object({
-        provider: storageProviderSchema,
+        provider: storageProviderSchema.optional(),
         path: z.string().min(1),
       })
     )
     .query(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
-
-      if (!adapter.getMetadata) {
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const reader = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
+      if (!reader.getMetadata) {
         throw new Error(
-          `Provider "${input.provider}" does not support getMetadata().`
+          `Provider "${input.provider ?? "virtual"}" does not support getMetadata().`
         );
       }
-
-      return adapter.getMetadata(input.path);
+      return reader.getMetadata(input.path);
     }),
 
-  /* ====================================================================== */
-  /*  Move (couches 1 + 2 + 3)                                              */
-  /* ====================================================================== */
-
-  /**
-   * Déplace un asset (file ou folder) ou une sélection.
-   *
-   * Le client envoie une `StorageMoveIntent` riche (avec `selection`,
-   * `status-folder`, etc.). Le router :
-   *   1) résout l'adapter du provider
-   *   2) appelle `resolveMoveIntent` qui expanse l'intent en N opérations
-   *      atomiques et les exécute via `adapter.move()`
-   *
-   * Cette procédure remplace l'ancienne `cloudinary.move`. Le frontend
-   * doit migrer ses callsites vers `storage.move` avec un `provider` explicite.
-   */
   move: protectedProcedure
     .input(
       z.object({
@@ -175,29 +174,34 @@ export const storageRouter = router({
         appRoot: ctx.appRoot,
       });
 
-      const operations = await resolveMoveIntent({
+      // Phase 1 : planifier les operations sans les exécuter.
+      const operations = await planMoveOperations({
         adapter,
         appRoot: ctx.appRoot,
         intent: input.intent,
       });
 
+      // Phase 2 : garde de cohérence à la sortie de `published`.
+      // Refuse si une op ferait sortir de `published` un asset encore
+      // référencé par une page (sous-chantier 7). L'erreur contient un
+      // diagnostic listant les pages référençantes — propagée tel quel
+      // au client par tRPC.
+      await assertOperationsDontUnpublishReferencedAssets(
+        ctx.prisma,
+        operations,
+        ctx.appRoot,
+      );
+
+      // Phase 3 : exécuter les operations planifiées via l'adapter.
+      await executeMoveOperations(adapter, operations);
+
       return { operations };
     }),
 
   /* ====================================================================== */
-  /*  Upload (capability — input/output provider-spécifiques)               */
+  /*  Upload Cloudinary (inchangé)                                          */
   /* ====================================================================== */
 
-  /**
-   * Délivre une autorisation d'upload bornée.
-   *
-   * Pour Cloudinary : un lot de signatures SHA1 prêtes à être présentées
-   * à l'API d'upload Cloudinary. Pour R2 (à venir) : presigned URLs.
-   *
-   * L'output est provider-spécifique — le client doit savoir quel
-   * provider il manipule pour interpréter la réponse (ce qui est attendu :
-   * la mécanique d'upload qui suit dépend du provider).
-   */
   createUploadAuthorization: protectedProcedure
     .input(
       z.object({
@@ -206,33 +210,25 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
 
-      // Capability d'upload obligatoire pour cette procédure — on échoue
-      // proprement si un provider non upload-capable est demandé.
-      if (typeof adapter.createUploadAuthorization !== "function") {
-        throw new Error(
-          `Provider "${input.provider}" does not support uploads ` +
-            `(no createUploadAuthorization method).`
-        );
+      switch (input.provider) {
+        case "cloudinary": {
+          const adapter = getAdapter("cloudinary", deps);
+          return adapter.createUploadAuthorization({
+            destination: input.destination,
+            assets: input.assets,
+          });
+        }
+        case "r2": {
+          throw new Error(
+            "R2 uploads not supported via this procedure. " +
+              "Use storage.createR2Upload / storage.registerR2Upload instead."
+          );
+        }
       }
-
-      return adapter.createUploadAuthorization({
-        destination: input.destination,
-        assets: input.assets,
-      });
     }),
 
-  /**
-   * Persiste les assets uploadés en base, après revérification serveur.
-   *
-   * `userId` est lu depuis `ctx.user.id` — jamais depuis l'input client.
-   * C'est l'auth tRPC (`protectedProcedure`) qui garantit qu'un userId
-   * authentifié est présent.
-   */
   registerUploadedAsset: protectedProcedure
     .input(
       z.object({
@@ -241,23 +237,63 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+
+      switch (input.provider) {
+        case "cloudinary": {
+          const adapter = getAdapter("cloudinary", deps);
+          return adapter.registerUploadedAsset({
+            destination: input.destination,
+            assets: input.assets,
+            eventDate: input.eventDate,
+            userId: ctx.user.id,
+          });
+        }
+        case "r2": {
+          throw new Error(
+            "R2 register-uploaded-asset not supported via this procedure. " +
+              "Use storage.createR2Upload / storage.registerR2Upload instead."
+          );
+        }
+      }
+    }),
+
+  /* ====================================================================== */
+  /*  Upload R2 — Phase 2 (enrichi avec destination + originalFileName)     */
+  /* ====================================================================== */
+
+  createR2Upload: protectedProcedure
+    .input(createR2UploadAuthorizationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const adapter = getAdapter("r2", {
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
       });
+      return adapter.createUploadAuthorization({
+        path: input.path,
+        mimeType: input.mimeType,
+        maxBytes: input.maxBytes,
+      });
+    }),
 
-      if (typeof adapter.registerUploadedAsset !== "function") {
-        throw new Error(
-          `Provider "${input.provider}" does not support uploads ` +
-            `(no registerUploadedAsset method).`
-        );
-      }
-
+  /**
+   * Phase 2 — l'input transporte maintenant `destination` + `originalFileName`
+   * pour permettre à l'adapter R2 de créer la row MediaAsset après HeadObject.
+   */
+  registerR2Upload: protectedProcedure
+    .input(registerR2UploadInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const adapter = getAdapter("r2", {
+        prisma: ctx.prisma,
+        appRoot: ctx.appRoot,
+      });
       return adapter.registerUploadedAsset({
-        destination: input.destination,
-        assets: input.assets,
-        eventDate: input.eventDate,
+        path: input.path,
         userId: ctx.user.id,
+        expectedBytes: input.expectedBytes,
+        expectedMimeType: input.expectedMimeType,
+        destination: input.destination,
+        originalFileName: input.originalFileName,
       });
     }),
 });

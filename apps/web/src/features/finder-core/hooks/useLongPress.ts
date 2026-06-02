@@ -40,6 +40,32 @@ export function useLongPress(
   onTouchStart: () => void;
   onTouchEnd: () => void;
   onDragStart: () => void;
+  /**
+   * Lit ET reset le flag "le longpress vient juste de tirer".
+   *
+   * 🎯 Pourquoi ce flag
+   *
+   * Sans lui, la séquence d'un longpress dans la TreeView est :
+   *   1. mousedown → timer démarré
+   *   2. 500ms écoulés → callback firé → mode multi-select activé + node
+   *      ajouté à la sélection
+   *   3. mouseup → le DOM émet un `click` sur le div parent
+   *   4. Le `onClick` du div fait `toggleSelect(node.id)` (en mode multi) →
+   *      le node qu'on vient juste de sélectionner est DÉSÉLECTIONNÉ
+   *
+   * Résultat : l'utilisateur fait un longpress, voit le mode multi-select
+   * s'activer, mais le node ciblé disparaît de la sélection instantanément.
+   *
+   * Fix : le handler `onClick` du div parent appelle `consumeJustFired()` en
+   * début. Si vrai, il return immédiatement — le click "fantôme" qui suit le
+   * longpress est avalé. Les clicks SUIVANTS (vrais clicks utilisateur)
+   * traversent normalement.
+   *
+   * Sémantique "consume" : on lit ET on reset à `false`. Comme ça, même
+   * si le click suivant n'arrive pas (cas pathologique), un click ultérieur
+   * ne sera pas silencieusement avalé.
+   */
+  consumeJustFired: () => boolean;
 } {
   // Référence au timer en cours (null si aucun timer actif).
   const timerRef = useRef<number | null>(null);
@@ -48,6 +74,11 @@ export function useLongPress(
   // cette indirection pour pouvoir annuler proprement depuis n'importe
   // quel chemin (cancel direct, déclenchement du callback, etc.).
   const cleanupWindowListenersRef = useRef<(() => void) | null>(null);
+
+  // Flag "le callback a tiré juste à l'instant". Consommé par le handler
+  // de click du composant parent pour avaler le click parasite qui suit
+  // le mouseup d'un longpress. Cf. doc dans le type de retour.
+  const didJustFireRef = useRef(false);
 
   /**
    * Annule le timer en cours et détache les listeners window.
@@ -76,6 +107,9 @@ export function useLongPress(
    */
   const start = () => {
     cancel();
+    // Reset le flag : un nouveau cycle commence, les anciens "justFired"
+    // qui n'auraient pas été consommés sont obsolètes.
+    didJustFireRef.current = false;
 
     timerRef.current = window.setTimeout(() => {
       // Le callback est sur le point d'être déclenché : on nettoie les
@@ -87,6 +121,10 @@ export function useLongPress(
         cleanupWindowListenersRef.current();
         cleanupWindowListenersRef.current = null;
       }
+
+      // Marqueur pour que le click parasite qui suit immédiatement le
+      // mouseup soit avalé par le composant parent via consumeJustFired().
+      didJustFireRef.current = true;
 
       onLongPress();
     }, delay);
@@ -114,5 +152,10 @@ export function useLongPress(
     onTouchStart: start,
     onTouchEnd: cancel,
     onDragStart: cancel,
+    consumeJustFired: () => {
+      const v = didJustFireRef.current;
+      didJustFireRef.current = false;
+      return v;
+    },
   };
 }

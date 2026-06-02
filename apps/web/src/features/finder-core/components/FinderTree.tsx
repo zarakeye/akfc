@@ -54,6 +54,18 @@ type Props = {
   currentPath: string;
   /** Callback quand un dossier est cliqué — déclenche la navigation. */
   onOpen: (path: string) => void;
+  /**
+   * Callback de démarrage de drag depuis un item de la TreeView.
+   * Optionnel : si non fourni, les items ne sont pas drag-source. Forwarded
+   * tel quel à `FinderTreeFolder` et `FinderTreeFile` qui s'occupent du
+   * câblage `draggable + onDragStart`. Identique au handler passé aux GridItem.
+   */
+  onItemDragStart?: (e: React.DragEvent, node: FinderNode) => void;
+  /**
+   * Callback long-press sur un item de la TreeView (parité GridView).
+   * Optionnel : si non fourni, le longpress n'active rien.
+   */
+  onItemLongPress?: (node: FinderNode) => void;
 };
 
 export default function FinderTree({
@@ -61,6 +73,8 @@ export default function FinderTree({
   rootPath,
   currentPath,
   onOpen,
+  onItemDragStart,
+  onItemLongPress,
 }: Props) {
   const [rootNode, setRootNode] = useState<FinderNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -219,9 +233,16 @@ export default function FinderTree({
               onOpen={onOpen}
               openPaths={openPaths}
               onToggleOpen={toggleOpen}
+              onDragStart={onItemDragStart}
+              onLongPress={onItemLongPress}
             />
           ) : (
-            <FinderTreeFile key={child.path} node={child} />
+            <FinderTreeFile
+              key={child.path}
+              node={child}
+              onDragStart={onItemDragStart}
+              onLongPress={onItemLongPress}
+            />
           ),
         )}
       </div>

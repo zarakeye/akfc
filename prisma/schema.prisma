@@ -1,8 +1,8 @@
 generator client {
-  provider      = "prisma-client-js"
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native"]
+  engineType      = "binary"
   previewFeatures = ["relationJoins"]
-  binaryTargets = ["native"]
-  engineType    = "binary"
 }
 
 datasource db {
@@ -46,14 +46,16 @@ model User {
   // --- Posts/comments/likes
   posts                 Post[]
   comments              Comment[]
-  likes                 Like[]
-
+  reactions Reaction[]        // ← AJOUT
+  pollVotes PollVote[]        // ← AJOUT
+  
   // --- Domaine métier (nouvelles relations)
   disciplinesAsInstructor   Discipline[]  @relation("DisciplineInstructor")
   coursesAsInstructor       Course[]      @relation("CourseInstructor")
   stagesAsPrimaryAnimator   Stage[]       @relation("StagePrimaryAnimator")
   stagesAsAnimator          Stage[]       @relation("StageAnimators")
   uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
+  eventsAsOrganizer         Event[]       @relation("EventOrganizer")  // ← AJOUT
 }
 
 model Permission {
@@ -128,11 +130,6 @@ model Verification {
 // AUDIT
 // ============================================================================
 
-/**
- * Audit Log (sécurité & support)
- * - Trace des actions sensibles faites par un admin (ex: changement de rôle)
- * - actorUserId/targetUserId nullable + onDelete:SetNull pour conserver l'historique
- */
 model AuditLog {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -158,21 +155,41 @@ enum AuditAction {
 }
 
 // ============================================================================
-// DOMAINE MÉTIER — Category → Discipline (modèle à 2 niveaux validé)
+// DOMAINE MÉTIER — Category → Discipline
 // ============================================================================
 
+/// Catégorisation haute des disciplines enseignées par le club.
+///
+/// `MARTIAL_ART` regroupe toutes les pratiques martiales (Karaté, Aikido, etc.).
+/// `CALLIGRAPHY` regroupe les pratiques calligraphiques (shodō, etc.).
+///
+/// Cet enum reste volontairement court — il distingue les grands champs
+/// pratiqués, pas les écoles ou styles (qui sont des `String?` libres
+/// sur Discipline). À étendre si de nouveaux champs apparaissent dans
+/// l'offre du club (méditation, tai-chi, etc.).
 enum DisciplineType {
   MARTIAL_ART
   CALLIGRAPHY
 }
 
+/// Public visé par un cours ou un stage.
+///
+/// Détermine notamment l'accessibilité au passage de grade : les
+/// adolescents n'y ont pas accès, les autres audiences oui (cette
+/// règle métier vit côté applicatif, pas en contrainte DB).
 enum Audience {
+  /// Enfants (typiquement moins de 12 ans).
   KIDS
+  /// Adolescents (12-17 ans environ). Pas de passage de grade pour
+  /// cette audience.
   TEENAGERS
+  /// Adultes (18 ans et plus).
   ADULTS
+  /// Cours/stage ouvert à toutes les tranches d'âge.
   ALL_AGES
 }
 
+/// Jour de la semaine d'un créneau récurrent (Course).
 enum Day {
   MONDAY
   TUESDAY
@@ -183,37 +200,177 @@ enum Day {
   SUNDAY
 }
 
-model Category {
-  id   Int    @id @default(autoincrement())
-  type String @unique // "Cours", "Stage", "Démo", ...
+// ============================================================================
+// ORIGINES CULTURELLES
+// ============================================================================
 
+/// Racine culturelle d'une discipline ou d'un événement (« Japon »,
+/// « Okinawa », « Chine », « Philippines »).
+///
+/// Remplace l'ancien champ `Discipline.origin: String?` libre, qui
+/// laissait coexister doublons orthographiques (« Japon » et « japon »
+/// et « JAPAN »...). En faisant une entité dédiée, on gagne :
+///
+/// - Pas de doublons (contrainte `@unique` sur `name` et `slug`)
+/// - Possibilité d'ajouter des métadonnées culturelles riches (région,
+///   période historique, drapeau emoji)
+/// - Regroupement transverse possible (toutes les disciplines / stages
+///   / events d'origine japonaise)
+/// - Tri manuel via `sortOrder` pour ne pas dépendre de l'alphabétique
+///
+/// Volontairement **pas de PageBuilder** sur ce modèle pour la v1 :
+/// `description` reste un `String?` simple. Si tu veux plus tard une
+/// page riche par origine, on migrera ce champ en `Json` (comme on l'a
+/// fait pour Discipline).
+model Origin {
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Nom d'affichage (unique). « Japon », « Okinawa », « Chine ».
+  name String @unique
+
+  /// Slug URL-safe (unique). « japon », « okinawa ». Sert pour des URLs
+  /// type `/origines/japon`.
+  slug String @unique
+
+  /// Description culturelle libre. Texte simple ; pas de PageBuilder
+  /// pour l'instant.
+  description String?
+
+  /// Pays moderne. Peut différer du `name` quand `name` désigne une
+  /// région (`name = "Okinawa"`, `country = "Japon"`).
+  country String?
+
+  /// Région ou sous-région culturelle. « Okinawa », « Shandong ».
+  region String?
+
+  /// Drapeau — emoji unicode (« 🇯🇵 ») ou code ISO 3166 alpha-2 (« JP »).
+  /// Format libre, à formaliser côté UI.
+  flag String?
+
+  /// Période historique d'ancrage de la culture (« Période Edo »,
+  /// « Dynastie Tang »). Champ pédagogique pour AKFC qui ancre ses
+  /// pratiques dans une histoire.
+  historicalPeriod String?
+
+  /// Ordre d'affichage manuel dans les listes. Default 0. Plus petit
+  /// = affiché en premier. Permet de ne pas dépendre de l'alphabétique.
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Disciplines rattachées à cette origine.
   disciplines Discipline[]
+
+  /// Stages rattachés à cette origine (notamment les stages hors-club).
+  stages Stage[]
+
+  /// Événements rattachés à cette origine.
+  events Event[]
+
+  @@index([sortOrder])
+}
+
+/// Grosse maille de classification des disciplines.
+///
+/// Sert d'ancre pour grouper les Discipline et les MediaAsset
+/// (rangement de la bibliothèque). Le champ `type` porte le nom de la
+/// catégorie (« martial_art », « calligraphy », « cultural »...) — il
+/// est nommé `type` historiquement mais sémantiquement c'est un libellé.
+///
+/// Modèle volontairement minimaliste : les catégories sont stables et
+/// rarement éditées par l'admin.
+model Category {
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Nom de la catégorie (unique). Sert aussi de slug fonctionnel.
+  type String @unique
+
+  /// Disciplines appartenant à cette catégorie.
+  disciplines Discipline[]
+
+  /// Assets média rattachés à cette catégorie.
   mediaAssets MediaAsset[]
 }
 
+/// Une discipline enseignée par le club, au sens conceptuel.
+///
+/// Le Karaté Shotokan en tant que tel — pas un créneau, pas un événement.
+/// Indépendante du temps et du lieu. Les créneaux récurrents qui
+/// l'enseignent sont des `Course`, les événements ponctuels sont des
+/// `Stage`, et les manifestations culturelles plus larges sont des
+/// `Event`.
 model Discipline {
-  id             Int            @id @default(autoincrement())
-  name           String                     // "Taï-chi", "Taolu multi-styles", "Tchoy-Lee-Fut", "Kali Escrima"
-  type           DisciplineType             // MARTIAL_ART | CALLIGRAPHY
-  family         String?                    // "Kung-fu Wushu" pour les pratiques chinoises, null sinon
-  school         String?                    // "Chen" pour Taï-chi, sinon null
-  classification String?                    // "interne (yin)" | "externe (yang)" | null
-  origin         String?                    // "Chine du Sud", "Philippines", ...
-  description    String?
-  categoryId     Int                        // chaque discipline appartient à UNE catégorie
-  instructorId   String                     // OBLIGATOIRE — référent de la discipline
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
 
-  category    Category     @relation(fields: [categoryId], references: [id])
-  instructor  User         @relation("DisciplineInstructor", fields: [instructorId], references: [id])
-  courses     Course[]
-  stages      Stage[]
+  /// Nom d'affichage de la discipline (« Karaté Shotokan »).
+  name String
+
+  /// Champ pratique : MARTIAL_ART ou CALLIGRAPHY.
+  type DisciplineType
+
+  /// Famille de discipline, en texte libre (« Karaté », « Aikido »).
+  /// Métadonnée informative, pas d'intégrité référentielle.
+  family String?
+
+  /// École spécifique (« Shōtōkan », « Aikikai »). Texte libre.
+  school String?
+
+  /// Classification (« Sport olympique », « Art martial traditionnel »).
+  /// Texte libre.
+  classification String?
+
+  /// Origine culturelle de la discipline. Relation vers le modèle
+  /// `Origin` introduit dans la migration v2. Nullable pour permettre
+  /// une création progressive (rattacher l'origine plus tard).
+  originId Int?
+
+  /// Page de présentation de la discipline, éditée au PageBuilder.
+  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  /// Default = composite vide.
+  description Json @default("{\"version\":1,\"blocks\":[]}")
+
+  /// Catégorie d'appartenance (NOT NULL).
+  categoryId Int
+
+  /// Instructeur principal — celui qui porte la responsabilité pédagogique
+  /// de la discipline. NOT NULL : chaque discipline a forcément un
+  /// référent.
+  ///
+  /// Distinct de `Course.instructorId` qui est l'instructeur SPÉCIFIQUE
+  /// d'un créneau particulier (peut diverger de l'instructeur principal).
+  instructorId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+
+  /// Origine culturelle (peut être null).
+  origin Origin? @relation(fields: [originId], references: [id])
+
+  /// Relation vers l'instructeur principal de la discipline.
+  instructor User @relation("DisciplineInstructor", fields: [instructorId], references: [id])
+
+  /// Cours hebdomadaires récurrents de cette discipline.
+  courses Course[]
+
+  /// Stages ponctuels rattachés à cette discipline.
+  stages Stage[]
+
+  /// Événements rattachés à cette discipline.
+  events Event[]
+
+  /// Assets média (photos, vidéos d'illustration) rattachés à cette discipline.
   mediaAssets MediaAsset[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
   @@index([instructorId])
+  @@index([originId])
   @@index([type])
 }
 
@@ -221,60 +378,194 @@ model Discipline {
 // OCCURRENCES
 // ============================================================================
 
+/// Un créneau hebdomadaire récurrent d'une discipline.
+///
+/// Le créneau existe en tant qu'entité — il a un jour, une heure, une
+/// audience — et revient chaque semaine. Un cours = un créneau, pas
+/// une séance individuelle.
+///
+/// L'unicité `(disciplineId, day, beginTime, audience)` définit ce
+/// qu'est un « doublon » : pas deux cours identiques sur la même
+/// combinaison.
 model Course {
-  id           Int      @id @default(autoincrement())
-  disciplineId Int                          // ex: Discipline "Tchoy-Lee-Fut"
-  audience     Audience                     // KIDS | TEENAGERS | ADULTS | ALL_AGES
-  day          Day
-  beginTime    Int                          // minutes depuis minuit
-  endTime      Int
-  instructorId String?                      // si null, hérite de discipline.instructor
-  requisites   String[]
-  content      Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
 
+  /// Discipline enseignée pendant ce créneau (NOT NULL).
+  disciplineId Int
+
+  /// Public visé. Détermine l'accessibilité au passage de grade
+  /// (cf. enum `Audience`).
+  audience Audience
+
+  /// Jour de la semaine où le créneau a lieu.
+  day Day
+
+  /// Heure de début au format HHMM (1830 = 18h30, 905 = 9h05).
+  /// Heure locale du club (pas de timezone).
+  beginTime Int
+
+  /// Heure de fin au format HHMM. Doit être strictement > beginTime.
+  endTime Int
+
+  /// Instructeur spécifique de ce créneau. **Nullable** par design :
+  /// si null, l'instructeur principal de la discipline s'applique par
+  /// défaut. Si non-null, surcharge ce créneau-là (par exemple, un
+  /// assistant qui anime un cours alors que le sensei principal en
+  /// anime un autre).
+  instructorId String?
+
+  /// Prérequis libres pour suivre le cours (« ceinture jaune minimum »,
+  /// « 14 ans révolus », etc.).
+  requisites String[]
+
+  /// Composite Json édité au PageBuilder. Décrit le cours
+  /// (présentation, programme, photos) — pas de champ `description`
+  /// séparé, tout vit dans ce composite.
+  ///
+  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  /// Lecture sécurisée via `parsePageContentV1(raw)`.
+  content Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Discipline enseignée.
   discipline Discipline @relation(fields: [disciplineId], references: [id])
-  instructor User?      @relation("CourseInstructor", fields: [instructorId], references: [id])
+
+  /// Instructeur spécifique du créneau (peut être null — voir le champ).
+  instructor User? @relation("CourseInstructor", fields: [instructorId], references: [id])
 
   @@unique([disciplineId, day, beginTime, audience])
   @@index([disciplineId])
   @@index([instructorId])
 }
 
+/// Un événement ponctuel, généralement intensif, d'une ou plusieurs
+/// sessions consécutives.
+///
+/// Plus dense qu'un Course récurrent — typiquement un weekend ou une
+/// semaine avec un intervenant invité. Porte **deux composites
+/// séparés** : `description` (ce que c'est et pourquoi) et `program`
+/// (ce qu'on va y faire).
+///
+/// La date n'est pas portée par Stage lui-même mais par ses
+/// `StageSession[]` — un Stage est un container, pas un événement daté.
+///
+/// **Rattachement flexible** (depuis la migration v2) : un Stage peut
+/// être rattaché à une discipline enseignée du club (`disciplineId`),
+/// à une discipline externe nommée librement (`externalDisciplineLabel`),
+/// ou simplement à une origine culturelle (`originId`). Les trois sont
+/// optionnels — la validation Zod côté router exige qu'au moins l'un
+/// d'eux soit renseigné pour qu'un stage ait du contexte.
+///
+/// ⚠️ La contrainte `@@unique([disciplineId, label])` ne s'applique que
+/// quand `disciplineId` est non-null (Postgres considère NULL ≠ NULL
+/// pour les unique constraints). Pour les stages externes, la
+/// prévention des doublons de label vit côté UI/validation.
 model Stage {
-  id                Int      @id @default(autoincrement())
-  disciplineId      Int                    // ex: Discipline "Tchoy-Lee-Fut" pour un stage de Tchoy-Lee-Fut
-  label             String                 // "Stage d'été — initiation aux bâtons"
-  audience          Audience
-  description       Json
-  program           Json
-  preRegistered     String[]
-  primaryAnimatorId String                 // OBLIGATOIRE — animateur principal (inclus dans `animators`)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
 
-  discipline      Discipline     @relation(fields: [disciplineId], references: [id])
-  primaryAnimator User           @relation("StagePrimaryAnimator", fields: [primaryAnimatorId], references: [id])
-  animators       User[]         @relation("StageAnimators")
-  sessions        StageSession[]
+  /// Discipline du stage (peut être null pour les stages externes).
+  disciplineId Int?
 
-  @@unique([disciplineId, label])
-  @@index([disciplineId])
-  @@index([primaryAnimatorId])
-}
+  /// Nom libre d'une discipline non enseignée (« Calligraphie chinoise »).
+  /// Sert quand le stage porte sur un domaine que le club n'enseigne
+  /// pas — typiquement intervenant extérieur.
+  externalDisciplineLabel String?
 
-model StageSession {
-  id        Int      @id @default(autoincrement())
-  stageId   Int
-  date      DateTime
-  beginTime Int
-  endTime   Int
-  location  String?
-  notes     String?
+  /// Origine culturelle rattachée. Permet le regroupement par culture
+  /// quand pas de discipline rattachée.
+  originId Int?
+
+  /// Nom du stage (« Stage Sensei Tanaka 2026 »).
+  /// Unique par discipline quand `disciplineId` est non-null.
+  label String
+
+  /// Public visé. Détermine l'accessibilité au passage de grade.
+  audience Audience
+
+  /// Composite Json édité au PageBuilder : présentation du stage,
+  /// contexte, intervenants, photos.
+  ///
+  /// Format : `PageContentV1`.
+  description Json
+
+  /// Composite Json édité au PageBuilder : programme détaillé,
+  /// session par session, techniques abordées, supports remis.
+  ///
+  /// Format : `PageContentV1`.
+  program Json
+
+  /// Inscriptions préalables. Tableau de chaînes (typiquement emails
+  /// ou identifiants utilisateur, à formaliser).
+  preRegistered String[]
+
+  /// Animateur principal du stage (NOT NULL — l'équivalent du sensei
+  /// en chef pour ce stage).
+  primaryAnimatorId String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Discipline (peut être null pour les stages externes).
+  discipline Discipline? @relation(fields: [disciplineId], references: [id])
+
+  /// Origine culturelle (peut être null).
+  origin Origin? @relation(fields: [originId], references: [id])
+
+  /// Animateur principal.
+  primaryAnimator User @relation("StagePrimaryAnimator", fields: [primaryAnimatorId], references: [id])
+
+  /// Animateurs secondaires (many-to-many).
+  animators User[] @relation("StageAnimators")
+
+  /// Sessions individuelles qui composent ce stage.
+  sessions StageSession[]
+
+  @@unique([disciplineId, label])
+  @@index([disciplineId])
+  @@index([originId])
+  @@index([primaryAnimatorId])
+}
+
+/// Une séance individuelle d'un Stage.
+///
+/// Un stage de weekend peut compter 4 sessions : samedi matin, samedi
+/// après-midi, dimanche matin, dimanche après-midi.
+///
+/// Pas de PageBuilder ici — les sessions sont des données structurées
+/// secondaires. Le contenu riche vit dans `Stage.description` et
+/// `Stage.program`.
+model StageSession {
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Stage parent (NOT NULL, cascade en suppression).
+  stageId Int
+
+  /// Date de la séance (jour calendaire).
+  date DateTime
+
+  /// Heure de début au format HHMM.
+  beginTime Int
+
+  /// Heure de fin au format HHMM. Doit être > beginTime.
+  endTime Int
+
+  /// Lieu de la séance — texte libre (« Dojo principal »,
+  /// « Gymnase Jean Moulin »). Optionnel.
+  location String?
+
+  /// Notes libres (« apporter son propre keikogi », etc.).
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Stage parent. `onDelete: Cascade` : si le stage est supprimé,
+  /// ses sessions le sont aussi.
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   @@unique([stageId, date, beginTime])
@@ -283,20 +574,157 @@ model StageSession {
 }
 
 // ============================================================================
+// ÉVÉNEMENTS
+// ============================================================================
+
+/// Événement ponctuel non récurrent — repas, conférence, journée
+/// portes ouvertes, atelier culturel.
+///
+/// **Différences avec Stage** :
+///
+/// - Pas obligatoirement rattaché à une discipline (`disciplineId` nullable)
+/// - Pas obligatoirement rattaché à une origine non plus (les deux
+///   relations sont optionnelles, mais on peut les combiner)
+/// - Un seul composite Json (`content`) — pas la dichotomie description
+///   / program de Stage. L'événement est typiquement plus "léger" en
+///   structure
+/// - `publicationDate?` pour gérer brouillons (cf. convention Post)
+/// - Plus simple côté animation : un seul `organizerId`, pas de
+///   distinction primary/secondary
+///
+/// La date n'est pas portée par Event lui-même mais par ses
+/// `EventSession[]` — comme Stage, un Event est un container temporel.
+model Event {
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Nom de l'événement (« Repas de fin d'année 2026 », « Conférence
+  /// sur le bouddhisme zen »).
+  label String
+
+  /// Composite Json édité au PageBuilder : présentation complète de
+  /// l'événement (contexte, intervenants, photos, programme).
+  ///
+  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  content Json @default("{\"version\":1,\"blocks\":[]}")
+
+  /// Public visé. NOT NULL — forcer le choix explicite (utiliser
+  /// `ALL_AGES` pour les événements tout public).
+  audience Audience
+
+  /// Discipline rattachée. **Nullable** : un événement culturel large
+  /// peut ne pas être rattaché à une discipline enseignée.
+  disciplineId Int?
+
+  /// Nom libre d'une discipline non enseignée (« Calligraphie chinoise »).
+  /// Sert quand l'événement porte sur un domaine que le club n'enseigne
+  /// pas — typiquement intervenant extérieur.
+  externalDisciplineLabel String?
+
+  /// Origine culturelle rattachée. Nullable. Permet de regrouper les
+  /// événements par culture quand pertinent.
+  originId Int?
+
+  /// Organisateur de l'événement (NOT NULL). User responsable.
+  organizerId String
+
+  /// Date de publication. **null = brouillon** (non visible publiquement).
+  /// Date dans le futur = publication programmée. Cohérent avec Post.
+  publicationDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Discipline rattachée (peut être null).
+  discipline Discipline? @relation(fields: [disciplineId], references: [id])
+
+  /// Origine rattachée (peut être null).
+  origin Origin? @relation(fields: [originId], references: [id])
+
+  /// Organisateur (User).
+  organizer User @relation("EventOrganizer", fields: [organizerId], references: [id])
+
+  /// Sessions individuelles qui composent l'événement (peut n'en
+  /// contenir qu'une).
+  sessions EventSession[]
+
+  @@index([disciplineId])
+  @@index([originId])
+  @@index([organizerId])
+  @@index([publicationDate])
+}
+
+/// Une session individuelle d'un Event.
+///
+/// Cloné sur `StageSession` — même rôle : porter la date et l'heure
+/// d'une séance. Un événement à une seule date a un seul `EventSession`.
+/// Un événement en plusieurs soirées en a plusieurs.
+model EventSession {
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Event parent (NOT NULL, cascade en suppression).
+  eventId Int
+
+  /// Date de la séance (jour calendaire).
+  date DateTime
+
+  /// Heure de début au format HHMM.
+  beginTime Int
+
+  /// Heure de fin au format HHMM. Doit être > beginTime.
+  endTime Int
+
+  /// Lieu de la séance — texte libre.
+  location String?
+
+  /// Notes libres.
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Event parent. `onDelete: Cascade` — supprimer un Event supprime
+  /// ses sessions.
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, date, beginTime])
+  @@index([eventId])
+  @@index([date])
+}
+
+// ============================================================================
 // MEDIA
 // ============================================================================
 
+/// MediaAsset — entité agnostique du backend de stockage (Phase 2).
+///
+/// Représente un fichier tracké côté DB, peu importe s'il est hébergé sur
+/// Cloudinary ou Cloudflare R2. Le champ pivot est `fullPath`, qui sert de
+/// clé universelle :
+///   - Pour Cloudinary : `<publicId>.<format>` (avec extension)
+///   - Pour R2 : la clé S3 directe (ex: AKFC/pending/cours/audio.mp3)
+///
+/// Les champs Cloudinary-only (publicId, secureUrl, resourceType) sont
+/// nullable depuis cette phase — null pour les rows R2.
+///
+/// NOTE: `fullPath` est temporairement nullable dans la migration
+/// `add_full_path_to_media_asset` pour permettre le backfill R2 historique
+/// sans casser la contrainte d'unicité prématurément. Après lancement du
+/// backfill R2, la migration `tighten_full_path` le passe en `@unique`
+/// NOT NULL — la déclaration ci-dessous reflète cet état final
 model MediaAsset {
   id                     String   @id @default(cuid())
 
-  // --- Cloudinary
-  publicId               String   @unique
-  secureUrl              String
-  resourceType           String
+  // --- Identité storage (Cloudinary OR R2)
+  publicId               String?  @unique   // Cloudinary uniquement
+  secureUrl              String?            // Cloudinary uniquement
+  resourceType           String?            // Cloudinary uniquement
+  fullPath               String   @unique   // Clé universelle (path complet)
+
+  // --- Fichier (commun aux deux backends)
   mimeType               String
   format                 String?
-
-  // --- Fichier
   originalFileName       String
   displayName            String?
   description            String?
@@ -309,8 +737,8 @@ model MediaAsset {
   appRoot                String
   status                 String                          // "pending" | "published" | ...
   categoryId             Int
-  disciplineId           Int?                            // null si la Discipline est proposée mais pas encore créée
-  proposedDisciplineName String?                         // nom proposé si disciplineId null
+  disciplineId           Int?                            // null si Discipline proposée pas encore créée
+  proposedDisciplineName String?
   eventDate              DateTime?
 
   // --- Provenance
@@ -324,39 +752,43 @@ model MediaAsset {
   discipline Discipline? @relation(fields: [disciplineId], references: [id])
   uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
 
+  // --- Références entrantes depuis le builder de pages
+  pageReferences PageMediaReference[]
+
   @@index([status])
   @@index([categoryId])
   @@index([disciplineId])
   @@index([uploaderUserId])
   @@index([uploadedAt])
+  @@index([appRoot, fullPath])  // ← bonus Phase 2 : optimise searchRecursive
 }
 
 // ============================================================================
-// CLOUDINARY FOLDERS & TRASH (inchangé)
+// FOLDERS & TRASH
 // ============================================================================
 
-model CloudinaryFolder {
-  id        String                 @id @default(cuid())
+model Folder {
+  id        String       @id @default(cuid())
   appRoot   String
   fullPath  String
-  status    CloudinaryFolderStatus
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
+  status    FolderStatus
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@unique([appRoot, fullPath])
   @@index([appRoot])
   @@index([appRoot, status])
+  @@map("CloudinaryFolder")
 }
 
-enum CloudinaryFolderStatus {
+enum FolderStatus {
   pending
   published
   bin
+
+  @@map("CloudinaryFolderStatus")
 }
 
-/**
- * Corbeille (bin) : une entrée = un "root" jeté (folder ou file).
- */
 model TrashEntry {
   id      String           @id @default(uuid())
   appRoot String
@@ -377,13 +809,6 @@ model TrashEntry {
   sizeBytes           BigInt?
   cloudinaryCreatedAt DateTime?
 
-  /**
-   * Catégorisation applicative du média ('image' | 'video' | 'document').
-   * Stocké en String (et non Enum) pour rester ouvert si on enrichit la palette
-   * sans forcer une migration à chaque ajout. La valeur est produite par
-   * l'adapter de stockage qui dépose l'entry — agnostique vis-à-vis du provider.
-   * NULL pour les folders et pour les entries antérieures à l'introduction du champ.
-   */
   mediaKind String?
 
   @@index([appRoot])
@@ -404,41 +829,198 @@ enum TrashEntryStatus {
 }
 
 // ============================================================================
-// CONTENU ÉDITORIAL (Posts/Comments/Likes — inchangé)
+// POSTS / COMMENTS / LIKES
 // ============================================================================
 
+/// Article éditorial — actualité, compte-rendu, annonce.
+///
+/// **Indépendant de toute discipline** : un Post peut parler du club
+/// en général, d'un événement de la vie associative, d'une actualité
+/// culturelle. Pas de rattachement à Discipline/Course/Stage.
+///
+/// **Statut de publication** : convention `publicationDate === null`
+/// = brouillon non visible publiquement, `publicationDate !== null`
+/// = publié (à la date donnée, qui peut être dans le futur pour une
+/// publication programmée).
 model Post {
-  id              Int       @id @default(autoincrement())
-  title           String
-  content         Json
-  authorId        String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  /// Identifiant entier auto-incrémenté.
+  id Int @id @default(autoincrement())
+
+  /// Titre de l'article.
+  title String
+
+  /// Composite Json édité au PageBuilder : corps de l'article complet.
+  ///
+  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  content Json
+
+  /// Auteur de l'article (NOT NULL).
+  authorId String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  /// Date de publication. **null = brouillon** (non visible publiquement).
+  /// Une date dans le futur = publication programmée.
   publicationDate DateTime?
 
-  author   User      @relation(fields: [authorId], references: [id])
+  /// Auteur de l'article.
+  author User @relation(fields: [authorId], references: [id])
+
+  /// Commentaires des utilisateurs sur l'article.
   comments Comment[]
-  likes    Like[]
+
+  poll     Poll?              // ← AJOUT (sondage optionnel = vote activable)
+
 }
 
+/// Commentaire sur un Post. Arborescent : `parentId` pointe vers le
+/// commentaire auquel celui-ci répond (null = commentaire racine).
+/// `content` est du texte simple — un commentaire n'a pas besoin du
+/// PageBuilder (pas de galeries/audio), contrairement aux Post/Stage.
 model Comment {
   id        Int      @id @default(autoincrement())
-  content   Json
+  content   String
   authorId  String
-  articleId Int
+  postId    Int
+  parentId  Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  postId    Int?
 
-  author User  @relation(fields: [authorId], references: [id])
-  post   Post? @relation(fields: [postId], references: [id])
+  author  User      @relation(fields: [authorId], references: [id])
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
 }
 
-model Like {
-  id     Int     @id @default(autoincrement())
-  postId Int
-  userId String
-  like   Boolean @default(false)
-  post   Post    @relation(fields: [postId], references: [id])
-  user   User    @relation(fields: [userId], references: [id])
+/// Cible d'une réaction. Polymorphe : une réaction peut porter sur un
+/// Post ou un Comment, distingués par `targetType` + `targetId`.
+enum ReactionTarget {
+  POST
+  COMMENT
+}
+
+/// Réaction emoji d'un utilisateur sur un Post ou un Comment.
+/// Le pouce levé n'est qu'un cas particulier : `emoji = "👍"`.
+/// Polymorphe par convention (`targetType` + `targetId`) : pas de FK
+/// Prisma vers Post/Comment, donc la suppression des réactions d'une
+/// cible supprimée se fait **côté router** (voir note plus bas).
+model Reaction {
+  id         Int            @id @default(autoincrement())
+  emoji      String
+  userId     String
+  targetType ReactionTarget
+  targetId   Int
+  createdAt  DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetType, targetId, emoji])
+  @@index([targetType, targetId])
+}
+
+/// Sondage rattaché à un Post (au plus un par post — `postId @unique`).
+/// Sa simple présence = « vote activé » sur le post. `multiple` autorise
+/// plusieurs choix par votant ; sinon un seul (règle appliquée au router).
+model Poll {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @unique
+  question  String
+  multiple  Boolean   @default(false)
+  closesAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options PollOption[]
+}
+
+/// Une option de réponse d'un sondage.
+model PollOption {
+  id        Int    @id @default(autoincrement())
+  pollId    Int
+  label     String
+  sortOrder Int    @default(0)
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId])
+}
+
+/// Vote d'un utilisateur pour une option. `pollId` est dénormalisé pour
+/// pouvoir appliquer la règle « un seul choix » (mode non-multiple) et
+/// requêter les votes par sondage sans jointure.
+model PollVote {
+  id        Int      @id @default(autoincrement())
+  optionId  Int
+  pollId    Int
+  userId    String
+  createdAt DateTime @default(now())
+
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id])
+
+  @@unique([optionId, userId])
+  @@index([pollId, userId])
+}
+
+/// PageMediaReference — table de jointure entre une page (Course, Stage,
+/// Post) et un MediaAsset référencé dans son composite de blocs.
+///
+/// Tenue à jour transactionnellement par les mutations qui sauvegardent
+/// une page (cf. router course / stage / post — sous-chantier 4). Le diff
+/// old/new est calculé par `extractMediaIdsFromContent` côté contracts.
+///
+/// Sert deux propos :
+///   1. **Garde-fou DB** : `onDelete: Restrict` sur `mediaAssetId` empêche
+///      la suppression hard d'un MediaAsset encore référencé par une page,
+///      même si la logique applicative a un bug.
+///   2. **Lookup applicatif** : permet aux services `trashToBin` et `move`
+///      (cf. sous-chantier 7) de refuser une sortie de `published` avec
+///      un diagnostic précis ("utilisé par Cours X, Stage Y").
+///
+/// ─── Polymorphie assumée ────────────────────────────────────────────────
+///
+/// `pageId` ne porte PAS de FK DB vers Course / Stage / Post — Prisma ne
+/// sait pas modéliser un FK polymorphe natif. L'intégrité de ce côté est
+/// tenue par l'application : au delete d'un Course/Stage/Post, on
+/// delete les rows correspondantes dans `PageMediaReference` dans la
+/// même transaction. Le seul côté protégé au niveau DB est `mediaAssetId`,
+/// et c'est suffisant — c'est le côté où une perte d'intégrité ferait
+/// vraiment mal (pages qui pointent vers du néant).
+model PageMediaReference {
+  id           String             @id @default(cuid())
+  mediaAssetId String
+  pageType     PageReferencerKind
+  pageId       String
+
+  createdAt    DateTime           @default(now())
+
+  mediaAsset   MediaAsset         @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  @@unique([mediaAssetId, pageType, pageId])
+  @@index([pageType, pageId])
+}
+
+/// Discriminant du référenceur dans `PageMediaReference`.
+///
+/// Stage en porte deux variantes parce qu'un même `Stage.id` accueille
+/// deux composites distincts (`description` et `program`), qu'on doit
+/// pouvoir distinguer dans la table de jointure pour des diffs propres
+/// au save.
+///
+/// `DISCIPLINE` et `EVENT` ajoutés en migration v2 : depuis la
+/// migration, ces deux entités portent aussi un composite Json édité
+/// au PageBuilder. Une seule variante par entité parce qu'un seul
+/// composite (pas comme Stage qui en porte deux).
+enum PageReferencerKind {
+  COURSE
+  STAGE_DESCRIPTION
+  STAGE_PROGRAM
+  POST
+  DISCIPLINE  // ← AJOUT v2
+  EVENT       // ← AJOUT v2
 }

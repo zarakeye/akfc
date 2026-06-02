@@ -31,11 +31,21 @@ import { requirePermission } from "@backend/trpc/middleware";
 /* -------------------------------------------------------------------------- */
 
 /**
- * Même logique que dans le router `course` : `beginTime`/`endTime` sont des
- * entiers représentant des minutes depuis minuit.
+ * Même logique que dans le router `course` : `beginTime` / `endTime`
+ * au format **HHMM** (1830 = 18h30, 905 = 9h05). La `.refine()` rejette
+ * les minutes invalides (≥ 60).
  */
-const beginTimeSchema = z.number().int().min(0).max(1439);
-const endTimeSchema = z.number().int().min(1).max(1440);
+const hhmmSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(2359)
+  .refine((v) => v % 100 < 60, {
+    message: "Minutes part must be 0-59 (e.g. 1860 is not a valid time).",
+  });
+
+const beginTimeSchema = hhmmSchema;
+const endTimeSchema = hhmmSchema;
 
 const createInput = z
   .object({
