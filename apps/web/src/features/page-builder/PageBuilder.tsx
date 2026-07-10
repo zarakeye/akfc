@@ -108,44 +108,44 @@ export function PageBuilder({
         )}
 
         {(() => {
-          // Alternance media-text (même logique que le PageRenderer public) :
-          // le compteur n'avance que sur les blocs media-text, pour que la
-          // preview du builder reflète fidèlement le côté public.
-          let mediaTextRank = 0;
-          return value.blocks.map((block, index) => {
-            let mediaSide: "left" | "right" | undefined;
-            if (block.type === "media-text") {
-              mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
-              mediaTextRank += 1;
-            }
-            return (
-              <BlockShell
-                key={block.id}
-                block={block}
-                mediaSide={mediaSide}
-                onUpdate={(next) => handleUpdate(block.id, next)}
-                onRemove={() => handleRemove(block.id)}
-                isDragging={draggingIndex === index}
-                isDragOver={dragOverIndex === index && draggingIndex !== index}
-                onDragStart={() => setDraggingIndex(index)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOverIndex(index);
-                }}
-                onDrop={() => {
-                  if (draggingIndex !== null) {
-                    handleMove(draggingIndex, index);
-                  }
-                  setDraggingIndex(null);
-                  setDragOverIndex(null);
-                }}
-                onDragEnd={() => {
-                  setDraggingIndex(null);
-                  setDragOverIndex(null);
-                }}
-              />
-            );
-          });
+          // Alternance media-text SANS aucune mutation pendant le rendu
+          // (contrainte du React Compiler) : le côté d'un bloc media-text
+          // dérive de son rang dans la liste des seuls blocs media-text.
+          const mediaTextIds = value.blocks
+            .filter((b) => b.type === "media-text")
+            .map((b) => b.id);
+          const sideFor = (blockId: string): "left" | "right" | undefined => {
+            const rank = mediaTextIds.indexOf(blockId);
+            if (rank === -1) return undefined;
+            return rank % 2 === 0 ? "left" : "right";
+          };
+          return value.blocks.map((block, index) => (
+            <BlockShell
+              key={block.id}
+              block={block}
+              mediaSide={sideFor(block.id)}
+              onUpdate={(next) => handleUpdate(block.id, next)}
+              onRemove={() => handleRemove(block.id)}
+              isDragging={draggingIndex === index}
+              isDragOver={dragOverIndex === index && draggingIndex !== index}
+              onDragStart={() => setDraggingIndex(index)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverIndex(index);
+              }}
+              onDrop={() => {
+                if (draggingIndex !== null) {
+                  handleMove(draggingIndex, index);
+                }
+                setDraggingIndex(null);
+                setDragOverIndex(null);
+              }}
+              onDragEnd={() => {
+                setDraggingIndex(null);
+                setDragOverIndex(null);
+              }}
+            />
+          ));
         })()}
 
         <AddBlockMenu onAdd={handleAdd} />

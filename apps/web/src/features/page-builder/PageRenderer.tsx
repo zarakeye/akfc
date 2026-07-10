@@ -86,33 +86,33 @@ export async function PageRenderer({ content }: PageRendererProps) {
     return null;
   }
 
+  // Alternance media-text SANS mutation pendant le rendu (React Compiler) :
+  // le côté dérive du rang du bloc dans la liste des seuls blocs media-text.
+  const mediaTextIds = content.blocks
+    .filter((b) => b.type === "media-text")
+    .map((b) => b.id);
+  const sideFor = (blockId: string): "left" | "right" | undefined => {
+    const rank = mediaTextIds.indexOf(blockId);
+    if (rank === -1) return undefined;
+    return rank % 2 === 0 ? "left" : "right";
+  };
+
   return (
     <div className="page-renderer flex flex-col gap-6">
-      {(() => {
-        // Compteur d'alternance : n'incrémente que sur les blocs media-text,
-        // pour que leur côté médias alterne indépendamment des autres blocs
-        // intercalés (1er media-text → gauche, 2e → droite, etc.).
-        let mediaTextRank = 0;
-        return content.blocks.map((block) => {
-          const def = getBlockDefinition(block.type);
-          const View = def.View as unknown as ComponentType<
-            BlockViewProps<PageBlockV1>
-          >;
-          let mediaSide: "left" | "right" | undefined;
-          if (block.type === "media-text") {
-            mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
-            mediaTextRank += 1;
-          }
-          return (
-            <View
-              key={block.id}
-              block={block}
-              resolveMedia={resolveMedia}
-              mediaSide={mediaSide}
-            />
-          );
-        });
-      })()}
+      {content.blocks.map((block) => {
+        const def = getBlockDefinition(block.type);
+        const View = def.View as unknown as ComponentType<
+          BlockViewProps<PageBlockV1>
+        >;
+        return (
+          <View
+            key={block.id}
+            block={block}
+            resolveMedia={resolveMedia}
+            mediaSide={sideFor(block.id)}
+          />
+        );
+      })}
     </div>
   );
 }
