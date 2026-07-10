@@ -84,6 +84,21 @@ export const storageRouter = router({
   /*  Lecture (inchangé)                                                    */
   /* ====================================================================== */
 
+  /**
+   * Compteurs « à traiter » de la bibliothèque, pour la cloche du header :
+   * assets en attente de classement (MediaAsset.status "pending") et
+   * entrées de corbeille (TrashEntry IN_BIN). protectedProcedure simple,
+   * comme le reste du router — la cloche est de plus gatée côté client
+   * sur la présence d'au moins une permission.
+   */
+  getAttentionCounts: protectedProcedure.query(async ({ ctx }) => {
+    const [pending, bin] = await Promise.all([
+      ctx.prisma.mediaAsset.count({ where: { status: "pending" } }),
+      ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
+    ]);
+    return { pending, bin };
+  }),
+
   list: protectedProcedure
     .input(
       z.object({
@@ -164,35 +179,28 @@ export const storageRouter = router({
   move: protectedProcedure
     .input(
       z.object({
-        provider: storageProviderSchema,
+        provider: storageProviderSchema.optional(),
         intent: storageMoveIntentSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const adapter = getAdapter(input.provider, {
-        prisma: ctx.prisma,
-        appRoot: ctx.appRoot,
-      });
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const adapter = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
 
-      // Phase 1 : planifier les operations sans les exécuter.
       const operations = await planMoveOperations({
         adapter,
         appRoot: ctx.appRoot,
         intent: input.intent,
       });
 
-      // Phase 2 : garde de cohérence à la sortie de `published`.
-      // Refuse si une op ferait sortir de `published` un asset encore
-      // référencé par une page (sous-chantier 7). L'erreur contient un
-      // diagnostic listant les pages référençantes — propagée tel quel
-      // au client par tRPC.
       await assertOperationsDontUnpublishReferencedAssets(
         ctx.prisma,
         operations,
         ctx.appRoot,
       );
 
-      // Phase 3 : exécuter les operations planifiées via l'adapter.
       await executeMoveOperations(adapter, operations);
 
       return { operations };
@@ -218,6 +226,7 @@ export const storageRouter = router({
           return adapter.createUploadAuthorization({
             destination: input.destination,
             assets: input.assets,
+            allowOverwrite: input.allowOverwrite,
           });
         }
         case "r2": {

@@ -63,7 +63,7 @@ export const roleRouter = router({
       z.object({
         name: z.string().min(1),
         permissionIds: z.array(z.number()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const exists = await ctx.prisma.role.findUnique({
@@ -106,7 +106,7 @@ export const roleRouter = router({
         id: z.number().int(),
         name: z.string().min(1),
         permissions: z.array(z.number().int()).default([]),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const exists = await ctx.prisma.role.findUnique({
@@ -123,13 +123,19 @@ export const roleRouter = router({
 
       const roleId = input.id;
 
+      // ⚠️ `RolePermissions` est une jointure EXPLICITE : `set` ne connecte
+      // que des lignes de jointure DÉJÀ existantes et n'en crée jamais une
+      // absente — donc assigner une nouvelle permission via `set` échoue
+      // silencieusement. Remplacement réel du jeu : `deleteMany` (scopé à la
+      // relation = ce rôle) puis `create` des liaisons voulues.
       return ctx.prisma.role.update({
         where: { id: roleId },
         data: {
           name: input.name,
           permissions: {
-            set: input.permissions.map((permissionId) => ({
-              roleId_permissionId: { roleId, permissionId },
+            deleteMany: {},
+            create: input.permissions.map((permissionId) => ({
+              permissionId,
             })),
           },
         },
@@ -153,3 +159,5 @@ export const roleRouter = router({
       });
     }),
 });
+
+export default roleRouter;

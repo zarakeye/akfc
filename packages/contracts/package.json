@@ -11,6 +11,7 @@
     "./explorer/*": "./src/explorer/*.ts",
     "./trash/*": "./src/trash/*.ts",
     "./preview/*": "./src/preview/*.ts",
-    "./schemas/*": "./schemas/*.ts"
+    "./schemas/*": "./schemas/*.ts",
+    "./slug/*": "./src/slug/*.ts"
   }
 }

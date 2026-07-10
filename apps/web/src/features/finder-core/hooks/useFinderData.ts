@@ -40,9 +40,20 @@ export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  // Reset synchronisé au changement de `currentPath`/`reloadKey`, pendant le
+  // render (pattern « adjust state during render ») : on lit le cache une
+  // fois pour savoir si un fetch sera nécessaire et on positionne
+  // loading/error en conséquence — au lieu de faire ces setState dans le
+  // corps de l'effet (interdit par react-hooks/set-state-in-effect).
+  const [prevDeps, setPrevDeps] = useState({ currentPath, reloadKey });
+  if (prevDeps.currentPath !== currentPath || prevDeps.reloadKey !== reloadKey) {
+    setPrevDeps({ currentPath, reloadKey });
+    const isCached = useFinderStore.getState().contentCache.has(currentPath);
+    setLoading(!isCached);
+    setError(null);
+  }
 
+  useEffect(() => {
     // Lecture imperative du cache : on évite de subscribe à `contentCache`
     // pour ne pas re-déclencher cet effect à chaque mutation du cache (qui
     // créerait des boucles infinies). On lit l'état actuel à T0 et c'est
@@ -50,17 +61,14 @@ export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
     const cached = useFinderStore.getState().contentCache.get(currentPath);
 
     if (cached) {
-      // Cache HIT : le contenu a déjà été appliqué via `setPath`.
-      // Pas de fetch, pas de loading. L'utilisateur voit instantanément
-      // le contenu mémorisé.
-      setLoading(false);
-      setError(null);
+      // Cache HIT : le contenu a déjà été appliqué via `setPath`, et
+      // loading a déjà été positionné à false par le bloc de reset
+      // ci-dessus. Pas de fetch, l'utilisateur voit le contenu mémorisé.
       return;
     }
 
-    // Cache MISS : fetch normal
-    setLoading(true);
-    setError(null);
+    // Cache MISS : fetch normal (loading déjà à true via le bloc de reset).
+    let cancelled = false;
 
     (async () => {
       try {

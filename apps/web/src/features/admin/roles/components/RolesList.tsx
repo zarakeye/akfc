@@ -4,6 +4,7 @@ import { JSX } from 'react';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { Role } from '@prisma/client';
+import { useRouter } from 'next/navigation';
 
 /**
  * RolesList component
@@ -16,6 +17,7 @@ import type { Role } from '@prisma/client';
  */
 export default function RolesList(): JSX.Element {
   const { data: roles, isLoading, isError } = trpc.role.getAll.useQuery();
+  const router = useRouter();
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading roles.</div>;
@@ -44,12 +46,9 @@ export default function RolesList(): JSX.Element {
       <Table
         columns={columns}
         rows={roles || []}
-        // onRowClick={(role: Role | null) => {
-        //   setCreating(null);
-        //   setOpenList(null);
-        //   setDisplayingMyInfo(false);
-        //   setDisplayRoleCard(role);
-        // }}
+        onRowClick={(row) => {
+          if (row) router.push(`/dashboard/roles/${row.id}`);
+        }}
       />
 
       

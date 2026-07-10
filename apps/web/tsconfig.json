@@ -16,7 +16,8 @@
       "@styles/*": ["./src/styles/*"],
       "@types/*": ["./src/types/*"],
       "@trpc/*": ["./src/core/trpc/*"],
-      "@config/*": ["../../packages/config/*"]
+      "@config/*": ["../../packages/config/*"],
+      "@finder-core/*": ["../../packages/finder-core/src/*"]
     }
   },
   "include": [
@@ -36,7 +37,9 @@
     "src/**/*.d.ts",
     "../../packages/contracts/src/**/*.ts",
     "../../packages/contracts/src/finder",
-    "../../packages/config"
+    "../../packages/config",
+    "../../packages/contracts/src/slug/slug.schema.ts",
+    "../../packages/finder-core/src/**/*.ts",
   ],
   "exclude": ["node_modules"]
 }

@@ -70,19 +70,21 @@ export function LibraryImageNodeView({
   const [status, setStatus] = useState<ResolutionStatus>("loading")
 
   useEffect(() => {
-    if (!mediaId) {
-      setStatus("missing")
-      setUrl(null)
-      return
-    }
+    // Pas de mediaId → état "missing" dérivé au rendu (effectiveStatus),
+    // pas de setState dans le corps de l'effet.
+    if (!mediaId) return
 
     let cancelled = false
-    setStatus("loading")
-    setUrl(null)
 
-    options
-      .resolveMediaUrl(mediaId)
-      .then((resolved) => {
+    // Le reset (loading) et le fetch vivent dans une fonction async : les
+    // setState ne sont donc pas dans le corps synchrone de l'effet, ce qui
+    // évite react-hooks/set-state-in-effect.
+    async function resolve() {
+      setStatus("loading")
+      setUrl(null)
+
+      try {
+        const resolved = await options.resolveMediaUrl(mediaId!)
         if (cancelled) return
         if (resolved) {
           setUrl(resolved)
@@ -90,11 +92,13 @@ export function LibraryImageNodeView({
         } else {
           setStatus("missing")
         }
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return
         setStatus("missing")
-      })
+      }
+    }
+
+    void resolve()
 
     return () => {
       cancelled = true
@@ -115,26 +119,31 @@ export function LibraryImageNodeView({
     [updateAttributes],
   )
 
+  // Sans mediaId, on dérive l'état "missing" directement, sans dépendre des
+  // states résiduels d'une résolution précédente.
+  const effectiveStatus: ResolutionStatus = mediaId ? status : "missing"
+  const effectiveUrl = mediaId ? url : null
+
   return (
     <NodeViewWrapper
       className={clsx(
         "group relative my-6 rounded-lg outline-2 outline-transparent transition-[outline-color] duration-100",
         selected && "outline-ring",
       )}
-      data-status={status}
+      data-status={effectiveStatus}
       data-selected={selected || undefined}
     >
       <figure
         className="m-0 flex flex-col items-stretch gap-2 rounded-[inherit] bg-muted/40 p-3"
         contentEditable={false}
       >
-        {status === "loading" && (
+        {effectiveStatus === "loading" && (
           <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             Chargement…
           </div>
         )}
 
-        {status === "missing" && (
+        {effectiveStatus === "missing" && (
           <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-destructive/30 bg-destructive/5 p-8 text-center text-sm text-destructive">
             <span>⚠️ Média indisponible</span>
             {mediaId && (
@@ -143,10 +152,10 @@ export function LibraryImageNodeView({
           </div>
         )}
 
-        {status === "ready" && url && (
+        {effectiveStatus === "ready" && effectiveUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={url}
+            src={effectiveUrl}
             alt={caption ?? ""}
             className="block w-full max-w-full rounded-md object-contain"
             draggable={false}

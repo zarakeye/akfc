@@ -36,6 +36,17 @@ export const uploadAssetRequestSchema = z.object({
 export const createUploadSignaturesSchema = z.object({
   destination: uploadDestinationSchema,
   assets: z.array(uploadAssetRequestSchema).min(1).max(20),
+  /**
+   * Autorise l'écrasement d'un asset existant (même public_id).
+   *
+   * - absent / false (DÉFAUT) : la signature est calculée avec
+   *   `overwrite: false`. Cloudinary REFUSE alors d'écraser un public_id
+   *   déjà présent → le binaire d'origine est protégé même si le client
+   *   tente l'upload par erreur. C'est le filet "dormir tranquille".
+   * - true : signé `overwrite: true`, à n'envoyer qu'APRÈS confirmation
+   *   explicite de l'utilisateur (dialogue « Écraser »).
+   */
+  allowOverwrite: z.boolean().optional(),
 });
 
 export const registeredAssetSchema = z.object({

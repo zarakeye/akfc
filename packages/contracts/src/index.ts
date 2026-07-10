@@ -23,12 +23,11 @@ export * from '@contracts/cloudinary/upload.schema';
 /*                                   FORMS                                    */
 /* -------------------------------------------------------------------------- */
 export * from '@contracts/forms/createPermissionForm.schema';
-export * from '@contracts/forms/createCategoryForm.schema';
+export * from '@contracts/forms/saveCategoryForm.schema';
 export * from '@contracts/forms/createUserForm.schema';
-export * from '@contracts/forms/createRoleForm.schema';
+export * from '@contracts/forms/saveRoleForm.schema';
 export * from '@contracts/forms/form-action.types';
 export * from '@contracts/forms/updateMeForm.schema';
-export * from '@contracts/forms/updateRoleForm.schema';
 export * from '@contracts/forms/updateUserRoleById.schema';
 
 export * from '@contracts/upload/upload.schema';
@@ -46,3 +45,13 @@ export * from '@contracts/page';
 /*  Voir packages/contracts/src/storage/storage.adapter.ts pour les détails.  */
 /* -------------------------------------------------------------------------- */
 export * from '@contracts/storage';
+
+// packages/contracts/src/index.ts
+export * from "@contracts/slug/slug.schema";
+
+/* -------------------------------------------------------------------------- */
+/*                                   SHARED                                   */
+/*  Schémas transverses réutilisés par plusieurs domaines (PageBuilder,       */
+/*  commentaires…). Voir chaque module pour la doc.                           */
+/* -------------------------------------------------------------------------- */
+export * from '@contracts/shared/prosemirror';

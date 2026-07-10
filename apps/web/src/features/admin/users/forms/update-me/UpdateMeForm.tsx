@@ -4,15 +4,17 @@ import { JSX, useEffect, useMemo } from "react";
 import { useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { useFormStatus } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
+import { AvatarUploader } from "@features/avatar/AvatarUploader";
+import { updateMeFormAction } from "./updateMeForm.action";
 import {
-  updateMeFormAction,
   initialUpdateMeFormState,
-} from "./updateMeForm.action";
-import type {
-  UpdateMeFormState,
-  UpdateMeFormValues,
+  type UpdateMeFormState,
+  type UpdateMeFormValues,
 } from "./updateMeForm.types";
 
 function SubmitButton(props: { disabled?: boolean }): JSX.Element {
@@ -29,12 +31,24 @@ function SubmitButton(props: { disabled?: boolean }): JSX.Element {
   );
 }
 
+/** Destination de retour selon le contexte d'appel (?from=). */
+function resolveBackHref(from: string | null): { href: string; label: string } {
+  if (from === "dashboard") {
+    return { href: "/dashboard", label: "Retour au tableau de bord" };
+  }
+  return { href: "/profil", label: "Retour au profil" };
+}
+
 export default function UpdateMeForm(): JSX.Element {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const back = resolveBackHref(searchParams.get("from"));
+
   const profileQuery = trpc.user.getCurrentUserProfile.useQuery();
 
   const [state, formAction] = useActionState<UpdateMeFormState, FormData>(
     updateMeFormAction,
-    initialUpdateMeFormState
+    initialUpdateMeFormState,
   );
 
   const {
@@ -51,7 +65,6 @@ export default function UpdateMeForm(): JSX.Element {
       aboutMe: "",
       phone: "",
       birthDate: "",
-      avatar: "",
     },
     mode: "onBlur",
   });
@@ -69,9 +82,8 @@ export default function UpdateMeForm(): JSX.Element {
         aboutMe: p.aboutMe ?? "",
         phone: p.phone ?? "",
         birthDate: (p.birthDate as string | null) ?? "",
-        avatar: p.avatar ?? "",
       },
-      { keepDirty: false }
+      { keepDirty: false },
     );
   }, [profileQuery.data, reset]);
 
@@ -88,19 +100,24 @@ export default function UpdateMeForm(): JSX.Element {
 
     const fe = state.fieldErrors;
 
-    if (fe.firstName) setError("firstName", { type: "server", message: fe.firstName });
-    if (fe.lastName) setError("lastName", { type: "server", message: fe.lastName });
+    if (fe.firstName)
+      setError("firstName", { type: "server", message: fe.firstName });
+    if (fe.lastName)
+      setError("lastName", { type: "server", message: fe.lastName });
     if (fe.pseudo) setError("pseudo", { type: "server", message: fe.pseudo });
-    if (fe.aboutMe) setError("aboutMe", { type: "server", message: fe.aboutMe });
+    if (fe.aboutMe)
+      setError("aboutMe", { type: "server", message: fe.aboutMe });
     if (fe.phone) setError("phone", { type: "server", message: fe.phone });
-    if (fe.birthDate) setError("birthDate", { type: "server", message: fe.birthDate });
-    if (fe.avatar) setError("avatar", { type: "server", message: fe.avatar });
+    if (fe.birthDate)
+      setError("birthDate", { type: "server", message: fe.birthDate });
   }, [state, setError, clearErrors]);
 
   useEffect(() => {
     if (state.status !== "success") return;
     profileQuery.refetch();
-  }, [state.status, profileQuery]);
+    // Redirige vers la page d'où l'on vient (profil ou dashboard).
+    router.push(back.href);
+  }, [state.status, profileQuery, router, back.href]);
 
   const loading = profileQuery.isLoading;
   const loadError = profileQuery.error;
@@ -111,6 +128,14 @@ export default function UpdateMeForm(): JSX.Element {
 
   return (
     <section className="space-y-4">
+      <Link
+        href={back.href}
+        className="inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-slate-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {back.label}
+      </Link>
+
       <header className="space-y-1">
         <h2 className="text-lg font-semibold">Mon profil</h2>
         <p className="text-sm text-slate-600">
@@ -142,33 +167,53 @@ export default function UpdateMeForm(): JSX.Element {
         <div className="grid gap-2">
           <label className="grid gap-1">
             <span className="text-sm">Prénom</span>
-            <input className="border rounded px-3 py-2" {...register("firstName")} />
+            <input
+              className="border rounded px-3 py-2"
+              {...register("firstName")}
+            />
             {errors.firstName?.message && (
-              <span className="text-xs text-red-600">{errors.firstName.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.firstName.message}
+              </span>
             )}
           </label>
 
           <label className="grid gap-1">
             <span className="text-sm">Nom</span>
-            <input className="border rounded px-3 py-2" {...register("lastName")} />
+            <input
+              className="border rounded px-3 py-2"
+              {...register("lastName")}
+            />
             {errors.lastName?.message && (
-              <span className="text-xs text-red-600">{errors.lastName.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.lastName.message}
+              </span>
             )}
           </label>
 
           <label className="grid gap-1">
             <span className="text-sm">Pseudo</span>
-            <input className="border rounded px-3 py-2" {...register("pseudo")} />
+            <input
+              className="border rounded px-3 py-2"
+              {...register("pseudo")}
+            />
             {errors.pseudo?.message && (
-              <span className="text-xs text-red-600">{errors.pseudo.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.pseudo.message}
+              </span>
             )}
           </label>
 
           <label className="grid gap-1">
             <span className="text-sm">Téléphone</span>
-            <input className="border rounded px-3 py-2" {...register("phone")} />
+            <input
+              className="border rounded px-3 py-2"
+              {...register("phone")}
+            />
             {errors.phone?.message && (
-              <span className="text-xs text-red-600">{errors.phone.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.phone.message}
+              </span>
             )}
           </label>
 
@@ -180,7 +225,9 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("birthDate")}
             />
             {errors.birthDate?.message && (
-              <span className="text-xs text-red-600">{errors.birthDate.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.birthDate.message}
+              </span>
             )}
           </label>
 
@@ -191,17 +238,18 @@ export default function UpdateMeForm(): JSX.Element {
               {...register("aboutMe")}
             />
             {errors.aboutMe?.message && (
-              <span className="text-xs text-red-600">{errors.aboutMe.message}</span>
+              <span className="text-xs text-red-600">
+                {errors.aboutMe.message}
+              </span>
             )}
           </label>
 
-          <label className="grid gap-1">
-            <span className="text-sm">Avatar (URL)</span>
-            <input className="border rounded px-3 py-2" {...register("avatar")} />
-            {errors.avatar?.message && (
-              <span className="text-xs text-red-600">{errors.avatar.message}</span>
-            )}
-          </label>
+          <div className="grid gap-2">
+            <span className="text-sm">Photo de profil</span>
+            {/* Flux AUTONOME : l'avatar se sauve seul (upload → register →
+                User.avatar), indépendamment du submit de ce formulaire. */}
+            <AvatarUploader />
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

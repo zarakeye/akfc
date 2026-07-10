@@ -156,7 +156,7 @@ export function TipTapView({
 
   return (
     <div
-      className="tiptap-rendered max-w-none"
+      className="tiptap-rendered prose max-w-none"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

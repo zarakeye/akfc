@@ -43,19 +43,10 @@ export const updateMeFormSchema = z.object({
       return !Number.isNaN(Date.parse(val));
     }, "Date de naissance invalide"),
 
-  avatar: z
-    .string()
-    .url("URL invalide")
-    .optional()
-    .or(z.literal('')),
-    // .refine((val) => {
-    //   try {
-    //     new URL(val);
-    //     return true;
-    //   } catch {
-    //     return false;
-    //   }
-    // }, "Invalid URL").optional().or(z.literal('')),
+  // NB : l'avatar n'est PLUS géré par ce formulaire. Il suit un flux
+  // AUTONOME (AvatarUploader → avatar.register → User.avatar), indépendant
+  // du submit. Le retirer d'ici évite une double écriture et la validation
+  // "URL invalide" (User.avatar stocke un publicId, pas une URL).
 });
 
 // 🧩 2. Type de données Zod

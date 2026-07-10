@@ -4,45 +4,24 @@ import { COOKIE_NAME } from "@contracts/auth/constants";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const PUBLIC_PATHS = [
-  "/",
-  "/docs",
-  "/auth",
-  "/api",
-  "/_next",
-  "/favicon.ico",
-];
-
 /**
- * Ce proxy agit comme un préfiltre léger :
- * - il vérifie la présence du cookie d'auth
- * - il vérifie que le JWT est encore valide
+ * Préfiltre d'auth léger.
  *
- * Il ne vérifie PAS la session en base de données.
- * La validation canonique de l'authentification reste faite côté backend via :
- * - getSessionFromRequest
- * - createTRPCContext
- * - protectedProcedure
+ * Grâce au `matcher` plus bas, ce proxy ne s'exécute QUE sur l'espace protégé
+ * (`/(admin)/**`). Tout le reste — pages publiques (home, disciplines, stages,
+ * évènements, galerie, à propos, contacts), assets `/public` (logo, icônes,
+ * fonts) et `/api` — ne passe jamais par ici, donc plus aucune redirection
+ * parasite sur les fichiers statiques.
+ *
+ * Il vérifie seulement la présence + validité (signature) du JWT. Il ne
+ * vérifie PAS la session en base : la validation canonique reste côté backend
+ * via getSessionFromRequest / createTRPCContext / protectedProcedure.
  */
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-}
-
 export async function proxy(req: NextRequest) {
-  const { pathname, origin } = req.nextUrl;
-
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
+  const { origin } = req.nextUrl;
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
-  if (!token) {
-    return NextResponse.redirect(new URL("/", origin));
-  }
-
-  if (!JWT_SECRET) {
+  if (!token || !JWT_SECRET) {
     return NextResponse.redirect(new URL("/", origin));
   }
 
@@ -53,3 +32,12 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/", origin));
   }
 }
+
+export const config = {
+  // Le proxy ne tourne QUE sur l'espace protégé. Tout le reste est public.
+  // Ajoute ici d'éventuelles autres zones privées (ex. "/account/:path*").
+  // ⚠ "(admin)" est un route group : il n'existe PAS dans les URLs.
+  // L'ancien matcher "/(admin)/:path*" ne matchait donc JAMAIS — le
+  // proxy ne tournait pas et l'espace admin était sans garde de route.
+  matcher: ["/dashboard/:path*", "/profil/:path*"],
+};

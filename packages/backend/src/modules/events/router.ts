@@ -7,6 +7,7 @@ import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
+import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
  * events/router.ts
@@ -48,6 +49,16 @@ import { pageContentSchemaV1 } from "@contracts/page";
  * `externalDisciplineLabel`, `originId` doit être renseigné pour qu'un
  * Event ait du contexte. Vérifié en Zod au create, en router après
  * merge à l'update.
+ *
+ * ─── Évolution navigation (socle slugs) ───────────────────────────────────
+ *
+ * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
+ * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
+ * d'un `getBySlug` public pour la page détail `/evenements/[slug]`.
+ * Particularité : le slug est la **première** contrainte d'unicité d'Event
+ * (il n'en avait aucune). Les mutations gagnent donc une gestion P2002
+ * qu'elles n'avaient pas — au create (où il n'y avait aucun `catch`) et à
+ * l'update (où seul P2025 était traité).
  */
 
 /* -------------------------------------------------------------------------- */
@@ -61,6 +72,7 @@ const userIdSchema = z.string().trim().min(1);
 const createInput = z
   .object({
     label: z.string().trim().min(1).max(255),
+    slug: slugSchema,
     content: pageContentSchemaV1,
     audience: audienceEnum,
 
@@ -95,6 +107,7 @@ const createInput = z
 const updateInput = z.object({
   id: z.number().int().positive(),
   label: z.string().trim().min(1).max(255).optional(),
+  slug: slugSchema.optional(),
   content: pageContentSchemaV1.optional(),
   audience: audienceEnum.optional(),
 
@@ -225,7 +238,12 @@ export const eventRouter = router({
       });
     }),
 
-  getById: publicProcedure
+  /**
+   * Lookup admin par id — brouillons/programmés inclus.
+   * Alimente la page d'édition `/dashboard/events/[id]/edit`.
+   */
+  getByIdAdmin: protectedProcedure
+    .use(requirePermission("manage_events"))
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const event = await ctx.prisma.event.findUnique({
@@ -235,14 +253,33 @@ export const eventRouter = router({
           sessions: { orderBy: { date: "asc" } },
         },
       });
-
       if (!event) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Event not found.",
-        });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
       }
+      return event;
+    }),
 
+  /**
+   * Lookup public par slug — alimente `/evenements/[slug]`.
+   * Seuls les events PUBLIÉS sont visibles ; un brouillon/programmé
+   * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
+   */
+  getBySlug: publicProcedure
+    .input(z.object({ slug: slugSchema }))
+    .query(async ({ ctx, input }) => {
+      const event = await ctx.prisma.event.findFirst({
+        where: {
+          slug: input.slug,
+          publicationDate: { not: null, lte: new Date() },
+        },
+        relationLoadStrategy: "join",
+        include: {
+          sessions: { orderBy: { date: "asc" } },
+        },
+      });
+      if (!event) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+      }
       return event;
     }),
 
@@ -259,18 +296,43 @@ export const eventRouter = router({
       // ─── Transaction : create event + sync references ──────────────────
 
       return await ctx.prisma.$transaction(async (tx) => {
-        const created = await tx.event.create({
-          data: {
-            label: input.label,
-            content: input.content as Prisma.InputJsonValue,
-            audience: input.audience,
-            disciplineId: input.disciplineId ?? null,
-            externalDisciplineLabel: input.externalDisciplineLabel ?? null,
-            originId: input.originId ?? null,
-            organizerId: input.organizerId,
-            publicationDate: input.publicationDate ?? null,
-          },
-        });
+        let created;
+        try {
+          created = await tx.event.create({
+            data: {
+              label: input.label,
+              slug: input.slug,
+              content: input.content as Prisma.InputJsonValue,
+              audience: input.audience,
+              disciplineId: input.disciplineId ?? null,
+              externalDisciplineLabel: input.externalDisciplineLabel ?? null,
+              originId: input.originId ?? null,
+              organizerId: input.organizerId,
+              publicationDate: input.publicationDate ?? null,
+            },
+          });
+        } catch (err) {
+          // `slug` est la seule contrainte unique d'Event — un P2002 ne
+          // peut donc venir que de lui. On garde le test sur `target`
+          // par cohérence avec discipline/stage et pour rester robuste
+          // si une autre contrainte unique apparaît plus tard.
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2002"
+          ) {
+            const t = err.meta?.target;
+            const onSlug = Array.isArray(t)
+              ? t.includes("slug")
+              : String(t ?? "").includes("slug");
+            if (onSlug) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: "This slug is already used. Choose a different one.",
+              });
+            }
+          }
+          throw err;
+        }
 
         await syncPageMediaReferences(tx, {
           pageType: "EVENT",
@@ -348,6 +410,7 @@ export const eventRouter = router({
         try {
           const data: Prisma.EventUncheckedUpdateInput = {
             label: rest.label,
+            slug: rest.slug,
             audience: rest.audience,
             disciplineId: rest.disciplineId,
             externalDisciplineLabel: rest.externalDisciplineLabel,
@@ -365,14 +428,25 @@ export const eventRouter = router({
             data,
           });
         } catch (err) {
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2025"
-          ) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Event not found.",
-            });
+          if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            if (err.code === "P2002") {
+              const t = err.meta?.target;
+              const onSlug = Array.isArray(t)
+                ? t.includes("slug")
+                : String(t ?? "").includes("slug");
+              if (onSlug) {
+                throw new TRPCError({
+                  code: "CONFLICT",
+                  message: "This slug is already used. Choose a different one.",
+                });
+              }
+            }
+            if (err.code === "P2025") {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Event not found.",
+              });
+            }
           }
           throw err;
         }

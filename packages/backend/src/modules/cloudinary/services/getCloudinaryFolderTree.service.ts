@@ -138,7 +138,12 @@ export async function getCloudinaryFolderTree(
       normalizedPath
     );
 
-    return mapCloudinaryFolderToClient(finderTree);
+    console.log("[tree:built]", normalizedPath, "taolu?", JSON.stringify(finderTree).includes("taolu-multi-styles"));
+
+    const mapped = mapCloudinaryFolderToClient(finderTree);
+    console.log("[tree:mapped]", normalizedPath, "taolu?", JSON.stringify(mapped).includes("taolu-multi-styles"));
+    
+    return mapped;
   })();
 
   inFlight.set(key, promise);

@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Props                                                                  */
@@ -90,21 +90,6 @@ export function TimeInput({ value, onChange, id }: TimeInputProps) {
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Helper d'affichage                                                     */
 /* ─────────────────────────────────────────────────────────────────────── */
-
-/**
- * Convertit une valeur HHMM en chaîne d'affichage « 18h30 ». À utiliser
- * dans les pages publiques et toute UI qui montre des horaires.
- *
- *   formatHHMM(0)     // "0h00"
- *   formatHHMM(905)   // "9h05"
- *   formatHHMM(1830)  // "18h30"
- *   formatHHMM(2359)  // "23h59"
- */
-export function formatHHMM(hhmm: number): string {
-  const h = Math.floor(hhmm / 100);
-  const m = hhmm % 100;
-  return `${h}h${String(m).padStart(2, "0")}`;
-}
 
 function clamp(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;

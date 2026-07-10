@@ -4,13 +4,15 @@ import { useState } from "react";
 import type { Discipline, DisciplineType } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { cloudinaryAdapter } from "@features/finder-adapters/cloudinary/cloudinary.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { CategorySelect } from "@features/admin/common/components/CategorySelect";
 import { OriginSelect } from "@features/admin/common/components/OriginSelect";
+import { FamilySelect } from "@/features/admin/common/components/FamilySelect";
 import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
 
+import { slugify } from "@contracts/slug/slugify";
 import {
   emptyPageContentV1,
   parsePageContentV1,
@@ -23,8 +25,9 @@ import {
 
 export interface DisciplineFormInput {
   name: string;
+  slug: string;
   type: DisciplineType;
-  family: string | null;
+  familyId: number | null;
   school: string | null;
   classification: string | null;
   originId: number | null;
@@ -58,20 +61,24 @@ const DISCIPLINE_TYPES: { value: DisciplineType; label: string }[] = [
 /**
  * Formulaire d'édition d'une `Discipline`. Trois sections :
  *
- *   1. **Identité** — name, type, catégorie, instructeur principal
- *   2. **Origine et classification** — origine culturelle (Origin v2)
- *      plus les champs libres family / school / classification
+ *   1. **Identité** — name, slug, type, catégorie, instructeur principal
+ *   2. **Origine et classification** — origine culturelle (Origin) et
+ *      famille (DisciplineFamily, via sélecteur), plus school / classification
  *   3. **Description** — composite Json édité au PageBuilder
- *      (introduit en v2)
  *
  * Validations au submit :
  *   - `name` non vide
+ *   - `slug` non vide (auto-rempli depuis le nom, éditable)
  *   - `categoryId !== 0` (forcé par le placeholder du CategorySelect)
  *   - `instructorId !== null` (Discipline.instructorId est NOT NULL)
  *
- * Le `categoryId` est immutable côté router (cf. discipline router) ;
- * en mode édition, le select reste affiché mais désactivé pour
- * signaler à l'admin qu'il ne peut pas le changer.
+ * Le `slug` suit le nom tant que l'admin n'y a pas touché (pattern
+ * `OriginForm`), puis devient indépendant — il reste **stable au
+ * renommage** une fois figé. Le `familyId` remplace l'ancien champ texte
+ * libre `family` : on choisit une `DisciplineFamily` existante (ou aucune).
+ *
+ * Le `categoryId` est immutable côté router ; en mode édition le select
+ * est remplacé par un champ désactivé.
  */
 export function DisciplineForm({
   initial,
@@ -79,10 +86,14 @@ export function DisciplineForm({
   submitLabel = "Enregistrer",
 }: DisciplineFormProps) {
   const [name, setName] = useState<string>(initial?.name ?? "");
+  const [slug, setSlug] = useState<string>(initial?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState<boolean>(!!initial);
   const [type, setType] = useState<DisciplineType>(
     initial?.type ?? "MARTIAL_ART",
   );
-  const [family, setFamily] = useState<string>(initial?.family ?? "");
+  const [familyId, setFamilyId] = useState<number | null>(
+    initial?.familyId ?? null,
+  );
   const [school, setSchool] = useState<string>(initial?.school ?? "");
   const [classification, setClassification] = useState<string>(
     initial?.classification ?? "",
@@ -104,11 +115,32 @@ export function DisciplineForm({
 
   const isEditMode = !!initial;
 
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (!slugTouched) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
+    setSlugTouched(true);
+  };
+
+  const handleRegenerateSlug = () => {
+    setSlug(slugify(name));
+    setSlugTouched(false);
+  };
+
   const handleSubmit = async () => {
     setSubmitError(null);
 
     if (name.trim() === "") {
       setSubmitError("Le nom est obligatoire.");
+      return;
+    }
+    if (slug.trim() === "") {
+      setSubmitError("Le slug est obligatoire.");
       return;
     }
     if (categoryId === 0) {
@@ -126,8 +158,9 @@ export function DisciplineForm({
     try {
       await onSubmit({
         name: name.trim(),
+        slug: slug.trim(),
         type,
-        family: family.trim() === "" ? null : family.trim(),
+        familyId,
         school: school.trim() === "" ? null : school.trim(),
         classification:
           classification.trim() === "" ? null : classification.trim(),
@@ -154,9 +187,29 @@ export function DisciplineForm({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
             placeholder="Karaté Shotokan"
             className="rounded border border-input bg-background px-2 py-1"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="flex items-center justify-between font-medium">
+            Slug *
+            <button
+              type="button"
+              onClick={handleRegenerateSlug}
+              className="text-xs font-normal text-muted-foreground underline hover:text-foreground"
+            >
+              régénérer depuis le nom
+            </button>
+          </span>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="karate-shotokan"
+            className="rounded border border-input bg-background px-2 py-1 font-mono text-xs"
           />
         </label>
 
@@ -215,13 +268,7 @@ export function DisciplineForm({
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Famille</span>
-          <input
-            type="text"
-            value={family}
-            onChange={(e) => setFamily(e.target.value)}
-            placeholder="Karaté, Aikido…"
-            className="rounded border border-input bg-background px-2 py-1"
-          />
+          <FamilySelect value={familyId} onChange={setFamilyId} />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
@@ -255,7 +302,7 @@ export function DisciplineForm({
         <PageBuilder
           value={description}
           onChange={setDescription}
-          adapter={cloudinaryAdapter}
+          adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
         />
       </fieldset>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Audience, Course, Day } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { cloudinaryAdapter } from "@features/finder-adapters/cloudinary/cloudinary.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
@@ -219,7 +219,7 @@ export function CourseForm({
         <PageBuilder
           value={content}
           onChange={setContent}
-          adapter={cloudinaryAdapter}
+          adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
         />
       </fieldset>

@@ -33,28 +33,9 @@
 
 import { z } from 'zod';
 import { router, protectedProcedure } from '@backend/trpc';
-
-/* -------------------------------------------------------------------------- */
-/*                                   TYPES                                    */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Forme du retour de `resolveByIds` pour un asset trouvé.
- *
- * Réutilisable côté frontend via :
- *   `inferRouterOutputs<AppRouter>['media']['resolveByIds'][string]`
- *
- * On expose le type explicitement pour qu'il puisse être référencé
- * directement par d'autres modules backend (notamment futur module
- * `page-renderer` server-side du sous-chantier 6).
- */
-export type ResolvedMedia = {
-  url: string;
-  mimeType: string;
-  width: number | null;
-  height: number | null;
-  duration: number | null;
-};
+import type { ResolvedMedia } from '@contracts/page';
+import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
+import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -79,6 +60,11 @@ function parentOf(path: string, appRoot: string): string {
   return lastSlash > 0 ? path.slice(0, lastSlash) : appRoot;
 }
 
+/** Dernier segment d'un fullPath → nom de fichier. */
+function fileNameOf(fullPath: string): string {
+  return fullPath.split('/').pop() ?? fullPath;
+}
+
 /**
  * Détermine si un `fullPath` DB matche un `path` d'entrée frontend.
  * Cf. doc en tête de fichier.
@@ -87,36 +73,6 @@ function matchesPath(fullPath: string, inputPath: string): boolean {
   if (fullPath === inputPath) return true;
   if (fullPath.startsWith(`${inputPath}.`)) return true;
   return false;
-}
-
-/**
- * Construit l'URL relative qui sert un asset au navigateur.
- *
- * Le projet a deux routes de proxy :
- *   - `/api/media/by-public-id/<publicId>` pour les assets Cloudinary
- *   - `/api/media/r2/<fullPath>` pour les assets R2 (presigned redirect)
- *
- * On discrimine par la présence de `publicId` — non-null = Cloudinary,
- * null = R2. Les segments sont URL-encodés pour gérer les caractères
- * spéciaux dans les noms de dossier ou de fichier.
- *
- * Variant Cloudinary forcé à `large` par défaut — c'est ce qui marche
- * pour un usage typique en édition et en lecture publique. Si on veut
- * un autre variant (`thumb`, `original`...), on l'overridera côté
- * appelant en post-traitant l'URL ou en ajoutant un paramètre à la
- * procédure.
- */
-function buildMediaProxyUrl(asset: {
-  publicId: string | null;
-  fullPath: string;
-}): string {
-  const encodeSegments = (path: string) =>
-    path.split('/').map(encodeURIComponent).join('/');
-
-  if (asset.publicId !== null) {
-    return `/api/media/by-public-id/${encodeSegments(asset.publicId)}?variant=large`;
-  }
-  return `/api/media/r2/${encodeSegments(asset.fullPath)}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -205,18 +161,10 @@ export const mediaRouter = router({
    * 🔗 Résout une liste de paths (côté UI/finder) vers leur `mediaId`
    * stable correspondant.
    *
-   * Consommé typiquement par le toolbar TipTap après un retour du
-   * MediaPicker : le picker rend des paths, on les convertit en
-   * mediaIds avant de les pousser dans les attrs du nœud
-   * `library-image`.
-   *
-   * Matching tolérant à l'extension (cf. doc en tête de fichier) —
-   * même mécanique que `getByPaths`, juste un retour plus restreint.
+   * Matching tolérant à l'extension (cf. doc en tête de fichier).
    *
    * Retourne un Record indexé par le path d'entrée. Si un path ne
-   * correspond à aucun asset (cas anormal vu que les paths viennent
-   * d'un picker qui liste ce qui existe), la valeur est `null` plutôt
-   * que omise — ça simplifie la consommation côté client.
+   * correspond à aucun asset, la valeur est `null` plutôt qu'omise.
    */
   resolveByPaths: protectedProcedure
     .input(
@@ -258,21 +206,16 @@ export const mediaRouter = router({
    * 🔗 Résout une liste de `mediaId` (cuid stable) vers les
    * informations nécessaires au rendu d'un asset (URL + metadata).
    *
-   * Consommé par :
-   *   - la NodeView `library-image` (un seul mediaId à chaque mount)
-   *   - le `View` server-side d'un bloc tiptap (batch, depuis le
-   *     walker ProseMirror — futur sous-chantier 6)
-   *   - le `View` des blocs `image-gallery` / `audio-collection` /
-   *     `document-list`
-   *
    * ─── Politique : `published` uniquement ────────────────────────────
    *
    * On filtre `status === 'published'`. Un asset en `pending` ou en
    * `bin` n'est jamais résolu — le caller reçoit `null` pour cet id
-   * et affichera son placeholder « média indisponible ». C'est cette
-   * procédure qui matérialise la règle métier décidée au cadrage :
-   * « ce qui est rendu provenant de la bibliothèque ne peut être pris
-   * que sous published ».
+   * et affichera son placeholder « média indisponible ».
+   *
+   * La forme de retour est le type canonique `ResolvedMedia`
+   * (`@contracts/page`) — source unique partagée avec le PageRenderer,
+   * le MediaListEditor (qui l'infère via inferRouterOutputs) et le
+   * MediaItemsEditor.
    *
    * Retourne un Record indexé par mediaId. Les ids absents de la DB
    * ou non-published rendent `null`.
@@ -298,6 +241,7 @@ export const mediaRouter = router({
           publicId: true,
           fullPath: true,
           mimeType: true,
+          resourceType: true,
           width: true,
           height: true,
           duration: true,
@@ -308,9 +252,15 @@ export const mediaRouter = router({
       for (const id of input.mediaIds) byId[id] = null;
 
       for (const asset of assets) {
+        const kind = deriveMediaKind(asset.resourceType, asset.mimeType);
+        const baseUrl = buildMediaProxyUrl(asset);
+
         byId[asset.id] = {
-          url: buildMediaProxyUrl(asset),
+          url: baseUrl,
+          kind,
+          posterUrl: kind === 'video' ? `${baseUrl}&as=poster` : null,
           mimeType: asset.mimeType,
+          fileName: fileNameOf(asset.fullPath),
           width: asset.width,
           height: asset.height,
           duration: asset.duration,
@@ -522,9 +472,6 @@ export const mediaRouter = router({
       }
 
       if (result.count > 1) {
-        // Cas improbable mais on log : deux Cloudinary "trotinette.jpg" et "trotinette.png"
-        // au même path racine matcheraient tous les deux. À ce stade c'est très peu
-        // probable dans la convention AKFC, mais on garde la trace en cas de.
         console.warn(
           `[media.updateDescription] ${result.count} rows updated pour path="${input.path}" ` +
             `— le path matche plusieurs MediaAssets. À investiguer si non intentionnel.`,

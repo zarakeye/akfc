@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   EditorContent,
   EditorContext,
@@ -113,9 +113,12 @@ export function BuilderTipTapEditor({
 
   // Ref sur onChange pour éviter toute closure périmée dans `onUpdate`
   // (l'editor n'est créé qu'une fois ; onChange peut changer à chaque
-  // render du bloc parent).
+  // render du bloc parent). On met la ref à jour dans un effet — écrire
+  // une ref pendant le render est interdit par `react-hooks/refs`.
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   /* ── Résolution mediaId → URL pour la NodeView ── */
 
@@ -198,6 +201,12 @@ export function BuilderTipTapEditor({
       Superscript,
       Subscript,
       Selection,
+      // `openImagePicker` capture `pickerResolveRef` pour résoudre la
+      // Promise au submit/cancel du picker : la ref n'est lue qu'à l'appel
+      // (événement utilisateur), jamais pendant le render. Mais `useEditor`
+      // exécute `configure()` au render, d'où ce faux positif structurel
+      // qu'on neutralise localement.
+      // eslint-disable-next-line react-hooks/refs
       LibraryImageNode.configure({
         resolveMediaUrl,
         openImagePicker,

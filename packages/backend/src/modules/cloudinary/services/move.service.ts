@@ -1,11 +1,11 @@
-import { cloudinary } from '@backend/modules/cloudinary/cloudinary.client';
-import { MoveIntent } from '@contracts/cloudinary/move.schema';
+import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
+import { MoveIntent } from "@contracts/cloudinary/move.schema";
 import {
   replaceStatusSegment,
   moveFileIntoFolder,
-} from '@backend/modules/cloudinary/utils/cloudinary.utils';
-import { getAssetInfo } from '@backend/modules/cloudinary/services/cloudinary.service';
-import { invalidate as invalidateResourcesCache } from '@backend/modules/cloudinary/cache/resourcesCache';
+} from "@backend/modules/cloudinary/utils/cloudinary.utils";
+import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
+import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 
 /**
  * move.service.ts
@@ -22,7 +22,7 @@ import { invalidate as invalidateResourcesCache } from '@backend/modules/cloudin
  *   et on le passe à uploader.rename().
  */
 
-type CloudinaryResourceType = 'image' | 'video' | 'raw';
+type CloudinaryResourceType = "image" | "video" | "raw";
 
 type ListedAsset = {
   public_id: string;
@@ -41,14 +41,14 @@ type ListedAsset = {
 export async function moveService(intent: MoveIntent): Promise<void> {
   const { source, target } = intent;
 
-  console.log('Executing move intent:', intent);
+  console.log("Executing move intent:", intent);
 
   /**
    * ---------------------------------------------------------------------------
    * ✅ 0) MULTI-SELECT
    * ---------------------------------------------------------------------------
    */
-  if (source.type === 'selection') {
+  if (source.type === "selection") {
     // Matérialiser la sélection (roots/excluded) en assets (public_id + resource_type)
     const assets = await collectSelectedAssets({
       roots: source.roots,
@@ -61,9 +61,12 @@ export async function moveService(intent: MoveIntent): Promise<void> {
     const uniqueAssets = Array.from(dedup.values());
 
     // ---------- selection -> virtual-folder ----------
-    if (target.type === 'virtual-folder') {
+    if (target.type === "virtual-folder") {
       for (const asset of uniqueAssets) {
-        const nextPublicId = replaceStatusSegment(asset.public_id, target.status);
+        const nextPublicId = replaceStatusSegment(
+          asset.public_id,
+          target.status,
+        );
 
         // no-op : déjà dans le bon status
         if (nextPublicId === asset.public_id) continue;
@@ -74,7 +77,7 @@ export async function moveService(intent: MoveIntent): Promise<void> {
     }
 
     // ---------- selection -> folder ----------
-    if (target.type === 'folder') {
+    if (target.type === "folder") {
       /**
        * IMPORTANT:
        * - On doit préserver la structure pour les dossiers sélectionnés.
@@ -93,7 +96,7 @@ export async function moveService(intent: MoveIntent): Promise<void> {
       return;
     }
 
-    throw new Error('Invalid target for selection');
+    throw new Error("Invalid target for selection");
   }
 
   /**
@@ -101,10 +104,10 @@ export async function moveService(intent: MoveIntent): Promise<void> {
    * 1) FILE / FOLDER -> VIRTUAL
    * ---------------------------------------------------------------------------
    */
-  if (target.type === 'virtual-folder') {
+  if (target.type === "virtual-folder") {
     const newPrefix = replaceStatusSegment(source.fullPath, target.status);
 
-    if (source.type === 'file') {
+    if (source.type === "file") {
       const info = await getAssetInfo(source.fullPath);
       await renameAsset(source.fullPath, newPrefix, info.resource_type);
     } else {
@@ -119,13 +122,13 @@ export async function moveService(intent: MoveIntent): Promise<void> {
    * 2) FILE / FOLDER -> FOLDER
    * ---------------------------------------------------------------------------
    */
-  if (target.type === 'folder') {
-    if (source.type === 'file') {
+  if (target.type === "folder") {
+    if (source.type === "file") {
       const newPath = moveFileIntoFolder(source.fullPath, target.fullPath);
       const info = await getAssetInfo(source.fullPath);
       await renameAsset(source.fullPath, newPath, info.resource_type);
     } else {
-      const folderName = source.fullPath.split('/').pop();
+      const folderName = source.fullPath.split("/").pop();
       if (!folderName) return;
 
       const targetPrefix = `${target.fullPath}/${folderName}`;
@@ -135,7 +138,7 @@ export async function moveService(intent: MoveIntent): Promise<void> {
     return;
   }
 
-  throw new Error('Invalid move intent');
+  throw new Error("Invalid move intent");
 }
 
 /**
@@ -151,13 +154,52 @@ export async function moveService(intent: MoveIntent): Promise<void> {
  * @param resourceType The type of the asset to rename.
  * @returns A promise that resolves when the asset has been renamed.
  */
-async function renameAsset(from: string, to: string, resourceType: CloudinaryResourceType) {
+async function renameAsset(
+  from: string,
+  to: string,
+  resourceType: CloudinaryResourceType,
+) {
+  // Le compte est en DYNAMIC FOLDERS : le public_id et l'`asset_folder`
+  // (dossier-entité, source de vérité de l'arbo Cloudinary) sont deux
+  // champs INDÉPENDANTS. Un rename qui ne touche que le public_id laisse
+  // l'asset rattaché à son ancien dossier-entité → Media Library et
+  // sub_folders/delete_folder le voient toujours à l'ancien emplacement
+  // (fantômes, arbo divergente). On aligne donc explicitement
+  // l'`asset_folder` sur le nouveau chemin : tout sauf le dernier segment
+  // du public_id cible.
+  const nextAssetFolder = to.includes("/")
+    ? to.slice(0, to.lastIndexOf("/"))
+    : "";
+
   // ✅ on passe resource_type pour que rename marche (image/video/raw)
-  await cloudinary.uploader.rename(from, to, {
-    type: 'authenticated',
+  //
+  // `asset_folder` est accepté par l'API rename (dynamic folders) mais
+  // absent du type RenameOptions du SDK. On construit les options typées
+  // normalement, puis on ajoute asset_folder via un spread élargi en
+  // `Record<string, unknown>` (double cast `as unknown as` — la voie que
+  // TS impose pour un champ runtime-valide mais non typé).
+  const renameOptions = {
+    type: "authenticated",
     resource_type: resourceType,
     overwrite: true,
-  });
+    invalidate: true,
+    // Déplace aussi le dossier-entité (dynamic folders).
+    asset_folder: nextAssetFolder,
+  } as unknown as Parameters<typeof cloudinary.uploader.rename>[2];
+
+  await cloudinary.uploader.rename(from, to, renameOptions);
+
+  // ⚠ `uploader.rename` déplace le public_id mais IGNORE `asset_folder`
+  // (confirmé en test : le retour garde l'ancien dossier-entité, quoi
+  // qu'on passe au rename). En DYNAMIC FOLDERS, le dossier-entité — source
+  // de vérité de l'arbo Cloudinary (Media Library, sub_folders,
+  // delete_folder) — se met à jour via l'Admin API `api.update` en appel
+  // SÉPARÉ. Sans lui : fantômes, arbo divergente, picker aveugle.
+  await cloudinary.api.update(to, {
+    asset_folder: nextAssetFolder,
+    resource_type: resourceType,
+    type: "authenticated",
+  } as unknown as Parameters<typeof cloudinary.api.update>[1]);
 
   // 🔁 Le state Cloudinary vient de changer — purge le cache des resources
   // pour que la prochaine lecture (tree, list) reflète l'état réel.
@@ -178,12 +220,12 @@ async function renameAsset(from: string, to: string, resourceType: CloudinaryRes
 async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
   const out: ListedAsset[] = [];
 
-  for (const rt of ['image', 'video', 'raw'] as const) {
+  for (const rt of ["image", "video", "raw"] as const) {
     let nextCursor: string | undefined;
 
     do {
       const res = await cloudinary.api.resources({
-        type: 'authenticated',
+        type: "authenticated",
         resource_type: rt,
         prefix,
         max_results: 500,
@@ -212,17 +254,20 @@ async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
  * @param targetPrefix Le préfixe cible du dossier à renommer.
  * @returns Une promesse qui se résout lorsqu'un dossier a été renommé.
  */
-async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
+async function moveFolderRecursively(
+  sourcePrefix: string,
+  targetPrefix: string,
+) {
   /**
    * Version robuste: on bouge image/video/raw, paginé.
    * (Ton ancienne version ne gérait qu’un type implicite et une pagination partielle selon usage.)
    */
-  for (const rt of ['image', 'video', 'raw'] as const) {
+  for (const rt of ["image", "video", "raw"] as const) {
     let nextCursor: string | undefined;
 
     do {
       const res = await cloudinary.api.resources({
-        type: 'authenticated',
+        type: "authenticated",
         resource_type: rt,
         prefix: sourcePrefix,
         max_results: 500,
@@ -290,10 +335,10 @@ async function collectSelectedAssets(input: {
  * @returns A promise that resolves with a ListedAsset object or null.
  */
 async function tryGetAsset(publicId: string): Promise<ListedAsset | null> {
-  for (const rt of ['image', 'video', 'raw'] as const) {
+  for (const rt of ["image", "video", "raw"] as const) {
     try {
       const res = await cloudinary.api.resource(publicId, {
-        type: 'authenticated',
+        type: "authenticated",
         resource_type: rt,
       });
       if (res?.public_id) {
@@ -346,7 +391,7 @@ async function moveSelectionIntoFolder(params: {
     }
 
     // root folder => déplacer sous targetFolder en gardant folderName
-    const folderName = root.split('/').pop();
+    const folderName = root.split("/").pop();
     if (!folderName) continue;
 
     const targetPrefix = `${targetFolder}/${folderName}`;

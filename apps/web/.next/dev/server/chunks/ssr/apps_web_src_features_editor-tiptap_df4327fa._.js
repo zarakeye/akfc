@@ -833,26 +833,31 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
     const [url, setUrl] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [status, setStatus] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("loading");
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (!mediaId) {
-            setStatus("missing");
-            setUrl(null);
-            return;
-        }
+        // Pas de mediaId → état "missing" dérivé au rendu (effectiveStatus),
+        // pas de setState dans le corps de l'effet.
+        if (!mediaId) return;
         let cancelled = false;
-        setStatus("loading");
-        setUrl(null);
-        options.resolveMediaUrl(mediaId).then((resolved)=>{
-            if (cancelled) return;
-            if (resolved) {
-                setUrl(resolved);
-                setStatus("ready");
-            } else {
+        // Le reset (loading) et le fetch vivent dans une fonction async : les
+        // setState ne sont donc pas dans le corps synchrone de l'effet, ce qui
+        // évite react-hooks/set-state-in-effect.
+        async function resolve() {
+            setStatus("loading");
+            setUrl(null);
+            try {
+                const resolved = await options.resolveMediaUrl(mediaId);
+                if (cancelled) return;
+                if (resolved) {
+                    setUrl(resolved);
+                    setStatus("ready");
+                } else {
+                    setStatus("missing");
+                }
+            } catch  {
+                if (cancelled) return;
                 setStatus("missing");
             }
-        }).catch(()=>{
-            if (cancelled) return;
-            setStatus("missing");
-        });
+        }
+        void resolve();
         return ()=>{
             cancelled = true;
         };
@@ -878,30 +883,34 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
     }, [
         updateAttributes
     ]);
+    // Sans mediaId, on dérive l'état "missing" directement, sans dépendre des
+    // states résiduels d'une résolution précédente.
+    const effectiveStatus = mediaId ? status : "missing";
+    const effectiveUrl = mediaId ? url : null;
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$react$40$3$2e$23$2e$6_$40$floating$2d$ui$2b$dom$40$1$2e$7$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tip_a8e365e180dfc8cb98aea3a4e030aa4f$2f$node_modules$2f40$tiptap$2f$react$2f$dist$2f$index$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["NodeViewWrapper"], {
         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"])("group relative my-6 rounded-lg outline-2 outline-transparent transition-[outline-color] duration-100", selected && "outline-ring"),
-        "data-status": status,
+        "data-status": effectiveStatus,
         "data-selected": selected || undefined,
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("figure", {
             className: "m-0 flex flex-col items-stretch gap-2 rounded-[inherit] bg-muted/40 p-3",
             contentEditable: false,
             children: [
-                status === "loading" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                effectiveStatus === "loading" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex min-h-32 items-center justify-center rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground",
                     children: "Chargement…"
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                    lineNumber: 132,
+                    lineNumber: 141,
                     columnNumber: 11
                 }, this),
-                status === "missing" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                effectiveStatus === "missing" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex min-h-32 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-destructive/30 bg-destructive/5 p-8 text-center text-sm text-destructive",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                             children: "⚠️ Média indisponible"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                            lineNumber: 139,
+                            lineNumber: 148,
                             columnNumber: 13
                         }, this),
                         mediaId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("code", {
@@ -909,24 +918,24 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
                             children: mediaId
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                            lineNumber: 141,
+                            lineNumber: 150,
                             columnNumber: 15
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                    lineNumber: 138,
+                    lineNumber: 147,
                     columnNumber: 11
                 }, this),
-                status === "ready" && url && // eslint-disable-next-line @next/next/no-img-element
+                effectiveStatus === "ready" && effectiveUrl && // eslint-disable-next-line @next/next/no-img-element
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
-                    src: url,
+                    src: effectiveUrl,
                     alt: caption ?? "",
                     className: "block w-full max-w-full rounded-md object-contain",
                     draggable: false
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                    lineNumber: 148,
+                    lineNumber: 157,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("figcaption", {
@@ -940,12 +949,12 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
                         disabled: !editor.isEditable
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                        lineNumber: 157,
+                        lineNumber: 166,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                    lineNumber: 156,
+                    lineNumber: 165,
                     columnNumber: 9
                 }, this),
                 editor.isEditable && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -958,12 +967,12 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
                             onClick: handleReplace,
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$icons$2f$image$2d$plus$2d$icon$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ImagePlusIcon"], {}, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                                lineNumber: 175,
+                                lineNumber: 184,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                            lineNumber: 169,
+                            lineNumber: 178,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$ui$2d$primitive$2f$button$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -973,29 +982,29 @@ function LibraryImageNodeView({ node, editor, selected, updateAttributes, delete
                             onClick: deleteNode,
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$icons$2f$close$2d$icon$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CloseIcon"], {}, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                                lineNumber: 183,
+                                lineNumber: 192,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                            lineNumber: 177,
+                            lineNumber: 186,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-                    lineNumber: 168,
+                    lineNumber: 177,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-            lineNumber: 127,
+            lineNumber: 136,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx",
-        lineNumber: 119,
+        lineNumber: 128,
         columnNumber: 5
     }, this);
 }

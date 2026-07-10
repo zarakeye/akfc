@@ -82,6 +82,8 @@ const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 "use strict";
 
 __turbopack_context__.s([
+    "config",
+    ()=>config,
     "proxy",
     ()=>proxy
 ]);
@@ -92,37 +94,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src
 ;
 ;
 const JWT_SECRET = process.env.JWT_SECRET;
-const PUBLIC_PATHS = [
-    "/",
-    "/docs",
-    "/auth",
-    "/api",
-    "/_next",
-    "/favicon.ico"
-];
-/**
- * Ce proxy agit comme un préfiltre léger :
- * - il vérifie la présence du cookie d'auth
- * - il vérifie que le JWT est encore valide
- *
- * Il ne vérifie PAS la session en base de données.
- * La validation canonique de l'authentification reste faite côté backend via :
- * - getSessionFromRequest
- * - createTRPCContext
- * - protectedProcedure
- */ function isPublicPath(pathname) {
-    return PUBLIC_PATHS.some((prefix)=>pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
 async function proxy(req) {
-    const { pathname, origin } = req.nextUrl;
-    if (isPublicPath(pathname)) {
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].next();
-    }
+    const { origin } = req.nextUrl;
     const token = req.cookies.get(__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$auth$2f$constants$2e$ts__$5b$middleware$5d$__$28$ecmascript$29$__["COOKIE_NAME"])?.value;
-    if (!token) {
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL("/", origin));
-    }
-    if (!JWT_SECRET) {
+    if (!token || !JWT_SECRET) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL("/", origin));
     }
     try {
@@ -132,6 +107,17 @@ async function proxy(req) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$middleware$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL("/", origin));
     }
 }
+const config = {
+    // Le proxy ne tourne QUE sur l'espace protégé. Tout le reste est public.
+    // Ajoute ici d'éventuelles autres zones privées (ex. "/account/:path*").
+    // ⚠ "(admin)" est un route group : il n'existe PAS dans les URLs.
+    // L'ancien matcher "/(admin)/:path*" ne matchait donc JAMAIS — le
+    // proxy ne tournait pas et l'espace admin était sans garde de route.
+    matcher: [
+        "/dashboard/:path*",
+        "/profil/:path*"
+    ]
+};
 }),
 ];
 

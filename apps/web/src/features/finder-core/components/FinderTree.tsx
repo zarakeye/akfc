@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import type { FinderNode } from '@contracts/finder';
@@ -19,53 +19,54 @@ import {
 } from '@features/finder-core/state/TrashMapContext';
 
 /**
- * FinderTree
+ * FinderTree — composant racine de la TreeView du finder.
+ * (Doc de chargement progressif / high-water mark inchangée — cf. historique.)
  *
- * Composant racine de la TreeView du finder.
- *
- * ─── Stratégie de chargement ──────────────────────────────────────────────
- *
- * Au montage, on appelle `adapter.getTree({ path: rootPath, depth: 2 })`
- * pour récupérer deux niveaux d'avance (les enfants du rootPath et leurs
- * propres enfants directs). Ça suffit pour rendre fluide la navigation
- * "premier niveau d'expansion" sans round-trip supplémentaire.
- *
- * Les niveaux plus profonds sont chargés à la demande dans chaque
- * `FinderTreeFolder` lorsqu'il est déplié pour la première fois (cf.
- * `ensureChildrenLoaded` dans ce composant fils).
- *
- * ─── État d'expansion ─────────────────────────────────────────────────────
- *
- * Le set des paths dépliés est tenu ICI (au niveau racine) plutôt que
- * dans chaque FinderTreeFolder, pour deux raisons :
- *   1) Permet de fermer toute la TreeView en un geste (ex: bouton "tout
- *      replier" ultérieur)
- *   2) Permet à des cas futurs (synchronisation avec la grille principale,
- *      ex: quand l'utilisateur navigue vers `cours/12` dans la grille on
- *      veut que la branche `cours` se déplie dans la TreeView) d'être
- *      ajoutés sans toucher à FinderTreeFolder.
+ * ─── Mode picker (panier) ─────────────────────────────────────────────────
+ * Reçoit `pickMode`/`isInCart`/`onPickToggle` et les propage à toute la
+ * récursion (FinderTreeFolder → FinderTreeFile). En pickMode, les fichiers de
+ * l'arbre deviennent pickables, branchés sur le MÊME store que la grille via
+ * MediaPicker → synchro grille↔arbre automatique.
  */
+
+const INITIAL_TREE_DEPTH = 2;
+
+function levelBelowRoot(path: string, rootPath: string): number {
+  if (path === rootPath) return 0;
+  const prefix = `${rootPath}/`;
+  const rel = path.startsWith(prefix) ? path.slice(prefix.length) : path;
+  return rel.split('/').filter(Boolean).length;
+}
+
+function pruneTreeFiles(
+  node: FinderNode,
+  predicate: (n: FinderNode) => boolean,
+): FinderNode {
+  if (node.type !== 'folder' || node.children === undefined) return node;
+  const children = node.children
+    .filter((c) => c.type === 'folder' || predicate(c))
+    .map((c) => pruneTreeFiles(c, predicate));
+  return { ...node, children };
+}
 
 type Props = {
   adapter: FileAdapter;
-  /** Chemin racine de l'arbre — typiquement l'`appRoot` du projet. */
   rootPath: string;
-  /** Path actuellement ouvert dans la grille principale (highlight). */
   currentPath: string;
-  /** Callback quand un dossier est cliqué — déclenche la navigation. */
   onOpen: (path: string) => void;
-  /**
-   * Callback de démarrage de drag depuis un item de la TreeView.
-   * Optionnel : si non fourni, les items ne sont pas drag-source. Forwarded
-   * tel quel à `FinderTreeFolder` et `FinderTreeFile` qui s'occupent du
-   * câblage `draggable + onDragStart`. Identique au handler passé aux GridItem.
-   */
   onItemDragStart?: (e: React.DragEvent, node: FinderNode) => void;
-  /**
-   * Callback long-press sur un item de la TreeView (parité GridView).
-   * Optionnel : si non fourni, le longpress n'active rien.
-   */
   onItemLongPress?: (node: FinderNode) => void;
+  fileFilter?: (node: FinderNode) => boolean;
+  /**
+   * Mode picker (panier) — propagé aux items de l'arbre. En pickMode, un clic
+   * sur un FICHIER l'épingle/retire du panier (au lieu de naviguer/sélectionner).
+   * Branché sur le même store que la grille → synchro automatique. Optionnel.
+   */
+  pickMode?: boolean;
+  /** En pickMode : ce path est-il dans le panier ? Propagé aux fichiers. */
+  isInCart?: (path: string) => boolean;
+  /** En pickMode : épingle/retire un fichier (délégué au store panier). */
+  onPickToggle?: (node: FinderNode) => void;
 };
 
 export default function FinderTree({
@@ -75,12 +76,18 @@ export default function FinderTree({
   onOpen,
   onItemDragStart,
   onItemLongPress,
+  fileFilter,
+  pickMode = false,
+  isInCart,
+  onPickToggle,
 }: Props) {
   const [rootNode, setRootNode] = useState<FinderNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [openPaths, setOpenPaths] = useState<Set<string>>(() => new Set());
+
+  const [treeDepth, setTreeDepth] = useState(INITIAL_TREE_DEPTH);
 
   function toggleOpen(path: string) {
     setOpenPaths((prev) => {
@@ -94,21 +101,12 @@ export default function FinderTree({
     });
   }
 
-  // ─── Chargement du trashMap (uuid → displayName) ─────────────────────────
-  //
-  // On charge `trash.listBin` côté front pour pouvoir, dans la TreeView,
-  // substituer les noms d'uuid par leur `displayName`. Cette query est
-  // toujours active (pas d'enabled conditionnel) parce que :
-  //   - elle est légère (juste la liste plate, pas le contenu de chaque entry)
-  //   - on ne sait pas a priori dans quelle branche l'utilisateur va naviguer
-  //   - le cache React Query évite les re-fetch
-  //
-  // Si la query échoue (admin manquant, network), on tombe sur une Map vide :
-  // le rendu reste cohérent (les uuids apparaîtront tels quels), sans crasher.
   const { data: trashListData } = trpc.trash.listBin.useQuery(
     { appRoot: APP_ROOT, limit: 100 },
     { refetchOnWindowFocus: false, staleTime: 10_000 }
   );
+
+  const reloadKey = useFinderStore((s) => s.reloadKey);
 
   const trashMap: TrashMap = useMemo(() => {
     const map = new Map() as TrashMap;
@@ -119,50 +117,47 @@ export default function FinderTree({
     return map;
   }, [trashListData]);
 
-  // Détection du changement de deps fetch — on reset le state SYNCHRONIQUEMENT
-  // dans le render path (pas dans le useEffect), ce qui évite le warning
-  // React 19 "react-hooks/set-state-in-effect" et donne un comportement plus
-  // prévisible : le reset du loading est visible au MÊME render que le
-  // déclenchement du nouveau fetch.
-  //
-  // Pattern officiellement documenté par React :
-  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const prevRootPath = useRef(rootPath);
-  const prevAdapter = useRef(adapter);
+  const supportsTree = typeof adapter.getTree === 'function';
 
-  if (prevRootPath.current !== rootPath || prevAdapter.current !== adapter) {
-    prevRootPath.current = rootPath;
-    prevAdapter.current = adapter;
+  const [prevDeps, setPrevDeps] = useState({ rootPath, adapter });
+
+  const rootChanged =
+    prevDeps.rootPath !== rootPath || prevDeps.adapter !== adapter;
+
+  if (rootChanged) {
+    setPrevDeps({ rootPath, adapter });
     setIsLoading(true);
     setLoadError(null);
+    setTreeDepth(INITIAL_TREE_DEPTH);
+    setOpenPaths(new Set());
   }
 
-  // Chargement initial : 2 niveaux d'avance.
+  if (!rootChanged) {
+    let deepest = 0;
+    for (const p of openPaths) {
+      const lvl = levelBelowRoot(p, rootPath);
+      if (lvl > deepest) deepest = lvl;
+    }
+    const needed = deepest + 2;
+    if (needed > treeDepth) {
+      setTreeDepth(needed);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     if (!adapter.getTree) {
-      setLoadError('Adapter sans getTree — la TreeView ne peut pas s\'afficher');
-      setIsLoading(false);
       return;
     }
 
     adapter
-      .getTree({ path: rootPath, depth: 2 })
+      .getTree({ path: rootPath, depth: treeDepth })
       .then(({ root }) => {
         if (cancelled) return;
-        setRootNode(root);
+        const visibleRoot = fileFilter ? pruneTreeFiles(root, fileFilter) : root;
+        setRootNode(visibleRoot);
 
-        // ─── Préchauffage du cache partagé store ─────────────────────────
-        //
-        // L'arbre initial contient les children de plusieurs niveaux
-        // (rootPath, ses enfants, et les petits-enfants pour depth=2).
-        // On parcourt récursivement et on cache les children de chaque
-        // node folder.
-        //
-        // Bénéfice : si l'utilisateur clique sur `bin` ou `pending/Cours`
-        // dans la TreeView, la GridView a déjà la donnée en cache et
-        // affiche le contenu instantanément sans spinner.
         const cacheChildrenAt = useFinderStore.getState().cacheChildrenAt;
         function walk(node: FinderNode) {
           if (node.type === 'folder' && node.children !== undefined) {
@@ -172,10 +167,10 @@ export default function FinderTree({
             }
           }
         }
-        walk(root);
+        walk(visibleRoot);
       })
       .catch((err) => {
-        console.error('[FinderTree] getTree initial failed', err);
+        console.error('[FinderTree] getTree failed', err);
         if (cancelled) return;
         setLoadError('Erreur de chargement de l\'arborescence');
       })
@@ -187,7 +182,15 @@ export default function FinderTree({
     return () => {
       cancelled = true;
     };
-  }, [adapter, rootPath]);
+  }, [adapter, rootPath, reloadKey, treeDepth, fileFilter]);
+
+  if (!supportsTree) {
+    return (
+      <div className="px-2 py-2 text-sm text-destructive" role="alert">
+        Adapter sans getTree — la TreeView ne peut pas s&apos;afficher
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -214,10 +217,6 @@ export default function FinderTree({
     );
   }
 
-  // Choix B2 validé : on affiche les ENFANTS du rootPath directement (et
-  // non le rootPath lui-même comme un nœud cliquable). Pour AKFC, ces
-  // enfants sont les status-folders pending / published / bin, mais on
-  // affiche aussi les éventuels fichiers présents directement à la racine.
   const topLevelChildren = rootNode.children;
 
   return (
@@ -235,6 +234,9 @@ export default function FinderTree({
               onToggleOpen={toggleOpen}
               onDragStart={onItemDragStart}
               onLongPress={onItemLongPress}
+              pickMode={pickMode}
+              isInCart={isInCart}
+              onPickToggle={onPickToggle}
             />
           ) : (
             <FinderTreeFile
@@ -242,6 +244,9 @@ export default function FinderTree({
               node={child}
               onDragStart={onItemDragStart}
               onLongPress={onItemLongPress}
+              pickMode={pickMode}
+              isInCart={isInCart}
+              onPickToggle={onPickToggle}
             />
           ),
         )}

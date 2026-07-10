@@ -9,7 +9,7 @@ import { Button } from "@/features/editor-tiptap/ui-primitive/button";
 import { trpc, trpcClient } from "@/core/trpc/trpcClient";
 import type { AppRouter } from "@backend/modules";
 
-import { usePageBuilderContext } from "../PageBuilderContext";
+import { usePageBuilderContext } from "@features/page-builder/PageBuilderContext";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

@@ -41,14 +41,12 @@ function formatFocusLines(start?: number, end?: number): string | null {
 
 export function CodeExampleClient({
   language = "ts",
-  filename,
   filepath,
   snippet,
   fullCode,
   snippetHtml,
   fullCodeHtml,
   snippetTitle = "Focused extract",
-  fullFileTitle = "Full file",
   focusStartLine,
   focusEndLine,
 }: CodeExampleClientProps) {
@@ -131,7 +129,7 @@ export function CodeExampleClient({
             <button
               type="button"
               onClick={() => setExpanded((value) => !value)}
-              className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+              className="shrink-0 rounded-md border border-white/10 bg-white/4 px-3 py-1 text-xs text-white/70 transition hover:bg-white/[0.07] hover:text-white"
             >
               {expanded ? "Revenir à l’extrait" : "Voir le fichier complet"}
             </button>

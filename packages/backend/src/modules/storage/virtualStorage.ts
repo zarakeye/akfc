@@ -19,6 +19,26 @@ import {
   type StorageAdapterDeps,
   type AdapterFor,
 } from "@backend/modules/storage/providerRegistry";
+import { getAssetInfo } from "../cloudinary/services/cloudinary.service";
+
+const STATUS_SEGMENTS = ['pending', 'published', 'bin'] as const;
+type LifecycleStatus = (typeof STATUS_SEGMENTS)[number];
+
+/**
+ * Statut applicatif dérivé d'un path : le segment juste après l'appRoot.
+ * `AKFC/published/cours/x/trotinette` → 'published'. Renvoie null si le
+ * segment n'est pas un statut connu. Convention identique au front
+ * (statusFromPath) et à resolveMoveIntent, dupliquée ici pour ne pas créer
+ * de dépendance backend → features front.
+ */
+function statusFromPath(path: string, appRoot: string): LifecycleStatus | null {
+  const parts = path.split('/').filter(Boolean);
+  const rootParts = appRoot.split('/').filter(Boolean);
+  const seg = parts[rootParts.length];
+  return (STATUS_SEGMENTS as readonly string[]).includes(seg)
+    ? (seg as LifecycleStatus)
+    : null;
+}
 
 /**
  * VirtualStorage — façade multi-backend
@@ -75,8 +95,10 @@ import {
 export class VirtualStorage implements StorageAdapter {
   private readonly cloudinary: AdapterFor<"cloudinary">;
   private readonly r2: AdapterFor<"r2">;
+  private readonly deps: StorageAdapterDeps;
 
   constructor(deps: StorageAdapterDeps) {
+    this.deps = deps;
     this.cloudinary = getAdapter("cloudinary", deps);
     this.r2 = getAdapter("r2", deps);
   }
@@ -148,15 +170,26 @@ export class VirtualStorage implements StorageAdapter {
       throw (results[0] as PromiseRejectedResult).reason;
     }
 
-    return c ?? r ?? null;
+    // ⚠️ On PRÉFÈRE une réponse `file` concrète à une réponse `folder`.
+    //
+    // Un fichier à un path donné est non-ambigu ; une réponse `folder` est
+    // souvent un provider qui rapporte un préfixe de façon optimiste — cas
+    // typique : Cloudinary répond "folder" pour le path d'un fichier qui vit
+    // en réalité sur R2. Avec un simple `c ?? r`, ce folder Cloudinary
+    // masquait le `file` de R2 → resolveMoveIntent traitait le fichier R2
+    // comme un dossier, `getTree` dessus ne ramassait rien, et l'item était
+    // ignoré en silence lors d'un move multi-sélection. Préférer le `file`
+    // corrige ça à la racine.
+    const candidates = [c, r].filter(
+      (n): n is StorageNode => n != null,
+    );
+    const file = candidates.find((n) => n.type === "file");
+    return file ?? candidates[0] ?? null;
   }
 
   async getMetadata(path: StoragePath): Promise<StorageMetadata | null> {
-    // Pour les metadata d'un fichier, un seul backend héberge réellement
-    // l'asset. On essaie selon `pickBackendByExtension`. Si ce backend
-    // est en panne, on tente l'autre par sécurité — l'asset existe forcément
-    // chez l'un des deux puisque l'utilisateur le voit dans le finder.
-    const primary = inferProviderForPath(path);
+    // On ne peut pas deviner le provider d'un path sans interroger la DB. On ne peut pas non plus se fier à l'extension (Cloudinary est extensionless). On doit donc interroger la DB pour savoir qui héberge le fichier, puis interroger le provider correspondant.
+    const primary = await this.resolveProvider(path);
     const primaryAdapter = primary === "cloudinary" ? this.cloudinary : this.r2;
     const fallbackAdapter = primary === "cloudinary" ? this.r2 : this.cloudinary;
 
@@ -178,19 +211,144 @@ export class VirtualStorage implements StorageAdapter {
   }
 
   /* ====================================================================== */
+  /*  Dispatch de provider — autoritaire via la DB                          */
+  /* ====================================================================== */
+
+  /**
+   * Détermine quel provider héberge le file à ce virtual path, en lisant le
+   * discriminant DB plutôt qu'en devinant par l'extension.
+   *
+   * ─── Pourquoi pas l'extension ───────────────────────────────────────────
+   *
+   * Dans l'espace des virtual paths, un asset Cloudinary est EXTENSIONLESS
+   * (c'est son public_id), un asset R2 porte son extension (vraie clé de
+   * fichier). `pickBackendByExtension` faisait donc tomber tout public_id
+   * Cloudinary (`…/trotinette`) sur le défaut R2 → `NoSuchKey` au move. Et un
+   * public_id contenant un point (`…/taolu-v2.1`) piégerait n'importe quelle
+   * heuristique. La source de vérité est la ligne `MediaAsset` : `publicId`
+   * non-null ⇒ Cloudinary, `publicId` null ⇒ R2.
+   *
+   * ─── Matching tolérant (identique au media router) ──────────────────────
+   *
+   * Le `fullPath` stocké porte l'extension. Pour R2 le virtual path la porte
+   * aussi → égalité stricte. Pour Cloudinary le virtual path est le public_id
+   * extensionless → on matche `fullPath` commençant par `path + '.'`.
+   *
+   * Repli si la DB ne connaît pas le path (orphelin non enregistré, ou DB
+   * indisponible) : heuristique améliorée `fallbackProviderForPath`.
+   */
+  private async resolveProvider(path: StoragePath): Promise<StorageProvider> {
+    const { prisma, appRoot } = this.deps;
+    try {
+      const asset = await prisma.mediaAsset.findFirst({
+        where: {
+          appRoot,
+          OR: [
+            { fullPath: path },                       // R2 : clé exacte (avec extension)
+            { fullPath: { startsWith: `${path}.` } }, // Cloudinary : public_id + extension
+          ],
+        },
+        select: { publicId: true },
+      });
+      if (asset) return asset.publicId == null ? "r2" : "cloudinary";
+    } catch (err) {
+      console.warn(
+        `[VirtualStorage] resolveProvider: lookup DB échoué pour "${path}", repli heuristique. Error:`,
+        err
+      );
+    }
+    return fallbackProviderForPath(path);
+  }
+
+  /**
+   * Réconcilie la DB après un move physique réussi. Le move physique a déplacé
+   * le fichier sur le provider, mais la DB n'est pas encore alignée sur le
+   * nouvel emplacement (fullPath / publicId / status). Cette méthode met à
+   * jour la ligne MediaAsset correspondante pour que la façade continue à
+   * fonctionner correctement.
+   * 
+   * @param oldPath 
+   * @param newPath 
+   * @returns 
+   */
+  private async reconcileMovedAsset(
+    oldPath: StoragePath,
+    newPath: StoragePath,
+  ): Promise<void> {
+    const { prisma, appRoot } = this.deps;
+
+    // Le provider est déterminé AVANT le move (la ligne existe encore à
+    // l'ancien path). On le repasse pour éviter une 2e lecture DB.
+    const provider = await this.resolveProvider(newPath).catch(() => null);
+
+    // R2 : pas d'asset_id Cloudinary. On réconcilie par fullPath (clé S3
+    // exacte, qui EST le path — pas de fragilité d'historique côté R2 car la
+    // clé R2 = le path, et le move R2 déplace réellement la clé).
+    if (provider === "r2") {
+      await prisma.mediaAsset.updateMany({
+        where: { appRoot, fullPath: oldPath },
+        data: {
+          fullPath: newPath,
+          ...(statusFromPath(newPath, appRoot)
+            ? { status: statusFromPath(newPath, appRoot)! }
+            : {}),
+        },
+      });
+      return;
+    }
+
+    // Cloudinary : on relit l'asset au NOUVEAU path pour son asset_id
+    // immuable, puis on réancre la ligne par cet id — robuste quel que soit
+    // l'historique des moves (contrairement au matching par ancien path).
+    let info: { asset_id?: string; format?: string } | null = null;
+    try {
+      info = await getAssetInfo(newPath);
+    } catch (err) {
+      console.warn(
+        `[VirtualStorage] reconcileMovedAsset: getAssetInfo("${newPath}") a échoué, réconciliation ignorée.`,
+        err,
+      );
+      return;
+    }
+
+    const assetId = info?.asset_id;
+    if (!assetId) {
+      console.warn(
+        `[VirtualStorage] reconcileMovedAsset: pas d'asset_id pour "${newPath}", réconciliation ignorée.`,
+      );
+      return;
+    }
+
+    const nextStatus = statusFromPath(newPath, appRoot);
+    const nextFullPath = `${newPath}${info?.format ? "." + info.format : ""}`;
+
+    await prisma.mediaAsset.updateMany({
+      where: { appRoot, cloudinaryAssetId: assetId },
+      data: {
+        fullPath: nextFullPath,
+        publicId: newPath,
+        ...(nextStatus ? { status: nextStatus } : {}),
+      },
+    });
+  }
+
+  /* ====================================================================== */
   /*  Écriture                                                              */
   /* ====================================================================== */
 
   async move(operation: StorageMoveOperation): Promise<void> {
     if (operation.source.type === "file") {
-      // Pour un file, le backend qui le détient est déterminé par
-      // l'extension via `pickBackendByExtension`.
-      const provider = inferProviderForPath(operation.source.path);
+      const provider = await this.resolveProvider(operation.source.path);
       const adapter = provider === "cloudinary" ? this.cloudinary : this.r2;
       if (!adapter.move) {
         throw new Error(`move(file) non supporté sur le provider "${provider}"`);
       }
-      return adapter.move(operation);
+      await adapter.move(operation);
+      // Le déplacement physique a réussi : on aligne la DB sur le nouvel
+      // emplacement (fullPath / publicId / status), sinon resolveByPaths,
+      // l'enrichissement et les filtres par status restent sur l'ancien path.
+      await this.reconcileMovedAsset(operation.source.path, operation.target.path);
+      return;
     }
 
     // Folder → on applique aux backends qui SUPPORTENT move. Un dossier
@@ -221,7 +379,7 @@ export class VirtualStorage implements StorageAdapter {
 
     const hasExtension = /\.[^/]+$/.test(path);
     if (hasExtension) {
-      const provider = inferProviderForPath(path);
+      const provider = await this.resolveProvider(path);
       const adapter = provider === "cloudinary" ? this.cloudinary : this.r2;
       if (!adapter.delete) {
         throw new Error(`delete non supporté sur le provider "${provider}"`);
@@ -353,15 +511,17 @@ function mergeFolderTrees(
 }
 
 /**
- * Déduit le provider qui héberge probablement un path donné.
+ * Repli de dispatch quand la DB ne connaît pas le path (orphelin non
+ * enregistré, ou DB indisponible). Utilisé uniquement par `resolveProvider`.
  *
- * Pour un file : basé sur l'extension via `pickBackendByExtension`.
- * Pour un folder (pas d'extension) : impossible à savoir sans interrogation,
- * donc on retombe sur le défaut R2 — mais la plupart des appels sur des
- * folders passent par la voie "broadcast aux deux" plus haut, donc cette
- * branche n'est utilisée que pour des cas sans extension qu'on doit
- * traiter quand même.
+ * Invariant : un virtual path Cloudinary est extensionless (public_id), un
+ * virtual path R2 porte son extension. Un segment final SANS extension ne
+ * peut donc être qu'un public_id Cloudinary — plus fiable que le
+ * `pickBackendByExtension` brut, qui routait l'extensionless vers R2.
  */
-function inferProviderForPath(path: StoragePath): StorageProvider {
-  return pickBackendByExtension(path);
+function fallbackProviderForPath(path: StoragePath): StorageProvider {
+  const name = path.split("/").pop() ?? "";
+  const dot = name.lastIndexOf(".");
+  const hasRealExtension = dot > 0 && dot < name.length - 1;
+  return hasRealExtension ? pickBackendByExtension(path) : "cloudinary";
 }

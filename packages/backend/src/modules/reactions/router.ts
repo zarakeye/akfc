@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { ReactionTarget } from "@prisma/client";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
+import {
+  router,
+  protectedProcedure,
+  publicProcedure,
+} from "@backend/trpc/core";
 
 /**
  * Router des réactions emoji (polymorphe Post / Comment).
@@ -13,7 +17,9 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
  * l'utilisateur courant a posés.
  */
 
-const userSelect = {
+// Exporté : la home (Server Component) réplique la shape de getByTarget
+// pour hydrater le mur sans requête client (cf. PostCard/PostInteractions).
+export const userSelect = {
   id: true,
   firstName: true,
   lastName: true,
@@ -51,7 +57,7 @@ export interface GroupedReaction {
  * d'apparition des emojis (premier réagi = premier affiché) et la liste
  * ordonnée des utilisateurs.
  */
-function groupReactions(
+export function groupReactions(
   reactions: ReactionWithUser[],
   currentUserId: string | undefined,
 ): GroupedReaction[] {

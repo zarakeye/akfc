@@ -47,13 +47,9 @@ export function useNodeTextContent(
   const [truncated, setTruncated] = useState(false);
 
   useEffect(() => {
-    if (!url) {
-      setContent(null);
-      setLoading(false);
-      setError(null);
-      setTruncated(false);
-      return;
-    }
+    // Pas d'URL → rien à charger. Le cas est traité par dérivation au
+    // retour du hook, pas par un setState dans le corps de l'effet.
+    if (!url) return;
 
     const controller = new AbortController();
     let cancelled = false;
@@ -100,6 +96,12 @@ export function useNodeTextContent(
       controller.abort();
     };
   }, [url, maxBytes]);
+
+  // Sans URL, on expose l'état vide directement (sans dépendre des states
+  // résiduels d'un fetch précédent).
+  if (!url) {
+    return { content: null, loading: false, error: null, truncated: false };
+  }
 
   return { content, loading, error, truncated };
 }

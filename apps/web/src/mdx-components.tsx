@@ -1,5 +1,5 @@
 import type { MDXComponents } from "mdx/types"
-import { Children, isValidElement } from "react"
+import { isValidElement } from "react"
 import type { ReactNode, ReactElement } from "react"
 
 import { Callout } from "@features/docs/ui/Callout"
@@ -41,10 +41,6 @@ function extractHeadingText(node: ReactNode): string {
   }
 
   return ""
-}
-
-function getHeadingText(children: React.ReactNode): string {
-  return Children.toArray(children).join("").trim()
 }
 
 function HeadingAnchor({ id }: { id: string }) {

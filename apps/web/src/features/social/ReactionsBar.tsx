@@ -6,7 +6,8 @@ import type { ReactionTarget } from "@prisma/client";
 
 import { trpcClient } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
-import { UserPortrait, formatUserName } from "@features/social/userDisplay";
+import { UserPortrait } from "@features/social/UserPortrait";
+import { formatUserName } from "@features/social/userDisplay";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Constantes                                                             */
@@ -35,6 +36,14 @@ export interface ReactionsBarProps {
   targetId: number;
   /** Réactions initiales (SSR) ; sinon le composant les charge au montage. */
   initialReactions?: ReactionGroup[];
+  /** N pastilles max affichées, le reste replié en « +n » (mur). */
+  maxVisible?: number;
+  /**
+   * Avec `initialReactions` : re-fetch au montage UNIQUEMENT si un user
+   * est connecté, pour corriger `reactedByMe` (le serveur public ne
+   * connaît pas la session). Anonyme = zéro requête.
+   */
+  revalidateOnMount?: boolean;
 }
 
 /**
@@ -49,6 +58,8 @@ export function ReactionsBar({
   targetType,
   targetId,
   initialReactions,
+  maxVisible,
+  revalidateOnMount = false,
 }: ReactionsBarProps) {
   const currentUser = useSessionStore((s) => s.session?.user);
   const canReact = Boolean(currentUser);
@@ -72,7 +83,7 @@ export function ReactionsBar({
   // Chargement initial : le setState vit dans le `.then` (asynchrone),
   // donc pas de setState synchrone dans le corps de l'effet.
   useEffect(() => {
-    if (initialReactions != null) return;
+    if (initialReactions != null && !(revalidateOnMount && canReact)) return;
     let cancelled = false;
     void fetchReactions().then((data) => {
       if (!cancelled) setReactions(data);
@@ -80,7 +91,7 @@ export function ReactionsBar({
     return () => {
       cancelled = true;
     };
-  }, [initialReactions, fetchReactions]);
+  }, [initialReactions, fetchReactions, revalidateOnMount, canReact]);
 
   const handleToggle = async (emoji: string) => {
     if (!canReact || pending) return;
@@ -94,9 +105,13 @@ export function ReactionsBar({
     }
   };
 
+  const visible =
+    maxVisible != null ? reactions.slice(0, maxVisible) : reactions;
+  const overflow = reactions.length - visible.length;
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {reactions.map((group) => (
+      {visible.map((group) => (
         <ReactionPill
           key={group.emoji}
           group={group}
@@ -105,6 +120,12 @@ export function ReactionsBar({
           onToggle={() => handleToggle(group.emoji)}
         />
       ))}
+
+      {overflow > 0 && (
+        <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+          +{overflow}
+        </span>
+      )}
 
       {canReact && (
         <div className="relative">
@@ -154,7 +175,12 @@ interface ReactionPillProps {
   onToggle: () => void;
 }
 
-function ReactionPill({ group, pending, canReact, onToggle }: ReactionPillProps) {
+function ReactionPill({
+  group,
+  pending,
+  canReact,
+  onToggle,
+}: ReactionPillProps) {
   const hidden = group.users.length - MAX_TOOLTIP_USERS;
 
   return (

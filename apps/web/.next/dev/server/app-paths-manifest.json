@@ -1,5 +1,5 @@
 {
-  "/admin/dashboard/posts/create/page": "app/admin/dashboard/posts/create/page.js",
-  "/admin/dashboard/stages/create/page": "app/admin/dashboard/stages/create/page.js",
+  "/(public)/gallery/page": "app/(public)/gallery/page.js",
+  "/(public)/page": "app/(public)/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

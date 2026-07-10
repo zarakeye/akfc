@@ -35,6 +35,18 @@
 
 export interface ResolvedMedia {
   url: string;
+  /**
+   * Nature du média, dérivée du resourceType/mimeType côté résolution.
+   * Permet au rendu de choisir l'élément (`<img>` vs poster + `<video>`)
+   * sans ré-inspecter le mimeType.
+   */
+  kind: 'image' | 'video' | 'audio' | 'document';
+  /**
+   * URL de poster (frame figée) pour les vidéos — chemin proxy avec
+   * `&as=poster`. `null` pour tout ce qui n'est pas une vidéo : le rendu
+   * utilise alors `url` directement.
+   */
+  posterUrl: string | null;
   mimeType: string;
   fileName: string;
   width: number | null;

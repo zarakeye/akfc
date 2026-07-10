@@ -1,5 +1,8 @@
 import { NextRequest } from "next/server";
-import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cloudinary.service";
+import {
+  fetchAuthenticatedAsset,
+  fetchVideoPoster,
+} from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -30,7 +33,7 @@ const FALLBACK_URL =
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ publicId: string[] }> }
+  { params }: { params: Promise<{ publicId: string[] }> },
 ) {
   try {
     const { publicId } = await params;
@@ -43,8 +46,18 @@ export async function GET(
 
     const { searchParams } = new URL(req.url);
     const variant = parseVariant(searchParams.get("variant"));
+    const asPoster = searchParams.get("as") === "poster";
+    // `v` = version Cloudinary du binaire (transmise par le store d'avatar).
+    // Passée à Cloudinary, elle garantit le bon fichier malgré un publicId
+    // fixe écrasé (sinon l'ancien binaire caché sur le CDN).
+    const vParam = searchParams.get("v");
+    const version = vParam ? Number(vParam) : undefined;
+    const safeVersion =
+      version && Number.isFinite(version) ? version : undefined;
 
-    const asset = await fetchAuthenticatedAsset(id, variant);
+    const asset = asPoster
+      ? await fetchVideoPoster(id, variant)
+      : await fetchAuthenticatedAsset(id, variant, safeVersion);
 
     /* ---------------------------------------------------------------------- */
     /*                               NOT FOUND                                */

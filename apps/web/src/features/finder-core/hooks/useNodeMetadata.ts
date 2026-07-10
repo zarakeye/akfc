@@ -32,13 +32,9 @@ export function useNodeMetadata(
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Pas de cible ou adapter sans support → reset propre, pas de fetch.
-    if (!path || !adapter.getMetadata) {
-      setMetadata(null);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    // Pas de cible ou adapter sans support → pas de fetch. Le cas est
+    // traité par dérivation au retour du hook (pas de setState ici).
+    if (!path || !adapter.getMetadata) return;
 
     let cancelled = false;
 
@@ -69,6 +65,12 @@ export function useNodeMetadata(
       cancelled = true;
     };
   }, [adapter, path]);
+
+  // Sans cible (ou adapter sans getMetadata), on expose l'état vide
+  // directement, sans dépendre des states résiduels d'un fetch précédent.
+  if (!path || !adapter.getMetadata) {
+    return { metadata: null, loading: false, error: null };
+  }
 
   return { metadata, loading, error };
 }

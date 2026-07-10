@@ -5,8 +5,8 @@ import { Calendar, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import {
   TimeInput,
-  formatHHMM,
 } from "@features/admin/common/components/TimeInput";
+import { formatHHMM } from "@lib/time/formatHHMM";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */

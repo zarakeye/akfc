@@ -7,6 +7,7 @@ import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
+import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
  * stages/router.ts
@@ -56,6 +57,15 @@ import { pageContentSchemaV1 } from "@contracts/page";
  * fourni, on vérifie que la discipline appartient à la catégorie « Stage ».
  * Si null (stage externe), pas de vérification — la catégorie n'a pas
  * de sens dans ce cas.
+ *
+ * ─── Évolution navigation (socle slugs) ───────────────────────────────────
+ *
+ * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
+ * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
+ * d'un `getBySlug` public pour la page détail `/stages/[slug]`. Le slug
+ * étant une 2ᵉ contrainte d'unicité (en plus de `(disciplineId, label)`),
+ * les `catch` P2002 distinguent le conflit de slug du conflit de label
+ * via `err.meta.target`.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -89,6 +99,7 @@ const createInput = z
     originId: z.number().int().positive().nullable().optional(),
 
     label: z.string().trim().min(1).max(255),
+    slug: slugSchema,
     audience: audienceEnum,
 
     // Composites Json typés au PageBuilder. Requis au create — le
@@ -99,6 +110,9 @@ const createInput = z
     preRegistered: z.array(userIdSchema).default([]),
     primaryAnimatorId: userIdSchema,
     coAnimatorIds: coAnimatorIdsSchema,
+    // Date de publication éditoriale. null/absent = brouillon (non visible
+    // publiquement). Une date = publié/programmé. Cohérent avec Post/Event.
+    publicationDate: z.coerce.date().nullable().optional(),
   })
   .refine(
     (data) => !data.coAnimatorIds.includes(data.primaryAnimatorId),
@@ -145,6 +159,7 @@ const updateInput = z
     originId: z.number().int().positive().nullable().optional(),
 
     label: z.string().trim().min(1).max(255).optional(),
+    slug: slugSchema.optional(),
     audience: audienceEnum.optional(),
 
     description: pageContentSchemaV1.optional(),
@@ -153,6 +168,7 @@ const updateInput = z
     preRegistered: z.array(userIdSchema).optional(),
     primaryAnimatorId: userIdSchema.optional(),
     coAnimatorIds: z.array(userIdSchema).optional(),
+    publicationDate: z.coerce.date().nullable().optional(),
   })
   .refine(
     (data) => {
@@ -207,10 +223,15 @@ async function assertUsersExist(
 }
 
 /**
- * Si `disciplineId` est fourni, vérifie qu'elle existe **et** qu'elle
- * appartient à la catégorie "Stage". Tolère null/undefined (stage externe).
+ * Si `disciplineId` est fourni, vérifie qu'elle existe. Tolère
+ * null/undefined (stage externe : rattachement par label ou origine).
+ *
+ * Note : contrairement à une version antérieure, on ne contraint PLUS la
+ * catégorie de la discipline. Un stage peut porter sur n'importe quelle
+ * discipline du club, comme le fait déjà Event. La catégorie sert au
+ * rangement (médias, listing), pas à restreindre les rattachements.
  */
-async function assertDisciplineFitsStage(
+async function assertDisciplineExists(
   prisma: PrismaClient,
   disciplineId: number | null | undefined,
 ): Promise<void> {
@@ -218,21 +239,12 @@ async function assertDisciplineFitsStage(
 
   const discipline = await prisma.discipline.findUnique({
     where: { id: disciplineId },
-    select: {
-      id: true,
-      category: { select: { type: true } },
-    },
+    select: { id: true },
   });
   if (!discipline) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: `Discipline not found (id=${disciplineId}).`,
-    });
-  }
-  if (discipline.category.type !== "Stage") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Discipline ${disciplineId} is not in the "Stage" category.`,
     });
   }
 }
@@ -260,27 +272,52 @@ async function assertOriginExists(
 
 export const stageRouter = router({
   /**
-   * Liste tous les stages, triés par discipline puis label.
+   * Liste publique des stages PUBLIÉS (publicationDate non null et passée).
+   * L'admin utilise `getAllAdmin` (inclut brouillons et programmés).
    */
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.stage.findMany({
+      where: { publicationDate: { not: null, lte: new Date() } },
       orderBy: [{ disciplineId: "asc" }, { label: "asc" }],
     });
   }),
 
   /**
-   * Liste les stages d'une discipline donnée.
+   * Liste admin de TOUS les stages — brouillons et programmés inclus.
+   * Tri : programmés/brouillons d'abord (nulls first), puis par création.
+   */
+  getAllAdmin: protectedProcedure
+    .use(requirePermission("manage_stages"))
+    .query(async ({ ctx }) => {
+      return ctx.prisma.stage.findMany({
+        orderBy: [
+          { publicationDate: { sort: "desc", nulls: "first" } },
+          { createdAt: "desc" },
+        ],
+      });
+    }),
+
+  /**
+   * Liste publique des stages PUBLIÉS d'une discipline donnée.
    */
   getAllByDiscipline: publicProcedure
     .input(z.object({ disciplineId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.stage.findMany({
-        where: { disciplineId: input.disciplineId },
+        where: {
+          disciplineId: input.disciplineId,
+          publicationDate: { not: null, lte: new Date() },
+        },
         orderBy: { label: "asc" },
       });
     }),
 
-  getById: publicProcedure
+  /**
+   * Lookup admin par id — brouillons/programmés inclus.
+   * Alimente la page d'édition `/dashboard/stages/[id]/edit`.
+   */
+  getByIdAdmin: protectedProcedure
+    .use(requirePermission("manage_stages"))
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const stage = await ctx.prisma.stage.findUnique({
@@ -291,14 +328,34 @@ export const stageRouter = router({
           sessions: { orderBy: { date: "asc" } },
         },
       });
-
       if (!stage) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stage not found.",
-        });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Stage not found." });
       }
+      return stage;
+    }),
 
+  /**
+   * Lookup public par slug — alimente `/stages/[slug]`.
+   * Seuls les stages PUBLIÉS sont visibles ; un brouillon/programmé
+   * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
+   */
+  getBySlug: publicProcedure
+    .input(z.object({ slug: slugSchema }))
+    .query(async ({ ctx, input }) => {
+      const stage = await ctx.prisma.stage.findFirst({
+        where: {
+          slug: input.slug,
+          publicationDate: { not: null, lte: new Date() },
+        },
+        relationLoadStrategy: "join",
+        include: {
+          animators: { select: { id: true, firstName: true, lastName: true } },
+          sessions: { orderBy: { date: "asc" } },
+        },
+      });
+      if (!stage) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Stage not found." });
+      }
       return stage;
     }),
 
@@ -308,7 +365,7 @@ export const stageRouter = router({
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction ───────────────────────────────────
 
-      await assertDisciplineFitsStage(ctx.prisma, input.disciplineId);
+      await assertDisciplineExists(ctx.prisma, input.disciplineId);
       await assertOriginExists(ctx.prisma, input.originId);
 
       const allAnimatorIds = [
@@ -328,6 +385,7 @@ export const stageRouter = router({
               externalDisciplineLabel: input.externalDisciplineLabel ?? null,
               originId: input.originId ?? null,
               label: input.label,
+              slug: input.slug,
               audience: input.audience,
               description: input.description as Prisma.InputJsonValue,
               program: input.program as Prisma.InputJsonValue,
@@ -337,6 +395,7 @@ export const stageRouter = router({
               animators: {
                 connect: allAnimatorIds.map((id) => ({ id })),
               },
+              publicationDate: input.publicationDate ?? null,
             },
             relationLoadStrategy: "join",
             include: {
@@ -350,10 +409,15 @@ export const stageRouter = router({
             err instanceof Prisma.PrismaClientKnownRequestError &&
             err.code === "P2002"
           ) {
+            const t = err.meta?.target;
+            const onSlug = Array.isArray(t)
+              ? t.includes("slug")
+              : String(t ?? "").includes("slug");
             throw new TRPCError({
               code: "CONFLICT",
-              message:
-                "A stage with this label already exists for this discipline.",
+              message: onSlug
+                ? "This slug is already used. Choose a different one."
+                : "A stage with this label already exists for this discipline.",
             });
           }
           throw err;
@@ -444,7 +508,7 @@ export const stageRouter = router({
 
       // Validation discipline si modifiée et non-null
       if (rest.disciplineId !== undefined && rest.disciplineId !== null) {
-        await assertDisciplineFitsStage(ctx.prisma, rest.disciplineId);
+        await assertDisciplineExists(ctx.prisma, rest.disciplineId);
       }
 
       // Validation origine si modifiée et non-null
@@ -488,8 +552,10 @@ export const stageRouter = router({
             externalDisciplineLabel: rest.externalDisciplineLabel,
             originId: rest.originId,
             label: rest.label,
+            slug: rest.slug,
             audience: rest.audience,
             preRegistered: rest.preRegistered,
+            publicationDate: rest.publicationDate,
             description:
               description === undefined
                 ? undefined
@@ -521,10 +587,15 @@ export const stageRouter = router({
         } catch (err) {
           if (err instanceof Prisma.PrismaClientKnownRequestError) {
             if (err.code === "P2002") {
+              const t = err.meta?.target;
+              const onSlug = Array.isArray(t)
+                ? t.includes("slug")
+                : String(t ?? "").includes("slug");
               throw new TRPCError({
                 code: "CONFLICT",
-                message:
-                  "A stage with this label already exists for this discipline.",
+                message: onSlug
+                  ? "This slug is already used. Choose a different one."
+                  : "A stage with this label already exists for this discipline.",
               });
             }
             if (err.code === "P2025") {

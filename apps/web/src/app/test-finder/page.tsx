@@ -1,7 +1,7 @@
 'use client';
 
 import Finder from '@features/finder-core/components/Finder';
-import { cloudinaryAdapter } from '@features/finder-adapters/cloudinary/cloudinary.adapter';
+import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
 
 /**
  * Page de test du finder agnostique.
@@ -16,7 +16,7 @@ import { cloudinaryAdapter } from '@features/finder-adapters/cloudinary/cloudina
 export default function TestFinderPage() {
   return (
     <div className='p-6'>
-      <Finder adapter={cloudinaryAdapter} rootPath="AKFC" />
+      <Finder adapter={finderStorageAdapter} rootPath="AKFC" />
     </div>
   );
 }

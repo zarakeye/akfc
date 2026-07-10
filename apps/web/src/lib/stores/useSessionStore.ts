@@ -4,10 +4,10 @@ import { SessionClient } from "@contracts/auth/session.types";
 
 export type SessionStatus =
   | "idle" // app faîchement ouverte, aucune action
-  | 'guest' // jamais connecté
+  | "guest" // jamais connecté
   | "authenticated" // connecté stable
   | "justLoggedIn" // feedback UX
-  | "justLoggedOut" // feedback UX
+  | "justLoggedOut"; // feedback UX
 
 // 1️⃣ useUserStore (finalisé)
 // fetchUser récupère la session via getSessionAction.
@@ -16,7 +16,7 @@ export type SessionStatus =
 // logout appelle le router auth.logout et supprime la session dans le store.
 // On conserve hasPermission pour le RBAC.
 
-// This class definition, `UserStore`, is an interface that defines the shape of an object that manages user-related data and actions. 
+// This class definition, `UserStore`, is an interface that defines the shape of an object that manages user-related data and actions.
 
 // Here's a summary of what each method does:
 
@@ -40,96 +40,116 @@ interface SessionStore {
   loginSuccess: (s: SessionClient) => void;
   logout: () => Promise<void>;
   resetStatus: () => void;
+  /** Met à jour le publicId d'avatar du user courant en session (sync UI). */
+  setAvatar: (publicId: string | null) => void;
 }
 
-export const useSessionStore = create<SessionStore>()((set, get): SessionStore => ({
-  session: null,
-  loading: false,
-  status: "idle",
+export const useSessionStore = create<SessionStore>()(
+  (set, get): SessionStore => ({
+    session: null,
+    loading: false,
+    status: "idle",
 
-  /**
-   * Sets the loading state to the provided boolean value.
-   * @param {boolean} loading - Whether the user-related operation is currently in progress.
-   */
-  setLoading: (loading: boolean): void => {
-    set({ loading });
-  },
-  
-  /**
-   * Called when the user session is successfully set.
-   * Updates the `session`, `status` and `loading` properties in the store.
-   * @param {SessionClient} session - The user session to be set.
-   */
-  loginSuccess: (session): void => {
-    set({
-      session,
-      status: "justLoggedIn",
-      loading: false
-    });
+    /**
+     * Sets the loading state to the provided boolean value.
+     * @param {boolean} loading - Whether the user-related operation is currently in progress.
+     */
+    setLoading: (loading: boolean): void => {
+      set({ loading });
+    },
 
-    setTimeout(() => {
-      set({ status: "authenticated" });
-    }, 3000);
-  },
+    /**
+     * Met à jour le publicId d'avatar du user en session, sans refetch complet.
+     * Appelé après un changement d'avatar pour que le header et toutes les vues
+     * lisant la session affichent le nouveau (ou l'absence) immédiatement.
+     */
+    setAvatar: (publicId: string | null): void => {
+      const current = get().session;
+      if (!current || !current.user) return;
+      set({
+        session: {
+          ...current,
+          user: { ...current.user, avatar: publicId },
+        },
+      });
+    },
 
-  // 🔁 Appelé UNE fois (SessionLoader)
-  /**
-   * Fetches the user session from the server and updates the `user` and `session` properties accordingly.
-   * If the session is absent or expired, it clears the session and its associated user in the store.
-   * @returns {Promise<void>} - The promise resolves when the session has been fetched and the store has been updated.
-   */
-  fetchSession: async (): Promise<void> => {
-    // ✅ Indique qu'on est en train de charger
-    set({ loading: true });
+    /**
+     * Called when the user session is successfully set.
+     * Updates the `session`, `status` and `loading` properties in the store.
+     * @param {SessionClient} session - The user session to be set.
+     */
+    loginSuccess: (session): void => {
+      set({
+        session,
+        status: "justLoggedIn",
+        loading: false,
+      });
 
-    try {
-      const session = await trpcClient.auth.getSession.query();
+      setTimeout(() => {
+        set({ status: "authenticated" });
+      }, 3000);
+    },
 
-      if (!session) {
-        set({ session: null, status: 'guest', loading: false });
-        return;
+    // 🔁 Appelé UNE fois (SessionLoader)
+    /**
+     * Fetches the user session from the server and updates the `user` and `session` properties accordingly.
+     * If the session is absent or expired, it clears the session and its associated user in the store.
+     * @returns {Promise<void>} - The promise resolves when the session has been fetched and the store has been updated.
+     */
+    fetchSession: async (): Promise<void> => {
+      // ✅ Indique qu'on est en train de charger
+      set({ loading: true });
+
+      try {
+        const session = await trpcClient.auth.getSession.query();
+
+        if (!session) {
+          set({ session: null, status: "guest", loading: false });
+          return;
+        }
+
+        set({ session, status: "authenticated", loading: false });
+      } catch {
+        set({
+          session: null,
+          status: "guest",
+          loading: false,
+        });
       }
+    },
 
-      set({ session, status: "authenticated", loading: false });
-    } catch {
+    // 🚪 Logout centralisé
+    /**
+     * Logs out the user and clears the session in the store.
+     * It also sets the UX status to "justLoggedOut".
+     * @returns {Promise<void>} - The promise resolves when the logout mutation has been completed and the store has been updated.
+     */
+    logout: async (): Promise<void> => {
+      await trpcClient.auth.logout.mutate();
+
       set({
         session: null,
-        status: "guest",
-        loading: false
+        status: "justLoggedOut",
+        loading: false,
       });
-    }
-  },
 
-  // 🚪 Logout centralisé
-  /**
-   * Logs out the user and clears the session in the store.
-   * It also sets the UX status to "justLoggedOut".
-   * @returns {Promise<void>} - The promise resolves when the logout mutation has been completed and the store has been updated.
-   */
-  logout: async (): Promise<void> => {
-    await trpcClient.auth.logout.mutate();
+      setTimeout(() => {
+        set({ status: "guest" });
+      }, 3000);
+    },
 
-    set({
-      session: null,
-      status: "justLoggedOut",
-      loading: false
-    });
+    // 🧹 Reset UX → état stable
+    /**
+     * Resets the transient status of the session to its steady state.
+     * If the session is present, it sets the status to "authenticated", otherwise it sets it to "idle".
+     */
+    resetStatus: () => {
+      const { session } = get();
 
-    setTimeout(() => {
-      set({ status: "guest" });
-    }, 3000);
-  },
-
-  // 🧹 Reset UX → état stable
-  /**
-   * Resets the transient status of the session to its steady state.
-   * If the session is present, it sets the status to "authenticated", otherwise it sets it to "idle".
-   */
-  resetStatus: () => {
-    const { session } = get();
-
-    set({
-      status: session ? "authenticated" : "guest",
-    });
-  },
-}));
+      set({
+        status: session ? "authenticated" : "guest",
+      });
+    },
+  }),
+);

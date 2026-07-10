@@ -9,5 +9,5 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false
   },
-  "include": ["src", "../contracts/src/**/*.ts"]
+  "include": ["src", "../contracts/src/**/*.ts", "../contracts/src/slug/slug.schema.ts"]
 }

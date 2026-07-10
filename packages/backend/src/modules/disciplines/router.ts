@@ -7,6 +7,7 @@ import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
+import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
  * disciplines/router.ts
@@ -44,6 +45,26 @@ import { pageContentSchemaV1 } from "@contracts/page";
  *      maintenir la table `PageMediaReference` à jour (pageType: "DISCIPLINE").
  *      Si le composite référence un mediaId non-published, la mutation
  *      roll-back avec un BAD_REQUEST précis.
+ *
+ * ─── Évolution navigation (socle slugs + DisciplineFamily) ────────────────
+ *
+ * Trois changements adressés ici :
+ *
+ *   1. `slug String @unique` — saisi par l'admin (le front le pré-remplit
+ *      via `slugify`, mais il reste éditable), validé par `slugSchema`, et
+ *      stable au renommage. Sert la page publique `/disciplines/[slug]`.
+ *
+ *   2. `Discipline.family` (String? libre) → `familyId` (Int? FK vers
+ *      DisciplineFamily). Même logique qu'`originId` : un id résolu depuis
+ *      l'admin, dont l'existence est validée côté router. Promeut le
+ *      regroupement de menu (« Kung-fu », etc.) en entité, pour fuir les
+ *      doublons orthographiques d'un champ libre.
+ *
+ *   3. `getBySlug` (publicProcedure) — lookup par slug pour la page détail.
+ *
+ * Comme `slug` introduit une 2ᵉ contrainte d'unicité (en plus de
+ * `(categoryId, name)`), les `catch` P2002 distinguent désormais le conflit
+ * de slug du conflit de nom via `err.meta.target`.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -54,8 +75,14 @@ const disciplineTypeEnum = z.enum(["MARTIAL_ART", "CALLIGRAPHY"]);
 
 const createInput = z.object({
   name: z.string().trim().min(1).max(120),
+  slug: slugSchema,
   type: disciplineTypeEnum,
-  family: z.string().trim().min(1).max(120).nullable().optional(),
+
+  // ID de la famille de disciplines (relation vers le modèle
+  // DisciplineFamily). Nullable : une discipline peut ne pas être
+  // rattachée à une famille (création progressive).
+  familyId: z.number().int().positive().nullable().optional(),
+
   school: z.string().trim().min(1).max(120).nullable().optional(),
   classification: z.string().trim().min(1).max(120).nullable().optional(),
 
@@ -76,8 +103,13 @@ const createInput = z.object({
 const updateInput = z.object({
   id: z.number().int().positive(),
   name: z.string().trim().min(1).max(120).optional(),
+  slug: slugSchema.optional(),
   type: disciplineTypeEnum.optional(),
-  family: z.string().trim().min(1).max(120).nullable().optional(),
+
+  // familyId nullable + optional : permet d'attacher, détacher, ou
+  // ne pas toucher selon `undefined` vs `null` vs un id.
+  familyId: z.number().int().positive().nullable().optional(),
+
   school: z.string().trim().min(1).max(120).nullable().optional(),
   classification: z.string().trim().min(1).max(120).nullable().optional(),
 
@@ -139,6 +171,26 @@ export const disciplineRouter = router({
       return discipline;
     }),
 
+  /**
+   * Lookup par slug — alimente la page publique `/disciplines/[slug]`.
+   */
+  getBySlug: publicProcedure
+    .input(z.object({ slug: slugSchema }))
+    .query(async ({ ctx, input }) => {
+      const discipline = await ctx.prisma.discipline.findUnique({
+        where: { slug: input.slug },
+      });
+
+      if (!discipline) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Discipline not found.",
+        });
+      }
+
+      return discipline;
+    }),
+
   create: protectedProcedure
     .use(requirePermission("manage_disciplines"))
     .input(createInput)
@@ -167,6 +219,19 @@ export const disciplineRouter = router({
         });
       }
 
+      if (input.familyId !== null && input.familyId !== undefined) {
+        const family = await ctx.prisma.disciplineFamily.findUnique({
+          where: { id: input.familyId },
+          select: { id: true },
+        });
+        if (!family) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `DisciplineFamily not found (id=${input.familyId}).`,
+          });
+        }
+      }
+
       if (input.originId !== null && input.originId !== undefined) {
         const origin = await ctx.prisma.origin.findUnique({
           where: { id: input.originId },
@@ -188,8 +253,9 @@ export const disciplineRouter = router({
           created = await tx.discipline.create({
             data: {
               name: input.name,
+              slug: input.slug,
               type: input.type,
-              family: input.family ?? null,
+              familyId: input.familyId ?? null,
               school: input.school ?? null,
               classification: input.classification ?? null,
               originId: input.originId ?? null,
@@ -203,10 +269,15 @@ export const disciplineRouter = router({
             err instanceof Prisma.PrismaClientKnownRequestError &&
             err.code === "P2002"
           ) {
+            const t = err.meta?.target;
+            const onSlug = Array.isArray(t)
+              ? t.includes("slug")
+              : String(t ?? "").includes("slug");
             throw new TRPCError({
               code: "CONFLICT",
-              message:
-                "A discipline with this name already exists in this category.",
+              message: onSlug
+                ? "This slug is already used. Choose a different one."
+                : "A discipline with this name already exists in this category.",
             });
           }
           throw err;
@@ -243,6 +314,21 @@ export const disciplineRouter = router({
         }
       }
 
+      // familyId : on valide seulement si fourni ET non-null
+      // (null = détachement explicite, autorisé).
+      if (rest.familyId !== undefined && rest.familyId !== null) {
+        const family = await ctx.prisma.disciplineFamily.findUnique({
+          where: { id: rest.familyId },
+          select: { id: true },
+        });
+        if (!family) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `DisciplineFamily not found (id=${rest.familyId}).`,
+          });
+        }
+      }
+
       // originId : on valide seulement si fourni ET non-null
       // (null = détachement explicite, autorisé).
       if (rest.originId !== undefined && rest.originId !== null) {
@@ -265,8 +351,9 @@ export const disciplineRouter = router({
         try {
           const data: Prisma.DisciplineUncheckedUpdateInput = {
             name: rest.name,
+            slug: rest.slug,
             type: rest.type,
-            family: rest.family,
+            familyId: rest.familyId,
             school: rest.school,
             classification: rest.classification,
             originId: rest.originId,
@@ -284,10 +371,15 @@ export const disciplineRouter = router({
         } catch (err) {
           if (err instanceof Prisma.PrismaClientKnownRequestError) {
             if (err.code === "P2002") {
+              const t = err.meta?.target;
+              const onSlug = Array.isArray(t)
+                ? t.includes("slug")
+                : String(t ?? "").includes("slug");
               throw new TRPCError({
                 code: "CONFLICT",
-                message:
-                  "A discipline with this name already exists in this category.",
+                message: onSlug
+                  ? "This slug is already used. Choose a different one."
+                  : "A discipline with this name already exists in this category.",
               });
             }
             if (err.code === "P2025") {

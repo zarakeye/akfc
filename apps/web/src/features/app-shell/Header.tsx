@@ -3,10 +3,12 @@
 import Link from "next/link";
 import LoginForm from "@features/auth/components/LoginForm";
 import UserMenu from "@features/app-shell/UserMenu";
+import { NotificationBell } from "@features/app-shell/NotificationBell";
 import { Suspense, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSessionStore } from "@lib/stores/useSessionStore";
+import OurActivitiesMenu from "@features/app-shell/OurActivitiesMenu";
 
 /**
  * Header component of the application.
@@ -49,75 +51,20 @@ export default function Header() {
 
         {user &&
           <Link
-            href="/admin/dashboard"
-            className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/admin/dashboard" ? "text-[40px]" : "text-[20px]"}`}
+            href="/dashboard"
+            className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/dashboard" ? "text-[40px]" : "text-[20px]"}`}
           >
             Dashboard
           </Link>
         }
 
-        <div
-          onMouseEnter={() => setActivitiesHover(true)}
-          onMouseLeave={() => setActivitiesHover(false)}
-          className={`relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/activities" ? "active" : ""}`}
-        >
-          <span>Nos activités</span>
-          <Image
-            src="/chevron-white.svg"
-            alt=""
-            aria-hidden="true"
-            width={30}
-            height={30}
-            className={`transition-transform duration-300 ${activitiesHover ? 'rotate-180' : ''}`}
-          />
-          <div className={`${activitiesHover ? 'block' : 'hidden'} absolute z-20 top-full left-1/2 transform -translate-x-1/2 w-40 bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}>
-            <div
-              onMouseEnter={() => setKungFuHover(true)}
-              onMouseLeave={() => setKungFuHover(false)}
-              className="relative block px-4 py-2 text-gray-800 hover:bg-gray-100"
-            >
-              <span>Kung Fu</span>
-              <Image
-                src="/chevron-gray.svg"
-                alt='chevron'
-                width={30}
-                height={30}
-                className={`absolute top-1/2 right-4 transform -translate-y-1/2 transition-transform duration-300 ${kunfuHover ? '-rotate-90' : ''}`}
-              />
-              <div className="absolute z-20 top-0 -right-full mt-2 w-40 bg-gray-300 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300">
-                <Link
-                  href="/activities/kung-fu/Taichi"
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Taï-Chi
-                </Link>
-                <Link
-                  href="/activities/kung-fu/Taolu"
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Tao-Lu
-                </Link>
-                <Link
-                  href="/activities/kung-fu/ChoyLeeFut"
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
-                >
-                  Choy Lee Fut
-                </Link>
-              </div>
-            </div>
-            <Link
-              href="/activities/kali"
-              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
-            >
-              Kali
-            </Link>
-          </div>
-        </div>
+        <OurActivitiesMenu />
+
         <Link
           href="/gallery"
           className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/gallery" ? "text-[20px]" : ""}`}
         >
-          Galerie
+          Galeries
         </Link>
         <Link 
           href="/about" 
@@ -177,7 +124,12 @@ export default function Header() {
 
       <Suspense fallback={<div>Chargement...</div>}>
         {user
-          ? <UserMenu />
+          ? (
+            <div className="flex items-center gap-3">
+              <NotificationBell />
+              <UserMenu />
+            </div>
+          )
           : <LoginForm />
         }
       </Suspense>

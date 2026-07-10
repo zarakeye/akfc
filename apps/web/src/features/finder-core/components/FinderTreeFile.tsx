@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { File } from 'lucide-react';
+import { File, Check } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -23,53 +23,60 @@ import ContextMenu, {
  * Lucide, le nom cliquable et — depuis ce sous-chantier — drag-source
  * et long-press pour parité avec la GridView.
  *
- * ─── Drag + long-press (parité GridView) ─────────────────────────────────
+ * ─── Mode picker (panier) ─────────────────────────────────────────────────
  *
- * Pourquoi : Stéphane attend de pouvoir manipuler les fichiers depuis la
- * TreeView aussi bien que depuis la GridView. Sans ces handlers, on ne
- * peut ni glisser un fichier vers une autre destination, ni activer le
- * mode multi-select via longpress depuis la sidebar.
+ * En `pickMode`, un clic sur le fichier l'épingle/retire du panier
+ * (`onPickToggle`) au lieu de naviguer/sélectionner. L'appartenance au panier
+ * est signalée par une coche verte, TOUJOURS visible (tactile-friendly).
+ * C'est la SECONDE surface de pick, branchée sur le MÊME store que la grille
+ * (`usePickerCartStore` via MediaPicker) — la synchro grille↔arbre est donc
+ * automatique : cocher ici met à jour le store, la grille se re-render, et
+ * inversement.
+ *
+ * ─── Drag + long-press (parité GridView) ─────────────────────────────────
  *
  * Les handlers `onDragStart` et `onLongPress` viennent du parent `Finder`
  * (via `FinderTree`) et sont strictement les mêmes que ceux passés à
- * `GridItem` — un node draggé depuis la TreeView se comporte exactement
- * comme draggé depuis la GridView (même payload, même ghost preview).
+ * `GridItem`.
  *
- * 🎯 Comportement au clic (inchangé)
+ * 🎯 Comportement au clic (mode normal, inchangé)
  *
  * Naviguer dans le dossier parent du fichier ET sélectionner le fichier.
- * C'est le comportement attendu d'un finder type macOS / VS Code : cliquer
- * sur un fichier dans l'arbo de gauche → on voit son dossier dans la
- * grille centrale ET le fichier est sélectionné (donc visible dans le
- * panneau de preview à droite).
  *
  * ⚠️ Ordre des opérations
  *
- * `setPath` reset la sélection ET désactive `multiSelectActive` (cf.
- * choix produit du 4.2). Donc on appelle d'abord `setPath(parent)`,
- * puis `selectOnly(file.id)` — sinon le step 1 effacerait la sélection
- * du step 2.
+ * `setPath` reset la sélection ET désactive `multiSelectActive`. Donc on
+ * appelle d'abord `setPath(parent)`, puis `selectOnly(file.id)`.
  */
 type Props = {
   node: FinderNode;
   /**
    * Callback déclenché au début d'un drag depuis ce fichier. Optionnel —
-   * si non fourni, le fichier n'est pas draggable. Fourni par le parent
-   * `Finder` via `FinderTree` ; identique à celui passé aux `GridItem`.
+   * si non fourni, le fichier n'est pas draggable.
    */
   onDragStart?: (e: React.DragEvent, node: FinderNode) => void;
   /**
-   * Callback déclenché au long-press (>= 500ms) sur ce fichier.
-   * Optionnel pour la même raison. Active le mode multi-select dans le
-   * store partagé.
+   * Callback déclenché au long-press (>= 500ms) sur ce fichier. Optionnel.
    */
   onLongPress?: (node: FinderNode) => void;
+  /**
+   * Mode picker actif : le clic épingle/retire le fichier du panier au lieu
+   * de naviguer. Optionnel — absent ⇒ comportement bibliothèque inchangé.
+   */
+  pickMode?: boolean;
+  /** En pickMode : ce path est-il dans le panier ? Pilote la coche. */
+  isInCart?: (path: string) => boolean;
+  /** En pickMode : épingle/retire le fichier (délégué au store panier). */
+  onPickToggle?: (node: FinderNode) => void;
 };
 
 export default function FinderTreeFile({
   node,
   onDragStart,
   onLongPress,
+  pickMode = false,
+  isInCart,
+  onPickToggle,
 }: Props): JSX.Element {
   const setPath = useFinderStore((s) => s.setPath);
   const selectOnly = useFinderStore((s) => s.selectOnly);
@@ -78,13 +85,10 @@ export default function FinderTreeFile({
   const currentPath = useFinderStore((s) => s.currentPath);
   const selectedIds = useFinderStore((s) => s.selection.roots);
 
-  // Le hook est instancié inconditionnellement (rules of hooks). Si le
-  // parent n'a pas fourni `onLongPress`, on no-op silencieusement.
   const longPress = useLongPress(() => {
     if (onLongPress) onLongPress(node);
   });
 
-  // ─── Context menu (right-click) ─────────────────────────────────────────
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
 
@@ -93,27 +97,33 @@ export default function FinderTreeFile({
 
   const isDraggable = Boolean(onDragStart);
 
+  // En pickMode, ce fichier est-il dans le panier ? (coche verte)
+  const pinned = pickMode && Boolean(isInCart?.(node.path));
+
   /**
    * Comportement du clic sur un fichier de la TreeView.
    *
+   * ─── Mode picker (panier) ────────────────────────────────────────────
+   * Le clic épingle/retire le fichier du panier. On court-circuite la
+   * navigation/sélection : le panier est la seule cible du clic.
+   *
    * ─── Mode normal ─────────────────────────────────────────────────────
-   * Naviguer dans le dossier parent + sélection unique (cf. la doc en
-   * tête de fichier).
+   * Naviguer dans le dossier parent + sélection unique.
    *
    * ─── Mode multi-select ───────────────────────────────────────────────
    * On NE NAVIGUE PAS et on ne reset PAS la sélection — on toggle juste
-   * l'appartenance du node à la sélection. Sans ce branchement, le longpress
-   * dans la TreeView (qui active multiSelectActive via `onLongPress`) serait
-   * immédiatement écrasé par le `mouseup` qui suit : ce dernier déclenche
-   * un click → `setPath` → reset multiSelectActive → mode multi sorti
-   * instantanément. C'était le bug "longpress sans effet dans la tree view
-   * du bin" (et en réalité partout dans la tree view).
+   * l'appartenance du node à la sélection.
    */
   function handleClick() {
-    // Avalage du click parasite qui suit un longpress (cf. doc dans
-    // useLongPress.ts). Sans ce skip, le node qui vient d'être ajouté à
-    // la sélection par le longpress serait toggle-off par ce click.
+    // Avalage du click parasite qui suit un longpress.
     if (longPress.consumeJustFired()) return;
+
+    // Mode picker : le clic alimente le panier, rien d'autre.
+    if (pickMode) {
+      onPickToggle?.(node);
+      return;
+    }
+
     if (multiSelectActive) {
       toggleSelect(node.id);
       return;
@@ -153,6 +163,11 @@ export default function FinderTreeFile({
         onDragStart={
           onDragStart
             ? (e) => {
+                // DnD imbriqué : sans stopPropagation, saisir un enfant
+                // fait remonter l'événement au premier ancêtre draggable
+                // (la ligne du dossier parent) → mauvaise source résolue
+                // (bug « cours/cours », 2026-07-03).
+                e.stopPropagation();
                 longPress.onDragStart();
                 onDragStart(e, node);
               }
@@ -160,26 +175,33 @@ export default function FinderTreeFile({
         }
         className={clsx(
           'flex items-center gap-1.5 rounded px-2 py-1 cursor-pointer text-sm',
-          // Indenté de la même quantité que les sous-dossiers — on aligne
-          // visuellement folders et files au même niveau hiérarchique.
-          // L'absence de chevron est compensée par un padding gauche
-          // équivalent à sa largeur quand on n'est PAS en multi-select.
-          // En multi-select, l'espace est récupéré par la checkbox.
-          !multiSelectActive && 'pl-[1.625rem]',
-          isActive && 'bg-accent text-accent-foreground font-medium',
-          !isActive && 'hover:bg-accent/40',
+          // Indentation : alignée sur les sous-dossiers. En multi-select OU
+          // en pickMode, l'espace gauche est occupé par la checkbox / coche.
+          !multiSelectActive && !pickMode && 'pl-[1.625rem]',
+          pinned && 'bg-emerald-50',
+          isActive && !pinned && 'bg-accent text-accent-foreground font-medium',
+          !isActive && !pinned && 'hover:bg-accent/40',
         )}
         title={node.path}
       >
-        {/* ─── Checkbox multi-select (parité avec GridItem) ─────────────
-            Visible seulement quand `multiSelectActive`. Sans cette
-            checkbox, le longpress dans la tree view activait bien le
-            mode multi-select dans le store mais l'utilisateur n'avait
-            aucun feedback visuel — d'où la perception "ça ne marche pas".
-            En `readOnly` parce que le toggle est fait via le `onClick`
-            du div parent (handleClick → toggleSelect en mode multi).
-        */}
-        {multiSelectActive && (
+        {/* ─── Coche panier (pickMode) ─────────────────────────────────────
+            Toujours présente en pickMode (pour aligner l'indentation) ;
+            remplie en vert si le fichier est dans le panier. Tactile-friendly :
+            visible en permanence, pas au hover. */}
+        {pickMode && (
+          <span
+            className={clsx(
+              'flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+              pinned ? 'bg-emerald-500 text-white' : 'border border-gray-300',
+            )}
+            aria-hidden
+          >
+            {pinned && <Check className="h-3 w-3" />}
+          </span>
+        )}
+
+        {/* Checkbox multi-select (masquée en pickMode) */}
+        {multiSelectActive && !pickMode && (
           <input
             type="checkbox"
             checked={selectedIds.has(node.id)}
@@ -187,6 +209,7 @@ export default function FinderTreeFile({
             className="shrink-0"
           />
         )}
+
         <File className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />
         <span className="truncate">{node.name}</span>
       </div>

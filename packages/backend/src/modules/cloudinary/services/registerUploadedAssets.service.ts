@@ -12,29 +12,30 @@ import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 /**
  * registerUploadedAssets.service.ts
  *
- * Enregistre en DB des assets fraîchement uploadés sur Cloudinary (signés
- * côté serveur puis envoyés directement client → Cloudinary).
+ * Enregistre en DB des assets fraîchement uploadés sur Cloudinary.
+ * (Voir l'en-tête historique pour la chaîne de vérifications 1→5.)
  *
- * Chaîne de vérifications, par asset :
- *   1. `assertSafeCloudinaryPath` — le folder déclaré par le client est sous
- *      `${appRoot}/pending/`, sans `..`, sans `.trash/`.
- *   2. `assertResourceTypeMatchesMimeType` — cohérence MIME ↔ resource_type.
- *   3. Égalité stricte `asset.folder === expectedFolder` — où `expectedFolder`
- *      est recalculé côté serveur par `resolvePendingUploadFolder`. Ça bloque
- *      toute tentative d'injecter un chemin non autorisé depuis le client.
- *   4. `publicId.startsWith(expectedFolder + "/")` — le publicId ne peut pas
- *      trahir sa destination annoncée.
- *   5. Relecture Cloudinary (`readUploadedAssetMetadata`) — on confronte ce
- *      que Cloudinary dit réellement de l'asset avec ce que le client
- *      prétend. `publicId` et `secureUrl` doivent matcher.
+ * ─── Source de vérité : Cloudinary, pas le client ───────────────────────────
  *
- * Les 5 étapes se font dans une transaction Prisma : si une seule échoue,
- * aucun `MediaAsset` n'est créé.
+ * Tous les champs dérivés du binaire sont relus depuis Cloudinary via
+ * `readUploadedAssetMetadata` : publicId, assetId, secureUrl, resourceType,
+ * format, bytes, dimensions, duration, ET le mimeType (désormais dérivé de
+ * resourceType + format côté Cloudinary). On ne fait PLUS confiance au
+ * `asset.mimeType` envoyé par le client — c'est ce qui produisait des lignes
+ * aberrantes `image/mp4` (un .mp4 déclaré image par le client).
  *
- * Cas `new-discipline` :
- *   `MediaAsset.disciplineId` reste null, `proposedDisciplineName` porte
- *   le nom proposé. La validation admin créera la Discipline et remplira
- *   `disciplineId` dans un second temps.
+ * ─── Idempotence (ré-upload / écrasement) ──────────────────────────────────
+ *
+ * `upsert` clé sur `publicId` :
+ *   - asset neuf      → branche `create` (row complète).
+ *   - asset réuploadé → branche `update`, qui rafraîchit UNIQUEMENT les
+ *     champs dérivés du binaire (secureUrl, dimensions, bytes, fullPath,
+ *     resourceType, mimeType…) et PRÉSERVE la curation (status, displayName,
+ *     description, catégorie, discipline, uploader d'origine).
+ *
+ * Le chemin "écraser" n'est atteint que si le client a obtenu une signature
+ * `overwrite:true` après confirmation explicite de l'utilisateur — sinon
+ * Cloudinary aurait refusé l'écrasement en amont (`overwrite:false` signé).
  */
 
 type RegisteredAssetInput = {
@@ -75,6 +76,9 @@ export async function registerUploadedAssets(params: {
     for (const asset of assets) {
       assertSafeCloudinaryPath(asset.folder, appRoot);
 
+      // Garde-fou d'entrée : cohérence resourceType/mimeType déclarés par le
+      // client. Note : la vérité retenue en base vient de Cloudinary
+      // (cloudinaryAsset.*), pas de ces valeurs.
       assertResourceTypeMatchesMimeType({
         resourceType: asset.resourceType,
         mimeType: asset.mimeType,
@@ -115,12 +119,19 @@ export async function registerUploadedAssets(params: {
         });
       }
 
-      const createdAsset = await tx.mediaAsset.create({
-        data: {
+      const fullPath = `${cloudinaryAsset.publicId}${
+        cloudinaryAsset.format ? "." + cloudinaryAsset.format : ""
+      }`;
+
+      const createdAsset = await tx.mediaAsset.upsert({
+        where: { publicId: cloudinaryAsset.publicId },
+        create: {
           publicId: cloudinaryAsset.publicId,
+          cloudinaryAssetId: cloudinaryAsset.assetId,
           secureUrl: cloudinaryAsset.secureUrl,
           resourceType: cloudinaryAsset.resourceType,
-          mimeType: asset.mimeType,
+          // mimeType dérivé de Cloudinary, pas du client.
+          mimeType: cloudinaryAsset.mimeType,
           format: cloudinaryAsset.format,
           originalFileName: asset.originalFileName,
           displayName: asset.displayName ?? null,
@@ -142,7 +153,24 @@ export async function registerUploadedAssets(params: {
               : null,
           eventDate: eventDate ?? null,
           uploaderUserId: userId,
-          fullPath: `${cloudinaryAsset.publicId}${cloudinaryAsset.format ? '.' + cloudinaryAsset.format : ''}`,
+          fullPath,
+        },
+        update: {
+          // On rafraîchit ce que le ré-upload change réellement…
+          secureUrl: cloudinaryAsset.secureUrl,
+          cloudinaryAssetId: cloudinaryAsset.assetId,
+          resourceType: cloudinaryAsset.resourceType,
+          // mimeType dérivé de Cloudinary, pas du client.
+          mimeType: cloudinaryAsset.mimeType,
+          format: cloudinaryAsset.format,
+          bytes: cloudinaryAsset.bytes,
+          width: cloudinaryAsset.width,
+          height: cloudinaryAsset.height,
+          duration: cloudinaryAsset.duration,
+          fullPath,
+          // …et on NE touche PAS : status, displayName, description,
+          // categoryId, disciplineId, eventDate, uploaderUserId
+          // (curation préservée).
         },
       });
 
@@ -152,10 +180,6 @@ export async function registerUploadedAssets(params: {
     return out;
   });
 
-  // 🔁 Les assets viennent d'être uploadés sur Cloudinary par le client
-  // (via signature) puis enregistrés en DB ici. Le cache backend ne sait
-  // pas qu'ils existent — purge pour que le prochain `listAuthenticatedResources`
-  // refasse l'appel API et les voie.
   invalidateResourcesCache();
 
   return {
