@@ -5,15 +5,15 @@ import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 
 /**
  * Lightbox carousel des galeries publiques — overlay plein écran à fond
- * translucide (noir 60 % + blur), la liste des contenus de la galerie
- * cliquée se lit sur place : chevrons LATÉRAUX de part et d'autre (dans le
- * voile), flèches clavier, Escape / clic sur le fond / croix pour fermer,
- * compteur, et LECTURE AUTO togglable (~4 s par slide). L'autoplay se coupe
- * sur toute navigation manuelle et pour les vidéos.
+ * translucide (noir 60 % + blur), chevrons LATÉRAUX de part et d'autre,
+ * flèches clavier, Escape / clic sur le fond / croix pour fermer, compteur,
+ * LECTURE AUTO togglable.
  *
- * Transition FONDU entre médias : le média sortant s'estompe, le nouveau
- * apparaît en fondu (effet « brouillard »). Le changement d'index réel est
- * différé le temps du fondu-sortie pour que la bascule ne soit pas brute.
+ * Ambiance « Ken Burns » : chaque média apparaît/disparaît en FONDU ample
+ * (brouillard, FADE_MS) et zoome TRÈS lentement en continu pendant tout son
+ * affichage (animation kenburns relancée à chaque média via la key). Effet
+ * doux, contemplatif, un brin nostalgique. Le zoom ne s'applique qu'aux
+ * images (une vidéo garde ses proportions et ses contrôles).
  */
 
 export interface LightboxItem {
@@ -30,8 +30,11 @@ interface GalleryLightboxProps {
   onClose: () => void;
 }
 
-const AUTOPLAY_MS = 4000;
-const FADE_MS = 250;
+const AUTOPLAY_MS = 6000;
+// Fondu ample (« brouillard ») — bien plus marqué qu'une simple bascule.
+const FADE_MS = 900;
+// Durée du zoom continu : long, pour un mouvement à peine perceptible.
+const KENBURNS_MS = 20000;
 
 export function GalleryLightbox({
   items,
@@ -47,8 +50,8 @@ export function GalleryLightbox({
   const count = items.length;
   const current = items[index];
 
-  // Change de média avec fondu : estompe (shown=false), puis après FADE_MS
-  // bascule l'index et ré-affiche (shown=true → fondu-entrée).
+  // Change de média avec fondu ample : estompe (shown=false), puis après
+  // FADE_MS bascule l'index et ré-affiche (shown=true → fondu-entrée).
   const goTo = useCallback(
     (next: number, manual: boolean) => {
       if (manual) setAutoplay(false);
@@ -94,7 +97,6 @@ export function GalleryLightbox({
   const controlClass =
     "rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25";
 
-  // Chevron latéral (grand, centré verticalement, dans la zone du voile).
   const sideChevron =
     "absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center " +
     "rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25";
@@ -107,7 +109,19 @@ export function GalleryLightbox({
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
-      {/* Chevron gauche — bord gauche du voile, hors du contenu cliquable */}
+      {/* Keyframes du zoom continu (Ken Burns). Injecté ici pour ne pas
+          dépendre de la config Tailwind. */}
+      <style>{`
+        @keyframes kenburns {
+          from { transform: scale(1); }
+          to { transform: scale(1.15); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kenburns-media { animation: none !important; }
+        }
+      `}</style>
+
+      {/* Chevron gauche — bord gauche du voile */}
       {count > 1 && (
         <button
           type="button"
@@ -127,9 +141,9 @@ export function GalleryLightbox({
         className="relative flex max-h-[90dvh] max-w-[92vw] flex-col items-center gap-3"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Média, en fondu (opacité pilotée par `shown`) */}
+        {/* Média, en fondu ample (opacité pilotée par `shown`) */}
         <div
-          className="transition-opacity ease-in-out"
+          className="overflow-hidden rounded-md transition-opacity ease-in-out"
           style={{
             opacity: shown ? 1 : 0,
             transitionDuration: `${FADE_MS}ms`,
@@ -149,12 +163,16 @@ export function GalleryLightbox({
               key={current.mediaAssetId}
               src={current.url}
               alt={current.fileName}
-              className="max-h-[78dvh] max-w-[92vw] rounded-md object-contain"
+              className="kenburns-media max-h-[78dvh] max-w-[92vw] rounded-md object-contain"
+              style={{
+                animation: `kenburns ${KENBURNS_MS}ms ease-out forwards`,
+                transformOrigin: "center",
+              }}
             />
           )}
         </div>
 
-        {/* Barre du bas : autoplay + compteur (chevrons désormais latéraux) */}
+        {/* Barre du bas : autoplay + compteur (chevrons latéraux) */}
         <div className="flex items-center gap-4">
           <button
             type="button"
