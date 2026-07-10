@@ -22,3 +22,5 @@
 [00:03:22.204] Browser LOG     null
 [00:03:22.204] Browser LOG     [2;38;2;124;124;124m%s[0m null
 [00:08:06.508] Server  LOG      ✓ Compiled in 683ms
+[00:09:17.986] Browser WARN    [tiptap warn]: Invalid content. Passed value: {} Error: {}
+[00:21:52.290] Server  LOG      ✓ Compiled in 206ms

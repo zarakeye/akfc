@@ -1,3 +1,14 @@
+#!/bin/bash
+# Fix page blanche sur /disciplines/[slug] : le fichier contenait par erreur
+# le code d une page STAGE (prisma.stage.findUnique -> notFound sur un slug
+# discipline). Reconstruit la VRAIE page Discipline : charge la discipline
+# par slug, entete (famille, origine, ecole, classification) + PageRenderer
+# sur `description` (le composite du builder, dont le bloc media-text).
+# À lancer depuis la RACINE du monorepo : bash fix_discipline_public_page.sh
+set -euo pipefail
+[ -f pnpm-workspace.yaml ] || { echo "ERREUR : racine du monorepo requise." >&2; exit 1; }
+echo "-> apps/web/src/app/(public)/disciplines/[slug]/page.tsx"
+cat > 'apps/web/src/app/(public)/disciplines/[slug]/page.tsx' << 'FILE_EOF'
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
@@ -66,3 +77,14 @@ export default async function PublicDisciplinePage({
     </article>
   );
 }
+FILE_EOF
+
+echo
+echo "Typecheck web..."
+pnpm --filter web typecheck
+
+echo
+echo "Typecheck OK -> commit."
+git add -A
+git commit -m "fix(disciplines): page publique affichait le code stage (page blanche)"
+echo "Commit effectue."

@@ -6,5 +6,6 @@
   "/(admin)/dashboard/posts/[id]/edit/page": "app/(admin)/dashboard/posts/[id]/edit/page.js",
   "/(admin)/dashboard/posts/[id]/page": "app/(admin)/dashboard/posts/[id]/page.js",
   "/(admin)/dashboard/posts/page": "app/(admin)/dashboard/posts/page.js",
+  "/(public)/disciplines/[slug]/page": "app/(public)/disciplines/[slug]/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }
