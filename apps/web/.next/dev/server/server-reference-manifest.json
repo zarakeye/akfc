@@ -1,5 +1,21 @@
 {
-  "node": {},
+  "node": {
+    "601228c6501433ed73c00ed5a716f34e3d42fd2e94": {
+      "workers": {
+        "app/(public)/profil/edit/page": {
+          "moduleId": "[project]/apps/web/.next-internal/server/app/(public)/profil/edit/page/actions.js { ACTIONS_MODULE0 => \"[project]/apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateMeFormAction",
+          "filename": "apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts"
+        }
+      },
+      "layer": {
+        "app/(public)/profil/edit/page": "action-browser"
+      },
+      "filename": "apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts",
+      "exportedName": "updateMeFormAction"
+    }
+  },
   "edge": {},
   "encryptionKey": "UrJ1pAAoWinzvalnVSnjyQbu9zaPRQ46VDcqP0C4uOo="
 }

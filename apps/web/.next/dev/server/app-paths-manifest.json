@@ -1,5 +1,7 @@
 {
-  "/(public)/gallery/page": "app/(public)/gallery/page.js",
+  "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js",
   "/(public)/page": "app/(public)/page.js",
+  "/(public)/profil/edit/page": "app/(public)/profil/edit/page.js",
+  "/(public)/profil/page": "app/(public)/profil/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }
