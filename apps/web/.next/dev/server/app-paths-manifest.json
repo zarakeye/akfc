@@ -1,11 +1,6 @@
 {
-  "/(admin)/dashboard/courses/[id]/edit/page": "app/(admin)/dashboard/courses/[id]/edit/page.js",
   "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js",
   "/(admin)/dashboard/disciplines/[id]/page": "app/(admin)/dashboard/disciplines/[id]/page.js",
-  "/(admin)/dashboard/disciplines/page": "app/(admin)/dashboard/disciplines/page.js",
-  "/(admin)/dashboard/posts/[id]/edit/page": "app/(admin)/dashboard/posts/[id]/edit/page.js",
-  "/(admin)/dashboard/posts/[id]/page": "app/(admin)/dashboard/posts/[id]/page.js",
-  "/(admin)/dashboard/posts/page": "app/(admin)/dashboard/posts/page.js",
   "/(public)/disciplines/[slug]/page": "app/(public)/disciplines/[slug]/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/stephanebazze/Library/CloudStorage/OneDrive-Bibliothe%CC%80quespartage%CC%81es-Onedrive/Documents/Documents_Mac/GitHub/sandbox/akfc_2/node_modules/.pnpm/react-ts-tab-lib%401.9.4_%40heroui%2Bsystem%402.4.28_%40heroui%2Btheme%402.4.26_tailwindcss%404.3.0__%40r_a46a51a4e3f1bca126230c96431dc07f/node_modules/react-ts-tab-lib/dist/index.css"],"sourcesContent":[".table-root [data-row]:hover div{background-color:#e8e8e8!important;color:#000!important}\n"],"names":[],"mappings":"AAAA","ignoreList":[0],"debugId":null}}]
-}

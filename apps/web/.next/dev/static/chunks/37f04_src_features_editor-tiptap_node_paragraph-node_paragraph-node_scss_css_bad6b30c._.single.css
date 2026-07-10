@@ -35,7 +35,7 @@
 }
 
 .tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) ::selection {
-  background-color: var(--tt-selection-color);
+  background-color: var(--tt-selection-color, #7a52ff40);
 }
 
 .tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) .selection::selection {
@@ -43,13 +43,13 @@
 }
 
 .tiptap.ProseMirror .selection {
-  background-color: var(--tt-selection-color);
+  background-color: var(--tt-selection-color, #7a52ff40);
   display: inline;
 }
 
 .tiptap.ProseMirror .ProseMirror-selectednode:not(img):not(pre):not(.react-renderer) {
   border-radius: var(--tt-radius-md);
-  background-color: var(--tt-selection-color);
+  background-color: var(--tt-selection-color, #7a52ff40);
 }
 
 .tiptap.ProseMirror .ProseMirror-hideselection {

@@ -526,15 +526,15 @@ __turbopack_context__.s([
     "default",
     ()=>__TURBOPACK__default__export__
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.23.6_@tiptap+pm@3.23.6/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$horizontal$2d$rule$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$horizontal$2d$rule$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-horizontal-rule@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-horizontal-rule/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.27.3_@tiptap+pm@3.27.3/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$horizontal$2d$rule$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$horizontal$2d$rule$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-horizontal-rule@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-horizontal-rule/dist/index.js [app-rsc] (ecmascript)");
 ;
 ;
-const HorizontalRule = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$horizontal$2d$rule$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$horizontal$2d$rule$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"].extend({
+const HorizontalRule = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$horizontal$2d$rule$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$horizontal$2d$rule$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["default"].extend({
     renderHTML () {
         return [
             "div",
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["mergeAttributes"])(this.options.HTMLAttributes, {
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["mergeAttributes"])(this.options.HTMLAttributes, {
                 "data-type": this.name
             }),
             [
@@ -553,18 +553,18 @@ __turbopack_context__.s([
     ()=>TipTapView
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@16.0.1_@babel+core@7.29.7_react-dom@19.2.0_react@19.2.0__react@19.2.0_sass@1.100.0/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.23.6_@tiptap+pm@3.23.6/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+html@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6_happy-dom@20.9.0/node_modules/@tiptap/html/dist/server/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.27.3_@tiptap+pm@3.27.3/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+html@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3_happy-dom@20.9.0/node_modules/@tiptap/html/dist/server/index.js [app-rsc] (ecmascript)");
 // Mêmes extensions que `BuilderTipTapEditor` (sous-chantier 5d), pour
 // que le rendu serveur reflète exactement les nodes/marks que l'admin
 // peut produire en édition.
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+starter-kit@3.23.6/node_modules/@tiptap/starter-kit/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-list@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-list/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-text-align@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-text-align/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-typography@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-typography/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-highlight@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-highlight/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-subscript@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-subscript/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-superscript@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-superscript/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$27$2e$1$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+starter-kit@3.27.1/node_modules/@tiptap/starter-kit/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-list@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-list/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-text-align@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-text-align/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-typography@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-typography/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-highlight@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-highlight/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-subscript@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-subscript/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-superscript@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-superscript/dist/index.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$node$2f$horizontal$2d$rule$2d$node$2f$horizontal$2d$rule$2d$node$2d$extension$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension.ts [app-rsc] (ecmascript)");
 ;
 ;
@@ -577,7 +577,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$featur
 ;
 ;
 ;
-const ServerLibraryImageNode = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Node"].create({
+const ServerLibraryImageNode = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Node"].create({
     name: "library-image",
     group: "block",
     atom: true,
@@ -660,27 +660,27 @@ const ServerLibraryImageNode = __TURBOPACK__imported__module__$5b$project$5d2f$n
     }
 });
 function TipTapView({ block, resolveMedia }) {
-    const html = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateHTML"])(block.content, [
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["StarterKit"].configure({
+    const html = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateHTML"])(block.content, [
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$27$2e$1$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["StarterKit"].configure({
             horizontalRule: false
         }),
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$node$2f$horizontal$2d$rule$2d$node$2f$horizontal$2d$rule$2d$node$2d$extension$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["HorizontalRule"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TextAlign"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TextAlign"].configure({
             types: [
                 "heading",
                 "paragraph"
             ]
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskList"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskItem"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskList"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskItem"].configure({
             nested: true
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Highlight"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Highlight"].configure({
             multicolor: true
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Typography"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Subscript"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Superscript"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Typography"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Subscript"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Superscript"],
         ServerLibraryImageNode.configure({
             resolveMedia
         })
@@ -1260,15 +1260,15 @@ __turbopack_context__.s([
     ()=>MediaTextView
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@16.0.1_@babel+core@7.29.7_react-dom@19.2.0_react@19.2.0__react@19.2.0_sass@1.100.0/node_modules/next/dist/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.23.6_@tiptap+pm@3.23.6/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+html@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6_happy-dom@20.9.0/node_modules/@tiptap/html/dist/server/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+starter-kit@3.23.6/node_modules/@tiptap/starter-kit/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-list@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-list/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-text-align@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-text-align/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-typography@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-typography/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-highlight@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6_/node_modules/@tiptap/extension-highlight/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-subscript@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-subscript/dist/index.js [app-rsc] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-superscript@3.23.6_@tiptap+core@3.23.6_@tiptap+pm@3.23.6__@tiptap+pm@3.23.6/node_modules/@tiptap/extension-superscript/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+core@3.27.3_@tiptap+pm@3.27.3/node_modules/@tiptap/core/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+html@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3_happy-dom@20.9.0/node_modules/@tiptap/html/dist/server/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$27$2e$1$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+starter-kit@3.27.1/node_modules/@tiptap/starter-kit/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-list@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-list/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-text-align@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-text-align/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-typography@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-typography/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-highlight@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3_/node_modules/@tiptap/extension-highlight/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-subscript@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-subscript/dist/index.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@tiptap+extension-superscript@3.27.1_@tiptap+core@3.27.3_@tiptap+pm@3.27.3__@tiptap+pm@3.27.3/node_modules/@tiptap/extension-superscript/dist/index.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$node$2f$horizontal$2d$rule$2d$node$2f$horizontal$2d$rule$2d$node$2d$extension$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension.ts [app-rsc] (ecmascript)");
 ;
 ;
@@ -1281,7 +1281,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$featur
 ;
 ;
 ;
-const ServerLibraryImageNode = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Node"].create({
+const ServerLibraryImageNode = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$core$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Node"].create({
     name: "library-image",
     group: "block",
     atom: true,
@@ -1371,45 +1371,54 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
     const hasMedia = media.length > 0;
     // Bloc vide (ni texte ni média résolu) → rien.
     if (!hasText && !hasMedia) return null;
-    const textHtml = hasText ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateHTML"])(block.content, [
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["StarterKit"].configure({
+    const textHtml = hasText ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$html$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3_happy$2d$dom$40$20$2e$9$2e$0$2f$node_modules$2f40$tiptap$2f$html$2f$dist$2f$server$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["generateHTML"])(block.content, [
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$starter$2d$kit$40$3$2e$27$2e$1$2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["StarterKit"].configure({
             horizontalRule: false
         }),
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$editor$2d$tiptap$2f$node$2f$horizontal$2d$rule$2d$node$2f$horizontal$2d$rule$2d$node$2d$extension$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["HorizontalRule"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TextAlign"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$text$2d$align$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$text$2d$align$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TextAlign"].configure({
             types: [
                 "heading",
                 "paragraph"
             ]
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskList"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskItem"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskList"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$list$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$list$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["TaskItem"].configure({
             nested: true
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Highlight"].configure({
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$highlight$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$highlight$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Highlight"].configure({
             multicolor: true
         }),
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Typography"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Subscript"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$23$2e$6_$40$tiptap$2b$core$40$3$2e$23$2e$6_$40$tiptap$2b$pm$40$3$2e$23$2e$6_$5f40$tiptap$2b$pm$40$3$2e$23$2e$6$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Superscript"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$typography$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$2f$node_modules$2f40$tiptap$2f$extension$2d$typography$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Typography"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$subscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$subscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Subscript"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$tiptap$2b$extension$2d$superscript$40$3$2e$27$2e$1_$40$tiptap$2b$core$40$3$2e$27$2e$3_$40$tiptap$2b$pm$40$3$2e$27$2e$3_$5f40$tiptap$2b$pm$40$3$2e$27$2e$3$2f$node_modules$2f40$tiptap$2f$extension$2d$superscript$2f$dist$2f$index$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Superscript"],
         ServerLibraryImageNode.configure({
             resolveMedia
         })
     ]) : null;
-    const MediaColumn = hasMedia ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "grid gap-3 sm:grid-cols-2",
+    const MediaColumn = hasMedia ? media.length === 1 ? // Un seul média : pleine largeur de la colonne.
+    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(MediaFigure, {
+        media: media[0].resolved,
+        caption: media[0].item.caption
+    }, void 0, false, {
+        fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
+        lineNumber: 116,
+        columnNumber: 7
+    }, this) : // Plusieurs médias : grille qui remplit la colonne.
+    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: "grid grid-cols-2 gap-3",
         children: media.map(({ item, resolved })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(MediaFigure, {
                 media: resolved,
                 caption: item.caption
             }, item.mediaId, false, {
                 fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                lineNumber: 116,
-                columnNumber: 9
+                lineNumber: 121,
+                columnNumber: 11
             }, this))
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-        lineNumber: 114,
-        columnNumber: 5
+        lineNumber: 119,
+        columnNumber: 7
     }, this) : null;
     const TextColumn = textHtml ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "tiptap-rendered prose max-w-none",
@@ -1418,7 +1427,7 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
         }
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-        lineNumber: 126,
+        lineNumber: 132,
         columnNumber: 5
     }, this) : null;
     // Une seule partie → centré, pleine largeur (impression de respiration).
@@ -1428,7 +1437,7 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
             children: hasMedia ? MediaColumn : TextColumn
         }, void 0, false, {
             fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-            lineNumber: 135,
+            lineNumber: 141,
             columnNumber: 7
         }, this);
     }
@@ -1441,14 +1450,14 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                     children: MediaColumn
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                    lineNumber: 146,
+                    lineNumber: 152,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     children: TextColumn
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                    lineNumber: 147,
+                    lineNumber: 153,
                     columnNumber: 11
                 }, this)
             ]
@@ -1459,7 +1468,7 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                     children: MediaColumn
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                    lineNumber: 151,
+                    lineNumber: 157,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1467,14 +1476,14 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                     children: TextColumn
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                    lineNumber: 152,
+                    lineNumber: 158,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true)
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-        lineNumber: 143,
+        lineNumber: 149,
         columnNumber: 5
     }, this);
 }
@@ -1489,7 +1498,7 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                 className: "block w-full rounded-md"
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                lineNumber: 173,
+                lineNumber: 179,
                 columnNumber: 9
             }, this) : // eslint-disable-next-line @next/next/no-img-element
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -1502,7 +1511,7 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                 className: "block w-full rounded-md object-cover"
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                lineNumber: 181,
+                lineNumber: 187,
                 columnNumber: 9
             }, this),
             caption && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("figcaption", {
@@ -1510,13 +1519,13 @@ function MediaTextView({ block, resolveMedia, mediaSide = "left" }) {
                 children: caption
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-                lineNumber: 192,
+                lineNumber: 198,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/page-builder/blocks/media-text/view.server.tsx",
-        lineNumber: 171,
+        lineNumber: 177,
         columnNumber: 5
     }, this);
 }

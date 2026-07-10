@@ -89,6 +89,13 @@ export interface BlockDefinition<TBlock extends PageBlockV1> {
 export interface BlockEditorProps<TBlock extends PageBlockV1> {
   block: TBlock;
   onChange: (next: TBlock) => void;
+  /**
+   * Côté d'affichage des médias dans la preview du builder, calculé par le
+   * PageBuilder selon la position du bloc parmi les blocs `media-text`
+   * (même alternance que le rendu public). Optionnel — seul le bloc
+   * media-text l'exploite pour sa preview.
+   */
+  mediaSide?: "left" | "right";
 }
 
 /**

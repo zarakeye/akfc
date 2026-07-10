@@ -17,6 +17,9 @@ export interface BlockShellProps {
   onUpdate: (next: PageBlockV1) => void;
   onRemove: () => void;
 
+  /** Côté médias (alternance), transmis à l'Editor pour sa preview. */
+  mediaSide?: "left" | "right";
+
   // État et callbacks de drag-and-drop, pilotés par le PageBuilder parent.
   isDragging: boolean;
   isDragOver: boolean;
@@ -60,6 +63,7 @@ export function BlockShell({
   block,
   onUpdate,
   onRemove,
+  mediaSide,
   isDragging,
   isDragOver,
   onDragStart,
@@ -118,7 +122,7 @@ export function BlockShell({
 
       {/* Corps : l'Editor spécifique au bloc */}
       <div className="p-3">
-        <Editor block={block} onChange={onUpdate} />
+        <Editor block={block} onChange={onUpdate} mediaSide={mediaSide} />
       </div>
     </div>
   );
