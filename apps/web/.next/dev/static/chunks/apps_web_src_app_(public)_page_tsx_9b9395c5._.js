@@ -1,10 +1,10 @@
 (globalThis.TURBOPACK_CHUNK_LISTS || (globalThis.TURBOPACK_CHUNK_LISTS = [])).push({
     script: typeof document === "object" ? document.currentScript : undefined,
     chunks: [
-  "static/chunks/60af3_mammoth_lib_index_ed7ecf90.js",
+  "static/chunks/60af3_mammoth_lib_index_717d3cbd.js",
   "static/chunks/apps_web_src_features_editor-tiptap_f3afc337._.js",
   "static/chunks/apps_web_src_features_finder-core_52250c6d._.js",
-  "static/chunks/apps_web_src_features_page-builder_95e75f1b._.js",
+  "static/chunks/apps_web_src_features_page-builder_489e9a7c._.js",
   "static/chunks/apps_web_src_features_social_f38f2ecb._.js",
   "static/chunks/apps_web_src_features_fc5c8993._.js",
   "static/chunks/apps_web_src_42daa974._.js",

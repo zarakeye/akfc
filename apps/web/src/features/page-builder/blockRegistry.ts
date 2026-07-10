@@ -5,6 +5,7 @@ import { tiptapDefinition } from "./blocks/tiptap";
 import { imageGalleryDefinition } from "./blocks/image-gallery";
 import { audioCollectionDefinition } from "./blocks/audio-collection";
 import { documentListDefinition } from "./blocks/document-list";
+import { mediaTextDefinition } from "./blocks/media-text";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Type du registry                                                       */
@@ -37,6 +38,7 @@ const BLOCK_REGISTRY: BlockRegistry = {
   "audio-collection": audioCollectionDefinition,
   "document-list": documentListDefinition,
   tiptap: tiptapDefinition,
+  "media-text": mediaTextDefinition,
 };
 
 /* ─────────────────────────────────────────────────────────────────────── */

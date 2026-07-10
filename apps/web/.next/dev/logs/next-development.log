@@ -4,3 +4,24 @@
 [00:01:01.394] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
 [00:01:56.902] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [01:35:51.096] Server  LOG      ✓ Compiled in 229ms
+[01:39:43.778] Browser WARN    Image with src "http://localhost:3000/mobilePhone.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:39:43.778] Browser WARN    Image with src "http://localhost:3000/email.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[01:40:17.292] Browser LOG     null
+[01:40:17.292] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:17.292] Browser LOG     null
+[01:40:17.292] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:17.292] Browser LOG     null
+[01:40:17.292] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:17.413] Browser LOG     null
+[01:40:17.413] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:17.413] Browser LOG     null
+[01:40:17.413] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:18.720] Browser LOG     {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[01:40:18.720] Browser LOG     [2;38;2;124;124;124m%s[0m {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[01:40:19.606] Browser LOG     null
+[01:40:19.606] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:40:20.886] Browser LOG     {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[01:40:20.886] Browser LOG     [2;38;2;124;124;124m%s[0m {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[01:40:21.480] Browser LOG     null
+[01:40:21.480] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[01:58:57.569] Server  LOG      ✓ Compiled in 0ms

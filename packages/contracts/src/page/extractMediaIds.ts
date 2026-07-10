@@ -1,4 +1,4 @@
-import type { PageBlockV1, PageContentV1 } from '@contracts/page/blocks.v1';
+import type { PageBlockV1, PageContentV1 } from "@contracts/page/blocks.v1";
 
 /**
  * Extraction des références `mediaId` d'un bloc ou d'un contenu de page.
@@ -30,14 +30,20 @@ export function extractMediaIdsFromBlock(
   block: PageBlockV1,
 ): readonly string[] {
   switch (block.type) {
-    case 'image-gallery':
+    case "image-gallery":
       return block.items.map((item) => item.mediaId);
-    case 'audio-collection':
+    case "audio-collection":
       return block.items.map((item) => item.mediaId);
-    case 'document-list':
+    case "document-list":
       return block.items.map((item) => item.mediaId);
-    case 'tiptap':
+    case "tiptap":
       return walkProseMirrorForMediaIds(block.content);
+    case "media-text":
+      // mediaIds directs (tableau media) + images éventuelles du ProseMirror.
+      return [
+        ...block.media.map((item) => item.mediaId),
+        ...walkProseMirrorForMediaIds(block.content),
+      ];
     default:
       return assertNever(block);
   }
@@ -82,7 +88,7 @@ function walkProseMirrorForMediaIds(content: unknown): readonly string[] {
   const ids: string[] = [];
 
   function walk(node: unknown): void {
-    if (!node || typeof node !== 'object') return;
+    if (!node || typeof node !== "object") return;
 
     const candidate = node as {
       type?: unknown;
@@ -91,8 +97,8 @@ function walkProseMirrorForMediaIds(content: unknown): readonly string[] {
     };
 
     if (
-      candidate.type === 'library-image' &&
-      typeof candidate.attrs?.mediaId === 'string' &&
+      candidate.type === "library-image" &&
+      typeof candidate.attrs?.mediaId === "string" &&
       candidate.attrs.mediaId.length > 0
     ) {
       ids.push(candidate.attrs.mediaId);
