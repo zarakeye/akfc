@@ -1,3 +1,15 @@
+#!/bin/bash
+# Lightbox : ambiance « Ken Burns ». (1) fondu AMPLE (FADE_MS 900ms, effet
+# brouillard bien plus marque) ; (2) ZOOM continu tres lent (scale 1 -> 1.15
+# sur KENBURNS_MS) pendant tout l affichage d une image, relance a chaque
+# media via la key ; respecte prefers-reduced-motion. Zoom sur images seules
+# (les videos gardent leurs proportions). Autoplay allonge a 6s.
+# À lancer depuis la RACINE du monorepo : bash fix_lightbox_kenburns.sh
+set -euo pipefail
+[ -f pnpm-workspace.yaml ] || { echo "ERREUR : racine du monorepo requise." >&2; exit 1; }
+
+echo "-> apps/web/src/features/gallery-public/GalleryLightbox.tsx"
+cat > 'apps/web/src/features/gallery-public/GalleryLightbox.tsx' << 'FILE_EOF'
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type JSX } from "react";
@@ -223,3 +235,14 @@ export function GalleryLightbox({
     </div>
   );
 }
+FILE_EOF
+
+echo
+echo "Typecheck web..."
+pnpm --filter web typecheck
+
+echo
+echo "Typecheck OK -> commit."
+git add -A
+git commit -m "feat(lightbox): ambiance Ken Burns (fondu ample + zoom continu)"
+echo "Commit effectue."

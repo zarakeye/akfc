@@ -1,5 +1,6 @@
 {
   "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js",
+  "/(public)/gallery/page": "app/(public)/gallery/page.js",
   "/(public)/page": "app/(public)/page.js",
   "/(public)/profil/edit/page": "app/(public)/profil/edit/page.js",
   "/(public)/profil/page": "app/(public)/profil/page.js",
