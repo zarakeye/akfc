@@ -8,7 +8,6 @@ import { z } from 'zod';
 
 import { trpc } from '@trpc/trpcClient';
 import { useSessionStore } from '@lib/stores/useSessionStore';
-import { useCategoryStore } from '@lib/stores/useCategoryStore';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { APP_ROOT } from '@config/app';
 import { pickBackend, type StorageProvider } from '@contracts/storage';
@@ -30,34 +29,13 @@ import Cropper from '@features/gallery-crop/components/Cropper';
  * Le dispatch repose sur `pickBackend(mimeType)` (`@contracts/storage`) —
  * même règle que côté finder pour la cohérence.
  *
- * ─── Pipeline d'upload (par lot dropé) ──────────────────────────────────
+ * ─── Conflits Cloudinary (ré-upload) ──────────────────────────────────────
  *
- *   1. Split par backend (cloudinaryItems vs r2Items via `pickBackend`)
- *   2. Cloudinary, en batch (une seule signature pour N assets) :
- *      - `storage.createUploadAuthorization({ provider: 'cloudinary', ... })`
- *      - `POST` direct vers Cloudinary en parallèle (Promise.all)
- *      - `storage.registerUploadedAsset` une fois pour les succès
- *   3. R2, par fichier (presigned POST = 1 signature = 1 fichier) :
- *      - `storage.createR2Upload({ path, mimeType, maxBytes })`
- *      - `POST` multipart vers l'URL presigned R2 avec les fields
- *      - `storage.registerR2Upload` pour confirmer côté backend
- *   4. Merge des résultats, update des statuts UI
- *
- * ─── Path R2 ──────────────────────────────────────────────────────────────
- *
- * Le path R2 est calculé côté UI à partir de la destination métier sélectionnée
- * (catégorie + discipline). Slugification simple (lowercase, accents strippés,
- * espaces en `-`). Format : `${APP_ROOT}/pending/${categorySlug}/${disciplineSlug}/${fileName}`.
- *
- * ─── Convertisseurs côté UI ──────────────────────────────────────────────
- *
- * NON implémentés dans cette livraison. Hook potentiel : juste avant l'upload
- * dans `uploadR2Single` / `uploadCloudinarySingle`, on peut intercepter le
- * fichier et lui appliquer une transformation (`browser-image-compression`
- * pour les images, `ffmpeg.wasm` pour audio/vidéo). Coût bundle élevé donc
- * différé jusqu'à un cas d'usage concret. Cloudinary fait déjà la conversion
- * `auto` à la livraison (URLs `f_auto`), donc seul R2 mériterait des
- * convertisseurs côté UI à terme.
+ * À l'autorisation, le backend signe `overwrite:false` par défaut et renvoie
+ * `alreadyExists` par asset. Si des fichiers existent déjà, on demande à
+ * l'utilisateur (dialogue) : Annuler (on ignore ces fichiers) ou Écraser
+ * (on re-signe ces fichiers avec `overwrite:true`). Le binaire d'origine est
+ * donc protégé tant que l'utilisateur n'a pas explicitement confirmé.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -66,25 +44,11 @@ import Cropper from '@features/gallery-crop/components/Cropper';
 
 const MAX_FILES_PER_BATCH = 20;
 
-/**
- * Tailles max différenciées par backend :
- *   - Cloudinary : 50 Mo (cohérent avec ses transformations on-the-fly)
- *   - R2 : 500 Mo (cohérent avec HARD_MAX_UPLOAD_BYTES côté adapter,
- *                  utile pour audios de cours longs ou archives)
- */
 const MAX_FILE_SIZE_CLOUDINARY_MB = 50;
 const MAX_FILE_SIZE_R2_MB = 500;
 const MAX_FILE_SIZE_CLOUDINARY_BYTES = MAX_FILE_SIZE_CLOUDINARY_MB * 1024 * 1024;
 const MAX_FILE_SIZE_R2_BYTES = MAX_FILE_SIZE_R2_MB * 1024 * 1024;
 
-/**
- * Liste explicite des types MIME acceptés. Refuse les formats exotiques
- * (RAR, 7z, BMP, TIFF, FLAC, AAC...) volontairement — réduit la surface
- * d'attaque et garantit que tout ce qui rentre est servable / lisible
- * dans les outils standards.
- *
- * Pour étendre, ajouter ici (et vérifier que `pickBackend` couvre le MIME).
- */
 const ACCEPTED_MIME_TYPES: Accept = {
   // Images (Cloudinary)
   'image/jpeg': ['.jpg', '.jpeg'],
@@ -161,21 +125,8 @@ type Destination =
 /*                                   TYPES                                    */
 /* -------------------------------------------------------------------------- */
 
-type UploadStatus =
-  | 'pending'    // dans la liste, pas encore tenté
-  | 'uploading'  // en cours d'upload (Cloudinary OU R2)
-  | 'done'       // uploadé + enregistré en DB
-  | 'error';     // l'upload OU l'enregistrement a échoué
+type UploadStatus = 'pending' | 'uploading' | 'done' | 'error';
 
-/**
- * Item de la file d'upload. Étend `PictureItem` (qui apporte
- * `id/file/originalFile/previewUrl`) avec des champs internes du formulaire
- * (statut, message d'erreur, backend cible).
- *
- * Le nom de type `PictureItem` est conservé en upstream (`@features/gallery-crop`)
- * pour rester compatible avec le `Cropper` ; côté UI on parle d'`items` plus
- * généralement pour refléter qu'on n'a plus seulement des images.
- */
 type EnrichedItem = PictureItem & {
   status: UploadStatus;
   errorMessage?: string;
@@ -186,16 +137,6 @@ type EnrichedItem = PictureItem & {
 /*                                  HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Map extension → MIME pour les types qu'on accepte. Sert de fallback quand
- * le navigateur n'a pas attribué de MIME au fichier (cas typique : `.md`,
- * `.markdown` sur certaines combinaisons OS+browser où le mapping système
- * est absent, ce qui donne `file.type === ''`).
- *
- * IMPORTANT : ce mapping doit être cohérent avec `ACCEPTED_MIME_TYPES`
- * ci-dessus. Si on ajoute un type ici, vérifier qu'il est aussi dans la
- * liste d'acceptation du dropzone.
- */
 const EXT_TO_MIME: Record<string, string> = {
   // Images
   jpg: 'image/jpeg',
@@ -231,20 +172,10 @@ function resolveMimeFromExtension(filename: string): string | null {
   return EXT_TO_MIME[ext] ?? null;
 }
 
-/**
- * Si le navigateur n'a pas attribué de MIME au fichier (ex: `.md` sur Firefox),
- * on en déduit un depuis l'extension. Comme `File.type` est read-only, on
- * recrée un `File` avec le MIME correct.
- *
- * Cette étape est CRITIQUE pour les uploads R2 car le `Content-Type` envoyé
- * par le navigateur lors du POST multipart est dérivé de `file.type`. Le
- * presigned POST policy R2 verrouille ce header en `eq` strict — si on envoie
- * vide ou différent, R2 refuse le upload.
- */
 function ensureMimeType(file: File): File {
   if (file.type && file.type.length > 0) return file;
   const resolved = resolveMimeFromExtension(file.name);
-  if (!resolved) return file; // pas pu résoudre — sera filtré ailleurs si problématique
+  if (!resolved) return file;
   return new File([file], file.name, {
     type: resolved,
     lastModified: file.lastModified,
@@ -255,17 +186,11 @@ function slugify(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
 
-/**
- * Renvoie la taille max autorisée pour ce fichier selon son backend cible.
- * Le `pickBackend` est la même règle que celle qui décidera de la route
- * d'upload au submit, donc cette validation est cohérente avec ce qui
- * sera réellement permis côté backend.
- */
 function getMaxBytesForFile(file: File): number {
   return pickBackend(file.type) === 'cloudinary'
     ? MAX_FILE_SIZE_CLOUDINARY_BYTES
@@ -276,12 +201,6 @@ function isImageOrVideo(file: File): boolean {
   return file.type.startsWith('image/') || file.type.startsWith('video/');
 }
 
-/**
- * Icône typée pour la preview UI quand on n'a pas de vignette image.
- * Couvre les grands groupes : audio, doc, archive. Le `pickIcon` du finder
- * fait la même chose côté UI mais on en a une version locale dégradée ici
- * pour ne pas créer de dépendance UI inter-modules.
- */
 function iconForMime(mime: string): string {
   if (mime.startsWith('audio/')) return '🎵';
   if (mime.startsWith('video/')) return '🎬';
@@ -299,21 +218,9 @@ function iconForMime(mime: string): string {
 
 export default function DragNDropForm(): JSX.Element {
   const user = useSessionStore((s) => s.session?.user);
-  const categories = useCategoryStore((s) => s.categories);
-  const fetchCategories = useCategoryStore((s) => s.fetchCategories);
+  const { data: categories = [] } = trpc.category.getAll.useQuery();
 
-  // Trigger d'invalidation du cache finder, appelé après upload réussi
-  // pour que la prochaine visite de /admin/dashboard/library affiche
-  // immédiatement les nouveaux fichiers sans nécessiter un reload manuel.
-  // Le store Zustand est global, donc cet appel impacte le finder même
-  // s'il est démonté actuellement (autre page).
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
-
-  useEffect(() => {
-    if (categories.length === 0) {
-      void fetchCategories();
-    }
-  }, [categories.length, fetchCategories]);
 
   // -------------------------------
   // Formulaire react-hook-form
@@ -333,6 +240,7 @@ export default function DragNDropForm(): JSX.Element {
     } as Partial<FormValues> as FormValues,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const destinationKind = watch('destinationKind');
   const categoryId = watch('categoryId');
 
@@ -351,9 +259,6 @@ export default function DragNDropForm(): JSX.Element {
 
   // -------------------------------
   // Mutations tRPC
-  //
-  // - Cloudinary : procédures unifiées (provider explicite dans le payload)
-  // - R2 : procédures dédiées (modèle d'upload trop différent pour mutualiser)
   // -------------------------------
   const createUploadAuthMutation =
     trpc.storage.createUploadAuthorization.useMutation();
@@ -372,7 +277,18 @@ export default function DragNDropForm(): JSX.Element {
   const [filesError, setFilesError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<number | null>(null);
+  const [skippedCount, setSkippedCount] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [overwritePrompt, setOverwritePrompt] = useState<{
+    names: string[];
+    resolve: (choice: 'cancel' | 'overwrite') => void;
+  } | null>(null);
+
+  // Pause le pipeline jusqu'au choix de l'utilisateur (résolu par les boutons du dialogue).
+  function askOverwrite(names: string[]): Promise<'cancel' | 'overwrite'> {
+    return new Promise((resolve) => setOverwritePrompt({ names, resolve }));
+  }
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -382,12 +298,8 @@ export default function DragNDropForm(): JSX.Element {
   const onDrop = (acceptedFiles: File[]) => {
     setFilesError(null);
 
-    // Étape 1 : résoudre les MIME manquants (cas `.md` sur Firefox/Safari etc.)
-    // Cette résolution est obligatoire avant les validations qui suivent
-    // pour que pickBackend(file.type) raisonne sur un MIME correct.
     const normalizedFiles = acceptedFiles.map(ensureMimeType);
 
-    // Étape 2 : validation taille — différenciée par backend cible
     const oversized = normalizedFiles.filter(
       (f) => f.size > getMaxBytesForFile(f)
     );
@@ -450,7 +362,6 @@ export default function DragNDropForm(): JSX.Element {
           ...it,
           file: croppedFile,
           previewUrl: URL.createObjectURL(croppedFile),
-          // Le crop ne change pas le backend (toujours image/* → Cloudinary)
           status: 'pending',
           errorMessage: undefined,
         };
@@ -501,15 +412,6 @@ export default function DragNDropForm(): JSX.Element {
   // -------------------------------
   // Helpers — path R2
   // -------------------------------
-
-  /**
-   * Construit le path R2 pour un fichier à partir de la destination métier.
-   * Reconstruit ce que le backend Cloudinary fait en interne, mais côté UI
-   * car le path R2 doit être fourni à `createR2Upload`.
-   *
-   * Pour `existing-discipline` : utilise les noms de catégorie/discipline
-   * récupérés des stores. Pour `new-discipline` : utilise le nom proposé.
-   */
   const buildR2Path = (destination: Destination, fileName: string): string => {
     const category = categories.find((c) => c.id === destination.categoryId);
     const categorySlug = slugify(category?.type ?? `cat-${destination.categoryId}`);
@@ -526,8 +428,6 @@ export default function DragNDropForm(): JSX.Element {
       disciplineSlug = slugify(destination.proposedDisciplineName);
     }
 
-    // Slugifier aussi le filename pour éviter les caractères problématiques
-    // dans une key S3/R2 (accents, espaces, etc.). On préserve l'extension.
     const dotIdx = fileName.lastIndexOf('.');
     const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
     const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
@@ -558,30 +458,69 @@ export default function DragNDropForm(): JSX.Element {
 
   async function uploadCloudinaryBatch(
     cloudinaryItems: EnrichedItem[],
-    destination: Destination
+    destination: Destination,
   ): Promise<{
     outcomes: CloudinaryUploadOutcome[];
     registeredCount: number;
+    skippedItemIds: string[];
   }> {
     if (cloudinaryItems.length === 0) {
-      return { outcomes: [], registeredCount: 0 };
+      return { outcomes: [], registeredCount: 0, skippedItemIds: [] };
     }
 
-    // Phase 1 : récupérer les signatures (1 appel pour N assets)
+    const assetsPayload = cloudinaryItems.map((it) => ({
+      fileName: it.file.name,
+      mimeType: it.file.type,
+      mediaType: it.file.type.startsWith('video/') ? ('video' as const) : ('image' as const),
+    }));
+
+    // Phase 1 — autorisation SANS overwrite (binaire protégé par défaut)
     const signatures = await createUploadAuthMutation.mutateAsync({
       provider: 'cloudinary',
       destination,
-      assets: cloudinaryItems.map((it) => ({
-        fileName: it.file.name,
-        mimeType: it.file.type,
-        mediaType: it.file.type.startsWith('video/') ? 'video' : 'image',
-      })),
+      allowOverwrite: false,
+      assets: assetsPayload,
     });
 
-    // Phase 2 : POST en parallèle vers Cloudinary
+    const conflictingIdx = signatures
+      .map((sig, idx) => (sig.alreadyExists ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    let effectiveSignatures = signatures;
+    const skippedItemIds: string[] = [];
+
+    if (conflictingIdx.length > 0) {
+      const choice = await askOverwrite(
+        conflictingIdx.map((i) => cloudinaryItems[i].file.name),
+      );
+      if (choice === 'cancel') {
+        conflictingIdx.forEach((i) => skippedItemIds.push(cloudinaryItems[i].id));
+      } else {
+        // Écraser : re-signer UNIQUEMENT les conflictuels avec overwrite:true
+        const overwriteSigs = await createUploadAuthMutation.mutateAsync({
+          provider: 'cloudinary',
+          destination,
+          allowOverwrite: true,
+          assets: conflictingIdx.map((i) => assetsPayload[i]),
+        });
+        effectiveSignatures = [...signatures];
+        conflictingIdx.forEach((idx, k) => {
+          effectiveSignatures[idx] = overwriteSigs[k];
+        });
+      }
+    }
+
+    const skippedSet = new Set(skippedItemIds);
+    const sigByItemId = new Map(
+      cloudinaryItems.map((it, idx) => [it.id, effectiveSignatures[idx]]),
+    );
+
+    const toUpload = cloudinaryItems.filter((it) => !skippedSet.has(it.id));
+
+    // Phase 2 — POST en parallèle (on saute les ignorés)
     const outcomes: CloudinaryUploadOutcome[] = await Promise.all(
-      cloudinaryItems.map(async (item, idx): Promise<CloudinaryUploadOutcome> => {
-        const sig = signatures[idx];
+      toUpload.map(async (item): Promise<CloudinaryUploadOutcome> => {
+        const sig = sigByItemId.get(item.id)!;
         try {
           const formData = new FormData();
           formData.append('file', item.file);
@@ -591,15 +530,13 @@ export default function DragNDropForm(): JSX.Element {
           formData.append('folder', sig.folder);
           formData.append('public_id', sig.publicId);
           formData.append('type', sig.type);
-
+          formData.append('overwrite', String(sig.overwrite)); // ← signé → doit être envoyé
           const url = `https://api.cloudinary.com/v1_1/${sig.cloudName}/${sig.resourceType}/upload`;
           const res = await fetch(url, { method: 'POST', body: formData });
-
           if (!res.ok) {
             const text = await res.text();
             throw new Error(`Cloudinary HTTP ${res.status}: ${text}`);
           }
-
           const data = await res.json();
           return {
             ok: true,
@@ -622,14 +559,13 @@ export default function DragNDropForm(): JSX.Element {
             error: err instanceof Error ? err.message : 'Upload failed',
           };
         }
-      })
+      }),
     );
 
-    // Phase 3 : enregistrer en DB les succès
+    // Phase 3 — register (upsert côté serveur)
     const successes = outcomes.filter(
-      (r): r is CloudinaryUploadOutcome & { ok: true } => r.ok
+      (r): r is CloudinaryUploadOutcome & { ok: true } => r.ok,
     );
-
     let registeredCount = 0;
     if (successes.length > 0) {
       const itemById = new Map(cloudinaryItems.map((it) => [it.id, it]));
@@ -638,8 +574,7 @@ export default function DragNDropForm(): JSX.Element {
         destination,
         assets: successes.map((s) => {
           const it = itemById.get(s.itemId)!;
-          const sig =
-            signatures[cloudinaryItems.findIndex((i) => i.id === s.itemId)];
+          const sig = sigByItemId.get(s.itemId)!;
           return {
             ...s.cloudinaryAsset,
             originalFileName: it.file.name,
@@ -648,11 +583,10 @@ export default function DragNDropForm(): JSX.Element {
           };
         }),
       });
-      // Cloudinary register procedure returns { assets: [...] }
       registeredCount = registered.assets.length;
     }
 
-    return { outcomes, registeredCount };
+    return { outcomes, registeredCount, skippedItemIds };
   }
 
   // -------------------------------
@@ -669,19 +603,12 @@ export default function DragNDropForm(): JSX.Element {
     const path = buildR2Path(destination, item.file.name);
 
     try {
-      // Phase 1 : presigned PUT (R2 ne supporte pas POST Object API).
-      // L'URL retournée embarque la signature SigV4 dans ses query params.
       const auth = await createR2UploadMutation.mutateAsync({
         path,
         mimeType: item.file.type,
         maxBytes: item.file.size,
       });
 
-      // Phase 2 : PUT direct vers R2 — body = binaire brut.
-      //
-      // Le Content-Type est intégré à la signature côté serveur ; il doit
-      // matcher exactement, sinon R2 rejette en 403 SignatureDoesNotMatch.
-      // Pas de FormData ici (presigned PUT, pas POST).
       const res = await fetch(auth.uploadUrl, {
         method: 'PUT',
         headers: {
@@ -694,15 +621,12 @@ export default function DragNDropForm(): JSX.Element {
         throw new Error(`R2 HTTP ${res.status}: ${text.slice(0, 200)}`);
       }
 
-      // Phase 3 : confirmer côté backend (HeadObject + validation cohérence).
-      // Cette étape est aussi notre rempart contre les abus de taille
-      // (`registerR2Upload` rejette si la taille réelle diverge).
       const result = await registerR2UploadMutation.mutateAsync({
         path,
         expectedBytes: item.file.size,
         expectedMimeType: item.file.type,
-        destination,                       // ← déjà construit dans onSubmit
-        originalFileName: item.file.name,  // ← depuis le File natif
+        destination,
+        originalFileName: item.file.name,
       });
 
       return {
@@ -726,6 +650,7 @@ export default function DragNDropForm(): JSX.Element {
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
     setSubmitSuccess(null);
+    setSkippedCount(null);
     setFilesError(null);
 
     if (!user?.id) {
@@ -764,12 +689,10 @@ export default function DragNDropForm(): JSX.Element {
             proposedDisciplineName: values.proposedDisciplineName.trim(),
           };
 
-    // Split par backend cible (déjà calculé au drop, on s'en sert)
     const cloudinaryItems = toUpload.filter((it) => it.backend === 'cloudinary');
     const r2Items = toUpload.filter((it) => it.backend === 'r2');
 
     try {
-      // Les deux pipelines tournent en parallèle (indépendants par construction).
       const [cloudinaryRes, r2Res] = await Promise.all([
         uploadCloudinaryBatch(cloudinaryItems, destination),
         Promise.all(r2Items.map((it) => uploadR2Single(it, destination))),
@@ -778,7 +701,10 @@ export default function DragNDropForm(): JSX.Element {
       const cloudinaryOutcomes = cloudinaryRes.outcomes;
       const r2Outcomes = r2Res;
 
-      // Update statuts UI
+      // Items ignorés (conflit Cloudinary, choix « Annuler ») → on les
+      // remet en `pending` (jamais uploadés, restent dans la liste).
+      const skippedSet = new Set(cloudinaryRes.skippedItemIds);
+
       const successIds = new Set<string>([
         ...cloudinaryOutcomes.filter((o) => o.ok).map((o) => o.itemId),
         ...r2Outcomes.filter((o) => o.ok).map((o) => o.itemId),
@@ -794,6 +720,9 @@ export default function DragNDropForm(): JSX.Element {
 
       setItems((prev) =>
         prev.map((it) => {
+          if (skippedSet.has(it.id)) {
+            return { ...it, status: 'pending' as UploadStatus, errorMessage: undefined };
+          }
           if (successIds.has(it.id)) {
             return { ...it, status: 'done' as UploadStatus };
           }
@@ -811,13 +740,10 @@ export default function DragNDropForm(): JSX.Element {
       const totalSuccess = successIds.size;
       if (totalSuccess > 0) {
         setSubmitSuccess(totalSuccess);
-
-        // Invalide le cache finder pour que la prochaine visite de
-        // /admin/dashboard/library refetch AKFC/pending (et tous les
-        // autres paths déjà visités) et affiche les nouveaux fichiers
-        // sans reload manuel. L'opération est instantanée — c'est juste
-        // un toggle de Map vide + incrément de reloadKey.
         reloadFolderContent();
+      }
+      if (skippedSet.size > 0) {
+        setSkippedCount(skippedSet.size);
       }
       if (failures.size > 0) {
         setSubmitError(
@@ -841,6 +767,9 @@ export default function DragNDropForm(): JSX.Element {
       );
     } finally {
       setIsSubmitting(false);
+      // Filet de sécurité : si un dialogue de conflit était resté ouvert
+      // (cas anormal), on le referme pour ne pas bloquer l'UI.
+      setOverwritePrompt(null);
     }
   };
 
@@ -994,10 +923,6 @@ export default function DragNDropForm(): JSX.Element {
                 className="relative w-32 h-32 border rounded overflow-hidden group bg-gray-50"
               >
                 {showsImagePreview ? (
-                  // Image/vidéo : vignette navigateur (URL.createObjectURL)
-                  // Cliquable pour ouvrir le cropper (images uniquement, mais
-                  // pour les vidéos on garde le clic — le cropper s'occupe
-                  // de gérer ce cas).
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={it.previewUrl}
@@ -1010,7 +935,6 @@ export default function DragNDropForm(): JSX.Element {
                     }}
                   />
                 ) : (
-                  // Audio / doc / archive : icône typée + nom de fichier
                   <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
                     <span className="text-3xl mb-1">
                       {iconForMime(it.file.type)}
@@ -1041,10 +965,6 @@ export default function DragNDropForm(): JSX.Element {
                   </div>
                 )}
 
-                {/* Message d'erreur détaillé visible sous la vignette
-                    (en plus du tooltip au survol). Aide à diagnostiquer
-                    sans avoir à survoler. Le `break-words` évite que le
-                    container explose en largeur si le message est long. */}
                 {it.status === 'error' && it.errorMessage && (
                   <div className="absolute -bottom-12 left-0 right-0 text-[10px] text-red-700 bg-red-50 border border-red-200 rounded p-1 break-words leading-tight z-20">
                     {it.errorMessage}
@@ -1073,7 +993,6 @@ export default function DragNDropForm(): JSX.Element {
                       🗑
                     </button>
                     {it.file.type.startsWith('image/') && (
-                      // Reset n'a de sens que sur les images crop-ables.
                       <button
                         type="button"
                         className="bg-yellow-500 text-white text-xs px-1 rounded"
@@ -1111,6 +1030,48 @@ export default function DragNDropForm(): JSX.Element {
         />
       )}
 
+      {/* Dialogue de conflit — fichiers déjà présents */}
+      {overwritePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-80 rounded-lg bg-white p-4 shadow-xl">
+            <h3 className="mb-2 font-semibold">Fichiers déjà présents</h3>
+            <p className="mb-2 text-sm text-gray-600">
+              {overwritePrompt.names.length} fichier(s) existent déjà dans la
+              bibliothèque :
+            </p>
+            <ul className="mb-3 max-h-32 overflow-auto rounded border border-gray-200 bg-gray-50 p-2 text-xs">
+              {overwritePrompt.names.map((n) => (
+                <li key={n} className="truncate" title={n}>
+                  {n}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
+                onClick={() => {
+                  overwritePrompt.resolve('cancel');
+                  setOverwritePrompt(null);
+                }}
+              >
+                Annuler (ignorer)
+              </button>
+              <button
+                type="button"
+                className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+                onClick={() => {
+                  overwritePrompt.resolve('overwrite');
+                  setOverwritePrompt(null);
+                }}
+              >
+                Écraser
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={isSubmitting}
@@ -1122,6 +1083,11 @@ export default function DragNDropForm(): JSX.Element {
       {submitSuccess !== null && (
         <p className="text-sm text-green-700">
           ✅ {submitSuccess} fichier(s) enregistré(s) avec succès.
+        </p>
+      )}
+      {skippedCount !== null && skippedCount > 0 && (
+        <p className="text-sm text-gray-600">
+          ⏭️ {skippedCount} fichier(s) déjà présent(s) ont été ignorés.
         </p>
       )}
       {submitError && <p className="text-sm text-red-700">⚠️ {submitError}</p>}

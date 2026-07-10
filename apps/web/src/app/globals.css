@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -1251,4 +1252,31 @@ input[type="range"]::-moz-range-thumb {
   .tiptap-popover[data-side="left-end"] {
     animation: slideFromRight 150ms cubic-bezier(0.16, 1, 0.3, 1);
   }
+}
+
+@keyframes carousel-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Rendu public du contenu tiptap (.tiptap-rendered, cf. view.server) ──
+   La typographie (titres, listes, hr, figures…) est portée par
+   @tailwindcss/typography via la classe `prose` posée sur le wrapper.
+   Ici : uniquement ce que le plugin ne connaît pas — les task lists
+   tiptap (ul[data-type="taskList"]). Le surlignage multicolore et
+   text-align passent en styles inline, non écrasés par prose. */
+.tiptap-rendered ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+.tiptap-rendered ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.tiptap-rendered ul[data-type="taskList"] li > label {
+  margin-top: 0.3em;
+}
+.tiptap-rendered ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
 }

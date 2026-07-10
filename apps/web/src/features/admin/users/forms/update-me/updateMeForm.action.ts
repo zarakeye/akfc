@@ -7,10 +7,6 @@ import { Prisma } from "@prisma/client";
 
 import type { UpdateMeFormState } from "./updateMeForm.types";
 
-export const initialUpdateMeFormState: UpdateMeFormState = {
-  status: "idle",
-};
-
 function firstError(errs?: string[]): string | undefined {
   if (!errs || errs.length === 0) return undefined;
   return errs[0];
@@ -18,7 +14,7 @@ function firstError(errs?: string[]): string | undefined {
 
 export async function updateMeFormAction(
   _prevState: UpdateMeFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<UpdateMeFormState> {
   const sessionClient = await getSessionFromRequest();
   const userId = sessionClient?.user?.id;
@@ -37,7 +33,6 @@ export async function updateMeFormAction(
     aboutMe: String(formData.get("aboutMe") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     birthDate: String(formData.get("birthDate") ?? ""),
-    avatar: String(formData.get("avatar") ?? ""),
   };
 
   const input = {
@@ -47,7 +42,6 @@ export async function updateMeFormAction(
     aboutMe: raw.aboutMe.trim() || undefined,
     phone: raw.phone.trim() || undefined,
     birthDate: raw.birthDate.trim() || undefined,
-    avatar: raw.avatar.trim() || undefined,
   };
 
   const parsed = updateMeFormSchema.safeParse(input);
@@ -65,7 +59,6 @@ export async function updateMeFormAction(
         aboutMe: firstError(flat.fieldErrors.aboutMe),
         phone: firstError(flat.fieldErrors.phone),
         birthDate: firstError(flat.fieldErrors.birthDate),
-        avatar: firstError(flat.fieldErrors.avatar),
       },
     };
   }
@@ -78,7 +71,6 @@ export async function updateMeFormAction(
     pseudo: data.pseudo ?? null,
     aboutMe: data.aboutMe ?? null,
     phone: data.phone ?? null,
-    avatar: data.avatar ?? null,
     birthDate: data.birthDate ? new Date(data.birthDate) : null,
     isFirstLogin: false,
   } satisfies Prisma.UserUpdateInput;

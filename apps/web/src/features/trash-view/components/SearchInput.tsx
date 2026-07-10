@@ -29,10 +29,15 @@ export default function SearchInput({
 }: Props): JSX.Element {
   const [localValue, setLocalValue] = useState(value);
 
-  // Synchronisation parent → local (utile si le parent reset depuis l'extérieur)
-  useEffect(() => {
+  // Synchronisation parent → local (si le parent reset `value` de l'extérieur).
+  // Pattern officiel « adjust state during render » : on compare à la valeur
+  // précédente et on resynchronise pendant le render, sans useEffect.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setLocalValue(value);
-  }, [value]);
+  }
 
   // Debounce local → parent
   useEffect(() => {

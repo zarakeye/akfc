@@ -12,8 +12,10 @@ export async function createUploadSignatures(params: {
   appRoot: string;
   destination: UploadDestination;
   assets: UploadAssetRequest[];
+  /** Si absent/false : signe `overwrite:false` → Cloudinary refuse d'écraser. */
+  allowOverwrite?: boolean;
 }) {
-  const { prisma, appRoot, destination, assets } = params;
+  const { prisma, appRoot, destination, assets, allowOverwrite } = params;
 
   const folder = await resolvePendingUploadFolder({
     prisma,
@@ -22,12 +24,34 @@ export async function createUploadSignatures(params: {
   });
 
   const timestamp = Math.floor(Date.now() / 1000);
+  const overwrite = allowOverwrite ?? false;
+
+  // ─── Détection de conflit, AVANT tout upload ───────────────────────────
+  //
+  // Le `publicId` stocké en DB est le publicId COMPLET (Cloudinary préfixe
+  // le public_id par le folder à l'upload : `folder/nom`). On calcule donc
+  // les publicIds complets prospectifs et on regarde lesquels existent déjà,
+  // en une seule requête.
+  const fullPublicIdFor = (fileName: string) =>
+    `${folder}/${fileName.replace(/\.[^/.]+$/, "")}`;
+
+  const existing = await prisma.mediaAsset.findMany({
+    where: { publicId: { in: assets.map((a) => fullPublicIdFor(a.fileName)) } },
+    select: { publicId: true },
+  });
+  const existingSet = new Set(existing.map((e) => e.publicId));
 
   return assets.map((asset) => {
     const publicId = asset.fileName.replace(/\.[^/.]+$/, "");
+    const fullPublicId = `${folder}/${publicId}`;
 
+    // ⚠️ La signature Cloudinary couvre TOUS les params envoyés (hors
+    // file/api_key/resource_type). On ajoute `overwrite` à la chaîne signée
+    // (le tri alphabétique est garanti par `.sort()`), et le client DOIT
+    // envoyer la même valeur en FormData.
     const toSign = {
       folder,
+      overwrite,
       timestamp,
       public_id: publicId,
       type: "authenticated",
@@ -52,6 +76,11 @@ export async function createUploadSignatures(params: {
       publicId,
       timestamp,
       type: "authenticated" as const,
+      // Renvoyé au client : la valeur signée (à ré-émettre en FormData)…
+      overwrite,
+      // …et le signal de conflit (le client demandera confirmation avant
+      // d'écraser un publicId déjà présent en DB).
+      alreadyExists: existingSet.has(fullPublicId),
       signature,
       apiKey: process.env.CLOUDINARY_API_KEY!,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME!,

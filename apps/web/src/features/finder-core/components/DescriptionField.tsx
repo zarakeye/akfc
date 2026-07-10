@@ -70,27 +70,40 @@ export default function DescriptionField({ file }: Props): JSX.Element {
   const debounceRef = useRef<number | null>(null);
   const savedTimerRef = useRef<number | null>(null);
 
-  // ─── Resync sur changement de fichier ──────────────────────────────
+  // ─── Resync sur changement de fichier (pendant le render) ───────────
   // file.id change → on bascule sur un nouveau fichier, sync le textarea.
   // On utilise file.id et PAS file.meta?.description : ça nous laisse écraser
   // localement avec ce que l'user tape sans être écrasé par un setContent
   // du store (qui pourrait arriver pour des raisons d'enrichissement).
-  useEffect(() => {
+  //
+  // Pattern « adjust state during render » : on resync les states ici, sans
+  // useEffect. On NE touche pas aux refs de timers pendant le render
+  // (interdit) — leur nettoyage se fait dans l'effet de cleanup ci-dessous.
+  const [prevFileId, setPrevFileId] = useState(file.id);
+  if (file.id !== prevFileId) {
+    setPrevFileId(file.id);
     const newValue = file.meta?.description ?? '';
     setValue(newValue);
     setSavedValue(newValue);
     setStatus('idle');
     setErrorMessage(null);
-    // Cleanup des timers en cas de changement de fichier en pleine frappe
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    if (savedTimerRef.current) {
-      window.clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = null;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }
+
+  // Cleanup des timers de debounce/badge au changement de fichier (ou à
+  // l'unmount). Le cleanup s'exécute avant le prochain effet, donc avant
+  // qu'un timer de l'ancien fichier puisse aboutir et sauver sur le mauvais
+  // path.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      if (savedTimerRef.current) {
+        window.clearTimeout(savedTimerRef.current);
+        savedTimerRef.current = null;
+      }
+    };
   }, [file.id]);
 
   // ─── Save logic (extrait pour réuse entre blur et debounce) ─────────

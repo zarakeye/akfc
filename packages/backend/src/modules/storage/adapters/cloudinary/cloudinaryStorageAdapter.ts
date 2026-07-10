@@ -15,7 +15,10 @@ import type {
   StoragePath,
 } from "@contracts/storage";
 
-import type { UploadDestination, UploadAssetRequest } from "@contracts/cloudinary/upload.types";
+import type {
+  UploadDestination,
+  UploadAssetRequest,
+} from "@contracts/cloudinary/upload.types";
 import type { MoveIntent as CloudinaryMoveIntent } from "@contracts/cloudinary/move.schema";
 
 import { getCloudinaryFolderTree } from "@backend/modules/cloudinary/services/getCloudinaryFolderTree.service";
@@ -23,6 +26,7 @@ import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.se
 import { moveService } from "@backend/modules/cloudinary/services/move.service";
 import { createUploadSignatures } from "@backend/modules/cloudinary/services/createUploadSignatures.service";
 import { registerUploadedAssets } from "@backend/modules/cloudinary/services/registerUploadedAssets.service";
+import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
 
 import { mapClientFolderTreeToStorageNode } from "@backend/modules/storage/adapters/cloudinary/mappers";
 
@@ -77,6 +81,7 @@ export type CloudinaryStorageAdapterDeps = {
 export type CloudinaryCreateUploadAuthorizationInput = {
   destination: UploadDestination;
   assets: UploadAssetRequest[];
+  allowOverwrite?: boolean; // Si absent/false : signe `overwrite:false` → Cloudinary refuse d'écraser.
 };
 
 export type CloudinaryCreateUploadAuthorizationOutput = Awaited<
@@ -121,7 +126,7 @@ export type CloudinaryStorageAdapter = StorageAdapter &
   >;
 
 export function createCloudinaryStorageAdapter(
-  deps: CloudinaryStorageAdapterDeps
+  deps: CloudinaryStorageAdapterDeps,
 ): CloudinaryStorageAdapter {
   const { prisma, appRoot } = deps;
 
@@ -184,6 +189,17 @@ export function createCloudinaryStorageAdapter(
       });
 
       const root = mapClientFolderTreeToStorageNode(tree, depth);
+
+      console.log(
+        "[tree:truncated]",
+        options.path,
+        "depth=",
+        depth,
+        "taolu?",
+        JSON.stringify(root).includes("taolu-multi-styles"),
+        "tchoy?",
+        JSON.stringify(root).includes("tchoy-lee-fut"),
+      );
 
       // Si le path résolvait un fichier (cas marginal), on enveloppe dans un
       // folder vide pour respecter le contrat (`root: StorageFolderNode`).
@@ -305,6 +321,84 @@ export function createCloudinaryStorageAdapter(
       };
 
       await moveService(intent);
+
+      // ─── Synchro MediaAsset (fullPath + status) ──────────────────────────
+      //
+      // moveService renomme dans Cloudinary mais ne touche JAMAIS la table
+      // MediaAsset : sans cette synchro, les `fullPath` deviennent périmés
+      // (résolutions par chemin cassées — bug picker taolu, 2026-07-03) et
+      // le `status` reste figé (assets publiés invisibles du public).
+      //
+      // Deltas vs le pattern R2 :
+      //   - préfixe : les fullPath Cloudinary incluent l'appRoot
+      //     (`AKFC/pending/…`), les paths d'opération non ;
+      //   - extension : fullPath = `publicId.format` — le SQL préserve le
+      //     suffixe par SUBSTRING (un updateMany à valeur fixe le perdrait) ;
+      //   - status : dérivé du premier segment du chemin CIBLE
+      //     (`pending`/`published` uniquement — la corbeille a son propre
+      //     mécanisme TrashEntry) ;
+      //   - LIKE : `%` et `_` sont des jokers SQL — les noms de fichiers
+      //     regorgent d'underscores, on échappe (ESCAPE '\').
+      // Les chemins d'opération INCLUENT l'appRoot (invariant de
+      // resolveTargetPath : parts[0] === appRoot) — on les utilise
+      // tels quels ; les préfixer une seconde fois faisait chercher
+      // `AKFC/AKFC/…` (zéro match silencieux, 2026-07-03).
+      const escLike = (s: string) => s.replace(/([\\%_])/g, "\\$1");
+      const srcDb = operation.source.path;
+      const dstDb = operation.target.path;
+      // Statut = segment APRÈS l'appRoot ([1], pas [0] qui est l'appRoot).
+      const topSegment = operation.target.path.split("/")[1];
+      const nextStatus =
+        topSegment === "pending" || topSegment === "published"
+          ? topSegment
+          : null;
+
+      if (operation.source.type === "file") {
+        // Exact (fullPath sans extension, improbable) OU `préfixe.` + ext.
+        // ⚠ On synchronise AUSSI `publicId` : il contient le chemin complet
+        // (sans extension) et sert à construire les URLs de vignette — s'il
+        // reste périmé, les aperçus pointent vers l'ancien emplacement → 404
+        // (image générique). Même substitution de préfixe que fullPath.
+        await prisma.$executeRaw`
+          UPDATE "MediaAsset"
+          SET "fullPath" = ${dstDb} || SUBSTRING("fullPath" FROM ${srcDb.length + 1}::int),
+              "publicId" = ${dstDb} || SUBSTRING("publicId" FROM ${srcDb.length + 1}::int),
+              "status" = COALESCE(${nextStatus}, "status")
+          WHERE "appRoot" = ${appRoot}
+            AND ("fullPath" = ${srcDb}
+              OR "fullPath" LIKE ${escLike(srcDb) + ".%"} ESCAPE '\\');
+        `;
+      } else {
+        const oldPrefix = `${srcDb}/`;
+        const newPrefix = `${dstDb}/`;
+        await prisma.$executeRaw`
+          UPDATE "MediaAsset"
+          SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int),
+              "publicId" = ${newPrefix} || SUBSTRING("publicId" FROM ${oldPrefix.length + 1}::int),
+              "status" = COALESCE(${nextStatus}, "status")
+          WHERE "appRoot" = ${appRoot}
+            AND "fullPath" LIKE ${escLike(oldPrefix) + "%"} ESCAPE '\\';
+        `;
+      }
+
+      // ─── Nettoyage du dossier source vidé ───────────────────────────────
+      //
+      // moveService renomme les assets mais ne touche pas la table `Folder`
+      // (registre qui sert à afficher les dossiers vides). Quand un move vide
+      // un dossier source, sa ligne `Folder` survit → dossier fantôme dans la
+      // vue source. On prune ces lignes orphelines ici.
+      //
+      // Rappel : `resolveMoveIntent` expanse les selections en moves de
+      // FICHIERS atomiques. C'est donc le move du dernier fichier d'un dossier
+      // qui le vide réellement — `folderHasAssets` renverra false uniquement à
+      // ce moment-là, les précédents s'arrêtant immédiatement (dossier encore
+      // peuplé). Pour une source `folder`, on part du dossier lui-même.
+      const startFolderPath =
+        operation.source.type === "file"
+          ? operation.source.path.split("/").slice(0, -1).join("/")
+          : operation.source.path;
+
+      await pruneEmptyFolders({ prisma, appRoot, startFolderPath });
     },
 
     // delete: NON IMPLÉMENTÉ (cf. doc en tête de fichier). Le contrat
@@ -315,13 +409,14 @@ export function createCloudinaryStorageAdapter(
     /* ====================================================================== */
 
     async createUploadAuthorization(
-      input: CloudinaryCreateUploadAuthorizationInput
+      input: CloudinaryCreateUploadAuthorizationInput,
     ): Promise<CloudinaryCreateUploadAuthorizationOutput> {
       return createUploadSignatures({
         prisma,
         appRoot,
         destination: input.destination,
         assets: input.assets,
+        allowOverwrite: input.allowOverwrite,
       });
     },
 
@@ -330,7 +425,7 @@ export function createCloudinaryStorageAdapter(
     /* ====================================================================== */
 
     async registerUploadedAsset(
-      input: CloudinaryRegisterUploadedAssetInput
+      input: CloudinaryRegisterUploadedAssetInput,
     ): Promise<CloudinaryRegisterUploadedAssetOutput> {
       return registerUploadedAssets({
         prisma,

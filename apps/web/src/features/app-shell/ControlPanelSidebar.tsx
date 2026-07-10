@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { JSX } from "react";
 import { useSessionStore } from "@lib/stores/useSessionStore";
@@ -12,17 +12,14 @@ import { useRouter } from "next/navigation";
  */
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
-  const role = useSessionStore(state => state.session?.user?.role);
+  const role = useSessionStore((state) => state.session?.user?.role);
 
-  return (
-    role && role.name === 'ADMIN'
-    ? (
-      <aside className='w-60 bg-gray-800 text-white p-5'>
-        <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
+  return role && role.name === "ADMIN" ? (
+    <aside className="w-60 bg-gray-800 text-white p-5">
+      <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
 
-        <ul className="space-y-2">
-
-        {['ADMIN', 'COACH'].includes(role.name) && (
+      <ul className="space-y-2">
+        {["ADMIN", "COACH"].includes(role.name) && (
           <>
             <li>
               <div className="flex">
@@ -37,7 +34,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/users');
+                    router.push("/dashboard/users");
                   }}
                 >
                   Utilisateurs
@@ -45,7 +42,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/users/create');
+                    router.push("/dashboard/users/create");
                   }}
                 >
                   <Image
@@ -57,23 +54,23 @@ export default function ControlPanelSidebar(): JSX.Element {
                 </button>
               </div>
             </li>
-            
+
             {/* Rôles */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/roles');
+                    router.push("/dashboard/roles");
                   }}
                 >
                   Rôles
                 </button>
-              
+
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/roles/create');
+                    router.push("/dashboard/roles/create");
                   }}
                 >
                   <Image
@@ -85,20 +82,20 @@ export default function ControlPanelSidebar(): JSX.Element {
                 </button>
               </div>
             </li>
-            
+
             {/* Permissions */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => router.push('admin/dashboard/permissions')}
+                  onClick={() => router.push("/dashboard/permissions")}
                 >
                   Permissions
                 </button>
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/permissions/create');
+                    router.push("/dashboard/permissions/create");
                   }}
                 >
                   <Image
@@ -111,13 +108,67 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
-            {/* Activity categories */}
+            {/* Disciplines */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/categories');
+                    router.push("/dashboard/disciplines");
+                  }}
+                >
+                  Disciplines
+                </button>
+                <button
+                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/disciplines/create");
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer une discipline"
+                    width={16}
+                    height={16}
+                  />
+                </button>
+              </div>
+            </li>
+
+            {/* Familles de disciplines */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/discipline-families");
+                  }}
+                >
+                  Familles
+                </button>
+                <button
+                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/discipline-families/create");
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer une famille de disciplines"
+                    width={16}
+                    height={16}
+                  />
+                </button>
+              </div>
+            </li>
+
+            {/* Catégories d'activités */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/categories");
                   }}
                 >
                   <span>Catégories d&apos;activités</span>
@@ -125,7 +176,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/categories/create');
+                    router.push("/dashboard/categories/create");
                   }}
                 >
                   <Image
@@ -137,14 +188,41 @@ export default function ControlPanelSidebar(): JSX.Element {
                 </button>
               </div>
             </li>
-            
+
+            {/* Origines culturelles */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/origins");
+                  }}
+                >
+                  Origines
+                </button>
+                <button
+                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/origins/create");
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer une origine culturelle"
+                    width={16}
+                    height={16}
+                  />
+                </button>
+              </div>
+            </li>
+
             {/* Cours */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                  router.push('/admin/dashboard/courses');
+                    router.push("/dashboard/courses");
                   }}
                 >
                   Cours
@@ -152,7 +230,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/courses/create');
+                    router.push("/dashboard/courses/create");
                   }}
                 >
                   <Image
@@ -165,12 +243,13 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
+            {/* Évènements */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/events');
+                    router.push("/dashboard/events");
                   }}
                 >
                   Évènements
@@ -178,7 +257,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/events/create');
+                    router.push("/dashboard/events/create");
                   }}
                 >
                   <Image
@@ -191,12 +270,13 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
+            {/* Stages */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/stages');
+                    router.push("/dashboard/stages");
                   }}
                 >
                   Stages
@@ -204,7 +284,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/stages/create');
+                    router.push("/dashboard/stages/create");
                   }}
                 >
                   <Image
@@ -217,12 +297,13 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
+            {/* Posts */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/posts');
+                    router.push("/dashboard/posts");
                   }}
                 >
                   Posts
@@ -230,7 +311,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/posts/create');
+                    router.push("/dashboard/posts/create");
                   }}
                 >
                   <Image
@@ -243,12 +324,40 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
+            {/* Actualités (BreakingNews) */}
             <li>
               <div className="flex">
                 <button
                   className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/library');
+                    router.push("/dashboard/breaking-news");
+                  }}
+                >
+                  Actualités
+                </button>
+                <button
+                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/breaking-news/create");
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer une actualité"
+                    width={16}
+                    height={16}
+                  />
+                </button>
+              </div>
+            </li>
+
+            {/* Bibliothèque */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/library");
                   }}
                 >
                   Bibliothèque
@@ -256,7 +365,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                 <button
                   className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
                   onClick={() => {
-                    router.push('/admin/dashboard/library/add');
+                    router.push("/dashboard/library/add");
                   }}
                 >
                   <Image
@@ -268,25 +377,49 @@ export default function ControlPanelSidebar(): JSX.Element {
                 </button>
               </div>
             </li>
+
+            {/* Galeries */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/galleries");
+                  }}
+                >
+                  Galeries
+                </button>
+                <button
+                  className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/galleries/create");
+                  }}
+                >
+                  <Image
+                    src="/add_circle.svg"
+                    alt="Créer une galerie"
+                    width={16}
+                    height={16}
+                  />
+                </button>
+              </div>
+            </li>
           </>
         )}
 
-          <li>
-            <button
-              className="w-full text-center mt-5"
-              onClick={() => {
-                router.push('/admin/dashboard');
-              }}
-            >
-              Mon profil
-            </button>
-          </li>
-        </ul>
-      </aside>
-    )
-    : (
-      <aside className='w-60 bg-gray-800 text-white p-5'>
-      </aside>
-    )
+        <li>
+          <button
+            className="w-full text-center mt-5"
+            onClick={() => {
+              router.push("/profil");
+            }}
+          >
+            Mon profil
+          </button>
+        </li>
+      </ul>
+    </aside>
+  ) : (
+    <aside className="w-60 bg-gray-800 text-white p-5"></aside>
   );
 }

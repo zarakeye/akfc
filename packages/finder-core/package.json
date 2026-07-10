@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/finder-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cart": "./src/cart/usePickerCartStore.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/contracts": "workspace:*"
+  }
+}

@@ -90,7 +90,6 @@ function formatFocusLabel(expr?: string): string | null {
 
 export function CodeWalkthroughClient({
   language = "ts",
-  filename,
   filepath,
   code,
   title = "Code walkthrough",

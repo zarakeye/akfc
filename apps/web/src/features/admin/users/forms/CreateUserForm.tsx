@@ -1,135 +1,115 @@
-'use client';
+"use client";
 
-import { useForm } from "react-hook-form";
-import { JSX, useActionState } from 'react';
-import { createUserAction, type CreateUserFormState } from '@features/admin/users/actions/createUserForm.action';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-// import { Label } from '@/components/ui/Label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  // SelectGroup
-  // SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@components/ui/select";
+import { useState } from "react";
 import { trpc } from "@trpc/trpcClient";
-import type { Role } from "@prisma/client";
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createUserFormSchema } from "@contracts/forms/createUserForm.schema";
-// import { SelectGroup } from "@radix-ui/react-select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 
-interface FormValues {
+export interface CreateUserFormInput {
   email: string;
-  // password: string;
+  password: string;
   roleId: number;
 }
 
+export interface CreateUserFormProps {
+  onSubmit: (input: CreateUserFormInput) => Promise<void>;
+  submitLabel?: string;
+}
+
 /**
- * Form to create a user.
- * It uses the createUserAction server action to handle form submission and displays a success toast when the response is successful.
- * If the response is not successful, it displays an error message.
- * @returns {JSX.Element} A form with email and select fields and a submit button.
+ * Form de création d'utilisateur. Pas de mode édition : côté admin, seul le
+ * rôle est modifiable (sur la fiche, via `updateUserRoleById`). Le mot de
+ * passe est hashé côté router (bcrypt) — on l'envoie en clair via la mutation
+ * tRPC `user.create`, jamais stocké tel quel.
  */
-export function CreateUserForm(): JSX.Element {
-  //  1️⃣ Validation client instantanée
-  const form = useForm<FormValues>({
-    resolver: zodResolver(createUserFormSchema),
-    defaultValues: {
-      email: '',
-      // password: '',
-      roleId: undefined,
-    },
-    mode: 'onBlur',
-  });
+export function CreateUserForm({
+  onSubmit,
+  submitLabel = "Créer",
+}: CreateUserFormProps) {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [roleId, setRoleId] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // 2️⃣ State côté serveur (Server Action)
-  const [state, formAction, isPending]  = useActionState<CreateUserFormState, FormData>(createUserAction, {} as CreateUserFormState);
-  const { data: roles, isLoading, isError} = trpc.role.getAll.useQuery();
+  // Liste des rôles pour le sélecteur (procédure protégée `manage_roles`).
+  const { data: roles } = trpc.role.getAll.useQuery();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error</div>;
-
-  // const password = generateStrongPassword();
-  // form.setValue('password', password);
+  const handleSubmit = async () => {
+    setSubmitError(null);
+    if (email.trim() === "") {
+      setSubmitError("L'email est obligatoire.");
+      return;
+    }
+    if (password.length < 12) {
+      setSubmitError("Le mot de passe doit faire au moins 12 caractères.");
+      return;
+    }
+    if (roleId === 0) {
+      setSubmitError("Choisis un rôle.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ email: email.trim(), password, roleId });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <Form {...form}>
-      <form
-        action={formAction}
-        onSubmit={async (e) => {
-          const valid = await form.trigger();
-          if (!valid) e.preventDefault();
-        }}
-        className="flex flex-col w-80 space-y-4"
-      >
-        <div className="mb-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input {...field} {...form.register("email")} id="email" type="email"  />
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="mb-4 ml-4">
-          <FormField
-            control={form.control}
-            name="roleId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rôle</FormLabel>
-                <FormControl>
-                  <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={field.value !== undefined ? String(field.value) : undefined}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Sélectionne un rôle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles?.map((role: Role) => (
-                        <SelectItem key={role.id} value={`${role.id}`}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <div className="h-10">
-                  <FormMessage/>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
-        {/* <input  */}
-        <input type="hidden" name="roleId" value={form.getValues('roleId')} />
+    <div className="flex max-w-md flex-col gap-4">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Email</span>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="rounded border border-input bg-background px-2 py-1"
+        />
+      </label>
 
-        {/* --- bouton --- */}
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Mot de passe</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="rounded border border-input bg-background px-2 py-1"
+        />
+        <span className="text-xs text-muted-foreground">
+          12 caractères minimum.
+        </span>
+      </label>
 
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Création en cours...' : 'Créer'}
-        </Button>
-        {/* --- succès --- */}
-        {state.success && <p className="text-green-500">Utilisateur créé avec succès !</p>}
-        {/* --- erreur serveur --- */}
-        {state.error &&
-          <p className="text-red-500">{state.error}</p>
-        }
-      </form>
-    </Form>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Rôle</span>
+        <select
+          value={roleId}
+          onChange={(e) => setRoleId(Number(e.target.value))}
+          className="rounded border border-input bg-background px-2 py-1"
+        >
+          <option value={0}>— Choisir —</option>
+          {(roles ?? []).map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {submitError && <p className="text-sm text-red-600">{submitError}</p>}
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isSubmitting ? "Création…" : submitLabel}
+        </button>
+      </div>
+    </div>
   );
 }

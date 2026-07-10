@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { trpc } from '@trpc/trpcClient';
 import { APP_ROOT } from '@config/app';
 import { useFinderStore, type SearchResultNode } from '@features/finder-core/state/useFinderStore';
-import { parentPath } from '@features/finder-core/utils/path';
 
 /**
  * 🔎 Hook qui pilote la recherche récursive depuis `currentPath`.

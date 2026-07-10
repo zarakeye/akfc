@@ -2,6 +2,7 @@ import { router } from "@backend/trpc/core";
 
 import { authRouter } from "@backend/modules/auth/router";
 import { userRouter } from "@backend/modules/users/router";
+import { avatarRouter } from "@backend/modules/avatar/router";
 import { roleRouter } from "@backend/modules/roles/router";
 import { sessionRouter } from "@backend/modules/session/router";
 import { cloudinaryRouter } from "@backend/modules/cloudinary/router";
@@ -21,10 +22,14 @@ import { originRouter } from "@backend/modules/origins/router";
 import { commentRouter } from "@backend/modules/comments/router";
 import { reactionRouter } from "@backend/modules/reactions/router";
 import { pollRouter } from "@backend/modules/polls/router";
+import { disciplineFamilyRouter } from "@backend/modules/disciplineFamilies/router";
+import { galleryRouter } from "@backend/modules/galleries/router";
+import { breakingNewsRouter } from "@backend/modules/breakingNews/router";
 
 export const appRouter = router({
   auth: authRouter,
   user: userRouter,
+  avatar: avatarRouter,
   role: roleRouter,
   session: sessionRouter,
   cloudinary: cloudinaryRouter,
@@ -44,6 +49,9 @@ export const appRouter = router({
   comment: commentRouter,
   reaction: reactionRouter,
   poll: pollRouter,
+  disciplineFamily: disciplineFamilyRouter,
+  gallery: galleryRouter,
+  breakingNews: breakingNewsRouter,
 });
 
 export type AppRouter = typeof appRouter;

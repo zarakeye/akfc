@@ -13,7 +13,7 @@ export function useTransformWithUndo<T>(
   const { commitDelay = 300 } = options;
 
   const [value, setValue] = useState<T>(initialValue);
-  const [history, setHistory] = useState<T[]>([]);
+  const [, setHistory] = useState<T[]>([]);
 
   const interactionStartRef = useRef<T | null>(null);
   const interactionStartTimeRef = useRef<number | null>(null);

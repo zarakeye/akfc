@@ -270,6 +270,9 @@ model Origin {
   events Event[]
 
   @@index([sortOrder])
+
+  /// Galeries rattachées à cette origine.
+  galleries Gallery[]
 }
 
 /// Grosse maille de classification des disciplines.
@@ -293,6 +296,22 @@ model Category {
 
   /// Assets média rattachés à cette catégorie.
   mediaAssets MediaAsset[]
+
+  /// Galeries rattachées à cette catégorie.
+  galleries Gallery[]
+}
+
+model DisciplineFamily {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  disciplines Discipline[]
+
+  @@index([sortOrder])
 }
 
 /// Une discipline enseignée par le club, au sens conceptuel.
@@ -312,9 +331,14 @@ model Discipline {
   /// Champ pratique : MARTIAL_ART ou CALLIGRAPHY.
   type DisciplineType
 
-  /// Famille de discipline, en texte libre (« Karaté », « Aikido »).
-  /// Métadonnée informative, pas d'intégrité référentielle.
-  family String?
+  /// Slug URL-safe pour la discipline, utilisé dans les URLs publiques
+  slug         String?    @unique        // nullable le temps du backfill
+
+  /// Famille d'appartenance pour regrouper les disciplines proches (ex: « Karaté », « Aikido »).
+  familyId     Int?
+
+  /// Relation vers la famille d'appartenance (nullable pour les disciplines proposées qui n'ont pas encore de famille créée).
+  family DisciplineFamily? @relation(fields: [familyId], references: [id])
 
   /// École spécifique (« Shōtōkan », « Aikikai »). Texte libre.
   school String?
@@ -367,11 +391,16 @@ model Discipline {
   /// Assets média (photos, vidéos d'illustration) rattachés à cette discipline.
   mediaAssets MediaAsset[]
 
+  /// Galeries rattachées à cette discipline.
+  galleries   Gallery[]
+
   @@unique([categoryId, name])
   @@index([categoryId])
   @@index([instructorId])
   @@index([originId])
   @@index([type])
+  @@index([familyId])
+
 }
 
 // ============================================================================
@@ -506,6 +535,10 @@ model Stage {
   /// en chef pour ce stage).
   primaryAnimatorId String
 
+  /// Date de publication. **null = brouillon** (non visible publiquement).
+  /// Une date dans le futur = publication programmée. Cohérent avec Post et Event.
+  publicationDate DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -524,10 +557,16 @@ model Stage {
   /// Sessions individuelles qui composent ce stage.
   sessions StageSession[]
 
+  slug String?  @unique // nullable le temps du backfill
+
+  /// Assets média (photos, vidéos d'illustration) rattachés à ce stage.
+  galleries   Gallery[]
+
   @@unique([disciplineId, label])
   @@index([disciplineId])
   @@index([originId])
   @@index([primaryAnimatorId])
+  @@index([publicationDate])
 }
 
 /// Une séance individuelle d'un Stage.
@@ -648,6 +687,11 @@ model Event {
   /// contenir qu'une).
   sessions EventSession[]
 
+  slug String?  @unique// nullable le temps du backfill
+
+  /// Assets média (photos, vidéos d'illustration) rattachés à cet événement.
+  galleries   Gallery[]
+
   @@index([disciplineId])
   @@index([originId])
   @@index([organizerId])
@@ -754,6 +798,15 @@ model MediaAsset {
 
   // --- Références entrantes depuis le builder de pages
   pageReferences PageMediaReference[]
+
+  // --- Références entrantes depuis les galeries (illustrations)
+  galleryItems GalleryItem[]
+
+  // --- Ancre stable Cloudinary (immuable à travers les renames/moves).
+  // C'est la clé de réconciliation après un move : publicId/fullPath/status
+  // changent au déplacement, asset_id ne bouge jamais. Null pour R2 et pour
+  // les lignes antérieures à cette colonne (réparées par backfill).
+  cloudinaryAssetId      String?  @unique
 
   @@index([status])
   @@index([categoryId])
@@ -872,15 +925,16 @@ model Post {
 
   poll     Poll?              // ← AJOUT (sondage optionnel = vote activable)
 
+  @@index([publicationDate])
 }
 
 /// Commentaire sur un Post. Arborescent : `parentId` pointe vers le
 /// commentaire auquel celui-ci répond (null = commentaire racine).
-/// `content` est du texte simple — un commentaire n'a pas besoin du
-/// PageBuilder (pas de galeries/audio), contrairement aux Post/Stage.
+/// `content` est un document ProseMirror (Json) : tiptap bridé côté front
+/// (gras/italique/liens), sans titres, sans images, sans PageBuilder.
 model Comment {
   id        Int      @id @default(autoincrement())
-  content   String
+  content   Json
   authorId  String
   postId    Int
   parentId  Int?
@@ -1023,4 +1077,103 @@ enum PageReferencerKind {
   POST
   DISCIPLINE  // ← AJOUT v2
   EVENT       // ← AJOUT v2
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  AJOUTS AU SCHÉMA — feature Galerie/Carousel
+//  À coller dans prisma/schema.prisma (à la racine du monorepo).
+// ─────────────────────────────────────────────────────────────────────────
+
+// 1) Nouvel enum partagé de visibilité (réutilisable plus tard par Post).
+enum Visibility {
+  PUBLIC
+  MEMBERS
+}
+
+// 2) Nouveaux modèles.
+
+/// Galerie d'images. Réutilise des MediaAsset existants via GalleryItem
+/// (jointure ordonnée). Rattachement optionnel à AU PLUS un thème
+/// (discipline / stage / event) ; une galerie sans thème au slug réservé
+/// sert de carousel d'accueil.
+model Gallery {
+  id         Int        @id @default(autoincrement())
+  slug       String     @unique
+  title      String
+  visibility Visibility @default(PUBLIC)
+  sortOrder  Int        @default(0)
+
+  /// Date de la galerie (le jour du stage/évènement photographié) —
+  /// métadonnée de tri et facette de la future recherche. Nullable.
+  date DateTime?
+
+  // Rattachements optionnels et CUMULABLES (décision 2026-07-03) : une
+  // galerie peut être à la fois d'une discipline, d'un stage… Ce sont
+  // les facettes de la future recherche.
+  disciplineId Int?
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+  stageId      Int?
+  stage        Stage?      @relation(fields: [stageId], references: [id])
+  eventId      Int?
+  event        Event?      @relation(fields: [eventId], references: [id])
+  categoryId   Int?
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  originId     Int?
+  origin       Origin?     @relation(fields: [originId], references: [id])
+
+  items GalleryItem[]
+
+  @@index([sortOrder])
+  @@index([date])
+}
+
+/// Jointure ordonnée Gallery ↔ MediaAsset (réutilisation de la bibliothèque,
+/// pas de nouvel upload). Un même asset n'apparaît qu'une fois par galerie.
+model GalleryItem {
+  id           Int        @id @default(autoincrement())
+  galleryId    Int
+  gallery      Gallery    @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  mediaAssetId String
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  sortOrder    Int        @default(0)
+
+  @@unique([galleryId, mediaAssetId])
+  @@index([galleryId, sortOrder])
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// BREAKING NEWS — la « voix du club »
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Actualité courte, diffusée par le ruban défilant et la sidebar
+/// escamotable du site public. Distincte de Post (réflexions commentables,
+/// avec interactions) : la BreakingNews est UNIDIRECTIONNELLE — pas
+/// d'auteur affiché (c'est le club qui parle), pas de commentaires, pas
+/// de réactions.
+///
+/// `publicationDate` suit le pattern maison (Stage/Event/Post) :
+/// null = brouillon, future = programmée, passée = publiée.
+/// `expiresAt` retire l'actu du ruban et de la sidebar après échéance
+/// (null = sans expiration) — une actu est éphémère par nature.
+model BreakingNews {
+  id    Int    @id @default(autoincrement())
+  title String
+
+  /// Corps court en texte brut — le ruban défile mal du texte riche,
+  /// et une actu de deux lignes n'a pas besoin de ProseMirror.
+  body String
+
+  /// Lien optionnel, interne (« /#post-12 » — un vote sur le mur) ou
+  /// externe. C'est le CTA de la fiche Announcement, PAS la cible du
+  /// clic sur le ruban (qui ouvre la sidebar).
+  href String?
+
+  publicationDate DateTime?
+  expiresAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([publicationDate])
 }

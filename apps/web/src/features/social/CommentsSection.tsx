@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState, type JSX } from "react";
 import { trpcClient } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { ReactionsBar } from "@features/social/ReactionsBar";
-import { UserPortrait, formatUserName } from "@features/social/userDisplay";
+import { UserPortrait } from "@features/social/UserPortrait";
+import { formatUserName } from "@features/social/userDisplay";
+import { CommentEditor } from "@features/social/CommentEditor";
+import { CommentContent } from "@features/social/CommentContent";
+import type { ProseMirrorContent } from "@contracts/shared/prosemirror";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types & helpers                                                        */
@@ -54,11 +58,37 @@ function formatDateTime(date: Date): string {
   }).format(new Date(date));
 }
 
+/**
+ * `content` sort du backend en JsonValue (schéma opaque). Pour rééditer,
+ * on ne repasse à l'éditeur que ce qui ressemble à un document (objet
+ * non-tableau) ; le reste (legacy, corrompu) ouvre un éditeur vide.
+ */
+function asEditableContent(value: unknown): ProseMirrorContent | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as ProseMirrorContent)
+    : undefined;
+}
+
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Section principale                                                     */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-export function CommentsSection({ postId }: { postId: number }): JSX.Element {
+interface CommentsSectionProps {
+  postId: number;
+  /** Masque le h2 « Commentaires (n) » (le mur affiche son propre compteur). */
+  hideTitle?: boolean;
+  /** Éditeur racine en mode compact (une ligne, s'étend au focus). */
+  compactEditor?: boolean;
+  /** Notifie le parent du nombre de commentaires (compteur du mur). */
+  onCountChange?: (count: number) => void;
+}
+
+export function CommentsSection({
+  postId,
+  hideTitle = false,
+  compactEditor = false,
+  onCountChange,
+}: CommentsSectionProps): JSX.Element {
   const currentUser = useSessionStore((s) => s.session?.user);
   const [comments, setComments] = useState<FlatComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +103,8 @@ export function CommentsSection({ postId }: { postId: number }): JSX.Element {
     const data = await fetchComments();
     setComments(data);
     setLoading(false);
-  }, [fetchComments]);
+    onCountChange?.(data.length);
+  }, [fetchComments, onCountChange]);
 
   // Chargement initial : setState dans le `.then`, pas dans le corps
   // de l'effet (évite le lint set-state-in-effect).
@@ -83,18 +114,22 @@ export function CommentsSection({ postId }: { postId: number }): JSX.Element {
       if (!cancelled) {
         setComments(data);
         setLoading(false);
+        onCountChange?.(data.length);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [fetchComments]);
+  }, [fetchComments, onCountChange]);
 
-  const handleCreate = async (content: string, parentId: number | null) => {
+  const handleCreate = async (
+    content: ProseMirrorContent,
+    parentId: number | null,
+  ) => {
     await trpcClient.comment.create.mutate({ postId, parentId, content });
     await refresh();
   };
-  const handleUpdate = async (id: number, content: string) => {
+  const handleUpdate = async (id: number, content: ProseMirrorContent) => {
     await trpcClient.comment.update.mutate({ id, content });
     await refresh();
   };
@@ -107,15 +142,18 @@ export function CommentsSection({ postId }: { postId: number }): JSX.Element {
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 text-xl font-bold">
-        Commentaires{comments.length > 0 ? ` (${comments.length})` : ""}
-      </h2>
+      {!hideTitle && (
+        <h2 className="mb-4 text-xl font-bold">
+          Commentaires{comments.length > 0 ? ` (${comments.length})` : ""}
+        </h2>
+      )}
 
       {currentUser ? (
-        <CommentForm
+        <CommentEditor
           onSubmit={(content) => handleCreate(content, null)}
           placeholder="Écrire un commentaire…"
           submitLabel="Commenter"
+          compact={compactEditor}
         />
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -156,8 +194,11 @@ interface CommentNodeProps {
   node: CommentNodeData;
   currentUserId: string | null;
   canComment: boolean;
-  onCreate: (content: string, parentId: number | null) => Promise<void>;
-  onUpdate: (id: number, content: string) => Promise<void>;
+  onCreate: (
+    content: ProseMirrorContent,
+    parentId: number | null,
+  ) => Promise<void>;
+  onUpdate: (id: number, content: ProseMirrorContent) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
@@ -189,8 +230,8 @@ function CommentNode({
           </div>
 
           {editing ? (
-            <CommentForm
-              initialValue={node.content}
+            <CommentEditor
+              initialContent={asEditableContent(node.content)}
               onSubmit={async (content) => {
                 await onUpdate(node.id, content);
                 setEditing(false);
@@ -199,7 +240,7 @@ function CommentNode({
               submitLabel="Enregistrer"
             />
           ) : (
-            <p className="mt-1 whitespace-pre-wrap text-sm">{node.content}</p>
+            <CommentContent doc={node.content} />
           )}
 
           {!editing && (
@@ -246,7 +287,7 @@ function CommentNode({
 
           {replying && (
             <div className="mt-3">
-              <CommentForm
+              <CommentEditor
                 onSubmit={async (content) => {
                   await onCreate(content, node.id);
                   setReplying(false);
@@ -276,79 +317,5 @@ function CommentNode({
         </ul>
       )}
     </li>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  Formulaire (création racine, réponse, édition)                         */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-interface CommentFormProps {
-  initialValue?: string;
-  onSubmit: (content: string) => Promise<void>;
-  onCancel?: () => void;
-  placeholder?: string;
-  submitLabel?: string;
-}
-
-function CommentForm({
-  initialValue = "",
-  onSubmit,
-  onCancel,
-  placeholder,
-  submitLabel = "Envoyer",
-}: CommentFormProps) {
-  const [value, setValue] = useState(initialValue);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async () => {
-    const trimmed = value.trim();
-    if (trimmed === "") {
-      setError("Le commentaire ne peut pas être vide.");
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
-    try {
-      await onSubmit(trimmed);
-      setValue("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="mt-2 flex flex-col gap-2">
-      <textarea
-        rows={3}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded border border-input bg-background px-3 py-2 text-sm"
-      />
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-        >
-          {submitting ? "Envoi…" : submitLabel}
-        </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Annuler
-          </button>
-        )}
-      </div>
-    </div>
   );
 }

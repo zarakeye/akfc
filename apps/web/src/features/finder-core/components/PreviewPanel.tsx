@@ -206,6 +206,7 @@ export function PreviewRenderer({
   switch (kind) {
     case 'image':
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={url}
           alt={file.name}
@@ -363,6 +364,7 @@ function DocxPreview({
     let cancelled = false;
 
     async function run() {
+      setState({ html: null, loading: true, error: null });
       try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -386,7 +388,6 @@ function DocxPreview({
       }
     }
 
-    setState({ html: null, loading: true, error: null });
     void run();
 
     return () => {

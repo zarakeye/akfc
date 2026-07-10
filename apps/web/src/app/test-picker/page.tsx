@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MediaPicker } from '@/features/finder-core/components/MediaPicker';
-import { cloudinaryAdapter } from '@/features/finder-adapters/cloudinary/cloudinary.adapter';
+import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
 
 export default function TestPickerPage() {
   const [open, setOpen] = useState(false);
@@ -19,7 +19,7 @@ export default function TestPickerPage() {
       <MediaPicker
         open={open}
         onClose={() => setOpen(false)}
-        adapter={cloudinaryAdapter}
+        adapter={finderStorageAdapter}
         rootPath="AKFC"
         onSubmit={(ids) => {
           console.log('Selected:', ids);

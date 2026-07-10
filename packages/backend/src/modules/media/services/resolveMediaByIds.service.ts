@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 import type { ResolvedMedia } from '@contracts/page';
+import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Audience                                                               */
@@ -24,38 +25,6 @@ import type { ResolvedMedia } from '@contracts/page';
  * (procédure tRPC `media.resolveByIds`).
  */
 export type MediaUrlAudience = 'admin' | 'public';
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  buildMediaProxyUrl                                                     */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-/**
- * Construit l'URL relative qui sert un asset au navigateur, selon
- * l'audience visée.
- *
- *   - Cloudinary (`publicId` non-null) : `/api/media/by-public-id/...`
- *     dans les deux cas (la route est publique de base).
- *   - R2 (`publicId` null) : `/api/media/r2/...` pour l'admin,
- *     `/api/media/public/r2/...` pour le visiteur public.
- *
- * Encodage segment par segment pour gérer dossiers/fichiers avec
- * caractères spéciaux sans casser les `/` structurels.
- */
-export function buildMediaProxyUrl(
-  asset: { publicId: string | null; fullPath: string },
-  audience: MediaUrlAudience = 'admin',
-): string {
-  const encodeSegments = (path: string) =>
-    path.split('/').map(encodeURIComponent).join('/');
-
-  if (asset.publicId !== null) {
-    return `/api/media/by-public-id/${encodeSegments(asset.publicId)}?variant=large`;
-  }
-
-  const r2Prefix =
-    audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';
-  return `${r2Prefix}/${encodeSegments(asset.fullPath)}`;
-}
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  resolveMediaByIds                                                      */
@@ -103,12 +72,21 @@ export async function resolveMediaByIds(
       width: true,
       height: true,
       duration: true,
+      resourceType: true,
     },
   });
 
   for (const asset of assets) {
+    const isVideo =
+      asset.resourceType === 'video' || asset.mimeType.startsWith('video/');
+    const isAudio = !isVideo && asset.mimeType.startsWith('audio/');
+    const isImage = !isVideo && !isAudio && asset.mimeType.startsWith('image/');
+
+    const baseUrl = buildMediaProxyUrl(asset);
     byId[asset.id] = {
       url: buildMediaProxyUrl(asset, audience),
+      kind: isVideo ? 'video' : isAudio ? 'audio' : isImage ? 'image' : 'document',
+      posterUrl: isVideo ? `${baseUrl}&as=poster` : null,
       mimeType: asset.mimeType,
       fileName: lastSegment(asset.fullPath),
       width: asset.width,

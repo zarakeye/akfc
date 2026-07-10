@@ -72,7 +72,31 @@ export const postRouter = router({
       });
     }),
 
+  /**
+   * Lookup public par id — seuls les posts PUBLIÉS (publicationDate non
+   * null et passée). Un brouillon/programmé renvoie NOT_FOUND.
+   */
   getById: publicProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.prisma.post.findFirst({
+        where: {
+          id: input.id,
+          publicationDate: { not: null, lte: new Date() },
+        },
+      });
+      if (!post) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+      }
+      return post;
+    }),
+
+  /**
+   * Lookup admin par id — brouillons/programmés inclus.
+   * Alimente la fiche et l'édition admin.
+   */
+  getByIdAdmin: protectedProcedure
+    .use(requirePermission("manage_posts"))
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const post = await ctx.prisma.post.findUnique({

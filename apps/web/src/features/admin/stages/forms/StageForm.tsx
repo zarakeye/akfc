@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Stage, Audience } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { cloudinaryAdapter } from "@features/finder-adapters/cloudinary/cloudinary.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
@@ -12,6 +12,7 @@ import { OriginSelect } from "@features/admin/common/components/OriginSelect";
 import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
 import { AnimatorsMultiSelect } from "@features/admin/common/components/AnimatorsMultiSelect";
 
+import { slugify } from "@contracts/slug/slugify";
 import {
   emptyPageContentV1,
   parsePageContentV1,
@@ -24,6 +25,7 @@ import {
 
 export interface StageFormInput {
   label: string;
+  slug: string;
   audience: Audience;
   disciplineId: number | null;
   externalDisciplineLabel: string | null;
@@ -33,6 +35,7 @@ export interface StageFormInput {
   preRegistered: string[];
   primaryAnimatorId: string;
   coAnimatorIds: string[];
+  publicationDate: Date | null;
 }
 
 export interface StageFormProps {
@@ -56,13 +59,27 @@ const AUDIENCES: { value: Audience; label: string }[] = [
 ];
 
 /* ─────────────────────────────────────────────────────────────────────── */
+/*  Helpers                                                              */
+/* ─────────────────────────────────────────────────────────────────────── */
+function dateToLocalInput(d: Date | null): string {
+  if (!d) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function localInputToDate(v: string): Date | null {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
 /*  Composant                                                              */
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Formulaire d'édition d'un `Stage`. Six sections :
+ * Formulaire d'édition d'un `Stage`. Sept sections :
  *
- *   1. **Identité** — label, audience, animateur principal
+ *   1. **Identité** — label, slug, audience, animateur principal
  *   2. **Rattachement** — au moins un des trois : discipline du club,
  *      label externe, origine culturelle
  *   3. **Co-animateurs** — multi-sélection (filtre primaryAnimatorId)
@@ -72,17 +89,21 @@ const AUDIENCES: { value: Audience; label: string }[] = [
  *
  * Validations au submit :
  *   - `label` non vide
+ *   - `slug` non vide (auto-rempli depuis le label, éditable)
  *   - `primaryAnimatorId` non null
  *   - Au moins un de `disciplineId` / `externalDisciplineLabel` /
  *     `originId` non vide
  *
+ * Le `slug` suit le label tant que l'admin n'y a pas touché (pattern
+ * `DisciplineForm`), puis devient indépendant — stable au renommage.
+ * Alimente `/stages/[slug]`.
+ *
  * Le label est `@@unique([disciplineId, label])` côté schéma quand
  * disciplineId est non-null — la collision remonte du router en
- * CONFLICT.
+ * CONFLICT (de même que le slug `@unique`).
  *
  * Les `StageSession[]` (séances datées) sont **gérées séparément** —
- * pas dans ce form. Voir la page d'édition qui les affiche et qui
- * exposera leur UI dédiée dans une livraison suivante.
+ * pas dans ce form.
  */
 export function StageForm({
   initial,
@@ -90,6 +111,8 @@ export function StageForm({
   submitLabel = "Enregistrer",
 }: StageFormProps) {
   const [label, setLabel] = useState<string>(initial?.label ?? "");
+  const [slug, setSlug] = useState<string>(initial?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState<boolean>(!!initial);
   const [audience, setAudience] = useState<Audience>(
     initial?.audience ?? "ADULTS",
   );
@@ -124,11 +147,36 @@ export function StageForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [publicationDate, setPublicationDate] = useState<Date | null>(
+    initial?.publicationDate ?? null,
+  );
+
+  const handleLabelChange = (value: string) => {
+    setLabel(value);
+    if (!slugTouched) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
+    setSlugTouched(true);
+  };
+
+  const handleRegenerateSlug = () => {
+    setSlug(slugify(label));
+    setSlugTouched(false);
+  };
+
   const handleSubmit = async () => {
     setSubmitError(null);
 
     if (label.trim() === "") {
       setSubmitError("Le label est obligatoire.");
+      return;
+    }
+    if (slug.trim() === "") {
+      setSubmitError("Le slug est obligatoire.");
       return;
     }
     if (primaryAnimatorId === null) {
@@ -166,6 +214,7 @@ export function StageForm({
     try {
       await onSubmit({
         label: label.trim(),
+        slug: slug.trim(),
         audience,
         disciplineId: disciplineIdFinal,
         externalDisciplineLabel: externalDisciplineLabelFinal,
@@ -175,6 +224,7 @@ export function StageForm({
         preRegistered,
         primaryAnimatorId,
         coAnimatorIds,
+        publicationDate,
       });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
@@ -194,7 +244,7 @@ export function StageForm({
           <input
             type="text"
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e) => handleLabelChange(e.target.value)}
             placeholder="Stage Sensei Tanaka 2026"
             className="rounded border border-input bg-background px-2 py-1"
           />
@@ -213,6 +263,26 @@ export function StageForm({
               </option>
             ))}
           </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm sm:col-span-3">
+          <span className="flex items-center justify-between font-medium">
+            Slug *
+            <button
+              type="button"
+              onClick={handleRegenerateSlug}
+              className="text-xs font-normal text-muted-foreground underline hover:text-foreground"
+            >
+              régénérer depuis le label
+            </button>
+          </span>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="stage-sensei-tanaka-2026"
+            className="rounded border border-input bg-background px-2 py-1 font-mono text-xs"
+          />
         </label>
 
         <label className="flex flex-col gap-1 text-sm sm:col-span-3">
@@ -288,7 +358,7 @@ export function StageForm({
         <PageBuilder
           value={description}
           onChange={setDescription}
-          adapter={cloudinaryAdapter}
+          adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
         />
       </fieldset>
@@ -305,7 +375,7 @@ export function StageForm({
         <PageBuilder
           value={program}
           onChange={setProgram}
-          adapter={cloudinaryAdapter}
+          adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
         />
       </fieldset>
@@ -325,6 +395,49 @@ export function StageForm({
             className="rounded border border-input bg-background px-2 py-1 font-mono text-sm"
           />
         </label>
+      </fieldset>
+
+      {/* ── Publication ─────────────────────────────────────────────── */}
+      <fieldset className="rounded-lg border border-border p-4">
+        <legend className="px-2 text-sm font-medium">Publication</legend>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="publicationMode"
+                checked={publicationDate === null}
+                onChange={() => setPublicationDate(null)}
+              />
+              Brouillon
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="publicationMode"
+                checked={publicationDate !== null}
+                onChange={() => setPublicationDate(publicationDate ?? new Date())}
+              />
+              Planifier la publication
+            </label>
+          </div>
+
+          {publicationDate !== null && (
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-xs text-muted-foreground">
+                Date et heure de publication. Une date future programme la
+                publication ; une date passée publie immédiatement.
+              </span>
+              <input
+                type="datetime-local"
+                value={dateToLocalInput(publicationDate)}
+                onChange={(e) => setPublicationDate(localInputToDate(e.target.value))}
+                className="rounded border border-input bg-background px-2 py-1 text-sm"
+              />
+            </label>
+          )}
+        </div>
       </fieldset>
 
       {/* ── Action ──────────────────────────────────────────────────── */}

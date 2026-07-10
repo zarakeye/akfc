@@ -8,6 +8,10 @@ import { APP_ROOT } from '@config/app';
 import type { FinderNode } from '@contracts/finder';
 
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import {
+  buildNodePool,
+  resolveSelectedNodes,
+} from '@features/finder-core/utils/selectionNodes';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
 
@@ -68,6 +72,8 @@ export function useNodeActions(): {
   const currentPath = useFinderStore((s) => s.currentPath);
   const folders = useFinderStore((s) => s.folders);
   const files = useFinderStore((s) => s.files);
+  const contentCache = useFinderStore((s) => s.contentCache);
+  const searchResults = useFinderStore((s) => s.search.results);
   const selection = useFinderStore((s) => s.selection);
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
@@ -192,13 +198,24 @@ export function useNodeActions(): {
     (focusedNode: FinderNode): FinderNode[] => {
       if (multiSelectActive && selection.roots.has(focusedNode.id)) {
         // Multi-select avec focusedNode dedans → toute la sélection.
-        // On reconstitue les nodes depuis les collections du path courant.
-        const all = [...folders, ...files];
-        return all.filter((n) => selection.roots.has(n.id));
+        //
+        // ⚠️ La sélection est partagée Grid + Tree (même `selection.roots`).
+        // On reconstitue donc depuis le POOL GLOBAL (dossier courant + tout
+        // le contentCache préchauffé par la TreeView + résultats de
+        // recherche), pas depuis le seul dossier grid courant — sinon un
+        // item coché dans l'arbre serait compté mais introuvable, et l'action
+        // s'appliquerait à un sous-ensemble (voire à rien).
+        const pool = buildNodePool({
+          folders,
+          files,
+          contentCache,
+          searchResults,
+        });
+        return resolveSelectedNodes(selection.roots, pool);
       }
       return [focusedNode];
     },
-    [multiSelectActive, selection.roots, folders, files],
+    [multiSelectActive, selection.roots, folders, files, contentCache, searchResults],
   );
 
   return {

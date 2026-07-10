@@ -1,21 +1,24 @@
 import { JSX } from 'react';
+import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import type { Category } from '@prisma/client';
 
 /**
- * CategoriesTable component
- * 
- * This component is responsible for displaying a list of all categories from the database.
- * It uses the trpc.category.getAll hook to fetch the data and the react-ts-tab-lib library to render the table.
- * 
- * The component also handles loading and error states for both the categories data.
+ * CategoriesTable
+ *
+ * Liste toutes les catégories (« types d'activités ») depuis la base via
+ * `trpc.category.getAll.useQuery()`, rendues avec `react-ts-tab-lib`.
+ *
+ * Gère les états de chargement et d'erreur. Mêmes conventions que les autres
+ * tables admin (PermissionsTable, etc.).
  */
 export default function CategoriesTable(): JSX.Element {
-  const { data: activityTypes, isLoading, isError } = trpc.category.getAll.useQuery();
+  const router = useRouter();
+  const { data: categories, isLoading, isError } = trpc.category.getAll.useQuery();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading permissions.</div>;
+  if (isLoading) return <div>Chargement…</div>;
+  if (isError) return <div>Erreur lors du chargement des catégories.</div>;
 
   const columns: Column<Category>[] = [
     {
@@ -25,7 +28,7 @@ export default function CategoriesTable(): JSX.Element {
     },
     {
       property: 'type',
-      displayName: 'Permission',
+      displayName: 'Libellé',
       type: 'string',
     },
   ];
@@ -33,7 +36,10 @@ export default function CategoriesTable(): JSX.Element {
   return (
     <Table
       columns={columns}
-      rows={activityTypes || []}
+      rows={categories || []}
+      onRowClick={(row: Category | null) => {
+        if (row) router.push(`/dashboard/categories/${row.id}`);
+      }}
     />
   );
 }

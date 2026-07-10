@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder, Music } from 'lucide-react';
+import { Folder, Music, Check } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -33,13 +33,6 @@ const AUDIO_EXTENSIONS = new Set([
   'mp3', 'wav', 'ogg', 'oga', 'm4a', 'opus', 'flac',
 ]);
 
-/**
- * Extensions vidéo pour lesquelles on tente de générer une thumbnail
- * Cloudinary. Les autres formats vidéos (rares) fallback sur l'emoji.
- */
-const VIDEO_EXTENSIONS_FOR_THUMB = new Set([
-  'mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'ogv',
-]);
 
 function getFileExtension(name: string): string | null {
   const idx = name.lastIndexOf('.');
@@ -111,6 +104,15 @@ function getCloudinaryVideoThumbnail(url: string): string | null {
  * - **Checkbox visible uniquement en mode multi-select**, en overlay
  *   haut-gauche (fond semi-transparent pour rester lisible).
  *
+ * ─── Mode picker (panier) ───────────────────────────────────────────────────
+ *
+ * Quand `pickMode` est actif (picker média), un clic sur un FICHIER pickable
+ * appelle `onPickToggle(node)` au lieu de la sélection/preview habituelle (la
+ * navigation des dossiers reste au simple clic). L'appartenance au panier est
+ * signalée par un overlay vert avec coche (`isInCart`), TOUJOURS visible (pas
+ * au hover) pour rester utilisable au tactile. Ces props sont optionnelles :
+ * absentes, le GridItem se comporte comme dans la bibliothèque (inchangé).
+ *
  * 🪝 Un sous-composant par item est nécessaire pour que `useLongPress`
  * soit appelé une fois par instance (rules of hooks).
  */
@@ -123,6 +125,16 @@ type GridItemProps = {
   onDoubleClick?: () => void;
   onLongPress: () => void;
   onDragStart: (e: React.DragEvent) => void;
+  /**
+   * Mode picker actif : le clic sur un fichier pickable épingle au panier
+   * (via le handler de clic du parent) plutôt que de sélectionner. Optionnel.
+   */
+  pickMode?: boolean;
+  /**
+   * Ce node est-il dans le panier ? Pilote l'overlay « épinglé ». Optionnel
+   * (défaut : false). N'a d'effet visuel qu'en `pickMode`.
+   */
+  isInCart?: boolean;
 };
 
 export default function GridItem({
@@ -134,6 +146,8 @@ export default function GridItem({
   onDoubleClick,
   onLongPress,
   onDragStart,
+  pickMode = false,
+  isInCart = false,
 }: GridItemProps): JSX.Element {
   // Détection : ce node est-il un dossier de statut (pending/published/bin) ?
   // Si oui, il est exclu du DnD, du longpress, de la checkbox et du menu
@@ -200,6 +214,10 @@ export default function GridItem({
   // "Visual thumb" générique pour ajuster le style du nom et du badge.
   const hasVisualThumb = hasImageThumb || hasVideoThumb;
 
+  // En mode picker, un fichier épinglé reçoit un anneau vert (distinct du
+  // bleu de sélection) pour que l'état « dans le panier » soit lisible.
+  const pinned = pickMode && isInCart;
+
   // Construit les items du menu contextuel pour ce node.
   // L'action `Supprimer` agit soit sur le node seul, soit sur toute la
   // sélection si on est en multi-select avec ce node dedans.
@@ -259,12 +277,17 @@ export default function GridItem({
       className={clsx(
         'relative aspect-square rounded-lg border bg-white overflow-hidden cursor-pointer select-none',
         'transition-shadow hover:shadow-md',
-        isSelected ? 'ring-2 ring-blue-400 border-blue-300' : 'border-gray-200',
+        pinned
+          ? 'ring-2 ring-emerald-500 border-emerald-300'
+          : isSelected
+          ? 'ring-2 ring-blue-400 border-blue-300'
+          : 'border-gray-200',
       )}
       title={node.name}
     >
       {/* ----------------------------- CONTENU ----------------------------- */}
       {hasImageThumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={url}
           alt={node.name}
@@ -275,6 +298,7 @@ export default function GridItem({
         <>
           {/* Thumbnail toujours présente — fallback visuel pendant le load
               de la vidéo au hover, et état affiché au repos. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={videoThumbnailUrl ?? undefined}
             alt={node.name}
@@ -352,6 +376,16 @@ export default function GridItem({
             readOnly
             className="block"
           />
+        </div>
+      )}
+
+      {/* --------------------------- PANIER (PICK) ------------------------ */}
+      {/* En mode picker, badge « épinglé » sur les fichiers du panier.
+          TOUJOURS visible (pas au hover) et cible large : utilisable au
+          tactile. Overlay vert distinct du bleu de multi-select. */}
+      {pickMode && !isFolder && isInCart && (
+        <div className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow">
+          <Check className="h-4 w-4" aria-label="Dans la sélection" />
         </div>
       )}
       </div>

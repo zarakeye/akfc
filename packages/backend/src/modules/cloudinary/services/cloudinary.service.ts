@@ -30,6 +30,8 @@ interface GetAssetInfoResult {
   resource_type: ResourceType;
   bytes?: number;
   created_at?: string;
+  asset_id?: string;
+  format?: string;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -54,7 +56,8 @@ const transformations: Record<Variant, TransformationOptions> = {
 export function buildAuthenticatedUrl(
   publicId: string,
   variant: Variant,
-  resourceType: ResourceType = "image"
+  resourceType: ResourceType = "image",
+  version?: number,
 ): string {
   const transformation = transformations[variant] ?? {};
 
@@ -64,6 +67,10 @@ export function buildAuthenticatedUrl(
     type: "authenticated",
     resource_type: resourceType,
     secure: true,
+    // Version Cloudinary (numéro du binaire) : produit une URL `.../v<n>/...`
+    // que le CDN traite comme unique. Sans elle, un asset écrasé (publicId
+    // fixe, ex. avatar) sert l'ANCIEN binaire encore en cache CDN.
+    ...(version ? { version } : {}),
   });
 }
 
@@ -73,11 +80,12 @@ export function buildAuthenticatedUrl(
  */
 export async function fetchAuthenticatedAsset(
   publicId: string,
-  variant: Variant
+  variant: Variant,
+  version?: number,
 ): Promise<Response | null> {
   for (const rt of ["image", "video", "raw"] as const) {
     try {
-      const url = buildAuthenticatedUrl(publicId, variant, rt);
+      const url = buildAuthenticatedUrl(publicId, variant, rt, version);
 
       const res = await fetch(url, {
         cache: "no-store",
@@ -102,7 +110,7 @@ export async function fetchAuthenticatedAsset(
  * Récupère les métadonnées d'un asset (multi resource_type).
  */
 export async function getAssetInfo(
-  publicId: string
+  publicId: string,
 ): Promise<GetAssetInfoResult> {
   for (const rt of ["image", "video", "raw"] as const) {
     try {
@@ -110,14 +118,15 @@ export async function getAssetInfo(
         type: "authenticated",
         resource_type: rt,
       });
+      console.log("[asset_id check]", res?.asset_id, res?.public_id);
 
       if (res?.public_id) {
         return {
           resource_type: rt,
           bytes: typeof res.bytes === "number" ? res.bytes : undefined,
-          created_at: res.created_at
-            ? String(res.created_at)
-            : undefined,
+          created_at: res.created_at ? String(res.created_at) : undefined,
+          asset_id: typeof res.asset_id === "string" ? res.asset_id : undefined,
+          format: typeof res.format === "string" ? res.format : undefined,
         };
       }
     } catch {
@@ -181,7 +190,7 @@ export async function fileExists(publicId: string): Promise<boolean> {
  * stale dès qu'on a muté la structure.
  */
 export async function deleteByPrefix(
-  prefix: string
+  prefix: string,
 ): Promise<{ success: boolean }> {
   // ─── Étape 1 : supprimer tous les assets sous le prefix ─────────────────
   for (const resourceType of ["image", "video", "raw"] as const) {
@@ -217,14 +226,17 @@ export async function deleteByPrefix(
  *   - Erreurs de listage d'un sous-dossier → log et continue (on supprime
  *     ce qu'on peut, on ne bloque pas tout le batch sur un cas particulier).
  */
-async function deleteCloudinaryFolderRecursive(
-  folderPath: string
+export async function deleteCloudinaryFolderRecursive(
+  folderPath: string,
 ): Promise<void> {
   // Liste les sous-dossiers directs.
   let subFolders: Array<{ name: string; path: string }> = [];
   try {
     const result = await cloudinary.api.sub_folders(folderPath);
-    subFolders = (result.folders ?? []) as Array<{ name: string; path: string }>;
+    subFolders = (result.folders ?? []) as Array<{
+      name: string;
+      path: string;
+    }>;
   } catch (err) {
     const desc = describeCloudinaryError(err);
     // Le dossier n'existe pas → nothing to do, on retourne silencieusement.
@@ -296,14 +308,14 @@ function describeCloudinaryError(err: unknown): {
         ? (obj.error as Record<string, unknown>)
         : null;
     const message = String(
-      (inner?.message ?? obj.message ?? JSON.stringify(err)) ?? "<unknown>",
+      inner?.message ?? obj.message ?? JSON.stringify(err) ?? "<unknown>",
     );
     const http_code =
       typeof inner?.http_code === "number"
         ? inner.http_code
         : typeof obj.http_code === "number"
-        ? obj.http_code
-        : undefined;
+          ? obj.http_code
+          : undefined;
     return { message, http_code };
   }
   return { message: String(err) };
@@ -352,7 +364,7 @@ function describeCloudinaryError(err: unknown): {
  * mais pas les vidéos" est moins pire que "rien du tout".
  */
 export async function listAuthenticatedResources(
-  prefix: string
+  prefix: string,
 ): Promise<ListAuthenticatedResourcesResult[]> {
   const cached = getCached(prefix);
   if (cached !== null) {
@@ -374,13 +386,17 @@ export async function listAuthenticatedResources(
   const mapped: ListAuthenticatedResourcesResult[] = [];
   const labels = ["image", "video", "raw"] as const;
 
+  // for (let i = 0; i < settled.length; i++) {
+  //   const o = settled[i];
+  // }
+
   for (let i = 0; i < settled.length; i++) {
     const outcome = settled[i];
     if (outcome.status === "rejected") {
       // On log mais on continue : mieux vaut une liste partielle qu'aucune.
       console.error(
         `[listAuthenticatedResources] resource_type=${labels[i]} failed for prefix '${prefix}':`,
-        outcome.reason
+        outcome.reason,
       );
       continue;
     }
@@ -396,4 +412,56 @@ export async function listAuthenticatedResources(
   setCached(prefix, mapped);
 
   return mapped;
+}
+
+/**
+ * Construit une URL signée vers le POSTER (frame représentative) d'une vidéo
+ * authenticated. Cloudinary génère l'image à la volée : resource_type vidéo +
+ * format jpg + start_offset auto (frame non-noire choisie automatiquement).
+ *
+ * Distinct de buildAuthenticatedUrl, qui applique des transformations IMAGE
+ * sur le resource_type détecté — inadapté pour extraire une frame d'une vidéo.
+ */
+export function buildVideoPosterUrl(
+  publicId: string,
+  variant: Variant = "large",
+): string {
+  const sizing = transformations[variant] ?? {};
+  return cloudinary.url(publicId, {
+    resource_type: "video",
+    type: "authenticated",
+    format: "jpg",
+    sign_url: true,
+    secure: true,
+    transformation: [{ start_offset: "0" }, sizing],
+  });
+}
+
+/**
+ * Récupère le poster d'une vidéo authenticated. Retourne le Response natif (streamable).
+ *
+ * @param publicId
+ * @param variant
+ * @returns
+ */
+export async function fetchVideoPoster(
+  publicId: string,
+  variant: Variant,
+): Promise<Response | null> {
+  try {
+    const url = buildVideoPosterUrl(publicId, variant);
+    console.log("[poster] url=", url);
+    const res = await fetch(url, { cache: "no-store" });
+    console.log(
+      "[poster] status=",
+      res.status,
+      "ct=",
+      res.headers.get("content-type"),
+    );
+    if (!res.ok) return null;
+    return res;
+  } catch (e) {
+    console.log("[poster] threw", e);
+    return null;
+  }
 }

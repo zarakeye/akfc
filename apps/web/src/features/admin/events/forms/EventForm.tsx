@@ -4,13 +4,14 @@ import { useState } from "react";
 import type { Event, Audience } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { cloudinaryAdapter } from "@features/finder-adapters/cloudinary/cloudinary.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
 import { OriginSelect } from "@features/admin/common/components/OriginSelect";
 import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
 
+import { slugify } from "@contracts/slug/slugify";
 import {
   emptyPageContentV1,
   parsePageContentV1,
@@ -23,6 +24,7 @@ import {
 
 export interface EventFormInput {
   label: string;
+  slug: string;
   content: PageContentV1;
   audience: Audience;
   disciplineId: number | null;
@@ -72,7 +74,7 @@ function toDatetimeLocalValue(date: Date | null): string {
 /**
  * Formulaire d'édition d'un `Event`. Plus simple que StageForm :
  *
- *   1. **Identité et publication** — label, audience, organisateur,
+ *   1. **Identité et publication** — label, slug, audience, organisateur,
  *      date de publication (vide = brouillon)
  *   2. **Rattachement** — au moins un des trois (discipline du club,
  *      label externe, origine), exactement comme Stage
@@ -80,19 +82,22 @@ function toDatetimeLocalValue(date: Date | null): string {
  *
  * Validations au submit :
  *   - `label` non vide
+ *   - `slug` non vide (auto-rempli depuis le label, éditable)
  *   - `organizerId` non null
  *   - Au moins un de `disciplineId` / `externalDisciplineLabel` /
  *     `originId`
  *
+ * Le `slug` suit le label tant que l'admin n'y a pas touché (pattern
+ * `DisciplineForm`/`OriginForm`), puis devient indépendant — stable au
+ * renommage. Alimente `/evenements/[slug]`.
+ *
  * `publicationDate` : `null` = brouillon. Une date passée = publié,
- * une date future = publication programmée. Le `<input datetime-local>`
- * édite en heure locale ; on reconstruit un objet `Date` au submit,
- * que `z.coerce.date()` côté router accepte directement.
+ * une date future = publication programmée.
  *
  * Note sur l'organisateur : on réutilise `InstructorSelect`, qui ne
  * liste que les instructeurs. Si tu veux pouvoir désigner n'importe
- * quel utilisateur comme organisateur (pas seulement un instructeur),
- * il faudra un `UserSelect` plus large — dis-le moi et je le fais.
+ * quel utilisateur comme organisateur, il faudra un `UserSelect` plus
+ * large — dis-le moi et je le fais.
  */
 export function EventForm({
   initial,
@@ -100,6 +105,8 @@ export function EventForm({
   submitLabel = "Enregistrer",
 }: EventFormProps) {
   const [label, setLabel] = useState<string>(initial?.label ?? "");
+  const [slug, setSlug] = useState<string>(initial?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState<boolean>(!!initial);
   const [audience, setAudience] = useState<Audience>(
     initial?.audience ?? "ALL_AGES",
   );
@@ -123,11 +130,32 @@ export function EventForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const handleLabelChange = (value: string) => {
+    setLabel(value);
+    if (!slugTouched) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
+    setSlugTouched(true);
+  };
+
+  const handleRegenerateSlug = () => {
+    setSlug(slugify(label));
+    setSlugTouched(false);
+  };
+
   const handleSubmit = async () => {
     setSubmitError(null);
 
     if (label.trim() === "") {
       setSubmitError("Le label est obligatoire.");
+      return;
+    }
+    if (slug.trim() === "") {
+      setSubmitError("Le slug est obligatoire.");
       return;
     }
     if (organizerId === null) {
@@ -161,6 +189,7 @@ export function EventForm({
     try {
       await onSubmit({
         label: label.trim(),
+        slug: slug.trim(),
         content,
         audience,
         disciplineId: disciplineIdFinal,
@@ -189,9 +218,29 @@ export function EventForm({
           <input
             type="text"
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e) => handleLabelChange(e.target.value)}
             placeholder="Repas de fin d'année, Conférence sur le zen…"
             className="rounded border border-input bg-background px-2 py-1"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+          <span className="flex items-center justify-between font-medium">
+            Slug *
+            <button
+              type="button"
+              onClick={handleRegenerateSlug}
+              className="text-xs font-normal text-muted-foreground underline hover:text-foreground"
+            >
+              régénérer depuis le label
+            </button>
+          </span>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => handleSlugChange(e.target.value)}
+            placeholder="repas-de-fin-d-annee"
+            className="rounded border border-input bg-background px-2 py-1 font-mono text-xs"
           />
         </label>
 
@@ -276,7 +325,7 @@ export function EventForm({
         <PageBuilder
           value={content}
           onChange={setContent}
-          adapter={cloudinaryAdapter}
+          adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
         />
       </fieldset>

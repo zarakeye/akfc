@@ -1,5 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+
+import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 
@@ -13,6 +16,10 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
  * - Écriture protégée : tout utilisateur connecté peut commenter et
  *   répondre. L'édition/suppression est réservée à l'auteur (la
  *   modération admin pourra être ajoutée via un endpoint dédié).
+ *
+ * `content` est un document ProseMirror (Json, schéma opaque partagé —
+ * cf. contracts/shared/prosemirror.ts). Les garanties de non-vacuité et
+ * de taille sont portées par l'éditeur bridé côté front.
  *
  * `Reaction` étant polymorphe (pas de FK), la suppression d'un
  * commentaire nettoie explicitement les réactions de toute sa
@@ -47,11 +54,7 @@ export const commentRouter = router({
       z.object({
         postId: z.number().int(),
         parentId: z.number().int().nullable().optional(),
-        content: z
-          .string()
-          .trim()
-          .min(1, "Le commentaire ne peut pas être vide.")
-          .max(5000),
+        content: proseMirrorContentSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -81,7 +84,7 @@ export const commentRouter = router({
         data: {
           postId: input.postId,
           parentId: input.parentId ?? null,
-          content: input.content,
+          content: input.content as Prisma.InputJsonValue,
           authorId: ctx.sessionClient.user.id,
         },
         include: { author: { select: authorSelect } },
@@ -93,7 +96,7 @@ export const commentRouter = router({
     .input(
       z.object({
         id: z.number().int(),
-        content: z.string().trim().min(1).max(5000),
+        content: proseMirrorContentSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -110,7 +113,7 @@ export const commentRouter = router({
       }
       return ctx.prisma.comment.update({
         where: { id: input.id },
-        data: { content: input.content },
+        data: { content: input.content as Prisma.InputJsonValue },
         include: { author: { select: authorSelect } },
       });
     }),

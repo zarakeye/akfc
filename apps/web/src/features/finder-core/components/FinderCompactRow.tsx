@@ -35,7 +35,6 @@ export default function FinderCompactRow({
 }: Props): JSX.Element {
   const longPress = useLongPress(onLongPress);
   const isFolder = node.type === 'folder';
-  const Icon = pickIcon(node);
 
   return (
     <div
@@ -65,10 +64,10 @@ export default function FinderCompactRow({
           aria-label={`Sélectionner ${node.name}`}
         />
       )}
-      <Icon
-        className={`h-4 w-4 shrink-0 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`}
-        strokeWidth={1.5}
-      />
+      {renderNodeIcon(
+        node,
+        `h-4 w-4 shrink-0 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`,
+      )}
       <span className="text-sm font-medium text-gray-900 truncate min-w-0 flex-1" title={node.name}>
         {node.name}
       </span>
@@ -79,15 +78,21 @@ export default function FinderCompactRow({
   );
 }
 
-function pickIcon(node: FinderNode): typeof Folder {
-  if (node.type === 'folder') return Folder;
+// Rend l'icône d'un node. On retourne un ÉLÉMENT (pas un composant) pour
+// éviter `<Icon>` avec une variable dynamique, que
+// react-hooks/static-components interdit (il y voit un composant créé pendant
+// le render). Les composants lucide utilisés sont statiques (importés), donc
+// aucune création dynamique.
+function renderNodeIcon(node: FinderNode, className: string): JSX.Element {
+  const props = { className, strokeWidth: 1.5 };
+  if (node.type === 'folder') return <Folder {...props} />;
   const kind = node.meta?.kind;
-  if (kind === 'image') return ImageIcon;
-  if (kind === 'video') return FileVideo;
-  if (kind === 'document') return FileText;
-  if (node.mimeType?.startsWith('audio/')) return FileAudio;
-  if (node.mimeType?.startsWith('text/')) return FileType;
-  return FileText;
+  if (kind === 'image') return <ImageIcon {...props} />;
+  if (kind === 'video') return <FileVideo {...props} />;
+  if (kind === 'document') return <FileText {...props} />;
+  if (node.mimeType?.startsWith('audio/')) return <FileAudio {...props} />;
+  if (node.mimeType?.startsWith('text/')) return <FileType {...props} />;
+  return <FileText {...props} />;
 }
 
 function formatBytes(bytes?: number): string {

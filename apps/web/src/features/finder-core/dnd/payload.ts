@@ -14,9 +14,9 @@
  * proprement plutôt que d'essayer de le parser et planter.
  */
 
-import type { FinderNode } from '@contracts/finder';
+import type { FinderNode } from "@contracts/finder";
 
-export const FINDER_DRAG_MIME = 'application/x-finder-drag';
+export const FINDER_DRAG_MIME = "application/x-finder-drag";
 
 /* -------------------------------------------------------------------------- */
 /*                                   PAYLOAD                                  */
@@ -25,7 +25,7 @@ export const FINDER_DRAG_MIME = 'application/x-finder-drag';
 export type DragItem = {
   id: string;
   path: string;
-  type: 'folder' | 'file';
+  type: "folder" | "file";
 };
 
 export type DragPayload = {
@@ -51,23 +51,25 @@ export function serializePayload(payload: DragPayload): string {
  * (fichier OS, contenu copié depuis une autre app, etc.) qui pourraient
  * coïncider par hasard avec le même MIME.
  */
-export function tryParsePayload(raw: string | undefined | null): DragPayload | null {
+export function tryParsePayload(
+  raw: string | undefined | null,
+): DragPayload | null {
   if (!raw) return null;
 
   try {
     const parsed: unknown = JSON.parse(raw);
 
-    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed || typeof parsed !== "object") return null;
     const candidate = parsed as { items?: unknown };
 
     if (!Array.isArray(candidate.items)) return null;
 
     for (const item of candidate.items) {
-      if (!item || typeof item !== 'object') return null;
+      if (!item || typeof item !== "object") return null;
       const i = item as { id?: unknown; path?: unknown; type?: unknown };
-      if (typeof i.id !== 'string') return null;
-      if (typeof i.path !== 'string') return null;
-      if (i.type !== 'folder' && i.type !== 'file') return null;
+      if (typeof i.id !== "string") return null;
+      if (typeof i.path !== "string") return null;
+      if (i.type !== "folder" && i.type !== "file") return null;
     }
 
     return candidate as DragPayload;
@@ -120,7 +122,7 @@ export function isDropAllowed(targetPath: string, items: DragItem[]): boolean {
     // Pas de drop sur soi-même
     if (targetPath === item.path) return false;
     // Pas de drop dans un descendant de soi-même
-    if (targetPath.startsWith(item.path + '/')) return false;
+    if (targetPath.startsWith(item.path + "/")) return false;
   }
   return true;
 }
@@ -132,11 +134,66 @@ export function isDropAllowed(targetPath: string, items: DragItem[]): boolean {
  * change rien : on l'évite pour ne pas faire d'aller-retour réseau.
  * À utiliser comme garde côté drop handler **après** `isDropAllowed`.
  */
-export function isDropEffective(targetPath: string, items: DragItem[]): boolean {
+export function isDropEffective(
+  targetPath: string,
+  items: DragItem[],
+): boolean {
   return items.some((item) => parentPath(item.path) !== targetPath);
 }
 
 function parentPath(p: string): string {
-  const idx = p.lastIndexOf('/');
-  return idx === -1 ? '' : p.slice(0, idx);
+  const idx = p.lastIndexOf("/");
+  return idx === -1 ? "" : p.slice(0, idx);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          DRAG EN COURS (registre)                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `dataTransfer.getData()` renvoie une chaîne VIDE pendant `dragover`
+ * (l'API ne dévoile le payload qu'au `drop`, par sécurité). Or la
+ * surbrillance de survol doit connaître la SOURCE pour décider si le
+ * survol en cours est un changement de statut. On mémorise donc les
+ * paths dragués dans une variable module au `dragstart` — éphémère,
+ * hors state React (aucun re-render), nettoyée au `dragend`.
+ */
+let draggingPaths: string[] = [];
+
+export function setDraggingPaths(paths: string[]): void {
+  draggingPaths = paths;
+}
+export function clearDraggingPaths(): void {
+  draggingPaths = [];
+}
+export function getDraggingPaths(): string[] {
+  return draggingPaths;
+}
+
+/**
+ * Le statut applicatif d'un path = 2e segment (`<appRoot>/<statut>/…`).
+ * Renvoie `undefined` hors de la convention.
+ */
+export function statusSegment(
+  path: string,
+  appRoot: string,
+): string | undefined {
+  if (!path.startsWith(`${appRoot}/`)) return undefined;
+  return path.slice(appRoot.length + 1).split("/")[0] || undefined;
+}
+
+/**
+ * Un drop de `items` sur `targetPath` est-il un CHANGEMENT DE STATUT ?
+ * Vrai si la cible est sous `pending`/`published` et qu'au moins un item
+ * vient d'un statut différent. Source unique de vérité, partagée par le
+ * drop handler (routage `status-folder`) ET la surbrillance de survol.
+ */
+export function isStatusChangeDrop(
+  targetPath: string,
+  itemPaths: string[],
+  appRoot: string,
+): boolean {
+  const targetStatus = statusSegment(targetPath, appRoot);
+  if (targetStatus !== "pending" && targetStatus !== "published") return false;
+  return itemPaths.some((p) => statusSegment(p, appRoot) !== targetStatus);
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { proseMirrorContentSchema } from '@contracts/shared/prosemirror';
+
 /**
  * Contrat versionné de contenu de page — v1.
  *
@@ -19,22 +21,9 @@ import { z } from 'zod';
 /*  Contenu ProseMirror                                                       */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Le contenu ProseMirror est traité comme une donnée opaque par le contrat.
- *
- * Raison : la grammaire ProseMirror est récursive et dépend des extensions
- * TipTap chargées. La modéliser strictement reviendrait à dupliquer ce
- * que TipTap valide déjà à l'hydratation. On exige juste que ce soit un
- * objet (pas null, pas un primitive), ce qui filtre les payloads
- * grossièrement corrompus sans contraindre la structure interne.
- *
- * Note importante : l'extracteur (cf. extractMediaIds.ts) traverse cet
- * arbre pour collecter les `mediaId` des nodes `library-image`. Cette
- * traversée est défensive — elle ne fait aucune hypothèse forte sur la
- * structure, donc un payload mal formé rend une liste vide plutôt que
- * de jeter.
- */
-const proseMirrorContentSchema = z.record(z.string(), z.unknown());
+// Le schéma vit désormais dans shared/prosemirror.ts : il ne concerne plus
+// seulement le PageBuilder (Comment.content le réutilise côté backend).
+// La doc complète (opacité, raisons, consommateurs) est là-bas.
 
 /* -------------------------------------------------------------------------- */
 /*  Base commune                                                              */

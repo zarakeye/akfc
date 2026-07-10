@@ -49,10 +49,13 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps): JSX.Element | null {
   const [typedValue, setTypedValue] = useState('');
 
-  // Reset l'input à chaque ouverture
-  useEffect(() => {
+  // Reset l'input à chaque ouverture. Pattern « adjust state during render »
+  // (comparaison à l'état précédent) plutôt qu'un useEffect + setState.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setTypedValue('');
-  }, [open]);
+  }
 
   // Échap pour annuler
   useEffect(() => {
