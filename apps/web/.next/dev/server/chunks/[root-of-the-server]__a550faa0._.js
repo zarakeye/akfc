@@ -5572,16 +5572,16 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src
    */ id: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1)
 });
 /* -------------------------------------------------------------------------- */ /*  Bloc tiptap                                                               */ /* -------------------------------------------------------------------------- */ const tiptapBlockSchema = blockBaseSchema.extend({
-    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('tiptap'),
+    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("tiptap"),
     content: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$shared$2f$prosemirror$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["proseMirrorContentSchema"]
 });
 /* -------------------------------------------------------------------------- */ /*  Bloc image-gallery                                                        */ /* -------------------------------------------------------------------------- */ const imageGalleryLayoutSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].enum([
-    'grid',
-    'carousel',
-    'masonry'
+    "grid",
+    "carousel",
+    "masonry"
 ]);
 const imageGalleryBlockSchema = blockBaseSchema.extend({
-    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('image-gallery'),
+    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("image-gallery"),
     /**
    * Liste des images de la galerie.
    *
@@ -5595,27 +5595,50 @@ const imageGalleryBlockSchema = blockBaseSchema.extend({
         mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
         caption: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
     })),
-    layout: imageGalleryLayoutSchema.default('grid')
+    layout: imageGalleryLayoutSchema.default("grid")
 });
 /* -------------------------------------------------------------------------- */ /*  Bloc audio-collection                                                     */ /* -------------------------------------------------------------------------- */ const audioCollectionBlockSchema = blockBaseSchema.extend({
-    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('audio-collection'),
+    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("audio-collection"),
     items: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
         mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
         /** Titre affiché à la place du nom de fichier brut. */ title: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
     }))
 });
 /* -------------------------------------------------------------------------- */ /*  Bloc document-list                                                        */ /* -------------------------------------------------------------------------- */ const documentListBlockSchema = blockBaseSchema.extend({
-    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('document-list'),
+    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("document-list"),
     items: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
         mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
         /** Libellé du lien (à défaut, on retombe sur le nom de fichier). */ label: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
     }))
 });
-const pageBlockSchemaV1 = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].discriminatedUnion('type', [
+/* -------------------------------------------------------------------------- */ /*  Bloc media-text                                                           */ /* -------------------------------------------------------------------------- */ /**
+ * Bloc composite « médias + texte » côte à côte, pensé pour une mise en page
+ * éditoriale. Les DEUX parties sont optionnelles :
+ *
+ *   - `content` + `media` non vides → rendu en deux colonnes ; le RENDERER
+ *     alterne automatiquement le côté des médias d'un bloc media-text au
+ *     suivant (1er : médias à gauche ; 2e : à droite ; etc.). L'ordre n'est
+ *     donc PAS stocké ici — c'est une décision de rendu fondée sur la
+ *     position, pas une donnée du bloc.
+ *   - une seule des deux parties → rendu centré, pleine largeur.
+ *
+ * `media` accepte plusieurs items (images et/ou une vidéo) ; le renderer
+ * décide de leur agencement (grille pour plusieurs images, lecteur pour une
+ * vidéo). `content` est le même ProseMirror JSON que le bloc tiptap.
+ */ const mediaTextBlockSchema = blockBaseSchema.extend({
+    type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("media-text"),
+    /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */ content: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$shared$2f$prosemirror$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["proseMirrorContentSchema"].optional(),
+    /** Médias optionnels (images et/ou vidéo). Vide → côté médias masqué. */ media: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+        mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
+        caption: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
+    }))
+});
+const pageBlockSchemaV1 = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].discriminatedUnion("type", [
     tiptapBlockSchema,
     imageGalleryBlockSchema,
     audioCollectionBlockSchema,
-    documentListBlockSchema
+    documentListBlockSchema,
+    mediaTextBlockSchema
 ]);
 const pageContentSchemaV1 = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
     version: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal(1),
@@ -5639,14 +5662,20 @@ __turbopack_context__.s([
 ]);
 function extractMediaIdsFromBlock(block) {
     switch(block.type){
-        case 'image-gallery':
+        case "image-gallery":
             return block.items.map((item)=>item.mediaId);
-        case 'audio-collection':
+        case "audio-collection":
             return block.items.map((item)=>item.mediaId);
-        case 'document-list':
+        case "document-list":
             return block.items.map((item)=>item.mediaId);
-        case 'tiptap':
+        case "tiptap":
             return walkProseMirrorForMediaIds(block.content);
+        case "media-text":
+            // mediaIds directs (tableau media) + images éventuelles du ProseMirror.
+            return [
+                ...block.media.map((item)=>item.mediaId),
+                ...walkProseMirrorForMediaIds(block.content)
+            ];
         default:
             return assertNever(block);
     }
@@ -5673,9 +5702,9 @@ function extractMediaIdsFromContent(content) {
  */ function walkProseMirrorForMediaIds(content) {
     const ids = [];
     function walk(node) {
-        if (!node || typeof node !== 'object') return;
+        if (!node || typeof node !== "object") return;
         const candidate = node;
-        if (candidate.type === 'library-image' && typeof candidate.attrs?.mediaId === 'string' && candidate.attrs.mediaId.length > 0) {
+        if (candidate.type === "library-image" && typeof candidate.attrs?.mediaId === "string" && candidate.attrs.mediaId.length > 0) {
             ids.push(candidate.attrs.mediaId);
         }
         if (Array.isArray(candidate.content)) {

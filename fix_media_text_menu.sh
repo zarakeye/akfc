@@ -1,3 +1,12 @@
+#!/bin/bash
+# Fix : le bloc media-text etait enregistre dans BLOCK_REGISTRY mais PAS dans
+# ALL_BLOCK_DEFINITIONS (liste figee, distincte, que le menu « + » du builder
+# itere) — d ou son absence du menu. Ajout de mediaTextDefinition a la liste.
+# À lancer depuis la RACINE du monorepo : bash fix_media_text_menu.sh
+set -euo pipefail
+[ -f pnpm-workspace.yaml ] || { echo "ERREUR : racine du monorepo requise." >&2; exit 1; }
+echo "-> apps/web/src/features/page-builder/blockRegistry.ts"
+cat > 'apps/web/src/features/page-builder/blockRegistry.ts' << 'FILE_EOF'
 import type { PageBlockKindV1, PageBlockV1 } from "@contracts/page";
 import type { BlockDefinition } from "./BlockDefinition.types";
 
@@ -97,3 +106,14 @@ export const ALL_BLOCK_DEFINITIONS: ReadonlyArray<AnyBlockDefinition> = [
   documentListDefinition,
   mediaTextDefinition,
 ];
+FILE_EOF
+
+echo
+echo "Typecheck web..."
+pnpm --filter web typecheck
+
+echo
+echo "Typecheck OK -> commit."
+git add -A
+git commit -m "fix(page-builder): media-text manquait dans ALL_BLOCK_DEFINITIONS (menu +)"
+echo "Commit effectue."

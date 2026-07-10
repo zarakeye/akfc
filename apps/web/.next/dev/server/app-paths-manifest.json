@@ -1,13 +1,10 @@
 {
   "/(admin)/dashboard/courses/[id]/edit/page": "app/(admin)/dashboard/courses/[id]/edit/page.js",
-  "/(admin)/dashboard/courses/[id]/page": "app/(admin)/dashboard/courses/[id]/page.js",
-  "/(admin)/dashboard/courses/page": "app/(admin)/dashboard/courses/page.js",
   "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js",
+  "/(admin)/dashboard/disciplines/[id]/page": "app/(admin)/dashboard/disciplines/[id]/page.js",
   "/(admin)/dashboard/disciplines/page": "app/(admin)/dashboard/disciplines/page.js",
-  "/(admin)/dashboard/page": "app/(admin)/dashboard/page.js",
-  "/(public)/gallery/page": "app/(public)/gallery/page.js",
-  "/(public)/page": "app/(public)/page.js",
-  "/(public)/profil/edit/page": "app/(public)/profil/edit/page.js",
-  "/(public)/profil/page": "app/(public)/profil/page.js",
+  "/(admin)/dashboard/posts/[id]/edit/page": "app/(admin)/dashboard/posts/[id]/edit/page.js",
+  "/(admin)/dashboard/posts/[id]/page": "app/(admin)/dashboard/posts/[id]/page.js",
+  "/(admin)/dashboard/posts/page": "app/(admin)/dashboard/posts/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

@@ -2034,7 +2034,8 @@ const ALL_BLOCK_DEFINITIONS = [
     __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$tiptap$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["tiptapDefinition"],
     __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$image$2d$gallery$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["imageGalleryDefinition"],
     __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$audio$2d$collection$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["audioCollectionDefinition"],
-    __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$document$2d$list$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["documentListDefinition"]
+    __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$document$2d$list$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["documentListDefinition"],
+    __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blocks$2f$media$2d$text$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["mediaTextDefinition"]
 ];
 }),
 "[project]/apps/web/src/features/page-builder/components/BlockShell.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
