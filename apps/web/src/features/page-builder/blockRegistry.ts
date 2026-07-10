@@ -95,4 +95,5 @@ export const ALL_BLOCK_DEFINITIONS: ReadonlyArray<AnyBlockDefinition> = [
   imageGalleryDefinition,
   audioCollectionDefinition,
   documentListDefinition,
+  mediaTextDefinition,
 ];
