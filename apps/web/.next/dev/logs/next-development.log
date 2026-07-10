@@ -4,3 +4,28 @@
 [00:03:23.317] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [00:03:25.982] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
 [00:16:12.371] Server  LOG      ✓ Compiled in 774ms
+[00:17:20.632] Browser WARN    Image with src "http://localhost:3000/email.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:17:20.632] Browser WARN    Image with src "http://localhost:3000/mobilePhone.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:17:28.535] Browser LOG     null
+[00:17:28.535] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[00:17:28.535] Browser LOG     null
+[00:17:28.535] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[00:17:28.535] Browser LOG     null
+[00:17:28.535] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[00:17:28.684] Browser LOG     null
+[00:17:28.684] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[00:17:28.684] Browser LOG     null
+[00:17:28.684] Browser LOG     [2;38;2;124;124;124m%s[0m null
+[00:17:29.697] Browser LOG     {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[00:17:29.697] Browser LOG     [2;38;2;124;124;124m%s[0m {"categorie":"#1","famille":"Escrima","id":4,"name":"Kali Escrima","slug":"kali-escrima","type":"Art martial"}
+[00:18:33.667] Browser WARN    [tiptap warn]: Invalid content. Passed value: {} Error: {}
+[00:18:39.473] Server  LOG     [tree:built] "AKFC" "taolu?" true
+[00:18:39.473] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
+[00:18:39.474] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
+[00:18:39.474] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
+[00:18:39.474] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
+[00:18:39.474] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
+[00:19:01.606] Browser WARN    [tiptap warn]: Invalid content. Passed value: {} Error: {}
+[00:19:43.086] Browser WARN    [tiptap warn]: Invalid content. Passed value: {} Error: {}
+[00:20:10.018] Browser WARN    [tiptap warn]: Invalid content. Passed value: {} Error: {}
+[07:31:46.089] Server  LOG      ✓ Compiled in 0ms

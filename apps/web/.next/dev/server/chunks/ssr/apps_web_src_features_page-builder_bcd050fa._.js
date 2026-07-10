@@ -2587,19 +2587,18 @@ function PageBuilder({ value, onChange, adapter, appRoot }) {
                     columnNumber: 11
                 }, this),
                 (()=>{
-                    // Alternance media-text (même logique que le PageRenderer public) :
-                    // le compteur n'avance que sur les blocs media-text, pour que la
-                    // preview du builder reflète fidèlement le côté public.
-                    let mediaTextRank = 0;
-                    return value.blocks.map((block, index)=>{
-                        let mediaSide;
-                        if (block.type === "media-text") {
-                            mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
-                            mediaTextRank += 1;
-                        }
-                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$components$2f$BlockShell$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BlockShell"], {
+                    // Alternance media-text SANS aucune mutation pendant le rendu
+                    // (contrainte du React Compiler) : le côté d'un bloc media-text
+                    // dérive de son rang dans la liste des seuls blocs media-text.
+                    const mediaTextIds = value.blocks.filter((b)=>b.type === "media-text").map((b)=>b.id);
+                    const sideFor = (blockId)=>{
+                        const rank = mediaTextIds.indexOf(blockId);
+                        if (rank === -1) return undefined;
+                        return rank % 2 === 0 ? "left" : "right";
+                    };
+                    return value.blocks.map((block, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$components$2f$BlockShell$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BlockShell"], {
                             block: block,
-                            mediaSide: mediaSide,
+                            mediaSide: sideFor(block.id),
                             onUpdate: (next)=>handleUpdate(block.id, next),
                             onRemove: ()=>handleRemove(block.id),
                             isDragging: draggingIndex === index,
@@ -2622,10 +2621,9 @@ function PageBuilder({ value, onChange, adapter, appRoot }) {
                             }
                         }, block.id, false, {
                             fileName: "[project]/apps/web/src/features/page-builder/PageBuilder.tsx",
-                            lineNumber: 122,
-                            columnNumber: 15
-                        }, this);
-                    });
+                            lineNumber: 123,
+                            columnNumber: 13
+                        }, this));
                 })(),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$components$2f$AddBlockMenu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AddBlockMenu"], {
                     onAdd: handleAdd
@@ -2689,35 +2687,32 @@ async function PageRenderer({ content }) {
     if (content.blocks.length === 0) {
         return null;
     }
+    // Alternance media-text SANS mutation pendant le rendu (React Compiler) :
+    // le côté dérive du rang du bloc dans la liste des seuls blocs media-text.
+    const mediaTextIds = content.blocks.filter((b)=>b.type === "media-text").map((b)=>b.id);
+    const sideFor = (blockId)=>{
+        const rank = mediaTextIds.indexOf(blockId);
+        if (rank === -1) return undefined;
+        return rank % 2 === 0 ? "left" : "right";
+    };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "page-renderer flex flex-col gap-6",
-        children: (()=>{
-            // Compteur d'alternance : n'incrémente que sur les blocs media-text,
-            // pour que leur côté médias alterne indépendamment des autres blocs
-            // intercalés (1er media-text → gauche, 2e → droite, etc.).
-            let mediaTextRank = 0;
-            return content.blocks.map((block)=>{
-                const def = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blockRegistry$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getBlockDefinition"])(block.type);
-                const View = def.View;
-                let mediaSide;
-                if (block.type === "media-text") {
-                    mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
-                    mediaTextRank += 1;
-                }
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(View, {
-                    block: block,
-                    resolveMedia: resolveMedia,
-                    mediaSide: mediaSide
-                }, block.id, false, {
-                    fileName: "[project]/apps/web/src/features/page-builder/PageRenderer.tsx",
-                    lineNumber: 107,
-                    columnNumber: 13
-                }, this);
-            });
-        })()
+        children: content.blocks.map((block)=>{
+            const def = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$page$2d$builder$2f$blockRegistry$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getBlockDefinition"])(block.type);
+            const View = def.View;
+            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(View, {
+                block: block,
+                resolveMedia: resolveMedia,
+                mediaSide: sideFor(block.id)
+            }, block.id, false, {
+                fileName: "[project]/apps/web/src/features/page-builder/PageRenderer.tsx",
+                lineNumber: 108,
+                columnNumber: 11
+            }, this);
+        })
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/page-builder/PageRenderer.tsx",
-        lineNumber: 90,
+        lineNumber: 101,
         columnNumber: 5
     }, this);
 }
