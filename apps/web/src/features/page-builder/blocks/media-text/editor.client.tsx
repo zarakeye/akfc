@@ -6,6 +6,7 @@ import type { MediaTextBlockV1 } from "@contracts/page";
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { MediaListEditor } from "../../components/MediaListEditor";
 import { BuilderTipTapEditor } from "../tiptap/builder-tiptap-editor";
+import { MediaTextPreview } from "./MediaTextPreview";
 
 /**
  * Editor du bloc `media-text`.
@@ -24,6 +25,7 @@ import { BuilderTipTapEditor } from "../tiptap/builder-tiptap-editor";
 export function MediaTextEditor({
   block,
   onChange,
+  mediaSide,
 }: BlockEditorProps<MediaTextBlockV1>) {
   const handleContentChange = useCallback(
     (content: Record<string, unknown>) => {
@@ -90,6 +92,16 @@ export function MediaTextEditor({
           content={block.content ?? {}}
           onChange={handleContentChange}
         />
+      </div>
+
+      {/* Aperçu du rendu public (mise en page réelle, alternance incluse) */}
+      <div className="space-y-2 border-t border-dashed border-border pt-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Aperçu public
+        </span>
+        <div className="rounded-md bg-muted/30 p-4">
+          <MediaTextPreview block={block} mediaSide={mediaSide} />
+        </div>
       </div>
     </div>
   );

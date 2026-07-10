@@ -107,32 +107,46 @@ export function PageBuilder({
           </p>
         )}
 
-        {value.blocks.map((block, index) => (
-          <BlockShell
-            key={block.id}
-            block={block}
-            onUpdate={(next) => handleUpdate(block.id, next)}
-            onRemove={() => handleRemove(block.id)}
-            isDragging={draggingIndex === index}
-            isDragOver={dragOverIndex === index && draggingIndex !== index}
-            onDragStart={() => setDraggingIndex(index)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOverIndex(index);
-            }}
-            onDrop={() => {
-              if (draggingIndex !== null) {
-                handleMove(draggingIndex, index);
-              }
-              setDraggingIndex(null);
-              setDragOverIndex(null);
-            }}
-            onDragEnd={() => {
-              setDraggingIndex(null);
-              setDragOverIndex(null);
-            }}
-          />
-        ))}
+        {(() => {
+          // Alternance media-text (même logique que le PageRenderer public) :
+          // le compteur n'avance que sur les blocs media-text, pour que la
+          // preview du builder reflète fidèlement le côté public.
+          let mediaTextRank = 0;
+          return value.blocks.map((block, index) => {
+            let mediaSide: "left" | "right" | undefined;
+            if (block.type === "media-text") {
+              mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
+              mediaTextRank += 1;
+            }
+            return (
+              <BlockShell
+                key={block.id}
+                block={block}
+                mediaSide={mediaSide}
+                onUpdate={(next) => handleUpdate(block.id, next)}
+                onRemove={() => handleRemove(block.id)}
+                isDragging={draggingIndex === index}
+                isDragOver={dragOverIndex === index && draggingIndex !== index}
+                onDragStart={() => setDraggingIndex(index)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDrop={() => {
+                  if (draggingIndex !== null) {
+                    handleMove(draggingIndex, index);
+                  }
+                  setDraggingIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggingIndex(null);
+                  setDragOverIndex(null);
+                }}
+              />
+            );
+          });
+        })()}
 
         <AddBlockMenu onAdd={handleAdd} />
       </div>

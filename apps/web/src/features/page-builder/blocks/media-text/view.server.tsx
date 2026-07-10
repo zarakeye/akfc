@@ -111,15 +111,21 @@ export function MediaTextView({
     : null;
 
   const MediaColumn = hasMedia ? (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {media.map(({ item, resolved }) => (
-        <MediaFigure
-          key={item.mediaId}
-          media={resolved}
-          caption={item.caption}
-        />
-      ))}
-    </div>
+    media.length === 1 ? (
+      // Un seul média : pleine largeur de la colonne.
+      <MediaFigure media={media[0].resolved} caption={media[0].item.caption} />
+    ) : (
+      // Plusieurs médias : grille qui remplit la colonne.
+      <div className="grid grid-cols-2 gap-3">
+        {media.map(({ item, resolved }) => (
+          <MediaFigure
+            key={item.mediaId}
+            media={resolved}
+            caption={item.caption}
+          />
+        ))}
+      </div>
+    )
   ) : null;
 
   const TextColumn = textHtml ? (
