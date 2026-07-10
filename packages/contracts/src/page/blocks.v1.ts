@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { proseMirrorContentSchema } from '@contracts/shared/prosemirror';
+import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
 
 /**
  * Contrat versionné de contenu de page — v1.
@@ -48,7 +48,7 @@ const blockBaseSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 const tiptapBlockSchema = blockBaseSchema.extend({
-  type: z.literal('tiptap'),
+  type: z.literal("tiptap"),
   content: proseMirrorContentSchema,
 });
 
@@ -58,12 +58,12 @@ export type TipTapBlockV1 = z.infer<typeof tiptapBlockSchema>;
 /*  Bloc image-gallery                                                        */
 /* -------------------------------------------------------------------------- */
 
-const imageGalleryLayoutSchema = z.enum(['grid', 'carousel', 'masonry']);
+const imageGalleryLayoutSchema = z.enum(["grid", "carousel", "masonry"]);
 
 export type ImageGalleryLayout = z.infer<typeof imageGalleryLayoutSchema>;
 
 const imageGalleryBlockSchema = blockBaseSchema.extend({
-  type: z.literal('image-gallery'),
+  type: z.literal("image-gallery"),
   /**
    * Liste des images de la galerie.
    *
@@ -80,7 +80,7 @@ const imageGalleryBlockSchema = blockBaseSchema.extend({
       caption: z.string().optional(),
     }),
   ),
-  layout: imageGalleryLayoutSchema.default('grid'),
+  layout: imageGalleryLayoutSchema.default("grid"),
 });
 
 export type ImageGalleryBlockV1 = z.infer<typeof imageGalleryBlockSchema>;
@@ -90,7 +90,7 @@ export type ImageGalleryBlockV1 = z.infer<typeof imageGalleryBlockSchema>;
 /* -------------------------------------------------------------------------- */
 
 const audioCollectionBlockSchema = blockBaseSchema.extend({
-  type: z.literal('audio-collection'),
+  type: z.literal("audio-collection"),
   items: z.array(
     z.object({
       mediaId: z.string().min(1),
@@ -107,7 +107,7 @@ export type AudioCollectionBlockV1 = z.infer<typeof audioCollectionBlockSchema>;
 /* -------------------------------------------------------------------------- */
 
 const documentListBlockSchema = blockBaseSchema.extend({
-  type: z.literal('document-list'),
+  type: z.literal("document-list"),
   items: z.array(
     z.object({
       mediaId: z.string().min(1),
@@ -120,14 +120,49 @@ const documentListBlockSchema = blockBaseSchema.extend({
 export type DocumentListBlockV1 = z.infer<typeof documentListBlockSchema>;
 
 /* -------------------------------------------------------------------------- */
+/*  Bloc media-text                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Bloc composite « médias + texte » côte à côte, pensé pour une mise en page
+ * éditoriale. Les DEUX parties sont optionnelles :
+ *
+ *   - `content` + `media` non vides → rendu en deux colonnes ; le RENDERER
+ *     alterne automatiquement le côté des médias d'un bloc media-text au
+ *     suivant (1er : médias à gauche ; 2e : à droite ; etc.). L'ordre n'est
+ *     donc PAS stocké ici — c'est une décision de rendu fondée sur la
+ *     position, pas une donnée du bloc.
+ *   - une seule des deux parties → rendu centré, pleine largeur.
+ *
+ * `media` accepte plusieurs items (images et/ou une vidéo) ; le renderer
+ * décide de leur agencement (grille pour plusieurs images, lecteur pour une
+ * vidéo). `content` est le même ProseMirror JSON que le bloc tiptap.
+ */
+const mediaTextBlockSchema = blockBaseSchema.extend({
+  type: z.literal("media-text"),
+  /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */
+  content: proseMirrorContentSchema.optional(),
+  /** Médias optionnels (images et/ou vidéo). Vide → côté médias masqué. */
+  media: z.array(
+    z.object({
+      mediaId: z.string().min(1),
+      caption: z.string().optional(),
+    }),
+  ),
+});
+
+export type MediaTextBlockV1 = z.infer<typeof mediaTextBlockSchema>;
+
+/* -------------------------------------------------------------------------- */
 /*  Union discriminée                                                         */
 /* -------------------------------------------------------------------------- */
 
-export const pageBlockSchemaV1 = z.discriminatedUnion('type', [
+export const pageBlockSchemaV1 = z.discriminatedUnion("type", [
   tiptapBlockSchema,
   imageGalleryBlockSchema,
   audioCollectionBlockSchema,
   documentListBlockSchema,
+  mediaTextBlockSchema,
 ]);
 
 export type PageBlockV1 = z.infer<typeof pageBlockSchemaV1>;
@@ -138,7 +173,7 @@ export type PageBlockV1 = z.infer<typeof pageBlockSchemaV1>;
  * Pratique pour typer les clés d'un registry — voir
  * `features/page-builder/blockRegistry.ts` (sous-chantier 5).
  */
-export type PageBlockKindV1 = PageBlockV1['type'];
+export type PageBlockKindV1 = PageBlockV1["type"];
 
 /* -------------------------------------------------------------------------- */
 /*  Enveloppe versionnée                                                      */
