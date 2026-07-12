@@ -20,6 +20,8 @@ import {
   executeMoveOperations,
 } from "@backend/modules/storage/resolveMoveIntent.service";
 import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service";
+import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
+import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 
 /**
  * storageRouter — Phase 2 update
@@ -97,6 +99,26 @@ export const storageRouter = router({
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
     ]);
     return { pending, bin };
+  }),
+
+  /**
+   * Statut du quota d'images de l'espace perso de l'admin courant (lecture
+   * seule). Le dossier perso est dérivé de `ctx.user.id`, jamais d'un input.
+   */
+  getPersoPhotoQuota: protectedProcedure.query(async ({ ctx }) => {
+    const counts = await countPersoImages({
+      prisma: ctx.prisma,
+      appRoot: ctx.appRoot,
+      userId: ctx.user.id,
+    });
+    const remaining = Math.max(0, PERSO_PHOTO_QUOTA - counts.total);
+    return {
+      quota: PERSO_PHOTO_QUOTA,
+      pending: counts.pending,
+      published: counts.published,
+      total: counts.total,
+      remaining,
+    };
   }),
 
   list: protectedProcedure
