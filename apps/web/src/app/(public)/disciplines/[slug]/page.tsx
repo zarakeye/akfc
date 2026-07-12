@@ -46,6 +46,8 @@ export default async function PublicDisciplinePage({
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-12">
+      {/*
+      <!--
       <header className="mb-8 border-b border-border pb-6">
         <h1 className="text-3xl font-bold">{discipline.name}</h1>
         {meta.length > 0 && (
@@ -59,7 +61,9 @@ export default async function PublicDisciplinePage({
           </dl>
         )}
       </header>
-
+      -->
+      */}
+      
       <section>
         <PageRenderer content={description} />
       </section>

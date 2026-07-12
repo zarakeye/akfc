@@ -138,17 +138,60 @@ export type DocumentListBlockV1 = z.infer<typeof documentListBlockSchema>;
  * décide de leur agencement (grille pour plusieurs images, lecteur pour une
  * vidéo). `content` est le même ProseMirror JSON que le bloc tiptap.
  */
+/** Média issu de la bibliothèque (MediaAsset). */
+const libraryMediaItemSchema = z.object({
+  kind: z.literal("library").default("library"),
+  mediaId: z.string().min(1),
+  caption: z.string().optional(),
+});
+
+/**
+ * Référence LOGIQUE à l'avatar d'un utilisateur (pas au binaire). Résolue
+ * dynamiquement au rendu : la page affiche toujours l'avatar COURANT du user
+ * — pas de copie, pas de synchro, pas de dérive. Si le user change d'avatar,
+ * la page suit automatiquement.
+ */
+const avatarMediaItemSchema = z.object({
+  kind: z.literal("avatar"),
+  userId: z.string().min(1),
+  caption: z.string().optional(),
+});
+
+/**
+ * Média d'un bloc media-text : soit un média de bibliothèque, soit une
+ * référence avatar. Discriminé par `kind`. L'ancien format (objet
+ * `{ mediaId }` sans `kind`) est traité comme `library` par le preprocess.
+ */
+const mediaTextItemSchema = z.discriminatedUnion("kind", [
+  libraryMediaItemSchema,
+  avatarMediaItemSchema,
+]);
+
 const mediaTextBlockSchema = blockBaseSchema.extend({
   type: z.literal("media-text"),
   /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */
   content: proseMirrorContentSchema.optional(),
-  /** Médias optionnels (images et/ou vidéo). Vide → côté médias masqué. */
-  media: z.array(
-    z.object({
-      mediaId: z.string().min(1),
-      caption: z.string().optional(),
-    }),
-  ),
+  /**
+   * UN SEUL média optionnel : média de bibliothèque OU référence avatar.
+   * Absent → côté médias masqué.
+   *
+   * Compat : preprocess tolérant — (1) un ancien TABLEAU est réduit à son
+   * premier élément ; (2) un objet SANS `kind` (ancien format média
+   * bibliothèque) reçoit `kind: "library"`.
+   */
+  media: z.preprocess((val) => {
+    let v = val;
+    if (Array.isArray(v)) v = v.length > 0 ? v[0] : undefined;
+    if (
+      v &&
+      typeof v === "object" &&
+      !("kind" in (v as Record<string, unknown>))
+    ) {
+      // Ancien format { mediaId, caption } → média bibliothèque.
+      return { kind: "library", ...(v as Record<string, unknown>) };
+    }
+    return v;
+  }, mediaTextItemSchema.optional()),
 });
 
 export type MediaTextBlockV1 = z.infer<typeof mediaTextBlockSchema>;

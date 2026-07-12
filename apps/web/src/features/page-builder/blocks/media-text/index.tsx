@@ -13,8 +13,7 @@ export const mediaTextDefinition: BlockDefinition<MediaTextBlockV1> = {
   defaultData: (id) => ({
     id,
     type: "media-text",
-    media: [],
-    // content laissé absent : le bloc démarre vide des deux côtés.
+    // media absent + content absent : le bloc démarre vide des deux côtés.
   }),
   Editor: MediaTextEditor,
   View: MediaTextView,

@@ -2,7 +2,13 @@
   "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js",
   "/(admin)/dashboard/disciplines/[id]/page": "app/(admin)/dashboard/disciplines/[id]/page.js",
   "/(admin)/dashboard/disciplines/page": "app/(admin)/dashboard/disciplines/page.js",
+  "/(admin)/dashboard/library/add/page": "app/(admin)/dashboard/library/add/page.js",
+  "/(admin)/dashboard/library/page": "app/(admin)/dashboard/library/page.js",
   "/(admin)/dashboard/page": "app/(admin)/dashboard/page.js",
   "/(public)/disciplines/[slug]/page": "app/(public)/disciplines/[slug]/page.js",
+  "/(public)/gallery/page": "app/(public)/gallery/page.js",
+  "/(public)/page": "app/(public)/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/media/by-public-id/[...publicId]/route": "app/api/media/by-public-id/[...publicId]/route.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

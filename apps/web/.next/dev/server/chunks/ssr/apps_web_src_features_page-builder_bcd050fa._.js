@@ -2680,7 +2680,7 @@ async function PageRenderer({ content }) {
     // 2. Résolution batch (1 requête SQL, filtre `published`).
     //    Audience `public` : les URLs R2 pointent vers la route publique
     //    `/api/media/public/r2/...` qui valide qu'un PageMediaReference
-    //    existe avant de signer (cf. sous-chantier 6c).
+    //    existe avant de signer .
     const resolvedMap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$resolveMediaByIds$2e$service$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["resolveMediaByIds"])(__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$prisma$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["prisma"], mediaIds, "public");
     // Lookup synchrone fermé sur la map — passé à chaque View.
     const resolveMedia = (mediaId)=>resolvedMap[mediaId] ?? null;
@@ -2706,13 +2706,13 @@ async function PageRenderer({ content }) {
                 mediaSide: sideFor(block.id)
             }, block.id, false, {
                 fileName: "[project]/apps/web/src/features/page-builder/PageRenderer.tsx",
-                lineNumber: 108,
+                lineNumber: 103,
                 columnNumber: 11
             }, this);
         })
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/page-builder/PageRenderer.tsx",
-        lineNumber: 101,
+        lineNumber: 96,
         columnNumber: 5
     }, this);
 }

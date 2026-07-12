@@ -20,10 +20,13 @@ import { trpc } from "@trpc/trpcClient";
  */
 export default function OurActivitiesMenu(): JSX.Element {
   const [hover, setHover] = useState<boolean>(false);
+  // Fetch des familles et disciplines pour construire le menu. On ne fait rien côté erreur : on n'affiche rien.
   const { data: familiesData } = trpc.disciplineFamily.getAll.useQuery();
   const { data: disciplinesData } = trpc.discipline.getAll.useQuery();
   const families = familiesData ?? [];
   const disciplines = disciplinesData ?? [];
+  
+  // On regroupe les disciplines par famille, triées par `sortOrder` pour les familles et par nom pour les disciplines. Les familles sans discipline sont filtrées.
   const groups = [...families]
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((f) => ({
@@ -34,12 +37,15 @@ export default function OurActivitiesMenu(): JSX.Element {
         .sort((a, b) => a.name.localeCompare(b.name)),
     }))
     .filter((g) => g.disciplines.length > 0);
+
+  // Les disciplines sans famille sont regroupées sous « Autres ».
   const orphans = disciplines
     .filter((d) => d.familyId == null)
     .sort((a, b) => a.name.localeCompare(b.name));
   if (orphans.length > 0) {
     groups.push({ id: -1, name: "Autres", disciplines: orphans });
   }
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -85,7 +91,7 @@ export default function OurActivitiesMenu(): JSX.Element {
           <div className="grid gap-2 p-2 sm:grid-cols-2">
             {groups.map((family) => (
               <div key={family.id}>
-                <p className="px-4 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                <p className="px-6 pt-2 text-sm font-bold uppercase underline tracking-wide text-gray-600">
                   {family.name}
                 </p>
                 <ul>

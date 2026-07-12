@@ -3026,6 +3026,10 @@
     height: calc(var(--spacing) * 40);
   }
 
+  .h-\[40vh\] {
+    height: 40vh;
+  }
+
   .h-\[60vh\] {
     height: 60vh;
   }

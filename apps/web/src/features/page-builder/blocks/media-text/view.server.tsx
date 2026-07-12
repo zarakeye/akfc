@@ -76,13 +76,17 @@ const ServerLibraryImageNode = Node.create<ServerLibraryImageOptions>({
 export function MediaTextView({
   block,
   resolveMedia,
+  resolveAvatar,
   mediaSide = "left",
 }: BlockViewProps<MediaTextBlockV1>) {
-  // Médias résolus (on saute silencieusement ceux qui ne résolvent pas).
-  const media = block.media.flatMap((item) => {
-    const resolved = resolveMedia(item.mediaId);
-    return resolved ? [{ item, resolved }] : [];
-  });
+  // Média unique résolu (ou null). Selon le kind : média de bibliothèque
+  // (resolveMedia) ou référence avatar résolue dynamiquement (resolveAvatar).
+  const resolvedMedia = !block.media
+    ? null
+    : block.media.kind === "avatar"
+      ? (resolveAvatar?.(block.media.userId) ?? null)
+      : resolveMedia(block.media.mediaId);
+  const mediaCaption = block.media?.caption;
 
   // Texte : présent uniquement si content non vide.
   const hasText =
@@ -90,7 +94,7 @@ export function MediaTextView({
     block.content !== null &&
     Object.keys(block.content).length > 0;
 
-  const hasMedia = media.length > 0;
+  const hasMedia = resolvedMedia !== null;
 
   // Bloc vide (ni texte ni média résolu) → rien.
   if (!hasText && !hasMedia) return null;
@@ -110,23 +114,10 @@ export function MediaTextView({
       ])
     : null;
 
-  const MediaColumn = hasMedia ? (
-    media.length === 1 ? (
-      // Un seul média : pleine largeur de la colonne.
-      <MediaFigure media={media[0].resolved} caption={media[0].item.caption} />
-    ) : (
-      // Plusieurs médias : grille qui remplit la colonne.
-      <div className="grid grid-cols-2 gap-3">
-        {media.map(({ item, resolved }) => (
-          <MediaFigure
-            key={item.mediaId}
-            media={resolved}
-            caption={item.caption}
-          />
-        ))}
-      </div>
-    )
-  ) : null;
+  const MediaColumn =
+    hasMedia && resolvedMedia ? (
+      <MediaFigure media={resolvedMedia} caption={mediaCaption} />
+    ) : null;
 
   const TextColumn = textHtml ? (
     <div
@@ -146,7 +137,7 @@ export function MediaTextView({
 
   // Deux parties → deux colonnes, côté médias selon l'alternance.
   return (
-    <div className="grid items-center gap-6 md:grid-cols-2">
+    <div className="grid items-center gap-10 md:grid-cols-2">
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>

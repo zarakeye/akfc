@@ -115,6 +115,12 @@ export interface BlockViewProps<TBlock extends PageBlockV1> {
   block: TBlock;
   resolveMedia: (mediaId: string) => ResolvedMedia | null;
   /**
+   * Résout l'avatar COURANT d'un utilisateur (pour les blocs media-text qui
+   * référencent « l'avatar de tel user »). Optionnel — seul le bloc
+   * media-text l'exploite. `null` si le user n'a pas d'avatar.
+   */
+  resolveAvatar?: (userId: string) => ResolvedMedia | null;
+  /**
    * Côté d'affichage des médias, calculé par le PageRenderer selon la
    * POSITION du bloc parmi les blocs `media-text` (alternance automatique :
    * 1er → "left", 2e → "right", etc.). Optionnel — seul le bloc media-text

@@ -33,15 +33,20 @@ type Carousel = {
  * réelle de lecture pour une vidéo, remplissage CSS 5 s pour une image).
  */
 export default function HomeCarousel(): JSX.Element | null {
+  // Carousel null tant que le fetch n'est pas terminé. On n'affiche rien côté erreur.
   const [carousel, setCarousel] = useState<Carousel>(null);
+  // Progression de lecture d'une vidéo active (0 → 1). Pour les images, la barre est animée en CSS sur 5 s.
   const [progress, setProgress] = useState(0); // 0 → 1, slide actif uniquement
 
+  // Embla Carousel (swipe/drag, loop). On pilote l'avance manuellement.
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  // Index du slide actif (pour la barre de progression et les bullets). On ne garde pas l'index dans Embla : on le met à jour via l'événement 'select'.
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Refs vers les <video> pour piloter play/pause/reset selon le slide actif.
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
+  // Fetch du carousel au montage. On ne fait rien côté erreur : on n'affiche rien.
   useEffect(() => {
     let cancelled = false;
     trpcClient.gallery.getCarousel
@@ -57,10 +62,14 @@ export default function HomeCarousel(): JSX.Element | null {
     };
   }, []);
 
+
+  // Memoise la liste des items pour ne pas recréer le tableau à chaque render.
   const items = useMemo(() => carousel?.items ?? [], [carousel]);
 
+  // Timer pour avancer automatiquement après 5 s sur les images. Les vidéos pilotent l'avance via onEnded.
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Synchronise la lecture des vidéos et le timer d'avance selon l'index actif.
   const syncPlayback = useCallback(
     (index: number) => {
       const current = items[index];
@@ -82,6 +91,7 @@ export default function HomeCarousel(): JSX.Element | null {
         advanceTimer.current = null;
       }
 
+      // Si le slide actif est une vidéo, on ne met pas de timer : l'avance se fait via onEnded. Pour les images, on avance après 5 s.
       if (current?.kind === 'video') {
         // La vidéo pilote l'avance via onEnded → pas de timer.
         return;
@@ -182,14 +192,14 @@ export default function HomeCarousel(): JSX.Element | null {
                   preload="metadata"
                   onEnded={handleVideoEnded}
                   onTimeUpdate={handleTimeUpdate}
-                  className="h-[60vh] w-full object-cover"
+                  className="h-[40vh] w-full object-cover"
                 />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={item.url}
                   alt=""
-                  className="h-[60vh] w-full object-cover"
+                  className="h-[40vh] w-full object-cover"
                 />
               )}
             </div>
