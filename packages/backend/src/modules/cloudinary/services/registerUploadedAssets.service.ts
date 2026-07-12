@@ -64,10 +64,23 @@ export async function registerUploadedAssets(params: {
 }) {
   const { prisma, appRoot, userId, destination, assets, eventDate } = params;
 
+  // Le dossier perso n'accepte que des images (garde-fou côté persistance —
+  // la source de vérité resourceType vient déjà de Cloudinary en amont).
+  if (destination.kind === "perso") {
+    const hasNonImage = assets.some((asset) => asset.resourceType !== "image");
+    if (hasNonImage) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Le dossier perso n'accepte que des images.",
+      });
+    }
+  }
+
   const expectedFolder = await resolvePendingUploadFolder({
     prisma,
     destination,
     appRoot,
+    userId,
   });
 
   const created = await prisma.$transaction(async (tx) => {
@@ -142,7 +155,11 @@ export async function registerUploadedAssets(params: {
           duration: cloudinaryAsset.duration,
           appRoot,
           status: "pending",
-          categoryId: destination.categoryId,
+          categoryId:
+            destination.kind === "existing-discipline" ||
+            destination.kind === "new-discipline"
+              ? destination.categoryId
+              : null,
           disciplineId:
             destination.kind === "existing-discipline"
               ? destination.disciplineId

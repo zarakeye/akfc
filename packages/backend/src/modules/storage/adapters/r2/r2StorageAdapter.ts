@@ -386,13 +386,27 @@ export function createR2StorageAdapter(
       let disciplineId: number | null = null;
       let proposedDisciplineName: string | null = null;
 
-      if (input.destination.kind === "existing-discipline") {
-        categoryId = input.destination.categoryId;
-        disciplineId = input.destination.disciplineId;
-      } else {
-        // 'new-discipline'
-        categoryId = input.destination.categoryId;
-        proposedDisciplineName = input.destination.proposedDisciplineName;
+      switch (input.destination.kind) {
+        case "existing-discipline":
+          categoryId = input.destination.categoryId;
+          disciplineId = input.destination.disciplineId;
+          break;
+        case "new-discipline":
+          categoryId = input.destination.categoryId;
+          proposedDisciplineName = input.destination.proposedDisciplineName;
+          break;
+        case "general":
+        case "perso":
+          // Destinations découplées non supportées pour R2 dans ce chantier
+          // (photos Cloudinary d'abord ; R2 perso reporté). On refuse plutôt
+          // que d'écrire une row bancale.
+          throw new Error(
+            "Les destinations 'general' et 'perso' ne sont pas supportées pour les uploads R2."
+          );
+        default:
+          // Exhaustivité : un nouveau kind non traité fera échouer le build ici.
+          input.destination satisfies never;
+          throw new Error("Unhandled upload destination kind.");
       }
 
       // 3. Création de la MediaAsset.

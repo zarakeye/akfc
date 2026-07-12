@@ -10,17 +10,27 @@ import type {
 export async function createUploadSignatures(params: {
   prisma: PrismaClient;
   appRoot: string;
+  userId: string;
   destination: UploadDestination;
   assets: UploadAssetRequest[];
   /** Si absent/false : signe `overwrite:false` → Cloudinary refuse d'écraser. */
   allowOverwrite?: boolean;
 }) {
-  const { prisma, appRoot, destination, assets, allowOverwrite } = params;
+  const { prisma, appRoot, userId, destination, assets, allowOverwrite } = params;
+
+  // Le dossier perso n'accepte que des images (comme les avatars).
+  if (destination.kind === "perso") {
+    const hasNonImage = assets.some((asset) => asset.mediaType !== "image");
+    if (hasNonImage) {
+      throw new Error("Le dossier perso n'accepte que des images.");
+    }
+  }
 
   const folder = await resolvePendingUploadFolder({
     prisma,
     destination,
     appRoot,
+    userId,
   });
 
   const timestamp = Math.floor(Date.now() / 1000);

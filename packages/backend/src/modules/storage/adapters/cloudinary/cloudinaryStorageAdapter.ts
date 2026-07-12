@@ -79,6 +79,7 @@ export type CloudinaryStorageAdapterDeps = {
  * requête tRPC donnée).
  */
 export type CloudinaryCreateUploadAuthorizationInput = {
+  userId: string; // Admin qui uploade (ctx.user.id) — requis pour la destination `perso`.
   destination: UploadDestination;
   assets: UploadAssetRequest[];
   allowOverwrite?: boolean; // Si absent/false : signe `overwrite:false` → Cloudinary refuse d'écraser.
@@ -426,6 +427,7 @@ export function createCloudinaryStorageAdapter(
       return createUploadSignatures({
         prisma,
         appRoot,
+        userId: input.userId,
         destination: input.destination,
         assets: input.assets,
         allowOverwrite: input.allowOverwrite,

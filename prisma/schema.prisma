@@ -780,7 +780,7 @@ model MediaAsset {
   // --- Métier
   appRoot                String
   status                 String                          // "pending" | "published" | ...
-  categoryId             Int
+  categoryId             Int?
   disciplineId           Int?                            // null si Discipline proposée pas encore créée
   proposedDisciplineName String?
   eventDate              DateTime?
@@ -792,7 +792,7 @@ model MediaAsset {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
+  category   Category?    @relation(fields: [categoryId], references: [id])
   discipline Discipline? @relation(fields: [disciplineId], references: [id])
   uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
 
