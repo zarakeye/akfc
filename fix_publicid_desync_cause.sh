@@ -1,3 +1,20 @@
+#!/bin/bash
+# Fix CAUSE PROFONDE du publicId desynchronise lors du move fichier
+# (pending<->published). La synchro SQL de l adaptateur Cloudinary appliquait
+# au publicId (SANS extension) la MEME substitution de longueur que fullPath
+# (AVEC extension) : SUBSTRING(publicId FROM srcDb.length+1) ou srcDb inclut
+# l extension .png -> coupe trop -> publicId reste perime (aperçus 404,
+# placeholder). Fix : la branche FICHIER fait desormais 2 requetes — (1)
+# fullPath + status comme avant, (2) publicId RECALCULE depuis le nouveau
+# fullPath sans extension (regexp_replace), invariant publicId===fullPath sans
+# ext. La branche DOSSIER est inchangee (prefixe dossier sans extension = deja
+# correct). La requete (2) est idempotente et repare au passage d eventuelles
+# lignes deja desync sous le meme chemin.
+# À lancer depuis la RACINE : bash fix_publicid_desync_cause.sh
+set -euo pipefail
+[ -f pnpm-workspace.yaml ] || { echo "ERREUR : racine du monorepo requise." >&2; exit 1; }
+echo "-> packages/backend/src/modules/storage/adapters/cloudinary/cloudinaryStorageAdapter.ts"
+cat > 'packages/backend/src/modules/storage/adapters/cloudinary/cloudinaryStorageAdapter.ts' << 'FILE_EOF'
 import type { PrismaClient } from "@prisma/client";
 
 import type {
@@ -480,3 +497,14 @@ function cloudinaryAssetInfoToStorageMetadata(info: {
     // reconstitue déjà.
   };
 }
+FILE_EOF
+
+echo
+echo "Typecheck backend..."
+pnpm --filter backend typecheck
+
+echo
+echo "Typecheck OK -> commit."
+git add -A
+git commit -m "fix(storage): publicId desync au move fichier (substitution avec extension)"
+echo "Commit effectue."

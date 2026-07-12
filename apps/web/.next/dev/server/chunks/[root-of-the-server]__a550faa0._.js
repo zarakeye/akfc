@@ -1071,6 +1071,37 @@ const userRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$
                 }
             ]
         });
+    }),
+    /**
+   * Liste tous les administrateurs (rôle ADMIN) avec leur avatar courant,
+   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
+   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
+   * affichera un placeholder. `avatar` est un publicId Cloudinary brut ;
+   * l'URL d'affichage est construite côté client comme pour l'avatar du
+   * header.
+   */ listAvatarCandidates: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["protectedProcedure"].query(async ({ ctx })=>{
+        return ctx.prisma.user.findMany({
+            where: {
+                role: {
+                    name: "ADMIN"
+                }
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                pseudo: true,
+                avatar: true
+            },
+            orderBy: [
+                {
+                    lastName: "asc"
+                },
+                {
+                    firstName: "asc"
+                }
+            ]
+        });
     })
 });
 }),
@@ -5625,13 +5656,51 @@ const imageGalleryBlockSchema = blockBaseSchema.extend({
  * `media` accepte plusieurs items (images et/ou une vidéo) ; le renderer
  * décide de leur agencement (grille pour plusieurs images, lecteur pour une
  * vidéo). `content` est le même ProseMirror JSON que le bloc tiptap.
- */ const mediaTextBlockSchema = blockBaseSchema.extend({
+ */ /** Média issu de la bibliothèque (MediaAsset). */ const libraryMediaItemSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+    kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("library").default("library"),
+    mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
+    caption: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
+});
+/**
+ * Référence LOGIQUE à l'avatar d'un utilisateur (pas au binaire). Résolue
+ * dynamiquement au rendu : la page affiche toujours l'avatar COURANT du user
+ * — pas de copie, pas de synchro, pas de dérive. Si le user change d'avatar,
+ * la page suit automatiquement.
+ */ const avatarMediaItemSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+    kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("avatar"),
+    userId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
+    caption: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
+});
+/**
+ * Média d'un bloc media-text : soit un média de bibliothèque, soit une
+ * référence avatar. Discriminé par `kind`. L'ancien format (objet
+ * `{ mediaId }` sans `kind`) est traité comme `library` par le preprocess.
+ */ const mediaTextItemSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].discriminatedUnion("kind", [
+    libraryMediaItemSchema,
+    avatarMediaItemSchema
+]);
+const mediaTextBlockSchema = blockBaseSchema.extend({
     type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("media-text"),
     /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */ content: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$shared$2f$prosemirror$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["proseMirrorContentSchema"].optional(),
-    /** Médias optionnels (images et/ou vidéo). Vide → côté médias masqué. */ media: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
-        mediaId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().min(1),
-        caption: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional()
-    }))
+    /**
+   * UN SEUL média optionnel : média de bibliothèque OU référence avatar.
+   * Absent → côté médias masqué.
+   *
+   * Compat : preprocess tolérant — (1) un ancien TABLEAU est réduit à son
+   * premier élément ; (2) un objet SANS `kind` (ancien format média
+   * bibliothèque) reçoit `kind: "library"`.
+   */ media: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].preprocess((val)=>{
+        let v = val;
+        if (Array.isArray(v)) v = v.length > 0 ? v[0] : undefined;
+        if (v && typeof v === "object" && !("kind" in v)) {
+            // Ancien format { mediaId, caption } → média bibliothèque.
+            return {
+                kind: "library",
+                ...v
+            };
+        }
+        return v;
+    }, mediaTextItemSchema.optional())
 });
 const pageBlockSchemaV1 = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].discriminatedUnion("type", [
     tiptapBlockSchema,
@@ -5671,9 +5740,12 @@ function extractMediaIdsFromBlock(block) {
         case "tiptap":
             return walkProseMirrorForMediaIds(block.content);
         case "media-text":
-            // mediaIds directs (tableau media) + images éventuelles du ProseMirror.
+            // Seul un média de bibliothèque a un mediaId à résoudre ; une référence
+            // avatar est résolue dynamiquement ailleurs (via User.avatar).
             return [
-                ...block.media.map((item)=>item.mediaId),
+                ...block.media && block.media.kind === "library" ? [
+                    block.media.mediaId
+                ] : [],
                 ...walkProseMirrorForMediaIds(block.content)
             ];
         default:

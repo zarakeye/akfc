@@ -1,3 +1,0 @@
-{
-  "/api/media/by-public-id/[...publicId]/route": "app/api/media/by-public-id/[...publicId]/route.js"
-}

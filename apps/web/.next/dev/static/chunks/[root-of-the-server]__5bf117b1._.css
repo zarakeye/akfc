@@ -3030,10 +3030,6 @@
     height: 40vh;
   }
 
-  .h-\[60vh\] {
-    height: 60vh;
-  }
-
   .h-\[400px\] {
     height: 400px;
   }
@@ -3738,6 +3734,10 @@
 
   .gap-8 {
     gap: calc(var(--spacing) * 8);
+  }
+
+  .gap-10 {
+    gap: calc(var(--spacing) * 10);
   }
 
   :where(.space-y-0\.5 > :not(:last-child)) {
