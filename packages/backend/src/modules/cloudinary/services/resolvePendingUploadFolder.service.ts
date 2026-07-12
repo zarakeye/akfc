@@ -9,42 +9,31 @@ import type { UploadDestination } from "@contracts/cloudinary/upload.types";
  * Traduit une intention d'upload (`Destination`) en chemin Cloudinary
  * `pending` absolu.
  *
- * Règles du chemin :
- *   - `${appRoot}/pending/${slug(category.type)}/${slug(discipline.name)}`
- *     pour une `existing-discipline` : discipline déjà inscrite en DB,
- *     identifiée par son id, mais on **slugifie son nom** pour
- *     construire le path (et NON son id numérique).
- *   - `${appRoot}/pending/${slug(category.type)}/new/${slug(proposedDisciplineName)}`
- *     pour une `new-discipline` : discipline non encore créée en DB. Les assets
- *     restent isolés dans un sous-dossier `new/` jusqu'à ce qu'un admin valide
- *     la création de la discipline.
+ * ─── Destinations couplées à une discipline (historique) ─────────────────
+ *   - existing-discipline :
+ *       `${appRoot}/pending/${slug(category.type)}/${slug(discipline.name)}`
+ *   - new-discipline :
+ *       `${appRoot}/pending/${slug(category.type)}/new/${slug(proposedName)}`
+ *     Les assets restent isolés dans `new/` jusqu'à validation admin.
  *
- * ─── ⚠️ Pourquoi slug du nom et pas l'ID numérique ──────────────────────
+ * ─── Destinations découplées (fondation « destination générique ») ────────
+ *   - general : `${appRoot}/pending/general`
+ *       Espace club sans discipline ni catégorie. Sert d'espace partagé de
+ *       fait entre admins (pas de permissions : club petit, confiance).
+ *   - perso   : `${appRoot}/pending/persos/${personSlug}-${userId}`
+ *       Espace personnel de l'admin qui uploade. Le dossier est dérivé de
+ *       `userId` (identité AUTHENTIFIÉE issue du contexte tRPC, jamais un id
+ *       fourni par le client) → un admin ne peut écrire que dans son dossier.
+ *       `personSlug` = slug(firstName lastName), sinon slug(pseudo), sinon
+ *       `user-${userId}` (les trois champs de nom sont nullable en DB).
  *
- * **Historique** : le code utilisait `discipline.id` comme segment de path
- * pour les disciplines existantes. C'était une décision interne propre,
- * mais elle introduisait une **divergence avec deux autres composants** :
+ * ─── ⚠️ Pourquoi slug du nom et pas l'ID numérique (disciplines) ──────────
  *
- *   - **buildR2Path côté UI** : utilise `slugify(discipline.name)` pour
- *     construire le path R2 (cohérent avec la convention "humaine").
- *   - **Le finder/TreeView** : navigue avec des paths en slug. Quand
- *     l'utilisateur clique sur "Tchoy-Lee-Fut", la query backend cible
- *     `AKFC/pending/cours/tchoy-lee-fut/` — pas `AKFC/pending/cours/3/`.
- *
- * Résultat : les assets Cloudinary uploadés sous `cours/3/` étaient
- * **invisibles dans le finder** (qui cherchait sous `cours/tchoy-lee-fut/`),
- * alors que les assets R2 (sous le slug) s'affichaient correctement.
- *
- * Ce fix aligne Cloudinary sur la convention slug, qui est la convention
- * **moderne** et la seule cohérente avec la navigation UI.
- *
- * ─── 📦 Migration des données existantes ────────────────────────────────
- *
- * Les assets Cloudinary déjà uploadés sous `cours/{id}/...` restent
- * physiquement à cet emplacement après ce fix — ils deviennent orphelins
- * du finder. Pour les récupérer :
- *   - Soit les renommer manuellement via la procédure tRPC `cloudinary.renamePicture`
- *   - Soit les re-uploader (l'ancien emplacement reste, peut être nettoyé en bin plus tard)
+ * Historiquement le path utilisait `discipline.id`, ce qui divergeait de
+ * `buildR2Path` (UI, en slug) et du finder/TreeView (navigation en slug) :
+ * les assets sous `cours/3/` devenaient invisibles dans le finder qui
+ * cherchait sous `cours/tchoy-lee-fut/`. On aligne donc Cloudinary sur la
+ * convention slug, la seule cohérente avec la navigation UI.
  */
 const SLUG_OPTIONS = { lower: true, strict: true } as const;
 
@@ -56,9 +45,41 @@ export async function resolvePendingUploadFolder(params: {
   prisma: PrismaClient;
   destination: UploadDestination;
   appRoot: string;
+  /**
+   * Identité de l'admin qui uploade (issue de `ctx.user.id`). Requise pour la
+   * destination `perso` (dossier dérivé de cet id). Ignorée pour les autres.
+   */
+  userId: string;
 }): Promise<string> {
-  const { prisma, destination, appRoot } = params;
+  const { prisma, destination, appRoot, userId } = params;
 
+  /* ── Destination club générique (sans discipline ni catégorie) ── */
+  if (destination.kind === "general") {
+    return `${appRoot}/pending/general`;
+  }
+
+  /* ── Destination personnelle de l'admin (dérivée de userId) ── */
+  if (destination.kind === "perso") {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true, pseudo: true },
+    });
+
+    if (!user) {
+      throw new Error(`Acting user not found (id=${userId})`);
+    }
+
+    const fullName = [user.firstName, user.lastName]
+      .filter((part): part is string => Boolean(part && part.trim()))
+      .join(" ");
+
+    const personSlug =
+      slug(fullName) || slug(user.pseudo ?? "") || `user-${userId}`;
+
+    return `${appRoot}/pending/persos/${personSlug}-${userId}`;
+  }
+
+  /* ── Destinations couplées à une discipline (historique) ── */
   const category = await prisma.category.findUnique({
     where: { id: destination.categoryId },
     select: { id: true, type: true },
@@ -73,26 +94,21 @@ export async function resolvePendingUploadFolder(params: {
   if (destination.kind === "existing-discipline") {
     const discipline = await prisma.discipline.findUnique({
       where: { id: destination.disciplineId },
-      // On a maintenant besoin du `name` pour construire le slug du path.
       select: { id: true, categoryId: true, name: true },
     });
 
     if (!discipline) {
-      throw new Error(
-        `Discipline not found (id=${destination.disciplineId})`
-      );
+      throw new Error(`Discipline not found (id=${destination.disciplineId})`);
     }
 
     if (discipline.categoryId !== destination.categoryId) {
       throw new Error(
-        `Discipline ${destination.disciplineId} does not belong to category ${destination.categoryId}`
+        `Discipline ${destination.disciplineId} does not belong to category ${destination.categoryId}`,
       );
     }
 
-    // Fallback `disc-${id}` si le nom est vide / slugify-incompatible :
-    // garantit toujours un segment non-vide et évite un throw si un nom
-    // de discipline est composé uniquement de caractères non-ASCII non
-    // transliterables (cas très rare mais possible).
+    // Fallback `disc-${id}` si le nom slugifie en chaîne vide (cas très rare
+    // de nom uniquement composé de caractères non transliterables).
     const disciplineSlug = slug(discipline.name) || `disc-${discipline.id}`;
 
     return `${appRoot}/pending/${categorySegment}/${disciplineSlug}`;
@@ -103,7 +119,7 @@ export async function resolvePendingUploadFolder(params: {
 
   if (!proposedSlug) {
     throw new Error(
-      "Proposed discipline name must contain at least one slug-friendly character"
+      "Proposed discipline name must contain at least one slug-friendly character",
     );
   }
 

@@ -14,7 +14,7 @@ import { z } from "zod";
  *                             porte le nom proposé jusqu'à validation).
  */
 
-export const uploadDestinationSchema = z.union([
+export const uploadDestinationSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("existing-discipline"),
     categoryId: z.number().int().positive(),
@@ -24,6 +24,19 @@ export const uploadDestinationSchema = z.union([
     kind: z.literal("new-discipline"),
     categoryId: z.number().int().positive(),
     proposedDisciplineName: z.string().trim().min(1).max(120),
+  }),
+  // ── Destinations découplées de la discipline (fondation) ──
+  // `general` : contenus du club sans discipline ni catégorie. Fait office
+  //             d'espace partagé de fait entre admins (pas de permissions :
+  //             club petit, confiance).
+  z.object({
+    kind: z.literal("general"),
+  }),
+  // `perso`   : espace personnel de l'admin. Aucune identité transportée ici —
+  //             le dossier cible est dérivé côté serveur de `ctx.user.id`, si
+  //             bien qu'un admin ne peut uploader QUE dans son propre dossier.
+  z.object({
+    kind: z.literal("perso"),
   }),
 ]);
 

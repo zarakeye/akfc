@@ -306,6 +306,7 @@ export const cloudinaryRouter = router({
       return createUploadSignatures({
         prisma: ctx.prisma,
         appRoot: PROJECT_ROOT,
+        userId: ctx.user.id,
         destination: input.destination,
         assets: input.assets,
       });

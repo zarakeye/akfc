@@ -224,6 +224,7 @@ export const storageRouter = router({
         case "cloudinary": {
           const adapter = getAdapter("cloudinary", deps);
           return adapter.createUploadAuthorization({
+            userId: ctx.user.id,
             destination: input.destination,
             assets: input.assets,
             allowOverwrite: input.allowOverwrite,
