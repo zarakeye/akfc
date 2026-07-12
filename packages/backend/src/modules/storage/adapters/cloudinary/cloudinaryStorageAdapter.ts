@@ -355,18 +355,30 @@ export function createCloudinaryStorageAdapter(
 
       if (operation.source.type === "file") {
         // Exact (fullPath sans extension, improbable) OU `préfixe.` + ext.
-        // ⚠ On synchronise AUSSI `publicId` : il contient le chemin complet
-        // (sans extension) et sert à construire les URLs de vignette — s'il
-        // reste périmé, les aperçus pointent vers l'ancien emplacement → 404
-        // (image générique). Même substitution de préfixe que fullPath.
+        // (1) fullPath + status par substitution de préfixe (fullPath a
+        //     l'extension → la longueur srcDb.length est correcte pour LUI).
         await prisma.$executeRaw`
           UPDATE "MediaAsset"
           SET "fullPath" = ${dstDb} || SUBSTRING("fullPath" FROM ${srcDb.length + 1}::int),
-              "publicId" = ${dstDb} || SUBSTRING("publicId" FROM ${srcDb.length + 1}::int),
               "status" = COALESCE(${nextStatus}, "status")
           WHERE "appRoot" = ${appRoot}
             AND ("fullPath" = ${srcDb}
               OR "fullPath" LIKE ${escLike(srcDb) + ".%"} ESCAPE '\\');
+        `;
+        // (2) publicId dérivé du NOUVEAU fullPath, sans son extension.
+        //     ⚠ On NE PEUT PAS réutiliser la substitution de fullPath pour
+        //     publicId : `srcDb` inclut l'extension alors que publicId n'en a
+        //     pas → `SUBSTRING(publicId FROM srcDb.length+1)` couperait trop
+        //     et laissait publicId périmé (bug désync 2026-07, aperçus 404).
+        //     Par invariant publicId === fullPath sans extension : on le
+        //     recalcule donc directement depuis le fullPath fraîchement mis à
+        //     jour, pour toutes les lignes désormais sous dstDb.
+        await prisma.$executeRaw`
+          UPDATE "MediaAsset"
+          SET "publicId" = regexp_replace("fullPath", '\\.[^./]+$', '')
+          WHERE "appRoot" = ${appRoot}
+            AND ("fullPath" = ${dstDb}
+              OR "fullPath" LIKE ${escLike(dstDb) + ".%"} ESCAPE '\\');
         `;
       } else {
         const oldPrefix = `${srcDb}/`;
