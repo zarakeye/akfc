@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import { prisma } from "@backend/prisma";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
+import { resolveAvatarsByUserIds } from "@backend/modules/media/services/resolveAvatarsByUserIds.service";
 
 import {
   extractMediaIdsFromContent,
@@ -82,6 +83,17 @@ export async function PageRenderer({ content }: PageRendererProps) {
   const resolveMedia = (mediaId: string): ResolvedMedia | null =>
     resolvedMap[mediaId] ?? null;
 
+  // Résolution des avatars référencés par les blocs media-text (référence
+  // logique { kind: "avatar", userId } → avatar courant du user).
+  const avatarUserIds = content.blocks.flatMap((b) =>
+    b.type === "media-text" && b.media?.kind === "avatar"
+      ? [b.media.userId]
+      : [],
+  );
+  const avatarMap = await resolveAvatarsByUserIds(prisma, avatarUserIds);
+  const resolveAvatar = (userId: string): ResolvedMedia | null =>
+    avatarMap[userId] ?? null;
+
   if (content.blocks.length === 0) {
     return null;
   }
@@ -98,7 +110,7 @@ export async function PageRenderer({ content }: PageRendererProps) {
   };
 
   return (
-    <div className="page-renderer flex flex-col gap-6">
+    <div className="page-renderer flex flex-col gap-10">
       {content.blocks.map((block) => {
         const def = getBlockDefinition(block.type);
         const View = def.View as unknown as ComponentType<
@@ -109,6 +121,7 @@ export async function PageRenderer({ content }: PageRendererProps) {
             key={block.id}
             block={block}
             resolveMedia={resolveMedia}
+            resolveAvatar={resolveAvatar}
             mediaSide={sideFor(block.id)}
           />
         );

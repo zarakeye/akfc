@@ -13,6 +13,7 @@ import { Superscript } from "@tiptap/extension-superscript";
 
 import { trpcClient } from "@trpc/trpcClient";
 import type { MediaTextBlockV1 } from "@contracts/page";
+import { publicIdToUrl } from "@features/social/userDisplay";
 
 /**
  * Preview CLIENT du bloc media-text, affichée sous l'éditeur dans le builder.
@@ -30,7 +31,6 @@ import type { MediaTextBlockV1 } from "@contracts/page";
  */
 
 interface ResolvedPreviewMedia {
-  mediaId: string;
   url: string;
   kind: string;
   posterUrl: string | null;
@@ -44,36 +44,57 @@ export function MediaTextPreview({
   block: MediaTextBlockV1;
   mediaSide?: "left" | "right";
 }): JSX.Element | null {
-  const [media, setMedia] = useState<ResolvedPreviewMedia[]>([]);
+  const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
 
-  const mediaKey = block.media.map((m) => m.mediaId).join(",");
+  const m = block.media ?? null;
+  // Clé de dépendance stable selon le kind.
+  const mediaKey =
+    m == null ? null : m.kind === "avatar" ? `avatar:${m.userId}` : m.mediaId;
 
   useEffect(() => {
     let cancelled = false;
-    const ids = block.media.map((m) => m.mediaId);
-    if (ids.length === 0) {
-      setMedia([]);
+    if (!m) {
+      setMedia(null);
       return;
     }
-    void trpcClient.media.resolveByIds
-      .query({ mediaIds: ids })
-      .then((resolved) => {
+
+    if (m.kind === "avatar") {
+      // Référence avatar : on récupère l'avatar courant du user (via la liste
+      // des candidats) et on construit l'URL comme le portrait du header.
+      void trpcClient.user.listAvatarCandidates.query().then((admins) => {
         if (cancelled) return;
-        const out: ResolvedPreviewMedia[] = [];
-        for (const item of block.media) {
-          const r = resolved[item.mediaId];
+        const user = admins.find((a) => a.id === m.userId);
+        if (user?.avatar) {
+          setMedia({
+            url: publicIdToUrl(user.avatar),
+            kind: "image",
+            posterUrl: null,
+            caption: m.caption,
+          });
+        } else {
+          setMedia(null);
+        }
+      });
+    } else {
+      // Média de bibliothèque.
+      void trpcClient.media.resolveByIds
+        .query({ mediaIds: [m.mediaId] })
+        .then((resolved) => {
+          if (cancelled) return;
+          const r = resolved[m.mediaId];
           if (r) {
-            out.push({
-              mediaId: item.mediaId,
+            setMedia({
               url: r.url,
               kind: r.kind,
               posterUrl: r.posterUrl,
-              caption: item.caption,
+              caption: m.caption,
             });
+          } else {
+            setMedia(null);
           }
-        }
-        setMedia(out);
-      });
+        });
+    }
+
     return () => {
       cancelled = true;
     };
@@ -84,7 +105,7 @@ export function MediaTextPreview({
     block.content !== undefined &&
     block.content !== null &&
     Object.keys(block.content).length > 0;
-  const hasMedia = media.length > 0;
+  const hasMedia = media !== null;
 
   if (!hasText && !hasMedia) {
     return (
@@ -107,17 +128,8 @@ export function MediaTextPreview({
       ])
     : null;
 
-  const MediaColumn = hasMedia ? (
-    media.length === 1 ? (
-      <PreviewFigure media={media[0]} />
-    ) : (
-      <div className="grid grid-cols-2 gap-3">
-        {media.map((m) => (
-          <PreviewFigure key={m.mediaId} media={m} />
-        ))}
-      </div>
-    )
-  ) : null;
+  const MediaColumn =
+    hasMedia && media ? <PreviewFigure media={media} /> : null;
 
   const TextColumn = textHtml ? (
     <div
@@ -137,7 +149,7 @@ export function MediaTextPreview({
 
   // Deux parties → deux colonnes, côté médias selon l'alternance, gouttière nette.
   return (
-    <div className="grid items-center gap-6 md:grid-cols-2">
+    <div className="grid items-center gap-10 md:grid-cols-2">
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>

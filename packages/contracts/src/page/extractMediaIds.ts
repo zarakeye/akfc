@@ -39,9 +39,12 @@ export function extractMediaIdsFromBlock(
     case "tiptap":
       return walkProseMirrorForMediaIds(block.content);
     case "media-text":
-      // mediaIds directs (tableau media) + images éventuelles du ProseMirror.
+      // Seul un média de bibliothèque a un mediaId à résoudre ; une référence
+      // avatar est résolue dynamiquement ailleurs (via User.avatar).
       return [
-        ...block.media.map((item) => item.mediaId),
+        ...(block.media && block.media.kind === "library"
+          ? [block.media.mediaId]
+          : []),
         ...walkProseMirrorForMediaIds(block.content),
       ];
     default:

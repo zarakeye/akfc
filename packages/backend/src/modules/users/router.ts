@@ -94,9 +94,11 @@ export const userRouter = router({
     .input(
       z.object({
         email: z.string().email("Invalid email format"),
-        password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
+        password: z
+          .string()
+          .min(12, "Le mot de passe doit avoir au moins 12 caractères"),
         roleId: z.number(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const exists = await ctx.prisma.user.findUnique({
@@ -149,43 +151,42 @@ export const userRouter = router({
       });
     }),
 
-  getCurrentUserProfile: protectedProcedure
-    .query(async ({ ctx }) => {
-      const userId = ctx.sessionClient.user.id;
+  getCurrentUserProfile: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
 
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          pseudo: true,
-          avatar: true,
-          aboutMe: true,
-          phone: true,
-          birthDate: true,
-          isFirstLogin: true,
-          role: true,
-        },
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        avatar: true,
+        aboutMe: true,
+        phone: true,
+        birthDate: true,
+        isFirstLogin: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
       });
+    }
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
+    const userProfile = {
+      ...user,
+      birthDate: user.birthDate
+        ? user.birthDate.toISOString().split("T")[0]
+        : null,
+    };
 
-      const userProfile = {
-        ...user,
-        birthDate: user.birthDate
-          ? user.birthDate.toISOString().split("T")[0]
-          : null,
-      };
-
-      return userProfile satisfies UserProfile;
-    }),
+    return userProfile satisfies UserProfile;
+  }),
 
   updateUserRoleById: protectedProcedure
     .use(requirePermission("manage_users"))
@@ -285,28 +286,46 @@ export const userRouter = router({
    * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
    * Tri par lastName puis firstName pour l'UX du select.
    */
-  getInstructors: protectedProcedure
-    .query(async ({ ctx }) => {
-      return ctx.prisma.user.findMany({
-        where: {
-          OR: [
-            { disciplinesAsInstructor: { some: {} } },
-            { coursesAsInstructor: { some: {} } },
-            { stagesAsPrimaryAnimator: { some: {} } },
-            { stagesAsAnimator: { some: {} } },
-          ],
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          pseudo: true,
-          email: true,
-        },
-        orderBy: [
-          { lastName: "asc" },
-          { firstName: "asc" },
+  getInstructors: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: {
+        OR: [
+          { disciplinesAsInstructor: { some: {} } },
+          { coursesAsInstructor: { some: {} } },
+          { stagesAsPrimaryAnimator: { some: {} } },
+          { stagesAsAnimator: { some: {} } },
         ],
-      });
-    }),
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        email: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+  }),
+
+  /**
+   * Liste tous les administrateurs (rôle ADMIN) avec leur avatar courant,
+   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
+   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
+   * affichera un placeholder. `avatar` est un publicId Cloudinary brut ;
+   * l'URL d'affichage est construite côté client comme pour l'avatar du
+   * header.
+   */
+  listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: { role: { name: "ADMIN" } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        avatar: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+  }),
 });

@@ -1,17 +1,15 @@
 #!/bin/bash
-# Nouveau bloc de page-builder « media-text » (non destructif) : un editeur
-# tiptap + un picker multi-medias (images et/ou video), les deux parties
-# OPTIONNELLES. Rendu public : deux colonnes avec ALTERNANCE automatique du
-# cote des medias d un bloc media-text au suivant (calculee par le
-# PageRenderer selon la position) ; si une seule partie -> centre pleine
-# largeur. Touche : contrat (schema + extraction mediaIds), BlockViewProps
-# (champ mediaSide), PageRenderer (calcul alternance), registry, et les 3
-# fichiers du bloc.
-# À lancer depuis la RACINE du monorepo : bash apply_media_text_block.sh
+# Bloc media-text : le media peut etre un MEDIA de bibliotheque OU une
+# REFERENCE AVATAR d un admin (logique : { kind:"avatar", userId }, resolue au
+# rendu via User.avatar -> la page suit l avatar COURANT). Editeur : picker
+# bibliotheque OU selecteur listant tous les admins. Compat ancien format
+# { mediaId } via preprocess (kind:"library"). (v2 : router 'user' au
+# singulier, kind litteral via 'as const', defaultData sans media:[]).
+# À lancer depuis la RACINE : bash apply_media_text_avatar_ref.sh
 set -euo pipefail
 [ -f pnpm-workspace.yaml ] || { echo "ERREUR : racine du monorepo requise." >&2; exit 1; }
 
-mkdir -p apps/web/src/features/page-builder/blocks/media-text
+mkdir -p apps/web/src/features/page-builder/blocks/media-text packages/backend/src/modules/media/services
 
 echo "-> packages/contracts/src/page/blocks.v1.ts"
 cat > 'packages/contracts/src/page/blocks.v1.ts' << 'FILE_EOF'
@@ -155,17 +153,60 @@ export type DocumentListBlockV1 = z.infer<typeof documentListBlockSchema>;
  * décide de leur agencement (grille pour plusieurs images, lecteur pour une
  * vidéo). `content` est le même ProseMirror JSON que le bloc tiptap.
  */
+/** Média issu de la bibliothèque (MediaAsset). */
+const libraryMediaItemSchema = z.object({
+  kind: z.literal("library").default("library"),
+  mediaId: z.string().min(1),
+  caption: z.string().optional(),
+});
+
+/**
+ * Référence LOGIQUE à l'avatar d'un utilisateur (pas au binaire). Résolue
+ * dynamiquement au rendu : la page affiche toujours l'avatar COURANT du user
+ * — pas de copie, pas de synchro, pas de dérive. Si le user change d'avatar,
+ * la page suit automatiquement.
+ */
+const avatarMediaItemSchema = z.object({
+  kind: z.literal("avatar"),
+  userId: z.string().min(1),
+  caption: z.string().optional(),
+});
+
+/**
+ * Média d'un bloc media-text : soit un média de bibliothèque, soit une
+ * référence avatar. Discriminé par `kind`. L'ancien format (objet
+ * `{ mediaId }` sans `kind`) est traité comme `library` par le preprocess.
+ */
+const mediaTextItemSchema = z.discriminatedUnion("kind", [
+  libraryMediaItemSchema,
+  avatarMediaItemSchema,
+]);
+
 const mediaTextBlockSchema = blockBaseSchema.extend({
   type: z.literal("media-text"),
   /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */
   content: proseMirrorContentSchema.optional(),
-  /** Médias optionnels (images et/ou vidéo). Vide → côté médias masqué. */
-  media: z.array(
-    z.object({
-      mediaId: z.string().min(1),
-      caption: z.string().optional(),
-    }),
-  ),
+  /**
+   * UN SEUL média optionnel : média de bibliothèque OU référence avatar.
+   * Absent → côté médias masqué.
+   *
+   * Compat : preprocess tolérant — (1) un ancien TABLEAU est réduit à son
+   * premier élément ; (2) un objet SANS `kind` (ancien format média
+   * bibliothèque) reçoit `kind: "library"`.
+   */
+  media: z.preprocess((val) => {
+    let v = val;
+    if (Array.isArray(v)) v = v.length > 0 ? v[0] : undefined;
+    if (
+      v &&
+      typeof v === "object" &&
+      !("kind" in (v as Record<string, unknown>))
+    ) {
+      // Ancien format { mediaId, caption } → média bibliothèque.
+      return { kind: "library", ...(v as Record<string, unknown>) };
+    }
+    return v;
+  }, mediaTextItemSchema.optional()),
 });
 
 export type MediaTextBlockV1 = z.infer<typeof mediaTextBlockSchema>;
@@ -260,9 +301,12 @@ export function extractMediaIdsFromBlock(
     case "tiptap":
       return walkProseMirrorForMediaIds(block.content);
     case "media-text":
-      // mediaIds directs (tableau media) + images éventuelles du ProseMirror.
+      // Seul un média de bibliothèque a un mediaId à résoudre ; une référence
+      // avatar est résolue dynamiquement ailleurs (via User.avatar).
       return [
-        ...block.media.map((item) => item.mediaId),
+        ...(block.media && block.media.kind === "library"
+          ? [block.media.mediaId]
+          : []),
         ...walkProseMirrorForMediaIds(block.content),
       ];
     default:
@@ -349,6 +393,394 @@ function assertNever(value: never): never {
     `Cas de bloc non couvert dans extractMediaIdsFromBlock : ${JSON.stringify(value)}`,
   );
 }
+FILE_EOF
+
+echo "-> packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts"
+cat > 'packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts' << 'FILE_EOF'
+import type { PrismaClient } from "@prisma/client";
+
+import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
+import type { ResolvedMedia } from "@contracts/page";
+
+/**
+ * Résout les avatars d'une liste d'utilisateurs en `ResolvedMedia`, pour les
+ * blocs media-text qui référencent « l'avatar de tel user » (référence
+ * LOGIQUE, résolue dynamiquement → la page suit toujours l'avatar courant).
+ *
+ * `User.avatar` stocke un publicId Cloudinary (délivrance signée via le
+ * proxy). On construit l'URL de la même façon que pour un MediaAsset image.
+ * Un user sans avatar → absent de la map (le rendu affichera un placeholder).
+ */
+export async function resolveAvatarsByUserIds(
+  prisma: PrismaClient,
+  userIds: string[],
+): Promise<Record<string, ResolvedMedia | null>> {
+  const out: Record<string, ResolvedMedia | null> = {};
+  for (const id of userIds) out[id] = null;
+
+  if (userIds.length === 0) return out;
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, avatar: true, firstName: true, lastName: true },
+  });
+
+  for (const user of users) {
+    if (!user.avatar) continue; // pas d'avatar → reste null (placeholder)
+    const url = buildMediaProxyUrl(
+      { publicId: user.avatar, fullPath: "" },
+      "public",
+    );
+    out[user.id] = {
+      url,
+      kind: "image",
+      posterUrl: null,
+      mimeType: "image/*",
+      fileName:
+        [user.firstName, user.lastName].filter(Boolean).join(" ") || "avatar",
+      width: null,
+      height: null,
+      duration: null,
+    };
+  }
+
+  return out;
+}
+FILE_EOF
+
+echo "-> packages/backend/src/modules/users/router.ts"
+cat > 'packages/backend/src/modules/users/router.ts' << 'FILE_EOF'
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { requirePermission, isAdmin } from "@backend/trpc/middleware";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { TRPCError } from "@trpc/server";
+
+import type { UserProfile } from "@contracts/users/user-profile.types";
+import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
+import { updateUserRoleByIdSchema } from "@contracts/forms/updateUserRoleById.schema";
+
+export const userRouter = router({
+  getAll: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .query(async ({ ctx }) => {
+      return ctx.prisma.user.findMany({
+        orderBy: { id: "asc" },
+        relationLoadStrategy: "join",
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }),
+
+  getById: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.id },
+        relationLoadStrategy: "join",
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return user;
+    }),
+
+  getByEmail: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { email: input.email },
+        relationLoadStrategy: "join",
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return user;
+    }),
+
+  create: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .input(
+      z.object({
+        email: z.string().email("Invalid email format"),
+        password: z
+          .string()
+          .min(12, "Le mot de passe doit avoir au moins 12 caractères"),
+        roleId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const exists = await ctx.prisma.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (exists) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "User already exists",
+        });
+      }
+
+      const hash = await bcrypt.hash(input.password, 12);
+
+      const user = await ctx.prisma.user.create({
+        data: {
+          email: input.email,
+          password: hash,
+          roleId: input.roleId,
+        },
+      });
+
+      return {
+        success: true,
+        user,
+      };
+    }),
+
+  updateProfile: protectedProcedure
+    .input(updateMeFormSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.sessionClient.user.id;
+
+      return ctx.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...input,
+          isFirstLogin: false,
+        },
+      });
+    }),
+
+  delete: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.user.delete({
+        where: { id: input.id },
+      });
+    }),
+
+  getCurrentUserProfile: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        avatar: true,
+        aboutMe: true,
+        phone: true,
+        birthDate: true,
+        isFirstLogin: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    const userProfile = {
+      ...user,
+      birthDate: user.birthDate
+        ? user.birthDate.toISOString().split("T")[0]
+        : null,
+    };
+
+    return userProfile satisfies UserProfile;
+  }),
+
+  updateUserRoleById: protectedProcedure
+    .use(requirePermission("manage_users"))
+    .input(updateUserRoleByIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const actorId = ctx.sessionClient.user.id;
+
+      if (actorId === input.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You cannot change your own role.",
+        });
+      }
+
+      const role = await ctx.prisma.role.findUnique({
+        where: { id: input.roleId },
+        select: { id: true },
+      });
+
+      if (!role) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Role not found",
+        });
+      }
+
+      const user = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { roleId: input.roleId },
+        relationLoadStrategy: "join",
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true },
+              },
+            },
+          },
+        },
+      });
+
+      return user;
+    }),
+
+  getProfileById: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          pseudo: true,
+          avatar: true,
+          aboutMe: true,
+          phone: true,
+          birthDate: true,
+          isFirstLogin: true,
+          role: true,
+        },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      const userProfile = {
+        ...user,
+        birthDate: user.birthDate
+          ? user.birthDate.toISOString().split("T")[0]
+          : null,
+      };
+
+      return userProfile satisfies UserProfile;
+    }),
+
+  /**
+   * Liste tous les users qui sont **factuellement** instructeurs — c'est-à-dire
+   * qui ont au moins une relation d'animation dans le club : ils animent
+   * une discipline, un cours, ou un stage (en tant qu'animateur principal
+   * ou secondaire).
+   *
+   * Le club n'a pas de rôle "instructor" nominal en schéma ; cette
+   * définition factuelle permet de peupler les sélecteurs des forms admin
+   * (Course, Stage, etc.) sans dépendre d'un signal qui n'existe pas.
+   *
+   * Si un jour tu veux désigner un nouvel instructeur qui n'anime encore
+   * rien, il faudra introduire un autre signal (rôle dédié ou flag
+   * `isInstructor` sur User) — auquel cas cette query devra évoluer.
+   *
+   * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
+   * Tri par lastName puis firstName pour l'UX du select.
+   */
+  getInstructors: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: {
+        OR: [
+          { disciplinesAsInstructor: { some: {} } },
+          { coursesAsInstructor: { some: {} } },
+          { stagesAsPrimaryAnimator: { some: {} } },
+          { stagesAsAnimator: { some: {} } },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        email: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+  }),
+
+  /**
+   * Liste tous les administrateurs (rôle ADMIN) avec leur avatar courant,
+   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
+   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
+   * affichera un placeholder. `avatar` est un publicId Cloudinary brut ;
+   * l'URL d'affichage est construite côté client comme pour l'avatar du
+   * header.
+   */
+  listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: { role: { name: "ADMIN" } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        avatar: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+  }),
+});
 FILE_EOF
 
 echo "-> apps/web/src/features/page-builder/BlockDefinition.types.ts"
@@ -444,6 +876,13 @@ export interface BlockDefinition<TBlock extends PageBlockV1> {
 export interface BlockEditorProps<TBlock extends PageBlockV1> {
   block: TBlock;
   onChange: (next: TBlock) => void;
+  /**
+   * Côté d'affichage des médias dans la preview du builder, calculé par le
+   * PageBuilder selon la position du bloc parmi les blocs `media-text`
+   * (même alternance que le rendu public). Optionnel — seul le bloc
+   * media-text l'exploite pour sa preview.
+   */
+  mediaSide?: "left" | "right";
 }
 
 /**
@@ -463,6 +902,12 @@ export interface BlockViewProps<TBlock extends PageBlockV1> {
   block: TBlock;
   resolveMedia: (mediaId: string) => ResolvedMedia | null;
   /**
+   * Résout l'avatar COURANT d'un utilisateur (pour les blocs media-text qui
+   * référencent « l'avatar de tel user »). Optionnel — seul le bloc
+   * media-text l'exploite. `null` si le user n'a pas d'avatar.
+   */
+  resolveAvatar?: (userId: string) => ResolvedMedia | null;
+  /**
    * Côté d'affichage des médias, calculé par le PageRenderer selon la
    * POSITION du bloc parmi les blocs `media-text` (alternance automatique :
    * 1er → "left", 2e → "right", etc.). Optionnel — seul le bloc media-text
@@ -479,6 +924,7 @@ import type { ComponentType } from "react";
 
 import { prisma } from "@backend/prisma";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
+import { resolveAvatarsByUserIds } from "@backend/modules/media/services/resolveAvatarsByUserIds.service";
 
 import {
   extractMediaIdsFromContent,
@@ -559,142 +1005,52 @@ export async function PageRenderer({ content }: PageRendererProps) {
   const resolveMedia = (mediaId: string): ResolvedMedia | null =>
     resolvedMap[mediaId] ?? null;
 
+  // Résolution des avatars référencés par les blocs media-text (référence
+  // logique { kind: "avatar", userId } → avatar courant du user).
+  const avatarUserIds = content.blocks.flatMap((b) =>
+    b.type === "media-text" && b.media?.kind === "avatar"
+      ? [b.media.userId]
+      : [],
+  );
+  const avatarMap = await resolveAvatarsByUserIds(prisma, avatarUserIds);
+  const resolveAvatar = (userId: string): ResolvedMedia | null =>
+    avatarMap[userId] ?? null;
+
   if (content.blocks.length === 0) {
     return null;
   }
 
+  // Alternance media-text SANS mutation pendant le rendu (React Compiler) :
+  // le côté dérive du rang du bloc dans la liste des seuls blocs media-text.
+  const mediaTextIds = content.blocks
+    .filter((b) => b.type === "media-text")
+    .map((b) => b.id);
+  const sideFor = (blockId: string): "left" | "right" | undefined => {
+    const rank = mediaTextIds.indexOf(blockId);
+    if (rank === -1) return undefined;
+    return rank % 2 === 0 ? "left" : "right";
+  };
+
   return (
-    <div className="page-renderer flex flex-col gap-6">
-      {(() => {
-        // Compteur d'alternance : n'incrémente que sur les blocs media-text,
-        // pour que leur côté médias alterne indépendamment des autres blocs
-        // intercalés (1er media-text → gauche, 2e → droite, etc.).
-        let mediaTextRank = 0;
-        return content.blocks.map((block) => {
-          const def = getBlockDefinition(block.type);
-          const View = def.View as unknown as ComponentType<
-            BlockViewProps<PageBlockV1>
-          >;
-          let mediaSide: "left" | "right" | undefined;
-          if (block.type === "media-text") {
-            mediaSide = mediaTextRank % 2 === 0 ? "left" : "right";
-            mediaTextRank += 1;
-          }
-          return (
-            <View
-              key={block.id}
-              block={block}
-              resolveMedia={resolveMedia}
-              mediaSide={mediaSide}
-            />
-          );
-        });
-      })()}
+    <div className="page-renderer flex flex-col gap-10">
+      {content.blocks.map((block) => {
+        const def = getBlockDefinition(block.type);
+        const View = def.View as unknown as ComponentType<
+          BlockViewProps<PageBlockV1>
+        >;
+        return (
+          <View
+            key={block.id}
+            block={block}
+            resolveMedia={resolveMedia}
+            resolveAvatar={resolveAvatar}
+            mediaSide={sideFor(block.id)}
+          />
+        );
+      })}
     </div>
   );
 }
-FILE_EOF
-
-echo "-> apps/web/src/features/page-builder/blockRegistry.ts"
-cat > 'apps/web/src/features/page-builder/blockRegistry.ts' << 'FILE_EOF'
-import type { PageBlockKindV1, PageBlockV1 } from "@contracts/page";
-import type { BlockDefinition } from "./BlockDefinition.types";
-
-import { tiptapDefinition } from "./blocks/tiptap";
-import { imageGalleryDefinition } from "./blocks/image-gallery";
-import { audioCollectionDefinition } from "./blocks/audio-collection";
-import { documentListDefinition } from "./blocks/document-list";
-import { mediaTextDefinition } from "./blocks/media-text";
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  Type du registry                                                       */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-/**
- * Mapped type qui préserve le typage discriminé pour chaque clé.
- *
- * `BlockRegistry['image-gallery']` rend précisément
- * `BlockDefinition<ImageGalleryBlockV1>`, pas l'union dégénérée. C'est
- * cette préservation qui permet à `Editor` et `View` d'accepter des
- * props typées correctement pour leur variante.
- *
- * Contrairement au `providerRegistry` du backend qui avait DÛ utiliser
- * un switch pour préserver le typage (parce que les factories y
- * retournaient des génériques structurellement divergents), ici une
- * mapped type sur un type discriminé suffit — tous les `BlockDefinition`
- * partagent la même forme paramétrée.
- */
-type BlockRegistry = {
-  [K in PageBlockKindV1]: BlockDefinition<Extract<PageBlockV1, { type: K }>>;
-};
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  Assemblage                                                             */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-const BLOCK_REGISTRY: BlockRegistry = {
-  "image-gallery": imageGalleryDefinition,
-  "audio-collection": audioCollectionDefinition,
-  "document-list": documentListDefinition,
-  tiptap: tiptapDefinition,
-  "media-text": mediaTextDefinition,
-};
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  API publique                                                           */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-/**
- * Récupère la définition complète d'un bloc par sa `kind`.
- *
- * À privilégier sur un accès direct `BLOCK_REGISTRY[kind]` parce que
- * le typage du retour est préservé : `getBlockDefinition('tiptap')`
- * rend `BlockDefinition<TipTapBlockV1>`, donc les props passées à
- * `.Editor` et `.View` sont strictement vérifiées par le compilateur.
- */
-export function getBlockDefinition<K extends PageBlockKindV1>(
-  kind: K,
-): BlockRegistry[K] {
-  return BLOCK_REGISTRY[kind];
-}
-
-/**
- * Type d'une définition prise au hasard dans le registry — union des
- * quatre variantes typées.
- *
- * **Pourquoi pas `BlockDefinition<PageBlockV1>` ?** Parce que `TBlock`
- * apparaît en position contravariante dans `onChange: (next: TBlock) => void` —
- * un `(tiptapBlock) => void` n'est pas assignable à un `(anyBlock) => void`,
- * la spécialisation est plus stricte. Forcer cette assignabilité demanderait
- * de relâcher le typage de `onChange`, ce qu'on ne veut pas.
- *
- * En revanche, une union des variantes typées (`BlockRegistry[PageBlockKindV1]`)
- * exprime exactement ce qu'on veut : « une définition parmi celles connues »,
- * sans tordre la variance. Les consommateurs qui ont besoin d'un narrowing
- * passent par `getBlockDefinition(kind)`.
- */
-export type AnyBlockDefinition = BlockRegistry[PageBlockKindV1];
-
-/**
- * Liste exhaustive des définitions, dans l'ordre d'affichage du menu "+".
- *
- * L'ordre ici détermine l'ordre dans le menu — choisi par fréquence
- * d'usage anticipée plutôt que par ordre alphabétique : tiptap en
- * premier parce que c'est le bloc le plus courant, document-list en
- * dernier parce que c'est le plus rare.
- *
- * Typé sur l'union des variantes (`AnyBlockDefinition`) parce que les
- * consommateurs de cette liste (typiquement le menu "+") n'ont pas
- * besoin de typage par variante — ils itèrent et lisent `kind`, `label`,
- * `icon`. Pour accéder à `Editor` / `View` avec leur typage précis,
- * passer par `getBlockDefinition(kind)`.
- */
-export const ALL_BLOCK_DEFINITIONS: ReadonlyArray<AnyBlockDefinition> = [
-  tiptapDefinition,
-  imageGalleryDefinition,
-  audioCollectionDefinition,
-  documentListDefinition,
-];
 FILE_EOF
 
 echo "-> apps/web/src/features/page-builder/blocks/media-text/view.server.tsx"
@@ -777,13 +1133,17 @@ const ServerLibraryImageNode = Node.create<ServerLibraryImageOptions>({
 export function MediaTextView({
   block,
   resolveMedia,
+  resolveAvatar,
   mediaSide = "left",
 }: BlockViewProps<MediaTextBlockV1>) {
-  // Médias résolus (on saute silencieusement ceux qui ne résolvent pas).
-  const media = block.media.flatMap((item) => {
-    const resolved = resolveMedia(item.mediaId);
-    return resolved ? [{ item, resolved }] : [];
-  });
+  // Média unique résolu (ou null). Selon le kind : média de bibliothèque
+  // (resolveMedia) ou référence avatar résolue dynamiquement (resolveAvatar).
+  const resolvedMedia = !block.media
+    ? null
+    : block.media.kind === "avatar"
+      ? (resolveAvatar?.(block.media.userId) ?? null)
+      : resolveMedia(block.media.mediaId);
+  const mediaCaption = block.media?.caption;
 
   // Texte : présent uniquement si content non vide.
   const hasText =
@@ -791,7 +1151,7 @@ export function MediaTextView({
     block.content !== null &&
     Object.keys(block.content).length > 0;
 
-  const hasMedia = media.length > 0;
+  const hasMedia = resolvedMedia !== null;
 
   // Bloc vide (ni texte ni média résolu) → rien.
   if (!hasText && !hasMedia) return null;
@@ -811,17 +1171,10 @@ export function MediaTextView({
       ])
     : null;
 
-  const MediaColumn = hasMedia ? (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {media.map(({ item, resolved }) => (
-        <MediaFigure
-          key={item.mediaId}
-          media={resolved}
-          caption={item.caption}
-        />
-      ))}
-    </div>
-  ) : null;
+  const MediaColumn =
+    hasMedia && resolvedMedia ? (
+      <MediaFigure media={resolvedMedia} caption={mediaCaption} />
+    ) : null;
 
   const TextColumn = textHtml ? (
     <div
@@ -841,7 +1194,7 @@ export function MediaTextView({
 
   // Deux parties → deux colonnes, côté médias selon l'alternance.
   return (
-    <div className="grid items-center gap-6 md:grid-cols-2">
+    <div className="grid items-center gap-10 md:grid-cols-2">
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>
@@ -909,6 +1262,8 @@ import type { MediaTextBlockV1 } from "@contracts/page";
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { MediaListEditor } from "../../components/MediaListEditor";
 import { BuilderTipTapEditor } from "../tiptap/builder-tiptap-editor";
+import { MediaTextPreview } from "./MediaTextPreview";
+import { AvatarPicker } from "./AvatarPicker";
 
 /**
  * Editor du bloc `media-text`.
@@ -927,6 +1282,7 @@ import { BuilderTipTapEditor } from "../tiptap/builder-tiptap-editor";
 export function MediaTextEditor({
   block,
   onChange,
+  mediaSide,
 }: BlockEditorProps<MediaTextBlockV1>) {
   const handleContentChange = useCallback(
     (content: Record<string, unknown>) => {
@@ -937,51 +1293,97 @@ export function MediaTextEditor({
 
   return (
     <div className="space-y-4">
-      {/* Médias */}
-      <div className="space-y-2">
+      {/* Média — UN SEUL, au choix : (1) un média de la bibliothèque, ou
+          (2) l'avatar d'un admin (référence logique, suit l'avatar courant).
+          Les deux sont exclusifs : choisir un avatar retire le média
+          bibliothèque et inversement. */}
+      <div className="space-y-3">
         <span className="text-sm font-medium text-muted-foreground">
-          Médias (images et/ou vidéo)
+          Média (une image/vidéo de la bibliothèque, ou un avatar d'admin)
         </span>
-        <MediaListEditor
-          items={block.media}
-          onChange={(media) => onChange({ ...block, media })}
-          itemFactory={(mediaId) => ({ mediaId })}
-          getItemText={(item) => item.caption}
-          setItemText={(item, value) => ({
-            ...item,
-            caption: value ?? undefined,
-          })}
-          textPlaceholder="Légende (optionnelle)"
-          addLabel="Ajouter des médias"
-          emptyStateLabel="Aucun média — le bloc affichera seulement le texte."
-          renderPreview={({ resolved, status }) => {
-            if (status === "loading") {
-              return <div className="h-full w-full animate-pulse bg-muted" />;
+
+        {/* Option 1 : bibliothèque (masquée si un avatar est référencé) */}
+        {(!block.media || block.media.kind === "library") && (
+          <MediaListEditor
+            items={
+              block.media && block.media.kind === "library" ? [block.media] : []
             }
-            if (status === "missing" || !resolved) {
+            onChange={(list) =>
+              onChange({
+                ...block,
+                media:
+                  list.length > 0
+                    ? { ...list[list.length - 1], kind: "library" as const }
+                    : undefined,
+              })
+            }
+            itemFactory={(mediaId) => ({ kind: "library" as const, mediaId })}
+            getItemText={(item) => item.caption}
+            setItemText={(item, value) => ({
+              ...item,
+              caption: value ?? undefined,
+            })}
+            textPlaceholder="Légende (optionnelle)"
+            addLabel={block.media ? "Remplacer le média" : "Ajouter un média"}
+            emptyStateLabel="Aucun média de bibliothèque sélectionné."
+            renderPreview={({ resolved, status }) => {
+              if (status === "loading") {
+                return <div className="h-full w-full animate-pulse bg-muted" />;
+              }
+              if (status === "missing" || !resolved) {
+                return (
+                  <div className="flex h-full w-full items-center justify-center bg-muted text-[10px] text-muted-foreground">
+                    indispo
+                  </div>
+                );
+              }
+              if (resolved.kind === "video") {
+                return (
+                  <div className="flex h-full w-full items-center justify-center bg-black text-[10px] text-white">
+                    vidéo
+                  </div>
+                );
+              }
               return (
-                <div className="flex h-full w-full items-center justify-center bg-muted text-[10px] text-muted-foreground">
-                  indispo
-                </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={resolved.url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               );
+            }}
+          />
+        )}
+
+        {/* Option 2 : avatar d'admin */}
+        <div className="space-y-1">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            …ou l'avatar d'un administrateur
+          </span>
+          <AvatarPicker
+            selectedUserId={
+              block.media && block.media.kind === "avatar"
+                ? block.media.userId
+                : null
             }
-            if (resolved.kind === "video") {
-              return (
-                <div className="flex h-full w-full items-center justify-center bg-black text-[10px] text-white">
-                  vidéo
-                </div>
-              );
+            onSelect={(userId) =>
+              onChange({
+                ...block,
+                media: userId
+                  ? {
+                      kind: "avatar",
+                      userId,
+                      caption:
+                        block.media && "caption" in block.media
+                          ? block.media.caption
+                          : undefined,
+                    }
+                  : undefined,
+              })
             }
-            return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={resolved.url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            );
-          }}
-        />
+          />
+        </div>
       </div>
 
       {/* Texte */}
@@ -994,6 +1396,321 @@ export function MediaTextEditor({
           onChange={handleContentChange}
         />
       </div>
+
+      {/* Aperçu du rendu public (mise en page réelle, alternance incluse) */}
+      <div className="space-y-2 border-t border-dashed border-border pt-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Aperçu public
+        </span>
+        <div className="rounded-md bg-muted/30 p-4">
+          <MediaTextPreview block={block} mediaSide={mediaSide} />
+        </div>
+      </div>
+    </div>
+  );
+}
+FILE_EOF
+
+echo "-> apps/web/src/features/page-builder/blocks/media-text/MediaTextPreview.tsx"
+cat > 'apps/web/src/features/page-builder/blocks/media-text/MediaTextPreview.tsx' << 'FILE_EOF'
+"use client";
+
+import { useEffect, useState, type JSX } from "react";
+import { generateHTML } from "@tiptap/html";
+import type { JSONContent } from "@tiptap/core";
+import { StarterKit } from "@tiptap/starter-kit";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Typography } from "@tiptap/extension-typography";
+import { Highlight } from "@tiptap/extension-highlight";
+import { Subscript } from "@tiptap/extension-subscript";
+import { Superscript } from "@tiptap/extension-superscript";
+
+import { trpcClient } from "@trpc/trpcClient";
+import type { MediaTextBlockV1 } from "@contracts/page";
+import { publicIdToUrl } from "@features/social/userDisplay";
+
+/**
+ * Preview CLIENT du bloc media-text, affichée sous l'éditeur dans le builder.
+ *
+ * Reproduit fidèlement le rendu public (MediaTextView, qui est un Server
+ * Component non montable ici) : résolution des médias via trpcClient,
+ * alternance gauche/droite selon `mediaSide` (fourni par le PageBuilder), et
+ * mêmes règles de disposition (1 média = pleine largeur ; plusieurs = grille ;
+ * une seule partie = centré, gouttière nette entre colonnes).
+ *
+ * Le rendu du texte réutilise generateHTML avec les mêmes extensions que la
+ * vue publique (sans le nœud library-image, dont la résolution serveur n'est
+ * pas disponible ici — les images insérées dans le texte n'apparaissent donc
+ * pas dans la preview, ce qui est acceptable pour un aperçu).
+ */
+
+interface ResolvedPreviewMedia {
+  url: string;
+  kind: string;
+  posterUrl: string | null;
+  caption?: string;
+}
+
+export function MediaTextPreview({
+  block,
+  mediaSide = "left",
+}: {
+  block: MediaTextBlockV1;
+  mediaSide?: "left" | "right";
+}): JSX.Element | null {
+  const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
+
+  const m = block.media ?? null;
+  // Clé de dépendance stable selon le kind.
+  const mediaKey =
+    m == null ? null : m.kind === "avatar" ? `avatar:${m.userId}` : m.mediaId;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!m) {
+      setMedia(null);
+      return;
+    }
+
+    if (m.kind === "avatar") {
+      // Référence avatar : on récupère l'avatar courant du user (via la liste
+      // des candidats) et on construit l'URL comme le portrait du header.
+      void trpcClient.user.listAvatarCandidates.query().then((admins) => {
+        if (cancelled) return;
+        const user = admins.find((a) => a.id === m.userId);
+        if (user?.avatar) {
+          setMedia({
+            url: publicIdToUrl(user.avatar),
+            kind: "image",
+            posterUrl: null,
+            caption: m.caption,
+          });
+        } else {
+          setMedia(null);
+        }
+      });
+    } else {
+      // Média de bibliothèque.
+      void trpcClient.media.resolveByIds
+        .query({ mediaIds: [m.mediaId] })
+        .then((resolved) => {
+          if (cancelled) return;
+          const r = resolved[m.mediaId];
+          if (r) {
+            setMedia({
+              url: r.url,
+              kind: r.kind,
+              posterUrl: r.posterUrl,
+              caption: m.caption,
+            });
+          } else {
+            setMedia(null);
+          }
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaKey]);
+
+  const hasText =
+    block.content !== undefined &&
+    block.content !== null &&
+    Object.keys(block.content).length > 0;
+  const hasMedia = media !== null;
+
+  if (!hasText && !hasMedia) {
+    return (
+      <p className="text-xs italic text-muted-foreground">
+        Aperçu : bloc vide (ajoute du texte et/ou des médias).
+      </p>
+    );
+  }
+
+  const textHtml = hasText
+    ? generateHTML(block.content as JSONContent, [
+        StarterKit.configure({ horizontalRule: false }),
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        Highlight.configure({ multicolor: true }),
+        Typography,
+        Subscript,
+        Superscript,
+      ])
+    : null;
+
+  const MediaColumn =
+    hasMedia && media ? <PreviewFigure media={media} /> : null;
+
+  const TextColumn = textHtml ? (
+    <div
+      className="prose prose-sm max-w-none"
+      dangerouslySetInnerHTML={{ __html: textHtml }}
+    />
+  ) : null;
+
+  // Une seule partie → centré, pleine largeur.
+  if (!hasText || !hasMedia) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {hasMedia ? MediaColumn : TextColumn}
+      </div>
+    );
+  }
+
+  // Deux parties → deux colonnes, côté médias selon l'alternance, gouttière nette.
+  return (
+    <div className="grid items-center gap-10 md:grid-cols-2">
+      {mediaSide === "left" ? (
+        <>
+          <div>{MediaColumn}</div>
+          <div>{TextColumn}</div>
+        </>
+      ) : (
+        <>
+          <div className="md:order-2">{MediaColumn}</div>
+          <div className="md:order-1">{TextColumn}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PreviewFigure({
+  media,
+}: {
+  media: ResolvedPreviewMedia;
+}): JSX.Element {
+  return (
+    <figure className="m-0">
+      {media.kind === "video" ? (
+        <video
+          src={media.url}
+          poster={media.posterUrl ?? undefined}
+          controls
+          className="block w-full rounded-md"
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={media.url}
+          alt={media.caption ?? ""}
+          className="block w-full rounded-md object-cover"
+        />
+      )}
+      {media.caption && (
+        <figcaption className="mt-1 text-xs text-muted-foreground">
+          {media.caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+FILE_EOF
+
+echo "-> apps/web/src/features/page-builder/blocks/media-text/AvatarPicker.tsx"
+cat > 'apps/web/src/features/page-builder/blocks/media-text/AvatarPicker.tsx' << 'FILE_EOF'
+"use client";
+
+import { useEffect, useState, type JSX } from "react";
+
+import { trpcClient } from "@trpc/trpcClient";
+import { publicIdToUrl } from "@features/social/userDisplay";
+
+interface AdminCandidate {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  pseudo: string | null;
+  avatar: string | null;
+}
+
+function labelFor(a: AdminCandidate): string {
+  const name = [a.firstName, a.lastName].filter(Boolean).join(" ").trim();
+  return name || a.pseudo || "Admin";
+}
+
+/**
+ * Sélecteur d'avatar d'administrateur pour le bloc media-text. Liste TOUS les
+ * admins (avec placeholder si pas d'avatar). Choisir un admin pose une
+ * référence LOGIQUE `{ kind: "avatar", userId }` — la page suivra l'avatar
+ * courant de ce user.
+ *
+ * `selectedUserId` : l'admin actuellement référencé (ou null). `onSelect`
+ * reçoit le userId choisi, ou null pour retirer la référence.
+ */
+export function AvatarPicker({
+  selectedUserId,
+  onSelect,
+}: {
+  selectedUserId: string | null;
+  onSelect: (userId: string | null) => void;
+}): JSX.Element {
+  const [admins, setAdmins] = useState<AdminCandidate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void trpcClient.user.listAvatarCandidates.query().then((rows) => {
+      if (cancelled) return;
+      setAdmins(rows);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <p className="text-xs text-muted-foreground">Chargement des avatars…</p>
+    );
+  }
+
+  if (admins.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">Aucun administrateur.</p>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {admins.map((a) => {
+        const selected = a.id === selectedUserId;
+        return (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => onSelect(selected ? null : a.id)}
+            className={`flex items-center gap-2 rounded-md border px-2 py-1 text-xs transition-colors ${
+              selected
+                ? "border-primary bg-primary/10"
+                : "border-border hover:bg-muted"
+            }`}
+            title={labelFor(a)}
+          >
+            <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-muted">
+              {a.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={publicIdToUrl(a.avatar)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] text-muted-foreground">
+                  {labelFor(a).slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <span>{labelFor(a)}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1016,8 +1733,7 @@ export const mediaTextDefinition: BlockDefinition<MediaTextBlockV1> = {
   defaultData: (id) => ({
     id,
     type: "media-text",
-    media: [],
-    // content laissé absent : le bloc démarre vide des deux côtés.
+    // media absent + content absent : le bloc démarre vide des deux côtés.
   }),
   Editor: MediaTextEditor,
   View: MediaTextView,
@@ -1031,5 +1747,5 @@ pnpm --filter contracts typecheck && pnpm --filter backend typecheck && pnpm --f
 echo
 echo "Typecheck OK -> commit."
 git add -A
-git commit -m "feat(page-builder): bloc media-text (tiptap + medias) a mise en page alternee"
+git commit -m "feat(media-text): reference avatar d admin (logique, suit l avatar courant)"
 echo "Commit effectue."
