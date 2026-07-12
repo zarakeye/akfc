@@ -2,6 +2,8 @@ import crypto from "crypto";
 import type { PrismaClient } from "@prisma/client";
 
 import { resolvePendingUploadFolder } from "@backend/modules/cloudinary/services/resolvePendingUploadFolder.service";
+import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
+import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import type {
   UploadDestination,
   UploadAssetRequest,
@@ -50,6 +52,21 @@ export async function createUploadSignatures(params: {
     select: { publicId: true },
   });
   const existingSet = new Set(existing.map((e) => e.publicId));
+
+  // ── Enforcement du quota perso (AVANT tout upload) ──
+  // Approximation volontaire : les fichiers déjà présents dans le dossier
+  // (écrasements) n'augmentent pas le total → on ne compte que le neuf.
+  // L'approximation penche du côté permissif (jamais de faux blocage).
+  if (destination.kind === "perso") {
+    const { total } = await countPersoImages({ prisma, appRoot, userId });
+    const newCount = assets.length - existing.length;
+    if (total + newCount > PERSO_PHOTO_QUOTA) {
+      throw new Error(
+        `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}). ` +
+          `Actuel : ${total}. Nouvelles demandées : ${Math.max(0, newCount)}.`,
+      );
+    }
+  }
 
   return assets.map((asset) => {
     const publicId = asset.fileName.replace(/\.[^/.]+$/, "");

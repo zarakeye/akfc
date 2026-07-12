@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
 
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
+import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 
 /**
  * resolvePendingUploadFolder.service.ts
@@ -60,23 +61,10 @@ export async function resolvePendingUploadFolder(params: {
 
   /* ── Destination personnelle de l'admin (dérivée de userId) ── */
   if (destination.kind === "perso") {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { firstName: true, lastName: true, pseudo: true },
-    });
-
-    if (!user) {
-      throw new Error(`Acting user not found (id=${userId})`);
-    }
-
-    const fullName = [user.firstName, user.lastName]
-      .filter((part): part is string => Boolean(part && part.trim()))
-      .join(" ");
-
-    const personSlug =
-      slug(fullName) || slug(user.pseudo ?? "") || `user-${userId}`;
-
-    return `${appRoot}/pending/persos/${personSlug}-${userId}`;
+    const base = await resolvePersoBaseFolder({ prisma, appRoot, userId });
+    // Les photos vivent dans le sous-dossier `photos/` de l'espace perso, pour
+    // une structure homogène avec les futures zones R2 (documents/, audio/).
+    return `${base}/photos`;
   }
 
   /* ── Destinations couplées à une discipline (historique) ── */
