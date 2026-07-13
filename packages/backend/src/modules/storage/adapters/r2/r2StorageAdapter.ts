@@ -382,7 +382,7 @@ export function createR2StorageAdapter(
       //
       // Cas existing-discipline : on a directement les FK.
       // Cas new-discipline : on garde proposedDisciplineName, disciplineId = null.
-      let categoryId: number;
+      let categoryId: number | null = null;
       let disciplineId: number | null = null;
       let proposedDisciplineName: string | null = null;
 
@@ -396,12 +396,13 @@ export function createR2StorageAdapter(
           proposedDisciplineName = input.destination.proposedDisciplineName;
           break;
         case "general":
+          // Espace club partagé, sans discipline ni catégorie
+          // (categoryId reste null).
+          break;
         case "perso":
-          // Destinations découplées non supportées pour R2 dans ce chantier
-          // (photos Cloudinary d'abord ; R2 perso reporté). On refuse plutôt
-          // que d'écrire une row bancale.
+          // R2 perso toujours reporté (photos Cloudinary d'abord).
           throw new Error(
-            "Les destinations 'general' et 'perso' ne sont pas supportées pour les uploads R2."
+            "La destination 'perso' n'est pas supportée pour les uploads R2.",
           );
         default:
           // Exhaustivité : un nouveau kind non traité fera échouer le build ici.
