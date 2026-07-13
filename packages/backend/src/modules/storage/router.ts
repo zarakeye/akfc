@@ -66,6 +66,10 @@ const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
     categoryId: z.number().int().positive(),
     proposedDisciplineName: z.string().min(1).max(120),
   }),
+  // Espace club partagé, sans discipline ni catégorie.
+  z.object({
+    kind: z.literal('general'),
+  }),
 ]);
 
 const registerR2UploadInputSchema = z.object({
