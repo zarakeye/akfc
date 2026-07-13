@@ -1,4 +1,0 @@
-[00:00:08.526] Server  LOG     [instrumentation] ensureRootFolders: all 3 root folders already present for appRoot="AKFC"
-[00:00:08.532] Server  LOG      ✓ Ready in 6.7s
-[00:00:11.616] Server  LOG      ○ Compiling /disciplines/[slug] ...
-[00:00:33.282] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.

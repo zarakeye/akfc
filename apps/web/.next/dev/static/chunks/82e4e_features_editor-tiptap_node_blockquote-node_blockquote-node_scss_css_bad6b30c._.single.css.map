@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///turbopack:///[project]/apps/web/src/features/editor-tiptap/node/blockquote-node/blockquote-node.scss"],"sourcesContent":[".tiptap.ProseMirror {\n  --blockquote-bg-color: var(--tt-gray-light-900);\n\n  .dark & {\n    --blockquote-bg-color: var(--tt-gray-dark-900);\n  }\n}\n\n/* =====================\n     BLOCKQUOTE\n     ===================== */\n.tiptap.ProseMirror {\n  blockquote {\n    position: relative;\n    padding-left: 1em;\n    padding-top: 0.375em;\n    padding-bottom: 0.375em;\n    margin: 1.5rem 0;\n\n    p {\n      margin-top: 0;\n    }\n\n    &::before,\n    &.is-empty::before {\n      position: absolute;\n      bottom: 0;\n      left: 0;\n      top: 0;\n      height: 100%;\n      width: 0.25em;\n      background-color: var(--blockquote-bg-color);\n      content: \"\";\n      border-radius: 0;\n    }\n  }\n}\n"],"names":[],"mappings":"AAAA;;;;AAGE;;;;AASA;;;;;;;;AAOE;;;;AAIA"}}]
-}

@@ -1,3 +1,0 @@
-{
-  "/(admin)/dashboard/disciplines/[id]/edit/page": "app/(admin)/dashboard/disciplines/[id]/edit/page.js"
-}

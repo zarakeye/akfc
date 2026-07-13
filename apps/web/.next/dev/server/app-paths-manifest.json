@@ -1,4 +1,0 @@
-{
-  "/(public)/disciplines/[slug]/page": "app/(public)/disciplines/[slug]/page.js",
-  "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
-}
