@@ -105,6 +105,11 @@ const formSchema = z.discriminatedUnion('destinationKind', [
         message: 'Le nom doit contenir au moins une lettre ou un chiffre',
       }),
   }),
+  z.object({
+    destinationKind: z.literal('general'),
+    // Sous-dossier optionnel sous « Général » (vide = racine).
+    generalFolder: z.string().trim().max(120).optional(),
+  }),
 ]);
 
 type FormValues = z.infer<typeof formSchema>;
@@ -119,6 +124,10 @@ type Destination =
       kind: 'new-discipline';
       categoryId: number;
       proposedDisciplineName: string;
+    }
+  | {
+      kind: 'general';
+      folder?: string;
     };
 
 /* -------------------------------------------------------------------------- */
@@ -256,6 +265,12 @@ export default function DragNDropForm(): JSX.Element {
     { enabled: typeof categoryId === 'number' && categoryId > 0 }
   );
   const disciplines = disciplinesQuery.data ?? [];
+
+  const generalFoldersQuery = trpc.storage.listGeneralFolders.useQuery(
+    undefined,
+    { enabled: destinationKind === 'general' },
+  );
+  const generalFolders = generalFoldersQuery.data ?? [];
 
   // -------------------------------
   // Mutations tRPC
@@ -413,6 +428,18 @@ export default function DragNDropForm(): JSX.Element {
   // Helpers — path R2
   // -------------------------------
   const buildR2Path = (destination: Destination, fileName: string): string => {
+    const dotIdx = fileName.lastIndexOf('.');
+    const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
+    const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
+    const safeFileName = `${slugify(baseName)}${ext.toLowerCase()}`;
+
+    if (destination.kind === 'general') {
+      const folderSlug = destination.folder ? slugify(destination.folder) : '';
+      return folderSlug
+        ? `${APP_ROOT}/pending/general/${folderSlug}/${safeFileName}`
+        : `${APP_ROOT}/pending/general/${safeFileName}`;
+    }
+
     const category = categories.find((c) => c.id === destination.categoryId);
     const categorySlug = slugify(category?.type ?? `cat-${destination.categoryId}`);
 
@@ -427,11 +454,6 @@ export default function DragNDropForm(): JSX.Element {
     } else {
       disciplineSlug = slugify(destination.proposedDisciplineName);
     }
-
-    const dotIdx = fileName.lastIndexOf('.');
-    const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
-    const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
-    const safeFileName = `${slugify(baseName)}${ext.toLowerCase()}`;
 
     return `${APP_ROOT}/pending/${categorySlug}/${disciplineSlug}/${safeFileName}`;
   };
@@ -676,18 +698,23 @@ export default function DragNDropForm(): JSX.Element {
       )
     );
 
-    const destination: Destination =
-      values.destinationKind === 'existing-discipline'
-        ? {
-            kind: 'existing-discipline',
-            categoryId: values.categoryId,
-            disciplineId: values.disciplineId,
-          }
-        : {
-            kind: 'new-discipline',
-            categoryId: values.categoryId,
-            proposedDisciplineName: values.proposedDisciplineName.trim(),
-          };
+    let destination: Destination;
+    if (values.destinationKind === 'existing-discipline') {
+      destination = {
+        kind: 'existing-discipline',
+        categoryId: values.categoryId,
+        disciplineId: values.disciplineId,
+      };
+    } else if (values.destinationKind === 'new-discipline') {
+      destination = {
+        kind: 'new-discipline',
+        categoryId: values.categoryId,
+        proposedDisciplineName: values.proposedDisciplineName.trim(),
+      };
+    } else {
+      const folder = values.generalFolder?.trim();
+      destination = { kind: 'general', folder: folder ? folder : undefined };
+    }
 
     const cloudinaryItems = toUpload.filter((it) => it.backend === 'cloudinary');
     const r2Items = toUpload.filter((it) => it.backend === 'r2');
@@ -780,7 +807,29 @@ export default function DragNDropForm(): JSX.Element {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-80">
       <input ref={fileInputRef} type="file" multiple hidden />
 
-      {/* Catégorie */}
+      {/* Destination : discipline ou « Général » */}
+      <div className="flex gap-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            checked={destinationKind !== 'general'}
+            onChange={() => setValue('destinationKind', 'existing-discipline')}
+          />
+          Vers une discipline
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            checked={destinationKind === 'general'}
+            onChange={() => setValue('destinationKind', 'general')}
+          />
+          Vers « Général »
+        </label>
+      </div>
+
+      {destinationKind !== 'general' && (
+        <>
+          {/* Catégorie */}
       <div>
         <label className="block font-semibold mb-1">Catégorie</label>
         <select
@@ -794,7 +843,7 @@ export default function DragNDropForm(): JSX.Element {
             </option>
           ))}
         </select>
-        {errors.categoryId && (
+        {'categoryId' in errors && errors.categoryId && (
           <p className="text-sm text-red-600 mt-1">
             {errors.categoryId.message}
           </p>
@@ -884,6 +933,29 @@ export default function DragNDropForm(): JSX.Element {
             </div>
           )}
         </>
+      )}
+        </>
+      )}
+
+      {destinationKind === 'general' && (
+        <div>
+          <label className="block font-semibold mb-1">Dossier (optionnel)</label>
+          <input
+            type="text"
+            list="akfc-general-folders"
+            {...register('generalFolder')}
+            className="border rounded p-2 w-full"
+            placeholder="Vide = racine de « Général »"
+          />
+          <datalist id="akfc-general-folders">
+            {generalFolders.map((folder) => (
+              <option key={folder} value={folder} />
+            ))}
+          </datalist>
+          <p className="text-xs text-gray-500 mt-1">
+            Choisis un dossier existant, tape un nouveau nom, ou laisse vide.
+          </p>
+        </div>
       )}
 
       {/* Dropzone */}
