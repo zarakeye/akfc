@@ -70,7 +70,7 @@ const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
   // Espace club partagé, sans discipline ni catégorie.
   z.object({
     kind: z.literal('general'),
-    folder: z.string().trim().min(1).max(120),
+    folder: z.string().trim().min(1).max(120).optional(),
   }),
 ]);
 

@@ -56,6 +56,10 @@ export async function resolvePendingUploadFolder(params: {
 
   /* ── Destination club générique (sans discipline ni catégorie) ── */
   if (destination.kind === "general") {
+    // Pas de sous-dossier → dépôt à la racine de `general/`.
+    if (!destination.folder) {
+      return `${appRoot}/pending/general`;
+    }
     const folderSlug = slug(destination.folder);
     if (!folderSlug) {
       throw new Error(

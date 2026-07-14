@@ -1,36 +1,20 @@
-[00:00:12.728] Server  LOG     [instrumentation] ensureRootFolders: all 3 root folders already present for appRoot="AKFC"
-[00:00:12.738] Server  LOG      ✓ Ready in 7.9s
-[00:00:17.244] Server  LOG      ○ Compiling /dashboard/library/add ...
-[00:00:24.681] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:00:27.674] Server  LOG      ○ Compiling /api/trpc/[trpc] ...
-[00:01:35.373] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:05:41.814] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:07:24.246] Server  LOG      ○ Compiling /dashboard/library ...
-[00:07:25.223] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
-[00:07:27.782] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:07:27.792] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:07:27.814] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
-[00:07:27.834] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
-[00:07:27.914] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
-[00:07:27.914] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
-[00:07:29.889] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:07:29.889] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:07:29.889] Server  LOG     [tree:truncated] "AKFC" "depth=" 3 "taolu?" true "tchoy?" true
-[00:07:33.205] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:07:33.205] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:07:33.205] Server  LOG     [tree:truncated] "AKFC" "depth=" 4 "taolu?" true "tchoy?" true
-[00:07:40.575] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:07:40.575] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:07:40.576] Server  LOG     [tree:truncated] "AKFC" "depth=" 5 "taolu?" true "tchoy?" true
-[00:07:42.709] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:07:42.709] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:07:42.709] Server  LOG     [tree:truncated] "AKFC" "depth=" 6 "taolu?" true "tchoy?" true
-[00:07:58.441] Server  LOG     [asset_id check] "fb393160c6a55d7d456d077462bae126" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/iScreen Shoter - Microsoft Edge - 250428231924"
-[00:16:07.636] Browser WARN    Image with src "http://localhost:3000/mobilePhone.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:16:07.636] Browser WARN    Image with src "http://localhost:3000/email.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
-[00:18:21.720] Server  LOG     [tree:built] "AKFC" "taolu?" true
-[00:18:21.721] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
-[00:18:21.721] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
-[00:18:21.721] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
-[00:18:22.278] Server  LOG     [asset_id check] "fb393160c6a55d7d456d077462bae126" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/iScreen Shoter - Microsoft Edge - 250428231924"
-[00:18:22.397] Server  LOG     [asset_id check] "fb393160c6a55d7d456d077462bae126" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/iScreen Shoter - Microsoft Edge - 250428231924"
+[00:00:12.990] Server  LOG     [instrumentation] ensureRootFolders: all 3 root folders already present for appRoot="AKFC"
+[00:00:12.998] Server  LOG      ✓ Ready in 9.3s
+[00:00:46.992] Server  LOG      ○ Compiling /dashboard/mes-photos ...
+[00:00:52.328] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:01:26.263] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:01:45.810] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:02:00.821] Browser WARN    Image with src "http://localhost:3000/mobilePhone.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:02:00.821] Browser WARN    Image with src "http://localhost:3000/email.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:04:22.278] Server  LOG     [tree:built] "AKFC" "taolu?" true
+[00:04:22.279] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
+[00:04:22.280] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
+[00:04:22.281] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
+[00:04:22.281] Server  LOG     [tree:truncated] "AKFC" "depth=" 2 "taolu?" false "tchoy?" false
+[00:04:22.281] Server  LOG     [tree:truncated] "AKFC" "depth=" 1 "taolu?" false "tchoy?" false
+[00:04:24.295] Server  LOG     [tree:built] "AKFC" "taolu?" true
+[00:04:24.296] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
+[00:04:24.296] Server  LOG     [tree:truncated] "AKFC" "depth=" 3 "taolu?" true "tchoy?" true
+[00:04:35.782] Server  LOG     [tree:built] "AKFC" "taolu?" true
+[00:04:35.782] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
+[00:04:35.782] Server  LOG     [tree:truncated] "AKFC" "depth=" 4 "taolu?" true "tchoy?" true
