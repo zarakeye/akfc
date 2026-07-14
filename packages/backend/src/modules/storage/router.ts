@@ -22,6 +22,7 @@ import {
 import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service";
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
+import { listGeneralFolders } from "@backend/modules/media/services/listGeneralFolders.service";
 
 /**
  * storageRouter — Phase 2 update
@@ -69,6 +70,7 @@ const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
   // Espace club partagé, sans discipline ni catégorie.
   z.object({
     kind: z.literal('general'),
+    folder: z.string().trim().min(1).max(120),
   }),
 ]);
 
@@ -123,6 +125,14 @@ export const storageRouter = router({
       total: counts.total,
       remaining,
     };
+  }),
+
+  /**
+   * Sous-dossiers existants sous `general/` (pending + published), pour peupler
+   * le select « dossier existant » de l'uploader général.
+   */
+  listGeneralFolders: protectedProcedure.query(async ({ ctx }) => {
+    return listGeneralFolders({ prisma: ctx.prisma, appRoot: ctx.appRoot });
   }),
 
   list: protectedProcedure

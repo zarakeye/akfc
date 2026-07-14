@@ -31,6 +31,8 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
   //             club petit, confiance).
   z.object({
     kind: z.literal("general"),
+    // Sous-dossier nommé sous `general/` (existant ou créé à la volée).
+    folder: z.string().trim().min(1).max(120),
   }),
   // `perso`   : espace personnel de l'admin. Aucune identité transportée ici —
   //             le dossier cible est dérivé côté serveur de `ctx.user.id`, si
