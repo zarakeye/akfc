@@ -56,7 +56,13 @@ export async function resolvePendingUploadFolder(params: {
 
   /* ── Destination club générique (sans discipline ni catégorie) ── */
   if (destination.kind === "general") {
-    return `${appRoot}/pending/general`;
+    const folderSlug = slug(destination.folder);
+    if (!folderSlug) {
+      throw new Error(
+        "General folder name must contain at least one slug-friendly character",
+      );
+    }
+    return `${appRoot}/pending/general/${folderSlug}`;
   }
 
   /* ── Destination personnelle de l'admin (dérivée de userId) ── */
