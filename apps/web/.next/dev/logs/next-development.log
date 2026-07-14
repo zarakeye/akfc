@@ -18,3 +18,5 @@
 [00:04:35.782] Server  LOG     [tree:built] "AKFC" "taolu?" true
 [00:04:35.782] Server  LOG     [tree:mapped] "AKFC" "taolu?" true
 [00:04:35.782] Server  LOG     [tree:truncated] "AKFC" "depth=" 4 "taolu?" true "tchoy?" true
+[00:08:02.570] Server  LOG      ✓ Compiled in 251ms
+[00:11:49.968] Server  LOG      ✓ Compiled in 272ms

@@ -1462,6 +1462,11 @@ const ACCEPTED_MIME_TYPES = {
         }).refine((v)=>/[a-zA-Z0-9]/.test(v), {
             message: 'Le nom doit contenir au moins une lettre ou un chiffre'
         })
+    }),
+    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+        destinationKind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('general'),
+        // Sous-dossier optionnel sous « Général » (vide = racine).
+        generalFolder: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().max(120).optional()
     })
 ]);
 /* -------------------------------------------------------------------------- */ /*                                  HELPERS                                   */ /* -------------------------------------------------------------------------- */ const EXT_TO_MIME = {
@@ -1566,6 +1571,10 @@ function DragNDropForm() {
         enabled: typeof categoryId === 'number' && categoryId > 0
     });
     const disciplines = disciplinesQuery.data ?? [];
+    const generalFoldersQuery = __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$core$2f$trpc$2f$trpcClient$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["trpc"].storage.listGeneralFolders.useQuery(undefined, {
+        enabled: destinationKind === 'general'
+    });
+    const generalFolders = generalFoldersQuery.data ?? [];
     // -------------------------------
     // Mutations tRPC
     // -------------------------------
@@ -1693,6 +1702,14 @@ function DragNDropForm() {
     // Helpers — path R2
     // -------------------------------
     const buildR2Path = (destination, fileName)=>{
+        const dotIdx = fileName.lastIndexOf('.');
+        const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
+        const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
+        const safeFileName = `${slugify(baseName)}${ext.toLowerCase()}`;
+        if (destination.kind === 'general') {
+            const folderSlug = destination.folder ? slugify(destination.folder) : '';
+            return folderSlug ? `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/pending/general/${folderSlug}/${safeFileName}` : `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/pending/general/${safeFileName}`;
+        }
         const category = categories.find((c)=>c.id === destination.categoryId);
         const categorySlug = slugify(category?.type ?? `cat-${destination.categoryId}`);
         let disciplineSlug;
@@ -1702,10 +1719,6 @@ function DragNDropForm() {
         } else {
             disciplineSlug = slugify(destination.proposedDisciplineName);
         }
-        const dotIdx = fileName.lastIndexOf('.');
-        const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
-        const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
-        const safeFileName = `${slugify(baseName)}${ext.toLowerCase()}`;
         return `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/pending/${categorySlug}/${disciplineSlug}/${safeFileName}`;
     };
     async function uploadCloudinaryBatch(cloudinaryItems, destination) {
@@ -1895,15 +1908,26 @@ function DragNDropForm() {
                     status: 'uploading',
                     errorMessage: undefined
                 } : it));
-        const destination = values.destinationKind === 'existing-discipline' ? {
-            kind: 'existing-discipline',
-            categoryId: values.categoryId,
-            disciplineId: values.disciplineId
-        } : {
-            kind: 'new-discipline',
-            categoryId: values.categoryId,
-            proposedDisciplineName: values.proposedDisciplineName.trim()
-        };
+        let destination;
+        if (values.destinationKind === 'existing-discipline') {
+            destination = {
+                kind: 'existing-discipline',
+                categoryId: values.categoryId,
+                disciplineId: values.disciplineId
+            };
+        } else if (values.destinationKind === 'new-discipline') {
+            destination = {
+                kind: 'new-discipline',
+                categoryId: values.categoryId,
+                proposedDisciplineName: values.proposedDisciplineName.trim()
+            };
+        } else {
+            const folder = values.generalFolder?.trim();
+            destination = {
+                kind: 'general',
+                folder: folder ? folder : undefined
+            };
+        }
         const cloudinaryItems = toUpload.filter((it)=>it.backend === 'cloudinary');
         const r2Items = toUpload.filter((it)=>it.backend === 'r2');
         try {
@@ -1992,223 +2016,323 @@ function DragNDropForm() {
                 hidden: true
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 781,
+                lineNumber: 808,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex gap-4",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                        className: "block font-semibold mb-1",
-                        children: "Catégorie"
-                    }, void 0, false, {
-                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 785,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
-                        ...register('categoryId', {
-                            valueAsNumber: true
-                        }),
-                        className: "border rounded p-2 w-full",
+                        className: "flex items-center gap-2",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                value: "",
-                                children: "— Choisir une catégorie —"
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                type: "radio",
+                                checked: destinationKind !== 'general',
+                                onChange: ()=>setValue('destinationKind', 'existing-discipline')
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 790,
+                                lineNumber: 813,
                                 columnNumber: 11
                             }, this),
-                            categories.map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                    value: cat.id,
-                                    children: cat.type
-                                }, cat.id, false, {
-                                    fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                    lineNumber: 792,
-                                    columnNumber: 13
-                                }, this))
+                            "Vers une discipline"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 786,
+                        lineNumber: 812,
                         columnNumber: 9
                     }, this),
-                    errors.categoryId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-sm text-red-600 mt-1",
-                        children: errors.categoryId.message
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                        className: "flex items-center gap-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                type: "radio",
+                                checked: destinationKind === 'general',
+                                onChange: ()=>setValue('destinationKind', 'general')
+                            }, void 0, false, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 821,
+                                columnNumber: 11
+                            }, this),
+                            "Vers « Général »"
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                        lineNumber: 820,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                lineNumber: 811,
+                columnNumber: 7
+            }, this),
+            destinationKind !== 'general' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                className: "block font-semibold mb-1",
+                                children: "Catégorie"
+                            }, void 0, false, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 834,
+                                columnNumber: 9
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
+                                ...register('categoryId', {
+                                    valueAsNumber: true
+                                }),
+                                className: "border rounded p-2 w-full",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                        value: "",
+                                        children: "— Choisir une catégorie —"
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 839,
+                                        columnNumber: 11
+                                    }, this),
+                                    categories.map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                            value: cat.id,
+                                            children: cat.type
+                                        }, cat.id, false, {
+                                            fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                            lineNumber: 841,
+                                            columnNumber: 13
+                                        }, this))
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 835,
+                                columnNumber: 9
+                            }, this),
+                            'categoryId' in errors && errors.categoryId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-sm text-red-600 mt-1",
+                                children: errors.categoryId.message
+                            }, void 0, false, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 847,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                        lineNumber: 833,
+                        columnNumber: 7
+                    }, this),
+                    typeof categoryId === 'number' && categoryId > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex gap-4",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                        className: "flex items-center gap-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                                type: "radio",
+                                                value: "existing-discipline",
+                                                ...register('destinationKind')
+                                            }, void 0, false, {
+                                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                                lineNumber: 858,
+                                                columnNumber: 15
+                                            }, this),
+                                            "Discipline existante"
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 857,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                        className: "flex items-center gap-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                                type: "radio",
+                                                value: "new-discipline",
+                                                ...register('destinationKind')
+                                            }, void 0, false, {
+                                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                                lineNumber: 866,
+                                                columnNumber: 15
+                                            }, this),
+                                            "Nouvelle (à valider)"
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 865,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 856,
+                                columnNumber: 11
+                            }, this),
+                            destinationKind === 'existing-discipline' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                        className: "block font-semibold mb-1",
+                                        children: "Discipline"
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 877,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$hook$2d$form$40$7$2e$76$2e$1_react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$hook$2d$form$2f$dist$2f$index$2e$esm$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Controller"], {
+                                        name: "disciplineId",
+                                        control: control,
+                                        render: ({ field })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
+                                                value: field.value ?? '',
+                                                onChange: (e)=>field.onChange(e.target.value === '' ? undefined : Number(e.target.value)),
+                                                onBlur: field.onBlur,
+                                                className: "border rounded p-2 w-full",
+                                                disabled: disciplinesQuery.isLoading,
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                                        value: "",
+                                                        children: "— Choisir une discipline —"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                                        lineNumber: 893,
+                                                        columnNumber: 21
+                                                    }, void 0),
+                                                    disciplines.map((d)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                                            value: d.id,
+                                                            children: d.name
+                                                        }, d.id, false, {
+                                                            fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                                            lineNumber: 895,
+                                                            columnNumber: 23
+                                                        }, void 0))
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                                lineNumber: 882,
+                                                columnNumber: 19
+                                            }, void 0)
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 878,
+                                        columnNumber: 15
+                                    }, this),
+                                    disciplinesQuery.isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-sm text-gray-500 mt-1",
+                                        children: "Chargement…"
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 903,
+                                        columnNumber: 17
+                                    }, this),
+                                    'disciplineId' in errors && errors.disciplineId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-sm text-red-600 mt-1",
+                                        children: errors.disciplineId.message
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 906,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 876,
+                                columnNumber: 13
+                            }, this),
+                            destinationKind === 'new-discipline' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                        className: "block font-semibold mb-1",
+                                        children: "Nom de la nouvelle discipline"
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 915,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                        type: "text",
+                                        ...register('proposedDisciplineName'),
+                                        className: "border rounded p-2 w-full",
+                                        placeholder: "Ex : Stage été 2026 — Kali"
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 918,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-xs text-gray-500 mt-1",
+                                        children: "Cette discipline sera proposée à un admin pour validation."
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 924,
+                                        columnNumber: 15
+                                    }, this),
+                                    'proposedDisciplineName' in errors && errors.proposedDisciplineName && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-sm text-red-600 mt-1",
+                                        children: errors.proposedDisciplineName.message
+                                    }, void 0, false, {
+                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                        lineNumber: 929,
+                                        columnNumber: 19
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 914,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true)
+                ]
+            }, void 0, true),
+            destinationKind === 'general' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                        className: "block font-semibold mb-1",
+                        children: "Dossier (optionnel)"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 798,
+                        lineNumber: 942,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                        type: "text",
+                        list: "akfc-general-folders",
+                        ...register('generalFolder'),
+                        className: "border rounded p-2 w-full",
+                        placeholder: "Vide = racine de « Général »"
+                    }, void 0, false, {
+                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                        lineNumber: 943,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("datalist", {
+                        id: "akfc-general-folders",
+                        children: generalFolders.map((folder)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                value: folder
+                            }, folder, false, {
+                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                                lineNumber: 952,
+                                columnNumber: 15
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                        lineNumber: 950,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "text-xs text-gray-500 mt-1",
+                        children: "Choisis un dossier existant, tape un nouveau nom, ou laisse vide."
+                    }, void 0, false, {
+                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
+                        lineNumber: 955,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 784,
-                columnNumber: 7
+                lineNumber: 941,
+                columnNumber: 9
             }, this),
-            typeof categoryId === 'number' && categoryId > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex gap-4",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                className: "flex items-center gap-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                        type: "radio",
-                                        value: "existing-discipline",
-                                        ...register('destinationKind')
-                                    }, void 0, false, {
-                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 809,
-                                        columnNumber: 15
-                                    }, this),
-                                    "Discipline existante"
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 808,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                className: "flex items-center gap-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                        type: "radio",
-                                        value: "new-discipline",
-                                        ...register('destinationKind')
-                                    }, void 0, false, {
-                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 817,
-                                        columnNumber: 15
-                                    }, this),
-                                    "Nouvelle (à valider)"
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 816,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 807,
-                        columnNumber: 11
-                    }, this),
-                    destinationKind === 'existing-discipline' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                className: "block font-semibold mb-1",
-                                children: "Discipline"
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 828,
-                                columnNumber: 15
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$hook$2d$form$40$7$2e$76$2e$1_react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$hook$2d$form$2f$dist$2f$index$2e$esm$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Controller"], {
-                                name: "disciplineId",
-                                control: control,
-                                render: ({ field })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
-                                        value: field.value ?? '',
-                                        onChange: (e)=>field.onChange(e.target.value === '' ? undefined : Number(e.target.value)),
-                                        onBlur: field.onBlur,
-                                        className: "border rounded p-2 w-full",
-                                        disabled: disciplinesQuery.isLoading,
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                                value: "",
-                                                children: "— Choisir une discipline —"
-                                            }, void 0, false, {
-                                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                                lineNumber: 844,
-                                                columnNumber: 21
-                                            }, void 0),
-                                            disciplines.map((d)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                                    value: d.id,
-                                                    children: d.name
-                                                }, d.id, false, {
-                                                    fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                                    lineNumber: 846,
-                                                    columnNumber: 23
-                                                }, void 0))
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 833,
-                                        columnNumber: 19
-                                    }, void 0)
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 829,
-                                columnNumber: 15
-                            }, this),
-                            disciplinesQuery.isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-sm text-gray-500 mt-1",
-                                children: "Chargement…"
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 854,
-                                columnNumber: 17
-                            }, this),
-                            'disciplineId' in errors && errors.disciplineId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-sm text-red-600 mt-1",
-                                children: errors.disciplineId.message
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 857,
-                                columnNumber: 17
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 827,
-                        columnNumber: 13
-                    }, this),
-                    destinationKind === 'new-discipline' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                className: "block font-semibold mb-1",
-                                children: "Nom de la nouvelle discipline"
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 866,
-                                columnNumber: 15
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                type: "text",
-                                ...register('proposedDisciplineName'),
-                                className: "border rounded p-2 w-full",
-                                placeholder: "Ex : Stage été 2026 — Kali"
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 869,
-                                columnNumber: 15
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-xs text-gray-500 mt-1",
-                                children: "Cette discipline sera proposée à un admin pour validation."
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 875,
-                                columnNumber: 15
-                            }, this),
-                            'proposedDisciplineName' in errors && errors.proposedDisciplineName && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-sm text-red-600 mt-1",
-                                children: errors.proposedDisciplineName.message
-                            }, void 0, false, {
-                                fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 880,
-                                columnNumber: 19
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 865,
-                        columnNumber: 13
-                    }, this)
-                ]
-            }, void 0, true),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 ...getRootProps(),
                 className: `border-2 border-dashed p-6 rounded-md text-center mt-4 ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`,
@@ -2217,7 +2341,7 @@ function DragNDropForm() {
                         ...getInputProps()
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 896,
+                        lineNumber: 968,
                         columnNumber: 9
                     }, this),
                     isDragActive ? 'Dépose ici' : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2230,7 +2354,7 @@ function DragNDropForm() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 901,
+                                lineNumber: 973,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2244,7 +2368,7 @@ function DragNDropForm() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 905,
+                                lineNumber: 977,
                                 columnNumber: 13
                             }, this)
                         ]
@@ -2252,7 +2376,7 @@ function DragNDropForm() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 890,
+                lineNumber: 962,
                 columnNumber: 7
             }, this),
             filesError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2260,7 +2384,7 @@ function DragNDropForm() {
                 children: filesError
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 913,
+                lineNumber: 985,
                 columnNumber: 22
             }, this),
             items.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2282,7 +2406,7 @@ function DragNDropForm() {
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 927,
+                                lineNumber: 999,
                                 columnNumber: 19
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "w-full h-full flex flex-col items-center justify-center p-2 text-center",
@@ -2292,7 +2416,7 @@ function DragNDropForm() {
                                         children: iconForMime(it.file.type)
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 939,
+                                        lineNumber: 1011,
                                         columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2301,13 +2425,13 @@ function DragNDropForm() {
                                         children: it.file.name
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 942,
+                                        lineNumber: 1014,
                                         columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 938,
+                                lineNumber: 1010,
                                 columnNumber: 19
                             }, this),
                             it.status !== 'pending' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2320,7 +2444,7 @@ function DragNDropForm() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 952,
+                                lineNumber: 1024,
                                 columnNumber: 19
                             }, this),
                             it.status === 'error' && it.errorMessage && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2328,7 +2452,7 @@ function DragNDropForm() {
                                 children: it.errorMessage
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 969,
+                                lineNumber: 1041,
                                 columnNumber: 19
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2344,7 +2468,7 @@ function DragNDropForm() {
                                         }
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 975,
+                                        lineNumber: 1047,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2360,7 +2484,7 @@ function DragNDropForm() {
                                                 children: "🗑"
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                                lineNumber: 985,
+                                                lineNumber: 1057,
                                                 columnNumber: 21
                                             }, this),
                                             it.file.type.startsWith('image/') && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2373,31 +2497,31 @@ function DragNDropForm() {
                                                 children: "Reset"
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                                lineNumber: 996,
+                                                lineNumber: 1068,
                                                 columnNumber: 23
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                        lineNumber: 984,
+                                        lineNumber: 1056,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                lineNumber: 974,
+                                lineNumber: 1046,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, it.id, true, {
                         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                        lineNumber: 921,
+                        lineNumber: 993,
                         columnNumber: 15
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 917,
+                lineNumber: 989,
                 columnNumber: 9
             }, this),
             selectedIds.size > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2411,7 +2535,7 @@ function DragNDropForm() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1016,
+                lineNumber: 1088,
                 columnNumber: 9
             }, this),
             itemToCrop && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$gallery$2d$crop$2f$components$2f$Cropper$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2420,7 +2544,7 @@ function DragNDropForm() {
                 onCrop: handleCrop
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1026,
+                lineNumber: 1098,
                 columnNumber: 9
             }, this),
             overwritePrompt && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2433,7 +2557,7 @@ function DragNDropForm() {
                             children: "Fichiers déjà présents"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                            lineNumber: 1037,
+                            lineNumber: 1109,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2444,7 +2568,7 @@ function DragNDropForm() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                            lineNumber: 1038,
+                            lineNumber: 1110,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -2455,12 +2579,12 @@ function DragNDropForm() {
                                     children: n
                                 }, n, false, {
                                     fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                    lineNumber: 1044,
+                                    lineNumber: 1116,
                                     columnNumber: 17
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                            lineNumber: 1042,
+                            lineNumber: 1114,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2476,7 +2600,7 @@ function DragNDropForm() {
                                     children: "Annuler (ignorer)"
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                    lineNumber: 1050,
+                                    lineNumber: 1122,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2489,24 +2613,24 @@ function DragNDropForm() {
                                     children: "Écraser"
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                                    lineNumber: 1060,
+                                    lineNumber: 1132,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                            lineNumber: 1049,
+                            lineNumber: 1121,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                    lineNumber: 1036,
+                    lineNumber: 1108,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1035,
+                lineNumber: 1107,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2516,7 +2640,7 @@ function DragNDropForm() {
                 children: isSubmitting ? 'Envoi…' : 'Envoyer'
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1075,
+                lineNumber: 1147,
                 columnNumber: 7
             }, this),
             submitSuccess !== null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2528,7 +2652,7 @@ function DragNDropForm() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1084,
+                lineNumber: 1156,
                 columnNumber: 9
             }, this),
             skippedCount !== null && skippedCount > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2540,7 +2664,7 @@ function DragNDropForm() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1089,
+                lineNumber: 1161,
                 columnNumber: 9
             }, this),
             submitError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2551,17 +2675,17 @@ function DragNDropForm() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-                lineNumber: 1093,
+                lineNumber: 1165,
                 columnNumber: 23
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/admin/library/forms/DragNDropForm.tsx",
-        lineNumber: 780,
+        lineNumber: 807,
         columnNumber: 5
     }, this);
 }
-_s(DragNDropForm, "3QTYzZDiLnUFAEC4SMMI5l7UIWQ=", false, function() {
+_s(DragNDropForm, "GPV1hEr041HGw+J8HlvOqC9jPfQ=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$stores$2f$useSessionStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSessionStore"],
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$state$2f$useFinderStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useFinderStore"],
