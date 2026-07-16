@@ -32,6 +32,8 @@ import Breadcrumb from "@features/finder-core/components/Breadcrumb";
 import PreviewPanel from "@features/finder-core/components/PreviewPanel";
 import FinderTree from "@features/finder-core/components/FinderTree";
 import GridItem from "@features/finder-core/components/GridItem";
+import StatusFilterBar from "@features/finder-core/components/StatusFilterBar";
+import { statusOf } from "@features/finder-core/utils/statusFolders";
 import ContextMenu, {
   type ContextMenuItem,
 } from "@features/finder-core/components/ContextMenu";
@@ -144,12 +146,26 @@ export default function Finder({
 
   const { deleteNodes, deleteLabel } = useNodeActions();
 
+  const statusFilter = useFinderStore((s) => s.statusFilter);
+
   // Filtre optionnel : on ne retire QUE des fichiers (les dossiers restent
   // pour la navigation). Absent ⇒ aucun retrait. cf. prop `fileFilter`.
-  const visibleFiles = useMemo(
-    () => (fileFilter ? files.filter(fileFilter) : files),
-    [files, fileFilter],
-  );
+  //
+  // Le filtre de STATUT s'applique par-dessus, et seulement ici. Il n'est
+  // jamais transmis à `FinderTree` — contrairement à `fileFilter`, qui pilote
+  // `pruneTreeFiles` et vit dans les deps du useEffect de construction de
+  // l'arbre. L'arbre reste donc stable quand on change de lentille : sinon on
+  // ne saurait plus si un dossier a disparu parce qu'il est filtré ou parce
+  // qu'il n'existe plus.
+  //
+  // Les dossiers ne sont jamais retirés non plus : un dossier n'a pas de
+  // statut (il contient des contenus des deux), et le vider de ses fichiers
+  // filtrés ne le rend pas moins navigable.
+  const visibleFiles = useMemo(() => {
+    const kept = fileFilter ? files.filter(fileFilter) : files;
+    if (statusFilter === 'all') return kept;
+    return kept.filter((file) => statusOf(file) === statusFilter);
+  }, [files, fileFilter, statusFilter]);
 
   const sortedAllItems = useMemo(
     () => sortNodes([...folders, ...visibleFiles], sort),
@@ -477,6 +493,12 @@ export default function Finder({
         {currentPath !== `${APP_ROOT}/bin` &&
           !multiSelectActive &&
           !fileFilter && <FinderSearchBar />}
+
+        {/* La corbeille garde son propre système : ses items n'ont pas de
+            statut de publication, la lentille n'y a rien à filtrer. */}
+        {currentPath !== `${APP_ROOT}/bin` &&
+          !multiSelectActive &&
+          !fileFilter && <StatusFilterBar />}
 
         {currentPath !== `${APP_ROOT}/bin` && <FinderViewModeSwitcher />}
 

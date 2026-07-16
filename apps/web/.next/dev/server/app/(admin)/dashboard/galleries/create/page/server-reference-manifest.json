@@ -12,10 +12,9 @@
       "layer": {
         "app/(admin)/dashboard/galleries/create/page": "action-browser"
       },
-      "filename": "apps/web/src/features/admin/galleries/actions/createGalleryForm.action.ts",
-      "exportedName": "createGalleryFormAction"
+      "exportedName": "createGalleryFormAction",
+      "filename": "apps/web/src/features/admin/galleries/actions/createGalleryForm.action.ts"
     }
   },
-  "edge": {},
-  "encryptionKey": "F+Tvu/YfgFNZlNb1TRAY2BC1njXppbIXVa9VYD0IbLc="
+  "edge": {}
 }
