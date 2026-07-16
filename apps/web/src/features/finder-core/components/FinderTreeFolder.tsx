@@ -285,7 +285,11 @@ export default function FinderTreeFolder({
           sources: items.map((it) => ({
             kind:
               it.type === "folder" ? ("folder" as const) : ("file" as const),
-            fullPath: it.path,
+            // Le LOCALISATEUR, pas le chemin logique : `trash.trashToBin`
+            // met en quarantaine un binaire, pas une vue. Un dossier n'en
+            // porte pas (il vit dans 1..N strates) — c'est le backend qui
+            // résout, cf. `resolvePhysicalLocations`.
+            fullPath: it.storagePath ?? it.path,
           })),
         });
         reloadFolderContent();

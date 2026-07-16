@@ -336,19 +336,36 @@ export const storageRouter = router({
           planMoveOperations({ adapter, appRoot: ctx.appRoot, intent }),
         ),
       );
-      const operations = plans.flat();
+      // ─── Une opération sur place n'est pas une opération ───────────
+      //
+      // Rien en aval ne filtre `{ source: X, target: X }` : `adapter.move`
+      // partirait renommer un objet sur lui-même, le provider refuserait, et
+      // l'exception ferait échouer TOUT le geste — y compris sa partie utile.
+      //
+      // Le cas devient courant avec le pliage : publier un dossier logique
+      // émet une intention par strate occupée, et celle qui vit DÉJÀ dans la
+      // strate cible se résout en X → X. Elle n'a simplement rien à faire.
+      //
+      // Le filtre est posé AVANT les gardes, pour qu'elles ne raisonnent que
+      // sur des opérations réelles — une opération sur place ne dépublie
+      // rien, elle n'a donc pas à peser dans leur verdict. Et il est posé
+      // avant `return { operations }` : l'appelant reçoit ce qui a bougé, pas
+      // ce qu'on a envisagé.
+      const effectiveOperations = plans
+        .flat()
+        .filter((operation) => operation.source.path !== operation.target.path);
 
       await assertOperationsDontUnpublishReferencedAssets(
         ctx.prisma,
-        operations,
+        effectiveOperations,
         ctx.appRoot,
       );
 
       // Exécution séquentielle, comme avant : Cloudinary n'aime pas les
       // opérations concurrentes sur des préfixes voisins.
-      await executeMoveOperations(adapter, operations);
+      await executeMoveOperations(adapter, effectiveOperations);
 
-      return { operations };
+      return { operations: effectiveOperations };
     }),
 
   /* ====================================================================== */
