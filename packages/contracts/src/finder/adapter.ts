@@ -169,6 +169,32 @@ export interface MoveItem {
   id: string;
   path: string;
   type: 'file' | 'folder';
+
+  /**
+   * Où vit réellement le binaire, quand ça diffère de `path`.
+   *
+   * `path` est le chemin LOGIQUE — celui par lequel l'admin navigue. Depuis
+   * le chantier « arbre sans strate de statut », il ne porte plus le segment
+   * `pending`/`published`, alors que le binaire, lui, vit encore dessous chez
+   * le provider. Un move a besoin du second : on ne renomme pas un chemin
+   * logique.
+   *
+   * Les DOSSIERS n'en portent pas, et c'est normal : un dossier logique
+   * recouvre plusieurs dossiers physiques (un par strate), il n'a pas
+   * d'emplacement unique à désigner. C'est `toPhysicalMoveIntents`, côté
+   * backend, qui résout ses strates contre le registre `Folder`.
+   *
+   * ⚠️ Ce champ doit rester en phase avec son jumeau `DragItem.storagePath`
+   * (`finder-core/dnd/payload.ts`). Les deux types sont structurellement
+   * identiques et déclarés séparément — l'un est le contrat de l'adapter,
+   * l'autre le payload éphémère du DnD, et `dragItemFromNode` produit le
+   * second là où le premier est attendu. L'assignation étant structurelle,
+   * un champ ajouté d'un seul côté ne se voit qu'à la lecture.
+   *
+   * Transitoire : à l'étape 5 du chantier, `storagePath === path` pour tout
+   * le monde et le champ se supprime.
+   */
+  storagePath?: string;
 }
 
 /**

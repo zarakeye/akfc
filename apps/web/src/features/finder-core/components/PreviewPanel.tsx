@@ -14,6 +14,7 @@ import { formatBytes } from '@features/finder-core/utils/formatBytes';
 import { formatDate } from '@features/finder-core/utils/formatDate';
 import PreviewModal from '@features/finder-core/components/PreviewModal';
 import DescriptionField from '@features/finder-core/components/DescriptionField';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 /* -------------------------------------------------------------------------- */
 /*                              PREVIEW KIND                                  */
@@ -85,7 +86,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
   const file = ids.length === 1 ? files.find((f) => f.id === ids[0]) ?? null : null;
 
   const { metadata, loading: metadataLoading, error: metadataError } =
-    useNodeMetadata(adapter, file?.path ?? null);
+    useNodeMetadata(adapter, file ? storagePathOf(file) : null);
 
   /* ------------------------------ EMPTY STATE ----------------------------- */
 

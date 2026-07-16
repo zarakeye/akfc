@@ -1,8 +1,4 @@
 {
-  "/(admin)/dashboard/library/add/page": "app/(admin)/dashboard/library/add/page.js",
   "/(admin)/dashboard/library/page": "app/(admin)/dashboard/library/page.js",
-  "/(admin)/dashboard/mes-photos/page": "app/(admin)/dashboard/mes-photos/page.js",
-  "/(admin)/dashboard/page": "app/(admin)/dashboard/page.js",
-  "/(public)/profil/page": "app/(public)/profil/page.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

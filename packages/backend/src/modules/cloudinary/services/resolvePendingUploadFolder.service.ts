@@ -69,6 +69,24 @@ export async function resolvePendingUploadFolder(params: {
     return `${appRoot}/pending/general/${folderSlug}`;
   }
 
+  /* ── Destination événement ── */
+  if (destination.kind === "event") {
+    const event = await prisma.event.findUnique({
+      where: { id: destination.eventId },
+      select: { id: true, slug: true },
+    });
+
+    if (!event) {
+      throw new Error(`Event not found (id=${destination.eventId})`);
+    }
+
+    // `Event.slug` est nullable (le temps du backfill) → fallback sur l'id,
+    // qui reste stable et unique.
+    const eventSlug = event.slug ? slug(event.slug) : `event-${event.id}`;
+
+    return `${appRoot}/pending/events/${eventSlug || `event-${event.id}`}`;
+  }
+
   /* ── Destination personnelle de l'admin (dérivée de userId) ── */
   if (destination.kind === "perso") {
     const base = await resolvePersoBaseFolder({ prisma, appRoot, userId });

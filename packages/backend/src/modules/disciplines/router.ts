@@ -417,7 +417,10 @@ export const disciplineRouter = router({
         await Promise.all([
           ctx.prisma.course.count({ where: { disciplineId: input.id } }),
           ctx.prisma.stage.count({ where: { disciplineId: input.id } }),
-          ctx.prisma.event.count({ where: { disciplineId: input.id } }),
+          // Via la jointure : compte aussi les événements multi-disciplines.
+          ctx.prisma.eventDiscipline.count({
+            where: { disciplineId: input.id },
+          }),
           ctx.prisma.mediaAsset.count({ where: { disciplineId: input.id } }),
         ]);
 

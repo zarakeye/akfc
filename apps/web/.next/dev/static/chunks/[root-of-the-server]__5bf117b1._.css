@@ -243,10 +243,12 @@
     --color-red-600: #e40014;
     --color-red-700: #bf000f;
     --color-red-950: #460809;
+    --color-amber-100: #fef3c6;
     --color-amber-200: #fee685;
     --color-amber-400: #fcbb00;
     --color-amber-500: #f99c00;
     --color-amber-700: #b75000;
+    --color-amber-800: #953d00;
     --color-yellow-50: #fefce8;
     --color-yellow-200: #fff085;
     --color-yellow-400: #fac800;
@@ -357,10 +359,12 @@
       --color-red-600: lab(48.4493% 77.4328 61.5452);
       --color-red-700: lab(40.4273% 67.2623 53.7441);
       --color-red-950: lab(13.003% 29.04 16.7519);
+      --color-amber-100: lab(95.916% -1.21653 23.111);
       --color-amber-200: lab(91.7203% -.505269 49.9084);
       --color-amber-400: lab(80.1641% 16.6016 99.2089);
       --color-amber-500: lab(72.7183% 31.8672 97.9407);
       --color-amber-700: lab(47.2709% 42.9082 69.2966);
+      --color-amber-800: lab(37.8822% 37.1699 52.2718);
       --color-yellow-50: lab(98.6846% -1.79055 9.7766);
       --color-yellow-200: lab(94.3433% -5.00429 52.9663);
       --color-yellow-400: lab(83.2664% 8.65132 106.895);
@@ -1784,6 +1788,10 @@
     top: calc(var(--spacing) * 6);
   }
 
+  .top-7 {
+    top: calc(var(--spacing) * 7);
+  }
+
   .top-10 {
     top: calc(var(--spacing) * 10);
   }
@@ -3078,6 +3086,10 @@
     max-height: calc(var(--spacing) * 32);
   }
 
+  .max-h-40 {
+    max-height: calc(var(--spacing) * 40);
+  }
+
   .max-h-48 {
     max-height: calc(var(--spacing) * 48);
   }
@@ -4013,6 +4025,10 @@
     border-color: var(--tt-badge-border-color);
   }
 
+  .border-amber-200 {
+    border-color: var(--color-amber-200);
+  }
+
   .border-amber-400\/30 {
     border-color: #fcbb004d;
   }
@@ -4250,6 +4266,10 @@
     background-color: var(--accent);
   }
 
+  .bg-amber-100 {
+    background-color: var(--color-amber-100);
+  }
+
   .bg-amber-400 {
     background-color: var(--color-amber-400);
   }
@@ -4271,6 +4291,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-amber-500\/10 {
       background-color: color-mix(in oklab, var(--color-amber-500) 10%, transparent);
+    }
+  }
+
+  .bg-amber-500\/90 {
+    background-color: #f99c00e6;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-amber-500\/90 {
+      background-color: color-mix(in oklab, var(--color-amber-500) 90%, transparent);
     }
   }
 
@@ -5357,6 +5387,10 @@
 
   .text-amber-700 {
     color: var(--color-amber-700);
+  }
+
+  .text-amber-800 {
+    color: var(--color-amber-800);
   }
 
   .text-background {

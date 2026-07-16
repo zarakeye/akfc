@@ -2885,10 +2885,7 @@ async function getCloudinaryFolderTree(params) {
         //     `trashMap` de toute façon (pour les displayName)
         // ───────────────────────────────────────────────────────────────────────
         const finderTree = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$cloudinary$2f$tree$2f$finder$2e$tree$2e$v1$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__buildCloudinaryTree__as__buildCloudinaryTreeV1$3e$__["buildCloudinaryTreeV1"])(resources, registered.map((f)=>f.fullPath), normalizedPath);
-        console.log("[tree:built]", normalizedPath, "taolu?", JSON.stringify(finderTree).includes("taolu-multi-styles"));
-        const mapped = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$mappers$2f$cloudinary$2f$tree$2e$v1$2e$mapper$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mapCloudinaryFolderToClient"])(finderTree);
-        console.log("[tree:mapped]", normalizedPath, "taolu?", JSON.stringify(mapped).includes("taolu-multi-styles"));
-        return mapped;
+        return (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$mappers$2f$cloudinary$2f$tree$2e$v1$2e$mapper$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mapCloudinaryFolderToClient"])(finderTree);
     })();
     inFlight.set(key, promise);
     // Cleanup quelle que soit l'issue (résolution ou erreur). On utilise
@@ -3055,6 +3052,24 @@ async function resolvePendingUploadFolder(params) {
             throw new Error("General folder name must contain at least one slug-friendly character");
         }
         return `${appRoot}/pending/general/${folderSlug}`;
+    }
+    /* ── Destination événement ── */ if (destination.kind === "event") {
+        const event = await prisma.event.findUnique({
+            where: {
+                id: destination.eventId
+            },
+            select: {
+                id: true,
+                slug: true
+            }
+        });
+        if (!event) {
+            throw new Error(`Event not found (id=${destination.eventId})`);
+        }
+        // `Event.slug` est nullable (le temps du backfill) → fallback sur l'id,
+        // qui reste stable et unique.
+        const eventSlug = event.slug ? slug(event.slug) : `event-${event.id}`;
+        return `${appRoot}/pending/events/${eventSlug || `event-${event.id}`}`;
     }
     /* ── Destination personnelle de l'admin (dérivée de userId) ── */ if (destination.kind === "perso") {
         const base = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$resolvePersoBaseFolder$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["resolvePersoBaseFolder"])({
@@ -3399,7 +3414,43 @@ async function registerUploadedAssets(params) {
         appRoot,
         userId
     });
+    // Les disciplines transmises doivent exister (sinon erreur FK opaque).
+    if (destination.kind === "event" && destination.disciplineIds.length > 0) {
+        const uniqueIds = [
+            ...new Set(destination.disciplineIds)
+        ];
+        const found = await prisma.discipline.findMany({
+            where: {
+                id: {
+                    in: uniqueIds
+                }
+            },
+            select: {
+                id: true
+            }
+        });
+        if (found.length !== uniqueIds.length) {
+            throw new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$trpc$2b$server$40$11$2e$17$2e$0_typescript$40$5$2e$9$2e$3$2f$node_modules$2f40$trpc$2f$server$2f$dist$2f$tracked$2d$DWInO6EQ$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["TRPCError"]({
+                code: "BAD_REQUEST",
+                message: "Discipline(s) introuvable(s) pour cet événement."
+            });
+        }
+    }
     const created = await prisma.$transaction(async (tx)=>{
+        // Les disciplines choisies à l'upload ENRICHISSENT l'événement : elles
+        // décrivent ce qui a été présenté lors de l'événement, pas chaque photo.
+        // `skipDuplicates` → l'enrichissement est idempotent.
+        if (destination.kind === "event" && destination.disciplineIds.length > 0) {
+            await tx.eventDiscipline.createMany({
+                data: [
+                    ...new Set(destination.disciplineIds)
+                ].map((disciplineId)=>({
+                        eventId: destination.eventId,
+                        disciplineId
+                    })),
+                skipDuplicates: true
+            });
+        }
         const out = [];
         for (const asset of assets){
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$cloudinary$2f$utils$2f$path$2d$validation$2e$utils$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["assertSafeCloudinaryPath"])(asset.folder, appRoot);
@@ -3463,6 +3514,7 @@ async function registerUploadedAssets(params) {
                     categoryId: destination.kind === "existing-discipline" || destination.kind === "new-discipline" ? destination.categoryId : null,
                     disciplineId: destination.kind === "existing-discipline" ? destination.disciplineId : null,
                     proposedDisciplineName: destination.kind === "new-discipline" ? destination.proposedDisciplineName : null,
+                    eventId: destination.kind === "event" ? destination.eventId : null,
                     eventDate: eventDate ?? null,
                     uploaderUserId: userId,
                     fullPath
@@ -3540,6 +3592,15 @@ const uploadDestinationSchema = __TURBOPACK__imported__module__$5b$project$5d2f$
     //             bien qu'un admin ne peut uploader QUE dans son propre dossier.
     __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
         kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("perso")
+    }),
+    // `event` : contenus d'un événement (forum des associations, démonstration).
+    // L'événement est créé par les admins ; le membre le choisit ici. Les
+    // `disciplineIds` ENRICHISSENT les disciplines de l'événement (elles
+    // décrivent l'ÉVÉNEMENT, pas chaque photo).
+    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+        kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal("event"),
+        eventId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive(),
+        disciplineIds: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive()).default([])
     })
 ]);
 const uploadAssetRequestSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
@@ -6909,7 +6970,8 @@ const disciplineRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$pac
                     disciplineId: input.id
                 }
             }),
-            ctx.prisma.event.count({
+            // Via la jointure : compte aussi les événements multi-disciplines.
+            ctx.prisma.eventDiscipline.count({
                 where: {
                     disciplineId: input.id
                 }
@@ -7864,17 +7926,21 @@ const createInput = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules
     slug: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$slug$2f$slug$2e$schema$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["slugSchema"],
     content: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$contracts$2f$src$2f$page$2f$blocks$2e$v1$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pageContentSchemaV1"],
     audience: audienceEnum,
-    // Trois champs de rattachement, tous optionnels en Zod —
-    // au moins un requis via `.refine` en bas.
-    disciplineId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive().nullable().optional(),
-    externalDisciplineLabel: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().min(1).max(120).nullable().optional(),
+    // Rattachements, tous optionnels en Zod — au moins un requis via
+    // `.refine` en bas.
+    //
+    // Un événement présente 0..N disciplines ENSEIGNÉES (forum des
+    // associations, démonstration multi-disciplines) et 0..N disciplines non
+    // enseignées (« Calligraphie chinoise »).
+    disciplineIds: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive()).optional(),
+    externalDisciplineLabels: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().min(1).max(120)).optional(),
     originId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive().nullable().optional(),
     organizerId: userIdSchema,
     publicationDate: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].coerce.date().nullable().optional()
-}).refine((data)=>data.disciplineId !== null && data.disciplineId !== undefined || data.externalDisciplineLabel !== null && data.externalDisciplineLabel !== undefined || data.originId !== null && data.originId !== undefined, {
-    message: "At least one of disciplineId, externalDisciplineLabel, or originId must be provided.",
+}).refine((data)=>(data.disciplineIds ?? []).length > 0 || (data.externalDisciplineLabels ?? []).length > 0 || data.originId !== null && data.originId !== undefined, {
+    message: "At least one of disciplineIds, externalDisciplineLabels, or originId must be provided.",
     path: [
-        "disciplineId"
+        "disciplineIds"
     ]
 });
 const updateInput = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
@@ -7885,26 +7951,33 @@ const updateInput = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules
     audience: audienceEnum.optional(),
     // Validation « au moins un des trois » faite en router après merge
     // avec l'état actuel en DB (Zod ne connaît pas l'état actuel).
-    disciplineId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive().nullable().optional(),
-    externalDisciplineLabel: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().min(1).max(120).nullable().optional(),
+    disciplineIds: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive()).optional(),
+    externalDisciplineLabels: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().min(1).max(120)).optional(),
     originId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive().nullable().optional(),
     organizerId: userIdSchema.optional(),
     publicationDate: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].coerce.date().nullable().optional()
 });
-/* -------------------------------------------------------------------------- */ /*                             INTERNAL HELPERS                               */ /* -------------------------------------------------------------------------- */ async function assertDisciplineExists(prisma, disciplineId) {
-    if (disciplineId === null || disciplineId === undefined) return;
-    const discipline = await prisma.discipline.findUnique({
+/* -------------------------------------------------------------------------- */ /*                             INTERNAL HELPERS                               */ /* -------------------------------------------------------------------------- */ /** Vérifie que TOUTES les disciplines existent (0..N). */ async function assertDisciplinesExist(prisma, disciplineIds) {
+    if (disciplineIds.length === 0) return;
+    const unique = [
+        ...new Set(disciplineIds)
+    ];
+    const found = await prisma.discipline.findMany({
         where: {
-            id: disciplineId
+            id: {
+                in: unique
+            }
         },
         select: {
             id: true
         }
     });
-    if (!discipline) {
+    const foundIds = new Set(found.map((d)=>d.id));
+    const missing = unique.filter((id)=>!foundIds.has(id));
+    if (missing.length > 0) {
         throw new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$trpc$2b$server$40$11$2e$17$2e$0_typescript$40$5$2e$9$2e$3$2f$node_modules$2f40$trpc$2f$server$2f$dist$2f$tracked$2d$DWInO6EQ$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["TRPCError"]({
             code: "BAD_REQUEST",
-            message: `Discipline not found (id=${disciplineId}).`
+            message: `Discipline(s) not found: ${missing.join(", ")}.`
         });
     }
 }
@@ -7973,15 +8046,59 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                 {
                     createdAt: "desc"
                 }
+            ],
+            include: {
+                // Disciplines enseignées (0..N) — alimente la colonne
+                // « rattachement » de la table admin.
+                disciplineLinks: {
+                    select: {
+                        discipline: {
+                            select: {
+                                name: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }),
+    /**
+   * Liste légère des événements pour le picker de l'uploader.
+   * `protectedProcedure` SANS `manage_events` : tout membre authentifié peut
+   * déposer des photos sur un événement, même s'il ne peut pas l'éditer.
+   * Brouillons inclus — un événement peut être préparé avant sa publication.
+   */ listForUpload: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["protectedProcedure"].query(async ({ ctx })=>{
+        return ctx.prisma.event.findMany({
+            select: {
+                id: true,
+                label: true,
+                slug: true
+            },
+            orderBy: [
+                {
+                    publicationDate: {
+                        sort: "desc",
+                        nulls: "first"
+                    }
+                },
+                {
+                    createdAt: "desc"
+                }
             ]
         });
     }),
     getAllByDiscipline: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["publicProcedure"].input(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
         disciplineId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive()
     })).query(async ({ ctx, input })=>{
+        // Via la jointure : capte AUSSI les événements multi-disciplines,
+        // que l'ancienne colonne `disciplineId` (1 seule) ratait.
         return ctx.prisma.event.findMany({
             where: {
-                disciplineId: input.disciplineId,
+                disciplineLinks: {
+                    some: {
+                        disciplineId: input.disciplineId
+                    }
+                },
                 publicationDate: {
                     not: null,
                     lte: new Date()
@@ -8024,6 +8141,17 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                     orderBy: {
                         date: "asc"
                     }
+                },
+                // Disciplines enseignées (0..N) — alimente le formulaire admin.
+                disciplineLinks: {
+                    select: {
+                        disciplineId: true,
+                        discipline: {
+                            select: {
+                                name: true
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -8056,6 +8184,18 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                     orderBy: {
                         date: "asc"
                     }
+                },
+                // Disciplines enseignées (0..N) — pour l'affichage public.
+                disciplineLinks: {
+                    select: {
+                        disciplineId: true,
+                        discipline: {
+                            select: {
+                                name: true,
+                                slug: true
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -8069,7 +8209,13 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
     }),
     create: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["protectedProcedure"].use((0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["requirePermission"])("manage_events")).input(createInput).mutation(async ({ ctx, input })=>{
         // ─── Validations pré-transaction ───────────────────────────────────
-        await assertDisciplineExists(ctx.prisma, input.disciplineId);
+        const disciplineIds = [
+            ...new Set(input.disciplineIds ?? [])
+        ];
+        const externalLabels = [
+            ...new Set(input.externalDisciplineLabels ?? [])
+        ];
+        await assertDisciplinesExist(ctx.prisma, disciplineIds);
         await assertOriginExists(ctx.prisma, input.originId);
         await assertUserExists(ctx.prisma, input.organizerId);
         // ─── Transaction : create event + sync references ──────────────────
@@ -8082,8 +8228,13 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                         slug: input.slug,
                         content: input.content,
                         audience: input.audience,
-                        disciplineId: input.disciplineId ?? null,
-                        externalDisciplineLabel: input.externalDisciplineLabel ?? null,
+                        // Nouvelle vérité : la jointure + le tableau de labels.
+                        disciplineLinks: {
+                            create: disciplineIds.map((disciplineId)=>({
+                                    disciplineId
+                                }))
+                        },
+                        externalDisciplineLabels: externalLabels,
                         originId: input.originId ?? null,
                         organizerId: input.organizerId,
                         publicationDate: input.publicationDate ?? null
@@ -8122,9 +8273,13 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                 id
             },
             select: {
-                disciplineId: true,
-                externalDisciplineLabel: true,
-                originId: true
+                externalDisciplineLabels: true,
+                originId: true,
+                disciplineLinks: {
+                    select: {
+                        disciplineId: true
+                    }
+                }
             }
         });
         if (!existing) {
@@ -8133,20 +8288,26 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                 message: "Event not found."
             });
         }
-        // Validation « au moins un des trois » après merge.
-        const mergedDisciplineId = rest.disciplineId !== undefined ? rest.disciplineId : existing.disciplineId;
-        const mergedExternalLabel = rest.externalDisciplineLabel !== undefined ? rest.externalDisciplineLabel : existing.externalDisciplineLabel;
+        const disciplinesChanged = rest.disciplineIds !== undefined;
+        const labelsChanged = rest.externalDisciplineLabels !== undefined;
+        const mergedDisciplineIds = disciplinesChanged ? [
+            ...new Set(rest.disciplineIds ?? [])
+        ] : existing.disciplineLinks.map((l)=>l.disciplineId);
+        const mergedExternalLabels = labelsChanged ? [
+            ...new Set(rest.externalDisciplineLabels ?? [])
+        ] : existing.externalDisciplineLabels;
         const mergedOriginId = rest.originId !== undefined ? rest.originId : existing.originId;
-        const hasAtLeastOne = mergedDisciplineId !== null || mergedExternalLabel !== null && mergedExternalLabel.length > 0 || mergedOriginId !== null;
+        // Validation « au moins un des trois » après merge.
+        const hasAtLeastOne = mergedDisciplineIds.length > 0 || mergedExternalLabels.length > 0 || mergedOriginId !== null;
         if (!hasAtLeastOne) {
             throw new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$trpc$2b$server$40$11$2e$17$2e$0_typescript$40$5$2e$9$2e$3$2f$node_modules$2f40$trpc$2f$server$2f$dist$2f$tracked$2d$DWInO6EQ$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["TRPCError"]({
                 code: "BAD_REQUEST",
-                message: "An event must keep at least one of disciplineId, externalDisciplineLabel, or originId set."
+                message: "An event must keep at least one of disciplineIds, externalDisciplineLabels, or originId set."
             });
         }
-        // Validations existence si champs modifiés et non-null
-        if (rest.disciplineId !== undefined && rest.disciplineId !== null) {
-            await assertDisciplineExists(ctx.prisma, rest.disciplineId);
+        // Validations existence si champs modifiés
+        if (disciplinesChanged) {
+            await assertDisciplinesExist(ctx.prisma, mergedDisciplineIds);
         }
         if (rest.originId !== undefined && rest.originId !== null) {
             await assertOriginExists(ctx.prisma, rest.originId);
@@ -8162,8 +8323,8 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                     label: rest.label,
                     slug: rest.slug,
                     audience: rest.audience,
-                    disciplineId: rest.disciplineId,
-                    externalDisciplineLabel: rest.externalDisciplineLabel,
+                    // La jointure est synchronisée juste après.
+                    externalDisciplineLabels: labelsChanged ? mergedExternalLabels : undefined,
                     originId: rest.originId,
                     organizerId: rest.organizerId,
                     publicationDate: rest.publicationDate,
@@ -8195,6 +8356,23 @@ const eventRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
                     }
                 }
                 throw err;
+            }
+            // Synchro de la jointure (source de vérité des disciplines).
+            if (disciplinesChanged) {
+                await tx.eventDiscipline.deleteMany({
+                    where: {
+                        eventId: id
+                    }
+                });
+                if (mergedDisciplineIds.length > 0) {
+                    await tx.eventDiscipline.createMany({
+                        data: mergedDisciplineIds.map((disciplineId)=>({
+                                eventId: id,
+                                disciplineId
+                            })),
+                        skipDuplicates: true
+                    });
+                }
             }
             if (content !== undefined) {
                 await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$syncPageMediaReferences$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["syncPageMediaReferences"])(tx, {
@@ -9220,7 +9398,6 @@ function createCloudinaryStorageAdapter(deps) {
                 normalizedPath: options.path
             });
             const root = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$storage$2f$adapters$2f$cloudinary$2f$mappers$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["mapClientFolderTreeToStorageNode"])(tree, depth);
-            console.log("[tree:truncated]", options.path, "depth=", depth, "taolu?", JSON.stringify(root).includes("taolu-multi-styles"), "tchoy?", JSON.stringify(root).includes("tchoy-lee-fut"));
             // Si le path résolvait un fichier (cas marginal), on enveloppe dans un
             // folder vide pour respecter le contrat (`root: StorageFolderNode`).
             // Le caller pourra détecter ça via root.children === [] et root.path === options.path.
@@ -9797,6 +9974,8 @@ function createR2StorageAdapter(deps) {
                     proposedDisciplineName = input.destination.proposedDisciplineName;
                     break;
                 case "general":
+                    break;
+                case "event":
                     break;
                 case "perso":
                     // R2 perso toujours reporté (photos Cloudinary d'abord).
@@ -10464,7 +10643,54 @@ class VirtualStorage {
  * Algo récursif : pour chaque sous-folder, on cherche les occurrences
  * dans les deux côtés et on les merge récursivement. Les files sont
  * concaténés (chaque file appartient à un seul backend).
+ *
+ * ─── Frontière de profondeur : ne JAMAIS matérialiser un `undefined` ─────
+ *
+ * Le contrat `StorageFolderNode` distingue deux états très différents :
+ *
+ *   children === undefined  → « non chargé » (profondeur max de getTree)
+ *   children === []         → « vide pour de vrai »
+ *
+ * `mapClientFolderTreeToStorageNode` respecte scrupuleusement cette
+ * distinction : à depth 0 il renvoie `{ children: undefined, hasChildren }`
+ * pour que la TreeView sache qu'il reste quelque chose à charger.
+ *
+ * La version précédente de ce merge écrasait le premier état par le second :
+ *
+ *   children: [...mergedFolders, ...aFiles, ...bFiles]   // → [] si rien chargé
+ *   hasChildren: mergedFolders.length + ... > 0          // → false
+ *
+ * Résultat : un dossier présent dans les DEUX backends et situé à la
+ * frontière de profondeur ressortait `{ children: [], hasChildren: false }`.
+ * La TreeView le traitait comme définitivement vide → impossible à déplier,
+ * son contenu invisible. Le hint `hasChildren` des deux côtés était perdu.
+ *
+ * Règles rétablies ici :
+ *   - `children` n'est matérialisé que si AU MOINS un côté l'a chargé.
+ *     Si aucun des deux n'a chargé, on propage `undefined`.
+ *   - `hasChildren` est l'OU des deux hints, jamais recalculé à la baisse.
+ *     Un hint à `true` d'un côté survit même si l'autre côté est vide.
+ *
+ * ⚠️ Ce point devient critique avec le chantier « arbre sans strate de
+ * statut » : le pliage fait converger `pending/<x>` et `published/<x>` sur
+ * un même path logique, donc « présent des deux côtés » y est le cas NORMAL
+ * et non plus l'exception.
  */ function mergeFolderTrees(a, b) {
+    // Hint de présence d'enfants : c'est un OU, jamais un recalcul. Un côté
+    // qui sait qu'il a des enfants (sans les avoir chargés) fait autorité.
+    const hasChildrenHint = (a.hasChildren ?? false) || (b.hasChildren ?? false);
+    const aLoaded = a.children !== undefined;
+    const bLoaded = b.children !== undefined;
+    // Aucun des deux n'a chargé ses enfants → on est à la frontière de
+    // profondeur. On propage `undefined` (et surtout PAS `[]`), avec le hint.
+    if (!aLoaded && !bLoaded) {
+        return {
+            type: "folder",
+            name: a.name,
+            path: a.path,
+            hasChildren: hasChildrenHint
+        };
+    }
     const childrenA = a.children ?? [];
     const childrenB = b.children ?? [];
     // Map des sous-folders pour merge par nom
@@ -10490,16 +10716,19 @@ class VirtualStorage {
     for (const fb of bFolders.values()){
         mergedFolders.push(fb);
     }
+    const children = [
+        ...mergedFolders,
+        ...aFiles,
+        ...bFiles
+    ];
     return {
         type: "folder",
         name: a.name,
         path: a.path,
-        children: [
-            ...mergedFolders,
-            ...aFiles,
-            ...bFiles
-        ],
-        hasChildren: mergedFolders.length + aFiles.length + bFiles.length > 0
+        children,
+        // Le hint des deux côtés prime ; `children.length > 0` n'est qu'un
+        // repli quand ni a ni b ne portaient de hint explicite.
+        hasChildren: hasChildrenHint || children.length > 0
     };
 }
 /**
@@ -10885,6 +11114,12 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2
     __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
         kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('general'),
         folder: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().trim().min(1).max(120).optional()
+    }),
+    // Contenus d'un événement (parité avec `general`).
+    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
+        kind: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].literal('event'),
+        eventId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive(),
+        disciplineIds: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].array(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].number().int().positive()).default([])
     })
 ]);
 const registerR2UploadInputSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({
@@ -10903,7 +11138,7 @@ const storageRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packag
    * comme le reste du router — la cloche est de plus gatée côté client
    * sur la présence d'au moins une permission.
    */ getAttentionCounts: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["protectedProcedure"].query(async ({ ctx })=>{
-        const [pending, bin] = await Promise.all([
+        const [pending, bin, generalPending, persoCounts] = await Promise.all([
             ctx.prisma.mediaAsset.count({
                 where: {
                     status: "pending"
@@ -10913,11 +11148,27 @@ const storageRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packag
                 where: {
                     status: "IN_BIN"
                 }
+            }),
+            ctx.prisma.mediaAsset.count({
+                where: {
+                    status: "pending",
+                    appRoot: ctx.appRoot,
+                    fullPath: {
+                        contains: "/general/"
+                    }
+                }
+            }),
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$countPersoImages$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["countPersoImages"])({
+                prisma: ctx.prisma,
+                appRoot: ctx.appRoot,
+                userId: ctx.user.id
             })
         ]);
         return {
             pending,
-            bin
+            bin,
+            generalPending,
+            persoPending: persoCounts.pending
         };
     }),
     /**
@@ -11277,6 +11528,8 @@ const mediaRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages
             const inputPath = input.paths.find((p)=>matchesPath(asset.fullPath, p));
             if (!inputPath) continue;
             byPath[inputPath] = {
+                // Source de vérité visée du statut (cf. MediaMeta.status).
+                status: asset.status,
                 createdAt: asset.uploadedAt.toISOString(),
                 uploadedBy: composeDisplayName(asset.uploader),
                 uploaderId: asset.uploader.id,

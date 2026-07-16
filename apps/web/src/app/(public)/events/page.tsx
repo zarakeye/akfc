@@ -17,7 +17,8 @@ export default async function PublicEventsListPage(): Promise<JSX.Element> {
     where: { publicationDate: { not: null, lte: new Date() } },
     orderBy: { publicationDate: "desc" },
     include: {
-      discipline: { select: { name: true } },
+      // Disciplines enseignées (0..N) présentées lors de l'événement.
+      disciplineLinks: { select: { discipline: { select: { name: true } } } },
       origin: { select: { name: true, flag: true } },
       sessions: {
         where: { date: { gte: new Date() } },
@@ -43,11 +44,16 @@ export default async function PublicEventsListPage(): Promise<JSX.Element> {
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {events.map((event) => {
+            // Toutes les disciplines + tous les labels externes ; à défaut,
+            // l'origine culturelle.
+            const rattachements = [
+              ...event.disciplineLinks.map((l) => l.discipline.name),
+              ...event.externalDisciplineLabels,
+            ];
             const rattachement =
-              event.discipline?.name ??
-              event.externalDisciplineLabel ??
-              event.origin?.name ??
-              null;
+              rattachements.length > 0
+                ? rattachements.join(', ')
+                : (event.origin?.name ?? null);
             const nextSession = event.sessions[0];
             return (
               <li key={event.id}>

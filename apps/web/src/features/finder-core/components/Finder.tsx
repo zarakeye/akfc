@@ -692,6 +692,7 @@ export default function Finder({
                         <th className="px-2 py-2 text-left w-8"></th>
                         <th className="px-3 py-2 text-left">Nom</th>
                         <th className="px-3 py-2 text-left">Type</th>
+                        <th className="px-3 py-2 text-left">Statut</th>
                         <th className="px-3 py-2 text-right">Taille</th>
                       </tr>
                     </thead>
@@ -705,7 +706,7 @@ export default function Finder({
                             prevGroup.parentKey !== group.parentKey);
                         const showChildHeader =
                           !!group.label && group.key !== group.parentKey;
-                        const span = multiSelectActive ? 5 : 4;
+                        const span = multiSelectActive ? 6 : 5;
 
                         return (
                           <React.Fragment key={group.key}>

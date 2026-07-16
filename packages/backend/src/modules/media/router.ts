@@ -36,6 +36,10 @@ import { router, protectedProcedure } from '@backend/trpc';
 import type { ResolvedMedia } from '@contracts/page';
 import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
 import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
+import {
+  physicalCandidates,
+  toLogicalPath,
+} from '@backend/modules/storage/logicalPath';
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -122,6 +126,7 @@ export const mediaRouter = router({
       const byPath: Record<
         string,
         {
+          status: string;
           createdAt: string;
           uploadedBy: string;
           uploaderId: string;
@@ -142,6 +147,8 @@ export const mediaRouter = router({
         if (!inputPath) continue;
 
         byPath[inputPath] = {
+          // Source de vérité visée du statut (cf. MediaMeta.status).
+          status: asset.status,
           createdAt: asset.uploadedAt.toISOString(),
           uploadedBy: composeDisplayName(asset.uploader),
           uploaderId: asset.uploader.id,
@@ -280,6 +287,15 @@ export const mediaRouter = router({
         appRoot: z.string().min(1),
         prefix: z.string().min(1),
         query: z.string().min(1).max(200),
+        /**
+         * `prefix` est un chemin LOGIQUE (cf. le flag `logical` du router
+         * storage) : la recherche s'élargit alors à ses emplacements
+         * physiques, replie les chemins trouvés, et n'expose plus les
+         * strates `pending`/`published` comme des dossiers.
+         *
+         * Baissé (le défaut), rien ne change.
+         */
+        logical: z.boolean().optional(),
         caseSensitive: z.boolean().default(false),
         wholeWord: z.boolean().default(false),
         useRegex: z.boolean().default(false),
@@ -305,14 +321,30 @@ export const mediaRouter = router({
         return { results: [], truncated: false };
       }
 
+      // ─── Pliage de la strate de statut ────────────────────────────
+      //
+      // Un prefix logique recouvre plusieurs emplacements physiques :
+      // `AKFC/cours` vit sous `pending`, sous `published`, et (après
+      // l'étape 4 du chantier) à plat. On interroge les trois.
+      //
+      // `toLogical` replie ensuite chaque fullPath trouvé. Tout ce qui suit
+      // — dérivation des dossiers, calcul des parents, noms — travaille donc
+      // en chemins LOGIQUES sans le savoir, et n'a pas eu à changer.
+      const prefixes = input.logical
+        ? physicalCandidates(input.prefix, input.appRoot)
+        : [input.prefix];
+
+      const toLogical = (fullPath: string): string =>
+        input.logical ? toLogicalPath(fullPath, input.appRoot) : fullPath;
+
       // 2. Lookup DB — match par fullPath
       const candidates = await ctx.prisma.mediaAsset.findMany({
         where: {
           appRoot: input.appRoot,
-          OR: [
-            { fullPath: input.prefix },
-            { fullPath: { startsWith: `${input.prefix}/` } },
-          ],
+          OR: prefixes.flatMap((prefix) => [
+            { fullPath: prefix },
+            { fullPath: { startsWith: `${prefix}/` } },
+          ]),
         },
         include: {
           uploader: {
@@ -341,9 +373,14 @@ export const mediaRouter = router({
       const folderPaths = new Set<string>();
       for (const asset of candidates) {
         if (!asset.fullPath) continue;
-        const relative = asset.fullPath.startsWith(`${input.prefix}/`)
-          ? asset.fullPath.slice(input.prefix.length + 1)
-          : asset.fullPath === input.prefix
+        // Replié AVANT la dérivation : `folderPaths` étant un Set, le dossier
+        // logique `AKFC/cours` dérivé depuis un asset `pending` et depuis un
+        // asset `published` se dédoublonne tout seul. La fusion des strates
+        // n'a pas besoin d'être écrite — elle tombe.
+        const fullPath = toLogical(asset.fullPath);
+        const relative = fullPath.startsWith(`${input.prefix}/`)
+          ? fullPath.slice(input.prefix.length + 1)
+          : fullPath === input.prefix
             ? ''
             : null;
         if (relative === null) continue;
@@ -368,7 +405,14 @@ export const mediaRouter = router({
       }
 
       // 3c. STATUS FOLDERS — exposés depuis la racine
-      const STATUS_FOLDERS = ['pending', 'published', 'bin'];
+      //
+      // En vue pliée, `pending` et `published` ne sont plus des lieux : les
+      // faire remonter comme résultats de recherche donnerait à l'admin un
+      // dossier sur lequel cliquer et qui n'existe nulle part. `bin`, lui,
+      // reste un vrai dossier et reste cherchable.
+      const STATUS_FOLDERS = input.logical
+        ? ['bin']
+        : ['pending', 'published', 'bin'];
       const statusFolders: Array<{ path: string; name: string }> = [];
       if (input.prefix === input.appRoot) {
         for (const folder of STATUS_FOLDERS) {
@@ -395,6 +439,11 @@ export const mediaRouter = router({
         kind: 'folder' as const,
         id: `folder:${f.path}`,
         path: f.path,
+        // Pas de `storagePath` sur un dossier : un dossier logique recouvre
+        // plusieurs dossiers physiques, il n'a pas d'emplacement unique à
+        // désigner. Les écritures qui en ont besoin le résolvent côté
+        // backend (cf. `resolvePhysicalLocations`).
+        storagePath: null,
         parentPath: parentOf(f.path, input.appRoot),
         name: f.name,
         mimeType: null,
@@ -410,7 +459,11 @@ export const mediaRouter = router({
       }));
 
       const fileResults = limitedFiles.map((asset) => {
-        const path = asset.fullPath!;
+        // `id` reste le cuid `MediaAsset.id` : c'est une identité d'unicité
+        // parfaitement valable, et le contrat finder l'autorise
+        // explicitement. Le LOCALISATEUR, lui, voyage à part.
+        const storagePath = asset.fullPath!;
+        const path = toLogical(storagePath);
         const lastSlash = path.lastIndexOf('/');
         const parentPath = lastSlash > 0 ? path.slice(0, lastSlash) : input.appRoot;
         const name = lastSlash > 0 ? path.slice(lastSlash + 1) : path;
@@ -419,6 +472,7 @@ export const mediaRouter = router({
           kind: 'file' as const,
           id: asset.id,
           path,
+          storagePath,
           parentPath,
           name,
           mimeType: asset.mimeType,

@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { trpc } from '@trpc/trpcClient';
 import { APP_ROOT } from '@config/app';
 import type { FinderNode } from '@contracts/finder';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 /**
  * ✏️ DescriptionField — champ description éditable d'un fichier sélectionné.
@@ -117,7 +118,7 @@ export default function DescriptionField({ file }: Props): JSX.Element {
     try {
       await updateMutation.mutateAsync({
         appRoot: APP_ROOT,
-        path: file.path,
+        path: storagePathOf(file),
         description: toSave,
       });
       setSavedValue(toSave);

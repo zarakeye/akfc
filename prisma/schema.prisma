@@ -386,13 +386,15 @@ model Discipline {
   stages Stage[]
 
   /// Événements rattachés à cette discipline.
-  events Event[]
 
   /// Assets média (photos, vidéos d'illustration) rattachés à cette discipline.
   mediaAssets MediaAsset[]
 
   /// Galeries rattachées à cette discipline.
   galleries   Gallery[]
+
+  /// Événements où cette discipline est présentée (0..N).
+  eventLinks EventDiscipline[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
@@ -651,14 +653,12 @@ model Event {
   /// `ALL_AGES` pour les événements tout public).
   audience Audience
 
-  /// Discipline rattachée. **Nullable** : un événement culturel large
-  /// peut ne pas être rattaché à une discipline enseignée.
-  disciplineId Int?
 
-  /// Nom libre d'une discipline non enseignée (« Calligraphie chinoise »).
-  /// Sert quand l'événement porte sur un domaine que le club n'enseigne
-  /// pas — typiquement intervenant extérieur.
-  externalDisciplineLabel String?
+
+  /// Noms libres des disciplines NON enseignées présentées lors de
+  /// l'événement (0..N) — ex. « Calligraphie chinoise ». Remplace
+  /// `externalDisciplineLabel` (singulier).
+  externalDisciplineLabels String[] @default([])
 
   /// Origine culturelle rattachée. Nullable. Permet de regrouper les
   /// événements par culture quand pertinent.
@@ -675,7 +675,6 @@ model Event {
   updatedAt DateTime @updatedAt
 
   /// Discipline rattachée (peut être null).
-  discipline Discipline? @relation(fields: [disciplineId], references: [id])
 
   /// Origine rattachée (peut être null).
   origin Origin? @relation(fields: [originId], references: [id])
@@ -692,7 +691,14 @@ model Event {
   /// Assets média (photos, vidéos d'illustration) rattachés à cet événement.
   galleries   Gallery[]
 
-  @@index([disciplineId])
+  /// Disciplines ENSEIGNÉES présentées lors de l'événement (0..N).
+  disciplineLinks EventDiscipline[]
+
+  /// Photos/vidéos déposées POUR cet événement. Distinct des `galleries`,
+  /// qui sont une curation montée par les admins : ici c'est le contenu brut
+  /// rattaché à l'événement.
+  mediaAssets MediaAsset[]
+
   @@index([originId])
   @@index([organizerId])
   @@index([publicationDate])
@@ -785,6 +791,10 @@ model MediaAsset {
   proposedDisciplineName String?
   eventDate              DateTime?
 
+  /// Événement auquel ce média est rattaché (upload « vers events »).
+  /// Nullable : la grande majorité des assets n'appartient à aucun événement.
+  eventId                Int?
+
   // --- Provenance
   uploaderUserId         String
   uploadedAt             DateTime @default(now())
@@ -794,6 +804,7 @@ model MediaAsset {
 
   category   Category?    @relation(fields: [categoryId], references: [id])
   discipline Discipline? @relation(fields: [disciplineId], references: [id])
+  event      Event?      @relation(fields: [eventId], references: [id])
   uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
 
   // --- Références entrantes depuis le builder de pages
@@ -811,6 +822,7 @@ model MediaAsset {
   @@index([status])
   @@index([categoryId])
   @@index([disciplineId])
+  @@index([eventId])
   @@index([uploaderUserId])
   @@index([uploadedAt])
   @@index([appRoot, fullPath])  // ← bonus Phase 2 : optimise searchRecursive
@@ -1176,4 +1188,21 @@ model BreakingNews {
   updatedAt DateTime @updatedAt
 
   @@index([publicationDate])
+}
+
+/// Jointure explicite Event <-> Discipline : un événement présente 0..N
+/// disciplines ENSEIGNÉES (forum des associations, démonstration
+/// multi-disciplines), une discipline apparaît dans 0..N événements.
+///
+/// Explicite (et non M2M implicite) pour maîtriser la forme SQL de la table
+/// et pouvoir y porter des métadonnées plus tard si le besoin apparaît.
+model EventDiscipline {
+  eventId      Int
+  disciplineId Int
+
+  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, disciplineId])
+  @@index([disciplineId])
 }

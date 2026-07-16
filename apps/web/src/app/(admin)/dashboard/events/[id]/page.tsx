@@ -52,7 +52,7 @@ export default async function EventPresentationPage({
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
-      discipline: { select: { name: true } },
+      disciplineLinks: { select: { discipline: { select: { name: true } } } },
       origin: { select: { name: true, flag: true } },
       organizer: {
         select: { firstName: true, lastName: true, pseudo: true, email: true },
@@ -63,9 +63,15 @@ export default async function EventPresentationPage({
   if (!event) notFound();
 
   const content = parsePageContentV1(event.content);
+  // Toutes les disciplines + tous les labels externes ; à défaut, l'origine.
+  const rattachements = [
+    ...event.disciplineLinks.map((l) => l.discipline.name),
+    ...event.externalDisciplineLabels,
+  ];
   const rattachement =
-    event.discipline?.name ??
-    event.externalDisciplineLabel ??
+    rattachements.length > 0
+      ? rattachements.join(', ')
+      :
     event.origin?.name ??
     "—";
 

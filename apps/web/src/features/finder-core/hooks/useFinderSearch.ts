@@ -101,6 +101,10 @@ export function useFinderSearch(): void {
             type: 'file' as const,
             size: r.bytes ?? undefined,
             meta: {
+              // Un résultat de recherche porte un cuid dans `id` : sans ce
+              // champ, les actions lancées depuis la recherche n'auraient
+              // aucun chemin à envoyer au backend.
+              storagePath: r.storagePath,
               format: r.format ?? undefined,
               kind: deriveKind(r.mimeType ?? ''),
               createdAt: r.createdAt ?? undefined,

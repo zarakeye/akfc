@@ -5775,12 +5775,13 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/lucide-react@0.553.0_react@19.2.0/node_modules/lucide-react/dist/esm/icons/check.js [app-client] (ecmascript) <export default as Check>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useLongPress$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/hooks/useLongPress.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/utils/statusFolders.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useNodeActions$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/hooks/useNodeActions.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$ContextMenu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/components/ContextMenu.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/utils/statusFolders.ts [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
+;
 ;
 ;
 ;
@@ -5872,6 +5873,10 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
     const isFolder = node.type === 'folder';
     const kind = node.meta?.kind;
     const url = node.meta?.url;
+    // Statut depuis la métadonnée (cf. MediaMeta.status) ; fallback sur le
+    // chemin pour les fichiers sans row MediaAsset. Seul `pending` est badgé :
+    // l'absence de badge signifie « publié ».
+    const isPending = !isFolder && (node.meta?.status ?? (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["statusFromPath"])(node.path)) === 'pending';
     // L'extension affichée comme badge et utilisée pour les heuristiques
     // (détection audio…) peut venir de deux endroits :
     //   - `node.meta.format` : présent quand le backend a stocké le format
@@ -5960,7 +5965,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                         onError: ()=>setImgFailed(true)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 291,
+                        lineNumber: 298,
                         columnNumber: 9
                     }, this) : hasVideoThumb ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                         children: [
@@ -5971,7 +5976,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                                 onError: ()=>setImgFailed(true)
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                                lineNumber: 302,
+                                lineNumber: 309,
                                 columnNumber: 11
                             }, this),
                             isHovering && url && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("video", {
@@ -5984,7 +5989,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                                 "aria-hidden": true
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                                lineNumber: 314,
+                                lineNumber: 321,
                                 columnNumber: 13
                             }, this)
                         ]
@@ -5993,7 +5998,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                         isAudio: isAudio
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 326,
+                        lineNumber: 333,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6001,7 +6006,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                         children: node.name
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 332,
+                        lineNumber: 339,
                         columnNumber: 7
                     }, this),
                     !isFolder && extension && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6009,7 +6014,15 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                         children: extension
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 352,
+                        lineNumber: 359,
+                        columnNumber: 9
+                    }, this),
+                    isPending && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$clsx$40$2$2e$1$2e$1$2f$node_modules$2f$clsx$2f$dist$2f$clsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"])('absolute right-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold', extension && !isFolder ? 'top-7' : 'top-1.5', hasVisualThumb ? 'bg-amber-500/90 text-white shadow-sm backdrop-blur-sm' : 'bg-amber-100 text-amber-800 border border-amber-200'),
+                        children: "En attente"
+                    }, void 0, false, {
+                        fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
+                        lineNumber: 375,
                         columnNumber: 9
                     }, this),
                     multiSelectActive && !isStatus && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6024,12 +6037,12 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                             className: "block"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                            lineNumber: 370,
+                            lineNumber: 394,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 369,
+                        lineNumber: 393,
                         columnNumber: 9
                     }, this),
                     pickMode && !isFolder && isInCart && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6039,18 +6052,18 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                             "aria-label": "Dans la sélection"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                            lineNumber: 388,
+                            lineNumber: 412,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                        lineNumber: 387,
+                        lineNumber: 411,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                lineNumber: 239,
+                lineNumber: 246,
                 columnNumber: 7
             }, this),
             menuPos && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$ContextMenu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -6060,7 +6073,7 @@ function GridItem({ node, isSelected, multiSelectActive, triState, onClick, onDo
                 onClose: ()=>setMenuPos(null)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                lineNumber: 397,
+                lineNumber: 421,
                 columnNumber: 9
             }, this)
         ]
@@ -6093,12 +6106,12 @@ _c = GridItem;
                 strokeWidth: 1.5
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                lineNumber: 434,
+                lineNumber: 458,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-            lineNumber: 433,
+            lineNumber: 457,
             columnNumber: 7
         }, this);
     }
@@ -6110,12 +6123,12 @@ _c = GridItem;
                 strokeWidth: 1.5
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-                lineNumber: 442,
+                lineNumber: 466,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-            lineNumber: 441,
+            lineNumber: 465,
             columnNumber: 7
         }, this);
     }
@@ -6126,7 +6139,7 @@ _c = GridItem;
         children: emoji
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/finder-core/components/GridItem.tsx",
-        lineNumber: 451,
+        lineNumber: 475,
         columnNumber: 5
     }, this);
 }
@@ -6193,8 +6206,10 @@ function useMediaAssetEnrichment() {
                 "useMediaAssetEnrichment.useEffect.hasNewData": (f)=>{
                     const meta = data[f.path];
                     if (!meta) return false;
-                    // Si on a déjà appliqué cette createdAt, pas la peine de refaire.
-                    return f.meta?.createdAt !== meta.createdAt;
+                    // `createdAt` ne bouge jamais après l'upload : le comparer seul
+                    // laisserait passer un changement de STATUT (publication), et le
+                    // rendu ne se rafraîchirait pas. On compare donc les deux.
+                    return f.meta?.createdAt !== meta.createdAt || f.meta?.status !== meta.status;
                 }
             }["useMediaAssetEnrichment.useEffect.hasNewData"]);
             if (!hasNewData) return;
@@ -6208,6 +6223,7 @@ function useMediaAssetEnrichment() {
                         ...f,
                         meta: {
                             ...f.meta,
+                            status: meta.status,
                             createdAt: meta.createdAt,
                             uploadedBy: meta.uploadedBy,
                             uploaderId: meta.uploaderId,
@@ -7808,8 +7824,11 @@ function StatusRadioGroup({ adapter, selectedNodes }) {
     const currentStatus = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "StatusRadioGroup.useMemo[currentStatus]": ()=>{
             if (selectedNodes.length === 0) return null;
+            // Le statut vient de la MÉTADONNÉE (`MediaAsset.status`). Fallback sur le
+            // chemin uniquement pour les fichiers sans row DB (antérieurs au
+            // tracking) — ce fallback disparaîtra avec la strate de statut.
             const distinct = new Set(selectedNodes.map({
-                "StatusRadioGroup.useMemo[currentStatus]": (n)=>(0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["statusFromPath"])(n.path)
+                "StatusRadioGroup.useMemo[currentStatus]": (n)=>n.meta?.status ?? (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["statusFromPath"])(n.path)
             }["StatusRadioGroup.useMemo[currentStatus]"]));
             return distinct.size === 1 ? [
                 ...distinct
@@ -7846,20 +7865,20 @@ function StatusRadioGroup({ adapter, selectedNodes }) {
                                 className: "sr-only"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-                                lineNumber: 73,
+                                lineNumber: 78,
                                 columnNumber: 15
                             }, this),
                             opt.label
                         ]
                     }, opt.value, true, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-                        lineNumber: 60,
+                        lineNumber: 65,
                         columnNumber: 13
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-                lineNumber: 52,
+                lineNumber: 57,
                 columnNumber: 7
             }, this),
             isPending && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
@@ -7867,7 +7886,7 @@ function StatusRadioGroup({ adapter, selectedNodes }) {
                 "aria-hidden": true
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-                lineNumber: 93,
+                lineNumber: 98,
                 columnNumber: 9
             }, this),
             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7877,13 +7896,13 @@ function StatusRadioGroup({ adapter, selectedNodes }) {
                 children: error
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-                lineNumber: 96,
+                lineNumber: 101,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/finder-core/components/StatusRadioGroup.tsx",
-        lineNumber: 51,
+        lineNumber: 56,
         columnNumber: 5
     }, this);
 }

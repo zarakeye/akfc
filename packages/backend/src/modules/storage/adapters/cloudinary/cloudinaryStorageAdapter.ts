@@ -191,17 +191,6 @@ export function createCloudinaryStorageAdapter(
 
       const root = mapClientFolderTreeToStorageNode(tree, depth);
 
-      console.log(
-        "[tree:truncated]",
-        options.path,
-        "depth=",
-        depth,
-        "taolu?",
-        JSON.stringify(root).includes("taolu-multi-styles"),
-        "tchoy?",
-        JSON.stringify(root).includes("tchoy-lee-fut"),
-      );
-
       // Si le path résolvait un fichier (cas marginal), on enveloppe dans un
       // folder vide pour respecter le contrat (`root: StorageFolderNode`).
       // Le caller pourra détecter ça via root.children === [] et root.path === options.path.

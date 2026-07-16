@@ -501,12 +501,43 @@ var _s = __turbopack_context__.k.signature();
  * Secousse : uniquement quand il y a du contenu à traiter — un wiggle
  * bref toutes les ~6 s (les 15 premiers % de l'animation), désactivé
  * par prefers-reduced-motion.
- */ function buildMessage(pending, bin) {
+ */ function buildMessage(pending, bin, persoPending, generalPending) {
     const s = (n)=>n > 1 ? "s" : "";
-    if (pending > 0 && bin > 0) {
-        return `Vous avez ${pending} contenu${s(pending)} en attente et ${bin} dans la corbeille`;
+    // Types de contenus en attente : personnels / dossier « général » /
+    // disciplines (le reste).
+    const rest = Math.max(0, pending - persoPending - generalPending);
+    const typesCount = (persoPending > 0 ? 1 : 0) + (generalPending > 0 ? 1 : 0) + (rest > 0 ? 1 : 0);
+    // Partie « en attente » (sans « Vous avez » ni corbeille).
+    let attente = "";
+    if (pending > 0) {
+        if (typesCount >= 2) {
+            // ≥ 2 types : total + ventilation « dont … » (le reste non nommé).
+            const breakdown = [];
+            if (persoPending > 0) {
+                breakdown.push(`${persoPending} personnel${s(persoPending)}`);
+            }
+            if (generalPending > 0) {
+                breakdown.push(`${generalPending} dans le dossier « général »`);
+            }
+            const dont = breakdown.length > 0 ? ` dont ${breakdown.join(" et ")}` : "";
+            attente = `${pending} contenu${s(pending)} en attente${dont}`;
+        } else if (persoPending > 0) {
+            // Uniquement du perso → libellé dédié.
+            attente = `${persoPending} contenu${s(persoPending)} personnel${s(persoPending)} en attente`;
+        } else if (generalPending > 0) {
+            // Uniquement du général → libellé dédié.
+            attente = `${generalPending} contenu${s(generalPending)} en attente dans le dossier « général »`;
+        } else {
+            // Uniquement des disciplines (non nommées).
+            attente = `${pending} contenu${s(pending)} en attente`;
+        }
     }
-    if (pending > 0) return `Vous avez ${pending} contenu${s(pending)} en attente`;
+    if (attente && bin > 0) {
+        return `Vous avez ${attente} et ${bin} dans la corbeille`;
+    }
+    if (attente) {
+        return `Vous avez ${attente}`;
+    }
     return `Vous avez ${bin} contenu${s(bin)} dans la corbeille`;
 }
 function NotificationBell() {
@@ -559,12 +590,12 @@ function NotificationBell() {
       `
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                lineNumber: 70,
+                lineNumber: 112,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                 href: "/dashboard/library",
-                "aria-label": total > 0 ? buildMessage(counts.pending, counts.bin) : "Bibliothèque",
+                "aria-label": total > 0 ? buildMessage(counts.pending, counts.bin, counts.persoPending, counts.generalPending) : "Bibliothèque",
                 className: "relative inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900",
                 children: total > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                     children: [
@@ -573,7 +604,7 @@ function NotificationBell() {
                             "aria-hidden": true
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                            lineNumber: 99,
+                            lineNumber: 146,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -581,7 +612,7 @@ function NotificationBell() {
                             children: total
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                            lineNumber: 100,
+                            lineNumber: 147,
                             columnNumber: 13
                         }, this)
                     ]
@@ -590,27 +621,27 @@ function NotificationBell() {
                     "aria-hidden": true
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                    lineNumber: 105,
+                    lineNumber: 152,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                lineNumber: 88,
+                lineNumber: 130,
                 columnNumber: 7
             }, this),
             total > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 role: "tooltip",
                 className: "pointer-events-none absolute right-0 top-full z-50 mt-1 hidden w-max max-w-64 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block",
-                children: buildMessage(counts.pending, counts.bin)
+                children: buildMessage(counts.pending, counts.bin, counts.persoPending, counts.generalPending)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-                lineNumber: 110,
+                lineNumber: 157,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/app-shell/NotificationBell.tsx",
-        lineNumber: 69,
+        lineNumber: 111,
         columnNumber: 5
     }, this);
 }

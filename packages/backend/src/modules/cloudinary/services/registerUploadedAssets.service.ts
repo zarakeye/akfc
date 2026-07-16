@@ -83,7 +83,35 @@ export async function registerUploadedAssets(params: {
     userId,
   });
 
+  // Les disciplines transmises doivent exister (sinon erreur FK opaque).
+  if (destination.kind === "event" && destination.disciplineIds.length > 0) {
+    const uniqueIds = [...new Set(destination.disciplineIds)];
+    const found = await prisma.discipline.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true },
+    });
+    if (found.length !== uniqueIds.length) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Discipline(s) introuvable(s) pour cet événement.",
+      });
+    }
+  }
+
   const created = await prisma.$transaction(async (tx) => {
+    // Les disciplines choisies à l'upload ENRICHISSENT l'événement : elles
+    // décrivent ce qui a été présenté lors de l'événement, pas chaque photo.
+    // `skipDuplicates` → l'enrichissement est idempotent.
+    if (destination.kind === "event" && destination.disciplineIds.length > 0) {
+      await tx.eventDiscipline.createMany({
+        data: [...new Set(destination.disciplineIds)].map((disciplineId) => ({
+          eventId: destination.eventId,
+          disciplineId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     const out = [];
 
     for (const asset of assets) {
@@ -168,6 +196,7 @@ export async function registerUploadedAssets(params: {
             destination.kind === "new-discipline"
               ? destination.proposedDisciplineName
               : null,
+          eventId: destination.kind === "event" ? destination.eventId : null,
           eventDate: eventDate ?? null,
           uploaderUserId: userId,
           fullPath,

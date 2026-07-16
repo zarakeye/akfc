@@ -399,6 +399,11 @@ export function createR2StorageAdapter(
           // Espace club partagé, sans discipline ni catégorie
           // (categoryId reste null).
           break;
+        case "event":
+          // Contenus d'un événement : ni catégorie ni discipline unique — le
+          // rattachement se fait par `eventId` (côté Cloudinary) et par les
+          // liens de disciplines de l'événement.
+          break;
         case "perso":
           // R2 perso toujours reporté (photos Cloudinary d'abord).
           throw new Error(
