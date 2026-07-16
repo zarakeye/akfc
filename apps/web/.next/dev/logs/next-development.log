@@ -30,3 +30,4 @@
 [00:59:12.071] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/published/cours/tchoy-lee-fut/N°série"
 [01:06:24.940] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [01:17:21.797] Server  LOG      ✓ Compiled in 390ms
+[01:18:34.636] Server  LOG      ✓ Compiled in 203ms

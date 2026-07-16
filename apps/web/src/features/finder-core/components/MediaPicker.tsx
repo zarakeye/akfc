@@ -8,6 +8,7 @@ import {
   isPickable,
   isMediaNode,
 } from '@features/finder-core/utils/statusFolders';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 type Props = {
   open: boolean;
@@ -91,7 +92,20 @@ export function MediaPicker({
 
   function handleSubmit() {
     if (cartCount === 0) return;
-    const paths = Array.from(items.keys());
+
+    // ⚠️ Les LOCALISATEURS, pas les clés du panier.
+    //
+    // `items` est keyée par `node.path` — un chemin LOGIQUE depuis le
+    // chantier « arbre sans strate de statut ». C'est la bonne clé pour le
+    // panier (les ghosts de la grille interrogent `isInCart(node.path)`), mais
+    // pas ce qu'attend le bout de la chaîne : `onSubmit` mène à
+    // `media.resolveByPaths`, qui matche `MediaAsset.fullPath` — physique.
+    //
+    // Rendre les clés ici renvoyait `AKFC/cours/x/photo` contre un
+    // `AKFC/pending/cours/x/photo` en base : aucun match, aucun id, une
+    // galerie vide. Et silencieusement, parce que le panier, lui, était bien
+    // rempli.
+    const paths = cartNodes.map(storagePathOf);
     onSubmit(paths);
     clearCart();
     onClose();

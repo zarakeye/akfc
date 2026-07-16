@@ -161,6 +161,10 @@
     --color-gray-700: #364153;
     --color-gray-800: #1e2939;
     --color-gray-900: #101828;
+    --color-neutral-100: #f5f5f5;
+    --color-neutral-300: #d4d4d4;
+    --color-neutral-600: #525252;
+    --color-neutral-800: #262626;
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -277,6 +281,10 @@
       --color-gray-700: lab(27.1134% -.956401 -12.3224);
       --color-gray-800: lab(16.1051% -1.18239 -11.7533);
       --color-gray-900: lab(8.11897% .811279 -12.254);
+      --color-neutral-100: lab(96.52% -.0000298023 .0000119209);
+      --color-neutral-300: lab(84.92% 0 -.0000119209);
+      --color-neutral-600: lab(34.924% 0 0);
+      --color-neutral-800: lab(15.204% 0 -.00000596046);
     }
   }
 }
@@ -4032,6 +4040,10 @@
     }
   }
 
+  .border-neutral-300 {
+    border-color: var(--color-neutral-300);
+  }
+
   .border-primary {
     border-color: var(--primary);
   }
@@ -4521,6 +4533,10 @@
     .bg-muted\/50 {
       background-color: color-mix(in oklab, var(--muted) 50%, transparent);
     }
+  }
+
+  .bg-neutral-800 {
+    background-color: var(--color-neutral-800);
   }
 
   .bg-popover {
@@ -5374,6 +5390,10 @@
     color: var(--muted-foreground);
   }
 
+  .text-neutral-600 {
+    color: var(--color-neutral-600);
+  }
+
   .text-popover-foreground {
     color: var(--popover-foreground);
   }
@@ -6221,6 +6241,12 @@
       .hover\:bg-muted\/50:hover {
         background-color: color-mix(in oklab, var(--muted) 50%, transparent);
       }
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-neutral-100:hover {
+      background-color: var(--color-neutral-100);
     }
   }
 
