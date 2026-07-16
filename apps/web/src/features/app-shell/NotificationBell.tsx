@@ -32,21 +32,78 @@ import { useSessionStore } from "@lib/stores/useSessionStore";
  * par prefers-reduced-motion.
  */
 
-function buildMessage(pending: number, bin: number): string {
+function buildMessage(
+  pending: number,
+  bin: number,
+  persoPending: number,
+  generalPending: number,
+): string {
   const s = (n: number) => (n > 1 ? "s" : "");
-  if (pending > 0 && bin > 0) {
-    return `Vous avez ${pending} contenu${s(pending)} en attente et ${bin} dans la corbeille`;
+
+  // Types de contenus en attente : personnels / dossier « général » /
+  // disciplines (le reste).
+  const rest = Math.max(0, pending - persoPending - generalPending);
+  const typesCount =
+    (persoPending > 0 ? 1 : 0) +
+    (generalPending > 0 ? 1 : 0) +
+    (rest > 0 ? 1 : 0);
+
+  // Partie « en attente » (sans « Vous avez » ni corbeille).
+  let attente = "";
+  if (pending > 0) {
+    if (typesCount >= 2) {
+      // ≥ 2 types : total + ventilation « dont … » (le reste non nommé).
+      const breakdown: string[] = [];
+      if (persoPending > 0) {
+        breakdown.push(`${persoPending} personnel${s(persoPending)}`);
+      }
+      if (generalPending > 0) {
+        breakdown.push(`${generalPending} dans le dossier « général »`);
+      }
+      const dont =
+        breakdown.length > 0 ? ` dont ${breakdown.join(" et ")}` : "";
+      attente = `${pending} contenu${s(pending)} en attente${dont}`;
+    } else if (persoPending > 0) {
+      // Uniquement du perso → libellé dédié.
+      attente = `${persoPending} contenu${s(persoPending)} personnel${s(persoPending)} en attente`;
+    } else if (generalPending > 0) {
+      // Uniquement du général → libellé dédié.
+      attente = `${generalPending} contenu${s(generalPending)} en attente dans le dossier « général »`;
+    } else {
+      // Uniquement des disciplines (non nommées).
+      attente = `${pending} contenu${s(pending)} en attente`;
+    }
   }
-  if (pending > 0)
-    return `Vous avez ${pending} contenu${s(pending)} en attente`;
+
+  if (attente && bin > 0) {
+    return `Vous avez ${attente} et ${bin} dans la corbeille`;
+  }
+  if (attente) {
+    return `Vous avez ${attente}`;
+  }
   return `Vous avez ${bin} contenu${s(bin)} dans la corbeille`;
 }
 
+/**
+ * La forme de `storage.getAttentionCounts`, DÉRIVÉE de la procédure.
+ *
+ * Elle était écrite à la main — `{ pending: number; bin: number }` — et n'a
+ * pas suivi quand le backend a gagné `generalPending` et `persoPending`. Le
+ * corps du composant les lisait déjà : `pnpm typecheck` restait rouge sans
+ * que rien ne pointe vers la cause, l'annotation étant syntaxiquement
+ * irréprochable.
+ *
+ * Dérivée, elle ne peut plus décrocher : ajouter un champ à la procédure le
+ * rend disponible ici, en retirer un fait échouer les lectures à l'endroit
+ * exact où elles se font.
+ */
+type AttentionCounts = Awaited<
+  ReturnType<typeof trpcClient.storage.getAttentionCounts.query>
+>;
+
 export function NotificationBell(): JSX.Element | null {
   const user = useSessionStore((s) => s.session?.user);
-  const [counts, setCounts] = useState<{ pending: number; bin: number } | null>(
-    null,
-  );
+  const [counts, setCounts] = useState<AttentionCounts | null>(null);
 
   const canSee = (user?.role?.permissions.length ?? 0) > 0;
 
@@ -89,7 +146,12 @@ export function NotificationBell(): JSX.Element | null {
         href="/dashboard/library"
         aria-label={
           total > 0
-            ? buildMessage(counts!.pending, counts!.bin)
+            ? buildMessage(
+                counts!.pending,
+                counts!.bin,
+                counts!.persoPending,
+                counts!.generalPending,
+              )
             : "Bibliothèque"
         }
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
@@ -111,7 +173,12 @@ export function NotificationBell(): JSX.Element | null {
           role="tooltip"
           className="pointer-events-none absolute right-0 top-full z-50 mt-1 hidden w-max max-w-64 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block"
         >
-          {buildMessage(counts!.pending, counts!.bin)}
+          {buildMessage(
+            counts!.pending,
+            counts!.bin,
+            counts!.persoPending,
+            counts!.generalPending,
+          )}
         </div>
       )}
     </div>
