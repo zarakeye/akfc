@@ -244,6 +244,7 @@ export default function DragNDropForm(): JSX.Element {
   const { data: categories = [] } = trpc.category.getAll.useQuery();
 
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
+  const utils = trpc.useUtils();
 
   // -------------------------------
   // Formulaire react-hook-form
@@ -821,6 +822,9 @@ export default function DragNDropForm(): JSX.Element {
       if (totalSuccess > 0) {
         setSubmitSuccess(totalSuccess);
         reloadFolderContent();
+        // Un dépôt biblio alimente `pending`, et `generalPending` si la
+        // destination est le dossier « général ».
+        void utils.storage.getAttentionCounts.invalidate();
       }
       if (skippedSet.size > 0) {
         setSkippedCount(skippedSet.size);

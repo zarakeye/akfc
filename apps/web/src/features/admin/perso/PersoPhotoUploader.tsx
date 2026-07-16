@@ -295,6 +295,8 @@ export default function PersoPhotoUploader(): JSX.Element {
       });
 
       await utils.storage.getPersoPhotoQuota.invalidate();
+      // Un dépôt perso alimente `pending` et `persoPending`.
+      await utils.storage.getAttentionCounts.invalidate();
     } catch (err) {
       // Ex. : le back refuse la signature car quota dépassé.
       setBanner({
