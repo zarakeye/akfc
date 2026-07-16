@@ -7,7 +7,6 @@ import { PickerCart } from '@features/finder-core/components/PickerCart';
 import {
   isPickable,
   isMediaNode,
-  statusFromPath,
 } from '@features/finder-core/utils/statusFolders';
 
 type Props = {
@@ -78,15 +77,15 @@ export function MediaPicker({
   const cartNodes = useMemo(() => Array.from(items.values()), [items]);
   const cartCount = cartNodes.length;
 
-  // Décision d'épinglage : seuls les FICHIERS publiés sont pickables. On
-  // s'appuie sur isPickable (type === 'file' && published) ; repli sur
-  // statusFromPath si la meta de type manque (cas improbable en grille).
+  // Décision d'épinglage : seuls les FICHIERS publiés sont pickables.
+  //
+  // On passe le nœud ENTIER. L'ancienne version reconstruisait un objet
+  // `{ type: 'file', path: node.path }` — ce qui privait `isPickable` de
+  // `meta`, donc de `meta.status`, donc de la seule source fiable du statut.
+  // Elle ne pouvait plus que le déduire du chemin : correct tant que le
+  // chemin portait la strate, muet ensuite.
   function handlePickToggle(node: FinderNode) {
-    const pickable =
-      node.type === 'file'
-        ? isPickable({ type: 'file', path: node.path })
-        : false;
-    if (!pickable) return; // non-publié ou dossier → on n'épingle pas
+    if (!isPickable(node)) return; // non-publié ou dossier → on n'épingle pas
     toggleCart(node);
   }
 
