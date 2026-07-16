@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import type { FinderNode } from '@contracts/finder';
 
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
-import { statusFromPath } from '@features/finder-core/utils/statusFolders';
+import { statusOf } from '@features/finder-core/utils/statusFolders';
 import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
 import ContextMenu, {
   type ContextMenuItem,
@@ -192,7 +192,7 @@ export default function GridItem({
   // chemin pour les fichiers sans row MediaAsset. Seul `pending` est badgé :
   // l'absence de badge signifie « publié ».
   const isPending =
-    !isFolder && (node.meta?.status ?? statusFromPath(node.path)) === 'pending';
+    !isFolder && statusOf(node) === 'pending';
 
   // L'extension affichée comme badge et utilisée pour les heuristiques
   // (détection audio…) peut venir de deux endroits :

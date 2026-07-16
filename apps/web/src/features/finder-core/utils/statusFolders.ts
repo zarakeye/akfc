@@ -1,6 +1,8 @@
 import { APP_ROOT } from '@config/app';
 import type { FinderNode } from '@contracts/finder';
 
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
+
 /**
  * 🛡️ Status folders : les 3 dossiers racines intouchables.
  *
@@ -50,6 +52,35 @@ export function isStatusFolder(path: string): boolean {
  * Renvoie `null` si le path n'est pas sous l'`APP_ROOT` ou si le segment de
  * statut n'est pas un statut connu (asset hors-pipeline) — le caller décide
  * quoi faire d'un `null` (typiquement : aucun radio coché).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  ⚠️  N'APPELEZ PAS CETTE FONCTION SUR UN `node.path`.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Le chantier « arbre sans strate de statut » a INVERSÉ la dépendance que
+ * cette fonction incarne.
+ *
+ * Avant : le chemin était la vérité, `MediaAsset.status` un cache dérivé.
+ *         Conséquence — publier obligeait à DÉPLACER le binaire chez le
+ *         provider, avec tout ce qui s'ensuivait : deux mécanismes de synchro
+ *         au move, un publicId qui se désynchronise, un chemin construit à
+ *         deux endroits devant s'accorder au caractère près.
+ *
+ * Après :  `MediaAsset.status` est la vérité. Publier est un `UPDATE`. Le
+ *          binaire ne bouge plus. Et `node.path` est un chemin LOGIQUE — il
+ *          ne porte plus de segment de statut, donc cette fonction y renvoie
+ *          `null`.
+ *
+ * Ce `null` est SILENCIEUX. Il ne lève pas, il ne warn pas : il éteint. Un
+ * badge qui n'apparaît plus, un picker où plus rien ne s'épingle. C'est
+ * exactement ce qui a failli passer inaperçu en livrant cette étape.
+ *
+ * Pour connaître le statut d'un nœud, utilisez **`statusOf(node)`**, plus bas.
+ *
+ * Ce qui reste légitime ici : les chemins PHYSIQUES (`storagePathOf(node)`,
+ * `MediaAsset.fullPath`), tant que la migration des binaires n'est pas faite.
+ * Après elle, cette fonction n'aura plus aucun appelant et se supprimera avec
+ * le reste du pliage.
  */
 export function statusFromPath(path: string): LifecycleStatus | null {
   const parts = path.split('/').filter(Boolean);
@@ -73,8 +104,43 @@ export function statusFromPath(path: string): LifecycleStatus | null {
  * statut ↔ dossier : si la règle de pick évolue (autoriser un autre statut,
  * ajouter une condition), c'est l'unique point à toucher.
  */
-export function isPickable(node: { type: 'file' | 'folder'; path: string }): boolean {
-  return node.type === 'file' && statusFromPath(node.path) === 'published';
+export function isPickable(
+  node: Pick<FinderNode, 'type' | 'path' | 'meta'>,
+): boolean {
+  return node.type === 'file' && statusOf(node) === 'published';
+}
+
+/**
+ * Le statut d'un nœud. **Le seul point d'entrée.**
+ *
+ * ─── L'ordre de préséance, et pourquoi il est dans cet ordre ──────────────
+ *
+ *   1. `meta.status` — `MediaAsset.status`, servi par `media.getByPaths` via
+ *      `useMediaAssetEnrichment`. C'est la VÉRITÉ.
+ *
+ *   2. `statusFromPath(storagePathOf(node))` — repli sur le chemin PHYSIQUE,
+ *      pour les fichiers sans row DB (antérieurs au tracking). Noter le
+ *      `storagePathOf` : c'est le chemin où vit le binaire, donc le seul qui
+ *      porte encore un segment de statut. Appliqué à `node.path`, ce repli
+ *      renverrait `null` dès la vue pliée levée — et s'éteindrait en silence.
+ *
+ * Le repli disparaîtra avec la strate elle-même (étape 5 du chantier) : à ce
+ * moment-là, plus aucun chemin ne portera de statut, et `meta.status` sera la
+ * seule réponse possible. Ce qui est déjà le cas dans les faits.
+ *
+ * ─── Pourquoi une fonction plutôt que l'expression recopiée ───────────────
+ *
+ * `n.meta?.status ?? statusFromPath(n.path)` était écrit à l'identique dans
+ * `GridItem`, `FinderTableRow` et `StatusRadioGroup`, et sous une troisième
+ * forme dans `isPickable`. Quatre copies d'une règle métier, qu'il fallait
+ * penser à corriger quatre fois — et dont une seule oubliée aurait éteint le
+ * picker sans un mot. C'est la même maladie que `MoveItem` / `DragItem`, et
+ * que le type de `getAttentionCounts` recopié à la main dans la cloche.
+ */
+export function statusOf(
+  node: Pick<FinderNode, 'path' | 'meta'>,
+): LifecycleStatus | null {
+  return node.meta?.status ?? statusFromPath(storagePathOf(node));
 }
 
 /* -------------------------------------------------------------------------- */

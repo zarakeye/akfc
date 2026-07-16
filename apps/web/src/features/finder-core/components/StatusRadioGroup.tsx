@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import type { FileAdapter, FinderNode } from '@contracts/finder';
 
 import {
-  statusFromPath,
+  statusOf,
   type LifecycleStatus,
 } from '@features/finder-core/utils/statusFolders';
 import { useStatusChange } from '@features/finder-core/hooks/useStatusChange';
@@ -41,12 +41,8 @@ export default function StatusRadioGroup({
 
   const currentStatus = useMemo<LifecycleStatus | null>(() => {
     if (selectedNodes.length === 0) return null;
-    // Le statut vient de la MÉTADONNÉE (`MediaAsset.status`). Fallback sur le
-    // chemin uniquement pour les fichiers sans row DB (antérieurs au
-    // tracking) — ce fallback disparaîtra avec la strate de statut.
-    const distinct = new Set(
-      selectedNodes.map((n) => n.meta?.status ?? statusFromPath(n.path)),
-    );
+    // La règle de dérivation vit dans `statusOf` — un seul endroit.
+    const distinct = new Set(selectedNodes.map(statusOf));
     return distinct.size === 1 ? ([...distinct][0] ?? null) : null;
   }, [selectedNodes]);
 
