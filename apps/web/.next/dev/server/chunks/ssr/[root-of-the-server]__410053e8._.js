@@ -2494,7 +2494,11 @@ function Breadcrumb({ adapter }) {
                         appRoot: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["APP_ROOT"],
                         sources: items.map((it)=>({
                                 kind: it.type === 'folder' ? 'folder' : 'file',
-                                fullPath: it.path
+                                // Le LOCALISATEUR, pas le chemin logique : `trash.trashToBin`
+                                // met en quarantaine un binaire, pas une vue. Un dossier n'en
+                                // porte pas (il vit dans 1..N strates) — c'est le backend qui
+                                // résout, cf. `resolvePhysicalLocations`.
+                                fullPath: it.storagePath ?? it.path
                             }))
                     });
                     reloadFolderContent();
@@ -2569,7 +2573,7 @@ function Breadcrumb({ adapter }) {
                         children: segment.name
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Breadcrumb.tsx",
-                        lineNumber: 195,
+                        lineNumber: 199,
                         columnNumber: 15
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                         type: "button",
@@ -2586,7 +2590,7 @@ function Breadcrumb({ adapter }) {
                         children: segment.name
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Breadcrumb.tsx",
-                        lineNumber: 218,
+                        lineNumber: 222,
                         columnNumber: 15
                     }, this),
                     !isLast && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
@@ -2594,19 +2598,19 @@ function Breadcrumb({ adapter }) {
                         "aria-hidden": true
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Breadcrumb.tsx",
-                        lineNumber: 243,
+                        lineNumber: 247,
                         columnNumber: 15
                     }, this)
                 ]
             }, segment.path, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/Breadcrumb.tsx",
-                lineNumber: 193,
+                lineNumber: 197,
                 columnNumber: 11
             }, this);
         })
     }, void 0, false, {
         fileName: "[project]/apps/web/src/features/finder-core/components/Breadcrumb.tsx",
-        lineNumber: 172,
+        lineNumber: 176,
         columnNumber: 5
     }, this);
 }
@@ -4759,7 +4763,11 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                     appRoot: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["APP_ROOT"],
                     sources: items.map((it)=>({
                             kind: it.type === "folder" ? "folder" : "file",
-                            fullPath: it.path
+                            // Le LOCALISATEUR, pas le chemin logique : `trash.trashToBin`
+                            // met en quarantaine un binaire, pas une vue. Un dossier n'en
+                            // porte pas (il vit dans 1..N strates) — c'est le backend qui
+                            // résout, cf. `resolvePhysicalLocations`.
+                            fullPath: it.storagePath ?? it.path
                         }))
                 });
                 reloadFolderContent();
@@ -4815,7 +4823,7 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                     onPickToggle: onPickToggle
                 }, child.path, false, {
                     fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                    lineNumber: 339,
+                    lineNumber: 343,
                     columnNumber: 13
                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderTreeFile$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                     node: child,
@@ -4826,7 +4834,7 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                     onPickToggle: onPickToggle
                 }, child.path, false, {
                     fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                    lineNumber: 354,
+                    lineNumber: 358,
                     columnNumber: 13
                 }, this))
         }, void 0, false);
@@ -4882,30 +4890,30 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                             className: "h-3.5 w-3.5 animate-spin"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                            lineNumber: 437,
+                            lineNumber: 441,
                             columnNumber: 15
                         }, this) : isOpen ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                             className: "h-3.5 w-3.5"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                            lineNumber: 439,
+                            lineNumber: 443,
                             columnNumber: 15
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
                             className: "h-3.5 w-3.5"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                            lineNumber: 441,
+                            lineNumber: 445,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 430,
+                        lineNumber: 434,
                         columnNumber: 11
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                         className: "inline-block h-4 w-4"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 445,
+                        lineNumber: 449,
                         columnNumber: 11
                     }, this),
                     multiSelectActive && !pickMode && !isStatus && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -4915,20 +4923,20 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                         className: "shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 451,
+                        lineNumber: 455,
                         columnNumber: 11
                     }, this),
                     isOpen ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$folder$2d$open$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__FolderOpen$3e$__["FolderOpen"], {
                         className: "h-4 w-4 text-muted-foreground shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 460,
+                        lineNumber: 464,
                         columnNumber: 11
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$folder$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Folder$3e$__["Folder"], {
                         className: "h-4 w-4 text-muted-foreground shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 462,
+                        lineNumber: 466,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4936,13 +4944,13 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                         children: displayLabel
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 465,
+                        lineNumber: 469,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                lineNumber: 388,
+                lineNumber: 392,
                 columnNumber: 7
             }, this),
             loadError && isOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4952,12 +4960,12 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                     children: loadError
                 }, void 0, false, {
                     fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                    lineNumber: 470,
+                    lineNumber: 474,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                lineNumber: 469,
+                lineNumber: 473,
                 columnNumber: 9
             }, this),
             isOpen && isMaterializing && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4969,25 +4977,25 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                             className: "h-3 w-3 animate-spin"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                            lineNumber: 477,
+                            lineNumber: 481,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                             children: "Chargement…"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                            lineNumber: 478,
+                            lineNumber: 482,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                    lineNumber: 476,
+                    lineNumber: 480,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                lineNumber: 475,
+                lineNumber: 479,
                 columnNumber: 9
             }, this),
             isOpen && effectiveChildren && effectiveChildren.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5006,7 +5014,7 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                         onPickToggle: onPickToggle
                     }, child.path, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 487,
+                        lineNumber: 491,
                         columnNumber: 15
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderTreeFile$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                         node: child,
@@ -5017,12 +5025,12 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                         onPickToggle: onPickToggle
                     }, child.path, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                        lineNumber: 502,
+                        lineNumber: 506,
                         columnNumber: 15
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                lineNumber: 484,
+                lineNumber: 488,
                 columnNumber: 9
             }, this),
             menuPos && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$ContextMenu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -5032,13 +5040,13 @@ function FinderTreeFolder({ node, adapter, currentPath, onOpen, openPaths, onTog
                 onClose: ()=>setMenuPos(null)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-                lineNumber: 517,
+                lineNumber: 521,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/finder-core/components/FinderTreeFolder.tsx",
-        lineNumber: 381,
+        lineNumber: 385,
         columnNumber: 5
     }, this);
 }

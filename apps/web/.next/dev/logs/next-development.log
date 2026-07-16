@@ -3,3 +3,4 @@
 [00:00:28.474] Server  LOG      ○ Compiling /dashboard/library ...
 [00:00:34.130] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
 [00:12:17.701] Server  LOG      ✓ Compiled in 340ms
+[00:21:45.241] Server  LOG      ✓ Compiled in 115ms
