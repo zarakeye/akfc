@@ -3,6 +3,34 @@ import { APP_ROOT } from '@config/app';
 import type { FinderNode } from '@contracts/finder';
 
 /**
+ * Les trois lentilles de statut. `'all'` n'est pas un statut — c'est
+ * l'absence de lentille, d'où un type à part et non `LifecycleStatus | null`.
+ */
+export type StatusFilter = 'all' | 'pending' | 'published';
+
+const STATUS_FILTER_KEY = 'akfc.finder.statusFilter';
+
+/**
+ * Persisté comme `viewMode` : c'est une préférence de travail, pas un état de
+ * navigation. Un admin qui trie ses contenus en attente ne veut pas
+ * recommencer à chaque rechargement.
+ *
+ * Défaut `'all'` — pour ne rien cacher à qui ne connaît pas encore le filtre.
+ * Un admin qui ne voit pas ses photos ne se demande pas quel filtre est
+ * actif : il pense qu'elles ont disparu.
+ */
+function loadStatusFilter(): StatusFilter {
+  if (typeof window === 'undefined') return 'all';
+  const stored = window.localStorage.getItem(STATUS_FILTER_KEY);
+  return stored === 'pending' || stored === 'published' ? stored : 'all';
+}
+
+function saveStatusFilter(filter: StatusFilter): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(STATUS_FILTER_KEY, filter);
+}
+
+/**
  * 🗂️ Store de gestion de l'état du Finder
  *
  * Gère navigation, contenu, sélection, multi-select, view mode, sort.
@@ -79,6 +107,22 @@ type FinderState = {
 
   viewMode: FinderViewMode;
   setViewMode: (mode: FinderViewMode) => void;
+
+  /**
+   * La lentille de statut posée sur la GRILLE.
+   *
+   * Depuis le chantier « arbre sans strate de statut », un dossier contient
+   * ses contenus en attente ET ses contenus publiés. Ce filtre rend ce que la
+   * strate donnait gratuitement — sans la strate.
+   *
+   * ⚠️ Il ne touche PAS l'arbre, délibérément. Il n'est jamais transmis à
+   * `FinderTree` : la structure reste stable quel que soit le filtre actif.
+   * Un arbre qui change de forme quand on change de lentille rend
+   * indécidable la question « ce dossier a-t-il disparu parce qu'il est
+   * filtré, ou parce qu'il n'existe plus ? ».
+   */
+  statusFilter: StatusFilter;
+  setStatusFilter: (filter: StatusFilter) => void;
 
   sort: SortState;
   setSortPrimary: (field: SortField, direction?: SortDirection) => void;
@@ -315,6 +359,12 @@ export const useFinderStore = create<FinderState>((set) => ({
     })),
 
   viewMode: loadViewMode(),
+  statusFilter: loadStatusFilter(),
+
+  setStatusFilter: (filter) => {
+    saveStatusFilter(filter);
+    set({ statusFilter: filter });
+  },
 
   setViewMode: (mode) => {
     saveViewMode(mode);
