@@ -33,7 +33,10 @@ export default async function PublicEventPage({
   const event = await prisma.event.findUnique({
     where: { slug },
     include: {
-      discipline: { select: { name: true, slug: true } },
+      // Disciplines enseignées (0..N) présentées lors de l'événement.
+      disciplineLinks: {
+        select: { discipline: { select: { name: true, slug: true } } },
+      },
       origin: { select: { name: true, slug: true, flag: true } },
       organizer: {
         select: { firstName: true, lastName: true, pseudo: true, email: true },
@@ -51,11 +54,15 @@ export default async function PublicEventPage({
 
   const content = parsePageContentV1(event.content);
   const organizerName = formatUserName(event.organizer);
+  // Toutes les disciplines + tous les labels externes ; à défaut, l'origine.
+  const rattachements = [
+    ...event.disciplineLinks.map((l) => l.discipline.name),
+    ...event.externalDisciplineLabels,
+  ];
   const rattachement =
-    event.discipline?.name ??
-    event.externalDisciplineLabel ??
-    event.origin?.name ??
-    null;
+    rattachements.length > 0
+      ? rattachements.join(', ')
+      : (event.origin?.name ?? null);
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-12">

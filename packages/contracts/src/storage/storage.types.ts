@@ -86,6 +86,46 @@ export interface StorageFileNode {
   name: string;
   path: StoragePath;
   metadata?: StorageMetadata;
+
+  /**
+   * Emplacement RÉEL du binaire chez le provider, quand il diffère de `path`.
+   *
+   * ─── Pourquoi ce champ existe ────────────────────────────────────────────
+   *
+   * `path` est le chemin LOGIQUE : celui par lequel la UI navigue, construit
+   * son fil d'Ariane et rattache un fichier à son dossier. Le contrat le dit
+   * depuis toujours (« le path est logique, il peut différer du chemin
+   * physique selon l'adapter ») — mais tant qu'il n'y avait qu'une seule
+   * convention de chemin, les deux étaient confondus partout.
+   *
+   * Le chantier « arbre sans strate de statut » les sépare pour de bon : le
+   * segment `pending`/`published` disparaît du chemin logique alors que le
+   * binaire, lui, vit encore dessous chez le provider.
+   *
+   *   path         : AKFC/cours/tchoy-lee-fut/photo
+   *   storagePath  : AKFC/pending/cours/tchoy-lee-fut/photo
+   *
+   * Les consommateurs qui parlent au PROVIDER (URL de preview, lecture de
+   * métadonnées, source d'un move, jointure avec `MediaAsset.fullPath`)
+   * doivent utiliser `storagePath`. Ceux qui parlent à l'UTILISATEUR
+   * (navigation, fil d'Ariane, arbre) utilisent `path`.
+   *
+   * ─── Le champ règle aussi les collisions ─────────────────────────────────
+   *
+   * Une photo publiée et une photo homonyme fraîchement uploadée vivent
+   * aujourd'hui dans deux dossiers distincts ; une fois la strate pliée,
+   * elles partagent le MÊME `path` logique. `storagePath` reste, lui,
+   * unique — c'est donc lui qui sert d'identité (`FinderNode.id`) côté UI.
+   * Sans ça, dédupliquer par path cacherait un des deux fichiers.
+   *
+   * ─── Durée de vie ────────────────────────────────────────────────────────
+   *
+   * Ce champ est TRANSITOIRE. À l'étape 5 du chantier (migration des
+   * binaires en chemins plats), `storagePath === path` pour tout le monde
+   * et le champ peut être supprimé sans rien casser. Il ne doit donc pas
+   * devenir un point d'appui pour autre chose que cette transition.
+   */
+  storagePath?: StoragePath;
 }
 
 export type StorageNode = StorageFolderNode | StorageFileNode;

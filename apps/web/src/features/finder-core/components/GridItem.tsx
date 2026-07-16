@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import type { FinderNode } from '@contracts/finder';
 
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
+import { statusFromPath } from '@features/finder-core/utils/statusFolders';
 import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
 import ContextMenu, {
   type ContextMenuItem,
@@ -187,6 +188,12 @@ export default function GridItem({
   const kind = node.meta?.kind;
   const url = node.meta?.url;
 
+  // Statut depuis la métadonnée (cf. MediaMeta.status) ; fallback sur le
+  // chemin pour les fichiers sans row MediaAsset. Seul `pending` est badgé :
+  // l'absence de badge signifie « publié ».
+  const isPending =
+    !isFolder && (node.meta?.status ?? statusFromPath(node.path)) === 'pending';
+
   // L'extension affichée comme badge et utilisée pour les heuristiques
   // (détection audio…) peut venir de deux endroits :
   //   - `node.meta.format` : présent quand le backend a stocké le format
@@ -358,6 +365,23 @@ export default function GridItem({
           )}
         >
           {extension}
+        </div>
+      )}
+
+      {/* -------------------------- BADGE STATUT -------------------------- */}
+      {/* Sous le badge de type (le coin haut-gauche est pris par la
+          checkbox). Orange : état de travail, pas une erreur. */}
+      {isPending && (
+        <div
+          className={clsx(
+            'absolute right-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold',
+            extension && !isFolder ? 'top-7' : 'top-1.5',
+            hasVisualThumb
+              ? 'bg-amber-500/90 text-white shadow-sm backdrop-blur-sm'
+              : 'bg-amber-100 text-amber-800 border border-amber-200',
+          )}
+        >
+          En attente
         </div>
       )}
 

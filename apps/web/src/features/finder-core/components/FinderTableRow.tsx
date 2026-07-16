@@ -5,6 +5,7 @@ import { Folder, FileText, Image as ImageIcon, FileVideo, FileAudio, FileType } 
 import type { FinderNode } from '@contracts/finder';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
+import { statusFromPath } from '@features/finder-core/utils/statusFolders';
 
 type Props = {
   node: FinderNode;
@@ -25,7 +26,7 @@ type Props = {
  *   - long-press → entrée en mode multi-select
  *   - drag → drag-and-drop pour déplacer
  *
- * Affichage : colonnes Nom / Type / Taille avec icônes.
+ * Affichage : colonnes Nom / Type / Statut / Taille avec icônes.
  */
 export default function FinderTableRow({
   node,
@@ -79,6 +80,14 @@ export default function FinderTableRow({
       </td>
       <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
         {isFolder ? 'Dossier' : (node.mimeType || node.meta?.format || 'Fichier')}
+      </td>
+      <td className="px-3 py-2 text-sm whitespace-nowrap">
+        {!isFolder &&
+        (node.meta?.status ?? statusFromPath(node.path)) === 'pending' ? (
+          <span className="rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+            En attente
+          </span>
+        ) : null}
       </td>
       <td className="px-3 py-2 text-sm text-gray-500 text-right whitespace-nowrap">
         {isFolder ? '—' : formatBytes(node.size)}

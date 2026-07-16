@@ -7,7 +7,7 @@ import { PageBuilder } from "@features/page-builder";
 import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
-import { DisciplineSelect } from "@features/admin/common/components/DisciplineSelect";
+import { trpc } from "@trpc/trpcClient";
 import { OriginSelect } from "@features/admin/common/components/OriginSelect";
 import { InstructorSelect } from "@features/admin/common/components/InstructorSelect";
 
@@ -27,16 +27,23 @@ export interface EventFormInput {
   slug: string;
   content: PageContentV1;
   audience: Audience;
-  disciplineId: number | null;
-  externalDisciplineLabel: string | null;
+  /** Disciplines ENSEIGNÉES présentées (0..N). */
+  disciplineIds: number[];
+  /** Disciplines NON enseignées, libellés libres (0..N). */
+  externalDisciplineLabels: string[];
   originId: number | null;
   organizerId: string;
   publicationDate: Date | null;
 }
 
 export interface EventFormProps {
-  /** Pré-remplissage en mode édition. Absent en création. */
-  initial?: Event;
+  /**
+   * Pré-remplissage en mode édition. Absent en création.
+   * `disciplineLinks` vient de `event.getByIdAdmin` (0..N disciplines).
+   */
+  initial?: Event & {
+    disciplineLinks?: { disciplineId: number }[];
+  };
   /** Appelée à la soumission. */
   onSubmit: (input: EventFormInput) => Promise<void>;
   /** Libellé du bouton de soumission. Default "Enregistrer". */
@@ -110,11 +117,31 @@ export function EventForm({
   const [audience, setAudience] = useState<Audience>(
     initial?.audience ?? "ALL_AGES",
   );
-  const [disciplineId, setDisciplineId] = useState<number>(
-    initial?.disciplineId ?? 0,
+  // 0..N disciplines enseignées, depuis la jointure (seule vérité).
+  const [disciplineIds, setDisciplineIds] = useState<number[]>(
+    initial?.disciplineLinks?.map((l) => l.disciplineId) ?? [],
   );
-  const [externalDisciplineLabel, setExternalDisciplineLabel] =
-    useState<string>(initial?.externalDisciplineLabel ?? "");
+  // 0..N libellés de disciplines non enseignées.
+  const [externalLabels, setExternalLabels] = useState<string[]>(
+    initial?.externalDisciplineLabels ?? [],
+  );
+  const [labelDraft, setLabelDraft] = useState<string>("");
+
+  const disciplinesQuery = trpc.discipline.getAll.useQuery();
+  const allDisciplines = disciplinesQuery.data ?? [];
+
+  const toggleDiscipline = (id: number) => {
+    setDisciplineIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const addLabel = () => {
+    const value = labelDraft.trim();
+    if (!value) return;
+    setExternalLabels((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    setLabelDraft("");
+  };
   const [originId, setOriginId] = useState<number | null>(
     initial?.originId ?? null,
   );
@@ -163,16 +190,17 @@ export function EventForm({
       return;
     }
 
-    const disciplineIdFinal = disciplineId === 0 ? null : disciplineId;
-    const externalDisciplineLabelFinal =
-      externalDisciplineLabel.trim() === ""
-        ? null
-        : externalDisciplineLabel.trim();
+    // Un libellé encore dans le champ de saisie (pas « Ajouté ») compte
+    // quand même : ne pas perdre silencieusement ce qui est tapé.
+    const pendingLabel = labelDraft.trim();
+    const externalLabelsFinal = pendingLabel
+      ? [...new Set([...externalLabels, pendingLabel])]
+      : externalLabels;
     const originIdFinal = originId;
 
     if (
-      disciplineIdFinal === null &&
-      externalDisciplineLabelFinal === null &&
+      disciplineIds.length === 0 &&
+      externalLabelsFinal.length === 0 &&
       originIdFinal === null
     ) {
       setSubmitError(
@@ -192,8 +220,8 @@ export function EventForm({
         slug: slug.trim(),
         content,
         audience,
-        disciplineId: disciplineIdFinal,
-        externalDisciplineLabel: externalDisciplineLabelFinal,
+        disciplineIds,
+        externalDisciplineLabels: externalLabelsFinal,
         originId: originIdFinal,
         organizerId,
         publicationDate,
@@ -285,27 +313,87 @@ export function EventForm({
           Rattachement (au moins un requis)
         </legend>
 
-        <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-          <span className="font-medium">Discipline du club</span>
-          <DisciplineSelect value={disciplineId} onChange={setDisciplineId} />
+        <div className="flex flex-col gap-1 text-sm sm:col-span-2">
+          <span className="font-medium">Disciplines du club</span>
+          {disciplinesQuery.isLoading ? (
+            <span className="text-xs text-muted-foreground">Chargement…</span>
+          ) : allDisciplines.length === 0 ? (
+            <span className="text-xs text-muted-foreground">
+              Aucune discipline enregistrée.
+            </span>
+          ) : (
+            <div className="grid max-h-48 grid-cols-1 gap-1 overflow-y-auto rounded border border-input p-2 sm:grid-cols-2">
+              {allDisciplines.map((d) => (
+                <label key={d.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={disciplineIds.includes(d.id)}
+                    onChange={() => toggleDiscipline(d.id)}
+                  />
+                  <span>{d.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
           <span className="text-xs text-muted-foreground">
-            Laisser sur « Aucune » pour un événement non rattaché à une
-            discipline (repas, conférence culturelle…).
+            Coche 0, une ou plusieurs disciplines — un événement peut en
+            présenter plusieurs (forum des associations, démonstration).
           </span>
-        </label>
+        </div>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <div className="flex flex-col gap-1 text-sm sm:col-span-2">
           <span className="font-medium">
-            Discipline externe (libellé libre)
+            Disciplines externes (libellés libres)
           </span>
-          <input
-            type="text"
-            value={externalDisciplineLabel}
-            onChange={(e) => setExternalDisciplineLabel(e.target.value)}
-            placeholder="Cérémonie du thé"
-            className="rounded border border-input bg-background px-2 py-1"
-          />
-        </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={labelDraft}
+              onChange={(e) => setLabelDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addLabel();
+                }
+              }}
+              placeholder="Calligraphie chinoise"
+              className="flex-1 rounded border border-input bg-background px-2 py-1"
+            />
+            <button
+              type="button"
+              onClick={addLabel}
+              disabled={labelDraft.trim() === ""}
+              className="rounded border border-input px-2 py-1 text-xs disabled:opacity-50"
+            >
+              Ajouter
+            </button>
+          </div>
+          {externalLabels.length > 0 && (
+            <ul className="mt-1 flex flex-wrap gap-1">
+              {externalLabels.map((lbl) => (
+                <li
+                  key={lbl}
+                  className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
+                >
+                  <span>{lbl}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExternalLabels((prev) => prev.filter((x) => x !== lbl))
+                    }
+                    aria-label={`Retirer ${lbl}`}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <span className="text-xs text-muted-foreground">
+            Pour les domaines que le club n'enseigne pas.
+          </span>
+        </div>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Origine culturelle</span>

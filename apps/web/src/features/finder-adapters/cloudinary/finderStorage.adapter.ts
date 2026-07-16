@@ -160,19 +160,31 @@ function mapFileToFinderNode(
       : name;
   const backend = pickBackendByExtension(nameForDispatch);
 
+  // Le LOCALISATEUR : `file.path` tant que la vue pliée n'est pas levée,
+  // `AKFC/pending/…` ensuite. C'est lui qui construit l'URL — le proxy
+  // `/api/media/by-public-id/…` interroge Cloudinary, qui ne connaît que
+  // l'emplacement réel. Lui passer un chemin logique rendrait 404.
+  const storagePath = file.storagePath ?? file.path;
+
   const url =
     backend === 'cloudinary'
-      ? getMediaUrl({ publicId: file.path })
-      : `/api/media/r2/${file.path.split('/').map(encodeURIComponent).join('/')}`;
+      ? getMediaUrl({ publicId: storagePath })
+      : `/api/media/r2/${storagePath.split('/').map(encodeURIComponent).join('/')}`;
 
   return {
-    id: file.path,
+    // `id` = le localisateur, et pas le chemin logique : deux fichiers
+    // homonymes (l'un publié, l'autre en attente de relecture) partagent le
+    // MÊME path logique une fois la strate pliée. Les distinguer est ce qui
+    // évite qu'en sélectionner un sélectionne l'autre — et qu'React en
+    // efface un des deux sur collision de key.
+    id: storagePath,
     name,
     path: file.path,
     type: 'file',
     mimeType: file.metadata?.mimeType,
     meta: {
       url,
+      storagePath,
       format,
       kind: kindFromFormat(format, name),
     },
@@ -203,14 +215,21 @@ function mapFileToFinderNode(
  *      l'extension.
  */
 function moveOptionsToSource(items: MoveOptions['items']): StorageMoveSource {
+  // Le backend attend des SOURCES localisables. Pour un fichier, c'est le
+  // `storagePath` ; pour un dossier, le chemin logique — un dossier logique
+  // n'a pas d'emplacement unique, c'est `toPhysicalMoveIntents` qui résout
+  // ses strates contre le registre `Folder`.
+  const sourcePath = (it: MoveOptions['items'][number]): string =>
+    it.storagePath ?? it.path;
+
   if (items.length === 1) {
     const only = items[0];
-    return { type: only.type, path: only.path };
+    return { type: only.type, path: sourcePath(only) };
   }
 
   return {
     type: 'selection',
-    roots: items.map((it) => it.path),
+    roots: items.map(sourcePath),
   };
 }
 

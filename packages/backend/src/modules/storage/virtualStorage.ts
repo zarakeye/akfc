@@ -468,11 +468,61 @@ function dedupeFoldersByPath(
  * Algo récursif : pour chaque sous-folder, on cherche les occurrences
  * dans les deux côtés et on les merge récursivement. Les files sont
  * concaténés (chaque file appartient à un seul backend).
+ *
+ * ─── Frontière de profondeur : ne JAMAIS matérialiser un `undefined` ─────
+ *
+ * Le contrat `StorageFolderNode` distingue deux états très différents :
+ *
+ *   children === undefined  → « non chargé » (profondeur max de getTree)
+ *   children === []         → « vide pour de vrai »
+ *
+ * `mapClientFolderTreeToStorageNode` respecte scrupuleusement cette
+ * distinction : à depth 0 il renvoie `{ children: undefined, hasChildren }`
+ * pour que la TreeView sache qu'il reste quelque chose à charger.
+ *
+ * La version précédente de ce merge écrasait le premier état par le second :
+ *
+ *   children: [...mergedFolders, ...aFiles, ...bFiles]   // → [] si rien chargé
+ *   hasChildren: mergedFolders.length + ... > 0          // → false
+ *
+ * Résultat : un dossier présent dans les DEUX backends et situé à la
+ * frontière de profondeur ressortait `{ children: [], hasChildren: false }`.
+ * La TreeView le traitait comme définitivement vide → impossible à déplier,
+ * son contenu invisible. Le hint `hasChildren` des deux côtés était perdu.
+ *
+ * Règles rétablies ici :
+ *   - `children` n'est matérialisé que si AU MOINS un côté l'a chargé.
+ *     Si aucun des deux n'a chargé, on propage `undefined`.
+ *   - `hasChildren` est l'OU des deux hints, jamais recalculé à la baisse.
+ *     Un hint à `true` d'un côté survit même si l'autre côté est vide.
+ *
+ * ⚠️ Ce point devient critique avec le chantier « arbre sans strate de
+ * statut » : le pliage fait converger `pending/<x>` et `published/<x>` sur
+ * un même path logique, donc « présent des deux côtés » y est le cas NORMAL
+ * et non plus l'exception.
  */
 function mergeFolderTrees(
   a: StorageFolderNode,
   b: StorageFolderNode
 ): StorageFolderNode {
+  // Hint de présence d'enfants : c'est un OU, jamais un recalcul. Un côté
+  // qui sait qu'il a des enfants (sans les avoir chargés) fait autorité.
+  const hasChildrenHint = (a.hasChildren ?? false) || (b.hasChildren ?? false);
+
+  const aLoaded = a.children !== undefined;
+  const bLoaded = b.children !== undefined;
+
+  // Aucun des deux n'a chargé ses enfants → on est à la frontière de
+  // profondeur. On propage `undefined` (et surtout PAS `[]`), avec le hint.
+  if (!aLoaded && !bLoaded) {
+    return {
+      type: "folder",
+      name: a.name,
+      path: a.path,
+      hasChildren: hasChildrenHint,
+    };
+  }
+
   const childrenA = a.children ?? [];
   const childrenB = b.children ?? [];
 
@@ -501,12 +551,16 @@ function mergeFolderTrees(
     mergedFolders.push(fb);
   }
 
+  const children = [...mergedFolders, ...aFiles, ...bFiles];
+
   return {
     type: "folder",
     name: a.name,
     path: a.path,
-    children: [...mergedFolders, ...aFiles, ...bFiles],
-    hasChildren: mergedFolders.length + aFiles.length + bFiles.length > 0,
+    children,
+    // Le hint des deux côtés prime ; `children.length > 0` n'est qu'un
+    // repli quand ni a ni b ne portaient de hint explicite.
+    hasChildren: hasChildrenHint || children.length > 0,
   };
 }
 

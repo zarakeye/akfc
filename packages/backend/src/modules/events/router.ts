@@ -76,15 +76,15 @@ const createInput = z
     content: pageContentSchemaV1,
     audience: audienceEnum,
 
-    // Trois champs de rattachement, tous optionnels en Zod —
-    // au moins un requis via `.refine` en bas.
-    disciplineId: z.number().int().positive().nullable().optional(),
-    externalDisciplineLabel: z
-      .string()
-      .trim()
-      .min(1)
-      .max(120)
-      .nullable()
+    // Rattachements, tous optionnels en Zod — au moins un requis via
+    // `.refine` en bas.
+    //
+    // Un événement présente 0..N disciplines ENSEIGNÉES (forum des
+    // associations, démonstration multi-disciplines) et 0..N disciplines non
+    // enseignées (« Calligraphie chinoise »).
+    disciplineIds: z.array(z.number().int().positive()).optional(),
+    externalDisciplineLabels: z
+      .array(z.string().trim().min(1).max(120))
       .optional(),
     originId: z.number().int().positive().nullable().optional(),
 
@@ -93,14 +93,13 @@ const createInput = z
   })
   .refine(
     (data) =>
-      (data.disciplineId !== null && data.disciplineId !== undefined) ||
-      (data.externalDisciplineLabel !== null &&
-        data.externalDisciplineLabel !== undefined) ||
+      (data.disciplineIds ?? []).length > 0 ||
+      (data.externalDisciplineLabels ?? []).length > 0 ||
       (data.originId !== null && data.originId !== undefined),
     {
       message:
-        "At least one of disciplineId, externalDisciplineLabel, or originId must be provided.",
-      path: ["disciplineId"],
+        "At least one of disciplineIds, externalDisciplineLabels, or originId must be provided.",
+      path: ["disciplineIds"],
     },
   );
 
@@ -113,13 +112,9 @@ const updateInput = z.object({
 
   // Validation « au moins un des trois » faite en router après merge
   // avec l'état actuel en DB (Zod ne connaît pas l'état actuel).
-  disciplineId: z.number().int().positive().nullable().optional(),
-  externalDisciplineLabel: z
-    .string()
-    .trim()
-    .min(1)
-    .max(120)
-    .nullable()
+  disciplineIds: z.array(z.number().int().positive()).optional(),
+  externalDisciplineLabels: z
+    .array(z.string().trim().min(1).max(120))
     .optional(),
   originId: z.number().int().positive().nullable().optional(),
 
@@ -131,19 +126,23 @@ const updateInput = z.object({
 /*                             INTERNAL HELPERS                               */
 /* -------------------------------------------------------------------------- */
 
-async function assertDisciplineExists(
+/** Vérifie que TOUTES les disciplines existent (0..N). */
+async function assertDisciplinesExist(
   prisma: PrismaClient,
-  disciplineId: number | null | undefined,
+  disciplineIds: number[],
 ): Promise<void> {
-  if (disciplineId === null || disciplineId === undefined) return;
-  const discipline = await prisma.discipline.findUnique({
-    where: { id: disciplineId },
+  if (disciplineIds.length === 0) return;
+  const unique = [...new Set(disciplineIds)];
+  const found = await prisma.discipline.findMany({
+    where: { id: { in: unique } },
     select: { id: true },
   });
-  if (!discipline) {
+  const foundIds = new Set(found.map((d) => d.id));
+  const missing = unique.filter((id) => !foundIds.has(id));
+  if (missing.length > 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Discipline not found (id=${disciplineId}).`,
+      message: `Discipline(s) not found: ${missing.join(", ")}.`,
     });
   }
 }
@@ -211,15 +210,40 @@ export const eventRouter = router({
           { publicationDate: { sort: "desc", nulls: "first" } },
           { createdAt: "desc" },
         ],
+        include: {
+          // Disciplines enseignées (0..N) — alimente la colonne
+          // « rattachement » de la table admin.
+          disciplineLinks: {
+            select: { discipline: { select: { name: true } } },
+          },
+        },
       });
     }),
+
+  /**
+   * Liste légère des événements pour le picker de l'uploader.
+   * `protectedProcedure` SANS `manage_events` : tout membre authentifié peut
+   * déposer des photos sur un événement, même s'il ne peut pas l'éditer.
+   * Brouillons inclus — un événement peut être préparé avant sa publication.
+   */
+  listForUpload: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.event.findMany({
+      select: { id: true, label: true, slug: true },
+      orderBy: [
+        { publicationDate: { sort: "desc", nulls: "first" } },
+        { createdAt: "desc" },
+      ],
+    });
+  }),
 
   getAllByDiscipline: publicProcedure
     .input(z.object({ disciplineId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
+      // Via la jointure : capte AUSSI les événements multi-disciplines,
+      // que l'ancienne colonne `disciplineId` (1 seule) ratait.
       return ctx.prisma.event.findMany({
         where: {
-          disciplineId: input.disciplineId,
+          disciplineLinks: { some: { disciplineId: input.disciplineId } },
           publicationDate: { not: null, lte: new Date() },
         },
         orderBy: { publicationDate: "desc" },
@@ -251,6 +275,10 @@ export const eventRouter = router({
         relationLoadStrategy: "join",
         include: {
           sessions: { orderBy: { date: "asc" } },
+          // Disciplines enseignées (0..N) — alimente le formulaire admin.
+          disciplineLinks: {
+            select: { disciplineId: true, discipline: { select: { name: true } } },
+          },
         },
       });
       if (!event) {
@@ -275,6 +303,13 @@ export const eventRouter = router({
         relationLoadStrategy: "join",
         include: {
           sessions: { orderBy: { date: "asc" } },
+          // Disciplines enseignées (0..N) — pour l'affichage public.
+          disciplineLinks: {
+            select: {
+              disciplineId: true,
+              discipline: { select: { name: true, slug: true } },
+            },
+          },
         },
       });
       if (!event) {
@@ -289,7 +324,10 @@ export const eventRouter = router({
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction ───────────────────────────────────
 
-      await assertDisciplineExists(ctx.prisma, input.disciplineId);
+      const disciplineIds = [...new Set(input.disciplineIds ?? [])];
+      const externalLabels = [...new Set(input.externalDisciplineLabels ?? [])];
+
+      await assertDisciplinesExist(ctx.prisma, disciplineIds);
       await assertOriginExists(ctx.prisma, input.originId);
       await assertUserExists(ctx.prisma, input.organizerId);
 
@@ -304,8 +342,11 @@ export const eventRouter = router({
               slug: input.slug,
               content: input.content as Prisma.InputJsonValue,
               audience: input.audience,
-              disciplineId: input.disciplineId ?? null,
-              externalDisciplineLabel: input.externalDisciplineLabel ?? null,
+              // Nouvelle vérité : la jointure + le tableau de labels.
+              disciplineLinks: {
+                create: disciplineIds.map((disciplineId) => ({ disciplineId })),
+              },
+              externalDisciplineLabels: externalLabels,
               originId: input.originId ?? null,
               organizerId: input.organizerId,
               publicationDate: input.publicationDate ?? null,
@@ -355,9 +396,9 @@ export const eventRouter = router({
       const existing = await ctx.prisma.event.findUnique({
         where: { id },
         select: {
-          disciplineId: true,
-          externalDisciplineLabel: true,
+          externalDisciplineLabels: true,
           originId: true,
+          disciplineLinks: { select: { disciplineId: true } },
         },
       });
       if (!existing) {
@@ -367,34 +408,35 @@ export const eventRouter = router({
         });
       }
 
-      // Validation « au moins un des trois » après merge.
-      const mergedDisciplineId =
-        rest.disciplineId !== undefined
-          ? rest.disciplineId
-          : existing.disciplineId;
-      const mergedExternalLabel =
-        rest.externalDisciplineLabel !== undefined
-          ? rest.externalDisciplineLabel
-          : existing.externalDisciplineLabel;
+      const disciplinesChanged = rest.disciplineIds !== undefined;
+      const labelsChanged = rest.externalDisciplineLabels !== undefined;
+
+      const mergedDisciplineIds = disciplinesChanged
+        ? [...new Set(rest.disciplineIds ?? [])]
+        : existing.disciplineLinks.map((l) => l.disciplineId);
+      const mergedExternalLabels = labelsChanged
+        ? [...new Set(rest.externalDisciplineLabels ?? [])]
+        : existing.externalDisciplineLabels;
       const mergedOriginId =
         rest.originId !== undefined ? rest.originId : existing.originId;
 
+      // Validation « au moins un des trois » après merge.
       const hasAtLeastOne =
-        mergedDisciplineId !== null ||
-        (mergedExternalLabel !== null && mergedExternalLabel.length > 0) ||
+        mergedDisciplineIds.length > 0 ||
+        mergedExternalLabels.length > 0 ||
         mergedOriginId !== null;
 
       if (!hasAtLeastOne) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "An event must keep at least one of disciplineId, externalDisciplineLabel, or originId set.",
+            "An event must keep at least one of disciplineIds, externalDisciplineLabels, or originId set.",
         });
       }
 
-      // Validations existence si champs modifiés et non-null
-      if (rest.disciplineId !== undefined && rest.disciplineId !== null) {
-        await assertDisciplineExists(ctx.prisma, rest.disciplineId);
+      // Validations existence si champs modifiés
+      if (disciplinesChanged) {
+        await assertDisciplinesExist(ctx.prisma, mergedDisciplineIds);
       }
       if (rest.originId !== undefined && rest.originId !== null) {
         await assertOriginExists(ctx.prisma, rest.originId);
@@ -412,8 +454,10 @@ export const eventRouter = router({
             label: rest.label,
             slug: rest.slug,
             audience: rest.audience,
-            disciplineId: rest.disciplineId,
-            externalDisciplineLabel: rest.externalDisciplineLabel,
+            // La jointure est synchronisée juste après.
+            externalDisciplineLabels: labelsChanged
+              ? mergedExternalLabels
+              : undefined,
             originId: rest.originId,
             organizerId: rest.organizerId,
             publicationDate: rest.publicationDate,
@@ -449,6 +493,20 @@ export const eventRouter = router({
             }
           }
           throw err;
+        }
+
+        // Synchro de la jointure (source de vérité des disciplines).
+        if (disciplinesChanged) {
+          await tx.eventDiscipline.deleteMany({ where: { eventId: id } });
+          if (mergedDisciplineIds.length > 0) {
+            await tx.eventDiscipline.createMany({
+              data: mergedDisciplineIds.map((disciplineId) => ({
+                eventId: id,
+                disciplineId,
+              })),
+              skipDuplicates: true,
+            });
+          }
         }
 
         if (content !== undefined) {

@@ -26,6 +26,19 @@ export type DragItem = {
   id: string;
   path: string;
   type: "folder" | "file";
+  /**
+   * Où vit le binaire, quand ça diffère de `path` (cf. `storagePathOf`).
+   *
+   * `path` reste le chemin LOGIQUE, et c'est bien lui que veulent
+   * `isDropAllowed` / `isDropEffective` : « ce dossier est-il un descendant
+   * de cet item » et « le drop change-t-il quelque chose » sont des
+   * questions qui se posent dans l'espace où l'admin voit son arbre, pas
+   * dans celui où Cloudinary range ses octets.
+   *
+   * Le localisateur ne sert qu'à la traduction en intent de move.
+   * Transitoire, comme le reste du pliage.
+   */
+  storagePath?: string;
 };
 
 export type DragPayload = {
@@ -66,10 +79,21 @@ export function tryParsePayload(
 
     for (const item of candidate.items) {
       if (!item || typeof item !== "object") return null;
-      const i = item as { id?: unknown; path?: unknown; type?: unknown };
+      const i = item as {
+        id?: unknown;
+        path?: unknown;
+        type?: unknown;
+        storagePath?: unknown;
+      };
       if (typeof i.id !== "string") return null;
       if (typeof i.path !== "string") return null;
       if (i.type !== "folder" && i.type !== "file") return null;
+      // Optionnel : absent tant que la vue pliée n'est pas levée. Mais s'il
+      // est là, il doit être une chaîne — un payload à moitié valide est un
+      // payload invalide.
+      if (i.storagePath !== undefined && typeof i.storagePath !== "string") {
+        return null;
+      }
     }
 
     return candidate as DragPayload;
@@ -90,6 +114,7 @@ export function dragItemFromNode(node: FinderNode): DragItem {
     id: node.id,
     path: node.path,
     type: node.type,
+    ...(node.meta?.storagePath ? { storagePath: node.meta.storagePath } : {}),
   };
 }
 

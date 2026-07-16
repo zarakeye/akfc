@@ -41,6 +41,15 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("perso"),
   }),
+  // `event` : contenus d'un événement (forum des associations, démonstration).
+  // L'événement est créé par les admins ; le membre le choisit ici. Les
+  // `disciplineIds` ENRICHISSENT les disciplines de l'événement (elles
+  // décrivent l'ÉVÉNEMENT, pas chaque photo).
+  z.object({
+    kind: z.literal("event"),
+    eventId: z.number().int().positive(),
+    disciplineIds: z.array(z.number().int().positive()).default([]),
+  }),
 ]);
 
 export const uploadAssetRequestSchema = z.object({

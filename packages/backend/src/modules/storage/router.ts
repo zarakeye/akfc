@@ -15,6 +15,8 @@ import {
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
+import { StatusFoldingReadView } from "@backend/modules/storage/statusFoldingReadView";
+import { toPhysicalMoveIntents } from "@backend/modules/storage/toPhysicalMoveIntents.service";
 import {
   planMoveOperations,
   executeMoveOperations,
@@ -72,6 +74,12 @@ const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
     kind: z.literal('general'),
     folder: z.string().trim().min(1).max(120).optional(),
   }),
+  // Contenus d'un événement (parité avec `general`).
+  z.object({
+    kind: z.literal('event'),
+    eventId: z.number().int().positive(),
+    disciplineIds: z.array(z.number().int().positive()).default([]),
+  }),
 ]);
 
 const registerR2UploadInputSchema = z.object({
@@ -100,11 +108,28 @@ export const storageRouter = router({
    * sur la présence d'au moins une permission.
    */
   getAttentionCounts: protectedProcedure.query(async ({ ctx }) => {
-    const [pending, bin] = await Promise.all([
+    const [pending, bin, generalPending, persoCounts] = await Promise.all([
       ctx.prisma.mediaAsset.count({ where: { status: "pending" } }),
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
+      ctx.prisma.mediaAsset.count({
+        where: {
+          status: "pending",
+          appRoot: ctx.appRoot,
+          fullPath: { contains: "/general/" },
+        },
+      }),
+      countPersoImages({
+        prisma: ctx.prisma,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+      }),
     ]);
-    return { pending, bin };
+    return {
+      pending,
+      bin,
+      generalPending,
+      persoPending: persoCounts.pending,
+    };
   }),
 
   /**
@@ -135,6 +160,38 @@ export const storageRouter = router({
     return listGeneralFolders({ prisma: ctx.prisma, appRoot: ctx.appRoot });
   }),
 
+  /**
+   * ═══ Le flag `logical` — chantier « arbre sans strate de statut » ═══════
+   *
+   * Levé, il enveloppe l'adapter dans `StatusFoldingReadView` : le nœud
+   * logique `AKFC/cours/x` fusionne alors les physiques
+   * `AKFC/pending/cours/x` et `AKFC/published/cours/x`, et le statut cesse
+   * d'être un lieu pour redevenir ce qu'il aurait toujours dû être — une
+   * métadonnée (`MediaAsset.status`, déjà exposée en `MediaMeta.status`).
+   *
+   * Baissé (le défaut), rien ne change : l'appelant voit l'arbre physique,
+   * exactement comme avant ce chantier.
+   *
+   * ─── Pourquoi un flag plutôt qu'une bascule sèche ─────────────────────
+   *
+   * Le pliage change ce que voit l'admin dans sa bibliothèque. Un flag
+   * découple la mise en place (backend, inerte, vérifiable) du basculement
+   * (front, visible) — et surtout, il rend le retour arrière instantané :
+   * un booléen, pas un revert en catastrophe un soir de démo.
+   *
+   * ⚠️ Un appelant qui lève `logical` sur une lecture DOIT le lever aussi
+   * sur `move` : les chemins qu'il reçoit sont logiques, et le pipeline de
+   * move ne sait travailler qu'en physique (cf. `toPhysicalMoveIntents`).
+   * Les mélanger, c'est envoyer des chemins logiques à `resolveTargetPath`,
+   * qui lève. En pratique il n'y a qu'un seul appelant
+   * (`finderStorageAdapter`), donc un seul endroit à tenir cohérent.
+   *
+   * ─── Durée de vie ─────────────────────────────────────────────────────
+   *
+   * Transitoire. À l'étape 5 du chantier, tous les binaires vivent à plat,
+   * le pliage devient l'identité, et le flag disparaît avec les trois
+   * modules qu'il commande.
+   */
   list: protectedProcedure
     .input(
       z.object({
@@ -142,13 +199,17 @@ export const storageRouter = router({
         path: z.string().min(1),
         cursor: z.string().optional(),
         limit: z.number().int().positive().optional(),
+        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const reader = input.provider
+      const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
+      const reader = input.logical
+        ? new StatusFoldingReadView(backend, ctx.appRoot)
+        : backend;
       return reader.list({
         path: input.path,
         cursor: input.cursor,
@@ -162,13 +223,17 @@ export const storageRouter = router({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
         depth: z.number().int().positive().optional(),
+        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const reader = input.provider
+      const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
+      const reader = input.logical
+        ? new StatusFoldingReadView(backend, ctx.appRoot)
+        : backend;
       return reader.getTree({ path: input.path, depth: input.depth });
     }),
 
@@ -177,13 +242,17 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
+        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const reader = input.provider
+      const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
+      const reader = input.logical
+        ? new StatusFoldingReadView(backend, ctx.appRoot)
+        : backend;
       if (!reader.getNode) {
         throw new Error(
           `Provider "${input.provider ?? "virtual"}" does not support getNode().`
@@ -197,13 +266,17 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
+        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const reader = input.provider
+      const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
+      const reader = input.logical
+        ? new StatusFoldingReadView(backend, ctx.appRoot)
+        : backend;
       if (!reader.getMetadata) {
         throw new Error(
           `Provider "${input.provider ?? "virtual"}" does not support getMetadata().`
@@ -217,19 +290,53 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         intent: storageMoveIntentSchema,
+        /**
+         * L'intention est exprimée en chemins LOGIQUES (cf. `list`).
+         *
+         * Un appelant qui lit en `logical` DOIT lever ce flag ici aussi :
+         * les chemins qu'il détient viennent de la vue pliée.
+         */
+        logical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+
+      // ⚠️ L'adapter reste PHYSIQUE, toujours. On n'enveloppe JAMAIS le
+      // pipeline de move dans `StatusFoldingReadView` : `planMoveOperations`
+      // lit la source via cet adapter puis calcule la cible avec
+      // `resolveTargetPath`, qui exige un segment de statut en position 1 et
+      // lève sinon. Lui donner des chemins logiques casserait la
+      // publication. La traduction se fait en amont, sur l'INTENTION.
       const adapter = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
 
-      const operations = await planMoveOperations({
-        adapter,
-        appRoot: ctx.appRoot,
-        intent: input.intent,
-      });
+      // Une intention logique peut recouvrir plusieurs emplacements réels
+      // (un dossier logique vit dans 1..N strates). `toPhysicalMoveIntents`
+      // les résout contre la DB et n'émet que des intentions RÉELLES — pas
+      // de spéculation, donc pas de tolérance à installer ici.
+      const intents = input.logical
+        ? await toPhysicalMoveIntents({
+            prisma: ctx.prisma,
+            appRoot: ctx.appRoot,
+            intent: input.intent,
+          })
+        : [input.intent];
+
+      // On planifie TOUT avant de garder, et on garde sur l'UNION.
+      //
+      // C'est le point non négociable de cet enchaînement :
+      // `assertOperationsDontUnpublishReferencedAssets` doit voir l'ensemble
+      // des opérations. La faire tourner par intention la laisserait
+      // raisonner sur un sous-ensemble — et une garde qui juge sur une
+      // partie du geste ne garde rien.
+      const plans = await Promise.all(
+        intents.map((intent) =>
+          planMoveOperations({ adapter, appRoot: ctx.appRoot, intent }),
+        ),
+      );
+      const operations = plans.flat();
 
       await assertOperationsDontUnpublishReferencedAssets(
         ctx.prisma,
@@ -237,6 +344,8 @@ export const storageRouter = router({
         ctx.appRoot,
       );
 
+      // Exécution séquentielle, comme avant : Cloudinary n'aime pas les
+      // opérations concurrentes sur des préfixes voisins.
       await executeMoveOperations(adapter, operations);
 
       return { operations };

@@ -32,17 +32,26 @@ type EventRow = {
   rattachement: string;
 };
 
+/**
+ * Rattachement affiché : TOUTES les disciplines enseignées + TOUS les labels
+ * externes (un événement peut en présenter plusieurs). À défaut, l'origine
+ * culturelle. Fonction module-level : aucune réassignation pendant le rendu
+ * (React Compiler STRICT).
+ */
+function buildRattachement(
+  disciplineNames: string[],
+  externalLabels: string[],
+  originName: string | undefined,
+): string {
+  const parts = [...disciplineNames, ...externalLabels];
+  if (parts.length > 0) return parts.join(', ');
+  return originName ?? '—';
+}
+
 export default function EventsTable(): JSX.Element {
   const router = useRouter();
   const { data: events, isLoading, isError } = trpc.event.getAllAdmin.useQuery();
-  const { data: disciplines } = trpc.discipline.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
-
-  const disciplineById = useMemo(() => {
-    const map = new Map<number, string>();
-    (disciplines ?? []).forEach((d) => map.set(d.id, d.name));
-    return map;
-  }, [disciplines]);
 
   const originById = useMemo(() => {
     const map = new Map<number, string>();
@@ -59,11 +68,11 @@ export default function EventsTable(): JSX.Element {
     slug: e.slug ?? '—',
     public: AUDIENCE_LABELS[e.audience] ?? e.audience,
     statut: statutLabel(e.publicationDate),
-    rattachement:
-      (e.disciplineId != null ? disciplineById.get(e.disciplineId) : undefined) ??
-      e.externalDisciplineLabel ??
-      (e.originId != null ? originById.get(e.originId) : undefined) ??
-      '—',
+    rattachement: buildRattachement(
+      e.disciplineLinks.map((l) => l.discipline.name),
+      e.externalDisciplineLabels,
+      e.originId != null ? originById.get(e.originId) : undefined,
+    ),
   }));
 
   const columns: Column<EventRow>[] = [

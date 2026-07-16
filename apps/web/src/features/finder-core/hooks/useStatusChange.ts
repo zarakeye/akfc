@@ -10,6 +10,7 @@ import { APP_ROOT } from '@config/app';
 import { dragItemFromNode } from '@features/finder-core/dnd/payload';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import type { LifecycleStatus } from '@features/finder-core/utils/statusFolders';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 /**
  * Hook de changement de statut d'une sélection de FinderNodes.
@@ -69,7 +70,7 @@ export function useStatusChange(adapter: FileAdapter): {
             sources: nodes.map((n) => ({
               kind:
                 n.type === 'folder' ? ('folder' as const) : ('file' as const),
-              fullPath: n.path,
+              fullPath: storagePathOf(n),
             })),
           });
           utils.trash.listBin.invalidate();

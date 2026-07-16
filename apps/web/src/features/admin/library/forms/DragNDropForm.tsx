@@ -110,6 +110,14 @@ const formSchema = z.discriminatedUnion('destinationKind', [
     // Sous-dossier optionnel sous « Général » (vide = racine).
     generalFolder: z.string().trim().max(120).optional(),
   }),
+  z.object({
+    destinationKind: z.literal('event'),
+    // Les évènements sont créés par les admins ; on en choisit un existant.
+    eventId: z
+      .number({ message: 'Sélectionne un évènement.' })
+      .int()
+      .positive('Sélectionne un évènement.'),
+  }),
 ]);
 
 type FormValues = z.infer<typeof formSchema>;
@@ -128,6 +136,12 @@ type Destination =
   | {
       kind: 'general';
       folder?: string;
+    }
+  | {
+      kind: 'event';
+      eventId: number;
+      /** Disciplines présentées lors de l'évènement (enrichissent l'évènement). */
+      disciplineIds: number[];
     };
 
 /* -------------------------------------------------------------------------- */
@@ -271,6 +285,29 @@ export default function DragNDropForm(): JSX.Element {
     { enabled: destinationKind === 'general' },
   );
   const generalFolders = generalFoldersQuery.data ?? [];
+
+  // Évènements existants (créés par les admins) pour le picker.
+  const eventsQuery = trpc.event.listForUpload.useQuery(undefined, {
+    enabled: destinationKind === 'event',
+  });
+  const eventsForUpload = eventsQuery.data ?? [];
+
+  // TOUTES les disciplines : `disciplinesQuery` ci-dessus est filtrée par
+  // catégorie, or un évènement n'a pas de catégorie.
+  const allDisciplinesQuery = trpc.discipline.getAll.useQuery(undefined, {
+    enabled: destinationKind === 'event',
+  });
+  const allDisciplines = allDisciplinesQuery.data ?? [];
+
+  // Hors schéma RHF (évite le typage d'un tableau dans une union discriminée) —
+  // fusionné à la destination au moment de la soumission.
+  const [eventDisciplineIds, setEventDisciplineIds] = useState<number[]>([]);
+
+  const toggleEventDiscipline = (id: number) => {
+    setEventDisciplineIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   // -------------------------------
   // Mutations tRPC
@@ -438,6 +475,16 @@ export default function DragNDropForm(): JSX.Element {
       return folderSlug
         ? `${APP_ROOT}/pending/general/${folderSlug}/${safeFileName}`
         : `${APP_ROOT}/pending/general/${safeFileName}`;
+    }
+
+    if (destination.kind === 'event') {
+      // Même règle que le backend (`resolvePendingUploadFolder`) : slug de
+      // l'évènement, fallback `event-<id>` car `Event.slug` est nullable.
+      const ev = eventsForUpload.find((e) => e.id === destination.eventId);
+      const eventSlug = ev?.slug
+        ? slugify(ev.slug)
+        : `event-${destination.eventId}`;
+      return `${APP_ROOT}/pending/events/${eventSlug}/${safeFileName}`;
     }
 
     const category = categories.find((c) => c.id === destination.categoryId);
@@ -711,6 +758,12 @@ export default function DragNDropForm(): JSX.Element {
         categoryId: values.categoryId,
         proposedDisciplineName: values.proposedDisciplineName.trim(),
       };
+    } else if (values.destinationKind === 'event') {
+      destination = {
+        kind: 'event',
+        eventId: values.eventId,
+        disciplineIds: eventDisciplineIds,
+      };
     } else {
       const folder = values.generalFolder?.trim();
       destination = { kind: 'general', folder: folder ? folder : undefined };
@@ -807,12 +860,15 @@ export default function DragNDropForm(): JSX.Element {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-80">
       <input ref={fileInputRef} type="file" multiple hidden />
 
-      {/* Destination : discipline ou « Général » */}
-      <div className="flex gap-4">
+      {/* Destination : discipline, « Général » ou évènement */}
+      <div className="flex flex-wrap gap-4">
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            checked={destinationKind !== 'general'}
+            checked={
+              destinationKind === 'existing-discipline' ||
+              destinationKind === 'new-discipline'
+            }
             onChange={() => setValue('destinationKind', 'existing-discipline')}
           />
           Vers une discipline
@@ -825,9 +881,18 @@ export default function DragNDropForm(): JSX.Element {
           />
           Vers « Général »
         </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            checked={destinationKind === 'event'}
+            onChange={() => setValue('destinationKind', 'event')}
+          />
+          Vers un évènement
+        </label>
       </div>
 
-      {destinationKind !== 'general' && (
+      {(destinationKind === 'existing-discipline' ||
+        destinationKind === 'new-discipline') && (
         <>
           {/* Catégorie */}
       <div>
@@ -935,6 +1000,67 @@ export default function DragNDropForm(): JSX.Element {
         </>
       )}
         </>
+      )}
+
+      {destinationKind === 'event' && (
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="block font-semibold mb-1">Évènement</label>
+            {eventsQuery.isLoading ? (
+              <p className="text-sm text-gray-500">Chargement…</p>
+            ) : eventsForUpload.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Aucun évènement. Les évènements sont créés par les admins.
+              </p>
+            ) : (
+              <select
+                {...register('eventId', { valueAsNumber: true })}
+                defaultValue=""
+                className="border rounded p-2 w-full"
+              >
+                <option value="" disabled>
+                  — Choisir un évènement —
+                </option>
+                {eventsForUpload.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {'eventId' in errors && errors.eventId && (
+              <p className="text-sm text-red-600 mt-1">
+                {errors.eventId.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">
+              Disciplines présentées (optionnel)
+            </label>
+            {allDisciplines.length === 0 ? (
+              <p className="text-sm text-gray-500">Chargement…</p>
+            ) : (
+              <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto rounded border p-2">
+                {allDisciplines.map((d) => (
+                  <label key={d.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={eventDisciplineIds.includes(d.id)}
+                      onChange={() => toggleEventDiscipline(d.id)}
+                    />
+                    <span>{d.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Elles décrivent l&apos;ÉVÈNEMENT (pas chaque fichier) et
+              s&apos;ajoutent aux disciplines déjà enregistrées sur lui.
+            </p>
+          </div>
+        </div>
       )}
 
       {destinationKind === 'general' && (

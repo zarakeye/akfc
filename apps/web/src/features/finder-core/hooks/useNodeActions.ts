@@ -12,6 +12,7 @@ import {
   buildNodePool,
   resolveSelectedNodes,
 } from '@features/finder-core/utils/selectionNodes';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
 
@@ -172,7 +173,7 @@ export function useNodeActions(): {
         // ─── Hors bin → trashToBin ──────────────────────────────────────
         const sources = nodes.map((n) => ({
           kind: n.type === 'folder' ? ('folder' as const) : ('file' as const),
-          fullPath: n.path,
+          fullPath: storagePathOf(n),
         }));
         await trashToBinMutation.mutateAsync({
           appRoot: APP_ROOT,
