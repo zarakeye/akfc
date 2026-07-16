@@ -180,6 +180,7 @@ export function useNodeActions(): {
           sources,
           logical: true,
         });
+        utils.storage.getAttentionCounts.invalidate();
       }
 
       reloadFolderContent();

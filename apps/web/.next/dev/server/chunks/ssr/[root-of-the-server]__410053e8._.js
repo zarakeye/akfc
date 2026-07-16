@@ -4170,6 +4170,7 @@ function useNodeActions() {
                 sources,
                 logical: true
             });
+            utils.storage.getAttentionCounts.invalidate();
         }
         reloadFolderContent();
         exitMultiSelect();
@@ -7148,6 +7149,7 @@ function useStatusChange(adapter) {
                     logical: true
                 });
                 utils.trash.listBin.invalidate();
+                utils.storage.getAttentionCounts.invalidate();
             } else {
                 if (!adapter.moveItems) {
                     setError('Déplacement non supporté par cet adaptateur.');
@@ -7161,6 +7163,10 @@ function useStatusChange(adapter) {
                         status: target
                     }
                 });
+                // Publier ou dépublier fait bouger `pending` (et, selon la zone,
+                // `generalPending` / `persoPending`). La cloche est dans le cache
+                // depuis sa migration `useQuery` : un invalidate suffit.
+                utils.storage.getAttentionCounts.invalidate();
             }
             reloadFolderContent();
             exitMultiSelect();

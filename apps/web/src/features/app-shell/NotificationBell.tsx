@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, type JSX } from "react";
+import { type JSX } from "react";
 import Link from "next/link";
 import { Bell, HardDrive } from "lucide-react";
 
-import { trpcClient } from "@trpc/trpcClient";
+import { trpc } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /**
@@ -84,39 +84,31 @@ function buildMessage(
   return `Vous avez ${bin} contenu${s(bin)} dans la corbeille`;
 }
 
-/**
- * La forme de `storage.getAttentionCounts`, DÉRIVÉE de la procédure.
- *
- * Elle était écrite à la main — `{ pending: number; bin: number }` — et n'a
- * pas suivi quand le backend a gagné `generalPending` et `persoPending`. Le
- * corps du composant les lisait déjà : `pnpm typecheck` restait rouge sans
- * que rien ne pointe vers la cause, l'annotation étant syntaxiquement
- * irréprochable.
- *
- * Dérivée, elle ne peut plus décrocher : ajouter un champ à la procédure le
- * rend disponible ici, en retirer un fait échouer les lectures à l'endroit
- * exact où elles se font.
- */
-type AttentionCounts = Awaited<
-  ReturnType<typeof trpcClient.storage.getAttentionCounts.query>
->;
-
 export function NotificationBell(): JSX.Element | null {
   const user = useSessionStore((s) => s.session?.user);
-  const [counts, setCounts] = useState<AttentionCounts | null>(null);
-
   const canSee = (user?.role?.permissions.length ?? 0) > 0;
 
-  useEffect(() => {
-    if (!canSee) return;
-    let cancelled = false;
-    void trpcClient.storage.getAttentionCounts.query().then((data) => {
-      if (!cancelled) setCounts(data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [canSee]);
+  // ─── Pourquoi useQuery et pas useEffect + useState ──────────────────────
+  //
+  // Ce composant faisait UN fetch au montage, dans un `useEffect([canSee])`,
+  // et stockait le résultat dans un `useState`. Il ne se rafraîchissait donc
+  // jamais : ni après un upload, ni après une publication. Il fallait
+  // recharger la page pour voir un compteur juste.
+  //
+  // Et surtout, il était HORS du cache react-query. Un `invalidate()` posé
+  // au bon endroit n'aurait rien fait — il n'avait rien à invalider. Les
+  // deux moitiés du mécanisme manquaient, chacune rendant l'autre inutile.
+  //
+  // Avec `useQuery`, le cache devient la source unique : les quatre endroits
+  // qui font bouger les compteurs (les deux uploaders, `useStatusChange`,
+  // `useNodeActions`) invalident, et la cloche suit — sans rien savoir d'eux.
+  //
+  // Le type vient de la procédure, il n'y a plus rien à écrire à la main.
+  // L'annotation précédente disait `{ pending, bin }` alors que le backend
+  // en renvoyait quatre depuis un moment.
+  const { data: counts } = trpc.storage.getAttentionCounts.useQuery(undefined, {
+    enabled: canSee,
+  });
 
   if (!canSee) return null;
 

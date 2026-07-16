@@ -6,3 +6,21 @@
 [00:21:45.241] Server  LOG      ✓ Compiled in 115ms
 [00:22:15.639] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
 [00:35:31.189] Server  LOG      ✓ Compiled in 111ms
+[00:42:18.066] Server  LOG     [asset_id check] "578b2aa0c9f85b5ea87da6d61eb50668" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/Baccalauréat_Stéphane_BAZZÉ"
+[00:42:18.944] Server  WARN    [media] asset not found → fallback {}
+[00:42:19.076] Server  WARN    [media] asset not found → fallback {}
+[00:43:15.533] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[00:45:26.087] Server  LOG     [asset_id check] "578b2aa0c9f85b5ea87da6d61eb50668" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/Baccalauréat_Stéphane_BAZZÉ"
+[00:45:26.172] Server  LOG     [asset_id check] "578b2aa0c9f85b5ea87da6d61eb50668" "AKFC/pending/persos/stephane-bazze-cmp6s16gw0001i51z30km4p2o/photos/Baccalauréat_Stéphane_BAZZÉ"
+[00:45:26.326] Server  WARN    [media] asset not found → fallback {}
+[00:45:26.423] Server  WARN    [media] asset not found → fallback {}
+[00:45:33.869] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/pending/cours/tchoy-lee-fut/N°série"
+[00:45:54.127] Server  LOG     Executing move intent: {}
+[00:45:54.560] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/pending/cours/tchoy-lee-fut/N°série"
+[00:45:58.476] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/published/cours/tchoy-lee-fut/N°série"
+[00:46:12.436] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/published/cours/tchoy-lee-fut/N°série"
+[00:46:14.451] Server  LOG     Executing move intent: {}
+[00:46:14.669] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/published/cours/tchoy-lee-fut/N°série"
+[00:46:17.549] Server  LOG     [asset_id check] "9817a917ec0d209429f9987fff1a7597" "AKFC/pending/cours/tchoy-lee-fut/N°série"
+[00:53:34.735] Browser WARN    Image with src "http://localhost:3000/AKFC_logo.svg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[00:58:34.279] Server  LOG      ✓ Compiled in 140ms

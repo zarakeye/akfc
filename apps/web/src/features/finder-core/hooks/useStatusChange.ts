@@ -78,6 +78,7 @@ export function useStatusChange(adapter: FileAdapter): {
             logical: true,
           });
           utils.trash.listBin.invalidate();
+          utils.storage.getAttentionCounts.invalidate();
         } else {
           if (!adapter.moveItems) {
             setError('Déplacement non supporté par cet adaptateur.');
@@ -88,6 +89,10 @@ export function useStatusChange(adapter: FileAdapter): {
             items: nodes.map(dragItemFromNode),
             target: { type: 'status-folder', status: target },
           });
+          // Publier ou dépublier fait bouger `pending` (et, selon la zone,
+          // `generalPending` / `persoPending`). La cloche est dans le cache
+          // depuis sa migration `useQuery` : un invalidate suffit.
+          utils.storage.getAttentionCounts.invalidate();
         }
 
         reloadFolderContent();
