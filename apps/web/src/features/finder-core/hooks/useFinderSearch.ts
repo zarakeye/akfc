@@ -76,6 +76,11 @@ export function useFinderSearch(): void {
           caseSensitive: flags.caseSensitive,
           wholeWord: flags.wholeWord,
           useRegex: flags.useRegex,
+          // `currentPath` est désormais un chemin logique : sans ce flag, le
+          // prefix ne matcherait aucun `MediaAsset.fullPath`, et les rares
+          // résultats reviendraient en chemins physiques dans une grille qui
+          // affiche du logique.
+          logical: true,
         });
 
         // Map vers SearchResultNode (FinderNode + parentPath).

@@ -291,6 +291,7 @@ export default function FinderTreeFolder({
             // résout, cf. `resolvePhysicalLocations`.
             fullPath: it.storagePath ?? it.path,
           })),
+          logical: true,
         });
         reloadFolderContent();
         exitMultiSelect();

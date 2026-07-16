@@ -72,6 +72,10 @@ export function useStatusChange(adapter: FileAdapter): {
                 n.type === 'folder' ? ('folder' as const) : ('file' as const),
               fullPath: storagePathOf(n),
             })),
+            // Un DOSSIER n'a pas de localisateur unique (il vit dans 1..N
+            // strates) : c'est le backend qui résout, contre le registre
+            // `Folder`. Jeter `AKFC/cours/x` jette les deux copies.
+            logical: true,
           });
           utils.trash.listBin.invalidate();
         } else {

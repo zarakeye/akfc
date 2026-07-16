@@ -142,6 +142,7 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
               // résout, cf. `resolvePhysicalLocations`.
               fullPath: it.storagePath ?? it.path,
             })),
+            logical: true,
           });
           reloadFolderContent();
           exitMultiSelect();

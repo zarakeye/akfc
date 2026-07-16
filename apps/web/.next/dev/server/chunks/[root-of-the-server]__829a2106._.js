@@ -11972,13 +11972,28 @@ const storageRouter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$packag
                 appRoot: ctx.appRoot,
                 intent
             })));
-        const operations = plans.flat();
-        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$assertOperationsDontUnpublishReferencedAssets$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["assertOperationsDontUnpublishReferencedAssets"])(ctx.prisma, operations, ctx.appRoot);
+        // ─── Une opération sur place n'est pas une opération ───────────
+        //
+        // Rien en aval ne filtre `{ source: X, target: X }` : `adapter.move`
+        // partirait renommer un objet sur lui-même, le provider refuserait, et
+        // l'exception ferait échouer TOUT le geste — y compris sa partie utile.
+        //
+        // Le cas devient courant avec le pliage : publier un dossier logique
+        // émet une intention par strate occupée, et celle qui vit DÉJÀ dans la
+        // strate cible se résout en X → X. Elle n'a simplement rien à faire.
+        //
+        // Le filtre est posé AVANT les gardes, pour qu'elles ne raisonnent que
+        // sur des opérations réelles — une opération sur place ne dépublie
+        // rien, elle n'a donc pas à peser dans leur verdict. Et il est posé
+        // avant `return { operations }` : l'appelant reçoit ce qui a bougé, pas
+        // ce qu'on a envisagé.
+        const effectiveOperations = plans.flat().filter((operation)=>operation.source.path !== operation.target.path);
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$media$2f$services$2f$assertOperationsDontUnpublishReferencedAssets$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["assertOperationsDontUnpublishReferencedAssets"])(ctx.prisma, effectiveOperations, ctx.appRoot);
         // Exécution séquentielle, comme avant : Cloudinary n'aime pas les
         // opérations concurrentes sur des préfixes voisins.
-        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$storage$2f$resolveMoveIntent$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["executeMoveOperations"])(adapter, operations);
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$modules$2f$storage$2f$resolveMoveIntent$2e$service$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["executeMoveOperations"])(adapter, effectiveOperations);
         return {
-            operations
+            operations: effectiveOperations
         };
     }),
     /* ====================================================================== */ /*  Upload Cloudinary (inchangé)                                          */ /* ====================================================================== */ createUploadAuthorization: __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$backend$2f$src$2f$trpc$2f$core$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["protectedProcedure"].input(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$zod$40$4$2e$4$2e$3$2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].object({

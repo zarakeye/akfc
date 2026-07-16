@@ -290,9 +290,23 @@ export const finderStorageAdapter: FileAdapter = {
     // `provider` absent → le router utilise `VirtualStorage` qui interroge
     // Cloudinary ET R2 puis fusionne les résultats. Le finder voit donc
     // les items des deux backends mélangés, transparent pour l'UI.
+    // ─── Vue LOGIQUE ────────────────────────────────────────────────
+    //
+    // Le nœud `AKFC/cours/x` fusionne les physiques `AKFC/pending/cours/x`
+    // et `AKFC/published/cours/x`. Le statut cesse d'être un lieu et
+    // redevient une métadonnée (`meta.status`, cf. `statusOf`).
+    //
+    // Les chemins qui ressortent d'ici sont donc LOGIQUES. Chaque fichier
+    // porte son emplacement réel dans `meta.storagePath` — c'est lui, et
+    // pas `path`, qu'attendent le provider et la DB (cf. `storagePathOf`).
+    //
+    // ⚠️ Ce flag est indivisible : lire en plié impose d'écrire en plié
+    // (`move`, `trashToBin`, `searchRecursive`). Les mélanger enverrait des
+    // chemins logiques à `resolveTargetPath`, qui lève.
     const { root } = await trpcClient.storage.getTree.query({
       path: options.path,
       depth: 1,
+      logical: true,
     });
 
     const { folders, files } = mapStorageTreeToFinderNodes(root);
@@ -308,6 +322,7 @@ export const finderStorageAdapter: FileAdapter = {
     const { root } = await trpcClient.storage.getTree.query({
       path: options.path,
       depth: options.depth ?? 1,
+      logical: true,
     });
 
     return { root: mapStorageNodeToFinderNode(root) };
@@ -336,8 +351,14 @@ export const finderStorageAdapter: FileAdapter = {
     // (`pickBackendByExtension`). Forcer `provider: 'cloudinary'` ici était
     // exactement ce qui laissait les assets R2 en `pending` lors d'un
     // changement de statut ou d'un DnD.
+    // Les sources sont des localisateurs (fichiers) ou des chemins logiques
+    // de dossier ; la cible est logique. `toPhysicalMoveIntents` redescend le
+    // tout dans l'espace physique, en émettant une intention par strate
+    // réellement occupée, et en faisant hériter chaque cible de la strate de
+    // sa source — un DnD réorganise, il ne publie pas.
     await trpcClient.storage.move.mutate({
       intent: { source, target },
+      logical: true,
     });
   },
 };

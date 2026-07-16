@@ -178,6 +178,7 @@ export function useNodeActions(): {
         await trashToBinMutation.mutateAsync({
           appRoot: APP_ROOT,
           sources,
+          logical: true,
         });
       }
 
