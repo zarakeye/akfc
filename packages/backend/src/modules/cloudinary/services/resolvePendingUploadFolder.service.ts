@@ -7,21 +7,32 @@ import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolveP
 /**
  * resolvePendingUploadFolder.service.ts
  *
- * Traduit une intention d'upload (`Destination`) en chemin Cloudinary
- * `pending` absolu.
+ * Traduit une intention d'upload (`Destination`) en chemin Cloudinary absolu.
+ *
+ * ─── ⚠️ Le nom de cette fonction est historique ──────────────────────────
+ *
+ * Elle ne résout plus rien de « pending ». Depuis l'étape 3, un upload naît
+ * `pending` parce que `registerUploadedAssets` écrit `status: "pending"` en
+ * base — pas parce qu'il atterrit sous un dossier qui s'appelle ainsi. Le
+ * chemin ne dit plus le statut : il dit juste où est le fichier.
+ *
+ * Le renommage (`resolveUploadFolder`) touche `registerUploadedAssets`,
+ * `createUploadSignatures`, un commentaire de `DragNDropForm` et un tutoriel
+ * MDX. Il part avec le reste à l'étape 6, plutôt que d'élargir un incrément
+ * qui parle de chemins.
  *
  * ─── Destinations couplées à une discipline (historique) ─────────────────
  *   - existing-discipline :
- *       `${appRoot}/pending/${slug(category.type)}/${slug(discipline.name)}`
+ *       `${appRoot}/${slug(category.type)}/${slug(discipline.name)}`
  *   - new-discipline :
- *       `${appRoot}/pending/${slug(category.type)}/new/${slug(proposedName)}`
+ *       `${appRoot}/${slug(category.type)}/new/${slug(proposedName)}`
  *     Les assets restent isolés dans `new/` jusqu'à validation admin.
  *
  * ─── Destinations découplées (fondation « destination générique ») ────────
- *   - general : `${appRoot}/pending/general`
+ *   - general : `${appRoot}/general`
  *       Espace club sans discipline ni catégorie. Sert d'espace partagé de
  *       fait entre admins (pas de permissions : club petit, confiance).
- *   - perso   : `${appRoot}/pending/persos/${personSlug}-${userId}`
+ *   - perso   : `${appRoot}/persos/${personSlug}-${userId}`
  *       Espace personnel de l'admin qui uploade. Le dossier est dérivé de
  *       `userId` (identité AUTHENTIFIÉE issue du contexte tRPC, jamais un id
  *       fourni par le client) → un admin ne peut écrire que dans son dossier.
@@ -58,7 +69,7 @@ export async function resolvePendingUploadFolder(params: {
   if (destination.kind === "general") {
     // Pas de sous-dossier → dépôt à la racine de `general/`.
     if (!destination.folder) {
-      return `${appRoot}/pending/general`;
+      return `${appRoot}/general`;
     }
     const folderSlug = slug(destination.folder);
     if (!folderSlug) {
@@ -66,7 +77,7 @@ export async function resolvePendingUploadFolder(params: {
         "General folder name must contain at least one slug-friendly character",
       );
     }
-    return `${appRoot}/pending/general/${folderSlug}`;
+    return `${appRoot}/general/${folderSlug}`;
   }
 
   /* ── Destination événement ── */
@@ -84,7 +95,7 @@ export async function resolvePendingUploadFolder(params: {
     // qui reste stable et unique.
     const eventSlug = event.slug ? slug(event.slug) : `event-${event.id}`;
 
-    return `${appRoot}/pending/events/${eventSlug || `event-${event.id}`}`;
+    return `${appRoot}/events/${eventSlug || `event-${event.id}`}`;
   }
 
   /* ── Destination personnelle de l'admin (dérivée de userId) ── */
@@ -127,7 +138,7 @@ export async function resolvePendingUploadFolder(params: {
     // de nom uniquement composé de caractères non transliterables).
     const disciplineSlug = slug(discipline.name) || `disc-${discipline.id}`;
 
-    return `${appRoot}/pending/${categorySegment}/${disciplineSlug}`;
+    return `${appRoot}/${categorySegment}/${disciplineSlug}`;
   }
 
   // kind === "new-discipline"
@@ -139,5 +150,5 @@ export async function resolvePendingUploadFolder(params: {
     );
   }
 
-  return `${appRoot}/pending/${categorySegment}/new/${proposedSlug}`;
+  return `${appRoot}/${categorySegment}/new/${proposedSlug}`;
 }

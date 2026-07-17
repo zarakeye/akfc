@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { physicalCandidates } from '@backend/modules/storage/logicalPath';
 
 /**
  * Liste les sous-dossiers existants sous `general/` (statuts pending +
@@ -24,10 +25,14 @@ export async function listGeneralFolders(params: {
     select: { fullPath: true },
   });
 
-  const prefixes = [
-    `${appRoot}/pending/general/`,
-    `${appRoot}/published/general/`,
-  ];
+  // Les emplacements possibles d'un dossier `general/` ne se listent pas à la
+  // main : `physicalCandidates` EST la règle du pliage, et elle rend les trois
+  // — le plat, `pending/`, `published/`. Les deux premiers étaient codés en
+  // dur ici ; le troisième, celui qui reçoit désormais les uploads, aurait
+  // manqué, et le dossier aurait disparu du select sans un mot.
+  const prefixes = physicalCandidates(`${appRoot}/general`, appRoot).map(
+    (candidate) => `${candidate}/`,
+  );
   const names = new Set<string>();
   for (const { fullPath } of assets) {
     for (const prefix of prefixes) {
