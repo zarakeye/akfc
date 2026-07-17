@@ -8234,6 +8234,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$featur
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderTree$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/components/FinderTree.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$GridItem$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/components/GridItem.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$StatusFilterBar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/components/StatusFilterBar.tsx [app-client] (ecmascript)");
+// Le dialogue de `trash-view`, celui dont `EmptyBinButton` se sert déjà.
+// En écrire un second serait la troisième façon de poser une question
+// dans ce projet.
+var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$trash$2d$view$2f$components$2f$ConfirmDialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/trash-view/components/ConfirmDialog.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$utils$2f$statusFolders$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/utils/statusFolders.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$ContextMenu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/components/ContextMenu.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useNodeActions$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/apps/web/src/features/finder-core/hooks/useNodeActions.ts [app-client] (ecmascript)");
@@ -8250,6 +8254,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$featur
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -8295,7 +8300,9 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
     const searchResults = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$state$2f$useFinderStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useFinderStore"])({
         "Finder.useFinderStore[searchResults]": (s)=>s.search.results
     }["Finder.useFinderStore[searchResults]"]);
-    const { deleteNodes, deleteLabel } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useNodeActions$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useNodeActions"])();
+    const { deleteNodes, deleteLabel, inBin } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useNodeActions$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useNodeActions"])();
+    // Le bouton « Supprimer » n'agit plus au premier clic.
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const statusFilter = (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$state$2f$useFinderStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useFinderStore"])({
         "Finder.useFinderStore[statusFilter]": (s)=>s.statusFilter
     }["Finder.useFinderStore[statusFilter]"]);
@@ -8614,12 +8621,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                             adapter: adapter
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 423,
+                            lineNumber: 430,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 422,
+                        lineNumber: 429,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8629,12 +8636,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                             "aria-label": "Chargement"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 428,
+                            lineNumber: 435,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 426,
+                        lineNumber: 433,
                         columnNumber: 9
                     }, this),
                     multiSelectActive && (()=>{
@@ -8654,7 +8661,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 449,
+                                    lineNumber: 456,
                                     columnNumber: 17
                                 }, this),
                                 !isBinAction && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$StatusRadioGroup$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -8662,7 +8669,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                     selectedNodes: selectedNodes
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 454,
+                                    lineNumber: 461,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -8677,20 +8684,20 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                             "aria-hidden": true
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                            lineNumber: 471,
+                                            lineNumber: 478,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: label
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                            lineNumber: 472,
+                                            lineNumber: 479,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 460,
+                                    lineNumber: 467,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -8704,12 +8711,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                         "aria-hidden": true
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 487,
+                                        lineNumber: 494,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 475,
+                                    lineNumber: 482,
                                     columnNumber: 17
                                 }, this)
                             ]
@@ -8717,17 +8724,17 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                     })(),
                     currentPath !== `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/bin` && !multiSelectActive && !fileFilter && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderSearchBar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 495,
+                        lineNumber: 502,
                         columnNumber: 26
                     }, this),
                     currentPath !== `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/bin` && !multiSelectActive && !fileFilter && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$StatusFilterBar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 501,
+                        lineNumber: 508,
                         columnNumber: 26
                     }, this),
                     currentPath !== `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/bin` && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderViewModeSwitcher$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 503,
+                        lineNumber: 510,
                         columnNumber: 47
                     }, this),
                     (()=>{
@@ -8745,9 +8752,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                             type: "button",
                             disabled: !canDelete,
-                            onClick: ()=>{
-                                void deleteNodes(selectedNodes);
-                            },
+                            onClick: ()=>setDeleteConfirmOpen(true),
                             "aria-label": deleteButtonLabel,
                             title: canDelete ? deleteButtonLabel : "Sélectionne un contenu ou un dossier",
                             className: canDelete ? "shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors" : "shrink-0 rounded p-1 text-gray-300 cursor-not-allowed transition-colors",
@@ -8755,15 +8760,31 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                 className: "h-4 w-4"
                             }, void 0, false, {
                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                lineNumber: 539,
+                                lineNumber: 544,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 521,
+                            lineNumber: 528,
                             columnNumber: 13
                         }, this);
                     })(),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$trash$2d$view$2f$components$2f$ConfirmDialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                        open: deleteConfirmOpen,
+                        title: inBin ? "Supprimer définitivement" : "Envoyer à la corbeille",
+                        description: inBin ? `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${selectedCount > 1 ? "seront supprimés" : "sera supprimé"} définitivement. Cette opération est irréversible.` : `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${selectedCount > 1 ? "seront envoyés" : "sera envoyé"} à la corbeille. Tu pourras ${selectedCount > 1 ? "les" : "le"} restaurer ensuite.`,
+                        confirmLabel: inBin ? "Supprimer définitivement" : "Envoyer à la corbeille",
+                        destructive: inBin,
+                        onConfirm: ()=>{
+                            setDeleteConfirmOpen(false);
+                            void deleteNodes(selectedNodes);
+                        },
+                        onCancel: ()=>setDeleteConfirmOpen(false)
+                    }, void 0, false, {
+                        fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
+                        lineNumber: 555,
+                        columnNumber: 9
+                    }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                         type: "button",
                         onClick: togglePreviewPanel,
@@ -8774,24 +8795,24 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                             className: "h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 565,
+                            lineNumber: 601,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$553$2e$0_react$40$19$2e$2$2e$0$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$panel$2d$right$2d$close$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__PanelRightClose$3e$__["PanelRightClose"], {
                             className: "h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 567,
+                            lineNumber: 603,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 544,
+                        lineNumber: 580,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                lineNumber: 421,
+                lineNumber: 428,
                 columnNumber: 7
             }, this),
             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8802,7 +8823,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                         className: "h-4 w-4 shrink-0"
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 578,
+                        lineNumber: 614,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -8812,13 +8833,13 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                         ]
                     }, void 0, true, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 579,
+                        lineNumber: 615,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                lineNumber: 574,
+                lineNumber: 610,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$resizable$2d$panels$40$4$2e$11$2e$2_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$resizable$2d$panels$2f$dist$2f$react$2d$resizable$2d$panels$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Group"], {
@@ -8846,19 +8867,19 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                             onPickToggle: onPickToggle
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 598,
+                            lineNumber: 634,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 591,
+                        lineNumber: 627,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$resizable$2d$panels$40$4$2e$11$2e$2_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$resizable$2d$panels$2f$dist$2f$react$2d$resizable$2d$panels$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                         className: " w-px bg-gray-200 hover:bg-blue-400 hover:w-0.75 transition-all focus-visible:outline-none focus-visible:bg-blue-400 focus-visible:w-0.75 "
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 612,
+                        lineNumber: 648,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$resizable$2d$panels$40$4$2e$11$2e$2_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$resizable$2d$panels$2f$dist$2f$react$2d$resizable$2d$panels$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Panel"], {
@@ -8867,11 +8888,11 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                         className: "flex flex-col min-h-0 relative",
                         children: currentPath === `${__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$config$2f$app$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APP_ROOT"]}/bin` ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$FinderBinRootView$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 628,
+                            lineNumber: 664,
                             columnNumber: 13
                         }, this) : searchActive ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$SearchResultsView$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {}, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 630,
+                            lineNumber: 666,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                             children: [
@@ -8884,7 +8905,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                 className: "h-6 w-6 animate-spin"
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 636,
+                                                lineNumber: 672,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -8892,18 +8913,18 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                 children: "Chargement…"
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 637,
+                                                lineNumber: 673,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 635,
+                                        lineNumber: 671,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 634,
+                                    lineNumber: 670,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8921,12 +8942,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                             children: "Ce dossier est vide"
                                         }, void 0, false, {
                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                            lineNumber: 651,
+                                            lineNumber: 687,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 650,
+                                        lineNumber: 686,
                                         columnNumber: 19
                                     }, this) : viewMode === "grid" ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "grid gap-2 grid-cols-[repeat(auto-fill,minmax(110px,1fr))]",
@@ -8943,12 +8964,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: group.parentLabel
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 668,
+                                                            lineNumber: 704,
                                                             columnNumber: 31
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                        lineNumber: 667,
+                                                        lineNumber: 703,
                                                         columnNumber: 29
                                                     }, this),
                                                     showChildHeader && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8959,7 +8980,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                 children: group.label
                                                             }, void 0, false, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 675,
+                                                                lineNumber: 711,
                                                                 columnNumber: 31
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -8971,13 +8992,13 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 678,
+                                                                lineNumber: 714,
                                                                 columnNumber: 31
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                        lineNumber: 674,
+                                                        lineNumber: 710,
                                                         columnNumber: 29
                                                     }, this),
                                                     group.nodes.map((node)=>{
@@ -9001,20 +9022,20 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             isInCart: isInCart ? isInCart(node.path) : false
                                                         }, node.id, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 697,
+                                                            lineNumber: 733,
                                                             columnNumber: 31
                                                         }, this);
                                                     })
                                                 ]
                                             }, group.key, true, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 665,
+                                                lineNumber: 701,
                                                 columnNumber: 25
                                             }, this);
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 654,
+                                        lineNumber: 690,
                                         columnNumber: 19
                                     }, this) : viewMode === "table" ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
                                         className: "w-full text-sm border-collapse",
@@ -9027,14 +9048,14 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             className: "px-2 py-2 text-left w-8"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 727,
+                                                            lineNumber: 763,
                                                             columnNumber: 27
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
                                                             className: "px-2 py-2 text-left w-8"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 729,
+                                                            lineNumber: 765,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9042,7 +9063,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: "Nom"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 730,
+                                                            lineNumber: 766,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9050,7 +9071,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: "Type"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 731,
+                                                            lineNumber: 767,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9058,7 +9079,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: "Statut"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 732,
+                                                            lineNumber: 768,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -9066,18 +9087,18 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: "Taille"
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 733,
+                                                            lineNumber: 769,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                    lineNumber: 725,
+                                                    lineNumber: 761,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 724,
+                                                lineNumber: 760,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -9099,17 +9120,17 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                         children: group.parentLabel
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                        lineNumber: 756,
+                                                                        lineNumber: 792,
                                                                         columnNumber: 35
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                    lineNumber: 752,
+                                                                    lineNumber: 788,
                                                                     columnNumber: 33
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 751,
+                                                                lineNumber: 787,
                                                                 columnNumber: 31
                                                             }, this),
                                                             showChildHeader && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
@@ -9123,7 +9144,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                             children: group.label
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                            lineNumber: 768,
+                                                                            lineNumber: 804,
                                                                             columnNumber: 35
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -9135,18 +9156,18 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                            lineNumber: 771,
+                                                                            lineNumber: 807,
                                                                             columnNumber: 35
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                    lineNumber: 764,
+                                                                    lineNumber: 800,
                                                                     columnNumber: 33
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 763,
+                                                                lineNumber: 799,
                                                                 columnNumber: 31
                                                             }, this),
                                                             group.nodes.map((node)=>{
@@ -9168,26 +9189,26 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                     onDragStart: (e)=>handleDragStart(e, node)
                                                                 }, node.id, false, {
                                                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                    lineNumber: 791,
+                                                                    lineNumber: 827,
                                                                     columnNumber: 33
                                                                 }, this);
                                                             })
                                                         ]
                                                     }, group.key, true, {
                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                        lineNumber: 749,
+                                                        lineNumber: 785,
                                                         columnNumber: 27
                                                     }, this);
                                                 })
                                             }, void 0, false, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 736,
+                                                lineNumber: 772,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 723,
+                                        lineNumber: 759,
                                         columnNumber: 19
                                     }, this) : /* compact */ /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "divide-y divide-gray-100",
@@ -9204,12 +9225,12 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             children: group.parentLabel
                                                         }, void 0, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 829,
+                                                            lineNumber: 865,
                                                             columnNumber: 31
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                        lineNumber: 828,
+                                                        lineNumber: 864,
                                                         columnNumber: 29
                                                     }, this),
                                                     showChildHeader && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9220,7 +9241,7 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                 children: group.label
                                                             }, void 0, false, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 836,
+                                                                lineNumber: 872,
                                                                 columnNumber: 31
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -9232,13 +9253,13 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                                lineNumber: 839,
+                                                                lineNumber: 875,
                                                                 columnNumber: 31
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                        lineNumber: 835,
+                                                        lineNumber: 871,
                                                         columnNumber: 29
                                                     }, this),
                                                     group.nodes.map((node)=>{
@@ -9260,39 +9281,39 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                                                             onDragStart: (e)=>handleDragStart(e, node)
                                                         }, node.id, false, {
                                                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                            lineNumber: 858,
+                                                            lineNumber: 894,
                                                             columnNumber: 31
                                                         }, this);
                                                     })
                                                 ]
                                             }, group.key, true, {
                                                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                                lineNumber: 826,
+                                                lineNumber: 862,
                                                 columnNumber: 25
                                             }, this);
                                         })
                                     }, void 0, false, {
                                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                        lineNumber: 815,
+                                        lineNumber: 851,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                                    lineNumber: 642,
+                                    lineNumber: 678,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 622,
+                        lineNumber: 658,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$resizable$2d$panels$40$4$2e$11$2e$2_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$resizable$2d$panels$2f$dist$2f$react$2d$resizable$2d$panels$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                         className: " w-px bg-gray-200 hover:bg-blue-400 hover:w-0.75 transition-all focus-visible:outline-none focus-visible:bg-blue-400 focus-visible:w-0.75 "
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 885,
+                        lineNumber: 921,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$react$2d$resizable$2d$panels$40$4$2e$11$2e$2_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$react$2d$resizable$2d$panels$2f$dist$2f$react$2d$resizable$2d$panels$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Panel"], {
@@ -9311,18 +9332,18 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                             adapter: adapter
                         }, void 0, false, {
                             fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                            lineNumber: 910,
+                            lineNumber: 946,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                        lineNumber: 895,
+                        lineNumber: 931,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                lineNumber: 584,
+                lineNumber: 620,
                 columnNumber: 7
             }, this),
             sortMenuPos && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$1_$40$babel$2b$core$40$7$2e$29$2e$7_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0_sass$40$1$2e$100$2e$0$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$components$2f$ContextMenu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -9332,17 +9353,17 @@ function Finder({ adapter, rootPath, fileFilter, pickMode = false, isInCart, onP
                 onClose: ()=>setSortMenuPos(null)
             }, void 0, false, {
                 fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-                lineNumber: 916,
+                lineNumber: 952,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/apps/web/src/features/finder-core/components/Finder.tsx",
-        lineNumber: 419,
+        lineNumber: 426,
         columnNumber: 5
     }, this);
 }
-_s(Finder, "/GZ38b7a2EfLegyUaGEGnjrzhyA=", false, function() {
+_s(Finder, "M0biXXb6ZCeYZMOV0zCpw24Ay3o=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$state$2f$useFinderStore$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useFinderStore"],
         __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$features$2f$finder$2d$core$2f$hooks$2f$useFinderData$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useFinderData"],
