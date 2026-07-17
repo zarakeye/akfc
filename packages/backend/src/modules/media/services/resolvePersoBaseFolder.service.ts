@@ -43,5 +43,5 @@ export async function resolvePersoBaseFolder(params: {
   const personSlug =
     slug(fullName) || slug(user.pseudo ?? "") || `user-${userId}`;
 
-  return `${appRoot}/pending/persos/${personSlug}-${userId}`;
+  return `${appRoot}/persos/${personSlug}-${userId}`;
 }
