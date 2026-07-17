@@ -40,6 +40,7 @@ import {
   physicalCandidates,
   toLogicalPath,
 } from '@backend/modules/storage/logicalPath';
+import { assertStatusChangeDoesntUnpublishReferencedAssets } from '@backend/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service';
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -550,17 +551,32 @@ export const mediaRouter = router({
    * bouge. `MediaAsset.status` cesse d'être un cache dérivé du chemin pour
    * devenir la source de vérité — c'est l'inversion que tout le chantier vise.
    *
-   * ─── ⚠️ `paths` attend des chemins PHYSIQUES ─────────────────────────────
+   * ─── Pourquoi `sources` et pas `paths` ───────────────────────────────────
    *
-   * Le matching se fait sur `MediaAsset.fullPath`, qui est le chemin où vit
-   * réellement le binaire — donc celui qui porte encore `pending/` ou
-   * `published/`. Un appelant front DOIT passer par `storagePathOf(node)`,
-   * jamais par `node.path` (logique, plié, sans strate) : le chemin logique ne
-   * matcherait aucune ligne, et cette mutation lèverait. C'est exactement le
-   * piège qui avait éteint le picker en silence.
+   * Parce qu'on publie aussi des DOSSIERS, et qu'un dossier n'a pas de
+   * `MediaAsset`. Les deux cas ne se matchent pas de la même façon :
    *
-   * Tolérance d'extension : cf. la doc en tête de fichier (publicId Cloudinary
-   * extensionless vs `fullPath` DB suffixé du format).
+   *   - `file`   → le chemin est un LOCALISATEUR. L'appelant front doit passer
+   *                `storagePathOf(node)` — le chemin physique, celui qui matche
+   *                `MediaAsset.fullPath`. Un chemin logique ne matcherait rien
+   *                et cette mutation lèverait. (Tolérance d'extension : cf. la
+   *                doc en tête de fichier.)
+   *
+   *   - `folder` → le chemin n'est PAS un localisateur : un dossier logique vit
+   *                dans 1..N strates. C'est le backend qui résout, via
+   *                `physicalCandidates` — la même règle que le pliage, pas une
+   *                copie. On met à jour tout ce qui vit SOUS l'un des candidats.
+   *
+   * Forme alignée sur `trash.trashToBin` (`sources` + `logical`), qui tranche
+   * déjà exactement le même problème. Une règle, un endroit.
+   *
+   * ─── Zéro ligne touchée : lever ou pas ? ─────────────────────────────────
+   *
+   * Pour un `file`, zéro ligne est une ANOMALIE : le statut n'a pas pris et
+   * personne ne le saurait. On lève. C'est le mode d'échec qui avait éteint
+   * le picker en silence.
+   * Pour un `folder`, zéro ligne est LÉGITIME : un dossier vide n'a rien à
+   * publier. On ne lève pas.
    *
    * ─── Pourquoi `bin` n'est pas dans l'enum ────────────────────────────────
    *
@@ -571,32 +587,76 @@ export const mediaRouter = router({
     .input(
       z.object({
         appRoot: z.string().min(1),
-        paths: z.array(z.string().min(1)).min(1),
+        sources: z
+          .array(
+            z.object({
+              kind: z.enum(["file", "folder"]),
+              path: z.string().min(1),
+            }),
+          )
+          .min(1),
         status: z.enum(["pending", "published"]),
+        /** Les `folder.path` sont des chemins LOGIQUES à résoudre. */
+        logical: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const counts = await Promise.all(
-        input.paths.map((path) =>
-          ctx.prisma.mediaAsset.updateMany({
-            where: {
-              appRoot: input.appRoot,
-              OR: [
-                { fullPath: path },
-                { fullPath: { startsWith: `${path}.` } },
-              ],
-            },
-            data: { status: input.status },
-          }),
-        ),
+      // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page affiche.
+      // Le move avait sa garde (`assertOperationsDontUnpublish...`) ; ce
+      // chemin-ci doit avoir la sienne, sinon publier par la nouvelle voie
+      // contournerait en silence une règle que l'ancienne faisait respecter.
+      await assertStatusChangeDoesntUnpublishReferencedAssets(
+        ctx.prisma,
+        input.sources,
+        input.status,
+        input.appRoot,
+        input.logical,
       );
 
-      // On lève sur le moindre path muet plutôt que de rendre un succès
-      // partiel : un statut qui n'a pas pris doit se voir, pas s'éteindre.
-      const missing = input.paths.filter((_, i) => counts[i].count === 0);
-      if (missing.length > 0) {
+      const results = await Promise.all(
+        input.sources.map(async (source) => {
+          if (source.kind === "file") {
+            const { count } = await ctx.prisma.mediaAsset.updateMany({
+              where: {
+                appRoot: input.appRoot,
+                OR: [
+                  { fullPath: source.path },
+                  { fullPath: { startsWith: `${source.path}.` } },
+                ],
+              },
+              data: { status: input.status },
+            });
+            return { source, count };
+          }
+
+          // Dossier : on ratisse chaque strate où il peut vivre. Le `/` final
+          // n'est pas cosmétique — sans lui, publier `cours` publierait aussi
+          // `cours-avance`. C'est la collision de préfixe déjà rencontrée dans
+          // `trashToBin.folder.deleteMany`.
+          const prefixes = input.logical
+            ? physicalCandidates(source.path, input.appRoot)
+            : [source.path];
+
+          const { count } = await ctx.prisma.mediaAsset.updateMany({
+            where: {
+              appRoot: input.appRoot,
+              OR: prefixes.map((prefix) => ({
+                fullPath: { startsWith: `${prefix}/` },
+              })),
+            },
+            data: { status: input.status },
+          });
+          return { source, count };
+        }),
+      );
+
+      const silent = results.filter(
+        (r) => r.source.kind === "file" && r.count === 0,
+      );
+      if (silent.length > 0) {
         throw new Error(
-          `Aucune MediaAsset trouvée pour : ${missing.join(", ")}. ` +
+          `Aucune MediaAsset trouvée pour : ` +
+            `${silent.map((r) => r.source.path).join(", ")}. ` +
             `Vérifier que l'appelant passe des chemins PHYSIQUES ` +
             `(storagePathOf), pas des chemins logiques. ` +
             `Si ce sont des fichiers R2 historiques, lancer le backfill ` +
@@ -604,14 +664,9 @@ export const mediaRouter = router({
         );
       }
 
-      const updated = counts.reduce((n, c) => n + c.count, 0);
-      if (updated > input.paths.length) {
-        console.warn(
-          `[media.setStatus] ${updated} lignes pour ${input.paths.length} path(s) ` +
-            `— un path matche plusieurs MediaAssets. À investiguer.`,
-        );
-      }
-
-      return { ok: true, updated };
+      return {
+        ok: true,
+        updated: results.reduce((n, r) => n + r.count, 0),
+      };
     }),
 });
