@@ -7,7 +7,6 @@ import type { FileAdapter, FinderNode } from '@contracts/finder';
 import { trpc } from '@trpc/trpcClient';
 import { APP_ROOT } from '@config/app';
 
-import { dragItemFromNode } from '@features/finder-core/dnd/payload';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import type { LifecycleStatus } from '@features/finder-core/utils/statusFolders';
 import { storagePathOf } from '@features/finder-core/utils/storagePath';
@@ -24,11 +23,17 @@ import { storagePathOf } from '@features/finder-core/utils/storagePath';
  *     du DnD (FinderTreeFolder.handleDrop) et du bouton Corbeille
  *     (useNodeActions.deleteNodes) — on ne le duplique pas, on le réutilise.
  *
- *   - `pending` ↔ `published` → `adapter.moveItems` (même primitive que le
- *     DnD), mais avec une cible `status-folder` au lieu de `folder` : la
- *     résolution backend (`resolveMoveIntent`) remplace le segment de statut
- *     en PRÉSERVANT le sous-chemin (`pending/cours/12/x.jpg` →
- *     `published/cours/12/x.jpg`). Le DnD, lui, vise un `folder` et aplatit.
+ *   - `pending` ↔ `published` → `media.setStatus`. **Un UPDATE, pas un
+ *     déplacement.** Le binaire ne bouge plus : `MediaAsset.status` est
+ *     devenu la vérité, le segment de statut du chemin n'est plus qu'un
+ *     décor que les étapes 4-5 effaceront.
+ *
+ *     Ce qu'on passe au backend n'est pas symétrique, et c'est voulu :
+ *       - un FICHIER porte son localisateur → `storagePathOf(node)`, le
+ *         chemin PHYSIQUE, seul à matcher `MediaAsset.fullPath` ;
+ *       - un DOSSIER n'en a pas (il vit dans 1..N strates) → on envoie le
+ *         chemin LOGIQUE et `logical: true`, le backend résout via
+ *         `physicalCandidates`. Même forme que `trash.trashToBin`.
  *
  *   - depuis `bin`          → hors scope ici : la restauration a son flux
  *     dédié (TrashEntry + previousPath). Le radio est masqué dans le bin
@@ -54,6 +59,7 @@ export function useStatusChange(adapter: FileAdapter): {
 
   const utils = trpc.useUtils();
   const trashToBinMutation = trpc.trash.trashToBin.useMutation();
+  const setStatusMutation = trpc.media.setStatus.useMutation();
 
   const [isMoving, setIsMoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,18 +86,21 @@ export function useStatusChange(adapter: FileAdapter): {
           utils.trash.listBin.invalidate();
           utils.storage.getAttentionCounts.invalidate();
         } else {
-          if (!adapter.moveItems) {
-            setError('Déplacement non supporté par cet adaptateur.');
-            return;
-          }
           setIsMoving(true);
-          await adapter.moveItems({
-            items: nodes.map(dragItemFromNode),
-            target: { type: 'status-folder', status: target },
+          await setStatusMutation.mutateAsync({
+            appRoot: APP_ROOT,
+            sources: nodes.map((node) =>
+              node.type === 'folder'
+                ? { kind: 'folder' as const, path: node.path }
+                : { kind: 'file' as const, path: storagePathOf(node) },
+            ),
+            status: target,
+            // Ne concerne que les `folder.path` ci-dessus : le backend les
+            // résout contre les strates. Les fichiers passent déjà physiques.
+            logical: true,
           });
-          // Publier ou dépublier fait bouger `pending` (et, selon la zone,
-          // `generalPending` / `persoPending`). La cloche est dans le cache
-          // depuis sa migration `useQuery` : un invalidate suffit.
+          // Publier ou dépublier change le décompte `pending`. La cloche est
+          // dans le cache depuis sa migration `useQuery` : un invalidate suffit.
           utils.storage.getAttentionCounts.invalidate();
         }
 
@@ -104,7 +113,7 @@ export function useStatusChange(adapter: FileAdapter): {
       }
     },
     [
-      adapter,
+      setStatusMutation,
       trashToBinMutation,
       utils.trash.listBin,
       reloadFolderContent,
@@ -114,7 +123,8 @@ export function useStatusChange(adapter: FileAdapter): {
 
   return {
     setStatus,
-    isPending: isMoving || trashToBinMutation.isPending,
+    isPending:
+      isMoving || trashToBinMutation.isPending || setStatusMutation.isPending,
     error,
   };
 }

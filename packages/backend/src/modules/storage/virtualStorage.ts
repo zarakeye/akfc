@@ -21,24 +21,15 @@ import {
 } from "@backend/modules/storage/providerRegistry";
 import { getAssetInfo } from "../cloudinary/services/cloudinary.service";
 
-const STATUS_SEGMENTS = ['pending', 'published', 'bin'] as const;
-type LifecycleStatus = (typeof STATUS_SEGMENTS)[number];
-
-/**
- * Statut applicatif dérivé d'un path : le segment juste après l'appRoot.
- * `AKFC/published/cours/x/trotinette` → 'published'. Renvoie null si le
- * segment n'est pas un statut connu. Convention identique au front
- * (statusFromPath) et à resolveMoveIntent, dupliquée ici pour ne pas créer
- * de dépendance backend → features front.
+/*
+ * `statusFromPath` vivait ici — quatrième copie d'une même règle, avec sa
+ * propre opinion sur le segment inconnu. Elle servait à redériver
+ * `MediaAsset.status` du chemin d'arrivée après chaque move.
+ *
+ * Elle est supprimée, pas désactivée. `status` a maintenant une source, et
+ * une seule : `media.setStatus`. Un move est redevenu ce qu'il aurait
+ * toujours dû être — une réorganisation, qui ne dit rien du cycle de vie.
  */
-function statusFromPath(path: string, appRoot: string): LifecycleStatus | null {
-  const parts = path.split('/').filter(Boolean);
-  const rootParts = appRoot.split('/').filter(Boolean);
-  const seg = parts[rootParts.length];
-  return (STATUS_SEGMENTS as readonly string[]).includes(seg)
-    ? (seg as LifecycleStatus)
-    : null;
-}
 
 /**
  * VirtualStorage — façade multi-backend
@@ -287,12 +278,7 @@ export class VirtualStorage implements StorageAdapter {
     if (provider === "r2") {
       await prisma.mediaAsset.updateMany({
         where: { appRoot, fullPath: oldPath },
-        data: {
-          fullPath: newPath,
-          ...(statusFromPath(newPath, appRoot)
-            ? { status: statusFromPath(newPath, appRoot)! }
-            : {}),
-        },
+        data: { fullPath: newPath },
       });
       return;
     }
@@ -319,7 +305,6 @@ export class VirtualStorage implements StorageAdapter {
       return;
     }
 
-    const nextStatus = statusFromPath(newPath, appRoot);
     const nextFullPath = `${newPath}${info?.format ? "." + info.format : ""}`;
 
     await prisma.mediaAsset.updateMany({
@@ -327,7 +312,6 @@ export class VirtualStorage implements StorageAdapter {
       data: {
         fullPath: nextFullPath,
         publicId: newPath,
-        ...(nextStatus ? { status: nextStatus } : {}),
       },
     });
   }
