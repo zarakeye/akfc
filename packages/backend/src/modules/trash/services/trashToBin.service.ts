@@ -290,12 +290,23 @@ export async function trashToBin(params: {
       // 4) Nettoyage registry DB des dossiers :
       //    Si tu jettes un dossier, il ne doit plus exister "à l'ancien endroit".
       //    Donc on supprime les Folder dont le fullPath est dans ce sous-arbre.
+      //
+      // ⚠️ Le sous-arbre, c'est le dossier LUI-MÊME et ce qui est SOUS LUI —
+      // pas tout ce qui commence par les mêmes lettres. Un `startsWith`
+      // nu sur `AKFC/pending/cours` emportait aussi les lignes de
+      // `AKFC/pending/cours-avance`, qui n'a rien à voir avec lui.
+      //
+      // C'est exactement la collision de préfixe contre laquelle la ligne
+      // ci-dessus se prémunit côté Cloudinary (« trailing slash pour éviter
+      // les collisions ») : la protection n'avait pas été portée côté DB. On
+      // adopte ici la même forme que `pruneEmptyFolders`, qui la fait bien.
       await prisma.folder.deleteMany({
         where: {
           appRoot,
-          fullPath: {
-            startsWith: normalized,
-          },
+          OR: [
+            { fullPath: normalized },
+            { fullPath: { startsWith: `${normalized}/` } },
+          ],
         },
       });
     }

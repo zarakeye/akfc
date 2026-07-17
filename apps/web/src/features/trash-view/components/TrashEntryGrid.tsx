@@ -1,8 +1,15 @@
 'use client';
 
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 import { Folder, FileText } from 'lucide-react';
 import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
+
+// La MÊME fonction que `mapFileToFinderNode` utilise pour la grille du
+// finder. La réécrire ici créerait une troisième façon de fabriquer une URL
+// de média dans ce projet, et la prochaine évolution de signature en
+// corrigerait deux sur trois. La corbeille étant Cloudinary de bout en bout
+// (aucun de ses services ne mentionne R2), le couplage est assumé.
+import { getMediaUrl } from '@features/finder-adapters/cloudinary/utils';
 
 type Props = {
   entry: TrashEntryDTO;
@@ -22,7 +29,7 @@ type Props = {
  * Card en mode grille pour une TrashEntry.
  *
  * - Carrée (aspect-square) — cohérent avec le finder
- * - Icône Folder ou FileText selon le `kind`
+ * - Vignette réelle pour les images, icône Folder/FileText sinon
  * - displayName en bas
  * - previousPathShort en tooltip et en petit sous-texte
  * - Sélectionnée → bordure bleue + fond bleu-50
@@ -40,6 +47,23 @@ export default function TrashEntryGrid({
 }: Props): JSX.Element {
   const isFolder = entry.kind === 'folder';
   const Icon = isFolder ? Folder : FileText;
+
+  // ─── Pourquoi une vignette ici ─────────────────────────────────────────
+  //
+  // `listBin` renvoie déjà `publicId` (le `storageRoot` de l'entry) et
+  // `mediaKind` — le contrat les documente explicitement comme servant à la
+  // preview. Cette card ne les avait simplement jamais regardés : la
+  // corbeille n'a jamais eu d'aperçus, et on y reconnaissait ses photos à
+  // leur seul nom de fichier.
+  //
+  // Les vidéos gardent leur icône : Cloudinary sait en tirer une poster
+  // frame, mais ça se décide (quelle frame, quel coût de transformation).
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  const thumbUrl =
+    !isFolder && entry.mediaKind === 'image' && entry.publicId && !thumbFailed
+      ? getMediaUrl({ publicId: entry.publicId })
+      : null;
 
   return (
     <div
@@ -66,10 +90,27 @@ export default function TrashEntryGrid({
       role="button"
       aria-pressed={selected}
     >
-      <Icon
-        className={`h-12 w-12 ${isFolder ? 'text-blue-400' : 'text-gray-400'}`}
-        strokeWidth={1.5}
-      />
+      {thumbUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- URL signée
+        // Cloudinary servie par le proxy applicatif : `next/image` exigerait
+        // une config de domaine distante que le reste du finder n'a pas non
+        // plus. On reste aligné sur `GridItem`.
+        <img
+          src={thumbUrl}
+          alt=""
+          // Un asset peut avoir disparu sous nos pieds (purge concurrente,
+          // vestige Cloudinary sans TrashEntry). On retombe alors sur
+          // l'icône plutôt que sur une image cassée — la card doit rester
+          // sélectionnable et restaurable dans tous les cas.
+          onError={() => setThumbFailed(true)}
+          className="h-12 w-12 rounded object-cover"
+        />
+      ) : (
+        <Icon
+          className={`h-12 w-12 ${isFolder ? 'text-blue-400' : 'text-gray-400'}`}
+          strokeWidth={1.5}
+        />
+      )}
       <div className="text-xs text-center truncate w-full px-1" title={entry.displayName}>
         {entry.displayName}
       </div>
