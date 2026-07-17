@@ -33,6 +33,10 @@ import PreviewPanel from "@features/finder-core/components/PreviewPanel";
 import FinderTree from "@features/finder-core/components/FinderTree";
 import GridItem from "@features/finder-core/components/GridItem";
 import StatusFilterBar from "@features/finder-core/components/StatusFilterBar";
+// Le dialogue de `trash-view`, celui dont `EmptyBinButton` se sert déjà.
+// En écrire un second serait la troisième façon de poser une question
+// dans ce projet.
+import ConfirmDialog from "@features/trash-view/components/ConfirmDialog";
 import { statusOf } from "@features/finder-core/utils/statusFolders";
 import ContextMenu, {
   type ContextMenuItem,
@@ -144,7 +148,10 @@ export default function Finder({
   const searchActive = useFinderStore((s) => s.search.query.trim().length > 0);
   const searchResults = useFinderStore((s) => s.search.results);
 
-  const { deleteNodes, deleteLabel } = useNodeActions();
+  const { deleteNodes, deleteLabel, inBin } = useNodeActions();
+
+  // Le bouton « Supprimer » n'agit plus au premier clic.
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const statusFilter = useFinderStore((s) => s.statusFilter);
 
@@ -521,9 +528,7 @@ export default function Finder({
             <button
               type="button"
               disabled={!canDelete}
-              onClick={() => {
-                void deleteNodes(selectedNodes);
-              }}
+              onClick={() => setDeleteConfirmOpen(true)}
               aria-label={deleteButtonLabel}
               title={
                 canDelete
@@ -540,6 +545,37 @@ export default function Finder({
             </button>
           );
         })()}
+
+        {/* ─── La question dépend du geste ───────────────────────────────
+            `deleteNodes` est adaptatif : mise en corbeille depuis la
+            bibliothèque, suppression définitive depuis la corbeille. Poser
+            la même question dans les deux cas serait pire que rien — ça
+            entraînerait à confirmer sans lire, et l'habitude serait déjà
+            prise le jour où le geste est irréversible. */}
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          title={inBin ? "Supprimer définitivement" : "Envoyer à la corbeille"}
+          description={
+            inBin
+              ? `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${
+                  selectedCount > 1 ? "seront supprimés" : "sera supprimé"
+                } définitivement. Cette opération est irréversible.`
+              : `${selectedCount} élément${selectedCount > 1 ? "s" : ""} ${
+                  selectedCount > 1 ? "seront envoyés" : "sera envoyé"
+                } à la corbeille. Tu pourras ${
+                  selectedCount > 1 ? "les" : "le"
+                } restaurer ensuite.`
+          }
+          confirmLabel={
+            inBin ? "Supprimer définitivement" : "Envoyer à la corbeille"
+          }
+          destructive={inBin}
+          onConfirm={() => {
+            setDeleteConfirmOpen(false);
+            void deleteNodes(selectedNodes);
+          }}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
 
         <button
           type="button"
