@@ -503,22 +503,37 @@ export default function Finder({
         {currentPath !== `${APP_ROOT}/bin` && <FinderViewModeSwitcher />}
 
         {(() => {
-          const inBin =
-            currentPath === `${APP_ROOT}/bin` ||
-            currentPath.startsWith(`${APP_ROOT}/bin/`);
+          // Ce bouton naviguait vers la corbeille. Elle est déjà atteignable
+          // par l'arbre (`AKFC/bin` y est un dossier, le pliage le préserve)
+          // et par le fil d'Ariane : il occupait la place d'une action utile
+          // pour dupliquer un chemin qui existait déjà.
+          //
+          // `deleteNodes` connaît déjà le dispatch — mise en corbeille depuis
+          // la bibliothèque, suppression définitive depuis la corbeille — et
+          // porte les invalidations de cache. `deleteLabel` en donne le
+          // libellé exact, y compris le pluriel.
+          const canDelete = selectedCount > 0;
+          const deleteButtonLabel = canDelete
+            ? deleteLabel(selectedCount, selectedNodes)
+            : "Supprimer";
+
           return (
             <button
               type="button"
-              onClick={() => setPath(inBin ? rootPath : `${APP_ROOT}/bin`)}
-              aria-label={
-                inBin ? "Quitter la corbeille" : "Ouvrir la corbeille"
+              disabled={!canDelete}
+              onClick={() => {
+                void deleteNodes(selectedNodes);
+              }}
+              aria-label={deleteButtonLabel}
+              title={
+                canDelete
+                  ? deleteButtonLabel
+                  : "Sélectionne un contenu ou un dossier"
               }
-              aria-pressed={inBin}
-              title="Corbeille"
               className={
-                inBin
-                  ? "shrink-0 rounded p-1 text-red-600 bg-red-50 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
-                  : "shrink-0 rounded p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
+                canDelete
+                  ? "shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors"
+                  : "shrink-0 rounded p-1 text-gray-300 cursor-not-allowed transition-colors"
               }
             >
               <Trash2 className="h-4 w-4" />
