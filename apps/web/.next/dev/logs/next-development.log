@@ -31,3 +31,24 @@
 [01:06:24.940] Browser WARN    Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [01:17:21.797] Server  LOG      ✓ Compiled in 390ms
 [01:18:34.636] Server  LOG      ✓ Compiled in 203ms
+[01:22:33.486] Server  LOG     Executing move intent: {}
+[01:23:08.062] Server  LOG     Executing move intent: {}
+[01:27:25.355] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:27:29.192] Server  LOG     Executing move intent: {}
+[01:27:29.379] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:27:31.704] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/dabakwondo/15167532_969257399885919_299849553367439684_o"
+[01:28:16.846] Server  LOG     Executing move intent: {}
+[01:28:17.358] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/dabakwondo/15167532_969257399885919_299849553367439684_o"
+[01:28:19.673] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:33:22.912] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:33:27.518] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:34:28.641] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:34:29.700] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:34:47.952] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:34:48.220] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:35:13.758] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/bin/.trash/628bb8e1-3f63-43a7-bb04-19875dda7cdf/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:35:22.439] Server  LOG     [asset_id check] "0853191855929d3f3c79d7e86607ce3b" "AKFC/published/cours/taolu-multi-styles/15167532_969257399885919_299849553367439684_o"
+[01:35:31.848] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:35:32.095] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/published/cours/taolu-multi-styles/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[01:35:43.939] Server  LOG     [asset_id check] "ea1c0bd38a85ed38f7418a7c6927f7bf" "AKFC/bin/.trash/e86ca3af-0942-4069-a860-428d6cebdd6b/1717085051_506_O-que-voce-precisa-saber-sobre-este-estilo-raro-de"
+[02:18:44.197] Server  LOG      ✓ Compiled in 361ms
