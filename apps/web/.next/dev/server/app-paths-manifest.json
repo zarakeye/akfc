@@ -2,6 +2,7 @@
   "/(admin)/dashboard/galleries/create/page": "app/(admin)/dashboard/galleries/create/page.js",
   "/(admin)/dashboard/library/add/page": "app/(admin)/dashboard/library/add/page.js",
   "/(admin)/dashboard/library/page": "app/(admin)/dashboard/library/page.js",
+  "/(public)/page": "app/(public)/page.js",
   "/api/media/by-public-id/[...publicId]/route": "app/api/media/by-public-id/[...publicId]/route.js",
   "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js"
 }

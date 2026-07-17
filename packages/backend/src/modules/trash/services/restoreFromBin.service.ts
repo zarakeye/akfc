@@ -17,6 +17,7 @@ import {
   suffixFolderPath,
 } from "@backend//modules/trash/utils";
 import { getAssetInfo, fileExists } from "@backend/modules/cloudinary/services/cloudinary.service";
+import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
 
 /**
  * restoreFromBin.service.ts
@@ -270,6 +271,32 @@ export async function restoreFromBin(params: {
         restoredToPath: normalizePath(restoredToPath),
       },
     });
+
+    // ─── La quarantaine vient d'être vidée : elle doit mourir ──────────
+    //
+    // `trashToBin` fait le ménage à l'aller (il supprime les lignes `Folder`
+    // du dossier source). Personne ne le faisait au retour : les assets
+    // sortent du wrapper `bin/.trash/<uuid>`, et sa ligne `Folder` survit.
+    // Le finder bâtissant son arbre sur cette table, un chevron persistait
+    // sur une corbeille visuellement vide.
+    //
+    // On ne passe pas par `adapter.move` (ce service renomme en direct),
+    // donc le prune de l'adapter ne s'est jamais déclenché ici. On l'appelle
+    // nous-mêmes.
+    //
+    // `pruneEmptyFolders` vérifie auprès de Cloudinary qu'aucun asset ne
+    // subsiste avant de supprimer un palier, puis remonte : le wrapper, puis
+    // `.trash` s'il ne reste plus rien, et s'arrête sur `${appRoot}/bin` que
+    // sa borne `minDepth` protège.
+    const wrapperPath =
+      kind === "folder"
+        ? normalizePath(entry.storageRoot)
+        : // Pour un fichier, `storageRoot` EST le publicId de l'asset : son
+          // dossier est son parent. Peu importe si on démarre plus profond
+          // que le wrapper, le prune remonte.
+          normalizePath(entry.storageRoot).split("/").slice(0, -1).join("/");
+
+    await pruneEmptyFolders({ prisma, appRoot, startFolderPath: wrapperPath });
 
     restored.push({
       id: entry.id,

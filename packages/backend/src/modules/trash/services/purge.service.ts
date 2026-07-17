@@ -7,6 +7,7 @@ import {
 } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
+import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
 
 /**
  * purge.service.ts
@@ -155,6 +156,19 @@ export async function purge(params: {
       await deleteByPrefix(`${normalizePath(wrapperPath)}/`);
       vestiges.push(wrapperPath);
     }
+
+    // ─── Le wrapper est vide : sa ligne `Folder` n'a plus rien à décrire ──
+    //
+    // Même raison que dans `restoreFromBin` : `purge` supprime en direct et
+    // ne passe donc pas par le prune de l'adapter Cloudinary. Sans ça, la
+    // quarantaine purgée laisse une ligne `Folder` orpheline, et le finder —
+    // qui bâtit son arbre sur cette table — garde un chevron sur une
+    // corbeille vide.
+    await pruneEmptyFolders({
+      prisma,
+      appRoot,
+      startFolderPath: normalizePath(wrapperPath),
+    });
 
     purged.push(wrapperPath);
   }
