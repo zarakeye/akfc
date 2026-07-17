@@ -242,11 +242,6 @@ export function createR2StorageAdapter(
       // Statut dérivé du premier segment du chemin cible (même logique
       // que l'adapter Cloudinary — le trou était identique ici).
       // Statut = segment APRÈS l'appRoot ([1] — les paths incluent l'appRoot).
-      const topSegment = operation.target.path.split("/")[1];
-      const nextStatus =
-        topSegment === "pending" || topSegment === "published"
-          ? topSegment
-          : null;
 
       if (operation.source.type === "file") {
         await moveFile(s3, Bucket, operation.source.path, operation.target.path);
@@ -254,10 +249,7 @@ export function createR2StorageAdapter(
         // Phase 2 : on update aussi la row MediaAsset pour refléter le nouveau path
         await prisma.mediaAsset.updateMany({
           where: { appRoot, fullPath: operation.source.path },
-          data: {
-            fullPath: operation.target.path,
-            ...(nextStatus ? { status: nextStatus } : {}),
-          },
+          data: { fullPath: operation.target.path },
         });
         return;
       }
@@ -271,8 +263,7 @@ export function createR2StorageAdapter(
       const newPrefix = `${operation.target.path}/`;
       await prisma.$executeRaw`
         UPDATE "MediaAsset"
-        SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int),
-            "status" = COALESCE(${nextStatus}, "status")
+        SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
         WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${oldPrefix + "%"};
       `;
     },
