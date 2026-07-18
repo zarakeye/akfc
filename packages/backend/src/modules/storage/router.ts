@@ -26,6 +26,7 @@ import { countPersoImages } from "@backend/modules/media/services/countPersoImag
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listGeneralFolders } from "@backend/modules/media/services/listGeneralFolders.service";
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
+import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
 /**
  * storageRouter — Phase 2 update
