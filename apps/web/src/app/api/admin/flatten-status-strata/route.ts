@@ -21,6 +21,8 @@ import {
   flattenStatusStrata,
   purgeAssetsById,
   purgeCloudinaryAssetsById,
+  findOrphanAssets,
+  purgeOrphanAssets,
 } from '@backend/modules/storage/services/flattenStatusStrata.service';
 
 export async function GET(request: NextRequest) {
@@ -33,6 +35,35 @@ export async function GET(request: NextRequest) {
 
   const params = request.nextUrl.searchParams;
   const run = params.get('run') === '1';
+
+  // Orphelins — lignes dont le binaire a disparu.
+  //   ?orphans        → LECTURE SEULE : liste les orphelins.
+  //   ?purgeorphans   → supprime les lignes orphelines (dry-run sauf &run=1).
+  if (params.get('orphans') !== null) {
+    try {
+      const report = await findOrphanAssets(prisma, APP_ROOT);
+      return NextResponse.json({ ok: true, report });
+    } catch (err) {
+      return NextResponse.json(
+        { ok: false, error: err instanceof Error ? err.message : String(err) },
+        { status: 500 },
+      );
+    }
+  }
+  if (params.get('purgeorphans') !== null) {
+    try {
+      const report = await purgeOrphanAssets(prisma, APP_ROOT, {
+        dryRun: !run,
+        force: params.get('force') === '1',
+      });
+      return NextResponse.json({ ok: true, report });
+    } catch (err) {
+      return NextResponse.json(
+        { ok: false, error: err instanceof Error ? err.message : String(err) },
+        { status: 500 },
+      );
+    }
+  }
 
   // Purge Cloudinary native : ?purgecloud=<id>[,...] — dry-run sauf &run=1.
   // &force=1 outrepasse la garde de référence (page publiée).

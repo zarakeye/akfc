@@ -323,3 +323,114 @@ export async function purgeCloudinaryAssetsById(
 
   return report;
 }
+
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/*  Orphelins — lignes DB dont le binaire a disparu du stockage             */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Détecte les MediaAsset dont le binaire n'existe PLUS chez le provider.
+ *
+ * LECTURE SEULE. Teste l'existence via `VirtualStorage.getMetadata`, qui
+ * dispatche Cloudinary (getAssetInfo) / R2 (HeadObject) et renvoie `null` si
+ * l'objet est absent. Ne supprime rien.
+ *
+ * Un orphelin naît d'une suppression manuelle au dashboard, d'un vieux move
+ * raté, ou d'un artefact de refacto : la ligne survit au binaire. La règle
+ * « ce qui n'existe plus en stockage ne doit plus exister en DB » les vise.
+ */
+export type OrphanReport = {
+  scanned: number;
+  orphans: Array<{ id: string; fullPath: string; provider: 'cloudinary' | 'r2' }>;
+};
+
+export async function findOrphanAssets(
+  prisma: PrismaClient,
+  appRoot: string,
+): Promise<OrphanReport> {
+  const assets = await prisma.mediaAsset.findMany({
+    where: { appRoot },
+    select: { id: true, fullPath: true, publicId: true },
+  });
+
+  const storage = new VirtualStorage({ prisma, appRoot });
+  const orphans: OrphanReport['orphans'] = [];
+
+  for (const asset of assets) {
+    const meta = await storage.getMetadata(asset.fullPath);
+    if (meta === null) {
+      orphans.push({
+        id: asset.id,
+        fullPath: asset.fullPath,
+        provider: asset.publicId ? 'cloudinary' : 'r2',
+      });
+    }
+  }
+
+  return { scanned: assets.length, orphans };
+}
+
+/**
+ * Supprime les LIGNES orphelines (binaire déjà absent → aucun appel de
+ * suppression stockage). Garde de référence : une ligne orpheline encore
+ * référencée par une page signale un problème plus grave (page pointant un
+ * média fantôme) — on la laisse et on la signale, sauf `force`.
+ *
+ * `dryRun` (défaut) : liste, ne supprime rien.
+ */
+export type OrphanPurgeReport = {
+  dryRun: boolean;
+  orphansFound: number;
+  purged: Array<{ id: string; fullPath: string }>;
+  blockedByReference: Array<{ id: string; fullPath: string; refs: number }>;
+};
+
+export async function purgeOrphanAssets(
+  prisma: PrismaClient,
+  appRoot: string,
+  options: { dryRun?: boolean; force?: boolean } = {},
+): Promise<OrphanPurgeReport> {
+  const dryRun = options.dryRun ?? true;
+  const force = options.force ?? false;
+
+  const { orphans } = await findOrphanAssets(prisma, appRoot);
+
+  const report: OrphanPurgeReport = {
+    dryRun,
+    orphansFound: orphans.length,
+    purged: [],
+    blockedByReference: [],
+  };
+
+  const refs = await prisma.pageMediaReference.groupBy({
+    by: ['mediaAssetId'],
+    where: { mediaAssetId: { in: orphans.map((o) => o.id) } },
+    _count: { mediaAssetId: true },
+  });
+  const refCount = new Map(
+    refs.map((r) => [r.mediaAssetId, r._count.mediaAssetId]),
+  );
+
+  const toPurge: typeof orphans = [];
+  for (const o of orphans) {
+    const n = refCount.get(o.id) ?? 0;
+    if (n > 0 && !force) {
+      report.blockedByReference.push({ id: o.id, fullPath: o.fullPath, refs: n });
+    } else {
+      toPurge.push(o);
+    }
+  }
+
+  if (dryRun) {
+    report.purged = toPurge.map((o) => ({ id: o.id, fullPath: o.fullPath }));
+    return report;
+  }
+
+  for (const o of toPurge) {
+    await prisma.mediaAsset.delete({ where: { id: o.id } });
+    report.purged.push({ id: o.id, fullPath: o.fullPath });
+  }
+
+  return report;
+}
