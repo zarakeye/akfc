@@ -20,6 +20,7 @@ import { prisma } from '@backend/prisma';
 import {
   flattenStatusStrata,
   purgeAssetsById,
+  purgeCloudinaryAssetsById,
 } from '@backend/modules/storage/services/flattenStatusStrata.service';
 
 export async function GET(request: NextRequest) {
@@ -32,6 +33,25 @@ export async function GET(request: NextRequest) {
 
   const params = request.nextUrl.searchParams;
   const run = params.get('run') === '1';
+
+  // Purge Cloudinary native : ?purgecloud=<id>[,...] — dry-run sauf &run=1.
+  // &force=1 outrepasse la garde de référence (page publiée).
+  const purgeCloudParam = params.get('purgecloud');
+  if (purgeCloudParam) {
+    const ids = purgeCloudParam.split(',').map((s) => s.trim()).filter(Boolean);
+    try {
+      const report = await purgeCloudinaryAssetsById(prisma, APP_ROOT, ids, {
+        dryRun: !run,
+        force: params.get('force') === '1',
+      });
+      return NextResponse.json({ ok: true, report });
+    } catch (err) {
+      return NextResponse.json(
+        { ok: false, error: err instanceof Error ? err.message : String(err) },
+        { status: 500 },
+      );
+    }
+  }
 
   // Purge ciblée : ?purge=<id>[,<id>...] — dry-run sauf si &run=1.
   const purgeParam = params.get('purge');
