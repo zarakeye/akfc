@@ -121,3 +121,77 @@ export async function flattenStatusStrata(
 
   return report;
 }
+
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/*  purgeAssetsById — suppression DÉFINITIVE ciblée                         */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Supprime définitivement des assets, ciblés par `id` (jamais par chemin ni
+ * préfixe : un id est unique, impossible de déborder sur un voisin).
+ *
+ * Fait les DEUX moitiés que ni `VirtualStorage.delete` ni la corbeille ne font
+ * ensemble : le binaire chez le provider PUIS la ligne `MediaAsset`. Ordre
+ * imposé — binaire d'abord, ligne ensuite : si l'ordre inverse échoue, on a
+ * une ligne fantôme pointant vers un binaire disparu.
+ *
+ * ⚠️ Irréversible. Ne passe pas par la corbeille (quarantaine). Réservé à un
+ * nettoyage admin explicite, pas à une suppression utilisateur.
+ *
+ * `dryRun` (défaut) : liste ce qui serait supprimé, ne touche à rien.
+ */
+export type PurgeReport = {
+  dryRun: boolean;
+  requested: string[];
+  planned: Array<{ id: string; fullPath: string }>;
+  purged: Array<{ id: string; fullPath: string }>;
+  failed: Array<{ id: string; fullPath: string; error: string }>;
+  notFound: string[];
+};
+
+export async function purgeAssetsById(
+  prisma: PrismaClient,
+  appRoot: string,
+  ids: readonly string[],
+  options: { dryRun?: boolean } = {},
+): Promise<PurgeReport> {
+  const dryRun = options.dryRun ?? true;
+
+  const assets = await prisma.mediaAsset.findMany({
+    where: { appRoot, id: { in: [...ids] } },
+    select: { id: true, fullPath: true },
+  });
+
+  const found = new Set(assets.map((a) => a.id));
+
+  const report: PurgeReport = {
+    dryRun,
+    requested: [...ids],
+    planned: assets.map((a) => ({ id: a.id, fullPath: a.fullPath })),
+    purged: [],
+    failed: [],
+    notFound: ids.filter((id) => !found.has(id)),
+  };
+
+  if (dryRun) return report;
+
+  const storage = new VirtualStorage({ prisma, appRoot });
+
+  for (const asset of assets) {
+    try {
+      // 1) le binaire (dispatch Cloudinary / R2 selon le provider).
+      await storage.delete(asset.fullPath);
+      // 2) la ligne — seulement si le binaire est bien parti.
+      await prisma.mediaAsset.delete({ where: { id: asset.id } });
+      report.purged.push({ id: asset.id, fullPath: asset.fullPath });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      report.failed.push({ id: asset.id, fullPath: asset.fullPath, error: message });
+      // Arrêt net, comme la migration.
+      break;
+    }
+  }
+
+  return report;
+}

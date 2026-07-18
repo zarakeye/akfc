@@ -17,7 +17,10 @@ import type { NextRequest } from 'next/server';
 
 import { APP_ROOT } from '@config/app';
 import { prisma } from '@backend/prisma';
-import { flattenStatusStrata } from '@backend/modules/storage/services/flattenStatusStrata.service';
+import {
+  flattenStatusStrata,
+  purgeAssetsById,
+} from '@backend/modules/storage/services/flattenStatusStrata.service';
 
 export async function GET(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
@@ -27,7 +30,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const run = request.nextUrl.searchParams.get('run') === '1';
+  const params = request.nextUrl.searchParams;
+  const run = params.get('run') === '1';
+
+  // Purge ciblée : ?purge=<id>[,<id>...] — dry-run sauf si &run=1.
+  const purgeParam = params.get('purge');
+  if (purgeParam) {
+    const ids = purgeParam.split(',').map((s) => s.trim()).filter(Boolean);
+    try {
+      const report = await purgeAssetsById(prisma, APP_ROOT, ids, {
+        dryRun: !run,
+      });
+      return NextResponse.json({ ok: true, report });
+    } catch (err) {
+      return NextResponse.json(
+        { ok: false, error: err instanceof Error ? err.message : String(err) },
+        { status: 500 },
+      );
+    }
+  }
 
   try {
     const report = await flattenStatusStrata(prisma, APP_ROOT, {
