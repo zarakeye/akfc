@@ -25,6 +25,7 @@ import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listGeneralFolders } from "@backend/modules/media/services/listGeneralFolders.service";
+import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 
 /**
  * storageRouter — Phase 2 update
@@ -437,15 +438,30 @@ export const storageRouter = router({
   createR2Upload: protectedProcedure
     .input(createR2UploadAuthorizationSchema)
     .mutation(async ({ ctx, input }) => {
+      // Le chemin se calcule ICI, une seule fois, avec la même règle que
+      // Cloudinary. `buildR2Path` (client) n'existe plus.
+      const folder = await resolvePendingUploadFolder({
+        prisma: ctx.prisma,
+        destination: input.destination,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+      });
+      const fileName = buildUploadFileName(input.originalFileName);
+      const path = `${folder}/${fileName}`;
+
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
       });
-      return adapter.createUploadAuthorization({
-        path: input.path,
+      const auth = await adapter.createUploadAuthorization({
+        path,
         mimeType: input.mimeType,
         maxBytes: input.maxBytes,
       });
+
+      // Le client a besoin du chemin résolu : il le renverra tel quel à
+      // `registerR2Upload`. Le chemin ne retraverse jamais une règle de calcul.
+      return { ...auth, path };
     }),
 
   /**

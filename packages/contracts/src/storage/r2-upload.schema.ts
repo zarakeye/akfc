@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { uploadDestinationSchema } from "@contracts/cloudinary/upload.schema";
+
 /**
  * Schemas Zod pour les procédures tRPC R2 upload.
  *
@@ -37,11 +39,17 @@ const HARD_MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 export const createR2UploadAuthorizationSchema = z.object({
   /**
-   * Path virtuel cible (ex: "AKFC/pending/Cours/12/intro.mp3"). Doit
-   * commencer par l'appRoot configuré côté backend — la validation
-   * détaillée est faite par l'adapter.
+   * Destination métier — le serveur en dérive le chemin, exactement comme la
+   * branche Cloudinary. Le client ne calcule plus de chemin : c'était la
+   * source de la divergence de slug entre les deux providers.
    */
-  path: z.string().min(1),
+  destination: uploadDestinationSchema,
+
+  /**
+   * Nom de fichier d'origine. Le serveur en tire une clé sûre via
+   * `buildUploadFileName` — même règle pour tous les providers.
+   */
+  originalFileName: z.string().min(1).max(255),
 
   /**
    * MIME type du fichier qui sera uploadé. Sera **verrouillé dans la

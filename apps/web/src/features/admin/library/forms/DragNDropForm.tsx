@@ -205,15 +205,6 @@ function ensureMimeType(file: File): File {
   });
 }
 
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 function getMaxBytesForFile(file: File): number {
   return pickBackend(file.type) === 'cloudinary'
     ? MAX_FILE_SIZE_CLOUDINARY_BYTES
@@ -462,49 +453,6 @@ export default function DragNDropForm(): JSX.Element {
     setSelectedIds(new Set());
   };
 
-  // -------------------------------
-  // Helpers — path R2
-  // -------------------------------
-  const buildR2Path = (destination: Destination, fileName: string): string => {
-    const dotIdx = fileName.lastIndexOf('.');
-    const baseName = dotIdx === -1 ? fileName : fileName.slice(0, dotIdx);
-    const ext = dotIdx === -1 ? '' : fileName.slice(dotIdx);
-    const safeFileName = `${slugify(baseName)}${ext.toLowerCase()}`;
-
-    if (destination.kind === 'general') {
-      const folderSlug = destination.folder ? slugify(destination.folder) : '';
-      return folderSlug
-        ? `${APP_ROOT}/pending/general/${folderSlug}/${safeFileName}`
-        : `${APP_ROOT}/pending/general/${safeFileName}`;
-    }
-
-    if (destination.kind === 'event') {
-      // Même règle que le backend (`resolvePendingUploadFolder`) : slug de
-      // l'évènement, fallback `event-<id>` car `Event.slug` est nullable.
-      const ev = eventsForUpload.find((e) => e.id === destination.eventId);
-      const eventSlug = ev?.slug
-        ? slugify(ev.slug)
-        : `event-${destination.eventId}`;
-      return `${APP_ROOT}/pending/events/${eventSlug}/${safeFileName}`;
-    }
-
-    const category = categories.find((c) => c.id === destination.categoryId);
-    const categorySlug = slugify(category?.type ?? `cat-${destination.categoryId}`);
-
-    let disciplineSlug: string;
-    if (destination.kind === 'existing-discipline') {
-      const discipline = disciplines.find(
-        (d) => d.id === destination.disciplineId
-      );
-      disciplineSlug = slugify(
-        discipline?.name ?? `disc-${destination.disciplineId}`
-      );
-    } else {
-      disciplineSlug = slugify(destination.proposedDisciplineName);
-    }
-
-    return `${APP_ROOT}/pending/${categorySlug}/${disciplineSlug}/${safeFileName}`;
-  };
 
   // -------------------------------
   // Upload — Cloudinary (batch)
@@ -670,14 +618,16 @@ export default function DragNDropForm(): JSX.Element {
     item: EnrichedItem,
     destination: Destination
   ): Promise<R2UploadOutcome> {
-    const path = buildR2Path(destination, item.file.name);
-
     try {
+      // Le serveur calcule le chemin (une seule règle, tous providers) et le
+      // renvoie dans `auth.path` — on le réutilise pour l'enregistrement.
       const auth = await createR2UploadMutation.mutateAsync({
-        path,
+        destination,
+        originalFileName: item.file.name,
         mimeType: item.file.type,
         maxBytes: item.file.size,
       });
+      const path = auth.path;
 
       const res = await fetch(auth.uploadUrl, {
         method: 'PUT',
