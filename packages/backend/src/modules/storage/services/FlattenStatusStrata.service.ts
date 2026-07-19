@@ -357,13 +357,23 @@ export async function findOrphanAssets(
   const storage = new VirtualStorage({ prisma, appRoot });
   const orphans: OrphanReport['orphans'] = [];
 
+  // ⚠️ Cloudinary indexe par public_id (SANS extension). Interroger avec le
+  // fullPath (AVEC extension) renvoie toujours « not found » → faux orphelins.
+  // On teste donc au bon identifiant selon le provider.
+  const toPublicIdForOrphanCheck = (fullPath: string): string =>
+    fullPath.replace(/\.[^/.]+$/, '');
+
   for (const asset of assets) {
-    const meta = await storage.getMetadata(asset.fullPath);
+    const isCloudinary = asset.publicId != null;
+    const probePath = isCloudinary
+      ? toPublicIdForOrphanCheck(asset.fullPath)
+      : asset.fullPath;
+    const meta = await storage.getMetadata(probePath);
     if (meta === null) {
       orphans.push({
         id: asset.id,
         fullPath: asset.fullPath,
-        provider: asset.publicId ? 'cloudinary' : 'r2',
+        provider: isCloudinary ? 'cloudinary' : 'r2',
       });
     }
   }
