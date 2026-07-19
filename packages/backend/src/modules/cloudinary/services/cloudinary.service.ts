@@ -112,9 +112,11 @@ export async function fetchAuthenticatedAsset(
 export async function getAssetInfo(
   publicId: string,
 ): Promise<GetAssetInfoResult> {
-  for (const rt of ["image", "video", "raw"] as const) {
+  const withoutExtension = publicId.replace(/\.[^/.]+$/, "");
+  const candidates = withoutExtension !== publicId ? [publicId, withoutExtension] : [publicId];
+  for (const candidate of candidates) for (const rt of ["image", "video", "raw"] as const) {
     try {
-      const res = await cloudinary.api.resource(publicId, {
+      const res = await cloudinary.api.resource(candidate, {
         type: "authenticated",
         resource_type: rt,
       });
