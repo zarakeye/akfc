@@ -113,7 +113,13 @@ export async function flattenStatusStrata(
       });
       report.moved.push(item);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null
+            ? JSON.stringify(err, Object.getOwnPropertyNames(err))
+            : String(err);
+
       report.failed.push({ ...item, error: message });
       // Arrêt net : on ne déplace pas 33 binaires de plus après un échec
       // dont on ne connaît pas la cause. Le run est reprenable — corriger,
