@@ -15,7 +15,6 @@ import {
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
-import { StatusFoldingReadView } from "@backend/modules/storage/statusFoldingReadView";
 import { toPhysicalMoveIntents } from "@backend/modules/storage/toPhysicalMoveIntents.service";
 import {
   planMoveOperations,
@@ -209,9 +208,10 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      const reader = input.logical
-        ? new StatusFoldingReadView(backend, ctx.appRoot)
-        : backend;
+      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
+      // fusionner. On lit directement le backend. Le flag `logical` est
+      // désormais sans effet sur la lecture.
+      const reader = backend;
       return reader.list({
         path: input.path,
         cursor: input.cursor,
@@ -233,9 +233,10 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      const reader = input.logical
-        ? new StatusFoldingReadView(backend, ctx.appRoot)
-        : backend;
+      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
+      // fusionner. On lit directement le backend. Le flag `logical` est
+      // désormais sans effet sur la lecture.
+      const reader = backend;
       return reader.getTree({ path: input.path, depth: input.depth });
     }),
 
@@ -252,9 +253,10 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      const reader = input.logical
-        ? new StatusFoldingReadView(backend, ctx.appRoot)
-        : backend;
+      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
+      // fusionner. On lit directement le backend. Le flag `logical` est
+      // désormais sans effet sur la lecture.
+      const reader = backend;
       if (!reader.getNode) {
         throw new Error(
           `Provider "${input.provider ?? "virtual"}" does not support getNode().`
@@ -276,9 +278,10 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      const reader = input.logical
-        ? new StatusFoldingReadView(backend, ctx.appRoot)
-        : backend;
+      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
+      // fusionner. On lit directement le backend. Le flag `logical` est
+      // désormais sans effet sur la lecture.
+      const reader = backend;
       if (!reader.getMetadata) {
         throw new Error(
           `Provider "${input.provider ?? "virtual"}" does not support getMetadata().`
