@@ -46,6 +46,12 @@ export type StorageMetadata = {
   format?: string;
   /** MIME type complet quand disponible */
   mimeType?: string;
+  /**
+   * Statut de cycle de vie, depuis `MediaAsset.status` en DB. Rempli par le
+   * listing (adapter) — le chemin étant désormais plat, il ne peut plus être
+   * dérivé du path.
+   */
+  status?: 'pending' | 'published' | 'bin';
 };
 
 /**
