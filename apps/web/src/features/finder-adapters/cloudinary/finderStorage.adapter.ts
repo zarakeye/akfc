@@ -187,6 +187,7 @@ function mapFileToFinderNode(
       storagePath,
       format,
       kind: kindFromFormat(format, name),
+      status: file.metadata?.status,
     },
   };
 }
