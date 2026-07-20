@@ -1,3 +1,30 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# VAGUE B (correctif) : inspect-folder balaie les 3 DELIVERY TYPES.
+#
+# Cause trouvée : « Folder is not empty » (400). medias contient des assets en
+# type:"upload" (ancienne implémentation, avant les assets signés). Ni
+# l'inventaire ni deleteByPrefix ne les voyaient — ils ne testaient que
+# type:"authenticated".
+#
+# Cette version teste type ∈ {upload, authenticated, private} × resource_type ∈
+# {image, video, raw}. En inventaire ET en suppression. Puis delete_folder.
+#
+# REMPLACE la route inspect-folder existante.
+#
+# À lancer depuis la RACINE du repo.  AKFC_APPLY_ONLY=1 → patch sans typecheck/commit.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+
+ROUTE="apps/web/src/app/api/admin/inspect-folder/route.ts"
+test -f "$ROUTE" || { echo "✗ $ROUTE absent — lance d'abord step_e6b_inspect_folder.sh."; exit 1; }
+
+if grep -q "DELIVERY_TYPES" "$ROUTE"; then
+  echo "→ inspect-folder gère déjà les 3 delivery types, rien à faire."
+  exit 0
+fi
+
+cat > "$ROUTE" <<'TSEOF'
 /**
  * 🔬 Inspecte / détruit un dossier Cloudinary, TOUS delivery types confondus.
  *
@@ -136,3 +163,11 @@ export async function POST(request: NextRequest) {
     report: { dryRun: false, path, deletedCount: assets.length, assets },
   });
 }
+TSEOF
+echo "✓ $ROUTE réécrite (3 delivery types)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "→ stop."; exit 0; fi
+echo "→ typecheck backend…"; pnpm --filter backend typecheck || { echo "✗ backend rouge"; exit 1; }
+echo "→ typecheck racine…"; pnpm typecheck || { echo "✗ racine rouge"; exit 1; }
+git add -A && git commit -m "fix(admin): inspect-folder couvre les 3 delivery types (medias legacy en upload)"
+echo "✓ commité."
