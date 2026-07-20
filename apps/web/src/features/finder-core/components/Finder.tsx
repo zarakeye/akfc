@@ -459,7 +459,6 @@ export default function Finder({
 
                 {!isBinAction && (
                   <StatusRadioGroup
-                    adapter={adapter}
                     selectedNodes={selectedNodes}
                   />
                 )}

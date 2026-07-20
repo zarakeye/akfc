@@ -148,17 +148,28 @@ export async function moveService(intent: MoveIntent): Promise<void> {
  */
 
 /**
- * Rename an asset on Cloudinary with the given resource type.
- * @param from The current public ID of the asset.
- * @param to The new public ID of the asset.
- * @param resourceType The type of the asset to rename.
- * @returns A promise that resolves when the asset has been renamed.
+ * Renames an asset in Cloudinary, taking into account the resource type.
+ * For images, the extension is removed from the public ID before renaming.
+ * For videos and raw files, the extension is kept.
+ *
+ * @param from - The current public ID of the asset.
+ * @param to - The new public ID for the asset.
+ * @param resourceType - The resource type of the asset (image, video, or raw).
+ *
+ * @returns A promise that resolves when the rename operation is complete.
  */
 async function renameAsset(
   from: string,
   to: string,
   resourceType: CloudinaryResourceType,
 ) {
+  // Cloudinary : le public_id d'une IMAGE n'a pas d'extension ; celui d'un
+  // raw/video la garde. `from`/`to` arrivent en fullPath (avec extension) —
+  // pour une image, on retire l'extension des deux, sinon rename → 404.
+  if (resourceType === "image" || resourceType === "video") {
+    from = from.replace(/\.[^/.]+$/, "");
+    to = to.replace(/\.[^/.]+$/, "");
+  }
   // Le compte est en DYNAMIC FOLDERS : le public_id et l'`asset_folder`
   // (dossier-entité, source de vérité de l'arbo Cloudinary) sont deux
   // champs INDÉPENDANTS. Un rename qui ne touche que le public_id laisse

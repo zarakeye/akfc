@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-import type { FileAdapter, FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@contracts/finder';
 
 import { trpc } from '@trpc/trpcClient';
 import { APP_ROOT } from '@config/app';
@@ -49,7 +49,7 @@ import { storagePathOf } from '@features/finder-core/utils/storagePath';
  * (`assertOperationsDontUnpublishReferencedAssets`) rejette la sortie de
  * `published`. L'erreur remonte ici et est exposée via `error`.
  */
-export function useStatusChange(adapter: FileAdapter): {
+export function useStatusChange(): {
   setStatus: (nodes: FinderNode[], target: LifecycleStatus) => Promise<void>;
   isPending: boolean;
   error: string | null;
