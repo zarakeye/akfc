@@ -18,7 +18,7 @@ import type { PrismaClient } from "@prisma/client";
  * Idempotent : basé sur un upsert par la clé unique `(appRoot, fullPath)`.
  */
 
-export const ROOT_FOLDER_STATUSES = ["pending", "published", "bin"] as const;
+export const ROOT_FOLDER_STATUSES = ["bin"] as const;
 export type RootFolderStatus = (typeof ROOT_FOLDER_STATUSES)[number];
 
 export async function ensureRootFolders(
