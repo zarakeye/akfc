@@ -4,7 +4,7 @@ import { useMemo, type JSX } from 'react';
 import { Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
-import type { FileAdapter, FinderNode } from '@contracts/finder';
+import type { FinderNode } from '@contracts/finder';
 
 import {
   statusOf,
@@ -31,13 +31,11 @@ const STATUS_OPTIONS: { value: LifecycleStatus; label: string }[] = [
  * rend que hors-bin (la restauration depuis la corbeille a son flux dédié).
  */
 export default function StatusRadioGroup({
-  adapter,
   selectedNodes,
 }: {
-  adapter: FileAdapter;
   selectedNodes: FinderNode[];
 }): JSX.Element | null {
-  const { setStatus, isPending, error } = useStatusChange(adapter);
+  const { setStatus, isPending, error } = useStatusChange();
 
   const currentStatus = useMemo<LifecycleStatus | null>(() => {
     if (selectedNodes.length === 0) return null;
