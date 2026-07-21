@@ -14,6 +14,7 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
+import { getFileExtension, isAudioFile, isPdfFile } from '@features/finder-core/utils/fileType';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -30,20 +31,9 @@ import type { TriState } from '@features/finder-core/utils/triState';
  * Doit rester aligné avec `AUDIO_FORMATS` dans PreviewPanel.tsx et la
  * liste ACCEPTED_MIME_TYPES côté DragNDropForm.
  */
-const AUDIO_EXTENSIONS = new Set([
-  'mp3', 'wav', 'ogg', 'oga', 'm4a', 'opus', 'flac',
-]);
 
 
-function getFileExtension(name: string): string | null {
-  const idx = name.lastIndexOf('.');
-  if (idx === -1 || idx === name.length - 1) return null;
-  return name.slice(idx + 1).toLowerCase();
-}
 
-function isAudioFile(extension: string | null): boolean {
-  return extension !== null && AUDIO_EXTENSIONS.has(extension);
-}
 
 /**
  * Transforme une URL Cloudinary de vidéo en URL de thumbnail JPG.
@@ -356,16 +346,25 @@ export default function GridItem({
           voit ainsi (Music icon centrale + badge MP3/WAV en coin) ce qui est
           plus parlant que l'icône seule. */}
       {!isFolder && extension && (
-        <div
-          className={clsx(
-            'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wide',
-            hasVisualThumb
-              ? 'bg-white/85 backdrop-blur-sm text-gray-700 shadow-sm'
-              : 'bg-gray-100 text-gray-600 border border-gray-200',
-          )}
-        >
-          {extension}
-        </div>
+        isPdfFile(extension) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/icons/pdf.svg"
+            alt="PDF"
+            className="absolute top-1.5 right-1.5 h-5 w-5 drop-shadow-sm"
+          />
+        ) : (
+          <div
+            className={clsx(
+              'absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wide',
+              hasVisualThumb
+                ? 'bg-white/85 backdrop-blur-sm text-gray-700 shadow-sm'
+                : 'bg-gray-100 text-gray-600 border border-gray-200',
+            )}
+          >
+            {extension}
+          </div>
+        )
       )}
 
       {/* -------------------------- BADGE STATUT -------------------------- */}
