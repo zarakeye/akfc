@@ -2,7 +2,7 @@
 
 import { JSX, useState } from 'react';
 import { File, Music, Check } from 'lucide-react';
-import { effectiveExtension, isAudioFile, isPdfFile } from '@features/finder-core/utils/fileType';
+import { effectiveExtension, isAudioFile, isPdfFile, getCloudinaryVideoThumbnail } from '@features/finder-core/utils/fileType';
 import { statusOf } from '@features/finder-core/utils/statusFolders';
 import clsx from 'clsx';
 
@@ -245,6 +245,8 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
   const isPending = statusOf(node) === 'pending';
 
   const hasImageThumb = kind === 'image' && url && !imgFailed;
+  const videoThumb =
+    kind === 'video' && url ? getCloudinaryVideoThumbnail(url) : null;
 
   let inner: JSX.Element;
   if (hasImageThumb) {
@@ -252,6 +254,16 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
+        alt={node.name}
+        className="h-4 w-4 shrink-0 rounded-sm object-cover"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  } else if (videoThumb && !imgFailed) {
+    inner = (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={videoThumb}
         alt={node.name}
         className="h-4 w-4 shrink-0 rounded-sm object-cover"
         onError={() => setImgFailed(true)}

@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder, Music, Check } from 'lucide-react';
+import { Folder, Music, Check, FileText } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -14,7 +14,8 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
-import { getFileExtension, isAudioFile, isPdfFile } from '@features/finder-core/utils/fileType';
+import { getFileExtension, isAudioFile, isPdfFile, getCloudinaryVideoThumbnail, isTextFile } from '@features/finder-core/utils/fileType';
+import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -50,18 +51,6 @@ import { getFileExtension, isAudioFile, isPdfFile } from '@features/finder-core/
  * Retourne `null` si l'URL n'est pas une URL Cloudinary vidéo
  * reconnaissable — dans ce cas, le caller fallback sur l'emoji vidéo.
  */
-function getCloudinaryVideoThumbnail(url: string): string | null {
-  if (!url.includes('/video/upload/')) return null;
-  // Ne pas double-injecter so_auto si déjà présent (cas du re-render).
-  const withSoAuto = url.includes('/upload/so_auto/')
-    ? url
-    : url.replace('/upload/', '/upload/so_auto/');
-  // Replace extension par .jpg pour demander le format image à Cloudinary.
-  return withSoAuto.replace(
-    /\.(mp4|webm|mov|avi|mkv|m4v|ogv|flv|wmv)$/i,
-    '.jpg',
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                  GRID ITEM                                 */
@@ -320,7 +309,11 @@ export default function GridItem({
           )}
         </>
       ) : (
-        <CardIcon node={node} isAudio={isAudio} />
+        isTextFile(extension) && url ? (
+          <GridTextPreview url={url} />
+        ) : (
+          <CardIcon node={node} isAudio={isAudio} />
+        )
       )}
 
       {/* ------------------------------ NOM ------------------------------- */}
@@ -473,6 +466,38 @@ function CardIcon({
   return (
     <div className="w-full h-full flex items-center justify-center pb-6 text-5xl">
       {emoji}
+    </div>
+  );
+}
+
+
+/**
+ * Aperçu du début d'un fichier texte dans une card de la grille. Réutilise
+ * `useNodeTextContent` (le même hook que la sidebar), plafonné à quelques
+ * centaines d'octets — on ne veut qu'un aperçu.
+ */
+function GridTextPreview({ url }: { url: string }): JSX.Element {
+  const { content, loading } = useNodeTextContent(url, { maxBytes: 600 });
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50">
+        <div className="text-[10px] text-gray-400">…</div>
+      </div>
+    );
+  }
+  if (!content) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-50">
+        <FileText className="h-8 w-8 text-gray-300" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  return (
+    <div className="w-full h-full overflow-hidden bg-gray-50 p-2">
+      <pre className="text-[7px] leading-[1.3] text-gray-600 whitespace-pre-wrap break-words font-mono">
+        {content}
+      </pre>
     </div>
   );
 }
