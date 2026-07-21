@@ -1,7 +1,9 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { File, Check } from 'lucide-react';
+import { File, Music, Check } from 'lucide-react';
+import { effectiveExtension, isAudioFile, isPdfFile } from '@features/finder-core/utils/fileType';
+import { statusOf } from '@features/finder-core/utils/statusFolders';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -210,7 +212,7 @@ export default function FinderTreeFile({
           />
         )}
 
-        <File className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />
+        <TreeFileVisual node={node} />
         <span className="truncate">{node.name}</span>
       </div>
 
@@ -223,5 +225,57 @@ export default function FinderTreeFile({
         />
       )}
     </>
+  );
+}
+
+
+/**
+ * Vignette typée d'un fichier dans la tree view :
+ *   - image  → aperçu réel (meta.url), fallback icône si l'image casse ;
+ *   - audio  → note de musique ;
+ *   - pdf    → logo PDF ;
+ *   - autre  → icône fichier générique.
+ * Un point orange discret signale le statut « en attente ».
+ */
+function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
+  const [imgFailed, setImgFailed] = useState(false);
+  const url = node.meta?.url;
+  const kind = node.meta?.kind;
+  const extension = effectiveExtension(node.meta?.format, node.name);
+  const isPending = statusOf(node) === 'pending';
+
+  const hasImageThumb = kind === 'image' && url && !imgFailed;
+
+  let inner: JSX.Element;
+  if (hasImageThumb) {
+    inner = (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt={node.name}
+        className="h-4 w-4 shrink-0 rounded-sm object-cover"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  } else if (isPdfFile(extension)) {
+    // eslint-disable-next-line @next/next/no-img-element
+    inner = <img src="/icons/pdf.svg" alt="PDF" className="h-4 w-4 shrink-0" />;
+  } else if (isAudioFile(extension)) {
+    inner = <Music className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+  } else {
+    inner = <File className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+  }
+
+  if (!isPending) return inner;
+
+  // Statut « en attente » : point orange en surimpression.
+  return (
+    <span className="relative inline-flex shrink-0">
+      {inner}
+      <span
+        className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-orange-400 ring-1 ring-white"
+        aria-label="En attente"
+      />
+    </span>
   );
 }
