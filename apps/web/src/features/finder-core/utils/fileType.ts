@@ -47,16 +47,13 @@ export function isTextFile(extension: string | null): boolean {
 }
 
 /**
- * Transforme une URL Cloudinary de vidéo en URL de thumbnail JPG (première
- * image via `so_auto`). Extrait de GridItem pour partage grid/tree.
+ * URL de la « première image » (poster) d'une vidéo. Le front reçoit une URL
+ * proxy `/api/media/by-public-id/…?variant=…` ; le proxy sait servir la 1re
+ * frame quand on ajoute `as=poster` (cf. route media + fetchVideoPoster).
+ * Renvoie null si l'URL n'est pas une URL média proxy exploitable.
  */
-export function getCloudinaryVideoThumbnail(url: string): string | null {
-  if (!url.includes('/video/upload/')) return null;
-  const withSoAuto = url.includes('/upload/so_auto/')
-    ? url
-    : url.replace('/upload/', '/upload/so_auto/');
-  return withSoAuto.replace(
-    /\.(mp4|webm|mov|avi|mkv|m4v|ogv|flv|wmv)$/i,
-    '.jpg',
-  );
+export function videoPosterUrl(url: string): string | null {
+  if (!url) return null;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}as=poster`;
 }

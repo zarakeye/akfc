@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder, Music, Check, FileText } from 'lucide-react';
+import { Folder, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -14,7 +14,7 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
-import { getFileExtension, isAudioFile, isPdfFile, getCloudinaryVideoThumbnail, isTextFile } from '@features/finder-core/utils/fileType';
+import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile } from '@features/finder-core/utils/fileType';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 
 /* -------------------------------------------------------------------------- */
@@ -194,7 +194,7 @@ export default function GridItem({
 
   // Vignette vidéo : kind explicite + url Cloudinary transformable
   const videoThumbnailUrl =
-    !isFolder && kind === 'video' && url ? getCloudinaryVideoThumbnail(url) : null;
+    !isFolder && kind === 'video' && url ? videoPosterUrl(url) : null;
   const hasVideoThumb = Boolean(videoThumbnailUrl) && !imgFailed;
 
   // "Visual thumb" générique pour ajuster le style du nom et du badge.
@@ -291,6 +291,12 @@ export default function GridItem({
             className="w-full h-full object-cover"
             onError={() => setImgFailed(true)}
           />
+          {/* Badge play : indique que c'est une vidéo (poster = 1re image). */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex items-center justify-center h-9 w-9 rounded-full bg-black/45 backdrop-blur-sm">
+              <Play className="h-4 w-4 text-white fill-white translate-x-[1px]" />
+            </div>
+          </div>
           {/* Preview vidéo monté UNIQUEMENT au hover.
               - muted + autoPlay : essentiel pour que le navigateur autorise l'autoplay
               - loop : la preview tourne en boucle tant qu'on hover

@@ -1,8 +1,8 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { File, Music, Check } from 'lucide-react';
-import { effectiveExtension, isAudioFile, isPdfFile, getCloudinaryVideoThumbnail } from '@features/finder-core/utils/fileType';
+import { File, Music, Check, FileText } from 'lucide-react';
+import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl } from '@features/finder-core/utils/fileType';
 import { statusOf } from '@features/finder-core/utils/statusFolders';
 import clsx from 'clsx';
 
@@ -246,7 +246,7 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
 
   const hasImageThumb = kind === 'image' && url && !imgFailed;
   const videoThumb =
-    kind === 'video' && url ? getCloudinaryVideoThumbnail(url) : null;
+    kind === 'video' && url ? videoPosterUrl(url) : null;
 
   let inner: JSX.Element;
   if (hasImageThumb) {
@@ -274,6 +274,9 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
     inner = <img src="/icons/pdf.svg" alt="PDF" className="h-4 w-4 shrink-0" />;
   } else if (isAudioFile(extension)) {
     inner = <Music className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+  } else if (isTextFile(extension)) {
+    // Texte : simple icône (16px trop petit pour un aperçu de contenu).
+    inner = <FileText className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
   } else {
     inner = <File className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
   }
