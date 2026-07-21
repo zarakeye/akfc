@@ -2,6 +2,8 @@ import { router, protectedProcedure } from "@backend/trpc/core";
 import { requirePermission, isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import generateStrongPassword from "@backend/lib/security/generatePassword";
+import sendPasswordEmail from "@backend/email/templates/welcomeEmailWithPassword";
 import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
@@ -94,9 +96,6 @@ export const userRouter = router({
     .input(
       z.object({
         email: z.string().email("Invalid email format"),
-        password: z
-          .string()
-          .min(12, "Le mot de passe doit avoir au moins 12 caractères"),
         roleId: z.number(),
       }),
     )
@@ -112,7 +111,11 @@ export const userRouter = router({
         });
       }
 
-      const hash = await bcrypt.hash(input.password, 12);
+      // Mot de passe généré côté serveur (jamais saisi par l'admin) puis
+      // envoyé à l'utilisateur par email. isFirstLogin=true (défaut Prisma)
+      // le forcera à le changer à la première connexion.
+      const password = generateStrongPassword();
+      const hash = await bcrypt.hash(password, 12);
 
       const user = await ctx.prisma.user.create({
         data: {
@@ -121,6 +124,18 @@ export const userRouter = router({
           roleId: input.roleId,
         },
       });
+
+      // Email de bienvenue avec le mot de passe temporaire. Un échec d'envoi
+      // ne doit pas annuler la création — on le logue sans jeter.
+      try {
+        await sendPasswordEmail(
+          input.email,
+          `Bienvenue`,
+          password,
+        );
+      } catch (err) {
+        console.error("[user.create] envoi email de bienvenue échoué :", err);
+      }
 
       return {
         success: true,

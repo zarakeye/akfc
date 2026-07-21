@@ -5,7 +5,6 @@ import { trpc } from "@trpc/trpcClient";
 
 export interface CreateUserFormInput {
   email: string;
-  password: string;
   roleId: number;
 }
 
@@ -17,15 +16,14 @@ export interface CreateUserFormProps {
 /**
  * Form de création d'utilisateur. Pas de mode édition : côté admin, seul le
  * rôle est modifiable (sur la fiche, via `updateUserRoleById`). Le mot de
- * passe est hashé côté router (bcrypt) — on l'envoie en clair via la mutation
- * tRPC `user.create`, jamais stocké tel quel.
+ * passe est GÉNÉRÉ côté serveur à la création et envoyé par email — l'admin
+ * ne le saisit jamais.
  */
 export function CreateUserForm({
   onSubmit,
   submitLabel = "Créer",
 }: CreateUserFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [roleId, setRoleId] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -39,17 +37,13 @@ export function CreateUserForm({
       setSubmitError("L'email est obligatoire.");
       return;
     }
-    if (password.length < 12) {
-      setSubmitError("Le mot de passe doit faire au moins 12 caractères.");
-      return;
-    }
     if (roleId === 0) {
       setSubmitError("Choisis un rôle.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), password, roleId });
+      await onSubmit({ email: email.trim(), roleId });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -67,19 +61,6 @@ export function CreateUserForm({
           onChange={(e) => setEmail(e.target.value)}
           className="rounded border border-input bg-background px-2 py-1"
         />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Mot de passe</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-input bg-background px-2 py-1"
-        />
-        <span className="text-xs text-muted-foreground">
-          12 caractères minimum.
-        </span>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
