@@ -1,10 +1,18 @@
 'use client';
 
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 import { Folder, FileText, Image as ImageIcon, FileVideo, FileAudio, FileType } from 'lucide-react';
 import type { FinderNode } from '@contracts/finder';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
+import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
+import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import ContextMenu, {
+  type ContextMenuItem,
+} from '@features/finder-core/components/ContextMenu';
+import { RenameInput } from '@features/finder-core/components/RenameInput';
+import { MoveDialog } from '@features/finder-core/components/MoveDialog';
+import { displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 
 type Props = {
   node: FinderNode;
@@ -36,12 +44,59 @@ export default function FinderCompactRow({
   const longPress = useLongPress(onLongPress);
   const isFolder = node.type === 'folder';
 
+  // Les dossiers de statut n'ont pas d'actions : ni menu, ni renommage, ni
+  // déplacement. Même règle que dans la grille (cf. utils/statusFolders.ts).
+  const isStatus = isStatusFolder(node.path);
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
+    useNodeActions();
+
+  // L'action porte sur la sélection effective quand le node visé en fait
+  // partie, sur lui seul sinon — la sémantique du DnD, reprise telle quelle.
+  function buildMenuItems(): ContextMenuItem[] {
+    const targetNodes = effectiveNodesFor(node);
+    return [
+      {
+        label: 'Renommer',
+        onClick: () => {
+          setRenameError(null);
+          setIsRenaming(true);
+        },
+      },
+      {
+        label: 'Déplacer…',
+        onClick: () => setMovingNodes(targetNodes),
+      },
+      {
+        label: deleteLabel(targetNodes.length, targetNodes),
+        destructive: true,
+        onClick: () => {
+          void deleteNodes(targetNodes);
+        },
+      },
+    ];
+  }
+
   return (
+    <>
     <div
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       draggable
       onDragStart={onDragStart}
+      onContextMenu={
+        isStatus
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuPos({ x: e.clientX, y: e.clientY });
+            }
+      }
       onMouseDown={longPress.onMouseDown}
       onMouseUp={longPress.onMouseUp}
       onMouseLeave={longPress.onMouseLeave}
@@ -68,13 +123,76 @@ export default function FinderCompactRow({
         node,
         `h-4 w-4 shrink-0 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`,
       )}
-      <span className="text-sm font-medium text-gray-900 truncate min-w-0 flex-1" title={node.name}>
-        {node.name}
-      </span>
+      {isRenaming ? (
+        <span className="min-w-0 flex-1">
+          <RenameInput
+            initial={baseNameOf(node.name, node.meta?.format)}
+            error={renameError}
+            onCancel={() => {
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+            onCommit={async (value) => {
+              const message = await renameNode(node, value);
+              if (message) {
+                setRenameError(message);
+                return;
+              }
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+          />
+        </span>
+      ) : (
+        <span
+          className="text-sm font-medium text-gray-900 truncate min-w-0 flex-1"
+          title={displayName(node.name, node.meta?.format)}
+          onDoubleClick={(e) => {
+            // Double-clic sur le NOM : renommer. Ailleurs sur la ligne :
+            // ouvrir. Le même partage que dans la grille.
+            e.stopPropagation();
+            if (!isStatus) {
+              setRenameError(null);
+              setIsRenaming(true);
+            }
+          }}
+        >
+          {displayName(node.name, node.meta?.format)}
+        </span>
+      )}
       <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">
         {isFolder ? '—' : formatBytes(node.size)}
       </span>
     </div>
+
+    {movingNodes && (
+      <MoveDialog
+        title={
+          movingNodes.length === 1
+            ? `Déplacer « ${displayName(
+                movingNodes[0].name,
+                movingNodes[0].meta?.format,
+              )} »`
+            : `Déplacer ${movingNodes.length} éléments`
+        }
+        onClose={() => setMovingNodes(null)}
+        onConfirm={async (destination) => {
+          const message = await moveNodes(movingNodes, destination);
+          if (message) throw new Error(message);
+          setMovingNodes(null);
+        }}
+      />
+    )}
+
+    {menuPos && (
+      <ContextMenu
+        x={menuPos.x}
+        y={menuPos.y}
+        items={buildMenuItems()}
+        onClose={() => setMenuPos(null)}
+      />
+    )}
+    </>
   );
 }
 
