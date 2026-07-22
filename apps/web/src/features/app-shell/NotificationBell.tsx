@@ -109,6 +109,10 @@ export function NotificationBell(): JSX.Element | null {
   const { data: counts } = trpc.storage.getAttentionCounts.useQuery(undefined, {
     enabled: canSee,
   });
+  const { data: breakdown } = trpc.storage.getPendingBreakdown.useQuery(
+    undefined,
+    { enabled: canSee },
+  );
 
   if (!canSee) return null;
 
@@ -163,14 +167,47 @@ export function NotificationBell(): JSX.Element | null {
       {total > 0 && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute right-0 top-full z-50 mt-1 hidden w-max max-w-64 rounded-md bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block"
+          /* `pt-1` plutôt qu'une marge : sans zone continue, le survol se
+             romprait entre la cloche et le panneau. Et pas de
+             `pointer-events-none` — les liens doivent être cliquables. */
+          className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block"
         >
-          {buildMessage(
-            counts!.pending,
-            counts!.bin,
-            counts!.persoPending,
-            counts!.generalPending,
-          )}
+          <div className="w-max max-w-80 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
+            {counts!.pending > 0 && (
+              <>
+                <p className="mb-1 font-medium">
+                  Vous avez {counts!.pending} contenu
+                  {counts!.pending > 1 ? 's' : ''} en attente
+                  {breakdown && breakdown.entries.length > 0 ? ' :' : ''}
+                </p>
+                {breakdown && breakdown.entries.length > 0 && (
+                  <ul className="space-y-0.5">
+                    {breakdown.entries.map((entry) => (
+                      <li key={entry.path}>
+                        <Link
+                          href={`/dashboard/library?path=${encodeURIComponent(entry.path)}`}
+                          className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
+                        >
+                          {entry.count} dans{' '}
+                          {entry.kind === 'general'
+                            ? 'le stockage général'
+                            : entry.kind === 'perso'
+                              ? 'votre stockage personnel'
+                              : `« ${entry.name} »`}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+            {counts!.bin > 0 && (
+              <p className={counts!.pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
+                {counts!.bin} contenu{counts!.bin > 1 ? 's' : ''} dans la
+                corbeille
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

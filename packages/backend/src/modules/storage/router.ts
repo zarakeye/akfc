@@ -139,6 +139,56 @@ export const storageRouter = router({
   }),
 
   /**
+   * Ventilation des contenus « en attente » par dossier parent.
+   *
+   * Renvoie le `kind` du dossier plutôt qu'un libellé : la formulation
+   * (« le stockage général », « votre stockage personnel »…) appartient à
+   * l'UI, pas au backend. Les dossiers sont triés par volume décroissant.
+   */
+  getPendingBreakdown: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma.mediaAsset.findMany({
+      where: { appRoot: ctx.appRoot, status: "pending" },
+      select: { fullPath: true },
+    });
+
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const segments = row.fullPath.split("/");
+      segments.pop(); // le nom du fichier
+      const folder = segments.join("/");
+      if (!folder) continue;
+      counts.set(folder, (counts.get(folder) ?? 0) + 1);
+    }
+
+    const generalRoot = `${ctx.appRoot}/general`;
+    const persosRoot = `${ctx.appRoot}/persos`;
+
+    const entries = Array.from(counts.entries()).map(([path, count]) => {
+      let kind: "general" | "perso" | "folder" = "folder";
+      if (path === generalRoot || path.startsWith(`${generalRoot}/`)) {
+        kind = "general";
+      } else if (path.startsWith(`${persosRoot}/`)) {
+        // Personnel de l'utilisateur courant uniquement : le dossier porte
+        // son id. Ceux des autres restent des dossiers ordinaires.
+        kind = path.includes(ctx.user.id) ? "perso" : "folder";
+      }
+      // Nom lisible : pour le dossier personnel d'un AUTRE utilisateur, le
+      // dernier segment vaut « photos » et n'apprend rien — on prend le
+      // segment qui identifie la personne.
+      let name = path.split("/").pop() ?? path;
+      if (kind === "folder" && path.startsWith(`${persosRoot}/`)) {
+        name = path.slice(persosRoot.length + 1).split("/")[0] ?? name;
+      }
+
+      return { path, count, kind, name };
+    });
+
+    entries.sort((a, b) => b.count - a.count);
+
+    return { total: rows.length, entries };
+  }),
+
+  /**
    * Statut du quota d'images de l'espace perso de l'admin courant (lecture
    * seule). Le dossier perso est dérivé de `ctx.user.id`, jamais d'un input.
    */
