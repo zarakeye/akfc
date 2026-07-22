@@ -116,6 +116,34 @@ export async function fetchAuthenticatedAsset(
   const diagOn = Boolean(diagMatch) && publicId.includes(diagMatch as string);
   if (diagOn) {
     console.log("[diag] publicId =", JSON.stringify(publicId));
+
+    // La fiche Admin API, à comparer entre un fichier cassé et un témoin qui
+    // marche. `access_control` en mode `token` rend une URL signée
+    // insuffisante — Cloudinary répond alors « Unauthenticated access » alors
+    // même que l'asset existe et que la signature est bonne.
+    for (const rt of ["image", "video", "raw"] as const) {
+      try {
+        const info = (await cloudinary.api.resource(publicId, {
+          type: "authenticated",
+          resource_type: rt,
+        })) as Record<string, unknown>;
+
+        console.log(
+          `[diag] admin ${rt} =`,
+          JSON.stringify({
+            type: info.type,
+            resource_type: info.resource_type,
+            format: info.format,
+            version: info.version,
+            bytes: info.bytes,
+            access_mode: info.access_mode,
+            access_control: info.access_control,
+          }),
+        );
+      } catch {
+        // absent de ce resource_type — silence, c'est attendu sur deux des trois
+      }
+    }
   }
 
   for (const rt of ["image", "video", "raw"] as const) {
