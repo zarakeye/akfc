@@ -6,12 +6,20 @@ import type { StorageFileNode, StorageNode } from "@contracts/storage";
  *
  * Depuis l'aplatissement des chemins, le statut ne peut plus être dérivé du
  * path : il vit dans `MediaAsset.status`. Cette couche le rapatrie pour que
- * `meta.status` soit renseigné côté client (badge « en attente », filtres,
+ * `meta.status` soit renseigné côté client (pastille de statut, filtres,
  * règle `isPickable`).
  *
- * Le match couvre les deux providers en une requête :
- *   - Cloudinary : `node.path` === `MediaAsset.publicId` (sans extension) ;
- *   - R2         : `node.path` === `MediaAsset.fullPath`.
+ * ─── Le point délicat : deux conventions de clé ────────────────────────────
+ *
+ * Le `path` d'un node est ce que le provider expose :
+ *   - Cloudinary image/vidéo : le public_id, SANS extension
+ *       node.path = "AKFC/cours/x/photo"
+ *   - Cloudinary raw et R2   : le chemin complet, AVEC extension
+ *       node.path = "AKFC/general/doc.pdf"
+ *
+ * En base, `publicId` et `fullPath` portent l'extension dans les deux cas.
+ * On interroge donc avec DEUX clés par fichier — le chemin nu et le chemin
+ * suffixé de son `format` — et on résout dans le même ordre.
  */
 
 type LifecycleStatus = "pending" | "published" | "bin";
@@ -20,26 +28,34 @@ function isLifecycleStatus(value: string): value is LifecycleStatus {
   return value === "pending" || value === "published" || value === "bin";
 }
 
-async function statusByPath(
+/** Les clés sous lesquelles ce fichier peut être connu en base. */
+function candidateKeys(file: StorageFileNode): string[] {
+  const keys = [file.path];
+  const format = file.metadata?.format?.toLowerCase();
+  if (format && !file.path.toLowerCase().endsWith(`.${format}`)) {
+    keys.push(`${file.path}.${format}`);
+  }
+  return keys;
+}
+
+async function statusByKey(
   prisma: PrismaClient,
   appRoot: string,
-  paths: string[],
+  keys: string[],
 ): Promise<Map<string, LifecycleStatus>> {
   const map = new Map<string, LifecycleStatus>();
-  if (paths.length === 0) return map;
+  if (keys.length === 0) return map;
 
   const rows = await prisma.mediaAsset.findMany({
     where: {
       appRoot,
-      OR: [{ publicId: { in: paths } }, { fullPath: { in: paths } }],
+      OR: [{ publicId: { in: keys } }, { fullPath: { in: keys } }],
     },
     select: { publicId: true, fullPath: true, status: true },
   });
 
   for (const row of rows) {
     if (!isLifecycleStatus(row.status)) continue;
-    // On indexe sur les DEUX clés : selon le provider, le node porte l'une
-    // ou l'autre. Une clé absente (publicId null pour R2) est ignorée.
     if (row.publicId) map.set(row.publicId, row.status);
     if (row.fullPath) map.set(row.fullPath, row.status);
   }
@@ -53,15 +69,17 @@ export async function enrichFilesWithStatus(
   files: ReadonlyArray<StorageFileNode>,
 ): Promise<void> {
   if (files.length === 0) return;
-  const byPath = await statusByPath(
-    prisma,
-    appRoot,
-    files.map((f) => f.path),
-  );
+
+  const allKeys = files.flatMap(candidateKeys);
+  const byKey = await statusByKey(prisma, appRoot, allKeys);
+
   for (const file of files) {
-    const status = byPath.get(file.path);
-    if (status) {
-      file.metadata = { ...(file.metadata ?? {}), status };
+    for (const key of candidateKeys(file)) {
+      const status = byKey.get(key);
+      if (status) {
+        file.metadata = { ...(file.metadata ?? {}), status };
+        break;
+      }
     }
   }
 }
