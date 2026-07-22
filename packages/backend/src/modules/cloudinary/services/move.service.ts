@@ -158,7 +158,7 @@ export async function moveService(intent: MoveIntent): Promise<void> {
  *
  * @returns A promise that resolves when the rename operation is complete.
  */
-async function renameAsset(
+export async function renameAsset(
   from: string,
   to: string,
   resourceType: CloudinaryResourceType,

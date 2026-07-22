@@ -23,7 +23,10 @@ import type { MoveIntent as CloudinaryMoveIntent } from "@contracts/cloudinary/m
 
 import { getCloudinaryFolderTree } from "@backend/modules/cloudinary/services/getCloudinaryFolderTree.service";
 import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
-import { moveService } from "@backend/modules/cloudinary/services/move.service";
+import {
+  moveService,
+  renameAsset,
+} from "@backend/modules/cloudinary/services/move.service";
 import { createUploadSignatures } from "@backend/modules/cloudinary/services/createUploadSignatures.service";
 import { registerUploadedAssets } from "@backend/modules/cloudinary/services/registerUploadedAssets.service";
 import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
@@ -326,15 +329,34 @@ export function createCloudinaryStorageAdapter(
       // à moveService. Cette traduction est triviale parce que le contrat
       // agnostique a précisément été pensé comme un sous-ensemble qui
       // tient dans Cloudinary sans gymnastique.
-      const intent: CloudinaryMoveIntent = {
-        source:
-          operation.source.type === "file"
-            ? { type: "file", fullPath: operation.source.path }
-            : { type: "folder", fullPath: operation.source.path },
-        target: { type: "folder", fullPath: targetParentPath },
-      };
+      if (operation.source.type === "file") {
+        // ⚠️ Un FICHIER ne passe pas par `moveService`.
+        //
+        // Sa branche file→folder reconstruit le nom depuis la source
+        // (`moveFileIntoFolder`), ce qui écrase le nom cible : un renommage
+        // devenait un rename de l'asset sur lui-même. On appelle donc
+        // directement la primitive, avec le chemin cible COMPLET.
+        //
+        // Généralisation stricte : quand le nom ne change pas — le cas d'un
+        // déplacement — `operation.target.path` vaut exactement ce que
+        // `moveFileIntoFolder` construisait. Rien ne change pour le DnD.
+        const info = await getAssetInfo(operation.source.path);
+        await renameAsset(
+          operation.source.path,
+          operation.target.path,
+          info.resource_type,
+        );
+      } else {
+        // Les DOSSIERS gardent `moveService` : sa branche folder→folder
+        // concatène elle-même le nom du dossier au parent, d'où le
+        // `targetParentPath` calculé plus haut.
+        const intent: CloudinaryMoveIntent = {
+          source: { type: "folder", fullPath: operation.source.path },
+          target: { type: "folder", fullPath: targetParentPath },
+        };
 
-      await moveService(intent);
+        await moveService(intent);
+      }
 
       // ─── Synchro MediaAsset (fullPath + status) ──────────────────────────
       //
