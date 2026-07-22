@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { File, Music, Check, FileText } from 'lucide-react';
+import { File, Music, Check, FileText, Play } from 'lucide-react';
 import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl, displayName } from '@features/finder-core/utils/fileType';
 import { statusOf } from '@features/finder-core/utils/statusFolders';
 import clsx from 'clsx';
@@ -242,7 +242,9 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
   const url = node.meta?.url;
   const kind = node.meta?.kind;
   const extension = effectiveExtension(node.meta?.format, node.name);
-  const isPending = statusOf(node) === 'pending';
+  const status = statusOf(node);
+  const isPending = status === 'pending';
+  const isPublished = status === 'published';
 
   const hasImageThumb = kind === 'image' && url && !imgFailed;
   const videoThumb =
@@ -255,41 +257,57 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
       <img
         src={url}
         alt={node.name}
-        className="h-4 w-4 shrink-0 rounded-sm object-cover"
+        className="h-5 w-5 shrink-0 rounded-sm object-cover"
         onError={() => setImgFailed(true)}
       />
     );
   } else if (videoThumb && !imgFailed) {
     inner = (
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={videoThumb}
-        alt={node.name}
-        className="h-4 w-4 shrink-0 rounded-sm object-cover"
-        onError={() => setImgFailed(true)}
-      />
+      <span className="relative inline-flex h-5 w-5 shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={videoThumb}
+          alt={node.name}
+          className="h-5 w-5 rounded-sm object-cover"
+          onError={() => setImgFailed(true)}
+        />
+        {/* Badge play : distingue une vidéo d'une image au premier coup d'œil. */}
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex h-3 w-3 items-center justify-center rounded-full bg-black/55">
+            <Play className="h-2 w-2 text-white fill-white translate-x-[0.5px]" />
+          </span>
+        </span>
+      </span>
     );
   } else if (isPdfFile(extension)) {
     // eslint-disable-next-line @next/next/no-img-element
-    inner = <img src="/icons/pdf.svg" alt="PDF" className="h-4 w-4 shrink-0" />;
+    inner = <img src="/icons/pdf.svg" alt="PDF" className="h-5 w-5 shrink-0" />;
   } else if (isAudioFile(extension)) {
-    inner = <Music className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <Music className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
   } else if (isTextFile(extension)) {
     // Texte : simple icône (16px trop petit pour un aperçu de contenu).
-    inner = <FileText className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <FileText className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
   } else {
-    inner = <File className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={1.5} />;
+    inner = <File className="h-5 w-5 shrink-0 text-gray-400" strokeWidth={1.5} />;
   }
 
-  if (!isPending) return inner;
+  // Statut inconnu (ou corbeille) : pas de pastille, rendu nu.
+  if (!isPending && !isPublished) return inner;
 
-  // Statut « en attente » : point orange en surimpression.
+  // Les DEUX états sont marqués — « publié » ne se déduit plus d'une absence.
+  // Les « en attente » sont estompés pour que les publiés ressortent.
   return (
     <span className="relative inline-flex shrink-0">
-      {inner}
+      <span className={clsx('inline-flex', isPending && 'opacity-60')}>
+        {inner}
+      </span>
       <span
-        className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-orange-400 ring-1 ring-white"
-        aria-label="En attente"
+        className={clsx(
+          'absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-white',
+          isPending ? 'bg-orange-400' : 'bg-emerald-500',
+        )}
+        aria-label={isPending ? 'En attente' : 'Publié'}
       />
     </span>
   );
