@@ -168,7 +168,7 @@ function mapFileToFinderNode(
 
   const url =
     backend === 'cloudinary'
-      ? getMediaUrl({ publicId: storagePath })
+      ? getMediaUrl({ publicId: storagePath, format })
       : `/api/media/r2/${storagePath.split('/').map(encodeURIComponent).join('/')}`;
 
   return {

@@ -69,9 +69,17 @@ export async function GET(
     const safeVersion =
       version && Number.isFinite(version) ? version : undefined;
 
+    // `format` = extension autoritaire transmise par le client (meta.format).
+    // Le serveur ne la déduit pas du nom : un nom peut légitimement contenir
+    // un point (cf. buildAuthenticatedUrl). Absente, on garde le comportement
+    // historique — la route reste compatible avec ses appelants existants.
+    const rawFormat = searchParams.get("format");
+    const format =
+      rawFormat && /^[A-Za-z0-9]{1,8}$/.test(rawFormat) ? rawFormat : undefined;
+
     const asset = asPoster
       ? await fetchVideoPoster(id, variant)
-      : await fetchAuthenticatedAsset(id, variant, safeVersion);
+      : await fetchAuthenticatedAsset(id, variant, safeVersion, format);
 
     /* ---------------------------------------------------------------------- */
     /*                               NOT FOUND                                */
@@ -127,13 +135,20 @@ function buildHeaders(res: Response, isFallback = false): HeadersInit {
   const contentType =
     res.headers.get("content-type") ?? "application/octet-stream";
 
+  // Un cache d'un an `immutable` sur une réponse qui n'est PAS un média fige
+  // l'erreur chez le client : plus aucune requête ne repart, le correctif
+  // serveur reste invisible, et le diagnostic porte sur un fossile. On ne
+  // fossilise donc que ce qui est bien une image ou une vidéo.
+  const isMedia = /^(image|video)\//.test(contentType);
+  const durable = !isFallback && isMedia;
+
   return {
     "Content-Type": contentType,
 
     // 🔥 CDN / navigateur cache
-    "Cache-Control": isFallback
-      ? "public, max-age=60" // fallback → court
-      : "public, max-age=31536000, immutable",
+    "Cache-Control": durable
+      ? "public, max-age=31536000, immutable"
+      : "public, max-age=60", // secours ou contenu inattendu → court
 
     // 🔥 optionnel mais utile (debug / observabilité)
     "X-Asset-Source": isFallback ? "fallback" : "cloudinary",
