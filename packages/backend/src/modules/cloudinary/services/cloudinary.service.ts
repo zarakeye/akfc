@@ -109,15 +109,6 @@ export async function fetchAuthenticatedAsset(
   version?: number,
   format?: string,
 ): Promise<Response | null> {
-  // [DIAG TEMPORAIRE] Muet sauf si AKFC_DIAG_MATCH est défini et que le
-  // publicId le contient. JSON.stringify pour rendre lisibles les caractères
-  // invisibles (espace final, U+00A0, tiret long…).
-  const diagMatch = process.env.AKFC_DIAG_MATCH;
-  const diagOn = Boolean(diagMatch) && publicId.includes(diagMatch as string);
-  if (diagOn) {
-    console.log("[diag] publicId =", JSON.stringify(publicId));
-  }
-
   for (const rt of ["image", "video", "raw"] as const) {
     try {
       const url = buildAuthenticatedUrl(publicId, variant, rt, version, format);
@@ -125,15 +116,6 @@ export async function fetchAuthenticatedAsset(
       const res = await fetch(url, {
         cache: "no-store",
       });
-
-      // [DIAG TEMPORAIRE] `x-cld-error` porte le motif du refus en clair.
-      if (diagOn) {
-        console.log(
-          `[diag] ${rt} → ${res.status}`,
-          res.headers.get("x-cld-error") ?? "(pas d'en-tête x-cld-error)",
-          url,
-        );
-      }
 
       if (!res.ok) continue;
 
