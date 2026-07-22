@@ -71,3 +71,9 @@ export function displayName(
   const ext = format.toLowerCase();
   return name.toLowerCase().endsWith(`.${ext}`) ? name : `${name}.${ext}`;
 }
+
+/** Nom sans son extension — ce que l'utilisateur édite lors d'un renommage. */
+export function baseNameOf(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(0, dot) : name;
+}
