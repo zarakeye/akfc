@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+
+/**
+ * Ce qui compte comme extension en fin de nom : 1 à 8 caractères
+ * alphanumériques. Exclut les points internes d'un libellé (« (ep. BAZZE) »).
+ */
+const EXTENSION_PATTERN = /\.[A-Za-z0-9]{1,8}$/;
 import {
   enrichFilesWithStatus,
   enrichTreeWithStatus,
@@ -397,9 +403,15 @@ export const storageRouter = router({
         });
       }
 
-      // Extension de la SOURCE, réappliquée telle quelle (voir doc ci-dessus).
-      const dot = currentName.lastIndexOf(".");
-      const extension = dot > 0 ? currentName.slice(dot) : "";
+      // Extension de la SOURCE, réappliquée telle quelle.
+      //
+      // ⚠️ Un point dans un nom n'est PAS forcément un séparateur
+      // d'extension : « CNI recto PORQUET (ep. BAZZE) Yvonne » en contient
+      // un. Couper au dernier point produirait une pseudo-extension
+      // « . BAZZE) Yvonne » et mutilerait le fichier au renommage. On
+      // n'accepte donc qu'un suffixe AYANT LA FORME d'une extension.
+      const extensionMatch = EXTENSION_PATTERN.exec(currentName);
+      const extension = extensionMatch ? extensionMatch[0] : "";
       const targetPath = `${parent}/${cleanName}${extension}`;
 
       // Renommage en son propre nom : rien à faire, mais pas une erreur.

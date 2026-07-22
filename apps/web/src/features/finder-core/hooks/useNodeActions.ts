@@ -250,7 +250,7 @@ export function useNodeActions(): {
     async (node: FinderNode, newBaseName: string): Promise<string | null> => {
       const clean = newBaseName.trim();
       if (!clean) return 'Le nom ne peut pas être vide.';
-      if (clean === baseNameOf(node.name)) return null; // rien à faire
+      if (clean === baseNameOf(node.name, node.meta?.format)) return null;
 
       try {
         await renameMutation.mutateAsync({
