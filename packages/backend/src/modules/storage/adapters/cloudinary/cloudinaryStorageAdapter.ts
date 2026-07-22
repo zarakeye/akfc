@@ -238,7 +238,31 @@ export function createCloudinaryStorageAdapter(
           normalizedPath: path,
         });
         const node = mapClientFolderTreeToStorageNode(tree, /* depth */ 0);
-        if (node.type === "folder") return node;
+
+        // ⚠️ Recevoir un `folder` n'est PAS la preuve qu'il existe.
+        //
+        // `buildCloudinaryTree` fabrique toujours un nœud racine : appelé sur
+        // un préfixe qui n'existe nulle part, il renvoie une racine à
+        // `children: []`. Retourner ce dossier fantôme fait croire à un
+        // élément présent — et `storage.rename`, qui détecte ses collisions
+        // avec `getNode(targetPath)`, refusait alors TOUT nouveau nom.
+        //
+        // Un dossier existe s'il est inscrit au registre (y compris vide,
+        // cas des dossiers créés explicitement) ou s'il porte des enfants.
+        if (node.type === "folder") {
+          const registered = await prisma.folder.findFirst({
+            where: {
+              appRoot,
+              OR: [
+                { fullPath: path },
+                { fullPath: { startsWith: `${path}/` } },
+              ],
+            },
+            select: { fullPath: true },
+          });
+
+          if (registered || node.hasChildren) return node;
+        }
       } catch {
         // ignore
       }
