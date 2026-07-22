@@ -16,6 +16,7 @@ import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
+import { RenameInput } from '@features/finder-core/components/RenameInput';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -575,50 +576,3 @@ function GridPdfPreview({
   );
 }
 
-/**
- * Champ d'édition en ligne du nom. Entrée valide, Échap annule, la perte de
- * focus valide. En cas d'erreur (collision…), le champ RESTE ouvert avec le
- * message dessous, pour que l'utilisateur corrige sans tout ressaisir.
- */
-function RenameInput({
-  initial,
-  error,
-  onCommit,
-  onCancel,
-}: {
-  initial: string;
-  error: string | null;
-  onCommit: (value: string) => void | Promise<void>;
-  onCancel: () => void;
-}): JSX.Element {
-  const [value, setValue] = useState(initial);
-
-  return (
-    <div onClick={(e) => e.stopPropagation()}>
-      <input
-        autoFocus
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onFocus={(e) => e.currentTarget.select()}
-        onDoubleClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            void onCommit(value);
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            onCancel();
-          }
-        }}
-        onBlur={() => void onCommit(value)}
-        className="w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-xs text-gray-800 outline-none"
-      />
-      {error && (
-        <p className="mt-0.5 rounded bg-red-50 px-1 text-[10px] text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}

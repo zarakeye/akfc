@@ -11,6 +11,8 @@ import type { FinderNode } from '@contracts/finder';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
 import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
+import { RenameInput } from '@features/finder-core/components/RenameInput';
+import { baseNameOf } from '@features/finder-core/utils/fileType';
 import { parentPath } from '@features/finder-core/utils/path';
 import ContextMenu, {
   type ContextMenuItem,
@@ -91,8 +93,11 @@ export default function FinderTreeFile({
     if (onLongPress) onLongPress(node);
   });
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } =
+    useNodeActions();
 
   const isActive =
     currentPath === parentPath(node.path) && selectedIds.has(node.id);
@@ -137,6 +142,13 @@ export default function FinderTreeFile({
   function buildMenuItems(): ContextMenuItem[] {
     const targetNodes = effectiveNodesFor(node);
     return [
+      {
+        label: 'Renommer',
+        onClick: () => {
+          setRenameError(null);
+          setIsRenaming(true);
+        },
+      },
       {
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
@@ -213,7 +225,36 @@ export default function FinderTreeFile({
         )}
 
         <TreeFileVisual node={node} />
-        <span className="truncate">{displayName(node.name, node.meta?.format)}</span>
+        {isRenaming ? (
+          <RenameInput
+            initial={baseNameOf(node.name)}
+            error={renameError}
+            onCancel={() => {
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+            onCommit={async (value) => {
+              const message = await renameNode(node, value);
+              if (message) {
+                setRenameError(message);
+                return;
+              }
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+          />
+        ) : (
+          <span
+            className="truncate"
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setRenameError(null);
+              setIsRenaming(true);
+            }}
+          >
+            {displayName(node.name, node.meta?.format)}
+          </span>
+        )}
       </div>
 
       {menuPos && (
