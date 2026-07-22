@@ -59,7 +59,12 @@ export function buildAuthenticatedUrl(
   resourceType: ResourceType = "image",
   version?: number,
 ): string {
-  const transformation = transformations[variant] ?? {};
+  // Cloudinary REFUSE les transformations sur les ressources `raw` (pdf, md,
+  // zip…) : l'URL signée avec transformation retourne 404, et l'appelant
+  // tombe alors sur l'image de fallback. On ne transforme donc que les
+  // resource_types qui le supportent (image / video).
+  const transformation =
+    resourceType === "raw" ? {} : (transformations[variant] ?? {});
 
   return cloudinary.url(publicId, {
     transformation,
