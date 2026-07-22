@@ -57,3 +57,17 @@ export function videoPosterUrl(url: string): string | null {
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}as=poster`;
 }
+
+/**
+ * Nom d'affichage AVEC extension. Les publicId Cloudinary ne portent pas
+ * l'extension dans leur nom (contrairement aux clés R2) : on la reconstruit
+ * depuis `format` quand elle manque.
+ */
+export function displayName(
+  name: string,
+  format: string | null | undefined,
+): string {
+  if (!format) return name;
+  const ext = format.toLowerCase();
+  return name.toLowerCase().endsWith(`.${ext}`) ? name : `${name}.${ext}`;
+}

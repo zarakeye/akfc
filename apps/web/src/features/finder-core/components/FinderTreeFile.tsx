@@ -2,7 +2,7 @@
 
 import { JSX, useState } from 'react';
 import { File, Music, Check, FileText } from 'lucide-react';
-import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl } from '@features/finder-core/utils/fileType';
+import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl, displayName } from '@features/finder-core/utils/fileType';
 import { statusOf } from '@features/finder-core/utils/statusFolders';
 import clsx from 'clsx';
 
@@ -213,7 +213,7 @@ export default function FinderTreeFile({
         )}
 
         <TreeFileVisual node={node} />
-        <span className="truncate">{node.name}</span>
+        <span className="truncate">{displayName(node.name, node.meta?.format)}</span>
       </div>
 
       {menuPos && (
