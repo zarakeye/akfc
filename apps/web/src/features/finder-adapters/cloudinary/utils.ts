@@ -38,7 +38,7 @@ function encodeSegment(segment: string): string {
  * spéciaux dans les noms de dossiers ou de fichiers.
  */
 export function getMediaUrl(
-  source: { publicId: string },
+  source: { publicId: string; format?: string },
   variant: Variant = 'thumb',
 ): string {
   const encoded = source.publicId
@@ -46,7 +46,16 @@ export function getMediaUrl(
     .map(encodeSegment)
     .join('/');
 
-  return `/api/media/by-public-id/${encoded}?variant=${variant}`;
+  // Le format part avec l'URL quand on le connaît : c'est lui qui rend le
+  // public_id non ambigu côté Cloudinary pour les noms contenant un point.
+  // Inutile si le publicId porte déjà son extension (assets R2 / raw).
+  const { format } = source;
+  const suffix =
+    format && !source.publicId.toLowerCase().endsWith(`.${format.toLowerCase()}`)
+      ? `&format=${encodeURIComponent(format)}`
+      : '';
+
+  return `/api/media/by-public-id/${encoded}?variant=${variant}${suffix}`;
 }
 
 /**

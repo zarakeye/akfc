@@ -58,6 +58,7 @@ export function buildAuthenticatedUrl(
   variant: Variant,
   resourceType: ResourceType = "image",
   version?: number,
+  format?: string,
 ): string {
   // Cloudinary REFUSE les transformations sur les ressources `raw` (pdf, md,
   // zip…) : l'URL signée avec transformation retourne 404, et l'appelant
@@ -66,12 +67,31 @@ export function buildAuthenticatedUrl(
   const transformation =
     resourceType === "raw" ? {} : (transformations[variant] ?? {});
 
+  // ─── Pourquoi transmettre le format ? ──────────────────────────────────
+  //
+  // Une URL de livraison Cloudinary s'écrit `<public_id>.<format>`. Le
+  // serveur coupe donc le dernier segment au DERNIER point. Sans extension
+  // explicite, un public_id qui contient un point ailleurs qu'en fin de nom
+  // est tronqué : « …/CNI recto PORQUET (ep. BAZZE) Yvonne » est lu comme le
+  // public_id « …/CNI recto PORQUET (ep » assorti du format « BAZZE) Yvonne ».
+  // Résultat : 404 sur les trois resource_types, puis image de secours.
+  //
+  // On ne DEVINE pas ce format — l'appelant le fournit (meta.format côté
+  // client, autoritaire). Deux abstentions : sur `raw`, dont le public_id
+  // porte déjà son extension ; et quand le public_id se termine déjà par
+  // `.<format>` (cas des URLs bâties depuis MediaAsset.publicId).
+  const appendFormat =
+    format !== undefined &&
+    resourceType !== "raw" &&
+    !publicId.toLowerCase().endsWith(`.${format.toLowerCase()}`);
+
   return cloudinary.url(publicId, {
     transformation,
     sign_url: true,
     type: "authenticated",
     resource_type: resourceType,
     secure: true,
+    ...(appendFormat ? { format } : {}),
     // Version Cloudinary (numéro du binaire) : produit une URL `.../v<n>/...`
     // que le CDN traite comme unique. Sans elle, un asset écrasé (publicId
     // fixe, ex. avatar) sert l'ANCIEN binaire encore en cache CDN.
@@ -87,10 +107,11 @@ export async function fetchAuthenticatedAsset(
   publicId: string,
   variant: Variant,
   version?: number,
+  format?: string,
 ): Promise<Response | null> {
   for (const rt of ["image", "video", "raw"] as const) {
     try {
-      const url = buildAuthenticatedUrl(publicId, variant, rt, version);
+      const url = buildAuthenticatedUrl(publicId, variant, rt, version, format);
 
       const res = await fetch(url, {
         cache: "no-store",
