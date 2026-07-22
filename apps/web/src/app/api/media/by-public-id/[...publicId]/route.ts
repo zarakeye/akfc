@@ -1,4 +1,11 @@
 import { NextRequest } from "next/server";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  getR2Client,
+  getR2Bucket,
+} from "@backend/modules/storage/adapters/r2/client";
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
 import {
   fetchAuthenticatedAsset,
   fetchVideoPoster,
@@ -36,6 +43,13 @@ export async function GET(
   { params }: { params: Promise<{ publicId: string[] }> },
 ) {
   try {
+    // Cette route sert des assets `authenticated` (dont des documents
+    // personnels). Elle exige donc une session, comme la route R2.
+    const session = await getSessionFromRequest(req);
+    if (!session) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
     const { publicId } = await params;
 
     const id = publicId?.join("/");
@@ -64,6 +78,16 @@ export async function GET(
     /* ---------------------------------------------------------------------- */
 
     if (!asset || !asset.ok || !asset.body) {
+      // Pas chez Cloudinary : le binaire vit peut-être dans R2 (documents,
+      // PDF…). Le chemin sert directement de clé d'objet.
+      const r2 = await fetchR2Asset(id);
+      if (r2 && r2.body) {
+        return new Response(r2.body, {
+          status: 200,
+          headers: { ...buildHeaders(r2), "X-Asset-Source": "r2" },
+        });
+      }
+
       console.warn(`[media] asset not found → fallback`, { id, variant });
 
       const fallback = await fetch(FALLBACK_URL);
@@ -114,4 +138,25 @@ function buildHeaders(res: Response, isFallback = false): HeadersInit {
     // 🔥 optionnel mais utile (debug / observabilité)
     "X-Asset-Source": isFallback ? "fallback" : "cloudinary",
   };
+}
+
+
+/**
+ * Tente de récupérer un binaire depuis R2. La clé d'objet est le chemin tel
+ * quel (même convention que /api/media/r2/[...path]). Retourne null si absent
+ * ou en cas d'erreur — l'appelant rendra alors l'image de secours.
+ */
+async function fetchR2Asset(key: string): Promise<Response | null> {
+  try {
+    const signedUrl = await getSignedUrl(
+      getR2Client(),
+      new GetObjectCommand({ Bucket: getR2Bucket(), Key: key }),
+      { expiresIn: 300 },
+    );
+    const res = await fetch(signedUrl, { cache: "no-store" });
+    if (!res.ok || !res.body) return null;
+    return res;
+  } catch {
+    return null;
+  }
 }
