@@ -17,6 +17,7 @@ import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
+import { MoveDialog } from '@features/finder-core/components/MoveDialog';
 
 /* -------------------------------------------------------------------------- */
 /*                              FORMAT HELPERS                                */
@@ -162,9 +163,10 @@ export default function GridItem({
   //   - Si multi-select actif et le node est sélectionné : action sur
   //     TOUTE la sélection (cohérent avec le DnD multi)
   const [isRenaming, setIsRenaming] = useState(false);
+  const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } = useNodeActions();
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();
 
   const isFolder = node.type === 'folder';
   const kind = node.meta?.kind;
@@ -219,6 +221,10 @@ export default function GridItem({
           setRenameError(null);
           setIsRenaming(true);
         },
+      },
+      {
+        label: 'Déplacer…',
+        onClick: () => setMovingNodes(targetNodes),
       },
       {
         label: deleteLabel(targetNodes.length, targetNodes),
@@ -458,6 +464,22 @@ export default function GridItem({
       {/* Menu contextuel — rendu hors du `<div>` principal pour éviter
           que ses clics/mousedown ne bubblent vers les handlers du div
           (sélection, hover, etc.). Positionné en `fixed` viewport. */}
+      {movingNodes && (
+        <MoveDialog
+          title={
+            movingNodes.length === 1
+              ? `Déplacer « ${movingNodes[0].name} »`
+              : `Déplacer ${movingNodes.length} éléments`
+          }
+          onClose={() => setMovingNodes(null)}
+          onConfirm={async (destination) => {
+            const message = await moveNodes(movingNodes, destination);
+            if (message) throw new Error(message);
+            setMovingNodes(null);
+          }}
+        />
+      )}
+
       {menuPos && (
         <ContextMenu
           x={menuPos.x}
