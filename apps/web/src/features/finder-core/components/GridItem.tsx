@@ -353,7 +353,7 @@ export default function GridItem({
       >
         {isRenaming ? (
           <RenameInput
-            initial={baseNameOf(node.name)}
+            initial={baseNameOf(node.name, node.meta?.format)}
             error={renameError}
             onCancel={() => {
               setIsRenaming(false);

@@ -72,8 +72,27 @@ export function displayName(
   return name.toLowerCase().endsWith(`.${ext}`) ? name : `${name}.${ext}`;
 }
 
-/** Nom sans son extension — ce que l'utilisateur édite lors d'un renommage. */
-export function baseNameOf(name: string): string {
-  const dot = name.lastIndexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
+/**
+ * Nom sans son extension — ce que l'utilisateur édite lors d'un renommage.
+ *
+ * ⚠️ On NE coupe PAS au dernier point : un nom peut légitimement en contenir
+ * (« CNI recto PORQUET (ep. BAZZE) Yvonne »), et couper là tronquerait le
+ * nom. On retire uniquement le suffixe `.{format}` quand `format` — la
+ * source autoritaire, issue du metadata — est connu et présent en fin de nom.
+ */
+export function baseNameOf(
+  name: string,
+  format?: string | null,
+): string {
+  if (format) {
+    const suffix = `.${format.toLowerCase()}`;
+    if (name.toLowerCase().endsWith(suffix)) {
+      return name.slice(0, -suffix.length);
+    }
+    return name;
+  }
+  // Sans format : on ne retire un suffixe que s'il A LA FORME d'une extension
+  // (1 à 8 caractères alphanumériques). Sinon le nom est déjà la base.
+  const match = /\.([A-Za-z0-9]{1,8})$/.exec(name);
+  return match ? name.slice(0, -match[0].length) : name;
 }
