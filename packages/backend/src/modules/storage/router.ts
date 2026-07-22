@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  enrichFilesWithStatus,
+  enrichTreeWithStatus,
+} from "@backend/modules/storage/services/enrichStatus.service";
 
 import { router, protectedProcedure } from "@backend/trpc";
 
@@ -212,11 +216,14 @@ export const storageRouter = router({
       // fusionner. On lit directement le backend. Le flag `logical` est
       // désormais sans effet sur la lecture.
       const reader = backend;
-      return reader.list({
+      const result = await reader.list({
         path: input.path,
         cursor: input.cursor,
         limit: input.limit,
       });
+      // Le statut vit en DB depuis l'aplatissement : on le rapatrie ici.
+      await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
+      return result;
     }),
 
   getTree: protectedProcedure
@@ -237,7 +244,12 @@ export const storageRouter = router({
       // fusionner. On lit directement le backend. Le flag `logical` est
       // désormais sans effet sur la lecture.
       const reader = backend;
-      return reader.getTree({ path: input.path, depth: input.depth });
+      const result = await reader.getTree({
+        path: input.path,
+        depth: input.depth,
+      });
+      await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
+      return result;
     }),
 
   getNode: protectedProcedure
