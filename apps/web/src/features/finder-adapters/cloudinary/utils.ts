@@ -15,6 +15,21 @@
 type Variant = 'thumb' | 'large' | 'original';
 
 /**
+ * Encodage RFC 3986 d'un segment de chemin.
+ *
+ * `encodeURIComponent` laisse littéraux six caractères — ( ) ! ' * ~ — qui
+ * traversent alors le routage Next, la signature Cloudinary et le cache HTTP
+ * sans garantie de traitement uniforme. On les encode explicitement : sans
+ * effet sur les noms ordinaires, et sans risque puisque le serveur décode.
+ */
+function encodeSegment(segment: string): string {
+  return encodeURIComponent(segment).replace(
+    /[!'()*~]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+/**
  * Construit l'URL d'affichage d'un asset Cloudinary à partir de son publicId.
  *
  * L'endpoint `/api/media/by-public-id/...` est un proxy maison qui sait
@@ -28,7 +43,7 @@ export function getMediaUrl(
 ): string {
   const encoded = source.publicId
     .split('/')
-    .map(encodeURIComponent)
+    .map(encodeSegment)
     .join('/');
 
   return `/api/media/by-public-id/${encoded}?variant=${variant}`;
