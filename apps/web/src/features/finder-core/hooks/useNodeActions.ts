@@ -13,6 +13,7 @@ import {
   resolveSelectedNodes,
 } from '@features/finder-core/utils/selectionNodes';
 import { storagePathOf } from '@features/finder-core/utils/storagePath';
+import { baseNameOf } from '@features/finder-core/utils/fileType';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
 
@@ -49,6 +50,15 @@ const BIN_PATH = `${APP_ROOT}/bin`;
 export function useNodeActions(): {
   /** Action delete sur une liste explicite de nodes. */
   deleteNodes: (nodes: FinderNode[]) => Promise<void>;
+  /**
+   * Renomme un node (move vers le même dossier). Retourne `null` en cas de
+   * succès, sinon le message d'erreur à afficher — le projet n'a pas de
+   * système de toast, l'appelant l'affiche inline.
+   */
+  renameNode: (
+    node: FinderNode,
+    newBaseName: string,
+  ) => Promise<string | null>;
   /**
    * Résout la "sélection effective" autour d'un node focused :
    *   - Si multi-select actif ET le node est dans la sélection → tous les
@@ -93,6 +103,7 @@ export function useNodeActions(): {
   // (TrashEntry existante → flow standard ; vestige → suppression physique).
   // Cf. purge.service.ts pour le détail des garde-fous.
   const purgeMutation = trpc.trash.purge.useMutation();
+  const renameMutation = trpc.storage.rename.useMutation();
 
   // Détection du contexte global : on est "dans le bin" si le path courant
   // est exactement la racine du bin OU un descendant (drilldown). Utilisé
@@ -221,11 +232,41 @@ export function useNodeActions(): {
     [multiSelectActive, selection.roots, folders, files, contentCache, searchResults],
   );
 
+  /**
+   * Renomme un node. Retourne `null` si tout s'est bien passé, sinon le
+   * message d'erreur à afficher (collision de nom, nom invalide…) — le
+   * projet n'a pas de système de toast, l'appelant l'affiche inline.
+   */
+  const renameNode = useCallback(
+    async (node: FinderNode, newBaseName: string): Promise<string | null> => {
+      const clean = newBaseName.trim();
+      if (!clean) return 'Le nom ne peut pas être vide.';
+      if (clean === baseNameOf(node.name)) return null; // rien à faire
+
+      try {
+        await renameMutation.mutateAsync({
+          path: storagePathOf(node),
+          type: node.type === 'folder' ? 'folder' : 'file',
+          newBaseName: clean,
+        });
+        reloadFolderContent();
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : 'Le renommage a échoué.';
+      }
+    },
+    [renameMutation, reloadFolderContent],
+  );
+
   return {
     deleteNodes,
+    renameNode,
     effectiveNodesFor,
     deleteLabel,
     inBin,
-    isPending: trashToBinMutation.isPending || purgeMutation.isPending,
+    isPending:
+      trashToBinMutation.isPending ||
+      purgeMutation.isPending ||
+      renameMutation.isPending,
   };
 }

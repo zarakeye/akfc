@@ -14,7 +14,7 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
-import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName } from '@features/finder-core/utils/fileType';
+import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 
 /* -------------------------------------------------------------------------- */
@@ -160,8 +160,10 @@ export default function GridItem({
   //   - Dans bin : "Supprimer définitivement" (deleteForever)
   //   - Si multi-select actif et le node est sélectionné : action sur
   //     TOUTE la sélection (cohérent avec le DnD multi)
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } = useNodeActions();
 
   const isFolder = node.type === 'folder';
   const kind = node.meta?.kind;
@@ -210,6 +212,13 @@ export default function GridItem({
   function buildMenuItems(): ContextMenuItem[] {
     const targetNodes = effectiveNodesFor(node);
     return [
+      {
+        label: 'Renommer',
+        onClick: () => {
+          setRenameError(null);
+          setIsRenaming(true);
+        },
+      },
       {
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
@@ -335,7 +344,38 @@ export default function GridItem({
             : 'bg-white border-t border-gray-100 text-gray-700',
         )}
       >
-        {displayName(node.name, node.meta?.format)}
+        {isRenaming ? (
+          <RenameInput
+            initial={baseNameOf(node.name)}
+            error={renameError}
+            onCancel={() => {
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+            onCommit={async (value) => {
+              const message = await renameNode(node, value);
+              if (message) {
+                setRenameError(message);
+                return;
+              }
+              setIsRenaming(false);
+              setRenameError(null);
+            }}
+          />
+        ) : (
+          <span
+            onDoubleClick={(e) => {
+              // Le double-clic sur la CARTE ouvre ; sur le NOM il renomme.
+              e.stopPropagation();
+              if (!isStatus) {
+                setRenameError(null);
+                setIsRenaming(true);
+              }
+            }}
+          >
+            {displayName(node.name, node.meta?.format)}
+          </span>
+        )}
       </div>
 
       {/* --------------------------- BADGE TYPE --------------------------- */}
@@ -531,6 +571,54 @@ function GridPdfPreview({
         tabIndex={-1}
         aria-hidden
       />
+    </div>
+  );
+}
+
+/**
+ * Champ d'édition en ligne du nom. Entrée valide, Échap annule, la perte de
+ * focus valide. En cas d'erreur (collision…), le champ RESTE ouvert avec le
+ * message dessous, pour que l'utilisateur corrige sans tout ressaisir.
+ */
+function RenameInput({
+  initial,
+  error,
+  onCommit,
+  onCancel,
+}: {
+  initial: string;
+  error: string | null;
+  onCommit: (value: string) => void | Promise<void>;
+  onCancel: () => void;
+}): JSX.Element {
+  const [value, setValue] = useState(initial);
+
+  return (
+    <div onClick={(e) => e.stopPropagation()}>
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void onCommit(value);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+        onBlur={() => void onCommit(value)}
+        className="w-full rounded border border-blue-400 bg-white px-1 py-0.5 text-xs text-gray-800 outline-none"
+      />
+      {error && (
+        <p className="mt-0.5 rounded bg-red-50 px-1 text-[10px] text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
