@@ -14,7 +14,7 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
-import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile } from '@features/finder-core/utils/fileType';
+import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName } from '@features/finder-core/utils/fileType';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 
 /* -------------------------------------------------------------------------- */
@@ -317,6 +317,8 @@ export default function GridItem({
       ) : (
         isTextFile(extension) && url ? (
           <GridTextPreview url={url} />
+        ) : isPdfFile(extension) && url ? (
+          <GridPdfPreview url={url} name={node.name} />
         ) : (
           <CardIcon node={node} isAudio={isAudio} />
         )
@@ -333,7 +335,7 @@ export default function GridItem({
             : 'bg-white border-t border-gray-100 text-gray-700',
         )}
       >
-        {node.name}
+        {displayName(node.name, node.meta?.format)}
       </div>
 
       {/* --------------------------- BADGE TYPE --------------------------- */}
@@ -504,6 +506,31 @@ function GridTextPreview({ url }: { url: string }): JSX.Element {
       <pre className="text-[7px] leading-[1.3] text-gray-600 whitespace-pre-wrap break-words font-mono">
         {content}
       </pre>
+    </div>
+  );
+}
+
+/**
+ * Aperçu de la première page d'un PDF dans une card, via iframe — le même
+ * mécanisme que la sidebar (PreviewPanel). Non interactif : `pointer-events`
+ * désactivé pour que le clic atteigne la card (sélection préservée).
+ */
+function GridPdfPreview({
+  url,
+  name,
+}: {
+  url: string;
+  name: string;
+}): JSX.Element {
+  return (
+    <div className="w-full h-full overflow-hidden bg-white pointer-events-none">
+      <iframe
+        src={`${url}#toolbar=0&navpanes=0&view=FitH`}
+        title={name}
+        className="w-full h-full border-0"
+        tabIndex={-1}
+        aria-hidden
+      />
     </div>
   );
 }
