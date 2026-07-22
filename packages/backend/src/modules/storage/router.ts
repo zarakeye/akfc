@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   enrichFilesWithStatus,
   enrichTreeWithStatus,
@@ -300,6 +301,93 @@ export const storageRouter = router({
         );
       }
       return reader.getMetadata(input.path);
+    }),
+
+  /**
+   * Renomme un fichier ou un dossier — c'est-à-dire un `move` vers le même
+   * parent sous un nouveau nom.
+   *
+   * `newBaseName` est le nom SANS extension : le client n'édite que la base
+   * (l'extension affichée est reconstruite par `displayName` et n'appartient
+   * pas toujours au path réel, cf. les public_id Cloudinary). L'extension de
+   * la source est réappliquée telle quelle, ce qui préserve la convention du
+   * provider.
+   */
+  rename: protectedProcedure
+    .input(
+      z.object({
+        provider: storageProviderSchema.optional(),
+        path: z.string().min(1),
+        type: z.enum(["file", "folder"]).default("file"),
+        newBaseName: z.string().min(1).max(255),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const cleanName = input.newBaseName.trim();
+      if (!cleanName) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Le nom ne peut pas être vide.",
+        });
+      }
+      if (cleanName.includes("/")) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Le nom ne peut pas contenir « / ».",
+        });
+      }
+
+      const segments = input.path.split("/");
+      const currentName = segments.pop() ?? "";
+      const parent = segments.join("/");
+      if (!parent) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Impossible de renommer un élément racine.",
+        });
+      }
+
+      // Extension de la SOURCE, réappliquée telle quelle (voir doc ci-dessus).
+      const dot = currentName.lastIndexOf(".");
+      const extension = dot > 0 ? currentName.slice(dot) : "";
+      const targetPath = `${parent}/${cleanName}${extension}`;
+
+      // Renommage en son propre nom : rien à faire, mais pas une erreur.
+      if (targetPath === input.path) {
+        return { success: true, path: input.path };
+      }
+
+      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
+      const adapter = input.provider
+        ? getAdapter(input.provider, deps)
+        : new VirtualStorage(deps);
+
+      // On n'écrase jamais un élément existant.
+      if (adapter.getNode) {
+        const collision = await adapter.getNode(targetPath);
+        if (collision) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Un élément porte déjà ce nom dans ce dossier.",
+          });
+        }
+      }
+
+      // `move` est optionnel sur l'interface d'adapter : on garde avant
+      // d'appeler, comme pour `getNode` plus haut.
+      if (!adapter.move) {
+        throw new TRPCError({
+          code: "NOT_IMPLEMENTED",
+          message: "Ce provider ne supporte pas le déplacement.",
+        });
+      }
+
+      await adapter.move({
+        source: { type: input.type, path: input.path },
+        target: { path: targetPath },
+      });
+
+      return { success: true, path: targetPath };
     }),
 
   move: protectedProcedure
