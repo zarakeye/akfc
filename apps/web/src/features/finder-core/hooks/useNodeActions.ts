@@ -60,6 +60,14 @@ export function useNodeActions(): {
     newBaseName: string,
   ) => Promise<string | null>;
   /**
+   * Déplace des nodes vers un dossier. Retourne `null` en cas de succès,
+   * sinon le message d'erreur à afficher.
+   */
+  moveNodes: (
+    nodes: FinderNode[],
+    destination: string,
+  ) => Promise<string | null>;
+  /**
    * Résout la "sélection effective" autour d'un node focused :
    *   - Si multi-select actif ET le node est dans la sélection → tous les
    *     nodes sélectionnés sont retournés.
@@ -104,6 +112,7 @@ export function useNodeActions(): {
   // Cf. purge.service.ts pour le détail des garde-fous.
   const purgeMutation = trpc.trash.purge.useMutation();
   const renameMutation = trpc.storage.rename.useMutation();
+  const moveMutation = trpc.storage.move.useMutation();
 
   // Détection du contexte global : on est "dans le bin" si le path courant
   // est exactement la racine du bin OU un descendant (drilldown). Utilisé
@@ -258,15 +267,59 @@ export function useNodeActions(): {
     [renameMutation, reloadFolderContent],
   );
 
+  /**
+   * Déplacement via `storage.move` — un seul node donne une source
+   * `file`/`folder`, plusieurs donnent une source `selection`.
+   */
+  const moveNodes = useCallback(
+    async (
+      nodes: FinderNode[],
+      destination: string,
+    ): Promise<string | null> => {
+      if (nodes.length === 0) return null;
+
+      const source =
+        nodes.length === 1
+          ? {
+              type: (nodes[0].type === 'folder' ? 'folder' : 'file') as
+                | 'folder'
+                | 'file',
+              path: storagePathOf(nodes[0]),
+            }
+          : {
+              type: 'selection' as const,
+              roots: nodes.map(storagePathOf),
+            };
+
+      try {
+        await moveMutation.mutateAsync({
+          intent: {
+            source,
+            target: { type: 'folder', path: destination },
+          },
+        });
+        reloadFolderContent();
+        return null;
+      } catch (err) {
+        return err instanceof Error
+          ? err.message
+          : 'Le déplacement a échoué.';
+      }
+    },
+    [moveMutation, reloadFolderContent],
+  );
+
   return {
     deleteNodes,
     renameNode,
+    moveNodes,
     effectiveNodesFor,
     deleteLabel,
     inBin,
     isPending:
       trashToBinMutation.isPending ||
       purgeMutation.isPending ||
-      renameMutation.isPending,
+      renameMutation.isPending ||
+      moveMutation.isPending,
   };
 }

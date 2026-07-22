@@ -12,6 +12,7 @@ import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { useLongPress } from '@features/finder-core/hooks/useLongPress';
 import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
+import { MoveDialog } from '@features/finder-core/components/MoveDialog';
 import { baseNameOf } from '@features/finder-core/utils/fileType';
 import { parentPath } from '@features/finder-core/utils/path';
 import ContextMenu, {
@@ -94,9 +95,10 @@ export default function FinderTreeFile({
   });
 
   const [isRenaming, setIsRenaming] = useState(false);
+  const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } =
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
     useNodeActions();
 
   const isActive =
@@ -148,6 +150,10 @@ export default function FinderTreeFile({
           setRenameError(null);
           setIsRenaming(true);
         },
+      },
+      {
+        label: 'Déplacer…',
+        onClick: () => setMovingNodes(targetNodes),
       },
       {
         label: deleteLabel(targetNodes.length, targetNodes),
@@ -256,6 +262,22 @@ export default function FinderTreeFile({
           </span>
         )}
       </div>
+
+      {movingNodes && (
+        <MoveDialog
+          title={
+            movingNodes.length === 1
+              ? `Déplacer « ${movingNodes[0].name} »`
+              : `Déplacer ${movingNodes.length} éléments`
+          }
+          onClose={() => setMovingNodes(null)}
+          onConfirm={async (destination) => {
+            const message = await moveNodes(movingNodes, destination);
+            if (message) throw new Error(message);
+            setMovingNodes(null);
+          }}
+        />
+      )}
 
       {menuPos && (
         <ContextMenu
