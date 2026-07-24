@@ -25,8 +25,10 @@ import { pollRouter } from "@backend/modules/polls/router";
 import { disciplineFamilyRouter } from "@backend/modules/disciplineFamilies/router";
 import { galleryRouter } from "@backend/modules/galleries/router";
 import { breakingNewsRouter } from "@backend/modules/breakingNews/router";
+import { siteStyleRouter } from "@backend/modules/siteStyle/router";
 
 export const appRouter = router({
+  siteStyle: siteStyleRouter,
   auth: authRouter,
   user: userRouter,
   avatar: avatarRouter,
