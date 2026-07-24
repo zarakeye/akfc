@@ -280,7 +280,8 @@ export function BlockStyleLab(): JSX.Element {
           className="border-l border-dashed border-border pl-3 transition-[max-width]"
         >
           <div className="akfc-page space-y-8">
-        <section
+        <section className="akfc-block-scope">
+        <div
           className="akfc-block-columns grid items-start"
           style={
             {
@@ -311,6 +312,7 @@ export function BlockStyleLab(): JSX.Element {
               <FakeMedia />
             </>
           )}
+        </div>
         </section>
 
         {/* Les trois blocs de collection. Ils lisent les mêmes variables que

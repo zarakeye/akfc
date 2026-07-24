@@ -201,6 +201,7 @@ export function MediaTextPreview({
   // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
   // ouvrait le bloc sur un vide asymétrique.
   return (
+    <div className="akfc-block-scope">
     <div
       className="akfc-block-columns grid items-start"
       style={
@@ -228,6 +229,7 @@ export function MediaTextPreview({
           <div>{MediaColumn}</div>
         </>
       )}
+    </div>
     </div>
   );
 }
