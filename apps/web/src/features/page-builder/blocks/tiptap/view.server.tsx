@@ -156,7 +156,11 @@ export function TipTapView({
 
   return (
     <div
-      className="tiptap-rendered prose max-w-none"
+      // `akfc-prose` manquait ici : ce bloc s'étalait sur toute la largeur
+      // du puits — environ 150 caractères par ligne — pendant qu'un bloc
+      // media-text réduit à son texte se limitait à 68. Deux blocs de texte
+      // voisins ne se lisaient pas à la même largeur.
+      className="akfc-prose tiptap-rendered prose max-w-none"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
