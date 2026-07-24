@@ -45,9 +45,9 @@
   li {
     p {
       margin-top: 0;
-      // Même levier que les paragraphes (cf. paragraph-node.scss) : une
-      // liste ne doit pas se lire plus aérée que le texte qui l'entoure.
-      line-height: var(--tt-leading);
+      // Pas de `line-height` ici : la propriété s'hérite depuis l'éditeur,
+      // où Tailwind la pose. En la fixant, cette règle gagnerait en
+      // spécificité et les listes se liraient plus aérées que le texte.
     }
   }
 

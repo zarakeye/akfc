@@ -181,7 +181,19 @@ export function BuilderTipTapEditor({
         autocorrect: "off",
         autocapitalize: "off",
         "aria-label": "Contenu du bloc texte.",
-        class: "simple-editor",
+        // Rythme vertical de l'éditeur — les deux seules classes à toucher.
+        //
+        //   leading-snug                interlignage 1.375 (avant : 1.6)
+        //   [&_p:not(:first-child)]:mt-2  écart entre paragraphes, 8px
+        //                                 (avant : 20px)
+        //
+        // `line-height` s'hérite : posé ici, il descend aux paragraphes, aux
+        // titres et aux items de liste sans qu'on les vise un par un.
+        //
+        // Les déclarations correspondantes ont été retirées de
+        // `paragraph-node.scss` et `list-node.scss` : leurs sélecteurs
+        // pesaient plus lourd que ces utilitaires et les auraient annulées.
+        class: "simple-editor leading-snug [&_p:not(:first-child)]:mt-2",
       },
     },
     extensions: [
