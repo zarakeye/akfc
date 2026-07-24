@@ -5,6 +5,15 @@
   --placeholder-color: var(--tt-gray-light-a-400);
   --thread-bg-color: var(--tt-color-yellow-inc-2);
 
+  // Rythme vertical du texte. Les deux seuls leviers à toucher pour
+  // resserrer ou aérer l'éditeur — ils sont repris par les paragraphes
+  // (ci-dessous) et par les paragraphes de liste (list-node.scss).
+  //
+  // `--tt-paragraph-gap` en `em` et non en px : l'écart suit la taille du
+  // texte au lieu de rester figé à une valeur d'écran.
+  --tt-leading: 1.5;
+  --tt-paragraph-gap: 0.75em;
+
   // ai
   --tiptap-ai-insertion-color: var(--tt-brand-color-600);
 
@@ -33,12 +42,21 @@
   outline: none;
   caret-color: var(--tt-cursor-color);
 
-  // Paragraph spacing
-  p:not(:first-child):not(td p):not(th p) {
+  // Interlignage — sur TOUS les paragraphes.
+  //
+  // La règle d'origine portait aussi `:not(:first-child)` : le premier
+  // paragraphe échappait donc à l'interlignage et se lisait légèrement
+  // différemment de ses voisins, en haut de chaque bloc.
+  p:not(td p):not(th p) {
     font-size: 1rem;
-    line-height: 1.6;
+    line-height: var(--tt-leading);
     font-weight: normal;
-    margin-top: 20px;
+  }
+
+  // Écart entre paragraphes — à partir du deuxième seulement, sans quoi
+  // chaque bloc s'ouvrirait sur un blanc.
+  p:not(:first-child):not(td p):not(th p) {
+    margin-top: var(--tt-paragraph-gap);
   }
 
   // Selection styles

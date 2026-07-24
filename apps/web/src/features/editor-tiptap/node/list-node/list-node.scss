@@ -45,7 +45,9 @@
   li {
     p {
       margin-top: 0;
-      line-height: 1.6;
+      // Même levier que les paragraphes (cf. paragraph-node.scss) : une
+      // liste ne doit pas se lire plus aérée que le texte qui l'entoure.
+      line-height: var(--tt-leading);
     }
   }
 
