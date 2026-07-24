@@ -189,7 +189,7 @@ export function MediaTextPreview({
   // Une seule partie → centré, pleine largeur.
   if (!hasText || !hasMedia) {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="akfc-measure-block">
         {hasMedia ? MediaColumn : TextColumn}
       </div>
     );

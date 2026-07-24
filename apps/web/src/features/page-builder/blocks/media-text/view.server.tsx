@@ -130,10 +130,13 @@ export function MediaTextView({
     />
   ) : null;
 
-  // Une seule partie → centré, pleine largeur (impression de respiration).
+  // Une seule partie → centré sur la MESURE, pas sur une largeur d'écran.
+  // `max-w-3xl` valait 768px, soit ~96 caractères par ligne : au-delà de la
+  // plage lisible. La mesure est en `ch`, donc elle suit la taille du texte
+  // au lieu de la contredire.
   if (!hasText || !hasMedia) {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="akfc-measure-block">
         {hasMedia ? MediaColumn : TextColumn}
       </div>
     );

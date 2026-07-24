@@ -58,6 +58,7 @@ const KNOBS: Knob[] = [
   { key: "--akfc-h4", label: "Taille h4", min: 0.8, max: 2, step: 0.05, unit: "em", initial: 1.05 },
   { key: "--akfc-h5", label: "Taille h5", min: 0.7, max: 1.6, step: 0.05, unit: "em", initial: 1 },
   { key: "--akfc-h6", label: "Taille h6", min: 0.6, max: 1.4, step: 0.05, unit: "em", initial: 0.875 },
+  { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68 },
   { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5 },
   { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0 },
 ];
@@ -70,6 +71,7 @@ export function BlockStyleLab(): JSX.Element {
   const [values, setValues] = useState<Record<string, number>>(INITIAL);
   const [side, setSide] = useState<"left" | "right">("left");
   const [ratioIndex, setRatioIndex] = useState(1);
+  const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
   // Le réglage enregistré, s'il existe, devient le point de départ des
   // curseurs — sinon on repartirait des valeurs de repli à chaque visite et
@@ -237,7 +239,41 @@ export function BlockStyleLab(): JSX.Element {
       </aside>
 
       {/* ─── Aperçu ───────────────────────────────────────────────── */}
-      <div style={styleOverrides} className="space-y-8">
+      {/* La largeur est bridée par `maxWidth` et non par une simulation
+          d'écran : les blocs réagissent à la largeur de leur CONTENEUR
+          (container query), donc rétrécir ce cadre reproduit fidèlement ce
+          qui se passera sur un écran de cette taille. Un iframe ou une
+          fausse fenêtre n'aurait rien montré de plus. */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Largeur d&apos;aperçu</span>
+          {(
+            [
+              { label: "Téléphone", w: "24rem" },
+              { label: "Tablette", w: "48rem" },
+              { label: "Portable", w: "64rem" },
+              { label: "Large", w: "100%" },
+            ] as const
+          ).map((v) => (
+            <button
+              key={v.label}
+              type="button"
+              onClick={() => setPreviewWidth(v.w)}
+              className={
+                previewWidth === v.w
+                  ? "rounded border border-foreground px-2 py-1"
+                  : "rounded border px-2 py-1 hover:bg-muted"
+              }
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{ ...styleOverrides, maxWidth: previewWidth }}
+          className="space-y-8 border-l border-dashed border-border pl-3 transition-[max-width]"
+        >
         <section
           className="akfc-block-columns grid items-start"
           style={
@@ -361,6 +397,7 @@ export function BlockStyleLab(): JSX.Element {
             </p>
           </article>
         </section>
+        </div>
       </div>
     </div>
   );
