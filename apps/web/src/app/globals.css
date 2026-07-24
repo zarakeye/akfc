@@ -1307,7 +1307,9 @@ input[type="range"]::-moz-range-thumb {
      rester fluide, sinon on gagnerait le réglage en perdant l'adaptation aux
      petits écrans. */
   --akfc-block-gap-max: 4rem;
-  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
+  /* La composition descend sur la classe qui consomme (voir plus bas) : une
+     variable composée à partir d'une autre se fige sur l'élément où elle est
+     DÉCLARÉE, et une surcharge posée plus bas arrive trop tard. */
   /* Échelle des titres, fluide. Un h1 à 2em fixes écrase un écran de
      téléphone et se perd sur un très grand écran : les bornes disent le
      minimum lisible et le maximum souhaitable, `vw` fait la transition. */
@@ -1334,7 +1336,7 @@ input[type="range"]::-moz-range-thumb {
      caractères occupent ~680px. On ne rallonge pas la ligne — on grossit le
      texte, ce qui referme le blanc SANS dégrader la lecture. */
   --akfc-base-max: 1.25rem;
-  --akfc-base-size: clamp(1rem, 0.9rem + 0.5vw, var(--akfc-base-max));
+  /* Composition portée par `.akfc-prose`, même raison. */
 
   /* Plafond du puits. Ramené de 76rem à 68rem : 76rem était calibré sur les
      blocs à deux colonnes, alors que le texte — le cas courant — laissait
@@ -1342,10 +1344,7 @@ input[type="range"]::-moz-range-thumb {
      La marge d'écran est fluide elle aussi : 1rem suffit sur téléphone, où
      2rem mangeaient une part notable d'une largeur déjà courte. */
   --akfc-page-max-width: 68rem;
-  --akfc-page-max: min(
-    100% - clamp(1rem, 4vw, 3rem),
-    var(--akfc-page-max-width)
-  );
+  /* Composition portée par `.akfc-page`, même raison. */
 
   /* Écart entre colonnes, fluide. Un palier fixe est trop large quand deux
      colonnes se serrent sur une tablette, et trop étroit sur un grand
@@ -1375,7 +1374,12 @@ input[type="range"]::-moz-range-thumb {
 /* `.akfc-prose` se pose EN PLUS de `prose`. Ses sélecteurs pèsent 0,1,1
    quand @tailwindcss/typography enveloppe les siens dans `:where()`, de
    spécificité nulle : nos règles l'emportent sans aucun `!important`. */
+/* La composition est DÉCLARÉE ici, sur l'élément qui l'utilise : elle se
+   substitue donc sur cet élément, qui hérite bien de toute surcharge de
+   `--akfc-base-max` posée au-dessus de lui — celle du laboratoire comprise.
+   Déclarée sur `:root`, elle se figeait avant que la surcharge n'existe. */
 .akfc-prose {
+  --akfc-base-size: clamp(1rem, 0.9rem + 0.5vw, var(--akfc-base-max));
   font-size: var(--akfc-base-size);
   line-height: var(--akfc-leading);
 }
@@ -1529,7 +1533,12 @@ input[type="range"]::-moz-range-thumb {
    la somme de deux variables : le curseur des titres déplaçait les blocs
    sans que rien ne l'annonce, et celui des blocs ne rendait qu'une partie de
    son effet. Une seule variable gouverne ce rythme. */
+/* `--akfc-block-gap` vient normalement de `.akfc-page`. Ce repli couvre le
+   cas d'un bloc rendu hors du puits — l'aperçu du builder, par exemple —
+   où la variable n'aurait sinon aucune valeur et le rembourrage
+   s'effondrerait à zéro. */
 .akfc-rule-h {
+  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
   border-top: max(1px, var(--akfc-rule-width)) solid var(--akfc-rule-color);
   padding-top: calc(var(--akfc-block-gap) / 2);
 }
@@ -1537,7 +1546,17 @@ input[type="range"]::-moz-range-thumb {
 /* Conteneur des pages construites au builder.
    `margin-inline: auto` avec une largeur en `min()` : centré et plafonné en
    une seule déclaration, sans point de rupture ni marge négative. */
+/* Deux compositions déclarées ici pour la même raison que ci-dessus.
+   `--akfc-block-gap` est posée sur `.akfc-page` plutôt que sur ses
+   consommateurs directs : `PageRenderer` et `.akfc-rule-h` sont tous deux
+   à l'intérieur du puits et en héritent, ce qui évite de répéter le
+   `clamp` à trois endroits. */
 .akfc-page {
+  --akfc-page-max: min(
+    100% - clamp(1rem, 4vw, 3rem),
+    var(--akfc-page-max-width)
+  );
+  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
   width: var(--akfc-page-max);
   margin-inline: auto;
 }
