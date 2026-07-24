@@ -58,6 +58,8 @@ const KNOBS: Knob[] = [
   { key: "--akfc-h4", label: "Taille h4", min: 0.8, max: 2, step: 0.05, unit: "em", initial: 1.05 },
   { key: "--akfc-h5", label: "Taille h5", min: 0.7, max: 1.6, step: 0.05, unit: "em", initial: 1 },
   { key: "--akfc-h6", label: "Taille h6", min: 0.6, max: 1.4, step: 0.05, unit: "em", initial: 0.875 },
+  { key: "--akfc-page-max-width", label: "Largeur maximale de page", min: 48, max: 96, step: 1, unit: "rem", initial: 68 },
+  { key: "--akfc-base-max", label: "Taille du texte (grand écran)", min: 1, max: 1.5, step: 0.05, unit: "rem", initial: 1.25 },
   { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68 },
   { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5 },
   { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0 },
@@ -270,10 +272,14 @@ export function BlockStyleLab(): JSX.Element {
           ))}
         </div>
 
+        {/* `akfc-page` sur le cadre d'aperçu : le laboratoire montre le
+            puits AVEC ses marges, sinon on réglerait leur largeur sans
+            jamais les voir. */}
         <div
           style={{ ...styleOverrides, maxWidth: previewWidth }}
-          className="space-y-8 border-l border-dashed border-border pl-3 transition-[max-width]"
+          className="border-l border-dashed border-border pl-3 transition-[max-width]"
         >
+          <div className="akfc-page space-y-8">
         <section
           className="akfc-block-columns grid items-start"
           style={
@@ -397,6 +403,7 @@ export function BlockStyleLab(): JSX.Element {
             </p>
           </article>
         </section>
+          </div>
         </div>
       </div>
     </div>

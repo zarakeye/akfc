@@ -1314,7 +1314,25 @@ input[type="range"]::-moz-range-thumb {
      étroit c'est la largeur disponible moins les marges qui commande, sur un
      grand écran c'est le plafond. Une seule expression pour les deux, sans
      point de rupture. */
-  --akfc-page-max: min(100% - 2rem, 76rem);
+  /* Taille du corps de texte, fluide.
+     C'est LE levier contre le vide. La justification étant plafonnée en
+     `ch`, elle suit la taille de police : à 16px, 68ch valent ~545px et la
+     colonne fait ruban dans un puits large ; à 20px, les mêmes 68
+     caractères occupent ~680px. On ne rallonge pas la ligne — on grossit le
+     texte, ce qui referme le blanc SANS dégrader la lecture. */
+  --akfc-base-max: 1.25rem;
+  --akfc-base-size: clamp(1rem, 0.9rem + 0.5vw, var(--akfc-base-max));
+
+  /* Plafond du puits. Ramené de 76rem à 68rem : 76rem était calibré sur les
+     blocs à deux colonnes, alors que le texte — le cas courant — laissait
+     alors la moitié de la surface vide.
+     La marge d'écran est fluide elle aussi : 1rem suffit sur téléphone, où
+     2rem mangeaient une part notable d'une largeur déjà courte. */
+  --akfc-page-max-width: 68rem;
+  --akfc-page-max: min(
+    100% - clamp(1rem, 4vw, 3rem),
+    var(--akfc-page-max-width)
+  );
 
   /* Écart entre colonnes, fluide. Un palier fixe est trop large quand deux
      colonnes se serrent sur une tablette, et trop étroit sur un grand
@@ -1345,6 +1363,7 @@ input[type="range"]::-moz-range-thumb {
    quand @tailwindcss/typography enveloppe les siens dans `:where()`, de
    spécificité nulle : nos règles l'emportent sans aucun `!important`. */
 .akfc-prose {
+  font-size: var(--akfc-base-size);
   line-height: var(--akfc-leading);
 }
 
@@ -1353,9 +1372,12 @@ input[type="range"]::-moz-range-thumb {
    toute la largeur disponible. On le remet, à notre valeur.
    `max-width` et non `width` : dans une colonne plus étroite que la mesure,
    le texte occupe la colonne — le plafond ne mord que quand il y a trop de
-   place. */
+   place.
+   `margin-inline: auto` : sans lui, le plafond laissait TOUT le blanc à
+   droite. Le vide était non seulement trop grand, il était de travers. */
 .akfc-prose {
   max-width: var(--akfc-measure);
+  margin-inline: auto;
 }
 
 /* Une colonne de bloc à deux colonnes est déjà plafonnée par la grille :
