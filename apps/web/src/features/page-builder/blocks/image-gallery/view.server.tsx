@@ -35,7 +35,10 @@ export function ImageGalleryView({
   switch (block.layout) {
     case "grid":
       return (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="grid sm:grid-cols-2 lg:grid-cols-3"
+          style={{ gap: "var(--akfc-item-gap)" }}
+        >
           {items.map(({ item, media }) => (
             <Figure key={item.mediaId} media={media} caption={item.caption} />
           ))}
@@ -44,7 +47,10 @@ export function ImageGalleryView({
 
     case "carousel":
       return (
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+        <div
+          className="-mx-4 flex snap-x snap-mandatory overflow-x-auto px-4 pb-2"
+          style={{ gap: "var(--akfc-item-gap)" }}
+        >
           {items.map(({ item, media }) => (
             <div
               key={item.mediaId}
@@ -58,9 +64,16 @@ export function ImageGalleryView({
 
     case "masonry":
       return (
-        <div className="columns-1 gap-3 sm:columns-2 lg:columns-3">
+        <div
+          className="columns-1 sm:columns-2 lg:columns-3"
+          style={{ gap: "var(--akfc-item-gap)" }}
+        >
           {items.map(({ item, media }) => (
-            <div key={item.mediaId} className="mb-3 break-inside-avoid">
+            <div
+              key={item.mediaId}
+              className="break-inside-avoid"
+              style={{ marginBottom: "var(--akfc-item-gap)" }}
+            >
               <Figure media={media} caption={item.caption} />
             </div>
           ))}
@@ -105,7 +118,10 @@ function Figure({
         className="block w-full rounded-md object-cover"
       />
       {caption && (
-        <figcaption className="mt-1 text-sm text-muted-foreground">
+        <figcaption
+          className="mt-1 text-muted-foreground"
+          style={{ fontSize: "var(--akfc-caption-size)" }}
+        >
           {caption}
         </figcaption>
       )}

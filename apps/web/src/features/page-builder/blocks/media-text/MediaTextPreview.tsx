@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, type CSSProperties, type JSX } from "react";
 import { generateHTML } from "@tiptap/html";
 import type { JSONContent } from "@tiptap/core";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -202,8 +202,20 @@ export function MediaTextPreview({
   // ouvrait le bloc sur un vide asymétrique.
   return (
     <div
-      className="akfc-block-columns grid items-start md:grid-cols-2"
-      style={{ gap: "var(--akfc-column-gap)" }}
+      className="akfc-block-columns grid items-start"
+      style={
+        {
+          gap: "var(--akfc-column-gap)",
+          "--akfc-col-1":
+            mediaSide === "left"
+              ? "var(--akfc-media-col)"
+              : "var(--akfc-text-col)",
+          "--akfc-col-2":
+            mediaSide === "left"
+              ? "var(--akfc-text-col)"
+              : "var(--akfc-media-col)",
+        } as CSSProperties
+      }
     >
       {mediaSide === "left" ? (
         <>
@@ -212,8 +224,8 @@ export function MediaTextPreview({
         </>
       ) : (
         <>
-          <div className="md:order-2">{MediaColumn}</div>
-          <div className="md:order-1">{TextColumn}</div>
+          <div>{TextColumn}</div>
+          <div>{MediaColumn}</div>
         </>
       )}
     </div>

@@ -40,13 +40,17 @@ export function DocumentListView({
   if (items.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul
+      className="flex flex-col"
+      style={{ gap: "var(--akfc-item-gap)" }}
+    >
       {items.map(({ item, media }) => (
         <li key={item.mediaId}>
           <a
             href={media.url}
             download={media.fileName}
-            className="flex items-center gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:bg-muted"
+            className="flex items-center gap-3 rounded-md border border-border bg-card transition-colors hover:bg-muted"
+            style={{ padding: "var(--akfc-card-padding)" }}
           >
             <FileText
               className="h-5 w-5 flex-shrink-0 text-muted-foreground"

@@ -28,6 +28,25 @@ type Knob = {
   initial: number;
 };
 
+/**
+ * Ratio média / texte, en parts de grille.
+ *
+ * Des PRÉRÉGLAGES et non un curseur au pourcent : sur cent et une valeurs,
+ * quatre ou cinq sont bonnes, et les autres ne font que désaligner les pages
+ * les unes par rapport aux autres. Un site tient sa cohérence d'une grille
+ * commune, pas d'un réglage fin par bloc.
+ *
+ * Les parts sont exprimées en douzièmes — la trame la plus courante en
+ * édition, divisible par 2, 3, 4 et 6.
+ */
+const RATIOS: { label: string; media: string; text: string; hint: string }[] = [
+  { label: "1/3 – 2/3", media: "4fr", text: "8fr", hint: "texte dominant" },
+  { label: "5/12 – 7/12", media: "5fr", text: "7fr", hint: "texte légèrement dominant" },
+  { label: "1/2 – 1/2", media: "6fr", text: "6fr", hint: "symétrique" },
+  { label: "7/12 – 5/12", media: "7fr", text: "5fr", hint: "média légèrement dominant" },
+  { label: "2/3 – 1/3", media: "8fr", text: "4fr", hint: "média dominant" },
+];
+
 /** Les valeurs initiales reprennent celles de `:root` dans globals.css. */
 const KNOBS: Knob[] = [
   { key: "--akfc-leading", label: "Interlignage", min: 1, max: 2.4, step: 0.05, unit: "", initial: 1.65 },
@@ -50,6 +69,7 @@ const INITIAL: Record<string, number> = Object.fromEntries(
 export function BlockStyleLab(): JSX.Element {
   const [values, setValues] = useState<Record<string, number>>(INITIAL);
   const [side, setSide] = useState<"left" | "right">("left");
+  const [ratioIndex, setRatioIndex] = useState(1);
 
   // Le réglage enregistré, s'il existe, devient le point de départ des
   // curseurs — sinon on repartirait des valeurs de repli à chaque visite et
@@ -81,13 +101,19 @@ export function BlockStyleLab(): JSX.Element {
 
   // Les propriétés personnalisées ne sont pas dans le type CSSProperties de
   // React : le cast est la voie prévue pour les passer en style inline.
-  const styleOverrides = Object.fromEntries(
-    KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
-  ) as CSSProperties;
+  const ratio = RATIOS[ratioIndex];
+
+  const styleOverrides = {
+    ...Object.fromEntries(KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`])),
+    "--akfc-media-col": ratio.media,
+    "--akfc-text-col": ratio.text,
+  } as CSSProperties;
 
   const cssSnippet = [
     ":root {",
     ...KNOBS.map((k) => `  ${k.key}: ${values[k.key]}${k.unit};`),
+    `  --akfc-media-col: ${ratio.media};`,
+    `  --akfc-text-col: ${ratio.text};`,
     "}",
   ].join("\n");
 
@@ -111,9 +137,13 @@ export function BlockStyleLab(): JSX.Element {
           disabled={saveMutation.isPending}
           onClick={() =>
             saveMutation.mutate({
-              variables: Object.fromEntries(
-                KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
-              ),
+              variables: {
+                ...Object.fromEntries(
+                  KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
+                ),
+                "--akfc-media-col": ratio.media,
+                "--akfc-text-col": ratio.text,
+              },
             })
           }
           className="w-full rounded border border-foreground px-2 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
@@ -155,6 +185,23 @@ export function BlockStyleLab(): JSX.Element {
           </div>
         </div>
 
+        <div className="space-y-1">
+          <span className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Ratio média / texte</span>
+            <span className="font-mono">{ratio.label}</span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={RATIOS.length - 1}
+            step={1}
+            value={ratioIndex}
+            onChange={(e) => setRatioIndex(Number(e.target.value))}
+            className="w-full"
+          />
+          <span className="text-[10px] text-muted-foreground">{ratio.hint}</span>
+        </div>
+
         {KNOBS.map((k) => (
           <label key={k.key} className="block space-y-1">
             <span className="flex justify-between text-xs">
@@ -192,16 +239,110 @@ export function BlockStyleLab(): JSX.Element {
       {/* ─── Aperçu ───────────────────────────────────────────────── */}
       <div style={styleOverrides} className="space-y-8">
         <section
-          className="akfc-block-columns grid items-start md:grid-cols-2"
-          style={{ gap: "var(--akfc-column-gap)" }}
+          className="akfc-block-columns grid items-start"
+          style={
+            {
+              gap: "var(--akfc-column-gap)",
+              "--akfc-col-1":
+                side === "left"
+                  ? "var(--akfc-media-col)"
+                  : "var(--akfc-text-col)",
+              "--akfc-col-2":
+                side === "left"
+                  ? "var(--akfc-text-col)"
+                  : "var(--akfc-media-col)",
+            } as CSSProperties
+          }
         >
-          <div className={side === "right" ? "md:order-2" : undefined}>
-            <FakeMedia />
+          {side === "left" ? (
+            <>
+              <FakeMedia />
+              <article className="akfc-prose prose max-w-none">
+                <SampleText />
+              </article>
+            </>
+          ) : (
+            <>
+              <article className="akfc-prose prose max-w-none">
+                <SampleText />
+              </article>
+              <FakeMedia />
+            </>
+          )}
+        </section>
+
+        {/* Les trois blocs de collection. Ils lisent les mêmes variables que
+            le reste depuis que leurs vues ont cessé de coder leurs
+            espacements en dur — sans quoi les curseurs n'auraient eu aucune
+            prise sur eux et le laboratoire aurait montré du faux. */}
+        <section className="akfc-rule-h space-y-6">
+          <div>
+            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+              Galerie d&apos;images
+            </h3>
+            <div
+              className="grid sm:grid-cols-2 lg:grid-cols-3"
+              style={{ gap: "var(--akfc-item-gap)" }}
+            >
+              {[0, 1, 2].map((i) => (
+                <figure key={i} className="m-0">
+                  <div className="flex aspect-[4/3] items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
+                    image {i + 1}
+                  </div>
+                  <figcaption
+                    className="mt-1 text-muted-foreground"
+                    style={{ fontSize: "var(--akfc-caption-size)" }}
+                  >
+                    Légende de l&apos;image {i + 1}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
           </div>
-          <div className={side === "right" ? "md:order-1" : undefined}>
-            <article className="akfc-prose prose max-w-none">
-              <SampleText />
-            </article>
+
+          <div>
+            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+              Collection audio
+            </h3>
+            <ul
+              className="flex flex-col"
+              style={{ gap: "var(--akfc-item-gap)" }}
+            >
+              {[0, 1].map((i) => (
+                <li
+                  key={i}
+                  className="rounded-md border border-border bg-card"
+                  style={{ padding: "var(--akfc-card-padding)" }}
+                >
+                  <p className="mb-2 text-sm font-medium">Piste {i + 1}</p>
+                  <div className="h-8 rounded bg-muted" />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+              Liste de documents
+            </h3>
+            <ul
+              className="flex flex-col"
+              style={{ gap: "var(--akfc-item-gap)" }}
+            >
+              {[0, 1].map((i) => (
+                <li key={i}>
+                  <span
+                    className="flex items-center gap-3 rounded-md border border-border bg-card"
+                    style={{ padding: "var(--akfc-card-padding)" }}
+                  >
+                    <span className="h-5 w-5 shrink-0 rounded bg-muted" />
+                    <span className="flex-1 text-sm">
+                      Document {i + 1}.pdf
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
