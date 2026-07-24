@@ -82,6 +82,23 @@ import {
  */
 const LAYOUT_STORAGE_KEY = "akfc:finder:layout";
 
+/**
+ * Replie le panneau d'aperçu au montage.
+ *
+ * Le panneau prend de la place et n'est utile que sur demande : son
+ * déploiement est un geste délibéré, à chaque ouverture du finder comme du
+ * picker. La garde sur `isCollapsed()` évite un `collapse()` inutile quand un
+ * layout restauré le donnait déjà replié.
+ */
+function collapsePreviewOnMount(panel: {
+  isCollapsed: () => boolean;
+  collapse: () => void;
+} | null): void {
+  if (!panel) return;
+  if (panel.isCollapsed()) return;
+  panel.collapse();
+}
+
 type Props = {
   adapter: FileAdapter;
   /**
@@ -185,7 +202,10 @@ export default function Finder({
   );
 
   const previewPanelRef = usePanelRef();
-  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
+  // Le panneau démarre replié (cf. l'effet de montage plus bas) : l'icône et
+  // le libellé du bouton doivent partir dans cet état, sans quoi le premier
+  // rendu annoncerait « Masquer » sur un panneau déjà masqué.
+  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(true);
 
   function togglePreviewPanel() {
     const panel = previewPanelRef.current;
@@ -210,6 +230,20 @@ export default function Finder({
       // Si JSON corrompu ou localStorage indisponible (mode privé strict),
       // on garde silencieusement le layout par défaut. Pas d'effet visible.
     }
+
+    // ─── L'aperçu démarre replié ────────────────────────────────────────
+    //
+    // APRÈS `setLayout`, jamais avant : le layout restauré rouvrirait le
+    // panneau qu'on vient de replier.
+    //
+    // Le layout reste restauré parce qu'il porte aussi la largeur du
+    // panneau de l'arbre, réglée par l'utilisateur. Seul l'aperçu est
+    // forcé — sa largeur, elle, survit dans le layout et sera restituée
+    // au premier déploiement.
+    //
+    // `collapse()` déclenche `onResize`, qui aligne `isPreviewCollapsed` :
+    // pas de synchronisation à faire ici.
+    collapsePreviewOnMount(previewPanelRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
