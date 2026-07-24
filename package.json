@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "clean": "rm -rf apps/web/.next node_modules/.cache",
+    "dev:clean": "pnpm clean && pnpm dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm --filter web typecheck",
     "lint": "pnpm --filter web lint",
-    "postinstall": "pnpm prisma generate"
+    "postinstall": "pnpm prisma generate",
+    "check": "pnpm clean && pnpm --filter backend typecheck && pnpm typecheck"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
