@@ -52,6 +52,9 @@ const KNOBS: Knob[] = [
   { key: "--akfc-leading", label: "Interlignage", min: 1, max: 2.4, step: 0.05, unit: "", initial: 1.65 },
   { key: "--akfc-para-gap", label: "Écart entre paragraphes", min: 0, max: 3, step: 0.05, unit: "em", initial: 1 },
   { key: "--akfc-heading-gap", label: "Écart avant un titre", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.8 },
+  { key: "--akfc-list-gap", label: "Écart entre puces", min: 0, max: 1.5, step: 0.05, unit: "em", initial: 0.35 },
+  { key: "--akfc-list-indent", label: "Retrait des puces", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.5 },
+  { key: "--akfc-block-gap-max", label: "Écart entre blocs (max)", min: 1, max: 8, step: 0.25, unit: "rem", initial: 4 },
   { key: "--akfc-h1", label: "Taille h1", min: 1, max: 4, step: 0.05, unit: "em", initial: 2 },
   { key: "--akfc-h2", label: "Taille h2", min: 1, max: 3, step: 0.05, unit: "em", initial: 1.5 },
   { key: "--akfc-h3", label: "Taille h3", min: 0.9, max: 2.5, step: 0.05, unit: "em", initial: 1.25 },
@@ -279,7 +282,12 @@ export function BlockStyleLab(): JSX.Element {
           style={{ ...styleOverrides, maxWidth: previewWidth }}
           className="border-l border-dashed border-border pl-3 transition-[max-width]"
         >
-          <div className="akfc-page space-y-8">
+          {/* `space-y-8` ignorait la variable : le curseur d'écart entre
+              blocs aurait bougé sans rien changer à l'écran. */}
+          <div
+            className="akfc-page flex flex-col"
+            style={{ gap: "var(--akfc-block-gap)" }}
+          >
         <section className="akfc-block-scope">
         <div
           className="akfc-block-columns grid items-start"
@@ -453,9 +461,21 @@ function SampleText(): JSX.Element {
       <h3>Titre de niveau 3</h3>
       <ul>
         <li>Premier élément de liste</li>
-        <li>Deuxième élément, un peu plus long pour voir le retour à la ligne</li>
+        <li>
+          Deuxième élément, un peu plus long pour voir le retour à la ligne
+          {/* Une sous-liste : c'est là qu'on voit si le retrait et l'écart
+              se composent proprement sur deux niveaux. */}
+          <ul>
+            <li>Sous-élément</li>
+            <li>Autre sous-élément</li>
+          </ul>
+        </li>
         <li>Troisième élément</li>
       </ul>
+      <ol>
+        <li>Élément numéroté</li>
+        <li>Deuxième élément numéroté</li>
+      </ol>
       <blockquote>
         Une citation, pour vérifier que son retrait et son interlignage
         suivent le reste du texte.

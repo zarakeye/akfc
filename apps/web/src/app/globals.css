@@ -1295,6 +1295,19 @@ input[type="range"]::-moz-range-thumb {
   --akfc-leading: 1.65;
   --akfc-para-gap: 1em;
   --akfc-heading-gap: 1.8em;
+
+  /* Écart entre deux puces. En `em` : il suit la taille du texte, comme
+     l'écart entre paragraphes. */
+  --akfc-list-gap: 0.35em;
+  /* Retrait de la puce par rapport au texte courant. */
+  --akfc-list-indent: 1.5em;
+
+  /* Écart entre deux blocs successifs de la page. Le curseur du laboratoire
+     règle la BORNE HAUTE du `clamp`, pas une valeur sèche : l'écart doit
+     rester fluide, sinon on gagnerait le réglage en perdant l'adaptation aux
+     petits écrans. */
+  --akfc-block-gap-max: 4rem;
+  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
   /* Échelle des titres, fluide. Un h1 à 2em fixes écrase un écran de
      téléphone et se perd sur un très grand écran : les bornes disent le
      minimum lisible et le maximum souhaitable, `vw` fait la transition. */
@@ -1410,6 +1423,34 @@ input[type="range"]::-moz-range-thumb {
    ligne de tête. */
 .akfc-prose > :first-child {
   margin-top: 0;
+}
+
+/* ── Listes ──────────────────────────────────────────────────────────────
+   Rien ne visait `li` : l'espacement venait de @tailwindcss/typography,
+   donc hors d'atteinte de nos variables. */
+.akfc-prose :is(ul, ol) > li + li {
+  margin-top: var(--akfc-list-gap);
+}
+
+.akfc-prose :is(ul, ol) {
+  padding-inline-start: var(--akfc-list-indent);
+}
+
+/* Tiptap enveloppe le contenu d'une puce dans un `<p>` :
+       <li><p>Premier élément</p></li>
+   Ce paragraphe recevait l'écart entre paragraphes — 1em À L'INTÉRIEUR de
+   chaque puce — et les listes s'aéraient bien plus que le texte autour,
+   sans que le CSS ne le laisse deviner.
+   `:first-child` seulement : une puce a le droit de contenir plusieurs
+   paragraphes, et ceux-là gardent leur écart. */
+.akfc-prose li > p:first-child {
+  margin-top: 0;
+}
+
+/* Une sous-liste appartient à la liste, pas à la prose : elle suit l'écart
+   de liste et non celui des paragraphes. */
+.akfc-prose li > :is(ul, ol) {
+  margin-top: var(--akfc-list-gap);
 }
 
 .akfc-prose h1 { font-size: var(--akfc-h1); }

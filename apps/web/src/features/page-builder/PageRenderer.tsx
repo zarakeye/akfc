@@ -116,7 +116,9 @@ export async function PageRenderer({ content }: PageRendererProps) {
     // L'écart entre blocs suit la même règle fluide que les gouttières.
     <div
       className="page-renderer akfc-page flex flex-col"
-      style={{ gap: "clamp(2rem, 5vw, 4rem)" }}
+      // L'écart entre blocs était écrit en dur ici, donc invisible au
+      // laboratoire. En variable, il devient réglable — et reste fluide.
+      style={{ gap: "var(--akfc-block-gap)" }}
     >
       {content.blocks.map((block) => {
         const def = getBlockDefinition(block.type);
