@@ -148,8 +148,12 @@ export function MediaTextPreview({
   }
 
   // Deux parties → deux colonnes, côté médias selon l'alternance, gouttière nette.
+  // `items-start` et non `items-center` : le média s'aligne sur la PREMIÈRE
+  // LIGNE du texte, comme en édition imprimée. Centrer les colonnes faisait
+  // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
+  // ouvrait le bloc sur un vide asymétrique.
   return (
-    <div className="grid items-center gap-10 md:grid-cols-2">
+    <div className="grid items-start gap-10 md:grid-cols-2">
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>

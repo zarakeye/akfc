@@ -121,7 +121,10 @@ export function MediaTextView({
 
   const TextColumn = textHtml ? (
     <div
-      className="tiptap-rendered prose max-w-none"
+      // `prose` s'arrête à h4 : sans ces deux variantes, un h5 ou un h6 se
+      // rendrait comme du texte courant en gras, indiscernable d'un
+      // paragraphe. On les pose explicitement.
+      className="tiptap-rendered prose max-w-none prose-h5:text-base prose-h5:font-semibold prose-h5:mt-6 prose-h6:text-sm prose-h6:font-semibold prose-h6:uppercase prose-h6:tracking-wide prose-h6:mt-6"
       dangerouslySetInnerHTML={{ __html: textHtml }}
     />
   ) : null;
@@ -136,8 +139,12 @@ export function MediaTextView({
   }
 
   // Deux parties → deux colonnes, côté médias selon l'alternance.
+  // `items-start` et non `items-center` : le média s'aligne sur la PREMIÈRE
+  // LIGNE du texte, comme en édition imprimée. Centrer les colonnes faisait
+  // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
+  // ouvrait le bloc sur un vide asymétrique.
   return (
-    <div className="grid items-center gap-10 md:grid-cols-2">
+    <div className="grid items-start gap-10 md:grid-cols-2">
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>

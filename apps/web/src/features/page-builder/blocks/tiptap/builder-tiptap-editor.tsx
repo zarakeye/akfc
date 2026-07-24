@@ -252,7 +252,10 @@ export function BuilderTipTapEditor({
           <ToolbarSeparator />
 
           <ToolbarGroup>
-            <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={false} />
+            {/* StarterKit accepte déjà 1 à 6 — il n'y avait qu'à les
+                exposer. Les styles suivent dans heading-node.scss (éditeur)
+                et via les variantes `prose-h5:` / `prose-h6:` (vue). */}
+            <HeadingDropdownMenu levels={[1, 2, 3, 4, 5, 6]} portal={false} />
             <ListDropdownMenu
               types={["bulletList", "orderedList", "taskList"]}
               portal={false}
