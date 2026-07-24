@@ -265,7 +265,7 @@ async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
  * @param targetPrefix Le préfixe cible du dossier à renommer.
  * @returns Une promesse qui se résout lorsqu'un dossier a été renommé.
  */
-async function moveFolderRecursively(
+export async function moveFolderRecursively(
   sourcePrefix: string,
   targetPrefix: string,
 ) {

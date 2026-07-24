@@ -24,6 +24,7 @@ import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
 import ContextMenu, {
   type ContextMenuItem,
 } from "@features/finder-core/components/ContextMenu";
+import { RenameInput } from "@features/finder-core/components/RenameInput";
 import {
   FINDER_DRAG_MIME,
   tryParsePayload,
@@ -93,11 +94,21 @@ export default function FinderTreeFolder({
   const isDraggable = Boolean(onDragStart) && !isStatus;
 
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const { effectiveNodesFor, deleteNodes, deleteLabel } = useNodeActions();
+  const [isRenamingFolder, setIsRenamingFolder] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode } =
+    useNodeActions();
 
   function buildMenuItems(): ContextMenuItem[] {
     const targetNodes = effectiveNodesFor(node);
     return [
+      {
+        label: "Renommer",
+        onClick: () => {
+          setRenameError(null);
+          setIsRenamingFolder(true);
+        },
+      },
       {
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
@@ -467,7 +478,42 @@ export default function FinderTreeFolder({
           <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
         )}
 
-        <span className="truncate capitalize">{displayLabel}</span>
+        {isRenamingFolder ? (
+          <span className="min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
+            <RenameInput
+              initial={displayLabel}
+              error={renameError}
+              onCancel={() => {
+                setIsRenamingFolder(false);
+                setRenameError(null);
+              }}
+              onCommit={async (value) => {
+                const message = await renameNode(node, value);
+                if (message) {
+                  setRenameError(message);
+                  return;
+                }
+                setIsRenamingFolder(false);
+                setRenameError(null);
+              }}
+            />
+          </span>
+        ) : (
+          <span
+            className="truncate capitalize"
+            onDoubleClick={(e) => {
+              // Double-clic sur le NOM : renommer. Le clic simple sur la
+              // ligne garde son rôle d'ouverture / de repli.
+              e.stopPropagation();
+              if (!isStatus) {
+                setRenameError(null);
+                setIsRenamingFolder(true);
+              }
+            }}
+          >
+            {displayLabel}
+          </span>
+        )}
       </div>
 
       {loadError && isOpen && (
