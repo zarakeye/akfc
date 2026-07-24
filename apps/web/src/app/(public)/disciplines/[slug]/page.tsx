@@ -44,8 +44,16 @@ export default async function PublicDisciplinePage({
   if (discipline.classification)
     meta.push({ label: "Classification", value: discipline.classification });
 
+  // `akfc-page` remplace `mx-auto max-w-3xl px-6` : ce plafond de 768px
+  // bridait le rendu du builder AVANT que ses propres variables aient la
+  // moindre prise, et laissait le contenu dans le tiers médian d'un grand
+  // écran. Le puits est désormais réglable (68rem par défaut) et porte sa
+  // marge d'écran fluide, d'où la disparition de `px-6`.
+  //
+  // Le texte, lui, reste plafonné à sa justification par `.akfc-prose` :
+  // élargir le puits profite aux médias, pas à la longueur des lignes.
   return (
-    <article className="mx-auto max-w-3xl px-6 py-12">
+    <article className="akfc-page py-12">
       {/*
       <!--
       <header className="mb-8 border-b border-border pb-6">
