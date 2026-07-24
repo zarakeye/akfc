@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type JSX } from "react";
-import { useRouter } from "next/navigation";
 
 import { trpc } from "@/core/trpc/trpcClient";
 
@@ -44,6 +43,15 @@ type Knob = {
  * `center` et non `start` : la cible arrive au milieu, avec son contexte
  * au-dessus et en dessous. C'est le point du geste — comparer.
  */
+/**
+ * Paramètre jetable ajouté à l'URL au moment du rechargement.
+ *
+ * Une URL que le navigateur n'a jamais vue ne peut pas sortir de son cache.
+ * `location.reload()` ne suffit pas : c'est exactement ce que fait Cmd+R, et
+ * Cmd+R ne suffisait pas.
+ */
+const RELOAD_PARAM = "_applied";
+
 function scrollToAnchor(id: string): void {
   document
     .getElementById(id)
@@ -99,6 +107,18 @@ const INITIAL: Record<string, number> = Object.fromEntries(
   KNOBS.map((k) => [k.key, k.initial]),
 );
 
+/**
+ * Recharge le document sur une URL neuve.
+ *
+ * `replace` et non `assign` : sans nouvelle entrée d'historique, pour que le
+ * bouton « précédent » ne ramène pas sur une URL jetable.
+ */
+function reloadWithFreshDocument(): void {
+  const url = new URL(window.location.href);
+  url.searchParams.set(RELOAD_PARAM, String(Date.now()));
+  window.location.replace(url.toString());
+}
+
 export function BlockStyleLab(): JSX.Element {
   const [values, setValues] = useState<Record<string, number>>(INITIAL);
   const [side, setSide] = useState<"left" | "right">("left");
@@ -108,35 +128,59 @@ export function BlockStyleLab(): JSX.Element {
   // Le réglage enregistré, s'il existe, devient le point de départ des
   // curseurs — sinon on repartirait des valeurs de repli à chaque visite et
   // on croirait avoir perdu son travail.
-  const router = useRouter();
   const saved = trpc.siteStyle.get.useQuery();
-  const utils = trpc.useUtils();
-  const saveMutation = trpc.siteStyle.save.useMutation({
-    onSuccess: () => {
-      void utils.siteStyle.get.invalidate();
 
-      // Le layout racine injecte la surcharge : une page déjà rendue la
-      // porterait figée. On demande sa régénération.
-      //
-      // Sans `await` et sans `catch` bloquant, délibérément : l'invalidation
-      // est un confort, pas une condition de succès. Si elle échoue, le
-      // réglage est enregistré quand même et une régénération ordinaire le
-      // rattrapera — inutile d'annoncer un échec pour ça.
-      void fetch("/api/admin/revalidate-style", { method: "POST" })
-        .then(() => {
-          // APRÈS l'invalidation serveur, jamais avant : `router.refresh()`
-          // vide le cache de routeur et redemande le rendu — s'il partait
-          // en premier, il rapporterait la version périmée.
-          //
-          // Nécessaire parce qu'un layout n'est PAS re-rendu lors d'une
-          // navigation côté client : la surcharge, injectée par le layout
-          // racine, resterait celle du chargement initial jusqu'à ce qu'on
-          // recharge la page à la main.
-          router.refresh();
-        })
-        .catch(() => undefined);
-    },
-  });
+  // Le paramètre jetable a fait son office au chargement : on le retire de
+  // la barre d'adresse. `replaceState` plutôt que `pushState` — il ne s'agit
+  // pas d'une navigation, seulement d'un nettoyage.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(RELOAD_PARAM)) return;
+    url.searchParams.delete(RELOAD_PARAM);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+  const saveMutation = trpc.siteStyle.save.useMutation();
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [isReloading, setIsReloading] = useState(false);
+
+  /**
+   * Enregistre, invalide, recharge — dans cet ordre.
+   *
+   * Chaque étape est sans effet si la précédente n'a pas abouti, d'où les
+   * `await` : la version précédente lançait les trois en parallèle et
+   * pouvait recharger avant que le serveur n'ait le nouveau réglage.
+   *
+   * `router.refresh()` a disparu : le rechargement complet fait tout ce
+   * qu'il faisait, et davantage.
+   */
+  async function applyAndReload(): Promise<void> {
+    setApplyError(null);
+    try {
+      await saveMutation.mutateAsync({
+        variables: {
+          ...Object.fromEntries(
+            KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
+          ),
+          "--akfc-media-col": ratio.media,
+          "--akfc-text-col": ratio.text,
+        },
+      });
+
+      // Contrairement à l'enregistrement, un échec ici n'est pas fatal : le
+      // réglage est en base, une régénération ordinaire le rattrapera. On
+      // continue donc vers le rechargement.
+      await fetch("/api/admin/revalidate-style", { method: "POST" }).catch(
+        () => undefined,
+      );
+
+      setIsReloading(true);
+      reloadWithFreshDocument();
+    } catch (error) {
+      setApplyError(
+        error instanceof Error ? error.message : "Échec de l'enregistrement",
+      );
+    }
+  }
 
   useEffect(() => {
     const stored = saved.data;
@@ -193,34 +237,24 @@ export function BlockStyleLab(): JSX.Element {
 
         <button
           type="button"
-          disabled={saveMutation.isPending}
-          onClick={() =>
-            saveMutation.mutate({
-              variables: {
-                ...Object.fromEntries(
-                  KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
-                ),
-                "--akfc-media-col": ratio.media,
-                "--akfc-text-col": ratio.text,
-              },
-            })
-          }
+          disabled={saveMutation.isPending || isReloading}
+          onClick={() => {
+            void applyAndReload();
+          }}
           className="w-full rounded border border-foreground px-2 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
         >
-          {saveMutation.isPending
-            ? "Enregistrement…"
-            : "Appliquer au site"}
+          {isReloading
+            ? "Rechargement…"
+            : saveMutation.isPending
+              ? "Enregistrement…"
+              : "Appliquer au site"}
         </button>
 
-        {saveMutation.isSuccess && (
-          <p className="text-xs text-muted-foreground">
-            Réglage enregistré. Rechargez une page du site pour le voir
-            appliqué&nbsp;: la surcharge est injectée au rendu serveur.
-          </p>
-        )}
-        {saveMutation.isError && (
+        {/* Pas de message de succès : la page se recharge, il ne serait
+            visible qu'un instant. L'échec, lui, laisse la page en place. */}
+        {applyError && (
           <p className="text-xs text-destructive">
-            Échec de l&apos;enregistrement : {saveMutation.error.message}
+            Échec de l&apos;enregistrement : {applyError}
           </p>
         )}
 
