@@ -112,6 +112,17 @@ export function BlockStyleLab(): JSX.Element {
   const saveMutation = trpc.siteStyle.save.useMutation({
     onSuccess: () => {
       void utils.siteStyle.get.invalidate();
+
+      // Le layout racine injecte la surcharge : une page déjà rendue la
+      // porterait figée. On demande sa régénération.
+      //
+      // Sans `await` et sans `catch` bloquant, délibérément : l'invalidation
+      // est un confort, pas une condition de succès. Si elle échoue, le
+      // réglage est enregistré quand même et une régénération ordinaire le
+      // rattrapera — inutile d'annoncer un échec pour ça.
+      void fetch("/api/admin/revalidate-style", { method: "POST" }).catch(
+        () => undefined,
+      );
     },
   });
 
