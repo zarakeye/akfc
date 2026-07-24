@@ -1524,9 +1524,14 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Filet horizontal, à poser entre deux blocs successifs. */
+/* Le rembourrage dérive de l'ÉCART ENTRE BLOCS, pas de l'écart avant un
+   titre. Avec `--akfc-heading-gap`, l'espace visible entre deux blocs était
+   la somme de deux variables : le curseur des titres déplaçait les blocs
+   sans que rien ne l'annonce, et celui des blocs ne rendait qu'une partie de
+   son effet. Une seule variable gouverne ce rythme. */
 .akfc-rule-h {
   border-top: max(1px, var(--akfc-rule-width)) solid var(--akfc-rule-color);
-  padding-top: var(--akfc-heading-gap);
+  padding-top: calc(var(--akfc-block-gap) / 2);
 }
 
 /* Conteneur des pages construites au builder.
