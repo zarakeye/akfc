@@ -36,11 +36,15 @@ export function AudioCollectionView({
   if (items.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul
+      className="flex flex-col"
+      style={{ gap: "var(--akfc-item-gap)" }}
+    >
       {items.map(({ item, media }) => (
         <li
           key={item.mediaId}
-          className="rounded-md border border-border bg-card p-3"
+          className="rounded-md border border-border bg-card"
+          style={{ padding: "var(--akfc-card-padding)" }}
         >
           <p className="mb-2 text-sm font-medium">
             {item.title ?? media.fileName}

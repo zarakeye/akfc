@@ -1,5 +1,6 @@
 import { Node } from "@tiptap/core";
 import type { JSONContent } from "@tiptap/core";
+import type { CSSProperties } from "react";
 import { generateHTML } from "@tiptap/html";
 import { StarterKit } from "@tiptap/starter-kit";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
@@ -139,6 +140,9 @@ export function MediaTextView({
   }
 
   // Deux parties → deux colonnes, côté médias selon l'alternance.
+  // `order` disparaît : les largeurs étant portées par les variables, c'est
+  // l'ORDRE DU DOM qui décide, et il suffit de le construire dans le bon
+  // sens (cf. plus bas).
   // `items-start` et non `items-center` : le média s'aligne sur la PREMIÈRE
   // LIGNE du texte, comme en édition imprimée. Centrer les colonnes faisait
   // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
@@ -147,8 +151,24 @@ export function MediaTextView({
     // La gouttière passe par la variable : le laboratoire la règle, et le
     // filet vertical facultatif se peint au milieu (cf. globals.css).
     <div
-      className="akfc-block-columns grid items-start md:grid-cols-2"
-      style={{ gap: "var(--akfc-column-gap)" }}
+      className="akfc-block-columns grid items-start"
+      style={
+        {
+          gap: "var(--akfc-column-gap)",
+          // L'inversion gauche/droite échange les LARGEURS, elle ne joue pas
+          // sur `order` : avec des colonnes inégales, `order` déplacerait le
+          // contenu sans déplacer les largeurs — le média atterrirait dans
+          // la colonne taillée pour le texte.
+          "--akfc-col-1":
+            mediaSide === "left"
+              ? "var(--akfc-media-col)"
+              : "var(--akfc-text-col)",
+          "--akfc-col-2":
+            mediaSide === "left"
+              ? "var(--akfc-text-col)"
+              : "var(--akfc-media-col)",
+        } as CSSProperties
+      }
     >
       {mediaSide === "left" ? (
         <>
@@ -157,8 +177,8 @@ export function MediaTextView({
         </>
       ) : (
         <>
-          <div className="md:order-2">{MediaColumn}</div>
-          <div className="md:order-1">{TextColumn}</div>
+          <div>{TextColumn}</div>
+          <div>{MediaColumn}</div>
         </>
       )}
     </div>

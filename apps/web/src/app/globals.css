@@ -1302,6 +1302,19 @@ input[type="range"]::-moz-range-thumb {
   --akfc-h5: 1em;
   --akfc-h6: 0.875em;
   --akfc-column-gap: 2.5rem;
+
+  /* Largeurs des deux colonnes d'un bloc media-text, en parts de grille.
+     Le bloc les pose EN LIGNE selon le côté du média (cf. view.server) ;
+     ces valeurs ne sont que le repli. Exprimées en `fr` et non en
+     pourcentage : la gouttière est alors retirée avant le partage, sinon
+     le total dépasse la largeur disponible. */
+  --akfc-col-1: 1fr;
+  --akfc-col-2: 1fr;
+
+  /* Blocs de collection : galerie, audio, documents. */
+  --akfc-item-gap: 0.75rem;
+  --akfc-card-padding: 0.75rem;
+  --akfc-caption-size: 0.875rem;
   --akfc-rule-width: 0px;
   --akfc-rule-color: color-mix(in oklch, currentColor 20%, transparent);
 }
@@ -1360,6 +1373,11 @@ input[type="range"]::-moz-range-thumb {
    Épaisseur 0 par défaut : le filet ne s'affiche que si on le demande. */
 @media (min-width: 768px) {
   .akfc-block-columns {
+    /* Le ratio vit ICI et non en style inline : un style inline ne peut pas
+       porter de point de rupture, alors qu'une variable posée en inline
+       traverse sans peine une media query. En dessous de 768px, la règle ne
+       s'applique pas et la grille reste à une seule colonne. */
+    grid-template-columns: var(--akfc-col-1) var(--akfc-col-2);
     background-image: linear-gradient(
       to right,
       var(--akfc-rule-color),
