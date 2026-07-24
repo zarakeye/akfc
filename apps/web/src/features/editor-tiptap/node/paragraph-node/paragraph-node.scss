@@ -5,15 +5,6 @@
   --placeholder-color: var(--tt-gray-light-a-400);
   --thread-bg-color: var(--tt-color-yellow-inc-2);
 
-  // Rythme vertical du texte. Les deux seuls leviers à toucher pour
-  // resserrer ou aérer l'éditeur — ils sont repris par les paragraphes
-  // (ci-dessous) et par les paragraphes de liste (list-node.scss).
-  //
-  // `--tt-paragraph-gap` en `em` et non en px : l'écart suit la taille du
-  // texte au lieu de rester figé à une valeur d'écran.
-  --tt-leading: 1.5;
-  --tt-paragraph-gap: 0.75em;
-
   // ai
   --tiptap-ai-insertion-color: var(--tt-brand-color-600);
 
@@ -42,21 +33,16 @@
   outline: none;
   caret-color: var(--tt-cursor-color);
 
-  // Interlignage — sur TOUS les paragraphes.
+  // Rythme vertical : réglé en Tailwind, sur l'élément ProseMirror
+  // (`builder-tiptap-editor.tsx`, `editorProps.attributes.class`).
   //
-  // La règle d'origine portait aussi `:not(:first-child)` : le premier
-  // paragraphe échappait donc à l'interlignage et se lisait légèrement
-  // différemment de ses voisins, en haut de chaque bloc.
+  // Aucune règle d'interlignage ni de marge ICI, délibérément : ce sélecteur
+  // pèse 0,2,1 quand une utilitaire Tailwind pèse 0,1,0. La moindre
+  // déclaration laissée à cet endroit l'emporterait sur la classe, et le
+  // réglage Tailwind serait sans effet — silencieusement.
   p:not(td p):not(th p) {
     font-size: 1rem;
-    line-height: var(--tt-leading);
     font-weight: normal;
-  }
-
-  // Écart entre paragraphes — à partir du deuxième seulement, sans quoi
-  // chaque bloc s'ouvrirait sur un blanc.
-  p:not(:first-child):not(td p):not(th p) {
-    margin-top: var(--tt-paragraph-gap);
   }
 
   // Selection styles
