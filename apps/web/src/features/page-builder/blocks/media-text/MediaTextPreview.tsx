@@ -30,6 +30,16 @@ import { publicIdToUrl } from "@features/social/userDisplay";
  * pas dans la preview, ce qui est acceptable pour un aperçu).
  */
 
+/**
+ * État de la résolution du média.
+ *
+ * `missing` = la requête a abouti mais n'a rien rendu (média absent de la
+ * base, ou administrateur sans avatar). `error` = la requête elle-même a
+ * échoué. Les deux méritaient d'être distingués : le premier est un
+ * problème de contenu, le second un problème de transport.
+ */
+type Resolution = "idle" | "loading" | "ready" | "missing" | "error";
+
 interface ResolvedPreviewMedia {
   url: string;
   kind: string;
@@ -46,6 +56,12 @@ export function MediaTextPreview({
 }): JSX.Element | null {
   const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
 
+  // Pourquoi un état explicite et pas seulement `media | null` : « aucun
+  // média choisi », « requête en cours » et « choisi mais introuvable »
+  // produisaient le même rendu — rien. L'admin ne pouvait pas les
+  // distinguer, et nous non plus au diagnostic.
+  const [resolution, setResolution] = useState<Resolution>("idle");
+
   const m = block.media ?? null;
   // Clé de dépendance stable selon le kind.
   const mediaKey =
@@ -55,26 +71,41 @@ export function MediaTextPreview({
     let cancelled = false;
     if (!m) {
       setMedia(null);
+      setResolution("idle");
       return;
     }
+
+    setMedia(null);
+    setResolution("loading");
 
     if (m.kind === "avatar") {
       // Référence avatar : on récupère l'avatar courant du user (via la liste
       // des candidats) et on construit l'URL comme le portrait du header.
-      void trpcClient.user.listAvatarCandidates.query().then((admins) => {
-        if (cancelled) return;
-        const user = admins.find((a) => a.id === m.userId);
-        if (user?.avatar) {
-          setMedia({
-            url: publicIdToUrl(user.avatar),
-            kind: "image",
-            posterUrl: null,
-            caption: m.caption,
-          });
-        } else {
+      void trpcClient.user.listAvatarCandidates
+        .query()
+        .then((admins) => {
+          if (cancelled) return;
+          const user = admins.find((a) => a.id === m.userId);
+          if (user?.avatar) {
+            setMedia({
+              url: publicIdToUrl(user.avatar),
+              kind: "image",
+              posterUrl: null,
+              caption: m.caption,
+            });
+            setResolution("ready");
+          } else {
+            // L'administrateur existe mais n'a pas d'avatar — ou n'est plus
+            // dans la liste des candidats (rôle changé depuis la sélection).
+            setMedia(null);
+            setResolution("missing");
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
           setMedia(null);
-        }
-      });
+          setResolution("error");
+        });
     } else {
       // Média de bibliothèque.
       void trpcClient.media.resolveByIds
@@ -89,9 +120,19 @@ export function MediaTextPreview({
               posterUrl: r.posterUrl,
               caption: m.caption,
             });
+            setResolution("ready");
           } else {
+            // `resolveByIds` filtre sur `status: 'published'` : un média
+            // repassé en attente ou envoyé à la corbeille APRÈS avoir été
+            // choisi revient `null` ici, sans que rien ne le signale.
             setMedia(null);
+            setResolution("missing");
           }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setMedia(null);
+          setResolution("error");
         });
     }
 
@@ -105,7 +146,11 @@ export function MediaTextPreview({
     block.content !== undefined &&
     block.content !== null &&
     Object.keys(block.content).length > 0;
-  const hasMedia = media !== null;
+  // « Il y a une colonne média » n'est PAS « le média est résolu ». Un média
+  // choisi mais non résolu garde sa colonne — sans quoi la mise en page
+  // basculerait en une seule colonne et l'admin croirait n'avoir rien
+  // sélectionné.
+  const hasMedia = block.media != null;
 
   if (!hasText && !hasMedia) {
     return (
@@ -128,8 +173,11 @@ export function MediaTextPreview({
       ])
     : null;
 
-  const MediaColumn =
-    hasMedia && media ? <PreviewFigure media={media} /> : null;
+  const MediaColumn = media ? (
+    <PreviewFigure media={media} />
+  ) : hasMedia ? (
+    <MediaResolutionNotice resolution={resolution} />
+  ) : null;
 
   const TextColumn = textHtml ? (
     <div
@@ -165,6 +213,29 @@ export function MediaTextPreview({
           <div className="md:order-1">{TextColumn}</div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Occupe la colonne média quand un média est choisi mais pas affichable, et
+ * dit pourquoi. Remplace le rendu vide, qui confondait trois situations.
+ */
+function MediaResolutionNotice({
+  resolution,
+}: {
+  resolution: Resolution;
+}): JSX.Element {
+  const message =
+    resolution === "loading"
+      ? "Chargement du média…"
+      : resolution === "error"
+        ? "Le média n'a pas pu être chargé (erreur réseau ou serveur)."
+        : "Média introuvable : il a peut-être été supprimé, remis en attente, ou l'administrateur choisi n'a pas d'avatar.";
+
+  return (
+    <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed border-border bg-muted/40 p-4 text-center text-xs text-muted-foreground">
+      {message}
     </div>
   );
 }
