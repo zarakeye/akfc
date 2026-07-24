@@ -151,8 +151,12 @@ export function MediaTextView({
   // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
   // ouvrait le bloc sur un vide asymétrique.
   return (
+    // `akfc-block-scope` est le conteneur de requête ; la grille qu'il
+    // enveloppe est l'élément interrogé. Les deux ne peuvent pas être le
+    // même nœud (cf. globals.css).
     // La gouttière passe par la variable : le laboratoire la règle, et le
-    // filet vertical facultatif se peint au milieu (cf. globals.css).
+    // filet vertical facultatif se peint au milieu.
+    <div className="akfc-block-scope">
     <div
       className="akfc-block-columns grid items-start"
       style={
@@ -184,6 +188,7 @@ export function MediaTextView({
           <div>{MediaColumn}</div>
         </>
       )}
+    </div>
     </div>
   );
 }
