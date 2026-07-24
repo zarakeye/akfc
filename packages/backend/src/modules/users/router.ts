@@ -1,4 +1,6 @@
-import { router, protectedProcedure } from "@backend/trpc/core";
+import { Prisma } from "@prisma/client";
+
+import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { requirePermission, isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -301,6 +303,122 @@ export const userRouter = router({
    * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
    * Tri par lastName puis firstName pour l'UX du select.
    */
+  /**
+   * Un instructeur enregistre SA PROPRE présentation.
+   *
+   * La cible est toujours `ctx.sessionClient.user.id`, jamais un id reçu en
+   * entrée : la garde « c'est mon profil » est structurelle. Aucune
+   * permission d'administration n'entre en jeu — on n'édite que soi.
+   *
+   * `bio` accepte n'importe quel JSON (le document de builder) ou `null`
+   * pour retirer sa présentation. L'ordre est optionnel.
+   */
+  /**
+   * L'utilisateur courant est-il titulaire, et quelle est sa bio ?
+   *
+   * Alimente l'éditeur du profil : la section n'apparaît que pour un
+   * titulaire, et se pré-remplit avec ce qu'il a déjà écrit. Le critère de
+   * titulaire est le MEME OR que `getInstructors` / `listPublicInstructors`.
+   */
+  getMyInstructorState: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        instructorBio: true,
+        instructorOrder: true,
+        _count: {
+          select: {
+            disciplinesAsInstructor: true,
+            coursesAsInstructor: true,
+            stagesAsPrimaryAnimator: true,
+            stagesAsAnimator: true,
+          },
+        },
+      },
+    });
+
+    const c = user?._count;
+    const isInstructor = Boolean(
+      c &&
+        (c.disciplinesAsInstructor > 0 ||
+          c.coursesAsInstructor > 0 ||
+          c.stagesAsPrimaryAnimator > 0 ||
+          c.stagesAsAnimator > 0),
+    );
+
+    return {
+      isInstructor,
+      bio: user?.instructorBio ?? null,
+      order: user?.instructorOrder ?? null,
+    };
+  }),
+
+  saveMyInstructorBio: protectedProcedure
+    .input(
+      z.object({
+        bio: z.any().nullable(),
+        order: z.number().int().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.sessionClient.user.id;
+      await ctx.prisma.user.update({
+        where: { id: userId },
+        data: {
+          instructorBio: input.bio ?? Prisma.DbNull,
+          ...(input.order !== undefined
+            ? { instructorOrder: input.order }
+            : {}),
+        },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * La page publique des instructeurs titulaires.
+   *
+   * PUBLIQUE : elle alimente une page ouverte à tous. Deux filtres —
+   *   1. titulaire : le MEME critere que `getInstructors` (rattachement a
+   *      une discipline, un cours ou un stage). Reutilise, pas redefini.
+   *   2. presente : `instructorBio` non nul, sinon on afficherait une carte
+   *      vide pour un titulaire qui ne s'est pas encore decrit.
+   *
+   * Tri par `instructorOrder` (les nuls en dernier), puis par nom.
+   */
+  listPublicInstructors: publicProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.prisma.user.findMany({
+      where: {
+        AND: [
+          { instructorBio: { not: Prisma.DbNull } },
+          {
+            OR: [
+              { disciplinesAsInstructor: { some: {} } },
+              { coursesAsInstructor: { some: {} } },
+              { stagesAsPrimaryAnimator: { some: {} } },
+              { stagesAsAnimator: { some: {} } },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        avatar: true,
+        instructorBio: true,
+        instructorOrder: true,
+      },
+      orderBy: [
+        { instructorOrder: { sort: "asc", nulls: "last" } },
+        { lastName: "asc" },
+        { firstName: "asc" },
+      ],
+    });
+    return rows;
+  }),
+
   getInstructors: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {

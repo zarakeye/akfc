@@ -33,6 +33,14 @@ model User {
   pseudo                String?
   avatar                String?
 
+  // Présentation publique d'un instructeur titulaire (page /about/instructeurs).
+  // `instructorBio` = contenu de builder (JSON), meme format que les
+  // descriptions de discipline. `instructorOrder` fixe l'ordre d'affichage ;
+  // repli sur le nom quand il est nul. NB : distinct de `aboutMe`, qui reste
+  // le texte simple du profil.
+  instructorBio         Json?
+  instructorOrder       Int?
+
   // --- Auth & profil
   role                  Role?                @relation(fields: [roleId], references: [id])
   preferences           Preferences?

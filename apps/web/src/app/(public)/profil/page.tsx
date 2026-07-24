@@ -7,6 +7,7 @@ import { Pencil } from "lucide-react";
 import { trpc } from "@trpc/trpcClient";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
+import { InstructorBioEditor } from "@features/social/InstructorBioEditor";
 
 /**
  * Page « Mon profil » — accessible à tout membre connecté (le proxy garde
@@ -70,6 +71,10 @@ export default function ProfilePage(): JSX.Element {
           <Field label="À propos" value={data.aboutMe} />
         </div>
       </dl>
+
+      {/* Ne s'affiche que pour un instructeur titulaire (le composant se
+          rend `null` sinon, sur décision du backend). */}
+      <InstructorBioEditor />
     </div>
   );
 }
