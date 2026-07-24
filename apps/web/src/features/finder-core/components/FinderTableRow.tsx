@@ -128,7 +128,7 @@ export default function FinderTableRow({
       <td className="px-2 py-2 w-8">
         {renderNodeIcon(
           node,
-          `h-4 w-4 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`,
+          `h-4 w-4 ${isFolder ? 'text-muted-foreground' : 'text-gray-500'}`,
         )}
       </td>
       <td className="px-3 py-2 text-sm font-medium text-gray-900">

@@ -121,7 +121,7 @@ export default function FinderCompactRow({
       )}
       {renderNodeIcon(
         node,
-        `h-4 w-4 shrink-0 ${isFolder ? 'text-blue-500' : 'text-gray-500'}`,
+        `h-4 w-4 shrink-0 ${isFolder ? 'text-muted-foreground' : 'text-gray-500'}`,
       )}
       {isRenaming ? (
         <span className="min-w-0 flex-1">

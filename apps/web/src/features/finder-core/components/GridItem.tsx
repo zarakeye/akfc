@@ -516,8 +516,10 @@ function CardIcon({
   isAudio: boolean;
 }): JSX.Element {
   if (node.type === 'folder') {
+    // Même token que l'arbre (`FinderTreeFolder`) : les dossiers ont la même
+    // couleur d'une vue à l'autre, et suivent le thème clair/sombre.
     return (
-      <div className="w-full h-full flex items-center justify-center pb-6 text-blue-400">
+      <div className="w-full h-full flex items-center justify-center pb-6 text-muted-foreground">
         <Folder className="w-16 h-16" strokeWidth={1.5} />
       </div>
     );
