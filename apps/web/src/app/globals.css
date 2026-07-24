@@ -1538,7 +1538,17 @@ input[type="range"]::-moz-range-thumb {
    où la variable n'aurait sinon aucune valeur et le rembourrage
    s'effondrerait à zéro. */
 .akfc-rule-h {
-  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
+  /* Le curseur DONNE la valeur ; `10vw` ne fait que la rabattre sur les
+     petits écrans. Avec l'ancienne forme — `clamp(1.5rem, 5vw, curseur)` —
+     le curseur n'était qu'un plafond appliqué à `5vw`, qui vaut déjà 6rem
+     sur un écran de 1920px : au-dessus de 6rem, plus rien ne bougeait, et
+     c'est précisément là qu'on pousse le curseur pour voir un effet.
+     `vw` mesure la fenêtre, ce que le reste du système a justement cessé de
+     faire — d'où un aperçu identique en mode « Téléphone » et en mode
+     « Large ». Le rôle de `vw` est ici réduit à un garde-fou pour les
+     petites largeurs, où 6rem de blanc entre deux blocs n'aurait pas de
+     sens. */
+  --akfc-block-gap: max(1rem, min(var(--akfc-block-gap-max), 10vw));
   border-top: max(1px, var(--akfc-rule-width)) solid var(--akfc-rule-color);
   padding-top: calc(var(--akfc-block-gap) / 2);
 }
@@ -1556,7 +1566,17 @@ input[type="range"]::-moz-range-thumb {
     100% - clamp(1rem, 4vw, 3rem),
     var(--akfc-page-max-width)
   );
-  --akfc-block-gap: clamp(1.5rem, 5vw, var(--akfc-block-gap-max));
+  /* Le curseur DONNE la valeur ; `10vw` ne fait que la rabattre sur les
+     petits écrans. Avec l'ancienne forme — `clamp(1.5rem, 5vw, curseur)` —
+     le curseur n'était qu'un plafond appliqué à `5vw`, qui vaut déjà 6rem
+     sur un écran de 1920px : au-dessus de 6rem, plus rien ne bougeait, et
+     c'est précisément là qu'on pousse le curseur pour voir un effet.
+     `vw` mesure la fenêtre, ce que le reste du système a justement cessé de
+     faire — d'où un aperçu identique en mode « Téléphone » et en mode
+     « Large ». Le rôle de `vw` est ici réduit à un garde-fou pour les
+     petites largeurs, où 6rem de blanc entre deux blocs n'aurait pas de
+     sens. */
+  --akfc-block-gap: max(1rem, min(var(--akfc-block-gap-max), 10vw));
   width: var(--akfc-page-max);
   margin-inline: auto;
 }
