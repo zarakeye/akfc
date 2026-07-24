@@ -59,6 +59,8 @@ export default function PreviewModal({
   isOpen,
   onClose,
 }: Props): JSX.Element | null {
+  // cf. `data-finder-overlay` plus bas : le finder n'attrape pas Échap tant
+  // que cette modale est montée.
   // ─── Listener Escape ───────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
@@ -90,6 +92,7 @@ export default function PreviewModal({
   return (
     <div
       // Backdrop : fixed plein écran, semi-opaque, blur léger
+      data-finder-overlay
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-8"
       onClick={onClose}
       role="dialog"

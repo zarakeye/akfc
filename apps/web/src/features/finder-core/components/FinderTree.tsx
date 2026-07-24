@@ -67,9 +67,15 @@ type Props = {
   isInCart?: (path: string) => boolean;
   /** En pickMode : épingle/retire un fichier (délégué au store panier). */
   onPickToggle?: (node: FinderNode) => void;
+  /**
+   * Clic dans le vide du panneau : le finder y sort du mode sélection. Le
+   * garde-fou `target === currentTarget` vit chez l'appelant.
+   */
+  onVoidClick?: (e: React.MouseEvent<HTMLElement>) => void;
 };
 
 export default function FinderTree({
+  onVoidClick,
   adapter,
   rootPath,
   currentPath,
@@ -221,7 +227,9 @@ export default function FinderTree({
 
   return (
     <TrashMapProvider value={trashMap}>
-      <div className="space-y-0.5">
+      {/* `min-h-full` : sans hauteur, le vide sous l'arbre appartiendrait au
+          panneau et non à ce div — le clic n'y serait jamais capté. */}
+      <div className="space-y-0.5 min-h-full" onClick={onVoidClick}>
         {topLevelChildren.map((child) =>
           child.type === 'folder' ? (
             <FinderTreeFolder

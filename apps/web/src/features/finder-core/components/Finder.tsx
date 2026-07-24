@@ -213,6 +213,51 @@ export default function Finder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── Échap quitte le mode sélection ──────────────────────────────────
+  //
+  // Deux garde-fous, expliqués en tête de ce chantier :
+  //   - un champ éditable a la priorité (renommage en ligne, recherche) ;
+  //   - une surface empilée aussi. `ContextMenu` et `PreviewModal` écoutent
+  //     Échap sur `window`, et l'ordre de déclenchement suit l'ordre de
+  //     montage : le finder passerait AVANT eux. On interroge donc le DOM,
+  //     qui ne dépend d'aucun ordre.
+  useEffect(() => {
+    if (!multiSelectActive) return;
+
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.isContentEditable ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      if (document.querySelector("[data-finder-overlay]")) return;
+
+      exitMultiSelect();
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [multiSelectActive, exitMultiSelect]);
+
+  // Clic dans le vide : `target === currentTarget` signifie que le clic n'a
+  // traversé aucun enfant. Pas de `stopPropagation` à semer dans les tuiles,
+  // et aucun risque de casser une sélection en cours.
+  const handleVoidClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (!multiSelectActive) return;
+      if (e.target !== e.currentTarget) return;
+      exitMultiSelect();
+    },
+    [multiSelectActive, exitMultiSelect],
+  );
+
   const handleLayoutChange = useCallback((layout: Layout) => {
     try {
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
@@ -631,6 +676,7 @@ export default function Finder({
           className="overflow-auto p-2"
         >
           <FinderTree
+            onVoidClick={handleVoidClick}
             adapter={adapter}
             rootPath={rootPath}
             currentPath={currentPath}
@@ -676,6 +722,7 @@ export default function Finder({
 
               <div
                 className="p-4 overflow-auto flex-1"
+                onClick={handleVoidClick}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setSortMenuPos({ x: e.clientX, y: e.clientY });
