@@ -26,7 +26,28 @@ type Knob = {
   step: number;
   unit: string;
   initial: number;
+  /**
+   * Identifiant de la zone d'aperçu que ce réglage modifie. Cliquer le
+   * libellé y amène la colonne de droite — un réglage dont on ne voit pas
+   * l'effet ne se règle pas.
+   */
+  anchor: string;
 };
+
+/**
+ * Amène une zone de l'aperçu à l'écran.
+ *
+ * `scrollIntoView` remonte de lui-même jusqu'au premier ancêtre défilant —
+ * la colonne d'aperçu — sans référence à lui passer ni position à
+ * recalculer quand la mise en page change.
+ * `center` et non `start` : la cible arrive au milieu, avec son contexte
+ * au-dessus et en dessous. C'est le point du geste — comparer.
+ */
+function scrollToAnchor(id: string): void {
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
 
 /**
  * Ratio média / texte, en parts de grille.
@@ -49,23 +70,28 @@ const RATIOS: { label: string; media: string; text: string; hint: string }[] = [
 
 /** Les valeurs initiales reprennent celles de `:root` dans globals.css. */
 const KNOBS: Knob[] = [
-  { key: "--akfc-leading", label: "Interlignage", min: 1, max: 2.4, step: 0.05, unit: "", initial: 1.65 },
-  { key: "--akfc-para-gap", label: "Écart entre paragraphes", min: 0, max: 3, step: 0.05, unit: "em", initial: 1 },
-  { key: "--akfc-heading-gap", label: "Écart avant un titre", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.8 },
-  { key: "--akfc-list-gap", label: "Écart entre puces", min: 0, max: 1.5, step: 0.05, unit: "em", initial: 0.35 },
-  { key: "--akfc-list-indent", label: "Retrait des puces", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.5 },
-  { key: "--akfc-block-gap-max", label: "Écart entre blocs (max)", min: 1, max: 8, step: 0.25, unit: "rem", initial: 4 },
-  { key: "--akfc-h1", label: "Taille h1", min: 1, max: 4, step: 0.05, unit: "em", initial: 2 },
-  { key: "--akfc-h2", label: "Taille h2", min: 1, max: 3, step: 0.05, unit: "em", initial: 1.5 },
-  { key: "--akfc-h3", label: "Taille h3", min: 0.9, max: 2.5, step: 0.05, unit: "em", initial: 1.25 },
-  { key: "--akfc-h4", label: "Taille h4", min: 0.8, max: 2, step: 0.05, unit: "em", initial: 1.05 },
-  { key: "--akfc-h5", label: "Taille h5", min: 0.7, max: 1.6, step: 0.05, unit: "em", initial: 1 },
-  { key: "--akfc-h6", label: "Taille h6", min: 0.6, max: 1.4, step: 0.05, unit: "em", initial: 0.875 },
-  { key: "--akfc-page-max-width", label: "Largeur maximale de page", min: 48, max: 96, step: 1, unit: "rem", initial: 68 },
-  { key: "--akfc-base-max", label: "Taille du texte (grand écran)", min: 1, max: 1.5, step: 0.05, unit: "rem", initial: 1.25 },
-  { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68 },
-  { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5 },
-  { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0 },
+  { key: "--akfc-leading", label: "Interlignage", min: 1, max: 2.4, step: 0.05, unit: "", initial: 1.65, anchor: "lab-texte" },
+  { key: "--akfc-para-gap", label: "Écart entre paragraphes", min: 0, max: 3, step: 0.05, unit: "em", initial: 1, anchor: "lab-texte" },
+  { key: "--akfc-heading-gap", label: "Écart avant un titre", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.8, anchor: "lab-titres" },
+  { key: "--akfc-list-gap", label: "Écart entre puces", min: 0, max: 1.5, step: 0.05, unit: "em", initial: 0.35, anchor: "lab-listes" },
+  { key: "--akfc-list-indent", label: "Retrait des puces", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.5, anchor: "lab-listes" },
+  { key: "--akfc-block-gap-max", label: "Écart entre blocs (max)", min: 1, max: 8, step: 0.25, unit: "rem", initial: 4, anchor: "lab-blocs" },
+  { key: "--akfc-h1", label: "Taille h1", min: 1, max: 4, step: 0.05, unit: "em", initial: 2, anchor: "lab-titres" },
+  { key: "--akfc-h2", label: "Taille h2", min: 1, max: 3, step: 0.05, unit: "em", initial: 1.5, anchor: "lab-titres" },
+  { key: "--akfc-h3", label: "Taille h3", min: 0.9, max: 2.5, step: 0.05, unit: "em", initial: 1.25, anchor: "lab-titres" },
+  { key: "--akfc-h4", label: "Taille h4", min: 0.8, max: 2, step: 0.05, unit: "em", initial: 1.05, anchor: "lab-titres-bas" },
+  { key: "--akfc-h5", label: "Taille h5", min: 0.7, max: 1.6, step: 0.05, unit: "em", initial: 1, anchor: "lab-titres-bas" },
+  { key: "--akfc-h6", label: "Taille h6", min: 0.6, max: 1.4, step: 0.05, unit: "em", initial: 0.875, anchor: "lab-titres-bas" },
+  { key: "--akfc-page-max-width", label: "Largeur maximale de page", min: 48, max: 96, step: 1, unit: "rem", initial: 68, anchor: "lab-colonnes" },
+  { key: "--akfc-base-max", label: "Taille du texte (grand écran)", min: 1, max: 1.5, step: 0.05, unit: "rem", initial: 1.25, anchor: "lab-texte" },
+  { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68, anchor: "lab-pleine-largeur" },
+  { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5, anchor: "lab-colonnes" },
+  { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0, anchor: "lab-blocs" },
+  // Ces trois-là manquaient : les blocs de collection figuraient dans
+  // l'aperçu sans qu'aucun curseur ne les atteigne.
+  { key: "--akfc-item-gap", label: "Écart entre éléments (collections)", min: 0, max: 3, step: 0.05, unit: "rem", initial: 0.75, anchor: "lab-collections" },
+  { key: "--akfc-card-padding", label: "Rembourrage des cartes", min: 0, max: 2.5, step: 0.05, unit: "rem", initial: 0.75, anchor: "lab-collections" },
+  { key: "--akfc-caption-size", label: "Taille des légendes", min: 0.6, max: 1.2, step: 0.025, unit: "rem", initial: 0.875, anchor: "lab-collections" },
 ];
 
 const INITIAL: Record<string, number> = Object.fromEntries(
@@ -175,6 +201,11 @@ export function BlockStyleLab(): JSX.Element {
           </p>
         )}
 
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          Cliquez le nom d&apos;un réglage pour amener l&apos;aperçu à
+          l&apos;endroit où il se voit.
+        </p>
+
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground">Côté du média</span>
           <div className="flex gap-2">
@@ -197,7 +228,14 @@ export function BlockStyleLab(): JSX.Element {
 
         <div className="space-y-1">
           <span className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Ratio média / texte</span>
+            <button
+              type="button"
+              onClick={() => scrollToAnchor("lab-colonnes")}
+              title="Aller à l'endroit où ce réglage se voit"
+              className="text-left text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Ratio média / texte
+            </button>
             <span className="font-mono">{ratio.label}</span>
           </span>
           <input
@@ -214,9 +252,16 @@ export function BlockStyleLab(): JSX.Element {
 
         {KNOBS.map((k) => (
           <label key={k.key} className="block space-y-1">
-            <span className="flex justify-between text-xs">
-              <span className="text-muted-foreground">{k.label}</span>
-              <span className="font-mono">
+            <span className="flex justify-between gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => scrollToAnchor(k.anchor)}
+                title="Aller à l'endroit où ce réglage se voit"
+                className="truncate text-left text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+              >
+                {k.label}
+              </button>
+              <span className="shrink-0 font-mono">
                 {values[k.key]}
                 {k.unit}
               </span>
@@ -294,7 +339,7 @@ export function BlockStyleLab(): JSX.Element {
             className="akfc-page flex flex-col"
             style={{ gap: "var(--akfc-block-gap)" }}
           >
-        <section className="akfc-block-scope">
+        <section id="lab-colonnes" className="akfc-block-scope">
         <div
           className="akfc-block-columns grid items-start"
           style={
@@ -333,9 +378,15 @@ export function BlockStyleLab(): JSX.Element {
             le reste depuis que leurs vues ont cessé de coder leurs
             espacements en dur — sans quoi les curseurs n'auraient eu aucune
             prise sur eux et le laboratoire aurait montré du faux. */}
-        <section className="akfc-rule-h space-y-6">
+        {/* Ce bloc PERD son filet, volontairement : il faut au moins une
+            frontière nue pour lire l'écart entre blocs seul. Le suivant
+            garde le sien, et montre l'autre cas. */}
+        <section id="lab-blocs" className="space-y-6">
           <div>
-            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+            <h3
+              id="lab-collections"
+              className="mb-2 text-xs uppercase tracking-wide text-muted-foreground"
+            >
               Galerie d&apos;images
             </h3>
             <div
@@ -404,7 +455,7 @@ export function BlockStyleLab(): JSX.Element {
           </div>
         </section>
 
-        <section className="akfc-rule-h">
+        <section id="lab-pleine-largeur" className="akfc-rule-h">
           <article className="akfc-prose prose max-w-none">
             <h2>Bloc pleine largeur</h2>
             <p>
@@ -447,8 +498,8 @@ function FakeMedia(): JSX.Element {
 function SampleText(): JSX.Element {
   return (
     <>
-      <h1>Titre de niveau 1</h1>
-      <p>
+      <h1 id="lab-titres">Titre de niveau 1</h1>
+      <p id="lab-texte">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec
         odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla
         quis sem at nibh elementum imperdiet.
@@ -465,7 +516,7 @@ function SampleText(): JSX.Element {
         at dolor. Maecenas mattis.
       </p>
       <h3>Titre de niveau 3</h3>
-      <ul>
+      <ul id="lab-listes">
         <li>Premier élément de liste</li>
         <li>
           Deuxième élément, un peu plus long pour voir le retour à la ligne
@@ -486,7 +537,7 @@ function SampleText(): JSX.Element {
         Une citation, pour vérifier que son retrait et son interlignage
         suivent le reste du texte.
       </blockquote>
-      <h4>Titre de niveau 4</h4>
+      <h4 id="lab-titres-bas">Titre de niveau 4</h4>
       <p>
         Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet
         nec, imperdiet iaculis, ipsum.
