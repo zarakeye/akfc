@@ -2,7 +2,9 @@
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  h5,
+  h6 {
     position: relative;
     color: inherit;
     font-style: inherit;
@@ -29,6 +31,23 @@
     font-size: 1.125em;
     font-weight: 600;
     margin-top: 2em;
+  }
+
+  // h5 et h6 : sous la taille du texte courant, ils ne se distinguent plus
+  // par l'échelle mais par la graisse et, pour h6, la casse — la convention
+  // des sous-titres de rubrique en presse.
+  h5 {
+    font-size: 1em;
+    font-weight: 600;
+    margin-top: 1.5em;
+  }
+
+  h6 {
+    font-size: 0.875em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 1.5em;
   }
 
   h4 {
