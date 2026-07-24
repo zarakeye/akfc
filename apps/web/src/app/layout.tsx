@@ -70,13 +70,29 @@ export default async function RootLayout({
 
   return (
     <html lang="fr">
-      {styleOverride && (
-        <style
-          id="akfc-site-style"
-          dangerouslySetInnerHTML={{ __html: styleOverride }}
-        />
-      )}
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/*
+          `href` + `precedence` : React 19 HISSE cette balise dans le
+          `<head>` et la déduplique sur `href`. C'est la voie prévue pour
+          injecter une feuille calculée au rendu serveur.
+
+          Rendue depuis `<body>` et non depuis `<html>` : seuls `<head>` et
+          `<body>` peuvent être enfants de `<html>`, et le navigateur
+          déplaçait la balise au parsing — d'où l'erreur d'hydratation. React
+          la hisse de toute façon ; en cas de non-hissage, elle reste ici à
+          un endroit valide.
+
+          Le CSS passe en ENFANT : React refuse `dangerouslySetInnerHTML` sur
+          une balise hissée, et un nœud texte convient à du CSS.
+
+          L'ORDRE d'insertion est indifférent — la surcharge l'emporte par
+          spécificité (`html:root`, 0,0,2 contre 0,0,1), pas par position.
+        */}
+        {styleOverride && (
+          <style href="akfc-site-style" precedence="high">
+            {styleOverride}
+          </style>
+        )}
         <AppProviders>
           <SessionLoader>{children}</SessionLoader>
         </AppProviders>
