@@ -1295,13 +1295,35 @@ input[type="range"]::-moz-range-thumb {
   --akfc-leading: 1.65;
   --akfc-para-gap: 1em;
   --akfc-heading-gap: 1.8em;
-  --akfc-h1: 2em;
-  --akfc-h2: 1.5em;
-  --akfc-h3: 1.25em;
+  /* Échelle des titres, fluide. Un h1 à 2em fixes écrase un écran de
+     téléphone et se perd sur un très grand écran : les bornes disent le
+     minimum lisible et le maximum souhaitable, `vw` fait la transition. */
+  --akfc-h1: clamp(1.6rem, 1.1rem + 2.2vw, 2.75rem);
+  --akfc-h2: clamp(1.35rem, 1rem + 1.5vw, 2rem);
+  --akfc-h3: clamp(1.15rem, 0.95rem + 0.9vw, 1.5rem);
   --akfc-h4: 1.05em;
   --akfc-h5: 1em;
   --akfc-h6: 0.875em;
-  --akfc-column-gap: 2.5rem;
+  /* Justification maximale, en `ch` et non en rem : l'unité suit la taille
+     de police effective, donc la ligne garde sa longueur en CARACTÈRES quand
+     le texte grossit. 68 caractères tient dans la plage confortable
+     (45–75), près de l'optimum admis autour de 65. */
+  --akfc-measure: 68ch;
+
+  /* Plafond de la page. `min()` et non une valeur sèche : sur un écran
+     étroit c'est la largeur disponible moins les marges qui commande, sur un
+     grand écran c'est le plafond. Une seule expression pour les deux, sans
+     point de rupture. */
+  --akfc-page-max: min(100% - 2rem, 76rem);
+
+  /* Écart entre colonnes, fluide. Un palier fixe est trop large quand deux
+     colonnes se serrent sur une tablette, et trop étroit sur un grand
+     écran ; `clamp()` interpole entre les deux au lieu de sauter. */
+  --akfc-column-gap: clamp(1.25rem, 3vw, 3.5rem);
+
+  /* Largeur en dessous de laquelle un bloc à deux colonnes repasse en une
+     seule. Mesurée sur le BLOC (container query), pas sur la fenêtre. */
+  --akfc-columns-min: 44rem;
 
   /* Largeurs des deux colonnes d'un bloc media-text, en parts de grille.
      Le bloc les pose EN LIGNE selon le côté du média (cf. view.server) ;
@@ -1324,6 +1346,23 @@ input[type="range"]::-moz-range-thumb {
    spécificité nulle : nos règles l'emportent sans aucun `!important`. */
 .akfc-prose {
   line-height: var(--akfc-leading);
+}
+
+/* Plafond de justification. `prose max-w-none` retire le plafond de 65ch de
+   @tailwindcss/typography ; sans rien en échange, le texte s'étirait sur
+   toute la largeur disponible. On le remet, à notre valeur.
+   `max-width` et non `width` : dans une colonne plus étroite que la mesure,
+   le texte occupe la colonne — le plafond ne mord que quand il y a trop de
+   place. */
+.akfc-prose {
+  max-width: var(--akfc-measure);
+}
+
+/* Une colonne de bloc à deux colonnes est déjà plafonnée par la grille :
+   y remettre la mesure la rétrécirait une seconde fois et laisserait un vide
+   à droite. */
+.akfc-block-columns .akfc-prose {
+  max-width: none;
 }
 
 /* Modèle à UNE SEULE direction : tout l'espacement vertical passe par
@@ -1371,12 +1410,26 @@ input[type="range"]::-moz-range-thumb {
    (`md:order-1` / `md:order-2`) mais pas l'ordre du DOM. Le dégradé, lui,
    tombe toujours au milieu de la gouttière.
    Épaisseur 0 par défaut : le filet ne s'affiche que si on le demande. */
-@media (min-width: 768px) {
+/* `container-type: inline-size` fait du bloc une unité de mesure pour ses
+   propres règles. Sans lui, `@container` n'aurait rien à interroger.
+   Posé sur le BLOC et non sur la page : la containment ne gêne alors ni le
+   collant, ni les débordements de la mise en page générale. */
+.akfc-block-columns {
+  container-type: inline-size;
+}
+
+/* On interroge la largeur du BLOC, pas celle de la fenêtre.
+   Le même bloc s'affiche derrière la barre latérale du tableau de bord
+   (240px de moins) et en pleine largeur sur le site : une media query
+   répondait juste dans un cas et faux dans l'autre — deux colonnes de 370px
+   sur une fenêtre de 1024px. */
+@container (min-width: 44rem) {
   .akfc-block-columns {
     /* Le ratio vit ICI et non en style inline : un style inline ne peut pas
-       porter de point de rupture, alors qu'une variable posée en inline
-       traverse sans peine une media query. En dessous de 768px, la règle ne
-       s'applique pas et la grille reste à une seule colonne. */
+       porter de condition, alors qu'une variable posée en inline la traverse
+       sans peine. En dessous du seuil, la règle ne s'applique pas et la
+       grille reste à une seule colonne — le média passe au-dessus du texte,
+       ce qui est l'ordre de lecture attendu sur téléphone. */
     grid-template-columns: var(--akfc-col-1) var(--akfc-col-2);
     background-image: linear-gradient(
       to right,
@@ -1393,4 +1446,20 @@ input[type="range"]::-moz-range-thumb {
 .akfc-rule-h {
   border-top: max(1px, var(--akfc-rule-width)) solid var(--akfc-rule-color);
   padding-top: var(--akfc-heading-gap);
+}
+
+/* Conteneur des pages construites au builder.
+   `margin-inline: auto` avec une largeur en `min()` : centré et plafonné en
+   une seule déclaration, sans point de rupture ni marge négative. */
+.akfc-page {
+  width: var(--akfc-page-max);
+  margin-inline: auto;
+}
+
+/* Bloc autonome — le cas d'un media-text réduit à son texte, ou d'un bloc
+   tiptap seul. Sa largeur est la MESURE, pas une valeur d'écran : c'est la
+   lisibilité qui commande, et elle ne dépend pas de la taille du moniteur. */
+.akfc-measure-block {
+  max-width: var(--akfc-measure);
+  margin-inline: auto;
 }

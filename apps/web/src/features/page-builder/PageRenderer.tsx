@@ -110,7 +110,14 @@ export async function PageRenderer({ content }: PageRendererProps) {
   };
 
   return (
-    <div className="page-renderer flex flex-col gap-10">
+    // `akfc-page` plafonne et centre. Sans lui, sur un écran de 1920px la
+    // colonne de texte atteignait 800px, soit près de 100 caractères par
+    // ligne — hors de la plage lisible, et qu'aucun ratio ne corrigeait.
+    // L'écart entre blocs suit la même règle fluide que les gouttières.
+    <div
+      className="page-renderer akfc-page flex flex-col"
+      style={{ gap: "clamp(2rem, 5vw, 4rem)" }}
+    >
       {content.blocks.map((block) => {
         const def = getBlockDefinition(block.type);
         const View = def.View as unknown as ComponentType<
