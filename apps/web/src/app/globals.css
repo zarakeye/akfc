@@ -1280,3 +1280,99 @@ input[type="range"]::-moz-range-thumb {
 .tiptap-rendered ul[data-type="taskList"] li > div {
   flex: 1 1 auto;
 }
+
+
+/* ── Rendu uniforme des blocs du builder ────────────────────────────────
+   Un seul jeu de variables pour TOUT le contenu produit par le builder :
+   la vue publique, l'aperçu du builder et le laboratoire de réglage
+   (/dashboard/design-lab) lisent les mêmes. Régler ici, c'est régler
+   partout.
+
+   Les valeurs vivent sur `:root` pour qu'un conteneur intermédiaire
+   puisse les surcharger par cascade — c'est exactement ce que fait le
+   laboratoire, en style inline, sans toucher à ce fichier. */
+:root {
+  --akfc-leading: 1.65;
+  --akfc-para-gap: 1em;
+  --akfc-heading-gap: 1.8em;
+  --akfc-h1: 2em;
+  --akfc-h2: 1.5em;
+  --akfc-h3: 1.25em;
+  --akfc-h4: 1.05em;
+  --akfc-h5: 1em;
+  --akfc-h6: 0.875em;
+  --akfc-column-gap: 2.5rem;
+  --akfc-rule-width: 0px;
+  --akfc-rule-color: color-mix(in oklch, currentColor 20%, transparent);
+}
+
+/* `.akfc-prose` se pose EN PLUS de `prose`. Ses sélecteurs pèsent 0,1,1
+   quand @tailwindcss/typography enveloppe les siens dans `:where()`, de
+   spécificité nulle : nos règles l'emportent sans aucun `!important`. */
+.akfc-prose {
+  line-height: var(--akfc-leading);
+}
+
+/* Modèle à UNE SEULE direction : tout l'espacement vertical passe par
+   `margin-top`. Avec les deux marges, celle du bas d'un élément et celle
+   du haut du suivant s'additionnent ou fusionnent selon le contexte, et
+   un réglage au curseur devient imprévisible. */
+.akfc-prose
+  :is(p, ul, ol, blockquote, pre, figure, hr, h1, h2, h3, h4, h5, h6) {
+  margin-bottom: 0;
+}
+
+.akfc-prose :is(p, ul, ol, blockquote, pre, figure) {
+  margin-top: var(--akfc-para-gap);
+}
+
+.akfc-prose :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: var(--akfc-heading-gap);
+  line-height: 1.2;
+}
+
+/* Le premier élément ne pousse rien : un bloc commence au ras de son
+   conteneur, sans quoi le média et le texte cesseraient de partager leur
+   ligne de tête. */
+.akfc-prose > :first-child {
+  margin-top: 0;
+}
+
+.akfc-prose h1 { font-size: var(--akfc-h1); }
+.akfc-prose h2 { font-size: var(--akfc-h2); }
+.akfc-prose h3 { font-size: var(--akfc-h3); }
+.akfc-prose h4 { font-size: var(--akfc-h4); }
+.akfc-prose h5 { font-size: var(--akfc-h5); }
+.akfc-prose h6 { font-size: var(--akfc-h6); }
+
+.akfc-prose hr {
+  margin-top: var(--akfc-heading-gap);
+  border-top-width: max(1px, var(--akfc-rule-width));
+  border-color: var(--akfc-rule-color);
+}
+
+/* Filet vertical entre les deux colonnes d'un bloc media-text.
+   PEINT SUR LE CONTENEUR, pas posé en bordure sur une colonne : une
+   bordure suivrait l'ordre du DOM et se retrouverait du mauvais côté dès
+   que `mediaSide` vaut « right », l'alternance inversant l'ordre visuel
+   (`md:order-1` / `md:order-2`) mais pas l'ordre du DOM. Le dégradé, lui,
+   tombe toujours au milieu de la gouttière.
+   Épaisseur 0 par défaut : le filet ne s'affiche que si on le demande. */
+@media (min-width: 768px) {
+  .akfc-block-columns {
+    background-image: linear-gradient(
+      to right,
+      var(--akfc-rule-color),
+      var(--akfc-rule-color)
+    );
+    background-size: var(--akfc-rule-width) 100%;
+    background-position: center top;
+    background-repeat: no-repeat;
+  }
+}
+
+/* Filet horizontal, à poser entre deux blocs successifs. */
+.akfc-rule-h {
+  border-top: max(1px, var(--akfc-rule-width)) solid var(--akfc-rule-color);
+  padding-top: var(--akfc-heading-gap);
+}

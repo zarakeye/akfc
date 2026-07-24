@@ -124,7 +124,7 @@ export function MediaTextView({
       // `prose` s'arrête à h4 : sans ces deux variantes, un h5 ou un h6 se
       // rendrait comme du texte courant en gras, indiscernable d'un
       // paragraphe. On les pose explicitement.
-      className="tiptap-rendered prose max-w-none prose-h5:text-base prose-h5:font-semibold prose-h5:mt-6 prose-h6:text-sm prose-h6:font-semibold prose-h6:uppercase prose-h6:tracking-wide prose-h6:mt-6"
+      className="akfc-prose tiptap-rendered prose max-w-none prose-h5:text-base prose-h5:font-semibold prose-h5:mt-6 prose-h6:text-sm prose-h6:font-semibold prose-h6:uppercase prose-h6:tracking-wide prose-h6:mt-6"
       dangerouslySetInnerHTML={{ __html: textHtml }}
     />
   ) : null;
@@ -144,7 +144,12 @@ export function MediaTextView({
   // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
   // ouvrait le bloc sur un vide asymétrique.
   return (
-    <div className="grid items-start gap-10 md:grid-cols-2">
+    // La gouttière passe par la variable : le laboratoire la règle, et le
+    // filet vertical facultatif se peint au milieu (cf. globals.css).
+    <div
+      className="akfc-block-columns grid items-start md:grid-cols-2"
+      style={{ gap: "var(--akfc-column-gap)" }}
+    >
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>
