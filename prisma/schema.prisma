@@ -1206,3 +1206,19 @@ model EventDiscipline {
   @@id([eventId, disciplineId])
   @@index([disciplineId])
 }
+
+/// Réglage typographique du rendu des blocs du builder.
+///
+/// Ligne UNIQUE (id figé à 1) : ce réglage vaut pour tout le site, il n'y a
+/// rien à multiplier. `variables` porte les `--akfc-*` sous forme
+/// { "--akfc-leading": "1.65", … } — un JSON plutôt qu'une colonne par
+/// variable, pour qu'ajouter un curseur au laboratoire ne demande pas une
+/// migration.
+///
+/// Source de vérité : cette ligne. Les valeurs de `globals.css` ne servent
+/// que de repli, tant qu'aucun réglage n'a été enregistré.
+model SiteStyle {
+  id        Int      @id @default(1)
+  variables Json
+  updatedAt DateTime @updatedAt
+}

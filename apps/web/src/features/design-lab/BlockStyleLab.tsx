@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type CSSProperties, type JSX } from "react";
+import { useEffect, useState, type CSSProperties, type JSX } from "react";
+
+import { trpc } from "@/core/trpc/trpcClient";
 
 /**
  * Laboratoire de réglage du rendu des blocs.
@@ -49,6 +51,34 @@ export function BlockStyleLab(): JSX.Element {
   const [values, setValues] = useState<Record<string, number>>(INITIAL);
   const [side, setSide] = useState<"left" | "right">("left");
 
+  // Le réglage enregistré, s'il existe, devient le point de départ des
+  // curseurs — sinon on repartirait des valeurs de repli à chaque visite et
+  // on croirait avoir perdu son travail.
+  const saved = trpc.siteStyle.get.useQuery();
+  const utils = trpc.useUtils();
+  const saveMutation = trpc.siteStyle.save.useMutation({
+    onSuccess: () => {
+      void utils.siteStyle.get.invalidate();
+    },
+  });
+
+  useEffect(() => {
+    const stored = saved.data;
+    if (!stored) return;
+    setValues((current) => {
+      const next = { ...current };
+      for (const knob of KNOBS) {
+        const raw = stored[knob.key];
+        if (raw === undefined) continue;
+        // La base stocke « 1.65 » ou « 2.5rem » : on retire l'unité, le
+        // curseur ne manipule que le nombre.
+        const parsed = Number.parseFloat(raw);
+        if (!Number.isNaN(parsed)) next[knob.key] = parsed;
+      }
+      return next;
+    });
+  }, [saved.data]);
+
   // Les propriétés personnalisées ne sont pas dans le type CSSProperties de
   // React : le cast est la voie prévue pour les passer en style inline.
   const styleOverrides = Object.fromEntries(
@@ -75,6 +105,35 @@ export function BlockStyleLab(): JSX.Element {
             Réinitialiser
           </button>
         </div>
+
+        <button
+          type="button"
+          disabled={saveMutation.isPending}
+          onClick={() =>
+            saveMutation.mutate({
+              variables: Object.fromEntries(
+                KNOBS.map((k) => [k.key, `${values[k.key]}${k.unit}`]),
+              ),
+            })
+          }
+          className="w-full rounded border border-foreground px-2 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50"
+        >
+          {saveMutation.isPending
+            ? "Enregistrement…"
+            : "Appliquer au site"}
+        </button>
+
+        {saveMutation.isSuccess && (
+          <p className="text-xs text-muted-foreground">
+            Réglage enregistré. Rechargez une page du site pour le voir
+            appliqué&nbsp;: la surcharge est injectée au rendu serveur.
+          </p>
+        )}
+        {saveMutation.isError && (
+          <p className="text-xs text-destructive">
+            Échec de l&apos;enregistrement : {saveMutation.error.message}
+          </p>
+        )}
 
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground">Côté du média</span>
@@ -121,7 +180,8 @@ export function BlockStyleLab(): JSX.Element {
 
         <div className="space-y-1 pt-2">
           <span className="text-xs text-muted-foreground">
-            À recopier dans globals.css
+            Équivalent CSS (pour figer ces valeurs comme repli dans
+            globals.css)
           </span>
           <pre className="max-h-56 overflow-auto rounded bg-muted p-2 text-[10px] leading-snug">
             {cssSnippet}
