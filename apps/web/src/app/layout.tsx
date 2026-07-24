@@ -68,6 +68,20 @@ export default async function RootLayout({
       ? serializeSiteStyle(siteStyle.variables as Record<string, string>)
       : null;
 
+  // ⚠️ `href` doit CHANGER quand le réglage change.
+  //
+  // React considère que deux feuilles de même `href` sont la même feuille :
+  // avec une valeur fixe, il gardait celle déjà insérée et ignorait la
+  // nouvelle, dont seul le contenu avait bougé. C'est le comportement
+  // documenté du hissage, et il est raisonnable — un `href` désigne
+  // normalement une ressource immuable.
+  //
+  // `updatedAt` fait une clé naturelle : la colonne existe déjà et change
+  // exactement quand il le faut.
+  const styleKey = siteStyle
+    ? `akfc-site-style-${siteStyle.updatedAt.getTime()}`
+    : "akfc-site-style";
+
   return (
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -89,7 +103,7 @@ export default async function RootLayout({
           spécificité (`html:root`, 0,0,2 contre 0,0,1), pas par position.
         */}
         {styleOverride && (
-          <style href="akfc-site-style" precedence="high">
+          <style href={styleKey} precedence="high">
             {styleOverride}
           </style>
         )}

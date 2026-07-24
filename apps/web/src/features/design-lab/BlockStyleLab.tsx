@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type JSX } from "react";
+import { useRouter } from "next/navigation";
 
 import { trpc } from "@/core/trpc/trpcClient";
 
@@ -107,6 +108,7 @@ export function BlockStyleLab(): JSX.Element {
   // Le réglage enregistré, s'il existe, devient le point de départ des
   // curseurs — sinon on repartirait des valeurs de repli à chaque visite et
   // on croirait avoir perdu son travail.
+  const router = useRouter();
   const saved = trpc.siteStyle.get.useQuery();
   const utils = trpc.useUtils();
   const saveMutation = trpc.siteStyle.save.useMutation({
@@ -120,9 +122,19 @@ export function BlockStyleLab(): JSX.Element {
       // est un confort, pas une condition de succès. Si elle échoue, le
       // réglage est enregistré quand même et une régénération ordinaire le
       // rattrapera — inutile d'annoncer un échec pour ça.
-      void fetch("/api/admin/revalidate-style", { method: "POST" }).catch(
-        () => undefined,
-      );
+      void fetch("/api/admin/revalidate-style", { method: "POST" })
+        .then(() => {
+          // APRÈS l'invalidation serveur, jamais avant : `router.refresh()`
+          // vide le cache de routeur et redemande le rendu — s'il partait
+          // en premier, il rapporterait la version périmée.
+          //
+          // Nécessaire parce qu'un layout n'est PAS re-rendu lors d'une
+          // navigation côté client : la surcharge, injectée par le layout
+          // racine, resterait celle du chargement initial jusqu'à ce qu'on
+          // recharge la page à la main.
+          router.refresh();
+        })
+        .catch(() => undefined);
     },
   });
 
