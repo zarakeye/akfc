@@ -351,7 +351,7 @@ export default function PersoPhotoUploader(): JSX.Element {
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {quota.pending} en attente · {quota.published} publiée(s)
+              {quota.pending} en attente · {quota.published} validée(s)
             </p>
           </>
         )}

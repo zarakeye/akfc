@@ -120,12 +120,12 @@ export function MediaPicker({
     <Modal open={open} onClose={handleClose}>
       <div className="p-4 border-b font-medium">Sélectionner des médias</div>
 
-      {/* Règle posée d'emblée : seuls les médias publiés sont épinglables. */}
+      {/* Règle posée d'emblée : seuls les médias validés sont épinglables. */}
       <div className="px-4 py-2 border-b bg-blue-50 text-xs text-blue-800">
-        Cliquez sur un média <strong>publié</strong> pour l&apos;ajouter à la
+        Cliquez sur un média <strong>validé</strong> pour l&apos;ajouter à la
         sélection. Vous pouvez naviguer entre les dossiers&nbsp;: la sélection
         est conservée. Un média en attente ou à la corbeille reste visible mais
-        n&apos;est pas sélectionnable tant qu&apos;il n&apos;est pas publié.
+        n&apos;est pas sélectionnable tant qu&apos;il n&apos;est pas validé.
       </div>
 
       <div className="flex-1 overflow-auto">
