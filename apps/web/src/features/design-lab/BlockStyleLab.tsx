@@ -125,9 +125,12 @@ export function BlockStyleLab(): JSX.Element {
   ].join("\n");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-6 lg:h-full lg:min-h-0 lg:grid-cols-[280px_1fr]">
       {/* ─── Réglages ─────────────────────────────────────────────── */}
-      <aside className="space-y-4 rounded-md border border-border p-4">
+      {/* `min-h-0` puis `overflow-y-auto` : le premier autorise la colonne à
+          être plus courte que son contenu, le second lui donne sa barre.
+          L'un sans l'autre ne produit rien. */}
+      <aside className="space-y-4 rounded-md border border-border p-4 lg:min-h-0 lg:overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Réglages</h2>
           <button
@@ -249,8 +252,11 @@ export function BlockStyleLab(): JSX.Element {
           (container query), donc rétrécir ce cadre reproduit fidèlement ce
           qui se passera sur un écran de cette taille. Un iframe ou une
           fausse fenêtre n'aurait rien montré de plus. */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-xs">
+      {/* Colonne d'aperçu : le sélecteur de largeur reste fixe en tête
+          (`shrink-0`), seul le contenu défile — sinon il disparaîtrait dès
+          qu'on descend, alors qu'on le compare en permanence. */}
+      <div className="flex flex-col gap-3 lg:min-h-0">
+        <div className="flex shrink-0 items-center gap-2 text-xs">
           <span className="text-muted-foreground">Largeur d&apos;aperçu</span>
           {(
             [
@@ -280,7 +286,7 @@ export function BlockStyleLab(): JSX.Element {
             jamais les voir. */}
         <div
           style={{ ...styleOverrides, maxWidth: previewWidth }}
-          className="border-l border-dashed border-border pl-3 transition-[max-width]"
+          className="border-l border-dashed border-border pl-3 transition-[max-width] lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
         >
           {/* `space-y-8` ignorait la variable : le curseur d'écart entre
               blocs aurait bougé sans rien changer à l'écran. */}

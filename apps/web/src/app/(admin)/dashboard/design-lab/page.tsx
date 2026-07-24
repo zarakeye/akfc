@@ -14,8 +14,13 @@ import { BlockStyleLab } from "@features/design-lab/BlockStyleLab";
  */
 export default function DesignLabPage(): JSX.Element {
   return (
-    <div className="space-y-4 p-4">
-      <header className="space-y-1">
+    // Le layout du tableau de bord pose la règle : le <main> défile par
+    // défaut, et une page qui gère son propre défilement se borne elle-même
+    // (`h-full overflow-hidden`), comme la bibliothèque. Le laboratoire est
+    // ce cas-là — mais seulement à partir de `lg`, où il y a deux colonnes à
+    // tenir côte à côte. En dessous, la page défile normalement.
+    <div className="flex flex-col gap-4 p-4 lg:h-full lg:min-h-0 lg:overflow-hidden">
+      <header className="shrink-0 space-y-1">
         <h1 className="text-lg font-semibold">Laboratoire de rendu</h1>
         <p className="text-sm text-muted-foreground">
           Les curseurs modifient les variables CSS réellement utilisées par le
@@ -25,7 +30,11 @@ export default function DesignLabPage(): JSX.Element {
         </p>
       </header>
 
-      <BlockStyleLab />
+      {/* `min-h-0` : sans lui, un enfant de flex refuse de descendre sous la
+          hauteur de son contenu et le confinement ne prendrait jamais. */}
+      <div className="lg:min-h-0 lg:flex-1">
+        <BlockStyleLab />
+      </div>
     </div>
   );
 }
