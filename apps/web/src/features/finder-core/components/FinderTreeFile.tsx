@@ -370,7 +370,7 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
           'absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-white',
           isPending ? 'bg-orange-400' : 'bg-emerald-500',
         )}
-        aria-label={isPending ? 'En attente' : 'Publié'}
+        aria-label={isPending ? 'En attente' : 'Validé'}
       />
     </span>
   );

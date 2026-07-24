@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { useFinderStore, type StatusFilter } from '@features/finder-core/state/useFinderStore';
 
 /**
- * La lentille de statut : Tous / En attente / Publiés.
+ * La lentille de statut : Tous / En attente / Validés.
  *
  * Avant le chantier « arbre sans strate de statut », cette distinction était
  * un LIEU : `AKFC/pending/…` d'un côté, `AKFC/published/…` de l'autre. On la
@@ -23,7 +23,8 @@ import { useFinderStore, type StatusFilter } from '@features/finder-core/state/u
 const OPTIONS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'Tous' },
   { value: 'pending', label: 'En attente' },
-  { value: 'published', label: 'Publiés' },
+  // `value` inchangé — cf. StatusRadioGroup pour le pourquoi du libellé.
+  { value: 'published', label: 'Validés' },
 ];
 
 export default function StatusFilterBar(): JSX.Element {

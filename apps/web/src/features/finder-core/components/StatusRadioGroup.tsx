@@ -12,9 +12,13 @@ import {
 } from '@features/finder-core/utils/statusFolders';
 import { useStatusChange } from '@features/finder-core/hooks/useStatusChange';
 
+// ⚠️ `value` reste 'published' : c'est la valeur du contrat et de la base.
+// Seul le LIBELLÉ change. Un admin valide un média — il le rend utilisable
+// dans une page — mais ne le publie pas : la mise en ligne dépend de la page
+// qui le référence, et de sa propre date de publication.
 const STATUS_OPTIONS: { value: LifecycleStatus; label: string }[] = [
   { value: 'pending', label: 'En attente' },
-  { value: 'published', label: 'Publié' },
+  { value: 'published', label: 'Validé' },
   { value: 'bin', label: 'Corbeille' },
 ];
 
