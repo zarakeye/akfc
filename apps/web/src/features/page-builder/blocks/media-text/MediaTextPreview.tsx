@@ -181,7 +181,7 @@ export function MediaTextPreview({
 
   const TextColumn = textHtml ? (
     <div
-      className="prose prose-sm max-w-none"
+      className="akfc-prose prose max-w-none"
       dangerouslySetInnerHTML={{ __html: textHtml }}
     />
   ) : null;
@@ -201,7 +201,10 @@ export function MediaTextPreview({
   // flotter l'image à mi-hauteur dès que le texte était plus long qu'elle, et
   // ouvrait le bloc sur un vide asymétrique.
   return (
-    <div className="grid items-start gap-10 md:grid-cols-2">
+    <div
+      className="akfc-block-columns grid items-start md:grid-cols-2"
+      style={{ gap: "var(--akfc-column-gap)" }}
+    >
       {mediaSide === "left" ? (
         <>
           <div>{MediaColumn}</div>
