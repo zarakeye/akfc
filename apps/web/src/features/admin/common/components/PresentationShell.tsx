@@ -21,7 +21,10 @@ export function PresentationShell({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <div>
+    // Même puits que les pages publiques : sans lui, l'aperçu admin
+    // s'étalait sur toute la zone du tableau de bord et ne montrait pas la
+    // largeur que la page aurait en ligne.
+    <div className="akfc-page">
       <Link
         href={listHref}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
