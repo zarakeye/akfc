@@ -410,7 +410,10 @@ export const storageRouter = router({
       // un. Couper au dernier point produirait une pseudo-extension
       // « . BAZZE) Yvonne » et mutilerait le fichier au renommage. On
       // n'accepte donc qu'un suffixe AYANT LA FORME d'une extension.
-      const extensionMatch = EXTENSION_PATTERN.exec(currentName);
+      // Un DOSSIER n'a pas d'extension : « photos.2024 » renommé en
+      // « archives » doit donner « archives », pas « archives.2024 ».
+      const extensionMatch =
+        input.type === "folder" ? null : EXTENSION_PATTERN.exec(currentName);
       const extension = extensionMatch ? extensionMatch[0] : "";
       const targetPath = `${parent}/${cleanName}${extension}`;
 

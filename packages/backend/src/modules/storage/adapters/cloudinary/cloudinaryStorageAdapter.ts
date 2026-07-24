@@ -26,6 +26,7 @@ import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.se
 import {
   moveService,
   renameAsset,
+  moveFolderRecursively,
 } from "@backend/modules/cloudinary/services/move.service";
 import { createUploadSignatures } from "@backend/modules/cloudinary/services/createUploadSignatures.service";
 import { registerUploadedAssets } from "@backend/modules/cloudinary/services/registerUploadedAssets.service";
@@ -347,15 +348,22 @@ export function createCloudinaryStorageAdapter(
           info.resource_type,
         );
       } else {
-        // Les DOSSIERS gardent `moveService` : sa branche folder→folder
-        // concatène elle-même le nom du dossier au parent, d'où le
-        // `targetParentPath` calculé plus haut.
-        const intent: CloudinaryMoveIntent = {
-          source: { type: "folder", fullPath: operation.source.path },
-          target: { type: "folder", fullPath: targetParentPath },
-        };
-
-        await moveService(intent);
+        // ⚠️ Un DOSSIER non plus ne passe pas par `moveService`.
+        //
+        // Sa branche folder→folder reconstruit le nom du dossier depuis la
+        // source, exactement comme `moveFileIntoFolder` le fait pour les
+        // fichiers. Le nom cible était donc écrasé, `targetPrefix` revenait
+        // au chemin d'origine, et chaque asset était renommé sur lui-même —
+        // un renommage silencieusement sans effet.
+        //
+        // Généralisation stricte, ici encore : quand le nom ne change pas,
+        // `operation.target.path` vaut `targetParentPath + '/' + nom`, soit
+        // précisément ce que la branche construisait.
+        void targetParentPath;
+        await moveFolderRecursively(
+          operation.source.path,
+          operation.target.path,
+        );
       }
 
       // ─── Synchro MediaAsset (fullPath + status) ──────────────────────────
@@ -426,6 +434,31 @@ export function createCloudinaryStorageAdapter(
               "status" = COALESCE(${nextStatus}, "status")
           WHERE "appRoot" = ${appRoot}
             AND "fullPath" LIKE ${escLike(oldPrefix) + "%"} ESCAPE '\\';
+        `;
+
+        // ─── Registre `Folder` (table "CloudinaryFolder") ─────────────────
+        //
+        // Les dossiers Cloudinary n'existent pas comme entités : ils sont
+        // dérivés des préfixes de public_id, et ce registre les persiste
+        // pour pouvoir afficher les dossiers VIDES. Sans cette réécriture,
+        // un dossier renommé garde sa ligne à l'ancien chemin et
+        // réapparaît sous son ancien nom, vide, à côté du nouveau.
+        //
+        // Deux mises à jour : la descendance (substitution de préfixe),
+        // puis le dossier lui-même (égalité stricte). Cet ordre est
+        // volontaire — l'inverse ferait qu'un UPDATE de préfixe ne
+        // retrouverait plus ses lignes filles, le parent ayant déjà changé.
+        await prisma.$executeRaw`
+          UPDATE "CloudinaryFolder"
+          SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
+          WHERE "appRoot" = ${appRoot}
+            AND "fullPath" LIKE ${escLike(oldPrefix) + "%"} ESCAPE '\\';
+        `;
+        await prisma.$executeRaw`
+          UPDATE "CloudinaryFolder"
+          SET "fullPath" = ${dstDb}
+          WHERE "appRoot" = ${appRoot}
+            AND "fullPath" = ${srcDb};
         `;
       }
 
