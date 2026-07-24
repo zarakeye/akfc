@@ -102,6 +102,9 @@ export default function ContextMenu({
     }
   }, [x, y]);
 
+  // Marqueur lu par le listener Échap du finder : tant qu'une surface est
+  // empilée, Échap lui appartient. Le DOM sert d'arbitre parce qu'il ne
+  // dépend pas de l'ordre de montage des listeners.
   // ─── Click outside + Escape ──────────────────────────────────────────────
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -126,6 +129,7 @@ export default function ContextMenu({
     <div
       ref={ref}
       role="menu"
+      data-finder-overlay
       style={{
         position: 'fixed',
         top: adjustedPos.y,
