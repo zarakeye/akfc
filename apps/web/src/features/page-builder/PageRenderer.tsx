@@ -83,10 +83,16 @@ export async function PageRenderer({ content }: PageRendererProps) {
   const resolveMedia = (mediaId: string): ResolvedMedia | null =>
     resolvedMap[mediaId] ?? null;
 
-  // Résolution des avatars référencés par les blocs media-text (référence
-  // logique { kind: "avatar", userId } → avatar courant du user).
+  // Résolution des avatars référencés par les blocs media-text ET float-text
+  // (référence logique { kind: "avatar", userId } → avatar courant du user).
+  //
+  // Oublier le float ici ne casserait RIEN à la compilation : le bloc aurait
+  // simplement reçu un resolveAvatar rendant null, donc une image absente,
+  // sans erreur. Le cas d'usage visé étant le portrait d'instructeur en
+  // float, le défaut serait apparu au pire endroit.
   const avatarUserIds = content.blocks.flatMap((b) =>
-    b.type === "media-text" && b.media?.kind === "avatar"
+    (b.type === "media-text" || b.type === "float-text") &&
+    b.media?.kind === "avatar"
       ? [b.media.userId]
       : [],
   );

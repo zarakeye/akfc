@@ -39,6 +39,11 @@ export function extractMediaIdsFromBlock(
     case "tiptap":
       return walkProseMirrorForMediaIds(block.content);
     case "media-text":
+    case "float-text":
+      // Même corps pour les deux : ils partagent le modèle de média (un seul
+      // média, bibliothèque OU avatar) et le texte riche. Seule leur mise en
+      // page diffère, ce qui ne regarde pas l'extraction des références.
+      //
       // Seul un média de bibliothèque a un mediaId à résoudre ; une référence
       // avatar est résolue dynamiquement ailleurs (via User.avatar).
       return [

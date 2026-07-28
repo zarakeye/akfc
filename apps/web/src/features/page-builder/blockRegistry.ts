@@ -6,6 +6,7 @@ import { imageGalleryDefinition } from "./blocks/image-gallery";
 import { audioCollectionDefinition } from "./blocks/audio-collection";
 import { documentListDefinition } from "./blocks/document-list";
 import { mediaTextDefinition } from "./blocks/media-text";
+import { floatTextDefinition } from "./blocks/float-text";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Type du registry                                                       */
@@ -39,6 +40,7 @@ const BLOCK_REGISTRY: BlockRegistry = {
   "document-list": documentListDefinition,
   tiptap: tiptapDefinition,
   "media-text": mediaTextDefinition,
+  "float-text": floatTextDefinition,
 };
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -96,4 +98,5 @@ export const ALL_BLOCK_DEFINITIONS: ReadonlyArray<AnyBlockDefinition> = [
   audioCollectionDefinition,
   documentListDefinition,
   mediaTextDefinition,
+  floatTextDefinition,
 ];

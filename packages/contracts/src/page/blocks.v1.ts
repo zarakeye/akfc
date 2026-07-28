@@ -197,6 +197,39 @@ const mediaTextBlockSchema = blockBaseSchema.extend({
 export type MediaTextBlockV1 = z.infer<typeof mediaTextBlockSchema>;
 
 /* -------------------------------------------------------------------------- */
+/*  Bloc float-text (texte enrobant une image)                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Une image `float`-ée dans une coulée de texte qui l'enrobe. À distinguer du
+ * média-texte : pas de deux colonnes, pas d'alternance de largeurs. Le `side`
+ * est une DONNÉE du bloc (on choisit où l'illustration se pose), pas une
+ * décision de position — un enrobage n'alterne pas.
+ *
+ * Même modèle de média que le média-texte (bibliothèque OU avatar), réutilisé
+ * via `mediaTextItemSchema` et son preprocess tolérant.
+ */
+const floatTextBlockSchema = blockBaseSchema.extend({
+  type: z.literal("float-text"),
+  content: proseMirrorContentSchema.optional(),
+  side: z.enum(["left", "right"]).default("left"),
+  media: z.preprocess((val) => {
+    let v = val;
+    if (Array.isArray(v)) v = v.length > 0 ? v[0] : undefined;
+    if (
+      v &&
+      typeof v === "object" &&
+      !("kind" in (v as Record<string, unknown>))
+    ) {
+      return { kind: "library", ...(v as Record<string, unknown>) };
+    }
+    return v;
+  }, mediaTextItemSchema.optional()),
+});
+
+export type FloatTextBlockV1 = z.infer<typeof floatTextBlockSchema>;
+
+/* -------------------------------------------------------------------------- */
 /*  Union discriminée                                                         */
 /* -------------------------------------------------------------------------- */
 
@@ -206,6 +239,7 @@ export const pageBlockSchemaV1 = z.discriminatedUnion("type", [
   audioCollectionBlockSchema,
   documentListBlockSchema,
   mediaTextBlockSchema,
+  floatTextBlockSchema,
 ]);
 
 export type PageBlockV1 = z.infer<typeof pageBlockSchemaV1>;
