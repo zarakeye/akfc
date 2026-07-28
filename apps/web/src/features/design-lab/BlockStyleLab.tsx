@@ -95,6 +95,8 @@ const KNOBS: Knob[] = [
   { key: "--akfc-base-max", label: "Taille du texte (grand écran)", min: 1, max: 1.5, step: 0.05, unit: "rem", initial: 1.25, anchor: "lab-texte" },
   { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68, anchor: "lab-pleine-largeur" },
   { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5, anchor: "lab-colonnes" },
+  { key: "--akfc-float-width", label: "Largeur image enrobée", min: 20, max: 60, step: 1, unit: "%", initial: 38, anchor: "lab-float" },
+  { key: "--akfc-float-gap", label: "Gouttière d'enrobage", min: 0, max: 4, step: 0.25, unit: "rem", initial: 1.5, anchor: "lab-float" },
   { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0, anchor: "lab-blocs" },
   // Ces trois-là manquaient : les blocs de collection figuraient dans
   // l'aperçu sans qu'aucun curseur ne les atteigne.
@@ -509,6 +511,33 @@ export function BlockStyleLab(): JSX.Element {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        <section id="lab-float" className="akfc-rule-h">
+          <div className="akfc-float-scope">
+            <div className="akfc-float" style={{ "--akfc-float-side": "left" } as CSSProperties}>
+              <figure className="akfc-float-figure m-0">
+                <div className="flex aspect-square w-full items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
+                  image
+                </div>
+              </figure>
+              <div className="akfc-prose prose max-w-none">
+                <p>
+                  Texte enrobant une image flottante. Il commence à droite de
+                  l&apos;image, l&apos;épouse sur toute sa hauteur, puis se
+                  poursuit sous elle en reprenant toute la largeur. Réglez la
+                  largeur de l&apos;image et la gouttière d&apos;enrobage pour
+                  voir la coulée s&apos;ajuster.
+                </p>
+                <p>
+                  Un deuxième paragraphe pour garantir que le texte dépasse la
+                  hauteur de l&apos;image et redescende sous elle — c&apos;est
+                  là qu&apos;on juge l&apos;enrobage.
+                </p>
+              </div>
+              <div className="akfc-float-clear" />
+            </div>
           </div>
         </section>
 

@@ -1296,6 +1296,10 @@ input[type="range"]::-moz-range-thumb {
   --akfc-para-gap: 1em;
   --akfc-heading-gap: 1.8em;
 
+  /* Bloc float : largeur de l'image enrobée et gouttière autour. */
+  --akfc-float-width: 38%;
+  --akfc-float-gap: 1.5rem;
+
   /* Écart entre deux puces. En `em` : il suit la taille du texte, comme
      l'écart entre paragraphes. */
   --akfc-list-gap: 0.35em;
@@ -1524,6 +1528,50 @@ input[type="range"]::-moz-range-thumb {
 @container (min-width: 62rem) {
   .akfc-block-columns {
     grid-template-columns: var(--akfc-col-1) var(--akfc-col-2);
+  }
+}
+
+/* ── Bloc « texte enrobant une image » ────────────────────────────────────
+   L'image est `float`-ée du côté `--akfc-float-side` ; le texte l'enrobe.
+   Deux variables réglables : la largeur de l'image (`--akfc-float-width`) et
+   la gouttière entre l'image et le texte (`--akfc-float-gap`). */
+.akfc-float-scope {
+  container-type: inline-size;
+}
+
+.akfc-float-figure {
+  float: var(--akfc-float-side, left);
+  width: var(--akfc-float-width);
+  margin-block-end: var(--akfc-float-gap);
+  /* `shape-outside` fait épouser au texte le contour de l'image (ici son
+     rectangle arrondi) plutôt qu'un bloc rigide — l'enrobage est plus doux. */
+  shape-outside: inset(0 round 0.375rem);
+}
+
+/* La gouttière va TOUJOURS du côté opposé au flottant : une image à gauche
+   écarte le texte par sa marge droite, une image à droite par sa marge
+   gauche. Le côté se lit sur la variable inline `--akfc-float-side`, portée
+   par le conteneur `.akfc-float`, via le sélecteur d'attribut sur son `style`.
+   Une seule règle par cas, aucune superposition. */
+.akfc-float[style*="left"] .akfc-float-figure {
+  margin-inline-end: var(--akfc-float-gap);
+}
+.akfc-float[style*="right"] .akfc-float-figure {
+  margin-inline-start: var(--akfc-float-gap);
+}
+
+/* Referme le flottant : la coulée de texte reprend toute la largeur après. */
+.akfc-float-clear {
+  clear: both;
+}
+
+/* Repli mobile : sous 34rem, l'enrobage laisserait trop peu de place au
+   texte. L'image passe pleine largeur au-dessus. */
+@container (max-width: 34rem) {
+  .akfc-float-figure {
+    float: none;
+    width: 100%;
+    margin-inline: 0;
   }
 }
 
