@@ -48,16 +48,25 @@ export function InstructorBioEditor(): JSX.Element | null {
   // qu'elle charge, on ne rend rien (la section est optionnelle, pas de
   // squelette a afficher).
   const [content, setContent] = useState<PageContentV1 | null>(null);
+  // Instantané sérialisé de ce qui est ENREGISTRÉ. Comparer le contenu plutôt
+  // que lever un simple drapeau : si l'on défait une modification, l'éditeur
+  // redevient « à jour » au lieu de garder un faux positif jusqu'au
+  // rechargement.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   if (state.isLoading) return null;
   // Non-titulaire : aucune section. C'est le backend qui tranche.
   if (!state.data?.isInstructor) return null;
 
-  const current =
-    content ??
-    (state.data.bio
-      ? parsePageContentV1(state.data.bio)
-      : emptyPageContentV1());
+  const persisted = state.data.bio
+    ? parsePageContentV1(state.data.bio)
+    : emptyPageContentV1();
+  const current = content ?? persisted;
+
+  // Référence : le dernier enregistrement réussi de cette session, sinon ce
+  // qui vient de la base.
+  const baseline = savedSnapshot ?? JSON.stringify(persisted);
+  const dirty = JSON.stringify(current) !== baseline;
 
   return (
     <section className="mt-10 rounded-lg border border-border p-4">
@@ -71,14 +80,30 @@ export function InstructorBioEditor(): JSX.Element | null {
             pour ne pas y figurer.
           </p>
         </div>
-        <button
-          type="button"
-          disabled={save.isPending}
-          onClick={() => save.mutate({ bio: current })}
-          className="shrink-0 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-        >
-          {save.isPending ? "Enregistrement…" : "Enregistrer"}
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          {dirty && (
+            <span className="text-xs font-medium text-amber-600">
+              Modifications non enregistrées
+            </span>
+          )}
+          <button
+            type="button"
+            disabled={save.isPending || !dirty}
+            onClick={() => {
+              // L'instantané est pris AVANT l'appel et posé seulement au
+              // succès : un enregistrement qui échoue ne doit pas faire
+              // croire que le contenu est à jour.
+              const snapshot = JSON.stringify(current);
+              save.mutate(
+                { bio: current },
+                { onSuccess: () => setSavedSnapshot(snapshot) },
+              );
+            }}
+            className="shrink-0 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {save.isPending ? "Enregistrement…" : "Enregistrer"}
+          </button>
+        </div>
       </div>
 
       <PageBuilder
