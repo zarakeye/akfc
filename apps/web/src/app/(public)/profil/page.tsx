@@ -32,45 +32,53 @@ export default function ProfilePage(): JSX.Element {
   }, [data]);
 
   if (isLoading) {
-    return <div className="mx-auto max-w-2xl px-4 py-12">Chargement…</div>;
+    return <div className="akfc-page py-12">Chargement…</div>;
   }
   if (error || !data || !displayUser) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-red-600">
+      <div className="akfc-page py-12 text-red-600">
         Impossible de charger votre profil.
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="scale-150">
-          <UserPortrait user={displayUser} size="md" />
+    <div className="akfc-page py-12">
+      {/* Identité et coordonnées : du contenu de formulaire, qui se lit mieux
+          à la mesure. Étalés sur tout le puits, cinq champs courts en deux
+          colonnes donneraient des lignes minuscules séparées par du vide. Le
+          puits large existe pour le builder de bio, plus bas. */}
+      <section className="akfc-measure-block">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="scale-150">
+            <UserPortrait user={displayUser} size="md" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {formatUserName(displayUser)}
+            </h1>
+            <p className="text-sm text-gray-500">{data.email}</p>
+          </div>
+          <Link
+            href="/profil/edit?from=profil"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+          >
+            <Pencil className="h-4 w-4" />
+            Éditer
+          </Link>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">{formatUserName(displayUser)}</h1>
-          <p className="text-sm text-gray-500">{data.email}</p>
-        </div>
-        <Link
-          href="/profil/edit?from=profil"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
-        >
-          <Pencil className="h-4 w-4" />
-          Éditer
-        </Link>
-      </div>
 
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-        <Field label="Prénom" value={data.firstName} />
-        <Field label="Nom" value={data.lastName} />
-        <Field label="Pseudo" value={data.pseudo} />
-        <Field label="Téléphone" value={data.phone} />
-        <Field label="Date de naissance" value={data.birthDate} />
-        <div className="sm:col-span-2">
-          <Field label="À propos" value={data.aboutMe} />
-        </div>
-      </dl>
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <Field label="Prénom" value={data.firstName} />
+          <Field label="Nom" value={data.lastName} />
+          <Field label="Pseudo" value={data.pseudo} />
+          <Field label="Téléphone" value={data.phone} />
+          <Field label="Date de naissance" value={data.birthDate} />
+          <div className="sm:col-span-2">
+            <Field label="À propos" value={data.aboutMe} />
+          </div>
+        </dl>
+      </section>
 
       {/* Ne s'affiche que pour un instructeur titulaire (le composant se
           rend `null` sinon, sur décision du backend). */}

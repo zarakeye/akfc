@@ -28,7 +28,7 @@ export default async function PublicStagesListPage(): Promise<JSX.Element> {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="akfc-page py-12">
       <header className="mb-10">
         <h1 className="mb-2 text-3xl font-bold">Nos stages</h1>
         <p className="text-muted-foreground">
