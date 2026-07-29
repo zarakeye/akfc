@@ -84,7 +84,7 @@ export default async function PublicCoursePage({
   const instructorName = formatInstructorName(course.instructor);
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-12">
+    <article className="akfc-page py-12">
       <header className="mb-8 border-b border-border pb-6">
         <h1 className="text-3xl font-bold">{course.discipline.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
