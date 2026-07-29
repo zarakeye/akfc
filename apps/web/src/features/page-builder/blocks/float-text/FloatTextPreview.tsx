@@ -50,6 +50,10 @@ export function FloatTextPreview({
 }): JSX.Element | null {
   const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
   const [resolution, setResolution] = useState<Resolution>("idle");
+  // Distinct de `resolution` : la résolution peut réussir (on a une URL) et
+  // le binaire échouer quand même. Avec un `alt` vide, une image cassée
+  // n'occupe aucune place — l'écran reste blanc sans le moindre signe.
+  const [imageFailed, setImageFailed] = useState(false);
 
   // Capture locale : c'est elle qui permet à TypeScript de conserver le
   // rétrécissement obtenu par `m.kind === "avatar"` jusque dans les closures
@@ -67,6 +71,7 @@ export function FloatTextPreview({
     }
 
     setMedia(null);
+    setImageFailed(false);
     setResolution("loading");
 
     if (m.kind === "avatar") {
@@ -161,13 +166,17 @@ export function FloatTextPreview({
 
   return (
     <div className="akfc-float-scope">
-      {!media && resolution !== "idle" && (
+      {(!media || imageFailed) && (
         <p className="mb-2 text-xs text-muted-foreground">
-          {resolution === "loading"
-            ? "Chargement du média…"
-            : resolution === "missing"
-              ? "Média sélectionné introuvable (supprimé, en attente, ou administrateur sans avatar)."
-              : "Échec du chargement du média."}
+          {imageFailed
+            ? `Image résolue mais non chargée (le binaire n'a pas répondu) : ${media?.url ?? ""}`
+            : resolution === "idle"
+              ? "Aucune image n'est associée à ce bloc : le choix d'avatar n'a rien enregistré, ou aucune image n'a encore été sélectionnée."
+              : resolution === "loading"
+                ? "Chargement du média…"
+                : resolution === "missing"
+                  ? "Média sélectionné introuvable (supprimé, en attente, ou administrateur sans avatar)."
+                  : "Échec de la requête de résolution du média."}
         </p>
       )}
       <div
@@ -192,6 +201,7 @@ export function FloatTextPreview({
               <img
                 src={media.url}
                 alt={media.caption ?? ""}
+                onError={() => setImageFailed(true)}
                 className="block w-full rounded-md object-cover"
               />
             )}
