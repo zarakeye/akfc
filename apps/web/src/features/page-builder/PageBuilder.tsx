@@ -26,6 +26,17 @@ export interface PageBuilderProps {
   adapter: FileAdapter;
   /** Racine de l'arborescence média (valeur d'`APP_ROOT`). */
   appRoot: string;
+  /**
+   * Types de blocs que cet hôte autorise. ABSENT = tous.
+   *
+   * Liste d'AUTORISATION : un bloc ajouté au registre plus tard n'apparaît
+   * pas dans un builder restreint tant qu'il n'y a pas été inscrit.
+   *
+   * Ne porte que sur l'AJOUT. Un bloc déjà présent dans le contenu reste
+   * affiché et éditable même s'il n'est plus autorisé — on ne fait pas
+   * disparaître du contenu au motif qu'un réglage a changé.
+   */
+  allowedBlocks?: readonly PageBlockKindV1[];
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -62,6 +73,7 @@ export function PageBuilder({
   onChange,
   adapter,
   appRoot,
+  allowedBlocks,
 }: PageBuilderProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -148,7 +160,7 @@ export function PageBuilder({
           ));
         })()}
 
-        <AddBlockMenu onAdd={handleAdd} />
+        <AddBlockMenu onAdd={handleAdd} allowedBlocks={allowedBlocks} />
       </div>
     </PageBuilderProvider>
   );

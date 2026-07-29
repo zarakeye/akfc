@@ -24,6 +24,17 @@ import { APP_ROOT } from "@config/app";
  * meme parse, meme adapter. Le format en base est un Json, comme la
  * description de discipline — rien a convertir.
  */
+/**
+ * Palette de la bio d'instructeur : le seul bloc « texte enrobant une image ».
+ *
+ * Un bloc suffit parce qu'il dégénère proprement — sans image choisie, il rend
+ * du texte simple à la mesure. Une section purement textuelle est donc ce même
+ * bloc sans image, et il n'y a pas lieu d'ouvrir aussi le bloc texte.
+ *
+ * Si l'usage prouve le contraire, ajouter "tiptap" ici suffit.
+ */
+const INSTRUCTOR_BIO_BLOCKS = ["float-text"] as const;
+
 export function InstructorBioEditor(): JSX.Element | null {
   const state = trpc.user.getMyInstructorState.useQuery();
   const utils = trpc.useUtils();
@@ -75,6 +86,7 @@ export function InstructorBioEditor(): JSX.Element | null {
         onChange={setContent}
         adapter={finderStorageAdapter}
         appRoot={APP_ROOT}
+        allowedBlocks={INSTRUCTOR_BIO_BLOCKS}
       />
 
       {save.isSuccess && (
