@@ -165,7 +165,7 @@ export function FloatTextPreview({
   }
 
   return (
-    <div className="akfc-float-scope">
+    <div className="akfc-float-scope akfc-measure-block">
       {(!media || imageFailed) && (
         <p className="mb-2 text-xs text-muted-foreground">
           {imageFailed
