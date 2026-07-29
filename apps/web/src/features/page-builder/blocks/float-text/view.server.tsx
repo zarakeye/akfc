@@ -135,8 +135,15 @@ export function FloatTextView({
   // Les deux présents : enrobage. `akfc-float-scope` est le conteneur de
   // requête (comme `akfc-block-scope` pour le média-texte) ; `akfc-float`
   // porte le float et le `clear`.
+  //
+  // PAS de `akfc-measure-block` ici, contrairement aux cas dégénérés. Avec un
+  // float, la largeur du texte vaut « conteneur moins image » : brider le
+  // conteneur à la mesure ne laisserait au texte que 62 % de 68ch, une
+  // quarantaine de caractères. Le conteneur prend donc le puits de page, et
+  // le texte enrobant retombe sur la mesure de lui-même (68rem × 62 % ≈ 68ch).
+  // La mesure n'est pas imposée au bloc : elle est le résultat de sa géométrie.
   return (
-    <div className="akfc-float-scope akfc-measure-block">
+    <div className="akfc-float-scope">
       <div
         className="akfc-float"
         style={

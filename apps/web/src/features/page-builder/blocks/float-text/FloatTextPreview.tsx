@@ -160,7 +160,16 @@ export function FloatTextPreview({
   }
 
   return (
-    <div className="akfc-float-scope akfc-measure-block">
+    <div className="akfc-float-scope">
+      {!media && resolution !== "idle" && (
+        <p className="mb-2 text-xs text-muted-foreground">
+          {resolution === "loading"
+            ? "Chargement du média…"
+            : resolution === "missing"
+              ? "Média sélectionné introuvable (supprimé, en attente, ou administrateur sans avatar)."
+              : "Échec du chargement du média."}
+        </p>
+      )}
       <div
         className="akfc-float"
         style={
