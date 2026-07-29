@@ -8,6 +8,7 @@ import {
   MediaListEditor,
   type MediaPreviewProps,
 } from "../../components/MediaListEditor";
+import { AudioCollectionPreview } from "./AudioCollectionPreview";
 
 type AudioItem = AudioCollectionBlockV1["items"][number];
 
@@ -32,17 +33,28 @@ export function AudioCollectionEditor({
   onChange,
 }: BlockEditorProps<AudioCollectionBlockV1>) {
   return (
-    <MediaListEditor<AudioItem>
-      items={block.items}
-      onChange={(items) => onChange({ ...block, items })}
-      itemFactory={(mediaId) => ({ mediaId })}
-      getItemText={(item) => item.title}
-      setItemText={(item, value) => ({ ...item, title: value ?? undefined })}
-      textPlaceholder="Titre (optionnel)"
-      addLabel="Ajouter des pistes audio"
-      emptyStateLabel="Aucune piste — clique sur « Ajouter des pistes audio » pour en sélectionner."
-      renderPreview={AudioPreview}
-    />
+    <div className="space-y-4">
+      <MediaListEditor<AudioItem>
+        items={block.items}
+        onChange={(items) => onChange({ ...block, items })}
+        itemFactory={(mediaId) => ({ mediaId })}
+        getItemText={(item) => item.title}
+        setItemText={(item, value) => ({ ...item, title: value ?? undefined })}
+        textPlaceholder="Titre (optionnel)"
+        addLabel="Ajouter des pistes audio"
+        emptyStateLabel="Aucune piste — clique sur « Ajouter des pistes audio » pour en sélectionner."
+        renderPreview={AudioPreview}
+      />
+
+      <div className="space-y-2 border-t border-dashed border-border pt-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Aperçu public
+        </span>
+        <div className="rounded-md bg-muted/30 p-4">
+          <AudioCollectionPreview block={block} />
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -4,6 +4,7 @@ import type { ImageGalleryBlockV1, ImageGalleryLayout } from "@contracts/page";
 
 import type { BlockEditorProps } from "../../BlockDefinition.types";
 import { MediaListEditor } from "../../components/MediaListEditor";
+import { ImageGalleryPreview } from "./ImageGalleryPreview";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Sélecteur de layout                                                    */
@@ -100,6 +101,15 @@ export function ImageGalleryEditor({
           );
         }}
       />
+
+      <div className="space-y-2 border-t border-dashed border-border pt-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Aperçu public
+        </span>
+        <div className="rounded-md bg-muted/30 p-4">
+          <ImageGalleryPreview block={block} />
+        </div>
+      </div>
     </div>
   );
 }
