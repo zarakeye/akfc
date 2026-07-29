@@ -139,20 +139,6 @@ export function FloatTextEditor({
             }
           />
         </div>
-
-        {/* DIAGNOSTIC — échafaudage temporaire, à retirer.
-            Affiche l'état réel de `block.media`, celui-là même que l'aperçu
-            reçoit. Permet de distinguer « le clic n'écrit rien » de « le clic
-            écrit mais l'aperçu ne le voit pas », deux causes qui appellent
-            des correctifs opposés. */}
-        <p className="text-[11px] text-muted-foreground">
-          État du bloc :{" "}
-          {block.media
-            ? block.media.kind === "avatar"
-              ? `avatar (${block.media.userId})`
-              : `bibliothèque (${block.media.mediaId})`
-            : "aucune image"}
-        </p>
       </div>
 
       {/* Texte */}

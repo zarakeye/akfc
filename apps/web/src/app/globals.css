@@ -1560,6 +1560,21 @@ input[type="range"]::-moz-range-thumb {
   margin-inline-start: var(--akfc-float-gap);
 }
 
+/* Dans un bloc float, la prose REMPLIT son conteneur au lieu de se re-brider
+   et se re-centrer toute seule (`.akfc-prose` porte `max-width: measure` et
+   `margin-inline: auto`). Sans cette règle, le texte serait centré dans un
+   box plus étroit que le conteneur pendant que l'image resterait collée au
+   bord gauche de celui-ci : deux bords gauches distincts, et l'image qui
+   dépasse de la colonne.
+
+   C'est le CONTENEUR qui porte la mesure ; le texte n'a plus son mot à dire.
+   L'alignement devient structurel au lieu de tenir à l'égalité fortuite de
+   deux largeurs, qui se romprait au premier réglage de la mesure. */
+.akfc-float .akfc-prose {
+  max-width: none;
+  margin-inline: 0;
+}
+
 /* Referme le flottant : la coulée de texte reprend toute la largeur après. */
 .akfc-float-clear {
   clear: both;
