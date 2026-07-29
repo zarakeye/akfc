@@ -1565,9 +1565,15 @@ input[type="range"]::-moz-range-thumb {
   clear: both;
 }
 
-/* Repli mobile : sous 34rem, l'enrobage laisserait trop peu de place au
-   texte. L'image passe pleine largeur au-dessus. */
-@container (max-width: 34rem) {
+/* Repli mobile : sous 26rem, l'enrobage laisserait trop peu de place au
+   texte. L'image passe pleine largeur au-dessus.
+   
+   Le seuil était à 34rem, ce qui frôlait la largeur nominale du bloc quand
+   son conteneur était encore bridé à la mesure (68ch ≈ 34–36rem) : la
+   bascule se déclenchait donc presque toujours, et l'enrobage ne se voyait
+   jamais. Il ne doit attraper que les contextes vraiment étroits — téléphone,
+   barre latérale. */
+@container (max-width: 26rem) {
   .akfc-float-figure {
     float: none;
     width: 100%;
