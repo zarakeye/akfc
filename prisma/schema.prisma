@@ -1239,5 +1239,19 @@ model EventDiscipline {
 model SiteStyle {
   id        Int      @id @default(1)
   variables Json
+
+  /// Longueur maximale d'une présentation synthétique de discipline, en
+  /// caractères de texte brut.
+  ///
+  /// Colonne à part et non entrée de `variables` : ce n'est pas une propriété
+  /// CSS et cela ne finira jamais dans une balise `<style>`.
+  summaryMaxChars Int @default(600)
+
+  /// Hauteur repliée des cartes d'accueil, en pixels.
+  ///
+  /// Une hauteur et non un nombre de caractères : c'est elle qui rend les
+  /// cartes égales, les mots n'ayant pas tous la même longueur.
+  cardCollapsedHeight Int @default(220)
+
   updatedAt DateTime @updatedAt
 }
