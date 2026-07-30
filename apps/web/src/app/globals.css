@@ -1296,8 +1296,22 @@ input[type="range"]::-moz-range-thumb {
   --akfc-para-gap: 1em;
   --akfc-heading-gap: 1.8em;
 
-  /* Bloc float : largeur de l'image enrobée et gouttière autour. */
-  --akfc-float-width: 38%;
+  /* Bloc float : largeur de l'image enrobée et gouttière autour.
+
+     24 % et non 38 % : le conteneur du bloc fait la MESURE du texte (68ch),
+     donc chaque point pris par l'image est retiré à la ligne de lecture.
+
+       image 24 %  →  49 caractères par ligne   (plage confortable 45–75)
+       image 38 %  →  39 caractères             (sous le seuil)
+       image 60 %  →  24 caractères             (deux mots par ligne)
+
+     L'ancien 38 % venait des ratios du média-texte, où l'image occupe une
+     COLONNE à part et ne prend rien au texte. Les deux réglages n'ont pas la
+     même conséquence et ne peuvent pas partager la même échelle.
+
+     À cette taille l'image est une VIGNETTE — portrait, logo, schéma. Pour
+     une grande image avec du texte à côté, c'est le média-texte qu'il faut. */
+  --akfc-float-width: 24%;
   --akfc-float-gap: 1.5rem;
 
   /* Écart entre deux puces. En `em` : il suit la taille du texte, comme

@@ -95,7 +95,10 @@ const KNOBS: Knob[] = [
   { key: "--akfc-base-max", label: "Taille du texte (grand écran)", min: 1, max: 1.5, step: 0.05, unit: "rem", initial: 1.25, anchor: "lab-texte" },
   { key: "--akfc-measure", label: "Justification (caractères)", min: 45, max: 90, step: 1, unit: "ch", initial: 68, anchor: "lab-pleine-largeur" },
   { key: "--akfc-column-gap", label: "Gouttière entre colonnes", min: 0, max: 8, step: 0.25, unit: "rem", initial: 2.5, anchor: "lab-colonnes" },
-  { key: "--akfc-float-width", label: "Largeur image enrobée", min: 20, max: 60, step: 1, unit: "%", initial: 38, anchor: "lab-float" },
+  // Plage 12–32 % et non 20–60 % : au-delà de 32 %, la colonne enrobante
+  // passe sous 45 caractères et devient illisible. Un curseur qui permet de
+  // casser la page n'est pas un réglage, c'est un piège.
+  { key: "--akfc-float-width", label: "Largeur image enrobée", min: 12, max: 32, step: 1, unit: "%", initial: 24, anchor: "lab-float" },
   { key: "--akfc-float-gap", label: "Gouttière d'enrobage", min: 0, max: 4, step: 0.25, unit: "rem", initial: 1.5, anchor: "lab-float" },
   { key: "--akfc-rule-width", label: "Épaisseur des filets", min: 0, max: 6, step: 1, unit: "px", initial: 0, anchor: "lab-blocs" },
   // Ces trois-là manquaient : les blocs de collection figuraient dans
