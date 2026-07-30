@@ -13,7 +13,7 @@ import { Superscript } from "@tiptap/extension-superscript";
 
 import { trpcClient } from "@trpc/trpcClient";
 import type { MediaTextBlockV1 } from "@contracts/page";
-import { publicIdToUrl } from "@features/social/userDisplay";
+import { avatarUrlFor } from "@features/social/userDisplay";
 
 /**
  * Preview CLIENT du bloc media-text, affichée sous l'éditeur dans le builder.
@@ -88,7 +88,9 @@ export function MediaTextPreview({
           const user = admins.find((a) => a.id === m.userId);
           if (user?.avatar) {
             setMedia({
-              url: publicIdToUrl(user.avatar),
+              // Même URL que la page publique : un aperçu qui emprunte un
+              // autre chemin que le rendu final n'est pas un aperçu.
+              url: avatarUrlFor(user.id),
               kind: "image",
               posterUrl: null,
               caption: m.caption,

@@ -3,7 +3,7 @@
 import { useEffect, useState, type JSX } from "react";
 
 import { trpcClient } from "@trpc/trpcClient";
-import { publicIdToUrl } from "@features/social/userDisplay";
+import { avatarUrlFor } from "@features/social/userDisplay";
 
 interface AdminCandidate {
   id: string;
@@ -81,7 +81,7 @@ export function AvatarPicker({
               {a.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={publicIdToUrl(a.avatar)}
+                  src={avatarUrlFor(a.id)}
                   alt=""
                   className="h-full w-full object-cover"
                 />

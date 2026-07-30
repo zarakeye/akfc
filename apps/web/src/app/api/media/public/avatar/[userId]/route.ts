@@ -23,11 +23,18 @@ import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cl
  */
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
     const { userId } = await params;
+
+    // `v` = version Cloudinary du binaire, transmise par le store d'avatar.
+    // Sans elle, un avatar remplacé resterait caché derrière le cache alors
+    // que son URL, elle, ne change pas.
+    const vParam = new URL(req.url).searchParams.get("v");
+    const parsed = vParam ? Number(vParam) : undefined;
+    const version = parsed && Number.isFinite(parsed) ? parsed : undefined;
     if (!userId) return new Response("Missing userId", { status: 400 });
 
     const user = await prisma.user.findUnique({
@@ -40,7 +47,7 @@ export async function GET(
     // que le rendu affiche ses initiales.
     if (!user?.avatar) return new Response("Not found", { status: 404 });
 
-    const asset = await fetchAuthenticatedAsset(user.avatar, "large");
+    const asset = await fetchAuthenticatedAsset(user.avatar, "large", version);
     if (!asset || !asset.ok || !asset.body) {
       return new Response("Not found", { status: 404 });
     }
