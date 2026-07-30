@@ -26,9 +26,11 @@ import { disciplineFamilyRouter } from "@backend/modules/disciplineFamilies/rout
 import { galleryRouter } from "@backend/modules/galleries/router";
 import { breakingNewsRouter } from "@backend/modules/breakingNews/router";
 import { siteStyleRouter } from "@backend/modules/siteStyle/router";
+import { sitePageRouter } from "@backend/modules/sitePages/router";
 
 export const appRouter = router({
   siteStyle: siteStyleRouter,
+  sitePage: sitePageRouter,
   auth: authRouter,
   user: userRouter,
   avatar: avatarRouter,
