@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { Discipline, DisciplineType } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { trpc } from "@/core/trpc/trpcClient";
+import { trpc, trpcClient } from "@/core/trpc/trpcClient";
+import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
 import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
@@ -27,23 +28,64 @@ import {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Palette du builder de présentation synthétique : le seul bloc
- * « média + texte ».
+ * Palette du builder de présentation synthétique : le seul bloc TEXTE.
  *
- * Et NON le bloc « texte enrobant une image », qui a été essayé et ne
- * convient pas : un enrobage suppose un texte assez long pour longer l'image
- * puis se poursuivre dessous. Dans une carte, cette place n'existe pas — le
- * texte reste coincé dans la bande étroite qui longe l'image.
+ * L'image ne passe plus par un bloc mais par un champ à part. Les blocs
+ * porteurs d'images — média-texte, texte enrobant une image — ont chacun
+ * leur mise en page propre : ratios, côté, seuils de bascule. Pour une carte
+ * dont la disposition est fixe, c'est du bagage inutile, et il s'est retourné
+ * contre nous.
  *
- * Le média-texte, lui, passe à UNE colonne sous 44rem avec le média
- * AU-DESSUS du texte : c'est exactement l'ordre de lecture d'une carte, et
- * les cartes d'accueil sont toujours sous ce seuil.
- *
- * La restriction reste ce qui garantit que toutes les cartes se ressemblent :
- * un builder complet y autoriserait galeries et listes, et l'accueil
- * deviendrait un patchwork qu'aucune règle de style ne rattraperait.
+ * Ne restant que du texte, plus rien dans le contenu ne peut décider de la
+ * mise en page : la carte dispose, et elle seule.
  */
-const SUMMARY_BLOCKS = ["media-text"] as const;
+const SUMMARY_BLOCKS = ["tiptap"] as const;
+
+/**
+ * Défait une présentation rédigée AVANT la refonte, sans rien écrire en base.
+ *
+ * L'ancien format rangeait texte et image dans un même bloc (« média-texte »
+ * ou « texte enrobant une image »), désormais hors palette. Sans cette
+ * reprise, ouvrir une fiche existante afficherait un builder vide et ferait
+ * perdre le texte au premier enregistrement.
+ *
+ * Le texte de chaque bloc devient un bloc texte ordinaire ; la première image
+ * de BIBLIOTHÈQUE rencontrée alimente le champ image.
+ *
+ * Les images d'avatar sont ignorées à dessein : un avatar n'est pas un
+ * `MediaAsset` et n'a pas d'identifiant que ce champ puisse porter. Mieux
+ * vaut un champ visiblement vide qu'une référence silencieusement fausse.
+ */
+function splitLegacySummary(raw: unknown): {
+  text: PageContentV1;
+  mediaId: string | null;
+} {
+  const parsed = parsePageContentV1(raw);
+
+  const carrier = parsed.blocks.find(
+    (block) =>
+      (block.type === "media-text" || block.type === "float-text") &&
+      block.media?.kind === "library",
+  );
+  const mediaId =
+    carrier &&
+    (carrier.type === "media-text" || carrier.type === "float-text") &&
+    carrier.media?.kind === "library"
+      ? carrier.media.mediaId
+      : null;
+
+  const blocks: PageContentV1["blocks"] = parsed.blocks.flatMap((block) => {
+    if (block.type === "tiptap") return [block];
+    if (block.type === "media-text" || block.type === "float-text") {
+      return [{ id: block.id, type: "tiptap" as const, content: block.content ?? {} }];
+    }
+    // Galeries, audios, documents : sans place dans une carte, et sans texte
+    // à préserver. On les laisse tomber plutôt que de les rendre inéditables.
+    return [];
+  });
+
+  return { text: { version: 1, blocks }, mediaId };
+}
 
 export interface DisciplineFormInput {
   name: string;
@@ -59,6 +101,8 @@ export interface DisciplineFormInput {
    * discipline ne figure pas sur l'accueil.
    */
   summary: PageContentV1;
+  /** Image de la carte d'accueil. `null` = carte sans illustration. */
+  summaryMediaId: string | null;
   categoryId: number;
   instructorId: string;
 }
@@ -137,9 +181,27 @@ export function DisciplineForm({
   const [description, setDescription] = useState<PageContentV1>(
     initial ? parsePageContentV1(initial.description) : emptyPageContentV1(),
   );
+  // Reprise de l'ancien format, calculée à chaque rendu mais consommée
+  // uniquement à l'initialisation des états ci-dessous : ouvrir une fiche
+  // n'écrit rien.
+  const legacy = splitLegacySummary(initial?.summary);
+
   const [summary, setSummary] = useState<PageContentV1>(
-    initial ? parsePageContentV1(initial.summary) : emptyPageContentV1(),
+    initial ? legacy.text : emptyPageContentV1(),
   );
+  const [summaryMediaId, setSummaryMediaId] = useState<string | null>(
+    initial ? (initial.summaryMediaId ?? legacy.mediaId) : null,
+  );
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Résolution de l'image choisie, pour l'aperçu du formulaire.
+  const summaryImage = trpc.media.resolveByIds.useQuery(
+    { mediaIds: summaryMediaId ? [summaryMediaId] : [] },
+    { enabled: summaryMediaId !== null },
+  );
+  const summaryImageUrl = summaryMediaId
+    ? (summaryImage.data?.[summaryMediaId]?.url ?? null)
+    : null;
   // Réglages éditoriaux PARTAGÉS (une seule ligne SiteStyle, comme le
   // laboratoire). Le contrôle est ici pour qu'on puisse l'essayer sans
   // changer de page ; la valeur, elle, vaut pour toutes les disciplines.
@@ -235,6 +297,7 @@ export function DisciplineForm({
         originId,
         description,
         summary,
+        summaryMediaId,
         categoryId,
         instructorId,
       });
@@ -387,6 +450,46 @@ export function DisciplineForm({
           carte, l&apos;image se place au-dessus du texte. Laissez vide pour
           que cette discipline ne figure pas sur l&apos;accueil.
         </p>
+        <div className="mb-4 space-y-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Image de la carte
+          </span>
+          <div className="flex items-start gap-3">
+            <div className="h-24 w-40 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+              {summaryImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={summaryImageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  {summaryMediaId ? "Chargement…" : "Aucune image"}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+              >
+                {summaryMediaId ? "Remplacer l'image" : "Choisir une image"}
+              </button>
+              {summaryMediaId && (
+                <button
+                  type="button"
+                  onClick={() => setSummaryMediaId(null)}
+                  className="text-left text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Retirer l&apos;image
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <PageBuilder
           value={summary}
           onChange={setSummary}
@@ -394,6 +497,30 @@ export function DisciplineForm({
           appRoot={APP_ROOT}
           allowedBlocks={SUMMARY_BLOCKS}
         />
+
+        {pickerOpen && (
+          <MediaPicker
+            open
+            adapter={finderStorageAdapter}
+            rootPath={APP_ROOT}
+            onClose={() => setPickerOpen(false)}
+            onSubmit={(paths) => {
+              setPickerOpen(false);
+              if (paths.length === 0) return;
+              // Le picker rend des CHEMINS ; la conversion en identifiant est
+              // la même que celle du builder, pour que les deux voies
+              // produisent exactement la même référence.
+              void trpcClient.media.resolveByPaths
+                .query({ appRoot: APP_ROOT, paths })
+                .then((resolved) => {
+                  const found = Object.values(resolved).find(
+                    (id): id is string => id !== null,
+                  );
+                  if (found) setSummaryMediaId(found);
+                });
+            }}
+          />
+        )}
         <p
           className={
             summaryOverLimit
