@@ -376,6 +376,14 @@ model Discipline {
   /// l'accueil, sans booléen supplémentaire.
   summary Json @default("{\"version\":1,\"blocks\":[]}")
 
+  /// Image de la carte de présentation synthétique.
+  ///
+  /// Identifiant de `MediaAsset` en texte simple et non relation Prisma :
+  /// c'est la convention des blocs du PageBuilder, qui stockent des `mediaId`
+  /// bruts. Deux régimes de référence pour la même chose seraient une source
+  /// de confusion durable.
+  summaryMediaId String?
+
   /// Catégorie d'appartenance (NOT NULL).
   categoryId Int
 
