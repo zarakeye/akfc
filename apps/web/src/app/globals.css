@@ -1549,8 +1549,35 @@ input[type="range"]::-moz-range-thumb {
    L'image est `float`-ée du côté `--akfc-float-side` ; le texte l'enrobe.
    Deux variables réglables : la largeur de l'image (`--akfc-float-width`) et
    la gouttière entre l'image et le texte (`--akfc-float-gap`). */
+/* akfc-float-scope-width-fix */
 .akfc-float-scope {
   container-type: inline-size;
+
+  /* Largeur DÉFINIE, et elle est indispensable — sans elle le bloc
+     s'effondre à zéro dans la page publique.
+
+     La vue du float est le seul bloc à porter à la fois cette classe et
+     `.akfc-measure-block`, qui pose `margin-inline: auto`. Dans le
+     `flex flex-col` de `PageRenderer`, les deux se contredisent :
+
+       1. Un élément flex dont une marge TRANSVERSALE vaut `auto` n'est pas
+          étiré — il retombe sur sa largeur intrinsèque.
+       2. `container-type: inline-size` établit un confinement de taille :
+          pour se dimensionner, l'élément ignore son contenu. Sa largeur
+          intrinsèque vaut donc zéro.
+
+     D'où un texte à un mot par ligne et une image flottante invisible,
+     puisqu'elle est dimensionnée en pourcentage de cette largeur. L'aperçu du
+     builder n'étant PAS dans un conteneur flex, il se comportait
+     normalement — ce qui rendait le défaut invisible côté édition.
+
+     `100%` est une valeur explicite : l'élément ne dépend plus de sa largeur
+     intrinsèque, et le confinement n'a plus rien à effondrer. `max-width` le
+     plafonne toujours à la mesure, `margin-inline: auto` le centre toujours.
+
+     Le média-texte échappe au piège faute de marge automatique sur son propre
+     conteneur de requête (`.akfc-block-scope`). */
+  width: 100%;
 }
 
 .akfc-float-figure {
