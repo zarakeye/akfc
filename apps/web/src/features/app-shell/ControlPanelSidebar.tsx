@@ -135,6 +135,20 @@ export default function ControlPanelSidebar(): JSX.Element {
               </div>
             </li>
 
+            {/* Pages du site */}
+            <li>
+              <div className="flex">
+                <button
+                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
+                  onClick={() => {
+                    router.push("/dashboard/site-pages/association");
+                  }}
+                >
+                  Page « L&apos;association »
+                </button>
+              </div>
+            </li>
+
             {/* Familles de disciplines */}
             <li>
               <div className="flex">

@@ -23,6 +23,7 @@ export default function Header() {
   const [activitiesHover, setActivitiesHover] = useState<boolean>(false);
   const [kunfuHover, setKungFuHover] = useState<boolean>(false);
   const [documentationHover, setDocumentationHover] = useState<boolean>(false);
+  const [aboutHover, setAboutHover] = useState<boolean>(false);
 
   return (
     <header className="flex justify-between items-center bg-black shadow-md">
@@ -66,12 +67,35 @@ export default function Header() {
         >
           Galeries
         </Link>
-        <Link 
-          href="/about" 
-          className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/about" ? "text-[20px]" : ""}`}
+        <div
+          onMouseEnter={() => setAboutHover(true)}
+          onMouseLeave={() => setAboutHover(false)}
+          className={`relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname.startsWith("/about") ? "text-[20px]" : ""}`}
         >
-          À propos
-        </Link>
+          <span>Qui sommes-nous&nbsp;?</span>
+          <Image
+            src="/chevron-white.svg"
+            alt=""
+            aria-hidden="true"
+            width={30}
+            height={30}
+            className={`transition-transform duration-300 ${aboutHover ? 'rotate-180' : ''}`}
+          />
+          <div className={`${aboutHover ? 'block' : 'hidden'} absolute z-20 top-full left-1/2 transform -translate-x-1/2 w-44 bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}>
+            <Link
+              href="/about"
+              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            >
+              L&apos;association
+            </Link>
+            <Link
+              href="/about/instructeurs"
+              className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+            >
+              Nos instructeurs
+            </Link>
+          </div>
+        </div>
         <Link
           href="/contacts"
           className={`text-white transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669] ${pathname === "/contacts" ? "active" : ""}`}
