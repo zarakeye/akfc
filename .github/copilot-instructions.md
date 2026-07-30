@@ -81,3 +81,10 @@ Put values in `.env.local` for local development.
 ---
 
 If anything is unclear or you want more details about a specific area (Cloudinary flows, session lifecycle, adding background jobs, or standard code examples), tell me which section to expand and I will iterate. ✅
+
+<!-- mermaid-ai-skills:start -->
+## Mermaid Diagrams
+
+When the user asks to create, edit, or visualize a diagram, follow the
+instructions in `.github/instructions/mermaid.instructions.md`.
+<!-- mermaid-ai-skills:end -->

@@ -1,6 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 import type { ResolvedMedia } from "@contracts/page";
 
 /**
@@ -28,10 +27,11 @@ export async function resolveAvatarsByUserIds(
 
   for (const user of users) {
     if (!user.avatar) continue; // pas d'avatar → reste null (placeholder)
-    const url = buildMediaProxyUrl(
-      { publicId: user.avatar, fullPath: "" },
-      "public",
-    );
+    // Route publique dédiée, et non le proxy général : celui-ci exige une
+    // session sans condition (il sert aussi des documents personnels), donc
+    // il rendait tout avatar invisible aux visiteurs anonymes — ici comme sur
+    // la page des instructeurs.
+    const url = `/api/media/public/avatar/${encodeURIComponent(user.id)}`;
     out[user.id] = {
       url,
       kind: "image",
