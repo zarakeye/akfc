@@ -14,6 +14,7 @@ import { PostCard } from "@features/social/PostCard";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { DisciplineSummaryCards } from "@features/disciplines/DisciplineSummaryCards";
 import { parsePageContentV1 } from "@contracts/page";
+import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
 
 /**
  * Page d'accueil PUBLIQUE du club (AKFC).
@@ -41,8 +42,25 @@ export default async function HomePage(): Promise<JSX.Element> {
   // Prisma ne sait pas exprimer sans dépendre de la forme sérialisée.
   const disciplineRows = await prisma.discipline.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, slug: true, summary: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      summary: true,
+      summaryMediaId: true,
+    },
   });
+
+  // Résolution des images de carte en UNE requête, comme le fait
+  // `PageRenderer` pour les médias d'un composite. Audience publique : ces
+  // images s'affichent pour un visiteur anonyme.
+  const summaryImages = await resolveMediaByIds(
+    prisma,
+    disciplineRows
+      .map((row) => row.summaryMediaId)
+      .filter((id): id is string => id !== null),
+    "public",
+  );
 
   const disciplineCards = disciplineRows
     .map((row) => ({ row, content: parsePageContentV1(row.summary) }))
@@ -51,6 +69,9 @@ export default async function HomePage(): Promise<JSX.Element> {
       id: row.id,
       name: row.name,
       slug: row.slug,
+      imageUrl: row.summaryMediaId
+        ? (summaryImages[row.summaryMediaId]?.url ?? null)
+        : null,
       // Rendu SERVEUR, passé ensuite en ReactNode au composant client qui
       // arbitre le dépliage : « Lire la suite » ne va rien chercher, il lève
       // seulement le clamp.

@@ -23,6 +23,8 @@ export interface DisciplineSummaryCardData {
   id: number;
   name: string;
   slug: string | null;
+  /** Image de la carte, déjà résolue côté serveur. */
+  imageUrl: string | null;
   /** Rendu serveur de la présentation synthétique. */
   content: ReactNode;
 }
@@ -67,6 +69,20 @@ export function DisciplineSummaryCards({
           key={card.id}
           className="flex h-full flex-col rounded-lg border border-border bg-white p-6"
         >
+          {card.imageUrl && (
+            // Hors du repli, et en `aspect-video` : c'est ce qui rend les
+            // cartes vraiment égales. Une image DANS la zone repliée
+            // mangerait toute la hauteur disponible et n'en laisserait
+            // aucune au texte, avec un résultat différent selon la forme de
+            // chaque photo.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={card.imageUrl}
+              alt=""
+              className="mb-4 block aspect-video w-full rounded-md object-cover"
+            />
+          )}
+
           <h3 className="mb-3 text-xl font-semibold">{card.name}</h3>
 
           <ExpandableContent

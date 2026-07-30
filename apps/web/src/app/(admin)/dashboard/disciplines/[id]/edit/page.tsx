@@ -60,6 +60,7 @@ export default function EditDisciplinePage({
       // transmet l'objet entier : sans cette ligne le résumé serait éditable
       // mais jamais enregistré en modification.
       summary: input.summary,
+      summaryMediaId: input.summaryMediaId,
     });
     await utils.discipline.getAll.invalidate();
     await utils.discipline.getById.invalidate({ id: disciplineId });
