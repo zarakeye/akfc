@@ -1549,6 +1549,22 @@ input[type="range"]::-moz-range-thumb {
    L'image est `float`-ée du côté `--akfc-float-side` ; le texte l'enrobe.
    Deux variables réglables : la largeur de l'image (`--akfc-float-width`) et
    la gouttière entre l'image et le texte (`--akfc-float-gap`). */
+/* Un puits IMBRIQUÉ prend toute la largeur de son parent.
+
+   `.akfc-page` vaut `min(100% - marge d'écran, 68rem)`. Or `PageRenderer`
+   pose lui-même un `.akfc-page` autour de ses blocs, et il est presque
+   toujours rendu à l'intérieur d'une page qui en porte déjà un : fiche
+   discipline, page « L'association », carte d'instructeur. La marge était
+   donc soustraite à CHAQUE niveau.
+
+   Elle n'a de sens qu'une fois, au puits le plus extérieur : c'est une marge
+   d'ÉCRAN, destinée à éloigner le contenu du bord de la fenêtre, pas une
+   marge de conteneur. Sur la page des instructeurs, elle coûtait 48px pris
+   sur une carte déjà trop étroite. */
+.akfc-page .akfc-page {
+  width: 100%;
+}
+
 /* akfc-float-scope-width-fix */
 .akfc-float-scope {
   container-type: inline-size;

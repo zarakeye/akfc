@@ -69,15 +69,26 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
             };
 
             return (
-              // `akfc-measure-block` cadre chaque bio a la meme largeur de
-              // lecture, quel que soit le contenu que l'instructeur y a mis.
-              // La carte l'annonce (portrait + nom) et la separe de la
-              // suivante par l'ecart entre blocs du systeme.
+              // La carte prend le PUITS, pas la mesure.
+              //
+              // `akfc-measure-block` etait pose ici, ce qui plafonnait la
+              // carte a 68ch. Mais la mesure est la largeur d'une LIGNE DE
+              // TEXTE, pas celle d'un conteneur qui ajoute par-dessus une
+              // bordure, 48px de rembourrage et un puits interne : le texte
+              // a l'interieur etait donc forcement plus etroit qu'elle,
+              // 57 caracteres au lieu de 68.
+              //
+              // La mesure appartient au texte, et le texte se la donne deja
+              // lui-meme — chaque bloc porte `akfc-prose` ou
+              // `akfc-measure-block`.
               <article
                 key={instructor.id}
-                className="akfc-measure-block rounded-lg border border-border p-6"
+                className="rounded-lg border border-border p-6"
               >
-                <header className="mb-4 flex items-center gap-3">
+                {/* La mesure passe ICI : sans elle, portrait et nom
+                    fuiraient vers le bord gauche d'une carte devenue large
+                    pendant que le texte resterait centre a 68ch. */}
+                <header className="akfc-measure-block mb-4 flex items-center gap-3">
                   <div className="scale-125">
                     <UserPortrait user={displayUser} size="md" />
                   </div>
