@@ -1108,6 +1108,7 @@ enum PageReferencerKind {
   POST
   DISCIPLINE  // ← AJOUT v2
   EVENT       // ← AJOUT v2
+  SITE_PAGE   // pages de contenu éditoriales (« L'association »…)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1236,6 +1237,24 @@ model EventDiscipline {
 ///
 /// Source de vérité : cette ligne. Les valeurs de `globals.css` ne servent
 /// que de repli, tant qu'aucun réglage n'a été enregistré.
+/// Page de contenu éditoriale du site : un titre, un composite PageBuilder,
+/// une URL stable. « L'association » en est la première.
+///
+/// La clé primaire est le SLUG et non un entier : ces pages sont désignées
+/// par leur nom dans les URLs et dans le code, jamais par un rang.
+model SitePage {
+  /// Clé stable, également segment d'URL (« association »).
+  slug String @id
+
+  /// Titre affiché en tête de page.
+  title String
+
+  /// Contenu composite édité au PageBuilder, format `PageContentV1`.
+  content Json @default("{\"version\":1,\"blocks\":[]}")
+
+  updatedAt DateTime @updatedAt
+}
+
 model SiteStyle {
   id        Int      @id @default(1)
   variables Json
