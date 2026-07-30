@@ -56,6 +56,7 @@ const ACCEPTED_MIME_TYPES: Accept = {
   'image/webp': ['.webp'],
   'image/avif': ['.avif'],
   'image/gif': ['.gif'],
+  'image/svg+xml': ['.svg'],
   // Vidéos (Cloudinary)
   'video/mp4': ['.mp4'],
   'video/webm': ['.webm'],
@@ -168,6 +169,7 @@ const EXT_TO_MIME: Record<string, string> = {
   webp: 'image/webp',
   avif: 'image/avif',
   gif: 'image/gif',
+  svg: 'image/svg+xml',
   // Vidéos
   mp4: 'video/mp4',
   webm: 'video/webm',
