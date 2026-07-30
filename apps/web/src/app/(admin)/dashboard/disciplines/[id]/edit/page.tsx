@@ -56,6 +56,10 @@ export default function EditDisciplinePage({
       originId: input.originId,
       instructorId: input.instructorId,
       description: input.description,
+      // Énumération explicite ici, contrairement à la page de création qui
+      // transmet l'objet entier : sans cette ligne le résumé serait éditable
+      // mais jamais enregistré en modification.
+      summary: input.summary,
     });
     await utils.discipline.getAll.invalidate();
     await utils.discipline.getById.invalidate({ id: disciplineId });

@@ -23,6 +23,20 @@ import {
 /*  Types                                                                  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
+/**
+ * Palette du builder de présentation synthétique : le seul bloc « texte
+ * enrobant une image ».
+ *
+ * La restriction est ce qui garantit que toutes les cartes d'accueil se
+ * ressemblent. Un builder complet y autoriserait galeries et colonnes, et la
+ * page d'accueil deviendrait un patchwork qu'aucune règle de style ne
+ * rattraperait.
+ *
+ * Le bloc dégénère proprement en texte simple quand aucune image n'est
+ * choisie, donc une présentation sans photo reste possible.
+ */
+const SUMMARY_BLOCKS = ["float-text"] as const;
+
 export interface DisciplineFormInput {
   name: string;
   slug: string;
@@ -32,6 +46,11 @@ export interface DisciplineFormInput {
   classification: string | null;
   originId: number | null;
   description: PageContentV1;
+  /**
+   * Présentation synthétique pour la page d'accueil. Composite VIDE = la
+   * discipline ne figure pas sur l'accueil.
+   */
+  summary: PageContentV1;
   categoryId: number;
   instructorId: string;
 }
@@ -110,6 +129,9 @@ export function DisciplineForm({
   const [description, setDescription] = useState<PageContentV1>(
     initial ? parsePageContentV1(initial.description) : emptyPageContentV1(),
   );
+  const [summary, setSummary] = useState<PageContentV1>(
+    initial ? parsePageContentV1(initial.summary) : emptyPageContentV1(),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -166,6 +188,7 @@ export function DisciplineForm({
           classification.trim() === "" ? null : classification.trim(),
         originId,
         description,
+        summary,
         categoryId,
         instructorId,
       });
@@ -304,6 +327,26 @@ export function DisciplineForm({
           onChange={setDescription}
           adapter={finderStorageAdapter}
           appRoot={APP_ROOT}
+        />
+      </fieldset>
+
+      {/* ── Présentation synthétique (builder restreint) ─────────────── */}
+      <fieldset className="rounded-lg border border-border p-4">
+        <legend className="px-2 text-sm font-medium">
+          Présentation synthétique (page d&apos;accueil)
+        </legend>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Quelques lignes autour d&apos;une image, affichées en carte sur la
+          page d&apos;accueil avec un lien vers la page complète ci-dessus.
+          Laissez vide pour que cette discipline ne figure pas sur
+          l&apos;accueil.
+        </p>
+        <PageBuilder
+          value={summary}
+          onChange={setSummary}
+          adapter={finderStorageAdapter}
+          appRoot={APP_ROOT}
+          allowedBlocks={SUMMARY_BLOCKS}
         />
       </fieldset>
 
