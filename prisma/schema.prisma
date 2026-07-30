@@ -365,6 +365,17 @@ model Discipline {
   /// Default = composite vide.
   description Json @default("{\"version\":1,\"blocks\":[]}")
 
+  /// Présentation SYNTHÉTIQUE de la discipline, éditée au PageBuilder
+  /// restreint (bloc « texte enrobant une image » uniquement).
+  /// Alimente la carte de la page d'accueil, qui renvoie vers la page
+  /// complète construite depuis `description`.
+  ///
+  /// Même format que `description` (`PageContentV1`) : aucune conversion, et
+  /// `PageRenderer` s'y applique tel quel. Un composite VIDE signifie « pas
+  /// de présentation synthétique » — c'est l'interrupteur d'apparition sur
+  /// l'accueil, sans booléen supplémentaire.
+  summary Json @default("{\"version\":1,\"blocks\":[]}")
+
   /// Catégorie d'appartenance (NOT NULL).
   categoryId Int
 

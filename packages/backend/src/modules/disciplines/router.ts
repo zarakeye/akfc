@@ -6,7 +6,7 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
 import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
-import { pageContentSchemaV1 } from "@contracts/page";
+import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
@@ -96,6 +96,11 @@ const createInput = z.object({
   // `emptyPageContentV1()` si l'admin n'a rien rédigé.
   description: pageContentSchemaV1,
 
+  // Présentation synthétique pour l'accueil. Optionnelle : la colonne a un
+  // composite vide par défaut, et un formulaire qui ne la renseigne pas doit
+  // continuer de fonctionner.
+  summary: pageContentSchemaV1.optional(),
+
   categoryId: z.number().int().positive(),
   instructorId: z.string().trim().min(1),
 });
@@ -120,6 +125,9 @@ const updateInput = z.object({
   // description optional : si non fourni, le composite reste tel qu'il
   // est en DB. Si fourni, la sync transactionnelle s'applique.
   description: pageContentSchemaV1.optional(),
+
+  // summary optional, même logique que description : non fourni = inchangé.
+  summary: pageContentSchemaV1.optional(),
 
   instructorId: z.string().trim().min(1).optional(),
   // Note : `categoryId` volontairement absent — non modifiable.
@@ -260,6 +268,10 @@ export const disciplineRouter = router({
               classification: input.classification ?? null,
               originId: input.originId ?? null,
               description: input.description as Prisma.InputJsonValue,
+              summary:
+                input.summary === undefined
+                  ? undefined
+                  : (input.summary as Prisma.InputJsonValue),
               categoryId: input.categoryId,
               instructorId: input.instructorId,
             },
@@ -283,10 +295,19 @@ export const disciplineRouter = router({
           throw err;
         }
 
+        // UNION des deux composites. `syncPageMediaReferences` recalcule
+        // l'ensemble COMPLET des références de la page : ne lui passer que la
+        // description ferait passer les images du résumé pour orphelines.
         await syncPageMediaReferences(tx, {
           pageType: "DISCIPLINE",
           pageId: String(created.id),
-          newContent: input.description,
+          newContent: {
+            version: 1,
+            blocks: [
+              ...input.description.blocks,
+              ...(input.summary?.blocks ?? []),
+            ],
+          },
         });
 
         return created;
@@ -362,6 +383,10 @@ export const disciplineRouter = router({
               rest.description === undefined
                 ? undefined
                 : (rest.description as Prisma.InputJsonValue),
+            summary:
+              rest.summary === undefined
+                ? undefined
+                : (rest.summary as Prisma.InputJsonValue),
           };
 
           updated = await tx.discipline.update({
@@ -392,14 +417,32 @@ export const disciplineRouter = router({
           throw err;
         }
 
-        // La sync n'est appelée que si l'update a effectivement touché à
-        // la description. Si l'admin met juste à jour `name` ou `family`,
-        // les références médias n'ont pas changé.
-        if (rest.description !== undefined) {
+        // La sync n'est appelée que si l'update a touché à l'un des deux
+        // composites. Si l'admin met juste à jour `name` ou `family`, les
+        // références médias n'ont pas changé.
+        //
+        // On relit la ligne APRÈS l'écriture plutôt que de raisonner sur ce
+        // qui a été fourni : l'union porte alors sur l'état réel, quel que
+        // soit le champ modifié, et il n'y a aucun cas particulier à oublier.
+        // La sync recalculant l'ensemble COMPLET des références de la page,
+        // lui passer un seul des deux composites effacerait les références de
+        // l'autre.
+        if (rest.description !== undefined || rest.summary !== undefined) {
+          const row = await tx.discipline.findUnique({
+            where: { id },
+            select: { description: true, summary: true },
+          });
+
           await syncPageMediaReferences(tx, {
             pageType: "DISCIPLINE",
             pageId: String(id),
-            newContent: rest.description,
+            newContent: {
+              version: 1,
+              blocks: [
+                ...parsePageContentV1(row?.description).blocks,
+                ...parsePageContentV1(row?.summary).blocks,
+              ],
+            },
           });
         }
 
