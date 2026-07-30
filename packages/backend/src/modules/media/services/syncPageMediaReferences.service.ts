@@ -50,9 +50,19 @@ export async function syncPageMediaReferences(
     pageType: PageReferencerKind;
     pageId: string;
     newContent: PageContentV1 | null;
+    /**
+     * Médias référencés par la page SANS passer par un bloc — par exemple
+     * l'image de carte d'une discipline, rangée dans une colonne à part.
+     *
+     * Sans eux, ces médias échapperaient au recensement et passeraient pour
+     * orphelins, donc éligibles au nettoyage. Ignorés quand `newContent` est
+     * `null` : ce cas signifie « la page disparaît », et tout doit alors
+     * partir avec elle.
+     */
+    extraMediaIds?: readonly string[];
   },
 ): Promise<{ added: string[]; removed: string[] }> {
-  const { pageType, pageId, newContent } = args;
+  const { pageType, pageId, newContent, extraMediaIds } = args;
 
   /* ─── 1. Lecture des références anciennes ─────────────────────────── */
 
@@ -76,7 +86,10 @@ export async function syncPageMediaReferences(
 
   /* ─── 3. Cas "save" : calcul du diff ──────────────────────────────── */
 
-  const newRefs = new Set(extractMediaIdsFromContent(newContent));
+  const newRefs = new Set([
+    ...extractMediaIdsFromContent(newContent),
+    ...(extraMediaIds ?? []),
+  ]);
 
   const toRemove = [...oldRefs].filter((id) => !newRefs.has(id));
   const toAdd = [...newRefs].filter((id) => !oldRefs.has(id));

@@ -101,6 +101,10 @@ const createInput = z.object({
   // continuer de fonctionner.
   summary: pageContentSchemaV1.optional(),
 
+  // Image de la carte d'accueil. Nullable : une discipline peut ne pas en
+  // avoir, et la carte se rend alors sans illustration.
+  summaryMediaId: z.string().min(1).nullable().optional(),
+
   categoryId: z.number().int().positive(),
   instructorId: z.string().trim().min(1),
 });
@@ -128,6 +132,10 @@ const updateInput = z.object({
 
   // summary optional, même logique que description : non fourni = inchangé.
   summary: pageContentSchemaV1.optional(),
+
+  // nullable + optional : permet d'attacher, de détacher, ou de ne pas
+  // toucher, selon `undefined` vs `null` vs un identifiant.
+  summaryMediaId: z.string().min(1).nullable().optional(),
 
   instructorId: z.string().trim().min(1).optional(),
   // Note : `categoryId` volontairement absent — non modifiable.
@@ -272,6 +280,7 @@ export const disciplineRouter = router({
                 input.summary === undefined
                   ? undefined
                   : (input.summary as Prisma.InputJsonValue),
+              summaryMediaId: input.summaryMediaId ?? null,
               categoryId: input.categoryId,
               instructorId: input.instructorId,
             },
@@ -308,6 +317,9 @@ export const disciplineRouter = router({
               ...(input.summary?.blocks ?? []),
             ],
           },
+          // L'image de carte vit hors composite : sans cette ligne elle
+          // échapperait au recensement et passerait pour orpheline.
+          extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
         });
 
         return created;
@@ -387,6 +399,7 @@ export const disciplineRouter = router({
               rest.summary === undefined
                 ? undefined
                 : (rest.summary as Prisma.InputJsonValue),
+            summaryMediaId: rest.summaryMediaId,
           };
 
           updated = await tx.discipline.update({
@@ -427,10 +440,18 @@ export const disciplineRouter = router({
         // La sync recalculant l'ensemble COMPLET des références de la page,
         // lui passer un seul des deux composites effacerait les références de
         // l'autre.
-        if (rest.description !== undefined || rest.summary !== undefined) {
+        if (
+          rest.description !== undefined ||
+          rest.summary !== undefined ||
+          rest.summaryMediaId !== undefined
+        ) {
           const row = await tx.discipline.findUnique({
             where: { id },
-            select: { description: true, summary: true },
+            select: {
+              description: true,
+              summary: true,
+              summaryMediaId: true,
+            },
           });
 
           await syncPageMediaReferences(tx, {
@@ -443,6 +464,7 @@ export const disciplineRouter = router({
                 ...parsePageContentV1(row?.summary).blocks,
               ],
             },
+            extraMediaIds: row?.summaryMediaId ? [row.summaryMediaId] : [],
           });
         }
 
