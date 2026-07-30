@@ -57,6 +57,13 @@ export default async function HomePage(): Promise<JSX.Element> {
       content: <PageRenderer content={content} />,
     }));
 
+  // Hauteur repliée des cartes : réglage partagé, lu ici plutôt que codé en
+  // dur pour que le champ du formulaire ait un effet visible.
+  const styleRow = await prisma.siteStyle.findUnique({
+    where: { id: 1 },
+    select: { cardCollapsedHeight: true },
+  });
+
   const activities = [
     {
       href: "/disciplines",
@@ -163,7 +170,10 @@ export default async function HomePage(): Promise<JSX.Element> {
       {disciplineCards.length > 0 && (
         <section className="akfc-page py-12">
           <h2 className="mb-8 text-2xl font-bold">Nos disciplines</h2>
-          <DisciplineSummaryCards cards={disciplineCards} />
+          <DisciplineSummaryCards
+            cards={disciplineCards}
+            collapsedHeight={styleRow?.cardCollapsedHeight ?? 220}
+          />
         </section>
       )}
 

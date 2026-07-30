@@ -49,4 +49,46 @@ export const siteStyleRouter = router({
       });
       return { success: true };
     }),
+
+  /**
+   * Réglages ÉDITORIAUX, distincts des variables CSS.
+   *
+   * Procédures à part plutôt qu'un élargissement de `get` / `save` : le
+   * layout racine et le laboratoire dépendent de la forme de retour de ces
+   * dernières, et leur faire porter deux entiers qui ne les concernent pas
+   * aurait été un risque gratuit.
+   *
+   * Lecture publique, comme `get` : la page d'accueil en a besoin pour
+   * replier ses cartes, et un visiteur anonyme doit la rendre correctement.
+   */
+  getLimits: publicProcedure.query(async ({ ctx }) => {
+    const row = await ctx.prisma.siteStyle.findUnique({
+      where: { id: 1 },
+      select: { summaryMaxChars: true, cardCollapsedHeight: true },
+    });
+    // Repli sur les valeurs par défaut du schéma quand aucune ligne n'existe
+    // encore — le site doit s'afficher avant tout premier enregistrement.
+    return {
+      summaryMaxChars: row?.summaryMaxChars ?? 600,
+      cardCollapsedHeight: row?.cardCollapsedHeight ?? 220,
+    };
+  }),
+
+  saveLimits: protectedProcedure
+    .input(
+      z.object({
+        // Bornes larges mais réelles : elles empêchent surtout la saisie
+        // absurde (zéro, ou une valeur qui viderait la page de son sens).
+        summaryMaxChars: z.number().int().min(100).max(3000),
+        cardCollapsedHeight: z.number().int().min(80).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.siteStyle.upsert({
+        where: { id: 1 },
+        create: { id: 1, variables: {}, ...input },
+        update: input,
+      });
+      return { success: true };
+    }),
 });

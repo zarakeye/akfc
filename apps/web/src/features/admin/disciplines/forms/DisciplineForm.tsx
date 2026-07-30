@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Discipline, DisciplineType } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
+import { trpc } from "@/core/trpc/trpcClient";
 import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
@@ -139,11 +140,36 @@ export function DisciplineForm({
   const [summary, setSummary] = useState<PageContentV1>(
     initial ? parsePageContentV1(initial.summary) : emptyPageContentV1(),
   );
+  // Réglages éditoriaux PARTAGÉS (une seule ligne SiteStyle, comme le
+  // laboratoire). Le contrôle est ici pour qu'on puisse l'essayer sans
+  // changer de page ; la valeur, elle, vaut pour toutes les disciplines.
+  const limits = trpc.siteStyle.getLimits.useQuery();
+  const saveLimits = trpc.siteStyle.saveLimits.useMutation();
+
+  // Saisie locale, qui prend le pas sur la valeur enregistrée tant qu'on
+  // tape : le compteur réagit immédiatement, l'enregistrement attend le
+  // départ du champ.
+  const [maxCharsDraft, setMaxCharsDraft] = useState<number | null>(null);
+  const [cardHeightDraft, setCardHeightDraft] = useState<number | null>(null);
+
+  const maxChars =
+    maxCharsDraft ??
+    limits.data?.summaryMaxChars ??
+    DISCIPLINE_SUMMARY_MAX_CHARS;
+  const cardHeight = cardHeightDraft ?? limits.data?.cardCollapsedHeight ?? 220;
+
+  const persistLimits = () => {
+    saveLimits.mutate({
+      summaryMaxChars: maxChars,
+      cardCollapsedHeight: cardHeight,
+    });
+  };
+
   // Mesure du texte réellement tapé : ni le balisage ni les légendes ne
   // comptent. Recalculée à chaque rendu — l'opération est un simple parcours
   // d'arbre, sans mémoïsation nécessaire (React Compiler s'en charge).
   const summaryChars = plainTextFromPageContentV1(summary).length;
-  const summaryOverLimit = summaryChars > DISCIPLINE_SUMMARY_MAX_CHARS;
+  const summaryOverLimit = summaryChars > maxChars;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -191,7 +217,7 @@ export function DisciplineForm({
 
     if (summaryOverLimit) {
       setSubmitError(
-        `La présentation synthétique dépasse la limite : ${summaryChars} caractères pour ${DISCIPLINE_SUMMARY_MAX_CHARS} autorisés. Raccourcissez-la — le détail a sa place dans la description ci-dessus.`,
+        `La présentation synthétique dépasse la limite : ${summaryChars} caractères pour ${maxChars} autorisés. Raccourcissez-la — le détail a sa place dans la description ci-dessus.`,
       );
       return;
     }
@@ -372,14 +398,53 @@ export function DisciplineForm({
           className={
             summaryOverLimit
               ? "mt-2 text-right text-xs font-medium text-destructive"
-              : summaryChars > DISCIPLINE_SUMMARY_MAX_CHARS * 0.85
+              : summaryChars > maxChars * 0.85
                 ? "mt-2 text-right text-xs font-medium text-amber-600"
                 : "mt-2 text-right text-xs text-muted-foreground"
           }
         >
-          {summaryChars} / {DISCIPLINE_SUMMARY_MAX_CHARS} caractères
+          {summaryChars} / {maxChars} caractères
           {summaryOverLimit && " — enregistrement bloqué"}
         </p>
+
+        <div className="mt-3 flex flex-wrap items-end gap-4 border-t border-dashed border-border pt-3">
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Limite de caractères
+            <input
+              type="number"
+              min={100}
+              max={3000}
+              step={50}
+              value={maxChars}
+              onChange={(e) => setMaxCharsDraft(Number(e.target.value))}
+              onBlur={persistLimits}
+              className="w-28 rounded-md border border-border px-2 py-1 text-sm text-foreground"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Hauteur repliée des cartes (px)
+            <input
+              type="number"
+              min={80}
+              max={1000}
+              step={10}
+              value={cardHeight}
+              onChange={(e) => setCardHeightDraft(Number(e.target.value))}
+              onBlur={persistLimits}
+              className="w-28 rounded-md border border-border px-2 py-1 text-sm text-foreground"
+            />
+          </label>
+
+          <p className="flex-1 text-xs text-muted-foreground">
+            Ces deux réglages valent pour TOUTES les disciplines, pas
+            seulement celle-ci — une règle éditoriale n&apos;a de sens que si
+            elle est la même partout. La hauteur est ce qui rend les cartes
+            égales : un nombre de caractères ne le ferait pas, les mots
+            n&apos;ayant pas tous la même longueur.
+            {saveLimits.isPending && " Enregistrement…"}
+          </p>
+        </div>
       </fieldset>
 
       {/* ── Action ──────────────────────────────────────────────────── */}

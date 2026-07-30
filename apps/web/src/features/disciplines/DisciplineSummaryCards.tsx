@@ -28,16 +28,17 @@ export interface DisciplineSummaryCardData {
 }
 
 /**
- * Hauteur repliée, en pixels.
+ * Hauteur repliée par défaut, en pixels — utilisée seulement si l'appelant
+ * n'en fournit pas.
  *
  * La troncature est en HAUTEUR et non en nombre de mots : c'est ce qui rend
  * les cartes égales par construction. Deux présentations de même longueur en
- * mots peuvent occuper cinq ou huit lignes selon les mots employés et selon
- * la façon dont l'image enrobée décale les retours à la ligne.
+ * mots peuvent occuper cinq ou huit lignes selon les mots employés.
  *
- * À ajuster à l'œil une fois de vraies présentations en place.
+ * La valeur réelle vient de `SiteStyle`, réglable depuis le formulaire de
+ * discipline.
  */
-const COLLAPSED_HEIGHT = 220;
+const DEFAULT_COLLAPSED_HEIGHT = 220;
 
 /**
  * Les cartes sont en GRILLE, et ce n'est pas qu'une question d'allure.
@@ -52,8 +53,10 @@ const GRID_CLASS = "grid gap-6 sm:grid-cols-2 lg:grid-cols-3";
 
 export function DisciplineSummaryCards({
   cards,
+  collapsedHeight = DEFAULT_COLLAPSED_HEIGHT,
 }: {
   cards: DisciplineSummaryCardData[];
+  collapsedHeight?: number;
 }): JSX.Element {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -67,7 +70,7 @@ export function DisciplineSummaryCards({
           <h3 className="mb-3 text-xl font-semibold">{card.name}</h3>
 
           <ExpandableContent
-            collapsedHeight={COLLAPSED_HEIGHT}
+            collapsedHeight={collapsedHeight}
             expanded={expandedId === card.id}
             onToggle={() =>
               setExpandedId((current) =>
