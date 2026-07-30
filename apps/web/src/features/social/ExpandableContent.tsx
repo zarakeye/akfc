@@ -18,6 +18,17 @@ interface ExpandableContentProps {
   children: ReactNode;
   /** Hauteur repliée, en px. */
   collapsedHeight?: number;
+  /**
+   * Mode CONTRÔLÉ. Fourni, l'état de dépliage appartient au parent — ce qui
+   * permet un accordéon, où déplier une carte replie la précédente. Absent,
+   * le composant garde son état pour lui (comportement du mur de posts,
+   * inchangé).
+   */
+  expanded?: boolean;
+  onToggle?: () => void;
+  /** Libellés, pour adapter au contexte (« Voir → », « Lire la suite »…). */
+  expandLabel?: string;
+  collapseLabel?: string;
 }
 
 /** Marge anti-oscillation : on ne clampe pas pour gagner 24px. */
@@ -26,10 +37,24 @@ const OVERFLOW_TOLERANCE = 24;
 export function ExpandableContent({
   children,
   collapsedHeight = 300,
+  expanded: controlledExpanded,
+  onToggle,
+  expandLabel = "Voir →",
+  collapseLabel = "Réduire",
 }: ExpandableContentProps): JSX.Element {
   const innerRef = useRef<HTMLDivElement>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [selfExpanded, setSelfExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
+
+  // Contrôlé dès que le parent fournit `expanded`. Le hook d'état interne
+  // reste appelé dans tous les cas — l'ordre des hooks ne doit pas dépendre
+  // des props.
+  const isControlled = controlledExpanded !== undefined;
+  const expanded = isControlled ? controlledExpanded : selfExpanded;
+  const toggle = () => {
+    if (isControlled) onToggle?.();
+    else setSelfExpanded((e) => !e);
+  };
 
   useEffect(() => {
     const el = innerRef.current;
@@ -63,10 +88,10 @@ export function ExpandableContent({
       {overflowing && (
         <button
           type="button"
-          onClick={() => setExpanded((e) => !e)}
+          onClick={toggle}
           className="mt-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
         >
-          {expanded ? "Réduire" : "Voir →"}
+          {expanded ? collapseLabel : expandLabel}
         </button>
       )}
     </div>

@@ -16,6 +16,8 @@ import { slugify } from "@contracts/slug/slugify";
 import {
   emptyPageContentV1,
   parsePageContentV1,
+  plainTextFromPageContentV1,
+  DISCIPLINE_SUMMARY_MAX_CHARS,
   type PageContentV1,
 } from "@contracts/page";
 
@@ -24,18 +26,23 @@ import {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Palette du builder de présentation synthétique : le seul bloc « texte
- * enrobant une image ».
+ * Palette du builder de présentation synthétique : le seul bloc
+ * « média + texte ».
  *
- * La restriction est ce qui garantit que toutes les cartes d'accueil se
- * ressemblent. Un builder complet y autoriserait galeries et colonnes, et la
- * page d'accueil deviendrait un patchwork qu'aucune règle de style ne
- * rattraperait.
+ * Et NON le bloc « texte enrobant une image », qui a été essayé et ne
+ * convient pas : un enrobage suppose un texte assez long pour longer l'image
+ * puis se poursuivre dessous. Dans une carte, cette place n'existe pas — le
+ * texte reste coincé dans la bande étroite qui longe l'image.
  *
- * Le bloc dégénère proprement en texte simple quand aucune image n'est
- * choisie, donc une présentation sans photo reste possible.
+ * Le média-texte, lui, passe à UNE colonne sous 44rem avec le média
+ * AU-DESSUS du texte : c'est exactement l'ordre de lecture d'une carte, et
+ * les cartes d'accueil sont toujours sous ce seuil.
+ *
+ * La restriction reste ce qui garantit que toutes les cartes se ressemblent :
+ * un builder complet y autoriserait galeries et listes, et l'accueil
+ * deviendrait un patchwork qu'aucune règle de style ne rattraperait.
  */
-const SUMMARY_BLOCKS = ["float-text"] as const;
+const SUMMARY_BLOCKS = ["media-text"] as const;
 
 export interface DisciplineFormInput {
   name: string;
@@ -132,6 +139,12 @@ export function DisciplineForm({
   const [summary, setSummary] = useState<PageContentV1>(
     initial ? parsePageContentV1(initial.summary) : emptyPageContentV1(),
   );
+  // Mesure du texte réellement tapé : ni le balisage ni les légendes ne
+  // comptent. Recalculée à chaque rendu — l'opération est un simple parcours
+  // d'arbre, sans mémoïsation nécessaire (React Compiler s'en charge).
+  const summaryChars = plainTextFromPageContentV1(summary).length;
+  const summaryOverLimit = summaryChars > DISCIPLINE_SUMMARY_MAX_CHARS;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -172,6 +185,13 @@ export function DisciplineForm({
     if (instructorId === null) {
       setSubmitError(
         "L'instructeur principal est obligatoire. Sélectionne quelqu'un.",
+      );
+      return;
+    }
+
+    if (summaryOverLimit) {
+      setSubmitError(
+        `La présentation synthétique dépasse la limite : ${summaryChars} caractères pour ${DISCIPLINE_SUMMARY_MAX_CHARS} autorisés. Raccourcissez-la — le détail a sa place dans la description ci-dessus.`,
       );
       return;
     }
@@ -336,10 +356,10 @@ export function DisciplineForm({
           Présentation synthétique (page d&apos;accueil)
         </legend>
         <p className="mb-3 text-xs text-muted-foreground">
-          Quelques lignes autour d&apos;une image, affichées en carte sur la
-          page d&apos;accueil avec un lien vers la page complète ci-dessus.
-          Laissez vide pour que cette discipline ne figure pas sur
-          l&apos;accueil.
+          Une image et quelques lignes, affichées en carte sur la page
+          d&apos;accueil avec un lien vers la page complète ci-dessus. Dans la
+          carte, l&apos;image se place au-dessus du texte. Laissez vide pour
+          que cette discipline ne figure pas sur l&apos;accueil.
         </p>
         <PageBuilder
           value={summary}
@@ -348,6 +368,18 @@ export function DisciplineForm({
           appRoot={APP_ROOT}
           allowedBlocks={SUMMARY_BLOCKS}
         />
+        <p
+          className={
+            summaryOverLimit
+              ? "mt-2 text-right text-xs font-medium text-destructive"
+              : summaryChars > DISCIPLINE_SUMMARY_MAX_CHARS * 0.85
+                ? "mt-2 text-right text-xs font-medium text-amber-600"
+                : "mt-2 text-right text-xs text-muted-foreground"
+          }
+        >
+          {summaryChars} / {DISCIPLINE_SUMMARY_MAX_CHARS} caractères
+          {summaryOverLimit && " — enregistrement bloqué"}
+        </p>
       </fieldset>
 
       {/* ── Action ──────────────────────────────────────────────────── */}

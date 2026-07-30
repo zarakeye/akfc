@@ -11,6 +11,9 @@ import {
   type GroupedReaction,
 } from "@backend/modules/reactions/router";
 import { PostCard } from "@features/social/PostCard";
+import { PageRenderer } from "@features/page-builder/PageRenderer";
+import { DisciplineSummaryCards } from "@features/disciplines/DisciplineSummaryCards";
+import { parsePageContentV1 } from "@contracts/page";
 
 /**
  * Page d'accueil PUBLIQUE du club (AKFC).
@@ -29,6 +32,31 @@ import { PostCard } from "@features/social/PostCard";
  * RSC public) : les îlots le corrigent à l'hydratation pour les membres.
  */
 export default async function HomePage(): Promise<JSX.Element> {
+  // Disciplines présentées sur l'accueil : celles dont la présentation
+  // synthétique n'est PAS vide. Rédiger vaut donc inscription, et il n'y a ni
+  // sélection ni ordre à maintenir à part.
+  //
+  // Le filtre se fait après lecture plutôt qu'en SQL : « composite non vide »
+  // se juge sur `blocks.length` une fois le Json parsé, ce qu'une clause
+  // Prisma ne sait pas exprimer sans dépendre de la forme sérialisée.
+  const disciplineRows = await prisma.discipline.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, slug: true, summary: true },
+  });
+
+  const disciplineCards = disciplineRows
+    .map((row) => ({ row, content: parsePageContentV1(row.summary) }))
+    .filter(({ content }) => content.blocks.length > 0)
+    .map(({ row, content }) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      // Rendu SERVEUR, passé ensuite en ReactNode au composant client qui
+      // arbitre le dépliage : « Lire la suite » ne va rien chercher, il lève
+      // seulement le clamp.
+      content: <PageRenderer content={content} />,
+    }));
+
   const activities = [
     {
       href: "/disciplines",
@@ -130,6 +158,14 @@ export default async function HomePage(): Promise<JSX.Element> {
           </Link>
         </div>
       </section>
+
+      {/* Présentations synthétiques des disciplines */}
+      {disciplineCards.length > 0 && (
+        <section className="akfc-page py-12">
+          <h2 className="mb-8 text-2xl font-bold">Nos disciplines</h2>
+          <DisciplineSummaryCards cards={disciplineCards} />
+        </section>
+      )}
 
       {/* Accès aux pages publiques */}
       <section className="bg-gray-50 py-16">
