@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import Link from "next/link";
-import { Award, Calendar, PartyPopper, Images, ArrowRight } from "lucide-react";
+import { Award, Calendar, Images, ArrowRight } from "lucide-react";
 
 import HomeCarousel from "@features/app-shell/HomeCarousel";
 
@@ -97,16 +97,10 @@ export default async function HomePage(): Promise<JSX.Element> {
       desc: "Les arts martiaux et pratiques enseignés au club.",
     },
     {
-      href: "/stages",
+      href: "/agenda",
       icon: Calendar,
-      title: "Nos stages",
-      desc: "Sessions intensives et rencontres ponctuelles.",
-    },
-    {
-      href: "/events",
-      icon: PartyPopper,
-      title: "Nos évènements",
-      desc: "Démonstrations, ateliers et temps forts de la vie du club.",
+      title: "Agenda",
+      desc: "Stages et évènements à venir, du plus proche au plus lointain.",
     },
     {
       href: "/gallery",
