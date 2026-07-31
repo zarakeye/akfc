@@ -19,6 +19,27 @@ const withMDX = createMDX({
 })
 
 const nextConfig: NextConfig = {
+  /**
+   * Les listes `/stages` et `/events` ont fusionné dans `/agenda`.
+   *
+   * Redirection plutôt que 404 : ces adresses ont pu être envoyées par
+   * message, mises en favori ou indexées, et l'agenda contient ce qu'on y
+   * cherchait.
+   *
+   * TEMPORAIRES (307) et non permanentes (308) : un 308 est mis en cache
+   * durablement par les navigateurs et resterait actif si une liste dédiée
+   * était rétablie un jour. Le coût d'un 307 est nul, celui d'un 308 qu'on
+   * regrette se compte en « vide ton cache ».
+   *
+   * Le chemin source est EXACT : les fiches `/stages/mon-stage` ne sont pas
+   * concernées, et c'est bien elles que l'agenda cible.
+   */
+  async redirects() {
+    return [
+      { source: "/stages", destination: "/agenda", permanent: false },
+      { source: "/events", destination: "/agenda", permanent: false },
+    ]
+  },
   transpilePackages: ["@workspace/backend", "@workspace/contracts"],
   // 🚀 Empêche Next/Turbopack de bundler `@prisma/client`. Le package est
   // traité comme un module Node externe, donc require() le résout une seule

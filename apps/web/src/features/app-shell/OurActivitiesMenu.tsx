@@ -64,22 +64,17 @@ export default function OurActivitiesMenu(): JSX.Element {
       <div
         className={`${hover ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
       >
-        {/* Accès directs aux listes publiques */}
+        {/* Accès direct à l'agenda.
+            « Tous les stages » et « Tous les évènements » ont fusionné ici :
+            deux liens vers la même chose, séparés par une distinction que le
+            visiteur ne fait pas, valaient moins qu'un seul. */}
         <ul className="border-b border-gray-400">
           <li>
             <Link
-              href="/stages"
+              href="/agenda"
               className="block px-4 py-2 font-semibold text-gray-800 hover:bg-gray-100"
             >
-              Tous les stages
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/events"
-              className="block px-4 py-2 font-semibold text-gray-800 hover:bg-gray-100"
-            >
-              Tous les évènements
+              Agenda — stages et évènements
             </Link>
           </li>
         </ul>
