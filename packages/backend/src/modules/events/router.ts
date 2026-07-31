@@ -6,7 +6,7 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
 import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
-import { pageContentSchemaV1 } from "@contracts/page";
+import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
@@ -74,6 +74,9 @@ const createInput = z
     label: z.string().trim().min(1).max(255),
     slug: slugSchema,
     content: pageContentSchemaV1,
+    // Résumé pour la carte d'agenda, même logique que pour les stages.
+    summary: pageContentSchemaV1.optional(),
+    summaryMediaId: z.string().min(1).nullable().optional(),
     audience: audienceEnum,
 
     // Rattachements, tous optionnels en Zod — au moins un requis via
@@ -108,6 +111,8 @@ const updateInput = z.object({
   label: z.string().trim().min(1).max(255).optional(),
   slug: slugSchema.optional(),
   content: pageContentSchemaV1.optional(),
+  summary: pageContentSchemaV1.optional(),
+  summaryMediaId: z.string().min(1).nullable().optional(),
   audience: audienceEnum.optional(),
 
   // Validation « au moins un des trois » faite en router après merge
@@ -341,6 +346,11 @@ export const eventRouter = router({
               label: input.label,
               slug: input.slug,
               content: input.content as Prisma.InputJsonValue,
+              summary:
+                input.summary === undefined
+                  ? undefined
+                  : (input.summary as Prisma.InputJsonValue),
+              summaryMediaId: input.summaryMediaId ?? null,
               audience: input.audience,
               // Nouvelle vérité : la jointure + le tableau de labels.
               disciplineLinks: {
@@ -380,6 +390,12 @@ export const eventRouter = router({
           pageId: String(created.id),
           newContent: input.content,
         });
+        await syncPageMediaReferences(tx, {
+          pageType: "EVENT_SUMMARY",
+          pageId: String(created.id),
+          newContent: input.summary ?? { version: 1, blocks: [] },
+          extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
+        });
 
         return created;
       });
@@ -389,7 +405,7 @@ export const eventRouter = router({
     .use(requirePermission("manage_events"))
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
-      const { id, content, ...rest } = input;
+      const { id, content, summary, ...rest } = input;
 
       // ─── Lecture pré-transaction (pour validation post-merge) ──────────
 
@@ -465,6 +481,11 @@ export const eventRouter = router({
               content === undefined
                 ? undefined
                 : (content as Prisma.InputJsonValue),
+            summary:
+              summary === undefined
+                ? undefined
+                : (summary as Prisma.InputJsonValue),
+            summaryMediaId: rest.summaryMediaId,
           };
 
           updated = await tx.event.update({
@@ -516,6 +537,18 @@ export const eventRouter = router({
             newContent: content,
           });
         }
+        if (summary !== undefined || rest.summaryMediaId !== undefined) {
+          const row = await tx.event.findUnique({
+            where: { id },
+            select: { summary: true, summaryMediaId: true },
+          });
+          await syncPageMediaReferences(tx, {
+            pageType: "EVENT_SUMMARY",
+            pageId: String(id),
+            newContent: parsePageContentV1(row?.summary),
+            extraMediaIds: row?.summaryMediaId ? [row.summaryMediaId] : [],
+          });
+        }
 
         return updated;
       });
@@ -530,6 +563,11 @@ export const eventRouter = router({
       // n'ont pas de FK DB côté `pageId` — il faut les nettoyer
       // explicitement avant le delete.
       return await ctx.prisma.$transaction(async (tx) => {
+        await syncPageMediaReferences(tx, {
+          pageType: "EVENT_SUMMARY",
+          pageId: String(input.id),
+          newContent: null,
+        });
         await syncPageMediaReferences(tx, {
           pageType: "EVENT",
           pageId: String(input.id),

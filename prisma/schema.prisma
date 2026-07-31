@@ -556,6 +556,16 @@ model Stage {
   /// Format : `PageContentV1`.
   program Json
 
+  /// Présentation SYNTHÉTIQUE, éditée au builder restreint (texte seul).
+  /// Alimente la carte de la page « Agenda », qui renvoie ici.
+  /// Composite VIDE = pas de carte.
+  summary Json @default("{\"version\":1,\"blocks\":[]}")
+
+  /// Image de la carte d'agenda. Identifiant de `MediaAsset` en texte
+  /// simple, comme les blocs du PageBuilder — pas de clé étrangère, pour
+  /// n'avoir qu'un seul régime de référence.
+  summaryMediaId String?
+
   /// Inscriptions préalables. Tableau de chaînes (typiquement emails
   /// ou identifiants utilisateur, à formaliser).
   preRegistered String[]
@@ -675,6 +685,16 @@ model Event {
   ///
   /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
   content Json @default("{\"version\":1,\"blocks\":[]}")
+
+  /// Présentation SYNTHÉTIQUE, éditée au builder restreint (texte seul).
+  /// Alimente la carte de la page « Agenda », qui renvoie ici.
+  /// Composite VIDE = pas de carte.
+  summary Json @default("{\"version\":1,\"blocks\":[]}")
+
+  /// Image de la carte d'agenda. Identifiant de `MediaAsset` en texte
+  /// simple, comme les blocs du PageBuilder — pas de clé étrangère, pour
+  /// n'avoir qu'un seul régime de référence.
+  summaryMediaId String?
 
   /// Public visé. NOT NULL — forcer le choix explicite (utiliser
   /// `ALL_AGES` pour les événements tout public).
@@ -1117,6 +1137,8 @@ enum PageReferencerKind {
   DISCIPLINE  // ← AJOUT v2
   EVENT       // ← AJOUT v2
   SITE_PAGE   // pages de contenu éditoriales (« L'association »…)
+  STAGE_SUMMARY // présentation synthétique d'un stage (carte d'agenda)
+  EVENT_SUMMARY // présentation synthétique d'un événement (carte d'agenda)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
