@@ -12,7 +12,10 @@ import {
 } from "@backend/modules/reactions/router";
 import { PostCard } from "@features/social/PostCard";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { DisciplineSummaryCards } from "@features/disciplines/DisciplineSummaryCards";
+import {
+  SummaryCards,
+  type SummaryCardData,
+} from "@features/common/SummaryCards";
 import { parsePageContentV1 } from "@contracts/page";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
 
@@ -62,13 +65,14 @@ export default async function HomePage(): Promise<JSX.Element> {
     "public",
   );
 
-  const disciplineCards = disciplineRows
+  const disciplineCards: SummaryCardData[] = disciplineRows
     .map((row) => ({ row, content: parsePageContentV1(row.summary) }))
     .filter(({ content }) => content.blocks.length > 0)
     .map(({ row, content }) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
+      key: `discipline-${row.id}`,
+      title: row.name,
+      href: row.slug ? `/disciplines/${row.slug}` : null,
+      linkLabel: "Voir la discipline",
       imageUrl: row.summaryMediaId
         ? (summaryImages[row.summaryMediaId]?.url ?? null)
         : null,
@@ -191,7 +195,7 @@ export default async function HomePage(): Promise<JSX.Element> {
       {disciplineCards.length > 0 && (
         <section className="akfc-page py-12">
           <h2 className="mb-8 text-2xl font-bold">Nos disciplines</h2>
-          <DisciplineSummaryCards
+          <SummaryCards
             cards={disciplineCards}
             collapsedHeight={styleRow?.cardCollapsedHeight ?? 220}
           />
