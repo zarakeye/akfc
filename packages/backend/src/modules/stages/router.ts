@@ -6,7 +6,7 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
 import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
-import { pageContentSchemaV1 } from "@contracts/page";
+import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
@@ -106,6 +106,11 @@ const createInput = z
     // frontend envoie `emptyPageContentV1()` au minimum.
     description: pageContentSchemaV1,
     program: pageContentSchemaV1,
+    // Résumé pour la carte d'agenda. Optionnel : la colonne a un composite
+    // vide par défaut, et un formulaire qui ne le renseigne pas doit
+    // continuer de fonctionner.
+    summary: pageContentSchemaV1.optional(),
+    summaryMediaId: z.string().min(1).nullable().optional(),
 
     preRegistered: z.array(userIdSchema).default([]),
     primaryAnimatorId: userIdSchema,
@@ -164,6 +169,8 @@ const updateInput = z
 
     description: pageContentSchemaV1.optional(),
     program: pageContentSchemaV1.optional(),
+    summary: pageContentSchemaV1.optional(),
+    summaryMediaId: z.string().min(1).nullable().optional(),
 
     preRegistered: z.array(userIdSchema).optional(),
     primaryAnimatorId: userIdSchema.optional(),
@@ -389,6 +396,11 @@ export const stageRouter = router({
               audience: input.audience,
               description: input.description as Prisma.InputJsonValue,
               program: input.program as Prisma.InputJsonValue,
+              summary:
+                input.summary === undefined
+                  ? undefined
+                  : (input.summary as Prisma.InputJsonValue),
+              summaryMediaId: input.summaryMediaId ?? null,
               preRegistered: input.preRegistered,
               primaryAnimatorId: input.primaryAnimatorId,
               // `animators` inclut le primaryAnimator (β)
@@ -436,6 +448,15 @@ export const stageRouter = router({
           pageId: String(created.id),
           newContent: input.program,
         });
+        // Le résumé porte ses propres références, image de carte comprise :
+        // celle-ci vit hors composite et échapperait au recensement sans
+        // `extraMediaIds`.
+        await syncPageMediaReferences(tx, {
+          pageType: "STAGE_SUMMARY",
+          pageId: String(created.id),
+          newContent: input.summary ?? { version: 1, blocks: [] },
+          extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
+        });
 
         return created;
       });
@@ -451,6 +472,7 @@ export const stageRouter = router({
         primaryAnimatorId,
         description,
         program,
+        summary,
         ...rest
       } = input;
 
@@ -564,6 +586,11 @@ export const stageRouter = router({
               program === undefined
                 ? undefined
                 : (program as Prisma.InputJsonValue),
+            summary:
+              summary === undefined
+                ? undefined
+                : (summary as Prisma.InputJsonValue),
+            summaryMediaId: rest.summaryMediaId,
             ...(primaryAnimatorId !== undefined ? { primaryAnimatorId } : {}),
             ...(finalAnimatorIds
               ? {
@@ -623,6 +650,21 @@ export const stageRouter = router({
             newContent: program,
           });
         }
+        // Relecture APRÈS écriture plutôt que raisonnement sur ce qui a été
+        // fourni : composite et image se modifient séparément, et traiter
+        // l'un sans l'autre laisserait la référence de l'autre à l'abandon.
+        if (summary !== undefined || rest.summaryMediaId !== undefined) {
+          const row = await tx.stage.findUnique({
+            where: { id },
+            select: { summary: true, summaryMediaId: true },
+          });
+          await syncPageMediaReferences(tx, {
+            pageType: "STAGE_SUMMARY",
+            pageId: String(id),
+            newContent: parsePageContentV1(row?.summary),
+            extraMediaIds: row?.summaryMediaId ? [row.summaryMediaId] : [],
+          });
+        }
 
         return updated;
       });
@@ -646,6 +688,11 @@ export const stageRouter = router({
         });
         await syncPageMediaReferences(tx, {
           pageType: "STAGE_PROGRAM",
+          pageId: String(input.id),
+          newContent: null,
+        });
+        await syncPageMediaReferences(tx, {
+          pageType: "STAGE_SUMMARY",
           pageId: String(input.id),
           newContent: null,
         });
