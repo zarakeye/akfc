@@ -4,6 +4,10 @@ import { useState } from "react";
 import type { Event, Audience } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
+import {
+  SummaryFieldset,
+  useSummaryLimits,
+} from "@features/admin/common/SummaryFieldset";
 import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
@@ -15,6 +19,7 @@ import { slugify } from "@contracts/slug/slugify";
 import {
   emptyPageContentV1,
   parsePageContentV1,
+  plainTextFromPageContentV1,
   type PageContentV1,
 } from "@contracts/page";
 
@@ -26,6 +31,10 @@ export interface EventFormInput {
   label: string;
   slug: string;
   content: PageContentV1;
+  /** Présentation synthétique pour la carte d'agenda. Vide = pas de carte. */
+  summary: PageContentV1;
+  /** Image de la carte d'agenda. */
+  summaryMediaId: string | null;
   audience: Audience;
   /** Disciplines ENSEIGNÉES présentées (0..N). */
   disciplineIds: number[];
@@ -155,6 +164,16 @@ export function EventForm({
     initial ? parsePageContentV1(initial.content) : emptyPageContentV1(),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [summary, setSummary] = useState<PageContentV1>(
+    initial ? parsePageContentV1(initial.summary) : emptyPageContentV1(),
+  );
+  const [summaryMediaId, setSummaryMediaId] = useState<string | null>(
+    initial?.summaryMediaId ?? null,
+  );
+  const { maxChars: summaryMaxChars } = useSummaryLimits();
+  const summaryOverLimit =
+    plainTextFromPageContentV1(summary).length > summaryMaxChars;
+
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleLabelChange = (value: string) => {
@@ -213,12 +232,21 @@ export function EventForm({
     const publicationDate =
       publicationDateValue === "" ? null : new Date(publicationDateValue);
 
+    if (summaryOverLimit) {
+      setSubmitError(
+        `La présentation synthétique dépasse la limite de ${summaryMaxChars} caractères. Raccourcissez-la — le détail a sa place dans le contenu complet.`,
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit({
         label: label.trim(),
         slug: slug.trim(),
         content,
+        summary,
+        summaryMediaId,
         audience,
         disciplineIds,
         externalDisciplineLabels: externalLabelsFinal,
@@ -417,6 +445,21 @@ export function EventForm({
           appRoot={APP_ROOT}
         />
       </fieldset>
+
+      <SummaryFieldset
+        legend="Présentation synthétique (page Agenda)"
+        help={
+          <>
+            Quelques lignes et une image, affichées en carte sur la page Agenda
+            avec un lien vers la fiche complète. Laissez vide pour que cet
+            événement ne figure pas à l&apos;agenda.
+          </>
+        }
+        summary={summary}
+        onSummaryChange={setSummary}
+        mediaId={summaryMediaId}
+        onMediaIdChange={setSummaryMediaId}
+      />
 
       {/* ── Action ──────────────────────────────────────────────────── */}
       {submitError && (
