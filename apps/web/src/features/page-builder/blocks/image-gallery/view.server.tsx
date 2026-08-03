@@ -35,18 +35,25 @@ export function ImageGalleryView({
   switch (block.layout) {
     case "grid":
       return (
+        // `@container` sur une ENVELOPPE, jamais sur la grille elle-même :
+        // une container query interroge les ANCÊTRES, donc la poser sur
+        // l'élément qu'elle doit régir ne déclencherait rien. C'est l'erreur
+        // exacte commise sur le média-texte plus tôt dans ce projet.
+        <div className="@container">
         <div
-          className="grid sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3"
           style={{ gap: "var(--akfc-item-gap)" }}
         >
           {items.map(({ item, media }) => (
             <Figure key={item.mediaId} media={media} caption={item.caption} />
           ))}
         </div>
+        </div>
       );
 
     case "carousel":
       return (
+        <div className="@container">
         <div
           className="-mx-4 flex snap-x snap-mandatory overflow-x-auto px-4 pb-2"
           style={{ gap: "var(--akfc-item-gap)" }}
@@ -54,18 +61,20 @@ export function ImageGalleryView({
           {items.map(({ item, media }) => (
             <div
               key={item.mediaId}
-              className="w-72 flex-shrink-0 snap-start"
+              className="w-64 @md:w-72 flex-shrink-0 snap-start"
             >
               <Figure media={media} caption={item.caption} />
             </div>
           ))}
         </div>
+        </div>
       );
 
     case "masonry":
       return (
+        <div className="@container">
         <div
-          className="columns-1 sm:columns-2 lg:columns-3"
+          className="columns-1 @md:columns-2 @3xl:columns-3"
           style={{ gap: "var(--akfc-item-gap)" }}
         >
           {items.map(({ item, media }) => (
@@ -77,6 +86,7 @@ export function ImageGalleryView({
               <Figure media={media} caption={item.caption} />
             </div>
           ))}
+        </div>
         </div>
       );
   }
