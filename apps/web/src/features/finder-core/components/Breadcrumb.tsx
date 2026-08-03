@@ -1,7 +1,7 @@
 'use client';
 
-import { JSX, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { JSX, useEffect, useRef, useState } from 'react';
+import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FileAdapter } from '@contracts/finder';
@@ -53,10 +53,28 @@ type Props = {
  *     Strictement parallèle au comportement de `FinderTreeFolder.handleDrop`.
  *   - Surbrillance bleue sur le segment survolé pendant le drag.
  *
- * Le tronquage `truncate max-w-[200px]` est conservé pour les chemins
- * profonds ; une vraie troncature centrée (avec `…`) sera à voir si on
- * a des chemins vraiment très longs en pratique.
+ * ─── Repli des chemins profonds ─────────────────────────────────────────
+ *
+ * Au-delà de `MAX_VISIBLE_SEGMENTS`, le fil devient
+ * `Racine / … / Parent / Courant` : les niveaux intermédiaires passent dans
+ * un menu ouvert par le « … ». Les segments repliés cessent d'être des
+ * cibles de dépôt, d'où un seuil assez haut pour que les chemins courants
+ * n'y passent jamais.
  */
+/**
+ * Nombre de segments affichés avant repli.
+ *
+ * Au-delà, le fil devient `Racine / … / Parent / Courant` et les niveaux
+ * intermédiaires passent dans un menu.
+ *
+ * Quatre et non deux : les segments repliés cessent d'être des cibles de
+ * dépôt (on ne lâche pas un fichier sur un « … »). Les chemins courants
+ * gardent donc toutes leurs cibles, et seuls les chemins vraiment profonds —
+ * où le fil débordait de toute façon — perdent celles du milieu. L'arbre
+ * reste disponible pour eux.
+ */
+const MAX_VISIBLE_SEGMENTS = 4;
+
 export default function Breadcrumb({ adapter }: Props): JSX.Element {
   const currentPath = useFinderStore((s) => s.currentPath);
   const setPath = useFinderStore((s) => s.setPath);
@@ -70,7 +88,35 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
   // -1 si rien.
   const [dragOverIndex, setDragOverIndex] = useState<number>(-1);
 
+  // Menu des segments repliés.
+  const [showHidden, setShowHidden] = useState(false);
+  const hiddenMenuRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!showHidden) return;
+    function onPointerDown(e: MouseEvent) {
+      if (!hiddenMenuRef.current?.contains(e.target as Node)) {
+        setShowHidden(false);
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [showHidden]);
+
   const segments = buildPathSegments(currentPath);
+
+  // Repli : on garde la RACINE et les deux derniers segments. Les
+  // intermédiaires passent dans le menu du « … ».
+  //
+  // Ce découpage vaut à toutes les tailles d'écran, à dessein : un seuil
+  // imposerait deux rendus du même fil, donc deux copies de la logique de
+  // glisser-déposer qui occupe l'essentiel de ce fichier. Le jour où l'une
+  // évolue sans l'autre, le dépôt marche sur desktop et pas en tablette.
+  const collapsed = segments.length > MAX_VISIBLE_SEGMENTS;
+  const hiddenSegments = collapsed ? segments.slice(1, segments.length - 2) : [];
+  const visibleSegments = collapsed
+    ? [segments[0], ...segments.slice(segments.length - 2)]
+    : segments;
 
   /**
    * Filtre les events DnD : seuls ceux qui portent notre MIME passent.
@@ -178,8 +224,12 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
       className="flex items-center gap-1 text-sm flex-wrap"
       aria-label="Fil d'Ariane"
     >
-      {segments.map((segment, index) => {
-        const isLast = index === segments.length - 1;
+      {visibleSegments.map((segment, visibleIndex) => {
+        const isLast = visibleIndex === visibleSegments.length - 1;
+        // Index dans la liste COMPLÈTE : c'est lui qui identifie la cible de
+        // dépôt survolée. Un index de la liste réduite ferait surligner le
+        // mauvais segment dès que le fil est replié.
+        const index = segments.indexOf(segment);
         // Tous les segments — y compris la feuille — sont drop-targets.
         //
         // Pourquoi la feuille aussi : la feuille est le `currentPath`, c-à-d
@@ -209,7 +259,7 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
                 // alors que le drop fonctionne effectivement.
                 data-finder-drop-path={segment.path}
                 className={clsx(
-                  'font-medium text-gray-900 truncate max-w-[200px]',
+                  'font-medium text-gray-900 truncate max-w-[110px] sm:max-w-[200px]',
                   'rounded px-1 py-0.5',
                   // Highlight au dragover (sur la feuille aussi)
                   isCurrentDragOver && 'bg-blue-100 text-blue-700 ring-2 ring-blue-400',
@@ -232,7 +282,7 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
                 data-finder-drop-path={segment.path}
                 className={clsx(
                   'text-gray-600 hover:text-gray-900 hover:underline',
-                  'truncate max-w-[200px]',
+                  'truncate max-w-[110px] sm:max-w-[200px]',
                   'rounded px-1 py-0.5',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
                   'transition-colors',
@@ -249,6 +299,52 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
                 className="h-3.5 w-3.5 text-gray-400 shrink-0"
                 aria-hidden
               />
+            )}
+
+            {/* Le « … » suit immédiatement la racine et ouvre les niveaux
+                escamotés. Ce ne sont pas des cibles de dépôt — d'où le seuil
+                fixé assez haut pour que les chemins courants n'y passent
+                jamais. */}
+            {collapsed && visibleIndex === 0 && (
+              <span ref={hiddenMenuRef} className="relative flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShowHidden((v) => !v)}
+                  aria-expanded={showHidden}
+                  aria-label={`Afficher les ${hiddenSegments.length} niveaux intermédiaires`}
+                  className={clsx(
+                    'rounded px-1 py-0.5 text-gray-500',
+                    'hover:bg-gray-100 hover:text-gray-900',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400',
+                  )}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+
+                {showHidden && (
+                  <div className="absolute left-0 top-full z-30 mt-1 min-w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+                    {hiddenSegments.map((hidden) => (
+                      <button
+                        key={hidden.path}
+                        type="button"
+                        onClick={() => {
+                          setShowHidden(false);
+                          setPath(hidden.path);
+                        }}
+                        className="block w-full truncate px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        title={hidden.name}
+                      >
+                        {hidden.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <ChevronRight
+                  className="h-3.5 w-3.5 shrink-0 text-gray-400"
+                  aria-hidden
+                />
+              </span>
             )}
           </span>
         );
