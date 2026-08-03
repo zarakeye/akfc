@@ -43,12 +43,6 @@ export default function Header() {
   const [panelMenu, setPanelMenu] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
-  // Fermeture au changement de page : sans cela, le panneau resterait ouvert
-  // par-dessus la page qu'on vient de demander.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
   // Échap ferme, et le défilement de la page est bloqué tant que le panneau
   // est ouvert — sinon le fond glisse sous les doigts pendant qu'on parcourt
   // le menu.
@@ -192,7 +186,27 @@ export default function Header() {
             aria-hidden="true"
           />
 
-          <div className="relative flex h-full flex-col overflow-y-auto bg-black px-6 pb-10">
+          {/* Fermeture sur appui d'un LIEN, par délégation.
+              
+              Et non par un effet réagissant au changement d'URL : un effet
+              sert à synchroniser React avec un système extérieur, et y
+              appeler `setState` relance un rendu par-dessus celui qui vient
+              de finir. La bonne question n'était d'ailleurs pas « l'URL a
+              changé » mais « l'utilisateur a touché un lien, il en a fini
+              avec le menu » — et cet événement-là était disponible.
+              
+              Délégation plutôt qu'un `onClick` par lien : « Nos activités »
+              est un composant à part dont les liens viennent de la base, et
+              il faudrait lui passer un rappel de fermeture, comme à tout
+              menu qu'on ajoutera ensuite. Le test porte sur les liens seuls,
+              donc les boutons qui déroulent les sous-menus ne ferment pas le
+              panneau — ce qui est le comportement voulu. */}
+          <div
+            className="relative flex h-full flex-col overflow-y-auto bg-black px-6 pb-10"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("a")) setOpen(false);
+            }}
+          >
             <div className="flex items-center justify-between py-4">
               <span className="text-lg font-semibold text-white">Menu</span>
               <button
