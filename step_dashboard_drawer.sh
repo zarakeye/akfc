@@ -1,3 +1,73 @@
+#!/usr/bin/env bash
+#
+# step_dashboard_drawer.sh
+#
+# Premier pas du responsive côté dashboard : la coquille.
+#
+# ─── Un vrai bug, pas seulement de l'inconfort ─────────────────────────────
+#
+# La sidebar était en `hidden md:flex` : sous 768px elle disparaissait, et
+# RIEN ne permettait de la rouvrir. Un administrateur sur téléphone n'avait
+# aucune navigation dans le panneau de contrôle — seulement la page où il
+# était arrivé.
+#
+# ─── Le seuil passe de 768 à 1024 ──────────────────────────────────────────
+#
+# À 768px, la sidebar laissait 528px au contenu, moins 80px de rembourrage :
+# 448px pour des formulaires qui portent des builders et des grilles à deux
+# colonnes. C'était tenir sans être utilisable.
+#
+# La sidebar reste donc affichée en permanence à partir de `lg` (1024px), où
+# le contenu garde 784px, et devient un tiroir en dessous.
+#
+# ─── Pourquoi un bouton et non une languette ───────────────────────────────
+#
+# Une languette collée au bord ne se découvre pas si l'on ne sait pas qu'elle
+# est là, et sa zone tactile entre en conflit avec le geste de retour du
+# navigateur sur iOS. Un bouton nommé dans une barre d'outils est bavard et
+# sans conflit.
+#
+# Il est LIBELLÉ « Panneau de contrôle » plutôt que réduit à une icône, parce
+# que le header porte déjà un burger — celui de la navigation du site. Deux
+# burgers identiques dans la même colonne d'écran, l'un sous l'autre, seraient
+# indistinguables.
+#
+# ─── Refermer le tiroir sans effet ─────────────────────────────────────────
+#
+# La sidebar navigue par `router.push` sur des BOUTONS, pas des liens : la
+# délégation sur les ancres utilisée dans le header ne s'applique pas ici.
+#
+# On emploie donc l'autre patron sanctionné par React : l'ajustement d'état
+# pendant le rendu. On garde le dernier chemin connu ; s'il a changé, on
+# referme et on met à jour, dans le corps du composant. React relance alors le
+# rendu SANS valider le premier — il n'y a ni effet, ni rendu supplémentaire
+# affiché, donc pas de cascade. C'est ce que la documentation recommande pour
+# ajuster un état quand une valeur dérivée change.
+#
+# ─── Rembourrage ───────────────────────────────────────────────────────────
+#
+# `p-10` fixe coûtait 80px de largeur sur un téléphone qui en a 390. Il
+# devient `p-4` et ne reprend ses 40px qu'à partir de `lg`.
+#
+# Usage :
+#   bash step_dashboard_drawer.sh
+#   AKFC_APPLY_ONLY=1 bash step_dashboard_drawer.sh
+#
+set -euo pipefail
+
+layout_file="apps/web/src/app/(admin)/dashboard/layout.tsx"
+
+[ -f pnpm-workspace.yaml ] || { echo "✗ à lancer à la racine du repo"; exit 1; }
+
+# ── Garde anti-double-application ──────────────────────────────────────────
+if grep -q "sidebarOpen" "$layout_file" 2>/dev/null; then
+  echo "✓ déjà appliqué (tiroir posé) — rien à faire"
+  exit 0
+fi
+
+[ -f "$layout_file" ] || { echo "✗ introuvable : $layout_file"; exit 1; }
+
+cat > "$layout_file" <<'TSX'
 'use client';
 
 import { JSX, useEffect, useState } from 'react';
@@ -148,3 +218,51 @@ export default function DashboardLayout({ children }: Props): JSX.Element {
     </Providers>
   );
 }
+TSX
+echo "  ~ dashboard/layout.tsx (réécrit)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "AKFC_APPLY_ONLY=1 → ni typecheck ni commit."
+  exit 0
+fi
+
+if ! pnpm --filter backend typecheck; then
+  echo "✗ typecheck backend — rien n'est commité"
+  exit 1
+fi
+
+if ! pnpm typecheck; then
+  echo "✗ typecheck web — rien n'est commité"
+  exit 1
+fi
+
+git add -A
+git commit -m "feat(responsive): tiroir de navigation dans le panneau de controle
+
+Un vrai bug corrige, pas seulement de l'inconfort : la sidebar etait en
+hidden md:flex, donc sous 768px elle disparaissait et RIEN ne permettait
+de la rouvrir. Un administrateur sur telephone n'avait aucune
+navigation dans le dashboard.
+
+Le seuil monte de md a lg. A 768px la sidebar ne laissait que 448px
+utiles au contenu, ce qui ne suffit pas aux formulaires portant des
+builders et des grilles a deux colonnes. Elle reste permanente a partir
+de 1024 et devient un tiroir en dessous.
+
+Bouton libelle plutot que languette : une languette collee au bord ne
+se decouvre pas et entre en conflit avec le geste de retour d'iOS. Et
+libelle plutot qu'icone seule parce que le header porte deja un burger,
+celui de la navigation du site — deux burgers identiques l'un sous
+l'autre seraient indistinguables.
+
+Refermeture a la navigation par AJUSTEMENT D'ETAT PENDANT LE RENDU : la
+sidebar navigue par router.push sur des boutons, donc la delegation sur
+les liens du header ne s'applique pas, et un effet appelant setState
+declencherait la cascade que React signale. React relance ici le rendu
+sans valider le premier.
+
+Rembourrage du main a p-4 sous lg : p-10 coutait 80px de largeur sur un
+telephone qui en a 390."
+
+echo "✓ commité"
+git log -1 --oneline
