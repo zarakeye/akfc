@@ -75,20 +75,26 @@ export default function Header() {
       {/* Logo — rembourrage et taille réduits sous `lg`, où l'ancien
           `px-20 py-10` mangeait presque toute la largeur d'un téléphone. */}
       <Link href="/">
-        <div className="flex items-center px-4 py-4 lg:px-20 lg:py-10">
+        {/* Trois paliers : le `px-20` d'origine coûtait 160px de chaque
+            côté, ce que la barre ne pouvait pas se permettre avant 1536px. */}
+        <div className="flex items-center px-4 py-4 xl:px-6 xl:py-6 2xl:px-20 2xl:py-10">
           <Image
             src="/AKFC_logo.svg"
             alt="AKFC logo"
             width={100}
             height={100}
             priority
-            className="h-12 w-auto lg:h-25"
+            className="h-12 w-auto xl:h-16 2xl:h-25"
           />
         </div>
       </Link>
 
       {/* ── Barre horizontale (≥ lg) ──────────────────────────────────── */}
-      <nav className="hidden w-[60%] items-center justify-center gap-4 lg:flex">
+      {/* `flex-1 min-w-0` et non `w-[60%]` : une largeur en pourcentage ne
+          négocie rien avec ses voisins et poussait le logo hors de sa place.
+          `flex-1` prend ce qui reste, `min-w-0` autorise le rétrécissement
+          plutôt que le débordement. */}
+      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex 2xl:gap-6">
         {visible.map((entry) => {
           if (entry.kind === "activities") {
             return <OurActivitiesMenu key="activities" />;
@@ -99,7 +105,7 @@ export default function Header() {
               <Link
                 key={entry.href}
                 href={entry.href}
-                className={`${NAV_GLOW} text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`}
+                className={`${NAV_GLOW} whitespace-nowrap text-[17px] 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`}
               >
                 {entry.label}
               </Link>
@@ -111,16 +117,16 @@ export default function Header() {
               key={entry.label}
               onMouseEnter={() => setBarMenu(entry.label)}
               onMouseLeave={() => setBarMenu(null)}
-              className={`relative flex items-center text-[20px] ${NAV_GLOW} ${isActive(entry) ? NAV_ACTIVE : ""}`}
+              className={`relative flex items-center whitespace-nowrap text-[17px] 2xl:text-[20px] ${NAV_GLOW} ${isActive(entry) ? NAV_ACTIVE : ""}`}
             >
               <span className="whitespace-nowrap">{entry.label}</span>
               <Image
                 src="/chevron-white.svg"
                 alt=""
                 aria-hidden="true"
-                width={30}
-                height={30}
-                className={`transition-transform duration-300 ${barMenu === entry.label ? "rotate-180" : ""}`}
+                width={22}
+                height={22}
+                className={`shrink-0 transition-transform duration-300 ${barMenu === entry.label ? "rotate-180" : ""}`}
               />
               <div
                 className={`${barMenu === entry.label ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-gray-300 opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
@@ -141,7 +147,7 @@ export default function Header() {
       </nav>
 
       {/* ── Authentification (≥ lg) ───────────────────────────────────── */}
-      <div className="hidden lg:block">
+      <div className="hidden shrink-0 xl:block">
         <Suspense fallback={<div>Chargement...</div>}>
           {user
             ? (
@@ -156,7 +162,7 @@ export default function Header() {
       </div>
 
       {/* ── Cloche + burger (< lg) ────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 lg:hidden">
+      <div className="flex shrink-0 items-center gap-3 px-4 xl:hidden">
         {/* La cloche RESTE visible : son intérêt est d'être vue sans qu'on la
             cherche. L'enfermer dans le panneau la viderait de son sens. */}
         {user && (
@@ -177,7 +183,7 @@ export default function Header() {
 
       {/* ── Panneau (< lg) ────────────────────────────────────────────── */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 xl:hidden">
           {/* Fond : ferme à l'appui, et masque la page pour que l'œil ne
               cherche pas à lire au travers. */}
           <div
