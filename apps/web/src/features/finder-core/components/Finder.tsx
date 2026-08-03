@@ -30,6 +30,7 @@ import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 
 import Breadcrumb from "@features/finder-core/components/Breadcrumb";
 import PreviewPanel from "@features/finder-core/components/PreviewPanel";
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
 import FinderTree from "@features/finder-core/components/FinderTree";
 import GridItem from "@features/finder-core/components/GridItem";
 import StatusFilterBar from "@features/finder-core/components/StatusFilterBar";
@@ -202,12 +203,32 @@ export default function Finder({
   );
 
   const previewPanelRef = usePanelRef();
+
+  /**
+   * Trois volets réclament 920px — arbre 240, zone centrale ~380, aperçu
+   * 300 — auxquels s'ajoute la sidebar du panneau de contrôle (240). Sous
+   * 1280, ils se disputent une place qu'ils n'ont pas.
+   *
+   * Ici c'est bien la LARGEUR qui décide, et non le périphérique de pointage
+   * comme pour les gestes : trois colonnes ne tiennent pas dans 900px, qu'on
+   * les touche ou qu'on les clique.
+   */
+  const isWide = useIsBreakpoint("min", 1280);
+
+  // En étroit, l'aperçu quitte la colonne pour une feuille venant du bas.
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   // Le panneau démarre replié (cf. l'effet de montage plus bas) : l'icône et
   // le libellé du bouton doivent partir dans cet état, sans quoi le premier
   // rendu annoncerait « Masquer » sur un panneau déjà masqué.
   const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(true);
 
   function togglePreviewPanel() {
+    // Même bouton, même intention : replier le volet en large, ouvrir la
+    // feuille en étroit.
+    if (!isWide) {
+      setPreviewSheetOpen((v) => !v);
+      return;
+    }
     const panel = previewPanelRef.current;
     if (!panel) return;
     if (panel.isCollapsed()) {
@@ -675,7 +696,7 @@ export default function Finder({
               : "Masquer la prévisualisation"
           }
         >
-          {isPreviewCollapsed ? (
+          {(isWide ? isPreviewCollapsed : !previewSheetOpen) ? (
             <PanelRightOpen className="h-4 w-4" />
           ) : (
             <PanelRightClose className="h-4 w-4" />
@@ -701,7 +722,12 @@ export default function Finder({
         onLayoutChange={handleLayoutChange}
         className="flex-1 min-h-0"
       >
-        {/* 🌳 TREE */}
+        {/* 🌳 TREE — masqué sous 1280.
+            On navigue alors par le contenu et le fil d'Ariane, tous deux
+            tactiles. Aucune application de fichiers mobile n'affiche
+            d'arbre : ni Fichiers, ni Drive, ni OneDrive. */}
+        {isWide && (
+        <>
         <Panel
           id="tree"
           defaultSize="320px"
@@ -732,6 +758,8 @@ export default function Finder({
             focus-visible:outline-none focus-visible:bg-blue-400 focus-visible:w-0.75
           "
         />
+        </>
+        )}
 
         {/* 📁 GRILLE */}
         <Panel
@@ -998,6 +1026,8 @@ export default function Finder({
           )}
         </Panel>
 
+        {isWide && (
+        <>
         <Separator
           className="
             w-px bg-gray-200
@@ -1025,7 +1055,44 @@ export default function Finder({
         >
           <PreviewPanel adapter={adapter} />
         </Panel>
+        </>
+        )}
       </Group>
+
+      {/* 👁️ APERÇU EN FEUILLE — sous 1280 uniquement.
+          `PreviewPanel` est réutilisé tel quel : un second composant
+          d'aperçu aurait divergé du premier à la première correction.
+
+          La feuille s'ouvre au BOUTON et non à la sélection d'un fichier :
+          réagir à un changement de sélection demanderait un effet, donc la
+          cascade de rendus que React signale. L'ouverture au geste touche
+          les trois vues — grille, table, compacte — et fera un incrément à
+          part. */}
+      {!isWide && previewSheetOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setPreviewSheetOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col rounded-t-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <span className="text-sm font-semibold">Aperçu</span>
+              <button
+                type="button"
+                onClick={() => setPreviewSheetOpen(false)}
+                aria-label="Fermer l'aperçu"
+                className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <PreviewPanel adapter={adapter} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Menu contextuel de tri */}
       {sortMenuPos && (
