@@ -28,11 +28,19 @@ import { useRef } from 'react';
  * ```
  *
  * @param onLongPress fonction à appeler si l'appui dure assez longtemps
- * @param delay durée requise en millisecondes (défaut : 1500ms)
+ * @param delay durée requise en millisecondes (défaut : 500ms)
+ *
+ * ⏱️ Pourquoi 500ms et non 1500 : iOS déclenche l'appui long vers 500ms,
+ * Android entre 400 et 500. À 1500ms, l'usager a relâché bien avant et
+ * conclut que le geste n'existe pas — le comportement était donc
+ * inatteignable en pratique sur écran tactile.
+ *
+ * Le hook sert aussi à la souris, où l'équivalent est le clic droit :
+ * raccourcir ne gêne pas, un maintien d'une demi-seconde restant volontaire.
  */
 export function useLongPress(
   onLongPress: () => void,
-  delay: number = 1500
+  delay: number = 500
 ): {
   onMouseDown: () => void;
   onMouseUp: () => void;
