@@ -18,7 +18,16 @@ import { trpc } from "@trpc/trpcClient";
  * chevron `chevron-white.svg` qui pivote, panneau `bg-gray-300` à liens
  * `text-gray-800 hover:bg-gray-100`.
  */
-export default function OurActivitiesMenu(): JSX.Element {
+export default function OurActivitiesMenu({
+  variant = "bar",
+}: {
+  /**
+   * `bar` : déroulé au SURVOL, pour la barre horizontale du desktop.
+   * `panel` : déroulé à l'APPUI, pour le panneau du menu burger — un écran
+   * tactile n'a pas de survol, et ce menu y était donc inatteignable.
+   */
+  variant?: "bar" | "panel";
+} = {}): JSX.Element {
   const [hover, setHover] = useState<boolean>(false);
   // Fetch des familles et disciplines pour construire le menu. On ne fait rien côté erreur : on n'affiche rien.
   const { data: familiesData } = trpc.disciplineFamily.getAll.useQuery();
@@ -44,6 +53,57 @@ export default function OurActivitiesMenu(): JSX.Element {
     .sort((a, b) => a.name.localeCompare(b.name));
   if (orphans.length > 0) {
     groups.push({ id: -1, name: "Autres", disciplines: orphans });
+  }
+
+  // ─── Variante panneau ───────────────────────────────────────────────
+  // Même contenu, déroulé à l'appui et posé dans le flux plutôt qu'en
+  // superposition : dans un panneau qui défile déjà, un sous-menu absolu
+  // sortirait de l'écran.
+  if (variant === "panel") {
+    return (
+      <div className="flex flex-col">
+        <button
+          type="button"
+          onClick={() => setHover(!hover)}
+          aria-expanded={hover}
+          className="flex items-center justify-between py-3 text-left text-lg text-white"
+        >
+          <span>Nos activités</span>
+          <Image
+            src="/chevron-white.svg"
+            alt=""
+            aria-hidden="true"
+            width={26}
+            height={26}
+            className={`transition-transform duration-300 ${hover ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {hover && (
+          <div className="flex flex-col border-l border-gray-700 pl-4">
+            <Link href="/agenda" className="block py-2 text-white/80">
+              Agenda — stages et évènements
+            </Link>
+            {groups.map((family) => (
+              <div key={family.id} className="mt-2">
+                <p className="text-sm font-bold uppercase tracking-wide text-gray-400">
+                  {family.name}
+                </p>
+                {family.disciplines.map((d) => (
+                  <Link
+                    key={d.id}
+                    href={`/disciplines/${d.slug}`}
+                    className="block py-2 text-white/80"
+                  >
+                    {d.name}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
