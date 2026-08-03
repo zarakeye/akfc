@@ -83,7 +83,16 @@ export default function FinderSearchControl(): JSX.Element {
       {expanded && (
         // `basis-full` : la barre prend sa propre ligne dans la barre
         // d'outils, qui enveloppe désormais ses éléments.
-        <div className="flex basis-full items-center gap-2 pt-1">
+        // `order-last` : cette recherche est montée AVANT les boutons
+        // d'état, le sélecteur de vue et le bouton de suppression. Sans lui,
+        // sa ligne pleine largeur pousserait tout cela sur la ligne du
+        // dessous. Il la place en dernier au RENDU, sans déplacer trente
+        // lignes de JSX pour un problème d'affichage.
+        //
+        // Contrepartie : `order` ne change que l'ordre visuel. Au clavier, la
+        // tabulation suit l'ordre du code, donc ce champ est atteint avant
+        // les boutons d'état alors qu'il s'affiche après.
+        <div className="order-last flex basis-full items-center gap-2 pt-1">
           <FinderSearchBar fullWidth autoFocusOnMount />
           <button
             type="button"

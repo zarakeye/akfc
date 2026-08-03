@@ -56,7 +56,10 @@ export function ImageGalleryPreview({
   }
 
   return (
-    <div>
+    // `@container` ici plutôt que sur chaque disposition : ce composant a
+    // déjà une enveloppe commune, et une container query régit ses
+    // DESCENDANTS.
+    <div className="@container">
       {missing > 0 && (
         <Notice>
           {missing} média(s) sélectionné(s) introuvable(s) — non affiché(s)
@@ -65,7 +68,7 @@ export function ImageGalleryPreview({
       )}
       {block.layout === "grid" && (
         <div
-          className="grid sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3"
           style={{ gap: "var(--akfc-item-gap)" }}
         >
           {items.map(({ item, media }) => (
@@ -79,7 +82,7 @@ export function ImageGalleryPreview({
           style={{ gap: "var(--akfc-item-gap)" }}
         >
           {items.map(({ item, media }) => (
-            <div key={item.mediaId} className="w-72 flex-shrink-0 snap-start">
+            <div key={item.mediaId} className="w-64 @md:w-72 flex-shrink-0 snap-start">
               <Figure media={media} caption={item.caption} />
             </div>
           ))}
@@ -87,7 +90,7 @@ export function ImageGalleryPreview({
       )}
       {block.layout === "masonry" && (
         <div
-          className="columns-1 sm:columns-2 lg:columns-3"
+          className="columns-1 @md:columns-2 @3xl:columns-3"
           style={{ gap: "var(--akfc-item-gap)" }}
         >
           {items.map(({ item, media }) => (
