@@ -1,6 +1,7 @@
 import { JSX } from "react";
 
 import Header from "@features/app-shell/Header";
+import Footer from "@features/app-shell/Footer";
 import { prisma } from "@backend/prisma";
 import { BreakingNewsShell } from "@features/breaking-news/BreakingNewsShell";
 import { FirstLoginRedirect } from "@features/auth/FirstLoginRedirect";
@@ -43,6 +44,7 @@ export default async function PublicLayout({
       </div>
       <BreakingNewsShell news={activeNews} />
       <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   );
 }
