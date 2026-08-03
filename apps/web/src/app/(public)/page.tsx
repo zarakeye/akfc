@@ -168,19 +168,21 @@ export default async function HomePage(): Promise<JSX.Element> {
           de leur culture, pour tous les âges et tous les niveaux. Découvrez nos
           disciplines, nos stages et la vie du club.
         </p>
+        {/* Un seul appel à l'action. « Découvrir nos disciplines » a été
+            retiré : elles s'affichent en cartes juste en dessous, chacune avec
+            son lien vers la présentation complète — un bouton vers une liste
+            déjà déroulée sous les yeux du visiteur ne lui apprend rien.
+
+            « Nous contacter » reste malgré l'item « Contacts » de la navbar :
+            une entrée de navigation et un appel à l'action ne jouent pas le
+            même rôle, même en menant au même endroit. */}
         <div className="flex flex-wrap justify-center gap-4">
           <Link
-            href="/disciplines"
+            href="/contacts"
             className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
           >
-            Découvrir nos disciplines
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/contacts"
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-5 py-3 font-medium transition-colors hover:bg-gray-50"
-          >
             Nous contacter
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
