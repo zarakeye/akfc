@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useState } from 'react';
+import { JSX, useRef, useState } from 'react';
 import { Folder, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -143,6 +143,16 @@ export default function GridItem({
     onLongPress();
   });
 
+  // Type de pointeur du geste EN COURS, relevé au premier contact.
+  //
+  // Une `ref` et non un état : cette valeur ne doit provoquer aucun rendu, et
+  // elle est lue dans le gestionnaire de clic qui suit immédiatement.
+  //
+  // On l'interroge à chaque geste plutôt que de détecter une fois pour toutes
+  // « est-ce un mobile ». Un portable tactile a les deux périphériques, et
+  // l'utilisateur alterne : la seule réponse juste est celle du geste courant.
+  const pointerTypeRef = useRef<string>("mouse");
+
   // État local pour détecter si la vignette image/thumbnail a échoué.
   // Fallback sur l'icône typée plutôt que le placeholder broken-image natif.
   const [imgFailed, setImgFailed] = useState(false);
@@ -240,6 +250,9 @@ export default function GridItem({
     <>
       <div
         draggable={!isStatus}
+        onPointerDown={(e) => {
+          pointerTypeRef.current = e.pointerType;
+        }}
         onClick={(e) => {
           // Avale le click parasite qui suit immédiatement un longpress
           // (cf. doc dans useLongPress.ts). Sans ce skip, le toggle dans
@@ -247,6 +260,30 @@ export default function GridItem({
           // longpress vient juste d'ajouter.
           if (longPress.consumeJustFired()) return;
           e.stopPropagation();
+
+          // ─── Tap simple = ouvrir, au DOIGT seulement ─────────────────
+          //
+          // Ouvrir demandait un double-clic, geste que le navigateur capte
+          // souvent comme un zoom sur écran tactile et qu'aucun gestionnaire
+          // de fichiers mobile n'emploie : Fichiers, Drive et OneDrive
+          // ouvrent tous au tap simple. Un dossier était donc pratiquement
+          // impossible à ouvrir au doigt.
+          //
+          // Le critère est le PÉRIPHÉRIQUE, pas la largeur d'écran : un
+          // portable tactile de 1440px mérite le tap simple, une fenêtre
+          // étroite sur un poste à souris garde le double-clic.
+          //
+          // En sélection multiple, le tap coche — c'est tout l'objet du mode,
+          // et ouvrir sous les doigts de quelqu'un qui coche serait hostile.
+          if (
+            pointerTypeRef.current !== "mouse" &&
+            !multiSelectActive &&
+            onDoubleClick
+          ) {
+            onDoubleClick();
+            return;
+          }
+
           onClick(e);
         }}
         onDoubleClick={onDoubleClick}
