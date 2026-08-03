@@ -47,7 +47,7 @@ import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
 import { useMediaAssetEnrichment } from "@features/finder-core/hooks/useMediaAssetEnrichment";
 import { useFinderSearch } from "@features/finder-core/hooks/useFinderSearch";
 
-import FinderSearchBar from "@features/finder-core/components/FinderSearchBar";
+import FinderSearchControl from "@features/finder-core/components/FinderSearchControl";
 import SearchResultsView from "@features/finder-core/components/SearchResultsView";
 
 import { sortNodes, groupNodes } from "@features/finder-core/utils/sortNodes";
@@ -525,7 +525,7 @@ export default function Finder({
   return (
     <div className="flex flex-col h-full border rounded overflow-hidden">
       {/* ──────────────────────── HEADER : breadcrumb + actions ─────────── */}
-      <div className="px-3 py-2 border-b text-sm flex items-center gap-2 min-h-10]">
+      <div className="px-3 py-2 border-b text-sm flex flex-wrap items-center gap-2 min-h-10">
         <div className="flex-1 min-w-0">
           <Breadcrumb adapter={adapter} />
         </div>
@@ -598,7 +598,7 @@ export default function Finder({
 
         {currentPath !== `${APP_ROOT}/bin` &&
           !multiSelectActive &&
-          !fileFilter && <FinderSearchBar />}
+          !fileFilter && <FinderSearchControl />}
 
         {/* La corbeille garde son propre système : ses items n'ont pas de
             statut de publication, la lentille n'y a rien à filtrer. */}

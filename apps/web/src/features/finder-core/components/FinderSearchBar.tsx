@@ -33,7 +33,15 @@ import { useFinderStore, type SearchFlags } from '@features/finder-core/state/us
  *   - ab| : Match whole word (le pipe représente la frontière de mot)
  *   - .* : Use regular expression
  */
-export default function FinderSearchBar(): JSX.Element {
+export default function FinderSearchBar({
+  fullWidth = false,
+  autoFocusOnMount = false,
+}: {
+  /** Occupe toute la largeur au lieu des 280px de la barre d'outils. */
+  fullWidth?: boolean;
+  /** Prend le focus au montage — la barre n'est dépliée que pour taper. */
+  autoFocusOnMount?: boolean;
+} = {}): JSX.Element {
   const query = useFinderStore((s) => s.search.query);
   const flags = useFinderStore((s) => s.search.flags);
   const loading = useFinderStore((s) => s.search.loading);
@@ -63,6 +71,14 @@ export default function FinderSearchBar(): JSX.Element {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // Focus au montage : la barre n'est dépliée que pour y taper, exiger un
+  // appui de plus serait gratuit. Un effet est ici légitime — il synchronise
+  // React avec le DOM (le focus), il n'appelle aucun setState.
+  useEffect(() => {
+    if (!autoFocusOnMount) return;
+    inputRef.current?.focus();
+  }, [autoFocusOnMount]);
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -73,13 +89,14 @@ export default function FinderSearchBar(): JSX.Element {
 
   return (
     <div
-      className="
+      className={`
         relative flex items-center gap-1 shrink-0
-        w-[280px] h-7 px-2
+        h-7 px-2
+        ${fullWidth ? 'w-full' : 'w-[280px]'}
         bg-white border border-gray-300 rounded
         focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500
         transition-colors
-      "
+      `}
     >
       {/* Icône loupe (ou spinner pendant le fetch) */}
       <div className="shrink-0 w-3.5 h-3.5 flex items-center justify-center text-gray-400">
