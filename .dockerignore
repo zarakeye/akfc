@@ -1,0 +1,40 @@
+# Ce que Docker ne doit JAMAIS recevoir dans son contexte de construction.
+#
+# Un contexte allégé n'est pas qu'une question de vitesse : tout ce qui entre
+# ici peut finir dans une couche de l'image, y compris ce qui ne devrait
+# jamais quitter ta machine.
+
+# Dépendances et artefacts : reconstruits dans l'image.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+.turbo
+
+# Secrets. Les variables d'environnement se passent au CONTENEUR, jamais à
+# l'image : une valeur copiée dans une couche y reste, même supprimée ensuite.
+.env
+.env.*
+!.env.example
+
+# Résidus macOS, que OneDrive propage abondamment dans ce dépôt.
+.DS_Store
+**/.DS_Store
+._*
+**/._*
+
+# Historique et outillage local.
+.git
+.github
+.vscode
+*.log
+
+# Scripts d'application et sauvegardes qui traînent à la racine.
+step_*.sh
+fix_*.sh
+diag_*.sh
+audit_*.sh
+*.sql
+*.png
