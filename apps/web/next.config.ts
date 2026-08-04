@@ -20,6 +20,23 @@ const withMDX = createMDX({
 
 const nextConfig: NextConfig = {
   /**
+   * Sortie AUTONOME : Next produit un dossier contenant son propre serveur et
+   * uniquement les dépendances que le code atteint réellement. Sans elle,
+   * l'image Docker embarque tout `node_modules` du monorepo.
+   */
+  output: "standalone",
+
+  /**
+   * Racine de traçage des fichiers.
+   *
+   * Indispensable en monorepo, et souvent oublié : par défaut Next trace
+   * depuis `apps/web` et manque donc `packages/backend` et
+   * `packages/contracts`, qui vivent AU-DESSUS. Le serveur démarre alors
+   * normalement puis s'effondre au premier import.
+   */
+  outputFileTracingRoot: path.join(process.cwd(), "../../"),
+
+  /**
    * Les listes `/stages` et `/events` ont fusionné dans `/agenda`.
    *
    * Redirection plutôt que 404 : ces adresses ont pu être envoyées par
