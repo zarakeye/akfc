@@ -5,6 +5,8 @@ import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * « L'association » — présentation du club.
  *

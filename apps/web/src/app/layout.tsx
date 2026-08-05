@@ -6,6 +6,8 @@ import { prisma } from "@backend/prisma"
 import { AppProviders } from "@app/providers"
 import { SessionLoader } from "@features/auth/SessionLoader"
 
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
