@@ -1,11 +1,22 @@
 'use client';
 
-import { JSX, useEffect } from 'react';
+import { JSX, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Finder from '@features/finder-core/components/Finder';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
 import { APP_ROOT } from '@config/app';
+
+// Lit ?path= dans l'URL — doit vivre sous un <Suspense> (exigence Next au build).
+function DeepLinkSync(): null {
+  const searchParams = useSearchParams();
+  const setPath = useFinderStore((state) => state.setPath);
+  const requestedPath = searchParams.get('path');
+  useEffect(() => {
+    if (requestedPath) setPath(requestedPath);
+  }, [requestedPath, setPath]);
+  return null;
+}
 
 /**
  * Page bibliothèque.
@@ -22,18 +33,11 @@ import { APP_ROOT } from '@config/app';
  * corbeille intégrée, et cache unifié TreeView/GridView.
  */
 export default function GalleryPage(): JSX.Element {
-  // Lien profond : `?path=AKFC/cours/x` ouvre le finder sur ce dossier.
-  // Utilisé par la cloche de notifications pour mener droit au contenu.
-  const searchParams = useSearchParams();
-  const setPath = useFinderStore((state) => state.setPath);
-  const requestedPath = searchParams.get('path');
-
-  useEffect(() => {
-    if (requestedPath) setPath(requestedPath);
-  }, [requestedPath, setPath]);
-
   return (
     <div className="p-6 h-full flex flex-col">
+      <Suspense fallback={null}>
+        <DeepLinkSync />
+      </Suspense>
       <h1 className="text-2xl font-semibold mb-6 shrink-0">
         Bibliothèque
       </h1>
