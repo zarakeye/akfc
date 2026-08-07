@@ -74,18 +74,20 @@ export async function GET(
     return new NextResponse('Not found', { status: 404 });
   }
 
-  // ─── Garde : asset published + référencé par au moins une page ────────
-  const reference = await prisma.pageMediaReference.findFirst({
+  // ─── Garde : asset published + placé (page OU galerie publique) ────────
+  const servable = await prisma.mediaAsset.findFirst({
     where: {
-      mediaAsset: {
-        fullPath: r2Key,
-        status: 'published',
-      },
+      fullPath: r2Key,
+      status: 'published',
+      OR: [
+        { pageReferences: { some: {} } },
+        { galleryItems: { some: { gallery: { visibility: 'PUBLIC' } } } },
+      ],
     },
     select: { id: true },
   });
 
-  if (!reference) {
+  if (!servable) {
     return new NextResponse('Not found', { status: 404 });
   }
 

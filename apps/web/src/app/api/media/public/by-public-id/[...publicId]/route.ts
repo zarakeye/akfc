@@ -57,23 +57,25 @@ export async function GET(
     const id = publicId?.join("/");
     if (!id) return new Response("Not found", { status: 404 });
 
-    // ─── Garde : published + référencé par au moins une page ──────────────
+    // ─── Garde : published + placé (page OU galerie publique) ──────────────
     // Clé sur `publicId` (@unique). L'asset ne se sert publiquement que si
     // un PageMediaReference le pointe et qu'il est publié — l'invariant
     // « référencé ⟹ published » est verrouillé côté sync + gardes de statut,
     // mais on revérifie ici : cette route est frappable indépendamment du
     // rendu de la page.
-    const reference = await prisma.pageMediaReference.findFirst({
+    const servable = await prisma.mediaAsset.findFirst({
       where: {
-        mediaAsset: {
-          publicId: id,
-          status: "published",
-        },
+        publicId: id,
+        status: "published",
+        OR: [
+          { pageReferences: { some: {} } },
+          { galleryItems: { some: { gallery: { visibility: "PUBLIC" } } } },
+        ],
       },
       select: { id: true },
     });
 
-    if (!reference) return new Response("Not found", { status: 404 });
+    if (!servable) return new Response("Not found", { status: 404 });
 
     // ─── Paramètres de rendu ──────────────────────────────────────────────
     const { searchParams } = new URL(req.url);
