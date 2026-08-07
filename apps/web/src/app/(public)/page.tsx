@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import Link from "next/link";
-import { Award, Calendar, Images, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import HomeCarousel from "@features/app-shell/HomeCarousel";
 
@@ -89,27 +89,6 @@ export default async function HomePage(): Promise<JSX.Element> {
     select: { cardCollapsedHeight: true },
   });
 
-  const activities = [
-    {
-      href: "/disciplines",
-      icon: Award,
-      title: "Nos disciplines",
-      desc: "Les arts martiaux et pratiques enseignés au club.",
-    },
-    {
-      href: "/agenda",
-      icon: Calendar,
-      title: "Agenda",
-      desc: "Stages et évènements à venir, du plus proche au plus lointain.",
-    },
-    {
-      href: "/gallery",
-      icon: Images,
-      title: "La galerie",
-      desc: "Images des entraînements, stages et moments partagés.",
-    },
-  ];
-
   const posts = await prisma.post.findMany({
     where: { publicationDate: { not: null, lte: new Date() } },
     orderBy: { publicationDate: "desc" },
@@ -197,29 +176,6 @@ export default async function HomePage(): Promise<JSX.Element> {
           />
         </section>
       )}
-
-      {/* Accès aux pages publiques */}
-      <section className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {activities.map(({ href, icon: Icon, title, desc }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md"
-              >
-                <Icon className="h-8 w-8 text-emerald-600" />
-                <p className="text-lg font-semibold">{title}</p>
-                <p className="flex-1 text-sm text-gray-600">{desc}</p>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600">
-                  Voir
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Mur de posts (flux façon Facebook) ─────────────────────── */}
       {posts.length > 0 && (
