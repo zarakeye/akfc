@@ -602,9 +602,16 @@ export default function Finder({
 
         {/* La corbeille garde son propre système : ses items n'ont pas de
             statut de publication, la lentille n'y a rien à filtrer. */}
+        {/* Masquée aussi quand le dossier courant n'a aucun fichier enfant
+            direct : le filtre ne trie que des fichiers, il n'a rien à faire
+            sur un dossier qui ne contient que des sous-dossiers. Condition sur
+            `files` BRUT (pas `visibleFiles`) — sinon filtrer « En attente »
+            sans aucun fichier en attente masquerait la barre et bloquerait le
+            retour à « Tous ». */}
         {currentPath !== `${APP_ROOT}/bin` &&
           !multiSelectActive &&
-          !fileFilter && <StatusFilterBar />}
+          !fileFilter &&
+          files.length > 0 && <StatusFilterBar />}
 
         {currentPath !== `${APP_ROOT}/bin` && <FinderViewModeSwitcher />}
 
