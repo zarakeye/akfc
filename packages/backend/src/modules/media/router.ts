@@ -248,6 +248,8 @@ export const mediaRouter = router({
           id: true,
           publicId: true,
           fullPath: true,
+          displayName: true,
+          originalFileName: true,
           mimeType: true,
           resourceType: true,
           width: true,
@@ -268,7 +270,10 @@ export const mediaRouter = router({
           kind,
           posterUrl: kind === 'video' ? `${baseUrl}&as=poster` : null,
           mimeType: asset.mimeType,
-          fileName: fileNameOf(asset.fullPath),
+          fileName:
+            asset.displayName?.trim() ||
+            asset.originalFileName ||
+            fileNameOf(asset.fullPath),
           width: asset.width,
           height: asset.height,
           duration: asset.duration,
@@ -467,7 +472,10 @@ export const mediaRouter = router({
         const path = toLogical(storagePath);
         const lastSlash = path.lastIndexOf('/');
         const parentPath = lastSlash > 0 ? path.slice(0, lastSlash) : input.appRoot;
-        const name = lastSlash > 0 ? path.slice(lastSlash + 1) : path;
+        const name =
+          asset.displayName?.trim() ||
+          asset.originalFileName ||
+          (lastSlash > 0 ? path.slice(lastSlash + 1) : path);
 
         return {
           kind: 'file' as const,
