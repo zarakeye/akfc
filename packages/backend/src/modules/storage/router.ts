@@ -403,6 +403,35 @@ export const storageRouter = router({
         });
       }
 
+      // ─── FICHIER : on n'édite QUE le nom d'affichage ───────────────────
+      //
+      // Depuis la slugification (increment 1), la clé de stockage est un slug
+      // stable et opaque. Renommer un fichier ne déplace donc plus rien chez
+      // le provider et ne devine plus d'extension (fin du bug historique) :
+      // c'est un simple UPDATE de `displayName`. Match logique tolérant à
+      // l'extension, comme `media.updateDescription` (fullPath DB = path UI +
+      // "." + format côté Cloudinary). Deux fichiers peuvent partager un nom
+      // d'affichage : pas de contrôle de collision ici, la clé reste unique.
+      if (input.type === "file") {
+        const result = await ctx.prisma.mediaAsset.updateMany({
+          where: {
+            appRoot: ctx.appRoot,
+            OR: [
+              { fullPath: input.path },
+              { fullPath: { startsWith: `${input.path}.` } },
+            ],
+          },
+          data: { displayName: cleanName },
+        });
+        if (result.count === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Aucun média trouvé pour ce fichier.",
+          });
+        }
+        return { success: true, path: input.path };
+      }
+
       // Extension de la SOURCE, réappliquée telle quelle.
       //
       // ⚠️ Un point dans un nom n'est PAS forcément un séparateur
