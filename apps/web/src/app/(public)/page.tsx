@@ -142,16 +142,19 @@ export default async function HomePage(): Promise<JSX.Element> {
 
       {/* Intro */}
       <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        {/* Logo — plus visible qu'en navbar, surtout sur mobile ; réduit sur
-            desktop (lg) où la navbar le porte déjà. */}
-        <Image
-          src="/AKFC_logo.svg"
-          alt="AKFC logo"
-          width={160}
-          height={160}
-          priority
-          className="mx-auto mb-6 block h-24 w-auto sm:h-28 lg:h-20"
-        />
+        {/* Logo inscrit dans un disque noir — agrandi pour la lisibilité.
+            Le disque (rounded-full + bg-black) fait cadre ; le padding donne
+            l'impression que le logo s'inscrit dedans. */}
+        <div className="mx-auto mb-6 h-48 w-48 rounded-full bg-black p-6 sm:h-56 sm:w-56 lg:h-48 lg:w-48">
+          <Image
+            src="/AKFC_logo.svg"
+            alt="AKFC logo"
+            width={224}
+            height={224}
+            priority
+            className="h-full w-full object-contain"
+          />
+        </div>
         <h1 className="mb-4 text-4xl font-bold">Bienvenue à l&apos;AKFC</h1>
         <p className="mb-8 text-lg text-gray-600">
           Un club dédié à la pratique et à la transmission des arts martiaux et
