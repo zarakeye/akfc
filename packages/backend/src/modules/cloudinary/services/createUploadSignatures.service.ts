@@ -4,6 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 import { resolvePendingUploadFolder } from "@backend/modules/cloudinary/services/resolvePendingUploadFolder.service";
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
+import { buildUploadFileName } from "@backend/modules/storage/services/buildUploadFileName.service";
 import type {
   UploadDestination,
   UploadAssetRequest,
@@ -44,8 +45,14 @@ export async function createUploadSignatures(params: {
   // le public_id par le folder à l'upload : `folder/nom`). On calcule donc
   // les publicIds complets prospectifs et on regarde lesquels existent déjà,
   // en une seule requête.
+  // Base slugifiée — même règle que R2 (`buildUploadFileName`), donc clés
+  // Cloudinary et R2 identiques et SÛRES (ni point, ni espace, ni parenthèse).
+  // Retire à la source la classe de bugs livraison/renommage. Le nom humain
+  // reste dans `originalFileName` / `displayName`, lus à l'affichage.
+  const safeBaseName = (fileName: string) =>
+    buildUploadFileName(fileName).replace(/\.[^/.]+$/, "");
   const fullPublicIdFor = (fileName: string) =>
-    `${folder}/${fileName.replace(/\.[^/.]+$/, "")}`;
+    `${folder}/${safeBaseName(fileName)}`;
 
   const existing = await prisma.mediaAsset.findMany({
     where: { publicId: { in: assets.map((a) => fullPublicIdFor(a.fileName)) } },
@@ -69,7 +76,7 @@ export async function createUploadSignatures(params: {
   }
 
   return assets.map((asset) => {
-    const publicId = asset.fileName.replace(/\.[^/.]+$/, "");
+    const publicId = safeBaseName(asset.fileName);
     const fullPublicId = `${folder}/${publicId}`;
 
     // ⚠️ La signature Cloudinary couvre TOUS les params envoyés (hors
