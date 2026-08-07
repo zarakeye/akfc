@@ -16,7 +16,7 @@ import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
  *                le MediaListEditor, et les previews dans l'admin.
  *
  *   - `public` : les routes publiques. Identiques côté Cloudinary
- *                (la route `by-public-id` est déjà publique), mais
+ *                (via `/api/media/public/by-public-id`, garde published + réf), mais
  *                différentes côté R2 où on passe par
  *                `/api/media/public/r2/<path>` qui vérifie qu'un
  *                `PageMediaReference` existe avant de signer.

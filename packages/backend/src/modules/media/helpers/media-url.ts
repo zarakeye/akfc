@@ -7,7 +7,11 @@ export function buildMediaProxyUrl(
   const encodeSegments = (path: string) =>
     path.split('/').map(encodeURIComponent).join('/');
   if (asset.publicId !== null) {
-    return `/api/media/by-public-id/${encodeSegments(asset.publicId)}?variant=large`;
+    const cldPrefix =
+      audience === 'public'
+        ? '/api/media/public/by-public-id'
+        : '/api/media/by-public-id';
+    return `${cldPrefix}/${encodeSegments(asset.publicId)}?variant=large`;
   }
   const r2Prefix =
     audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';
