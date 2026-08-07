@@ -62,6 +62,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # `--filter web` place le répertoire courant dans `apps/web`, ce dont
 # `next.config.ts` a besoin : il y résout son greffon remark par
 # `process.cwd()`.
+# ─── Variables publiques figées au BUILD ─────────────────────────────────
+# Les `NEXT_PUBLIC_*` sont inlinées par `next build`, pas lues au runtime.
+# Sans elles ici, `APP_ROOT` (= NEXT_PUBLIC_APP_SHORT_NAME || 'my_app', racine
+# du finder) tombe sur son fallback et le finder liste du vide en prod. On les
+# reçoit en build args (valeurs fournies par le compose : build.args).
+ARG NEXT_PUBLIC_APP_SHORT_NAME
+ARG NEXT_PUBLIC_APP_FULL_NAME
+ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
+ENV NEXT_PUBLIC_APP_FULL_NAME=${NEXT_PUBLIC_APP_FULL_NAME}
 RUN pnpm --filter web build
 
 # ─── Migrateur ────────────────────────────────────────────────────────────
