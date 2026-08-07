@@ -38,12 +38,14 @@ function candidateKeys(file: StorageFileNode): string[] {
   return keys;
 }
 
-async function statusByKey(
+type ResolvedMeta = { status?: LifecycleStatus; human?: string };
+
+async function metaByKey(
   prisma: PrismaClient,
   appRoot: string,
   keys: string[],
-): Promise<Map<string, LifecycleStatus>> {
-  const map = new Map<string, LifecycleStatus>();
+): Promise<Map<string, ResolvedMeta>> {
+  const map = new Map<string, ResolvedMeta>();
   if (keys.length === 0) return map;
 
   const rows = await prisma.mediaAsset.findMany({
@@ -51,18 +53,29 @@ async function statusByKey(
       appRoot,
       OR: [{ publicId: { in: keys } }, { fullPath: { in: keys } }],
     },
-    select: { publicId: true, fullPath: true, status: true },
+    select: {
+      publicId: true,
+      fullPath: true,
+      status: true,
+      displayName: true,
+      originalFileName: true,
+    },
   });
 
   for (const row of rows) {
-    if (!isLifecycleStatus(row.status)) continue;
-    if (row.publicId) map.set(row.publicId, row.status);
-    if (row.fullPath) map.set(row.fullPath, row.status);
+    // La cle de stockage (publicId) est desormais slugifiee : c'est ici qu'on
+    // rend au finder le nom lisible. displayName cure sinon nom d'origine ;
+    // l'extension/format est geree par les helpers d'affichage du front.
+    const human = row.displayName?.trim() || row.originalFileName || undefined;
+    const status = isLifecycleStatus(row.status) ? row.status : undefined;
+    const meta: ResolvedMeta = { status, human };
+    if (row.publicId) map.set(row.publicId, meta);
+    if (row.fullPath) map.set(row.fullPath, meta);
   }
   return map;
 }
 
-/** Pose `metadata.status` sur chaque fichier d'une liste plate. */
+/** Pose `metadata.status` ET le nom d'affichage humain sur chaque fichier. */
 export async function enrichFilesWithStatus(
   prisma: PrismaClient,
   appRoot: string,
@@ -71,13 +84,17 @@ export async function enrichFilesWithStatus(
   if (files.length === 0) return;
 
   const allKeys = files.flatMap(candidateKeys);
-  const byKey = await statusByKey(prisma, appRoot, allKeys);
+  const byKey = await metaByKey(prisma, appRoot, allKeys);
 
   for (const file of files) {
     for (const key of candidateKeys(file)) {
-      const status = byKey.get(key);
-      if (status) {
-        file.metadata = { ...(file.metadata ?? {}), status };
+      const hit = byKey.get(key);
+      if (hit) {
+        if (hit.status) {
+          file.metadata = { ...(file.metadata ?? {}), status: hit.status };
+        }
+        // Le `name` stocke est le slug ; on affiche le nom humain quand connu.
+        if (hit.human) file.name = hit.human;
         break;
       }
     }
