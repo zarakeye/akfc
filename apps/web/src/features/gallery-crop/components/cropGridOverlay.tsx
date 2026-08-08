@@ -23,7 +23,7 @@ export default function CropGridOverlay({
     gridY: number;
   } | null>(null);
 
-  const onMouseDown = (e: React.MouseEvent) => {
+  const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
 
     dragStart.current = {
@@ -39,7 +39,7 @@ export default function CropGridOverlay({
 
   /* 📐 mesurer le workspace une fois monté */
   useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
       const start = dragStart.current;
       const workspace = workspaceRef.current;
 
@@ -63,24 +63,24 @@ export default function CropGridOverlay({
       }));
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       dragStart.current = null;
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
 
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
     };
   }, [setGrid, workspaceRef]);
 
   return (
     <div
       ref={gridRef}
-      onMouseDown={onMouseDown}
-      className="absolute border  pointer-events-auto cursor-move select-none"
+      onPointerDown={onPointerDown}
+      className="absolute border-2 border-white/90 pointer-events-auto cursor-move select-none touch-none"
       style={{
         left: grid.x,
         top: grid.y,
