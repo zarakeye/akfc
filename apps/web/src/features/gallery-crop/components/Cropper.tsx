@@ -154,12 +154,12 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4">
-      <div className="bg-white p-4 rounded shadow gap-4">
-        <div className="flex gap-4">
+    <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4 overflow-auto">
+      <div className="bg-white p-4 rounded shadow gap-4 w-full sm:w-auto max-w-full max-h-[92dvh] overflow-auto">
+        <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
           <div
             ref={workspaceRef}
-            className="relative w-[500px] h-[500px] overflow-hidden bg-checkerboard"
+            className="relative w-full max-w-[500px] aspect-square overflow-hidden bg-checkerboard"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -184,7 +184,7 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
           />
         </div>
 
-        <div className="flex gap-6 mt-4">
+        <div className="flex flex-wrap gap-4 mt-4">
           {/* Zoom */}
           <div className="flex items-center gap-2">
             <input
