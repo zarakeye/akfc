@@ -187,6 +187,9 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
         <div className="flex flex-wrap gap-4 mt-4">
           {/* Zoom */}
           <div className="flex items-center gap-2">
+            <span className="w-14 shrink-0 text-xs font-medium text-gray-500">
+              Zoom
+            </span>
             <input
               type="range"
               min={0.1}
@@ -196,17 +199,29 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
               onMouseDown={zoom.startInteraction}
               onMouseUp={zoom.endInteraction}
               onChange={(e) => zoom.set(Number(e.target.value))}
+              className="h-1.5 w-36 cursor-pointer accent-emerald-600"
             />
-            <button type="button" onClick={zoom.undo}>
-              undo
+            <button
+              type="button"
+              onClick={zoom.undo}
+              className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              Défaire
             </button>
-            <button type="button" onClick={zoom.reset}>
-              reset
+            <button
+              type="button"
+              onClick={zoom.reset}
+              className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              Réinit.
             </button>
           </div>
 
           {/* Rotation */}
           <div className="flex items-center gap-2">
+            <span className="w-14 shrink-0 text-xs font-medium text-gray-500">
+              Rotation
+            </span>
             <input
               type="range"
               min={-180}
@@ -216,33 +231,47 @@ export default function Cropper({ picture, onCrop, onCancel }: CropperProps) {
               onMouseDown={rotation.startInteraction}
               onMouseUp={rotation.endInteraction}
               onChange={(e) => rotation.set(Number(e.target.value))}
+              className="h-1.5 w-36 cursor-pointer accent-emerald-600"
             />
-            <button type="button" onClick={rotation.undo}>
-              undo
+            <button
+              type="button"
+              onClick={rotation.undo}
+              className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              Défaire
             </button>
-            <button type="button" onClick={rotation.reset}>
-              reset
+            <button
+              type="button"
+              onClick={rotation.reset}
+              className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              Réinit.
             </button>
           </div>
 
           <button
+            type="button"
             onClick={resetAll}
-            className="px-3 py-1 bg-red-500 text-white rounded"
+            className="rounded-full px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
           >
-            Reset all
+            Tout réinitialiser
           </button>
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button type="button" onClick={onCancel}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+          >
             Annuler
           </button>
           <button
             type="button"
             onClick={handleCrop}
-            className="bg-blue-600 text-white px-3 py-1 rounded"
+            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
           >
-            Cropper
+            Recadrer
           </button>
         </div>
       </div>
