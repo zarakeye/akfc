@@ -46,6 +46,9 @@ export function CameraCapture({
   // Flash logiciel : surface blanche affichée brièvement à la capture
   // (mode "capture") — distinct de l'illumination persistante (mode "on").
   const [screenFlash, setScreenFlash] = useState(false);
+  // Le flash logiciel ne compense l'absence de flash frontal que sur petit
+  // écran / mobile. Sur grand écran, il éblouit sans raison.
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +93,20 @@ export function CameraCapture({
       streamRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setIsSmallScreen(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Flash logiciel autorisé uniquement sans flash matériel ET sur petit écran.
+  // `flashAvailable` conditionne l'affichage du bouton flash.
+  const softwareFlashAllowed = !hasTorch && isSmallScreen;
+  const flashAvailable = hasTorch || softwareFlashAllowed;
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -146,7 +163,7 @@ export function CameraCapture({
     // Mode "on" : l'écran est DÉJÀ illuminé (voile persistant) → capture
     // directe. Mode "capture" sans torch : on illumine brièvement avant de
     // figer l'image. Sinon : capture directe.
-    if (flashMode === "capture" && !hasTorch) {
+    if (flashMode === "capture" && softwareFlashAllowed) {
       setScreenFlash(true);
       window.setTimeout(() => {
         doCapture();
@@ -166,7 +183,7 @@ export function CameraCapture({
   // le visage au maximum). La preview vidéo reste au centre comme une
   // fenêtre — le blanc l'entoure sans jamais passer devant. La barre d'outils
   // prend alors un fond noir pour rester lisible sur le blanc.
-  const litOn = flashMode === "on" && !screenFlash;
+  const litOn = flashMode === "on" && !screenFlash && flashAvailable;
 
   return (
     <div
@@ -195,37 +212,39 @@ export function CameraCapture({
         >
           <Grid3x3 className="h-5 w-5" />
         </button>
-        <button
-          type="button"
-          aria-label={
-            flashMode === "off"
-              ? "Flash désactivé (cliquer pour flash à la capture)"
-              : flashMode === "capture"
-                ? "Flash à la capture (cliquer pour flash continu)"
-                : "Flash continu (cliquer pour désactiver)"
-          }
-          onClick={cycleFlash}
-          title={
-            flashMode === "off"
-              ? "Flash : off"
-              : flashMode === "capture"
-                ? "Flash : à la capture"
-                : "Flash : continu"
-          }
-          className={`rounded-full p-2 transition-colors ${
-            flashMode === "on"
-              ? "bg-amber-400 text-gray-900"
-              : flashMode === "capture"
-                ? "bg-white text-gray-900"
-                : "bg-white/10 text-white hover:bg-white/25"
-          }`}
-        >
-          {flashMode === "off" ? (
-            <ZapOff className="h-5 w-5" />
-          ) : (
-            <Zap className="h-5 w-5" />
-          )}
-        </button>
+        {flashAvailable && (
+          <button
+            type="button"
+            aria-label={
+              flashMode === "off"
+                ? "Flash désactivé (cliquer pour flash à la capture)"
+                : flashMode === "capture"
+                  ? "Flash à la capture (cliquer pour flash continu)"
+                  : "Flash continu (cliquer pour désactiver)"
+            }
+            onClick={cycleFlash}
+            title={
+              flashMode === "off"
+                ? "Flash : off"
+                : flashMode === "capture"
+                  ? "Flash : à la capture"
+                  : "Flash : continu"
+            }
+            className={`rounded-full p-2 transition-colors ${
+              flashMode === "on"
+                ? "bg-amber-400 text-gray-900"
+                : flashMode === "capture"
+                  ? "bg-white text-gray-900"
+                  : "bg-white/10 text-white hover:bg-white/25"
+            }`}
+          >
+            {flashMode === "off" ? (
+              <ZapOff className="h-5 w-5" />
+            ) : (
+              <Zap className="h-5 w-5" />
+            )}
+          </button>
+        )}
         <button
           type="button"
           aria-label="Fermer la caméra"
