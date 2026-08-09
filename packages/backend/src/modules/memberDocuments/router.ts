@@ -135,7 +135,7 @@ export const memberDocumentRouter = router({
   publish: adminProcedure
     .input(
       z.object({
-        mediaAssetId: z.string(),
+        path: z.string(),
         title: z.string().trim().max(300).optional(),
         audience: z.enum(["ALL_MEMBERS", "SPECIFIC"]),
         recipientUserIds: z.array(z.string()).optional(),
@@ -153,8 +153,15 @@ export const memberDocumentRouter = router({
         });
       }
 
-      const asset = await ctx.prisma.mediaAsset.findUnique({
-        where: { id: input.mediaAssetId },
+      // Résolution par chemin logique, tolérante à l'extension (comme
+      // media.updateDescription) : le finder fournit un chemin, pas un id.
+      const asset = await ctx.prisma.mediaAsset.findFirst({
+        where: {
+          OR: [
+            { fullPath: input.path },
+            { fullPath: { startsWith: `${input.path}.` } },
+          ],
+        },
         select: { id: true },
       });
       if (!asset) {
@@ -162,7 +169,7 @@ export const memberDocumentRouter = router({
       }
 
       const existing = await ctx.prisma.memberDocument.findUnique({
-        where: { mediaAssetId: input.mediaAssetId },
+        where: { mediaAssetId: asset.id },
         select: { id: true },
       });
       if (existing) {
@@ -177,7 +184,7 @@ export const memberDocumentRouter = router({
 
       const doc = await ctx.prisma.memberDocument.create({
         data: {
-          mediaAssetId: input.mediaAssetId,
+          mediaAssetId: asset.id,
           title: input.title,
           audience: input.audience,
           publishedById: ctx.sessionClient.user.id,
@@ -210,4 +217,41 @@ export const memberDocumentRouter = router({
       },
     });
   }),
+
+  /** Membres, pour choisir les destinataires d'une diffusion restreinte. */
+  listMembers: adminProcedure.query(async ({ ctx }) => {
+    const users = await ctx.prisma.user.findMany({
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }, { email: "asc" }],
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+    return users.map((u) => ({
+      id: u.id,
+      name:
+        [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email,
+    }));
+  }),
+
+  /** État de mise à disposition d'un fichier (pour le menu du finder). */
+  publicationForPath: adminProcedure
+    .input(z.object({ path: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const asset = await ctx.prisma.mediaAsset.findFirst({
+        where: {
+          OR: [
+            { fullPath: input.path },
+            { fullPath: { startsWith: `${input.path}.` } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (!asset) return null;
+      return ctx.prisma.memberDocument.findUnique({
+        where: { mediaAssetId: asset.id },
+        select: {
+          id: true,
+          audience: true,
+          _count: { select: { recipients: true } },
+        },
+      });
+    }),
 });
