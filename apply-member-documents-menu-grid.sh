@@ -1,3 +1,35 @@
+#!/usr/bin/env bash
+#
+# AKFC — Documents membres, 6b (menu contextuel, vue GRILLE) : preuve verticale.
+#
+#   - `PublishToMembersDialog` : interroge lui-même `publicationForPath` →
+#     mode « publier » ou « retirer », plus besoin de le lui passer ;
+#   - GridItem : item de menu « Rendre disponible aux membres » (admin +
+#     fichier uniquement), qui ouvre le dialogue (état local `publishTarget`,
+#     rendu à côté du MoveDialog — même motif que le déplacement).
+#
+# Une seule vue câblée pour l'instant (grille) : je ne peux pas tester le front,
+# donc on valide le rendu ici avant de répliquer à l'arbre / tableau / liste.
+#
+# Nécessite les increments 1, 2, 6a + le dialogue (fondation) appliqués.
+#
+# Usage normal (Stéphane) : depuis la racine du repo.
+#   bash apply-member-documents-menu-grid.sh
+# Usage Claude sur clone :
+#   AKFC_APPLY_ONLY=1 bash apply-member-documents-menu-grid.sh
+#
+set -euo pipefail
+
+DLG="apps/web/src/features/member-documents/PublishToMembersDialog.tsx"
+GRID="apps/web/src/features/finder-core/components/GridItem.tsx"
+
+if [ ! -f "package.json" ] || [ ! -f "$GRID" ]; then
+  echo "ERREUR: lance depuis la racine du repo AKFC ($GRID attendu)." >&2
+  exit 1
+fi
+
+# ── 1) Dialogue auto-renseigné (réécrit) ────────────────────────────────────
+cat > "$DLG" <<'DLG_EOF'
 "use client";
 
 import { useState } from "react";
@@ -223,3 +255,113 @@ export function PublishToMembersDialog({
     </div>
   );
 }
+DLG_EOF
+echo "dialogue auto-renseigné écrit"
+
+# ── 2) Câblage GridItem ─────────────────────────────────────────────────────
+python3 - "$GRID" <<'PY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); s = p.read_text(encoding="utf-8")
+if "PublishToMembersDialog" in s:
+    print("GridItem déjà câblé"); sys.exit(0)
+
+# imports
+A_OLD = "import { MoveDialog } from '@features/finder-core/components/MoveDialog';"
+A_NEW = ("import { MoveDialog } from '@features/finder-core/components/MoveDialog';\n"
+         "import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';\n"
+         "import { storagePathOf } from '@features/finder-core/utils/storagePath';\n"
+         "import { useSessionStore } from '@lib/stores/useSessionStore';")
+assert s.count(A_OLD) == 1, "ancre import GridItem introuvable — abandon"
+s = s.replace(A_OLD, A_NEW)
+
+# état publishTarget
+B_OLD = "  const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);"
+B_NEW = ("  const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);\n"
+         "  const [publishTarget, setPublishTarget] = useState<FinderNode | null>(null);")
+assert s.count(B_OLD) == 1, "ancre state GridItem introuvable — abandon"
+s = s.replace(B_OLD, B_NEW)
+
+# isAdmin
+C_OLD = "  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();"
+C_NEW = ("  const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();\n"
+         "  const isAdmin = useSessionStore((st) => st.session?.user?.role?.name === 'ADMIN');")
+assert s.count(C_OLD) == 1, "ancre useNodeActions GridItem introuvable — abandon"
+s = s.replace(C_OLD, C_NEW)
+
+# item de menu (après Déplacer…)
+D_OLD = r'''      {
+        label: 'Déplacer…',
+        onClick: () => setMovingNodes(targetNodes),
+      },'''
+D_NEW = r'''      {
+        label: 'Déplacer…',
+        onClick: () => setMovingNodes(targetNodes),
+      },
+      ...(isAdmin && !isFolder && !isStatus
+        ? [
+            {
+              label: 'Rendre disponible aux membres',
+              onClick: () => setPublishTarget(node),
+            } as ContextMenuItem,
+          ]
+        : []),'''
+assert s.count(D_OLD) == 1, "ancre item Déplacer introuvable — abandon"
+s = s.replace(D_OLD, D_NEW)
+
+# rendu du dialogue (après le MoveDialog)
+E_OLD = r'''            setMovingNodes(null);
+          }}
+        />
+      )}
+
+      {menuPos && ('''
+E_NEW = r'''            setMovingNodes(null);
+          }}
+        />
+      )}
+
+      {publishTarget && (
+        <PublishToMembersDialog
+          path={storagePathOf(publishTarget)}
+          defaultTitle={publishTarget.name}
+          onClose={() => setPublishTarget(null)}
+        />
+      )}
+
+      {menuPos && ('''
+assert s.count(E_OLD) == 1, "ancre rendu MoveDialog introuvable — abandon"
+s = s.replace(E_OLD, E_NEW)
+
+p.write_text(s, encoding="utf-8"); print("GridItem câblé")
+PY
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck ni commit"
+  exit 0
+fi
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+  echo "aucune modification — rien à typechecker/committer"
+  exit 0
+fi
+
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then
+  TC="check"
+else
+  TC="typecheck"
+fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -15 || true
+  echo "----- fin du log -----"; tail -4 /tmp/akfc_tc.log
+  exit 1
+fi
+echo "✅ typecheck OK"
+
+git add -A
+if git commit -m "feat(documents): action « Rendre disponible aux membres » dans le menu contextuel (grille)" > /tmp/akfc_commit.log 2>&1; then
+  echo "✅ commit $(git rev-parse --short HEAD)"
+else
+  echo "❌ commit échoué :"; head -10 /tmp/akfc_commit.log; exit 1
+fi
