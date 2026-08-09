@@ -27,6 +27,7 @@ import { galleryRouter } from "@backend/modules/galleries/router";
 import { breakingNewsRouter } from "@backend/modules/breakingNews/router";
 import { siteStyleRouter } from "@backend/modules/siteStyle/router";
 import { sitePageRouter } from "@backend/modules/sitePages/router";
+import { memberDocumentRouter } from "@backend/modules/memberDocuments/router";
 
 export const appRouter = router({
   siteStyle: siteStyleRouter,
@@ -56,6 +57,7 @@ export const appRouter = router({
   disciplineFamily: disciplineFamilyRouter,
   gallery: galleryRouter,
   breakingNews: breakingNewsRouter,
+  memberDocument: memberDocumentRouter,
 });
 
 export type AppRouter = typeof appRouter;
