@@ -7,29 +7,22 @@ import { trpc } from "@trpc/trpcClient";
 
 type Audience = "ALL_MEMBERS" | "SPECIFIC";
 
-export type ExistingPublication = {
-  id: string;
-  audience: Audience;
-} | null;
-
 /**
  * Dialogue de mise à disposition d'un fichier aux membres — réutilisable
  * (menu contextuel, formulaire d'upload, DnD).
  *
- * `path` : chemin logique du fichier (le backend résout le MediaAsset).
- * `existing` : publication en cours si le fichier est déjà à disposition
- * (bascule le dialogue en mode « retirer »).
+ * `path` : chemin logique du fichier (le backend résout le MediaAsset). Le
+ * dialogue interroge lui-même l'état de publication : mode « publier » si le
+ * fichier n'est pas encore à disposition, mode « retirer » sinon.
  */
 export function PublishToMembersDialog({
   path,
   defaultTitle,
-  existing = null,
   onClose,
   onDone,
 }: {
   path: string;
   defaultTitle?: string;
-  existing?: ExistingPublication;
   onClose: () => void;
   onDone?: () => void;
 }) {
@@ -39,8 +32,11 @@ export function PublishToMembersDialog({
   const [recipientIds, setRecipientIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const pubQuery = trpc.memberDocument.publicationForPath.useQuery({ path });
+  const publication = pubQuery.data ?? null;
+
   const membersQuery = trpc.memberDocument.listMembers.useQuery(undefined, {
-    enabled: !existing && audience === "SPECIFIC",
+    enabled: !publication && audience === "SPECIFIC",
   });
 
   const invalidate = () => {
@@ -90,7 +86,9 @@ export function PublishToMembersDialog({
       <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
         <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <h2 className="text-base font-semibold text-gray-900">
-            {existing ? "Document à disposition" : "Rendre disponible aux membres"}
+            {publication
+              ? "Document à disposition"
+              : "Rendre disponible aux membres"}
           </h2>
           <button
             type="button"
@@ -103,10 +101,12 @@ export function PublishToMembersDialog({
         </header>
 
         <div className="space-y-4 px-4 py-4">
-          {existing ? (
+          {pubQuery.isLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : publication ? (
             <p className="text-sm text-gray-600">
               Ce fichier est déjà à disposition des membres
-              {existing.audience === "ALL_MEMBERS"
+              {publication.audience === "ALL_MEMBERS"
                 ? " (tous les membres)."
                 : " (membres sélectionnés)."}
             </p>
@@ -196,12 +196,12 @@ export function PublishToMembersDialog({
           >
             Annuler
           </button>
-          {existing ? (
+          {publication ? (
             <button
               type="button"
               onClick={() => {
                 setError(null);
-                unpublish.mutate({ id: existing.id });
+                unpublish.mutate({ id: publication.id });
               }}
               disabled={busy}
               className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
@@ -212,7 +212,7 @@ export function PublishToMembersDialog({
             <button
               type="button"
               onClick={submit}
-              disabled={busy}
+              disabled={busy || pubQuery.isLoading}
               className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
             >
               Mettre à disposition
