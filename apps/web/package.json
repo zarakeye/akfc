@@ -28,6 +28,7 @@
     "next-mdx-remote": "^6.0.0",
     "radix-ui": "^1.4.3",
     "react-markdown": "^10.1.0",
+    "react-pdf": "^10.4.1",
     "react-ts-tab-lib": "^1.9.4",
     "remark-frontmatter": "^5.0.0",
     "remark-mdx": "^3.1.1",
