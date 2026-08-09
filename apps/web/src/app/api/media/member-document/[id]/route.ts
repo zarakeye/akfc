@@ -49,8 +49,16 @@ export async function GET(
       ],
     },
     select: {
+      title: true,
       mediaAsset: {
-        select: { publicId: true, fullPath: true, mimeType: true },
+        select: {
+          publicId: true,
+          fullPath: true,
+          mimeType: true,
+          displayName: true,
+          originalFileName: true,
+          format: true,
+        },
       },
     },
   });
@@ -59,6 +67,15 @@ export async function GET(
 
   const asset = doc.mediaAsset;
   const contentType = asset.mimeType ?? "application/pdf";
+
+  // ?download=1 → pièce jointe (nom humain) ; sinon aperçu inline.
+  const download = req.nextUrl.searchParams.get("download") === "1";
+  const baseName = doc.title ?? asset.displayName ?? asset.originalFileName;
+  const ext = asset.format ?? "pdf";
+  const fileName = /\.[^.]+$/.test(baseName) ? baseName : `${baseName}.${ext}`;
+  const disposition = download
+    ? `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`
+    : "inline";
 
   // ─── Cloudinary (rare pour un document) : stream ──────────────────────
   if (asset.publicId) {
@@ -71,7 +88,7 @@ export async function GET(
         status: 200,
         headers: {
           "Content-Type": res.headers.get("content-type") ?? contentType,
-          "Content-Disposition": "inline",
+          "Content-Disposition": disposition,
           "Cache-Control": "private, no-store",
         },
       });
@@ -88,7 +105,7 @@ export async function GET(
       Bucket: getR2Bucket(),
       Key: asset.fullPath,
       ResponseContentType: contentType,
-      ResponseContentDisposition: "inline",
+      ResponseContentDisposition: disposition,
     });
     const signedUrl = await getSignedUrl(s3, command, {
       expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,
