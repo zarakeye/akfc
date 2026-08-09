@@ -12,6 +12,9 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
+import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
+import { storagePathOf } from '@features/finder-core/utils/storagePath';
+import { useSessionStore } from '@lib/stores/useSessionStore';
 import { displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 
 type Props = {
@@ -51,6 +54,8 @@ export default function FinderCompactRow({
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);
+  const [publishTarget, setPublishTarget] = useState<FinderNode | null>(null);
+  const isAdmin = useSessionStore((st) => st.session?.user?.role?.name === 'ADMIN');
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
     useNodeActions();
@@ -71,6 +76,14 @@ export default function FinderCompactRow({
         label: 'Déplacer…',
         onClick: () => setMovingNodes(targetNodes),
       },
+      ...(isAdmin && !isFolder && !isStatus
+        ? [
+            {
+              label: 'Rendre disponible aux membres',
+              onClick: () => setPublishTarget(node),
+            } as ContextMenuItem,
+          ]
+        : []),
       {
         label: deleteLabel(targetNodes.length, targetNodes),
         destructive: true,
@@ -181,6 +194,14 @@ export default function FinderCompactRow({
           if (message) throw new Error(message);
           setMovingNodes(null);
         }}
+      />
+    )}
+
+    {publishTarget && (
+      <PublishToMembersDialog
+        path={storagePathOf(publishTarget)}
+        defaultTitle={publishTarget.name}
+        onClose={() => setPublishTarget(null)}
       />
     )}
 
