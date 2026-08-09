@@ -64,6 +64,11 @@ model User {
   stagesAsAnimator          Stage[]       @relation("StageAnimators")
   uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
   eventsAsOrganizer         Event[]       @relation("EventOrganizer")  // ← AJOUT
+
+  // --- Documents membres
+  memberDocumentsPublished  MemberDocument[]          @relation("MemberDocumentPublisher")
+  memberDocumentRecipients  MemberDocumentRecipient[] @relation("MemberDocumentRecipient")
+  documentReceipts          DocumentReceipt[]         @relation("DocumentReceiptUser")
 }
 
 model Permission {
@@ -860,6 +865,9 @@ model MediaAsset {
   // --- Références entrantes depuis les galeries (illustrations)
   galleryItems GalleryItem[]
 
+  /// Surcouche « mis à disposition des membres », si ce fichier est publié.
+  memberDocument MemberDocument?
+
   // --- Ancre stable Cloudinary (immuable à travers les renames/moves).
   // C'est la clé de réconciliation après un move : publicId/fullPath/status
   // changent au déplacement, asset_id ne bouge jamais. Null pour R2 et pour
@@ -1303,4 +1311,62 @@ model SiteStyle {
   cardCollapsedHeight Int @default(220)
 
   updatedAt DateTime @updatedAt
+}
+
+
+enum DocumentAudience {
+  ALL_MEMBERS
+  SPECIFIC
+}
+
+/// Document du club mis à disposition des membres (compte rendu d'AG, carte
+/// d'affiliation…). Surcouche « publié aux membres » posée sur un fichier du
+/// finder : référence le MediaAsset, ne duplique ni son chemin ni son URL.
+model MemberDocument {
+  id           String     @id @default(cuid())
+  mediaAssetId String     @unique
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  /// Titre affiché ; à défaut, le displayName de l'asset.
+  title String?
+
+  /// ALL_MEMBERS = diffusé à tous (nouveaux membres inclus d'office).
+  /// SPECIFIC    = réservé aux membres listés dans `recipients` (perso = 1,
+  /// bureau plus tard = N).
+  audience DocumentAudience @default(ALL_MEMBERS)
+
+  publishedAt   DateTime @default(now())
+  publishedById String?
+  publishedBy   User?    @relation("MemberDocumentPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  recipients MemberDocumentRecipient[]
+  receipts   DocumentReceipt[]
+
+  @@index([audience])
+}
+
+/// Destinataire explicite d'un MemberDocument SPECIFIC. Vide pour ALL_MEMBERS.
+model MemberDocumentRecipient {
+  id               String         @id @default(cuid())
+  memberDocumentId String
+  memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation("MemberDocumentRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([memberDocumentId, userId])
+  @@index([userId])
+}
+
+/// Statut de lecture par membre. Absence de ligne = jamais ouvert.
+/// `readAt` null = marqué non lu (garde le signal de la cloche).
+model DocumentReceipt {
+  id               String         @id @default(cuid())
+  memberDocumentId String
+  memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation("DocumentReceiptUser", fields: [userId], references: [id], onDelete: Cascade)
+  readAt           DateTime?
+
+  @@unique([memberDocumentId, userId])
+  @@index([userId])
 }
