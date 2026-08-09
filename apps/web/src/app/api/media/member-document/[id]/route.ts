@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
@@ -23,8 +22,6 @@ import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cl
  * forcés en `application/pdf` inline pour l'aperçu en iframe, quel que soit le
  * content-type stocké. Cloudinary : stream, si jamais le document y vit.
  */
-
-const PRESIGNED_URL_EXPIRY_SECONDS = 30 * 60;
 
 export async function GET(
   req: NextRequest,
@@ -98,26 +95,32 @@ export async function GET(
     }
   }
 
-  // ─── R2 (PDF) : redirection presignée, inline forcé ───────────────────
+  // ─── R2 (PDF) : stream MÊME ORIGINE (gated) ───────────────────────────
+  // On streame plutôt que de rediriger vers une URL presignée : pdf.js fetche
+  // les octets en JS et se heurterait au CORS d'une redirection cross-origin.
+  // En prime, les octets restent gatés à chaque requête (pas d'URL signée
+  // partageable).
   try {
     const s3 = getR2Client();
-    const command = new GetObjectCommand({
-      Bucket: getR2Bucket(),
-      Key: asset.fullPath,
-      ResponseContentType: contentType,
-      ResponseContentDisposition: disposition,
-    });
-    const signedUrl = await getSignedUrl(s3, command, {
-      expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,
-    });
-    return NextResponse.redirect(signedUrl, {
-      status: 302,
+    const obj = await s3.send(
+      new GetObjectCommand({ Bucket: getR2Bucket(), Key: asset.fullPath }),
+    );
+    if (!obj.Body) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+    return new Response(obj.Body.transformToWebStream(), {
+      status: 200,
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Content-Type": contentType,
+        "Content-Disposition": disposition,
+        ...(obj.ContentLength
+          ? { "Content-Length": String(obj.ContentLength) }
+          : {}),
+        "Cache-Control": "private, no-store",
       },
     });
   } catch (err) {
-    console.error("[member-document] r2 sign error", id, err);
+    console.error("[member-document] r2 stream error", id, err);
     return new NextResponse("Internal server error", { status: 500 });
   }
 }

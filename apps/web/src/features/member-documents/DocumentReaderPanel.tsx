@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { X, Download, BookmarkCheck, BookmarkMinus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
+import { PdfViewer } from "@features/member-documents/PdfViewer";
 
 type ReaderDoc = {
   id: string;
@@ -113,19 +114,9 @@ export function DocumentReaderPanel({
           </button>
         </header>
 
-        {/* Aperçu — embed natif provisoire (remplacé par react-pdf en 4b). */}
+        {/* Aperçu — viewer react-pdf (canvas). */}
         <div className="min-h-0 flex-1 bg-gray-100">
-          <object data={src} type="application/pdf" className="h-full w-full">
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sm text-gray-600">
-              <p>L&apos;aperçu n&apos;est pas disponible sur cet appareil.</p>
-              <a
-                href={`${src}?download=1`}
-                className="rounded-full bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
-              >
-                Télécharger le document
-              </a>
-            </div>
-          </object>
+          <PdfViewer src={src} />
         </div>
       </aside>
     </>
