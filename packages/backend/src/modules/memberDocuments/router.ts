@@ -68,13 +68,23 @@ export const memberDocumentRouter = router({
   /** Nombre de documents non lus (pour la cloche). */
   unreadCountForMe: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.sessionClient.user.id;
+    const me = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: { memberSince: true },
+    });
+    // Borne = 1er janvier de l'ANNÉE d'adhésion (pas la date exacte) : un membre
+    // qui adhère après la dernière AG doit quand même être invité à lire le
+    // compte rendu de la même année. Les documents antérieurs restent listés
+    // sur la page (lecture volontaire). memberSince null → pas de borne.
+    const yearStart = me?.memberSince
+      ? new Date(Date.UTC(me.memberSince.getUTCFullYear(), 0, 1))
+      : null;
     return ctx.prisma.memberDocument.count({
       where: {
         ...visibleToUser(userId),
         // Non lu = aucun reçu daté pour ce membre.
         receipts: { none: { userId, readAt: { not: null } } },
-        // Raffinement possible (à décider) : ne notifier que le postérieur à
-        // l'adhésion → ajouter `publishedAt: { gte: <memberSince> }`.
+        ...(yearStart ? { publishedAt: { gte: yearStart } } : {}),
       },
     });
   }),
