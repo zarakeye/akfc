@@ -89,6 +89,39 @@ export const memberDocumentRouter = router({
     });
   }),
 
+  /** Non-lus ventilés : généraux (ALL_MEMBERS, bornés à l'année d'adhésion) et
+   *  persos (SPECIFIC pour ce membre, toujours signalés). Pour le badge de
+   *  l'item « Documents » de la navbar. */
+  unreadBreakdownForMe: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+    const me = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: { memberSince: true },
+    });
+    const yearStart = me?.memberSince
+      ? new Date(Date.UTC(me.memberSince.getUTCFullYear(), 0, 1))
+      : null;
+    const unread = { receipts: { none: { userId, readAt: { not: null } } } };
+
+    const [general, perso] = await Promise.all([
+      ctx.prisma.memberDocument.count({
+        where: {
+          audience: "ALL_MEMBERS" as const,
+          ...unread,
+          ...(yearStart ? { publishedAt: { gte: yearStart } } : {}),
+        },
+      }),
+      ctx.prisma.memberDocument.count({
+        where: {
+          audience: "SPECIFIC" as const,
+          recipients: { some: { userId } },
+          ...unread,
+        },
+      }),
+    ]);
+    return { general, perso };
+  }),
+
   /** Marquer lu (à l'ouverture de l'aperçu). */
   markRead: protectedProcedure
     .input(z.object({ id: z.string() }))

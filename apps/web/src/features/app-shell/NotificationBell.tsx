@@ -114,36 +114,9 @@ export function NotificationBell(): JSX.Element | null {
     { enabled: canSee },
   );
 
-  const { data: unreadDocs = 0 } =
-    trpc.memberDocument.unreadCountForMe.useQuery(undefined, {
-      enabled: Boolean(user),
-    });
+  if (!canSee) return null;
 
-  const libraryTotal = (counts?.pending ?? 0) + (counts?.bin ?? 0);
-  const total = libraryTotal + unreadDocs;
-
-  // Manager : cloche toujours là (muette si rien à traiter). Membre simple :
-  // elle n'apparaît que s'il a des documents à lire.
-  if (!user) return null;
-  if (!canSee && total === 0) return null;
-
-  const href = canSee ? "/dashboard/library" : "/documents";
-  const docsLabel =
-    unreadDocs > 0
-      ? `${unreadDocs} document${unreadDocs > 1 ? "s" : ""} à lire`
-      : "";
-  const libLabel =
-    canSee && libraryTotal > 0
-      ? buildMessage(
-          counts!.pending,
-          counts!.bin,
-          counts!.persoPending,
-          counts!.generalPending,
-        )
-      : "";
-  const ariaLabel =
-    [libLabel, docsLabel].filter(Boolean).join(" · ") ||
-    (canSee ? "Bibliothèque" : "Mes documents");
+  const total = (counts?.pending ?? 0) + (counts?.bin ?? 0);
 
   return (
     <div className="group relative">
@@ -166,8 +139,17 @@ export function NotificationBell(): JSX.Element | null {
       `}</style>
 
       <Link
-        href={href}
-        aria-label={ariaLabel}
+        href="/dashboard/library"
+        aria-label={
+          total > 0
+            ? buildMessage(
+                counts!.pending,
+                counts!.bin,
+                counts!.persoPending,
+                counts!.generalPending,
+              )
+            : "Bibliothèque"
+        }
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
       >
         {total > 0 ? (
@@ -191,7 +173,7 @@ export function NotificationBell(): JSX.Element | null {
           className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block"
         >
           <div className="w-max max-w-80 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
-            {canSee && counts && counts.pending > 0 && (
+            {counts!.pending > 0 && (
               <>
                 <p className="mb-1 font-medium">
                   Vous avez {counts!.pending} contenu
@@ -219,23 +201,11 @@ export function NotificationBell(): JSX.Element | null {
                 )}
               </>
             )}
-            {canSee && counts && counts.bin > 0 && (
-              <p className={counts.pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
-                {counts.bin} contenu{counts.bin > 1 ? 's' : ''} dans la
+            {counts!.bin > 0 && (
+              <p className={counts!.pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
+                {counts!.bin} contenu{counts!.bin > 1 ? 's' : ''} dans la
                 corbeille
               </p>
-            )}
-            {unreadDocs > 0 && (
-              <Link
-                href="/documents"
-                className={
-                  canSee && counts && (counts.pending > 0 || counts.bin > 0)
-                    ? 'mt-1.5 block border-t border-white/15 pt-1.5 hover:underline'
-                    : 'block hover:underline'
-                }
-              >
-                {unreadDocs} document{unreadDocs > 1 ? 's' : ''} à lire
-              </Link>
             )}
           </div>
         </div>
