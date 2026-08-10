@@ -91,13 +91,31 @@ export function ImageGalleryEditor({
               </div>
             );
           }
+          const isVideo = resolved.kind === "video";
           return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={resolved.url}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <div className="relative h-full w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  isVideo ? (resolved.posterUrl ?? resolved.url) : resolved.url
+                }
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              {isVideo && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="ml-0.5 h-4 w-4 fill-white"
+                      aria-hidden
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
           );
         }}
       />
