@@ -44,6 +44,7 @@ export function PublishToMembersDialog({
     void utils.memberDocument.publicationForPath.invalidate();
     void utils.memberDocument.listForMe.invalidate();
     void utils.memberDocument.unreadCountForMe.invalidate();
+    void utils.memberDocument.unreadBreakdownForMe.invalidate();
   };
   const done = () => {
     invalidate();

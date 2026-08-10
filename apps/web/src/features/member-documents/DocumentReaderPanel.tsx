@@ -32,6 +32,7 @@ export function DocumentReaderPanel({
   const invalidate = () => {
     void utils.memberDocument.listForMe.invalidate();
     void utils.memberDocument.unreadCountForMe.invalidate();
+    void utils.memberDocument.unreadBreakdownForMe.invalidate();
   };
   const markRead = trpc.memberDocument.markRead.useMutation({
     onSuccess: invalidate,
