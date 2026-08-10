@@ -16,6 +16,7 @@ import {
   NAV_GLOW,
   type NavEntry,
 } from "@features/app-shell/navEntries";
+import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
 
 /**
  * En-tête de l'application, en deux rendus alimentés par la MÊME source
@@ -101,12 +102,19 @@ export default function Header() {
           }
 
           if (entry.kind === "link") {
+            const linkClass = `${NAV_GLOW} whitespace-nowrap text-[17px] 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`;
+            if (entry.href === "/documents") {
+              return (
+                <DocumentsNavLink
+                  key={entry.href}
+                  href={entry.href}
+                  label={entry.label}
+                  className={linkClass}
+                />
+              );
+            }
             return (
-              <Link
-                key={entry.href}
-                href={entry.href}
-                className={`${NAV_GLOW} whitespace-nowrap text-[17px] 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`}
-              >
+              <Link key={entry.href} href={entry.href} className={linkClass}>
                 {entry.label}
               </Link>
             );
@@ -232,12 +240,20 @@ export default function Header() {
                 }
 
                 if (entry.kind === "link") {
+                  const linkClass = `block py-3 text-lg text-white ${isActive(entry) ? NAV_ACTIVE : ""}`;
+                  if (entry.href === "/documents") {
+                    return (
+                      <DocumentsNavLink
+                        key={entry.href}
+                        href={entry.href}
+                        label={entry.label}
+                        className={linkClass}
+                        withTooltip={false}
+                      />
+                    );
+                  }
                   return (
-                    <Link
-                      key={entry.href}
-                      href={entry.href}
-                      className={`block py-3 text-lg text-white ${isActive(entry) ? NAV_ACTIVE : ""}`}
-                    >
+                    <Link key={entry.href} href={entry.href} className={linkClass}>
                       {entry.label}
                     </Link>
                   );
