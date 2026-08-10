@@ -455,7 +455,12 @@ export function buildVideoPosterUrl(
   variant: Variant = "large",
 ): string {
   const sizing = transformations[variant] ?? {};
-  return cloudinary.url(publicId, {
+  // Le public_id d'une vidéo arrive souvent avec son extension (.mp4) dans le
+  // chemin ; Cloudinary lui accolerait le format `jpg` → `…mp4.jpg`, qui
+  // renvoie 404 (poster remplacé par l'image de secours). On retire
+  // l'extension : le public_id de livraison est le chemin nu, le format `jpg`.
+  const cleanPublicId = publicId.replace(/\.[^./]+$/, "");
+  return cloudinary.url(cleanPublicId, {
     resource_type: "video",
     type: "authenticated",
     format: "jpg",
