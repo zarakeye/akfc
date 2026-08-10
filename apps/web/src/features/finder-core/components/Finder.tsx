@@ -335,6 +335,23 @@ export default function Finder({
 
   const selectedCount = selectedNodes.length;
 
+  // Id du fichier sélectionné seul (null si dossier, aucun, ou multi-sélection).
+  const singleSelected = selectedCount === 1 ? selectedNodes[0] : null;
+  const selectedFileId =
+    singleSelected && singleSelected.type !== "folder"
+      ? singleSelected.id
+      : null;
+
+  // Ouvre l'aperçu accosté dès qu'un fichier est sélectionné, sur grand écran
+  // (≥1280, où l'aperçu est une colonne). En dessous, l'aperçu est une feuille
+  // qu'on n'ouvre pas d'office à chaque sélection (trop intrusif).
+  useEffect(() => {
+    if (isWide && selectedFileId) {
+      previewPanelRef.current?.expand();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFileId, isWide]);
+
   const allNodes: FinderNode[] = useMemo(
     () => Array.from(nodePool.values()),
     [nodePool],
