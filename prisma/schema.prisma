@@ -69,6 +69,7 @@ model User {
   memberDocumentsPublished  MemberDocument[]          @relation("MemberDocumentPublisher")
   memberDocumentRecipients  MemberDocumentRecipient[] @relation("MemberDocumentRecipient")
   documentReceipts          DocumentReceipt[]         @relation("DocumentReceiptUser")
+  memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
 }
 
 model Permission {
@@ -1331,8 +1332,8 @@ model MemberDocument {
   title String?
 
   /// ALL_MEMBERS = diffusé à tous (nouveaux membres inclus d'office).
-  /// SPECIFIC    = réservé aux membres listés dans `recipients` (perso = 1,
-  /// bureau plus tard = N).
+  /// SPECIFIC    = ciblé : groupes (`groups`, appartenance résolue dynamiquement)
+  /// ET/OU membres ad hoc (`recipients`). Un doc peut viser plusieurs groupes.
   audience DocumentAudience @default(ALL_MEMBERS)
 
   publishedAt   DateTime @default(now())
@@ -1340,6 +1341,7 @@ model MemberDocument {
   publishedBy   User?    @relation("MemberDocumentPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
 
   recipients MemberDocumentRecipient[]
+  groups     MemberDocumentGroup[]
   receipts   DocumentReceipt[]
 
   @@index([audience])
@@ -1369,4 +1371,42 @@ model DocumentReceipt {
 
   @@unique([memberDocumentId, userId])
   @@index([userId])
+}
+
+
+/// Groupe de membres (ex. « Bureau »), géré dans le panneau de contrôle. Sert
+/// de liste de diffusion : l'appartenance est résolue DYNAMIQUEMENT, donc un
+/// membre ajouté hérite des documents déjà publiés au groupe.
+model MemberGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  memberships MemberGroupMembership[]
+  documents   MemberDocumentGroup[]
+}
+
+/// Appartenance d'un membre à un groupe (un membre peut être dans plusieurs).
+model MemberGroupMembership {
+  id      String      @id @default(cuid())
+  groupId String
+  group   MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User        @relation("MemberGroupMembership", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+/// Groupe visé par un MemberDocument ciblé. Un document peut en viser plusieurs.
+model MemberDocumentGroup {
+  id               String         @id @default(cuid())
+  memberDocumentId String
+  memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  groupId          String
+  group            MemberGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([memberDocumentId, groupId])
+  @@index([groupId])
 }
