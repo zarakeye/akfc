@@ -182,8 +182,15 @@ export default function HomeCarousel(): JSX.Element | null {
               {item.kind === 'video' ? (
                 <video
                   ref={(el) => {
-                    if (el) videoRefs.current.set(item.mediaAssetId, el);
-                    else videoRefs.current.delete(item.mediaAssetId);
+                    if (el) {
+                      // Forcer la PROPRIÉTÉ muted : l'attribut JSX ne la fixe
+                      // pas toujours, et sans elle la politique autoplay bloque
+                      // `play()` (rejet avalé → seul le poster s'affiche).
+                      el.muted = true;
+                      videoRefs.current.set(item.mediaAssetId, el);
+                    } else {
+                      videoRefs.current.delete(item.mediaAssetId);
+                    }
                   }}
                   src={item.url}
                   poster={item.posterUrl ?? undefined}
