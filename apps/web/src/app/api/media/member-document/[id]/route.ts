@@ -42,7 +42,17 @@ export async function GET(
       id,
       OR: [
         { audience: "ALL_MEMBERS" },
-        { audience: "SPECIFIC", recipients: { some: { userId } } },
+        {
+          audience: "SPECIFIC",
+          OR: [
+            { recipients: { some: { userId } } },
+            {
+              groups: {
+                some: { group: { memberships: { some: { userId } } } },
+              },
+            },
+          ],
+        },
       ],
     },
     select: {

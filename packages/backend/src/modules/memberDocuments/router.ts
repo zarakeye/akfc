@@ -21,7 +21,18 @@ function visibleToUser(userId: string) {
   return {
     OR: [
       { audience: "ALL_MEMBERS" as const },
-      { audience: "SPECIFIC" as const, recipients: { some: { userId } } },
+      {
+        audience: "SPECIFIC" as const,
+        // Ciblé : destinataire ad hoc OU membre d'un groupe visé (appartenance
+        // résolue dynamiquement → un membre ajouté au groupe hérite des docs
+        // déjà posés).
+        OR: [
+          { recipients: { some: { userId } } },
+          {
+            groups: { some: { group: { memberships: { some: { userId } } } } },
+          },
+        ],
+      },
     ],
   };
 }
@@ -172,17 +183,22 @@ export const memberDocumentRouter = router({
         title: z.string().trim().max(300).optional(),
         audience: z.enum(["ALL_MEMBERS", "SPECIFIC"]),
         recipientUserIds: z.array(z.string()).optional(),
+        groupIds: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const recipientIds =
+        input.audience === "SPECIFIC" ? (input.recipientUserIds ?? []) : [];
+      const groupIds =
+        input.audience === "SPECIFIC" ? (input.groupIds ?? []) : [];
       if (
         input.audience === "SPECIFIC" &&
-        (!input.recipientUserIds || input.recipientUserIds.length === 0)
+        recipientIds.length === 0 &&
+        groupIds.length === 0
       ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Au moins un destinataire est requis pour une diffusion restreinte.",
+          message: "Choisissez au moins un groupe ou un membre.",
         });
       }
 
@@ -212,9 +228,6 @@ export const memberDocumentRouter = router({
         });
       }
 
-      const recipientIds =
-        input.audience === "SPECIFIC" ? (input.recipientUserIds ?? []) : [];
-
       const doc = await ctx.prisma.memberDocument.create({
         data: {
           mediaAssetId: asset.id,
@@ -222,6 +235,7 @@ export const memberDocumentRouter = router({
           audience: input.audience,
           publishedById: ctx.sessionClient.user.id,
           recipients: { create: recipientIds.map((id) => ({ userId: id })) },
+          groups: { create: groupIds.map((id) => ({ groupId: id })) },
         },
         select: { id: true },
       });
