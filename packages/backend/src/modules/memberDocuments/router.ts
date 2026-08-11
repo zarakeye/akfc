@@ -43,6 +43,14 @@ export const memberDocumentRouter = router({
   /** Documents visibles par le membre courant, avec son statut de lecture. */
   listForMe: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.sessionClient.user.id;
+    const myGroupIds = new Set(
+      (
+        await ctx.prisma.memberGroupMembership.findMany({
+          where: { userId },
+          select: { groupId: true },
+        })
+      ).map((m) => m.groupId),
+    );
     const docs = await ctx.prisma.memberDocument.findMany({
       where: visibleToUser(userId),
       orderBy: { publishedAt: "desc" },
@@ -60,6 +68,8 @@ export const memberDocumentRouter = router({
           },
         },
         receipts: { where: { userId }, select: { readAt: true } },
+        recipients: { where: { userId }, select: { userId: true } },
+        groups: { select: { group: { select: { id: true, name: true } } } },
       },
     });
 
@@ -73,6 +83,10 @@ export const memberDocumentRouter = router({
       format: d.mediaAsset.format,
       // Pas de reçu, ou reçu à readAt null (re-marqué non lu) = non lu.
       readAt: d.receipts[0]?.readAt ?? null,
+      // Destinataire direct (document personnel) ?
+      personal: d.recipients.length > 0,
+      // Groupes visés dont ce membre fait partie (par quel groupe il l'a reçu).
+      groups: d.groups.map((g) => g.group).filter((g) => myGroupIds.has(g.id)),
     }));
   }),
 
@@ -113,14 +127,16 @@ export const memberDocumentRouter = router({
       ? new Date(Date.UTC(me.memberSince.getUTCFullYear(), 0, 1))
       : null;
     const unread = { receipts: { none: { userId, readAt: { not: null } } } };
+    const generalBound = yearStart ? { publishedAt: { gte: yearStart } } : {};
 
-    const [general, perso] = await Promise.all([
+    const myGroups = await ctx.prisma.memberGroupMembership.findMany({
+      where: { userId },
+      select: { group: { select: { id: true, name: true } } },
+    });
+
+    const [general, perso, total, ...groupCounts] = await Promise.all([
       ctx.prisma.memberDocument.count({
-        where: {
-          audience: "ALL_MEMBERS" as const,
-          ...unread,
-          ...(yearStart ? { publishedAt: { gte: yearStart } } : {}),
-        },
+        where: { audience: "ALL_MEMBERS" as const, ...unread, ...generalBound },
       }),
       ctx.prisma.memberDocument.count({
         where: {
@@ -129,8 +145,47 @@ export const memberDocumentRouter = router({
           ...unread,
         },
       }),
+      // Total DISTINCT (un doc atteignant le membre par plusieurs canaux compté
+      // une seule fois) : sert au badge.
+      ctx.prisma.memberDocument.count({
+        where: {
+          ...unread,
+          OR: [
+            { audience: "ALL_MEMBERS" as const, ...generalBound },
+            {
+              audience: "SPECIFIC" as const,
+              OR: [
+                { recipients: { some: { userId } } },
+                {
+                  groups: {
+                    some: { group: { memberships: { some: { userId } } } },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      ...myGroups.map(({ group }) =>
+        ctx.prisma.memberDocument.count({
+          where: {
+            audience: "SPECIFIC" as const,
+            groups: { some: { groupId: group.id } },
+            ...unread,
+          },
+        }),
+      ),
     ]);
-    return { general, perso };
+
+    const byGroup = myGroups
+      .map(({ group }, i) => ({
+        groupId: group.id,
+        name: group.name,
+        count: groupCounts[i] ?? 0,
+      }))
+      .filter((g) => g.count > 0);
+
+    return { general, perso, total, byGroup };
   }),
 
   /** Marquer lu (à l'ouverture de l'aperçu). */
