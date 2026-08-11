@@ -30,12 +30,16 @@ export function PublishToMembersDialog({
   const [audience, setAudience] = useState<Audience>("ALL_MEMBERS");
   const [title, setTitle] = useState(defaultTitle ?? "");
   const [recipientIds, setRecipientIds] = useState<string[]>([]);
+  const [groupIds, setGroupIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const pubQuery = trpc.memberDocument.publicationForPath.useQuery({ path });
   const publication = pubQuery.data ?? null;
 
   const membersQuery = trpc.memberDocument.listMembers.useQuery(undefined, {
+    enabled: !publication && audience === "SPECIFIC",
+  });
+  const groupsQuery = trpc.memberGroup.list.useQuery(undefined, {
     enabled: !publication && audience === "SPECIFIC",
   });
 
@@ -68,10 +72,19 @@ export function PublishToMembersDialog({
       ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
     );
 
+  const toggleGroup = (id: string) =>
+    setGroupIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+
   const submit = () => {
     setError(null);
-    if (audience === "SPECIFIC" && recipientIds.length === 0) {
-      setError("Choisissez au moins un destinataire.");
+    if (
+      audience === "SPECIFIC" &&
+      recipientIds.length === 0 &&
+      groupIds.length === 0
+    ) {
+      setError("Choisissez au moins un groupe ou un membre.");
       return;
     }
     publish.mutate({
@@ -79,6 +92,7 @@ export function PublishToMembersDialog({
       title: title.trim() || undefined,
       audience,
       recipientUserIds: audience === "SPECIFIC" ? recipientIds : undefined,
+      groupIds: audience === "SPECIFIC" ? groupIds : undefined,
     });
   };
 
@@ -153,33 +167,68 @@ export function PublishToMembersDialog({
               </div>
 
               {audience === "SPECIFIC" && (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-gray-700">
-                    Destinataires
-                  </p>
-                  <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-gray-200 p-2">
-                    {membersQuery.isLoading ? (
-                      <p className="px-1 py-2 text-sm text-gray-500">Chargement…</p>
-                    ) : (membersQuery.data ?? []).length === 0 ? (
-                      <p className="px-1 py-2 text-sm text-gray-500">
-                        Aucun membre.
-                      </p>
-                    ) : (
-                      (membersQuery.data ?? []).map((m) => (
-                        <label
-                          key={m.id}
-                          className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={recipientIds.includes(m.id)}
-                            onChange={() => toggleRecipient(m.id)}
-                            className="accent-emerald-600"
-                          />
-                          {m.name}
-                        </label>
-                      ))
-                    )}
+                <div className="space-y-3">
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-gray-700">
+                      Groupes
+                    </p>
+                    <div className="max-h-40 space-y-1 overflow-auto rounded-lg border border-gray-200 p-2">
+                      {groupsQuery.isLoading ? (
+                        <p className="px-1 py-2 text-sm text-gray-500">
+                          Chargement…
+                        </p>
+                      ) : (groupsQuery.data ?? []).length === 0 ? (
+                        <p className="px-1 py-2 text-sm text-gray-500">
+                          Aucun groupe.
+                        </p>
+                      ) : (
+                        (groupsQuery.data ?? []).map((g) => (
+                          <label
+                            key={g.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={groupIds.includes(g.id)}
+                              onChange={() => toggleGroup(g.id)}
+                              className="accent-emerald-600"
+                            />
+                            {g.name}
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-gray-700">
+                      Membres
+                    </p>
+                    <div className="max-h-48 space-y-1 overflow-auto rounded-lg border border-gray-200 p-2">
+                      {membersQuery.isLoading ? (
+                        <p className="px-1 py-2 text-sm text-gray-500">
+                          Chargement…
+                        </p>
+                      ) : (membersQuery.data ?? []).length === 0 ? (
+                        <p className="px-1 py-2 text-sm text-gray-500">
+                          Aucun membre.
+                        </p>
+                      ) : (
+                        (membersQuery.data ?? []).map((m) => (
+                          <label
+                            key={m.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={recipientIds.includes(m.id)}
+                              onChange={() => toggleRecipient(m.id)}
+                              className="accent-emerald-600"
+                            />
+                            {m.name}
+                          </label>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
