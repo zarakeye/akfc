@@ -28,6 +28,7 @@ import { breakingNewsRouter } from "@backend/modules/breakingNews/router";
 import { siteStyleRouter } from "@backend/modules/siteStyle/router";
 import { sitePageRouter } from "@backend/modules/sitePages/router";
 import { memberDocumentRouter } from "@backend/modules/memberDocuments/router";
+import { memberGroupRouter } from "@backend/modules/memberGroups/router";
 
 export const appRouter = router({
   siteStyle: siteStyleRouter,
@@ -58,6 +59,7 @@ export const appRouter = router({
   gallery: galleryRouter,
   breakingNews: breakingNewsRouter,
   memberDocument: memberDocumentRouter,
+  memberGroup: memberGroupRouter,
 });
 
 export type AppRouter = typeof appRouter;
