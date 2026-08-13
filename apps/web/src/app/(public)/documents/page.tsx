@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FileText, CircleDot } from "lucide-react";
 
@@ -14,14 +14,24 @@ type DocItem = {
   audience: "ALL_MEMBERS" | "SPECIFIC";
   publishedAt: string | Date;
   readAt: string | Date | null;
+  personal: boolean;
+  groups: { id: string; name: string }[];
 };
+
+/** « du groupe X » (1) / « des groupes X, Y et Z » (N). */
+function groupLabel(names: string[]): string {
+  const list = new Intl.ListFormat("fr", { type: "conjunction" }).format(names);
+  return names.length <= 1 ? `du groupe ${list}` : `des groupes ${list}`;
+}
 
 function DocList({
   items,
   onSelect,
+  showGroups = false,
 }: {
   items: DocItem[];
   onSelect: (id: string) => void;
+  showGroups?: boolean;
 }) {
   return (
     <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -41,6 +51,9 @@ function DocList({
                 </span>
                 <span className="block text-xs text-gray-500">
                   {new Date(d.publishedAt).toLocaleDateString("fr-FR")}
+                  {showGroups && d.groups.length > 0
+                    ? ` · ${groupLabel(d.groups.map((g) => g.name))}`
+                    : ""}
                 </span>
               </span>
               {unread && (
@@ -54,6 +67,23 @@ function DocList({
         );
       })}
     </ul>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }
 
@@ -71,8 +101,13 @@ export default function DocumentsPage() {
     [docs, selectedId],
   );
 
-  const general = docs.filter((d) => d.audience === "ALL_MEMBERS");
-  const perso = docs.filter((d) => d.audience === "SPECIFIC");
+  const club = docs.filter((d) => d.audience === "ALL_MEMBERS");
+  const groupDocs = docs.filter(
+    (d) => d.audience === "SPECIFIC" && d.groups.length > 0,
+  );
+  const personalDocs = docs.filter(
+    (d) => d.audience === "SPECIFIC" && d.groups.length === 0 && d.personal,
+  );
 
   if (!user) {
     return (
@@ -104,21 +139,20 @@ export default function DocumentsPage() {
         <p className="text-gray-500">Aucun document pour le moment.</p>
       ) : (
         <div className="space-y-8">
-          {general.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Documents du club
-              </h2>
-              <DocList items={general} onSelect={setSelectedId} />
-            </section>
+          {club.length > 0 && (
+            <Section title="Documents du club">
+              <DocList items={club} onSelect={setSelectedId} />
+            </Section>
           )}
-          {perso.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Vos documents personnels
-              </h2>
-              <DocList items={perso} onSelect={setSelectedId} />
-            </section>
+          {groupDocs.length > 0 && (
+            <Section title="Documents de groupe">
+              <DocList items={groupDocs} onSelect={setSelectedId} showGroups />
+            </Section>
+          )}
+          {personalDocs.length > 0 && (
+            <Section title="Vos documents personnels">
+              <DocList items={personalDocs} onSelect={setSelectedId} />
+            </Section>
           )}
         </div>
       )}
