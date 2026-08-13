@@ -6,9 +6,10 @@ import { trpc } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /**
- * Entrée de navbar « Documents » avec badge de non-lus (généraux + persos) et,
- * sur desktop, un tooltip détaillé au survol (au niveau de la cloche). Le
- * burger passe `withTooltip={false}` : pas de survol sur tactile, juste le badge.
+ * Entrée de navbar « Documents » avec badge de non-lus (total DISTINCT) et, sur
+ * desktop, un tooltip détaillé au survol : une ligne par famille non vide —
+ * club, chaque groupe, personnels. Le burger passe `withTooltip={false}` :
+ * pas de survol tactile, juste le badge.
  */
 export function DocumentsNavLink({
   href,
@@ -27,7 +28,29 @@ export function DocumentsNavLink({
   });
   const general = data?.general ?? 0;
   const perso = data?.perso ?? 0;
-  const total = general + perso;
+  const byGroup = data?.byGroup ?? [];
+  const total = data?.total ?? 0;
+
+  const plural = (n: number) => (n > 1 ? "s" : "");
+  const lines: { key: string; text: string }[] = [];
+  if (general > 0) {
+    lines.push({
+      key: "general",
+      text: `${general} document${plural(general)} du club à lire`,
+    });
+  }
+  for (const g of byGroup) {
+    lines.push({
+      key: g.groupId,
+      text: `${g.count} document${plural(g.count)} du groupe ${g.name} à lire`,
+    });
+  }
+  if (perso > 0) {
+    lines.push({
+      key: "perso",
+      text: `${perso} document${plural(perso)} personnel${plural(perso)} à lire`,
+    });
+  }
 
   return (
     <span
@@ -45,29 +68,24 @@ export function DocumentsNavLink({
           {total}
         </span>
       )}
-      {withTooltip && total > 0 && (
+      {withTooltip && lines.length > 0 && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-60 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-left text-xs text-white shadow-lg group-hover:pointer-events-auto group-hover:block"
+          className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-64 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-left text-xs text-white shadow-lg group-hover:pointer-events-auto group-hover:block"
         >
-          {general > 0 && (
-            <Link href="/documents" className="block hover:underline">
-              {general} document{general > 1 ? "s" : ""} du club à lire
-            </Link>
-          )}
-          {perso > 0 && (
+          {lines.map((line, i) => (
             <Link
+              key={line.key}
               href="/documents"
               className={
-                general > 0
+                i > 0
                   ? "mt-1.5 block border-t border-white/15 pt-1.5 hover:underline"
                   : "block hover:underline"
               }
             >
-              {perso} document{perso > 1 ? "s" : ""} personnel
-              {perso > 1 ? "s" : ""} à lire
+              {line.text}
             </Link>
-          )}
+          ))}
         </div>
       )}
     </span>
