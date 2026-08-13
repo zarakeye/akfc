@@ -1,3 +1,30 @@
+#!/usr/bin/env bash
+#
+# AKFC — Groupes, increment 5/N : page membre à trois familles.
+#
+# Page /documents réécrite : « Documents du club » (ALL_MEMBERS), « Documents
+# de groupe » (UNE zone ; chaque doc étiqueté smart « du groupe X » / « des
+# groupes X, Y et Z » via Intl.ListFormat, d'après les groupes du membre par
+# lesquels il arrive), « Vos documents personnels » (destinataire ad hoc).
+# Chaque section n'apparaît que si non vide. Données : listForMe (2b-2).
+#
+# Nécessite l'increment 2b-2 appliqué (listForMe : personal + groups).
+#
+# Usage normal (Stéphane) : depuis la racine du repo.
+#   bash apply-member-groups-member-page.sh
+# Usage Claude sur clone :
+#   AKFC_APPLY_ONLY=1 bash apply-member-groups-member-page.sh
+#
+set -euo pipefail
+
+PAGE="apps/web/src/app/(public)/documents/page.tsx"
+
+if [ ! -f "package.json" ] || [ ! -f "$PAGE" ]; then
+  echo "ERREUR: lance depuis la racine du repo AKFC ($PAGE attendu)." >&2
+  exit 1
+fi
+
+cat > "$PAGE" <<'PAGE_EOF'
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
@@ -161,3 +188,29 @@ export default function DocumentsPage() {
     </main>
   );
 }
+PAGE_EOF
+echo "page /documents réécrite (3 familles + étiquette smart)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck ni commit"
+  exit 0
+fi
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -15 || true
+  tail -4 /tmp/akfc_tc.log
+  exit 1
+fi
+echo "✅ typecheck OK"
+
+git add -A
+if git commit -m "feat(groups): page membre à 3 familles (club/groupe/perso) + étiquette smart" > /tmp/akfc_commit.log 2>&1; then
+  echo "✅ commit $(git rev-parse --short HEAD)"
+else
+  echo "❌ commit échoué :"; head -10 /tmp/akfc_commit.log; exit 1
+fi
