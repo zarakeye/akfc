@@ -1,3 +1,29 @@
+#!/usr/bin/env bash
+#
+# AKFC — Groupes, increment 6/N : badge + tooltip navbar à trois familles.
+#
+# `DocumentsNavLink` : badge = `total` DISTINCT (un doc multi-canal compté une
+# fois) ; tooltip = une ligne par famille non vide — club, chaque groupe
+# (byGroup), personnels — chacune cliquable. S'appuie sur unreadBreakdownForMe
+# (2b-2 : general / perso / total / byGroup).
+#
+# Nécessite l'increment 2b-2 + le composant DocumentsNavLink (badge d'origine).
+#
+# Usage normal (Stéphane) : depuis la racine du repo.
+#   bash apply-member-groups-nav-badge.sh
+# Usage Claude sur clone :
+#   AKFC_APPLY_ONLY=1 bash apply-member-groups-nav-badge.sh
+#
+set -euo pipefail
+
+CMP="apps/web/src/features/member-documents/DocumentsNavLink.tsx"
+
+if [ ! -f "package.json" ] || [ ! -f "$CMP" ]; then
+  echo "ERREUR: lance depuis la racine du repo AKFC ($CMP attendu)." >&2
+  exit 1
+fi
+
+cat > "$CMP" <<'CMP_EOF'
 "use client";
 
 import Link from "next/link";
@@ -91,3 +117,29 @@ export function DocumentsNavLink({
     </span>
   );
 }
+CMP_EOF
+echo "DocumentsNavLink réécrit (badge total distinct + tooltip 3 familles)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck ni commit"
+  exit 0
+fi
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -15 || true
+  tail -4 /tmp/akfc_tc.log
+  exit 1
+fi
+echo "✅ typecheck OK"
+
+git add -A
+if git commit -m "feat(groups): badge total distinct + tooltip navbar à 3 familles (club/groupe/perso)" > /tmp/akfc_commit.log 2>&1; then
+  echo "✅ commit $(git rev-parse --short HEAD)"
+else
+  echo "❌ commit échoué :"; head -10 /tmp/akfc_commit.log; exit 1
+fi
