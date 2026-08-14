@@ -17,6 +17,9 @@ export async function register() {
   const { ensureRootFolders } = await import(
     "@backend/modules/cloudinary/services/ensureRootFolders.service"
   );
+  const { ensureAllGroupSpaces } = await import(
+    "@backend/modules/memberGroups/ensureAllGroupSpaces.service"
+  );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 
@@ -37,6 +40,18 @@ export async function register() {
     // On log pour investigation, mais l'app démarre quand même.
     console.error(
       "[instrumentation] ensureRootFolders failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const { ensured } = await ensureAllGroupSpaces(prisma, APP_ROOT);
+    console.log(
+      `[instrumentation] ensureAllGroupSpaces: ${ensured} espace(s) de groupe collaboratif garanti(s) pour appRoot="${APP_ROOT}"`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureAllGroupSpaces failed — app will still start",
       err
     );
   }
