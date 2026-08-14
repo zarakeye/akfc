@@ -14,6 +14,7 @@ import type {
 import { listBin } from "@backend/modules/trash/services/listBin.service";
 import { readTrashFolder } from "@backend/modules/trash/services/readTrashFolder.service";
 import { trashToBin } from "@backend/modules/trash/services/trashToBin.service";
+import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 import { resolvePhysicalLocations } from "@backend/modules/storage/resolvePhysicalLocations.service";
 import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
 import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
@@ -156,9 +157,19 @@ export const trashRouter = router({
       return readTrashFolder({ prisma: ctx.prisma, input });
     }),
 
-  trashToBin: adminProcedure
+  trashToBin: protectedProcedure
     .input(trashToBinInputSchema)
     .mutation(async ({ ctx, input }): Promise<TrashToBinOutput> => {
+      // Garde : admin partout ; sinon uniquement dans un espace de groupe
+      // (`groups/…`) dont l'utilisateur est EDITOR. Purge/restore restent admin.
+      await assertCanTrashPaths({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        paths: input.sources.flatMap((source) =>
+          source.kind === "selection" ? source.roots : [source.fullPath],
+        ),
+      });
+
       const sources = input.logical
         ? await toPhysicalTrashSources({
             prisma: ctx.prisma,
