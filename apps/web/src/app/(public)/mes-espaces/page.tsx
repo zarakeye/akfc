@@ -1,6 +1,7 @@
 "use client";
 
 import { JSX } from "react";
+import Link from "next/link";
 
 import { trpc } from "@trpc/trpcClient";
 
@@ -39,21 +40,23 @@ export default function MesEspacesPage(): JSX.Element {
       {data && data.length > 0 && (
         <ul className="space-y-3">
           {data.map((space) => (
-            <li
-              key={space.groupId}
-              className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
-            >
-              <span className="font-medium">{space.name}</span>
-              <span
-                className={
-                  "rounded-full px-2 py-0.5 text-xs font-medium " +
-                  (space.access === "EDITOR"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-gray-100 text-gray-600")
-                }
+            <li key={space.groupId}>
+              <Link
+                href={`/mes-espaces/${space.groupId}`}
+                className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50"
               >
-                {space.access === "EDITOR" ? "éditeur" : "lecteur"}
-              </span>
+                <span className="font-medium">{space.name}</span>
+                <span
+                  className={
+                    "rounded-full px-2 py-0.5 text-xs font-medium " +
+                    (space.access === "EDITOR"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-gray-100 text-gray-600")
+                  }
+                >
+                  {space.access === "EDITOR" ? "éditeur" : "lecteur"}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
