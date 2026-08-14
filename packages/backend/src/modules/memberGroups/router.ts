@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
+import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGroupSpaceFolder.service";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -59,6 +60,13 @@ export const memberGroupRouter = router({
         },
         select: { id: true },
       });
+      if (input.isCollaborative) {
+        await ensureGroupSpaceFolder({
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          groupId: group.id,
+        });
+      }
       return { id: group.id };
     }),
 
@@ -81,6 +89,13 @@ export const memberGroupRouter = router({
           isCollaborative: input.isCollaborative,
         },
       });
+      if (input.isCollaborative === true) {
+        await ensureGroupSpaceFolder({
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          groupId: input.id,
+        });
+      }
       return { success: true };
     }),
 
