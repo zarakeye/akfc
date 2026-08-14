@@ -1374,6 +1374,12 @@ model DocumentReceipt {
 }
 
 
+/// Droit d'un membre dans l'espace d'un groupe collaboratif.
+enum MemberGroupAccess {
+  VIEWER
+  EDITOR
+}
+
 /// Groupe de membres (ex. « Bureau »), géré dans le panneau de contrôle. Sert
 /// de liste de diffusion : l'appartenance est résolue DYNAMIQUEMENT, donc un
 /// membre ajouté hérite des documents déjà publiés au groupe.
@@ -1381,6 +1387,8 @@ model MemberGroup {
   id          String   @id @default(cuid())
   name        String
   description String?
+  /// Diffusion (défaut) vs espace collaboratif (dossier finder dédié + droits).
+  isCollaborative Boolean @default(false)
   createdAt   DateTime @default(now())
 
   memberships MemberGroupMembership[]
@@ -1394,6 +1402,9 @@ model MemberGroupMembership {
   group   MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   userId  String
   user    User        @relation("MemberGroupMembership", fields: [userId], references: [id], onDelete: Cascade)
+  /// Droit dans l'espace d'un groupe COLLABORATIF : EDITOR = dépôt/suppression,
+  /// VIEWER = consultation seule. Sans effet sur une liste de diffusion.
+  access  MemberGroupAccess @default(EDITOR)
 
   @@unique([groupId, userId])
   @@index([userId])

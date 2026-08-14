@@ -28,6 +28,7 @@ export const memberGroupRouter = router({
         id: true,
         name: true,
         description: true,
+        isCollaborative: true,
         _count: { select: { memberships: true } },
       },
     });
@@ -35,6 +36,7 @@ export const memberGroupRouter = router({
       id: g.id,
       name: g.name,
       description: g.description,
+      isCollaborative: g.isCollaborative,
       memberCount: g._count.memberships,
     }));
   }),
@@ -45,11 +47,16 @@ export const memberGroupRouter = router({
       z.object({
         name: z.string().trim().min(1).max(120),
         description: z.string().trim().max(500).optional(),
+        isCollaborative: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.prisma.memberGroup.create({
-        data: { name: input.name, description: input.description },
+        data: {
+          name: input.name,
+          description: input.description,
+          isCollaborative: input.isCollaborative ?? false,
+        },
         select: { id: true },
       });
       return { id: group.id };
@@ -62,12 +69,17 @@ export const memberGroupRouter = router({
         id: z.string(),
         name: z.string().trim().min(1).max(120),
         description: z.string().trim().max(500).optional(),
+        isCollaborative: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.memberGroup.update({
         where: { id: input.id },
-        data: { name: input.name, description: input.description ?? null },
+        data: {
+          name: input.name,
+          description: input.description ?? null,
+          isCollaborative: input.isCollaborative,
+        },
       });
       return { success: true };
     }),
@@ -87,26 +99,37 @@ export const memberGroupRouter = router({
       const memberships = await ctx.prisma.memberGroupMembership.findMany({
         where: { groupId: input.groupId },
         select: {
+          access: true,
           user: {
             select: { id: true, firstName: true, lastName: true, email: true },
           },
         },
       });
       return memberships
-        .map((m) => ({ id: m.user.id, name: memberName(m.user) }))
+        .map((m) => ({ id: m.user.id, name: memberName(m.user), access: m.access }))
         .sort((a, b) => a.name.localeCompare(b.name, "fr"));
     }),
 
   /** Ajoute un membre à un groupe (idempotent). */
   addMember: adminProcedure
-    .input(z.object({ groupId: z.string(), userId: z.string() }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(),
+        access: z.enum(["VIEWER", "EDITOR"]).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.memberGroupMembership.upsert({
         where: {
           groupId_userId: { groupId: input.groupId, userId: input.userId },
         },
-        create: { groupId: input.groupId, userId: input.userId },
-        update: {},
+        create: {
+          groupId: input.groupId,
+          userId: input.userId,
+          access: input.access ?? "EDITOR",
+        },
+        update: input.access ? { access: input.access } : {},
       });
       return { success: true };
     }),
@@ -117,6 +140,25 @@ export const memberGroupRouter = router({
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.memberGroupMembership.deleteMany({
         where: { groupId: input.groupId, userId: input.userId },
+      });
+      return { success: true };
+    }),
+
+  /** Change le droit d'un membre dans un groupe collaboratif (VIEWER/EDITOR). */
+  setMemberAccess: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(),
+        access: z.enum(["VIEWER", "EDITOR"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.memberGroupMembership.update({
+        where: {
+          groupId_userId: { groupId: input.groupId, userId: input.userId },
+        },
+        data: { access: input.access },
       });
       return { success: true };
     }),
