@@ -50,6 +50,12 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
     eventId: z.number().int().positive(),
     disciplineIds: z.array(z.number().int().positive()).default([]),
   }),
+  // Espace d'un groupe collaboratif : dépôt réservé aux éditeurs/admins
+  // (garde côté router). Rattachement par le chemin `groups/…`.
+  z.object({
+    kind: z.literal("group"),
+    groupId: z.string(),
+  }),
 ]);
 
 export const uploadAssetRequestSchema = z.object({

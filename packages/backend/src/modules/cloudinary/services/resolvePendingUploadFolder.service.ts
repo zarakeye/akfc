@@ -3,6 +3,7 @@ import slugify from "slugify";
 
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
+import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 
 /**
  * resolvePendingUploadFolder.service.ts
@@ -104,6 +105,12 @@ export async function resolvePendingUploadFolder(params: {
     // Les photos vivent dans le sous-dossier `photos/` de l'espace perso, pour
     // une structure homogène avec les futures zones R2 (documents/, audio/).
     return `${base}/photos`;
+  }
+
+  /* ── Destination espace d'un groupe collaboratif (dérivée du groupe) ── */
+  if (destination.kind === "group") {
+    // resolveGroupBaseFolder valide l'existence + le caractère collaboratif.
+    return resolveGroupBaseFolder({ prisma, appRoot, groupId: destination.groupId });
   }
 
   /* ── Destinations couplées à une discipline (historique) ── */

@@ -395,6 +395,10 @@ export function createR2StorageAdapter(
           // rattachement se fait par `eventId` (côté Cloudinary) et par les
           // liens de disciplines de l'événement.
           break;
+        case "group":
+          // Espace de groupe collaboratif : rattachement par le chemin
+          // (`groups/…`), sans catégorie ni discipline (comme `general`).
+          break;
         case "perso":
           // R2 perso toujours reporté (photos Cloudinary d'abord).
           throw new Error(
