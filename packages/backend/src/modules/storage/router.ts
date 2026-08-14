@@ -36,6 +36,8 @@ import { countPersoImages } from "@backend/modules/media/services/countPersoImag
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listGeneralFolders } from "@backend/modules/media/services/listGeneralFolders.service";
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
+import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
+import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { assertCanWriteGroupSpace } from '@backend/modules/memberGroups/assertCanWriteGroupSpace.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
@@ -229,6 +231,29 @@ export const storageRouter = router({
   }),
 
   /**
+   * Espaces des groupes collaboratifs accessibles à l'utilisateur courant
+   * (racines du finder côté membre) : chemin + droit par groupe.
+   */
+  myCollaborativeSpaces: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.prisma.memberGroupMembership.findMany({
+      where: { userId: ctx.user.id, group: { isCollaborative: true } },
+      select: { access: true, group: { select: { id: true, name: true } } },
+    });
+    return Promise.all(
+      memberships.map(async (m) => ({
+        groupId: m.group.id,
+        name: m.group.name,
+        access: m.access,
+        path: await resolveGroupBaseFolder({
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          groupId: m.group.id,
+        }),
+      })),
+    );
+  }),
+
+  /**
    * ═══ Le flag `logical` — chantier « arbre sans strate de statut » ═══════
    *
    * Levé, il enveloppe l'adapter dans `StatusFoldingReadView` : le nœud
@@ -271,6 +296,11 @@ export const storageRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadPath({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        path: input.path,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -299,6 +329,11 @@ export const storageRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadPath({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        path: input.path,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -324,6 +359,11 @@ export const storageRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadPath({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        path: input.path,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -349,6 +389,11 @@ export const storageRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadPath({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        path: input.path,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
