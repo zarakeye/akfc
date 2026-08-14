@@ -18,10 +18,12 @@ function GroupsManager() {
   const groupsQuery = trpc.memberGroup.list.useQuery();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [newCollab, setNewCollab] = useState(false);
 
   const create = trpc.memberGroup.create.useMutation({
     onSuccess: () => {
       setNewName("");
+      setNewCollab(false);
       void utils.memberGroup.list.invalidate();
     },
   });
@@ -40,22 +42,37 @@ function GroupsManager() {
   return (
     <div className="flex flex-col gap-6 md:flex-row">
       <div className="md:w-72">
-        <div className="mb-4 flex gap-2">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nouveau groupe"
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-          />
-          <button
-            type="button"
-            disabled={!newName.trim() || create.isPending}
-            onClick={() => create.mutate({ name: newName.trim() })}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-          >
-            Créer
-          </button>
+        <div className="mb-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Nouveau groupe"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              disabled={!newName.trim() || create.isPending}
+              onClick={() =>
+                create.mutate({
+                  name: newName.trim(),
+                  isCollaborative: newCollab,
+                })
+              }
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            >
+              Créer
+            </button>
+          </div>
+          <label className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+            <input
+              type="checkbox"
+              checked={newCollab}
+              onChange={(e) => setNewCollab(e.target.checked)}
+            />
+            Espace collaboratif (dossier dédié + droits éditeur/lecteur)
+          </label>
         </div>
 
         {groupsQuery.isLoading ? (
@@ -73,7 +90,14 @@ function GroupsManager() {
                     selectedId === g.id ? "bg-emerald-50 font-medium" : ""
                   }`}
                 >
-                  <span>{g.name}</span>
+                  <span className="flex items-center gap-2">
+                    {g.name}
+                    {g.isCollaborative ? (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                        collab
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="text-xs text-gray-400">{g.memberCount}</span>
                 </button>
               </li>
@@ -103,7 +127,12 @@ function GroupDetail({
   group,
   onDeleted,
 }: {
-  group: { id: string; name: string; description: string | null };
+  group: {
+    id: string;
+    name: string;
+    description: string | null;
+    isCollaborative: boolean;
+  };
   onDeleted: () => void;
 }) {
   const utils = trpc.useUtils();
@@ -118,6 +147,12 @@ function GroupDetail({
   };
   const rename = trpc.memberGroup.update.useMutation({
     onSuccess: () => void utils.memberGroup.list.invalidate(),
+  });
+  const setCollab = trpc.memberGroup.update.useMutation({
+    onSuccess: () => void utils.memberGroup.list.invalidate(),
+  });
+  const setAccess = trpc.memberGroup.setMemberAccess.useMutation({
+    onSuccess: invalidate,
   });
   const addMember = trpc.memberGroup.addMember.useMutation({
     onSuccess: invalidate,
@@ -160,6 +195,22 @@ function GroupDetail({
         </button>
       </div>
 
+      <label className="mb-6 flex items-center gap-2 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={group.isCollaborative}
+          disabled={setCollab.isPending}
+          onChange={() =>
+            setCollab.mutate({
+              id: group.id,
+              name: group.name,
+              isCollaborative: !group.isCollaborative,
+            })
+          }
+        />
+        Espace collaboratif (dossier dédié + droits éditeur/lecteur)
+      </label>
+
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <p className="mb-2 text-sm font-medium text-gray-700">Membres</p>
@@ -173,15 +224,33 @@ function GroupDetail({
                   className="flex items-center justify-between rounded px-2 py-1 text-sm hover:bg-gray-50"
                 >
                   <span>{m.name}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      removeMember.mutate({ groupId: group.id, userId: m.id })
-                    }
-                    className="text-xs text-red-600 hover:underline"
-                  >
-                    Retirer
-                  </button>
+                  <span className="flex items-center gap-2">
+                    {group.isCollaborative ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccess.mutate({
+                            groupId: group.id,
+                            userId: m.id,
+                            access: m.access === "EDITOR" ? "VIEWER" : "EDITOR",
+                          })
+                        }
+                        className="rounded-full border border-gray-300 px-2 py-0.5 text-[11px] font-medium text-gray-600 hover:bg-gray-100"
+                        title="Basculer éditeur / lecteur"
+                      >
+                        {m.access === "EDITOR" ? "éditeur" : "lecteur"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeMember.mutate({ groupId: group.id, userId: m.id })
+                      }
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      Retirer
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>
