@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
+import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
 
 /**
  * Documents membres : fichiers du finder mis à disposition des membres, avec
@@ -295,6 +296,62 @@ export const memberDocumentRouter = router({
         select: { id: true },
       });
       return { id: doc.id };
+    }),
+
+  /**
+   * Dépôt d'un fichier dans l'espace d'un groupe collaboratif par un
+   * ÉDITEUR (ou admin) : publie le MediaAsset comme MemberDocument ciblé
+   * sur CE groupe, pour que tout le système documents (reçus, badges,
+   * cloche) s'applique. Idempotent doux (ne re-publie pas un asset déjà
+   * mis à disposition).
+   */
+  depositToGroupSpace: protectedProcedure
+    .input(
+      z.object({
+        path: z.string(),
+        groupId: z.string(),
+        title: z.string().trim().max(300).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCanWriteGroupSpace({
+        prisma: ctx.prisma,
+        userId: ctx.sessionClient.user.id,
+        groupId: input.groupId,
+      });
+
+      const asset = await ctx.prisma.mediaAsset.findFirst({
+        where: {
+          OR: [
+            { fullPath: input.path },
+            { fullPath: { startsWith: `${input.path}.` } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (!asset) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Fichier introuvable." });
+      }
+
+      const existing = await ctx.prisma.memberDocument.findUnique({
+        where: { mediaAssetId: asset.id },
+        select: { id: true },
+      });
+      if (existing) {
+        return { id: existing.id, alreadyPublished: true };
+      }
+
+      const doc = await ctx.prisma.memberDocument.create({
+        data: {
+          mediaAssetId: asset.id,
+          title: input.title,
+          audience: "SPECIFIC",
+          publishedById: ctx.sessionClient.user.id,
+          groups: { create: [{ groupId: input.groupId }] },
+        },
+        select: { id: true },
+      });
+      return { id: doc.id, alreadyPublished: false };
     }),
 
   /** Retire la mise à disposition (cascade reçus + destinataires). */
