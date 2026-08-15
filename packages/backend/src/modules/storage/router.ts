@@ -233,21 +233,50 @@ export const storageRouter = router({
   /**
    * Espaces des groupes collaboratifs accessibles à l'utilisateur courant
    * (racines du finder côté membre) : chemin + droit par groupe.
+   *
+   * Passerelle admin : un administrateur est d'emblée ÉDITEUR de TOUS les
+   * espaces collaboratifs (au-dessus du système de groupes), sans
+   * appartenance manuelle.
    */
   myCollaborativeSpaces: protectedProcedure.query(async ({ ctx }) => {
-    const memberships = await ctx.prisma.memberGroupMembership.findMany({
-      where: { userId: ctx.user.id, group: { isCollaborative: true } },
-      select: { access: true, group: { select: { id: true, name: true } } },
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { role: { select: { name: true } } },
     });
+    const isAdmin = user?.role?.name === "ADMIN";
+
+    const entries: {
+      groupId: string;
+      name: string;
+      access: "VIEWER" | "EDITOR";
+    }[] = isAdmin
+      ? (
+          await ctx.prisma.memberGroup.findMany({
+            where: { isCollaborative: true },
+            select: { id: true, name: true },
+          })
+        ).map((g) => ({ groupId: g.id, name: g.name, access: "EDITOR" as const }))
+      : (
+          await ctx.prisma.memberGroupMembership.findMany({
+            where: { userId: ctx.user.id, group: { isCollaborative: true } },
+            select: {
+              access: true,
+              group: { select: { id: true, name: true } },
+            },
+          })
+        ).map((m) => ({
+          groupId: m.group.id,
+          name: m.group.name,
+          access: m.access,
+        }));
+
     return Promise.all(
-      memberships.map(async (m) => ({
-        groupId: m.group.id,
-        name: m.group.name,
-        access: m.access,
+      entries.map(async (e) => ({
+        ...e,
         path: await resolveGroupBaseFolder({
           prisma: ctx.prisma,
           appRoot: ctx.appRoot,
-          groupId: m.group.id,
+          groupId: e.groupId,
         }),
       })),
     );
