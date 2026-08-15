@@ -20,6 +20,9 @@ export async function register() {
   const { ensureAllGroupSpaces } = await import(
     "@backend/modules/memberGroups/ensureAllGroupSpaces.service"
   );
+  const { ensureAdminGroup } = await import(
+    "@backend/modules/memberGroups/ensureAdminGroup.service"
+  );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 
@@ -52,6 +55,18 @@ export async function register() {
   } catch (err) {
     console.error(
       "[instrumentation] ensureAllGroupSpaces failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const { adminsLinked } = await ensureAdminGroup(prisma, APP_ROOT);
+    console.log(
+      `[instrumentation] ensureAdminGroup: groupe Administrateurs garanti, ${adminsLinked} admin(s) inscrit(s) pour appRoot="${APP_ROOT}"`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureAdminGroup failed — app will still start",
       err
     );
   }

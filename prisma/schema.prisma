@@ -1389,6 +1389,9 @@ model MemberGroup {
   description String?
   /// Diffusion (défaut) vs espace collaboratif (dossier finder dédié + droits).
   isCollaborative Boolean @default(false)
+  /// Groupe « Administrateurs » UNIQUE (le plus privilégié) : son espace
+  /// deviendra l'ex-dossier « general ». Singleton garanti par ensureAdminGroup.
+  isAdminGroup Boolean @default(false)
   createdAt   DateTime @default(now())
 
   memberships MemberGroupMembership[]
