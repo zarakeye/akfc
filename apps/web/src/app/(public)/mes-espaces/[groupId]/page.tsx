@@ -1,24 +1,30 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { JSX, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CornerLeftUp, Folder as FolderIcon, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  CornerLeftUp,
+  Folder as FolderIcon,
+  FileText,
+  Upload,
+} from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 
 /**
- * Parcours en LECTURE d'un espace collaboratif — page MEMBRE
- * `(public)/mes-espaces/[groupId]`.
+ * Espace collaboratif d'un groupe — page MEMBRE `(public)/mes-espaces/[groupId]`.
  *
- * Navigue dossier par dossier via `storage.getTree` (profondeur 1) rooté sur
- * le chemin de l'espace. Lecture autorisée par la garde de lecture (1e) ;
- * aucune action admin, corbeille, ni déplacement. Le dépôt (éditeur) arrive à
- * l'incrément suivant.
+ * Parcours en lecture (getTree rooté, garde 1e) + dépôt de document pour les
+ * ÉDITEURS : séquence R2 (createR2Upload → PUT → registerR2Upload,
+ * destination `kind:"group"`) puis `depositToGroupSpace` (le fichier devient un
+ * MemberDocument ciblé sur le groupe). v1 : PDF, dépôt à la racine de l'espace.
  */
 export default function EspacePage(): JSX.Element {
   const params = useParams<{ groupId: string }>();
   const groupId = params.groupId;
+  const utils = trpc.useUtils();
 
   const spacesQuery = trpc.storage.myCollaborativeSpaces.useQuery();
   const space =
@@ -31,6 +37,14 @@ export default function EspacePage(): JSX.Element {
     { path: currentPath ?? "", depth: 1 },
     { enabled: Boolean(currentPath) },
   );
+
+  const createR2 = trpc.storage.createR2Upload.useMutation();
+  const registerR2 = trpc.storage.registerR2Upload.useMutation();
+  const deposit = trpc.memberDocument.depositToGroupSpace.useMutation();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   if (spacesQuery.isLoading) {
     return <div className="mx-auto max-w-3xl p-6">Chargement…</div>;
@@ -53,11 +67,57 @@ export default function EspacePage(): JSX.Element {
 
   const children = treeQuery.data?.root.children ?? [];
   const atRoot = currentPath === space.path;
+  const canEdit = space.access === "EDITOR";
 
   const goUp = (): void => {
     if (!currentPath || atRoot) return;
     const parent = currentPath.split("/").slice(0, -1).join("/");
     setPath(parent.length >= space.path.length ? parent : space.path);
+  };
+
+  const onFileChosen = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const destination = { kind: "group" as const, groupId };
+
+      const auth = await createR2.mutateAsync({
+        destination,
+        originalFileName: file.name,
+        mimeType: file.type,
+        maxBytes: file.size,
+      });
+
+      const res = await fetch(auth.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) {
+        throw new Error(`Envoi échoué (HTTP ${res.status}).`);
+      }
+
+      const registered = await registerR2.mutateAsync({
+        path: auth.path,
+        expectedBytes: file.size,
+        expectedMimeType: file.type,
+        destination,
+        originalFileName: file.name,
+      });
+
+      await deposit.mutateAsync({ path: registered.path, groupId });
+      await utils.storage.getTree.invalidate();
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Le dépôt a échoué.",
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -69,19 +129,43 @@ export default function EspacePage(): JSX.Element {
         <ArrowLeft className="h-4 w-4" /> Mes espaces
       </Link>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{space.name}</h1>
-        <span
-          className={
-            "rounded-full px-2 py-0.5 text-xs font-medium " +
-            (space.access === "EDITOR"
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-gray-100 text-gray-600")
-          }
-        >
-          {space.access === "EDITOR" ? "éditeur" : "lecteur"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span
+            className={
+              "rounded-full px-2 py-0.5 text-xs font-medium " +
+              (canEdit
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-gray-100 text-gray-600")
+            }
+          >
+            {canEdit ? "éditeur" : "lecteur"}
+          </span>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <Upload className="h-4 w-4" />
+              {uploading ? "Dépôt…" : "Ajouter un document"}
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={onFileChosen}
+          />
+        </div>
       </div>
+
+      {uploadError && (
+        <p className="mb-3 text-sm text-red-600">{uploadError}</p>
+      )}
 
       {!atRoot && (
         <button
