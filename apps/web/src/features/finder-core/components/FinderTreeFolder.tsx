@@ -121,6 +121,7 @@ export default function FinderTreeFolder({
   }
 
   const trashToBinMutation = trpc.trash.trashToBin.useMutation();
+  const { data: groupSpaceHierarchy } = trpc.storage.groupSpaceHierarchy.useQuery();
 
   const trashMap = useTrashMap();
 
@@ -203,7 +204,56 @@ export default function FinderTreeFolder({
   const effectiveChildren: FinderNode[] | undefined =
     node.children !== undefined ? node.children : (loadedChildren ?? undefined);
 
-  const hasChildren = node.hasChildren ?? (effectiveChildren?.length ?? 0) > 0;
+  // ─── Option B : imbrication VISUELLE des espaces de groupe ──────────────
+  // Le finder reste physique ; on range seulement les espaces selon la
+  // hiérarchie logique (parentGroupId). Chaque nœud synthétique garde son
+  // CHEMIN RÉEL → navigation + chargement du contenu inchangés.
+  const groupsContainerPath = `${APP_ROOT}/groups`;
+  const spacePathByGroupId = new Map<string, string>();
+  for (const sp of groupSpaceHierarchy ?? []) {
+    spacePathByGroupId.set(sp.groupId, sp.path);
+  }
+  const allSpacePaths = new Set(
+    (groupSpaceHierarchy ?? []).map((sp) => sp.path),
+  );
+  const rootSpacePaths = new Set<string>();
+  const childSpacesByParentPath = new Map<string, FinderNode[]>();
+  for (const sp of groupSpaceHierarchy ?? []) {
+    const parentPath = sp.parentGroupId
+      ? spacePathByGroupId.get(sp.parentGroupId)
+      : undefined;
+    const synthetic: FinderNode = {
+      id: sp.path,
+      name: sp.path.split("/").pop() ?? sp.name,
+      path: sp.path,
+      type: "folder",
+      hasChildren: true,
+    };
+    if (parentPath) {
+      const arr = childSpacesByParentPath.get(parentPath) ?? [];
+      arr.push(synthetic);
+      childSpacesByParentPath.set(parentPath, arr);
+    } else {
+      rootSpacePaths.add(sp.path);
+    }
+  }
+
+  const syntheticChildSpaces = allSpacePaths.has(node.path)
+    ? (childSpacesByParentPath.get(node.path) ?? [])
+    : [];
+
+  const displayChildren: FinderNode[] | undefined =
+    node.path === groupsContainerPath
+      ? effectiveChildren?.filter(
+          (c) => !allSpacePaths.has(c.path) || rootSpacePaths.has(c.path),
+        )
+      : syntheticChildSpaces.length > 0
+        ? [...(effectiveChildren ?? []), ...syntheticChildSpaces]
+        : effectiveChildren;
+
+  const hasChildren =
+    (node.hasChildren ?? (effectiveChildren?.length ?? 0) > 0) ||
+    syntheticChildSpaces.length > 0;
 
   const isMaterializing =
     isOpen &&
@@ -532,9 +582,9 @@ export default function FinderTreeFolder({
         </div>
       )}
 
-      {isOpen && effectiveChildren && effectiveChildren.length > 0 && (
+      {isOpen && displayChildren && displayChildren.length > 0 && (
         <div className="ml-3 pl-3 border-l border-border">
-          {effectiveChildren.map((child) =>
+          {displayChildren.map((child) =>
             child.type === "folder" ? (
               <FinderTreeFolder
                 key={child.path}
