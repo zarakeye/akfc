@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
@@ -30,6 +31,7 @@ export const memberGroupRouter = router({
         name: true,
         description: true,
         isCollaborative: true,
+        parentGroupId: true,
         _count: { select: { memberships: true } },
       },
     });
@@ -38,6 +40,7 @@ export const memberGroupRouter = router({
       name: g.name,
       description: g.description,
       isCollaborative: g.isCollaborative,
+      parentGroupId: g.parentGroupId,
       memberCount: g._count.memberships,
     }));
   }),
@@ -104,6 +107,67 @@ export const memberGroupRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.memberGroup.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
+
+  /**
+   * Définit (ou retire, si parentGroupId=null) le groupe PARENT d'un
+   * groupe — l'inclusion/hiérarchie (arbre). Garde anti-cycle : le nouveau
+   * parent ne peut être ni le groupe lui-même ni l'un de ses descendants.
+   */
+  setParentGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        parentGroupId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { groupId, parentGroupId } = input;
+
+      if (parentGroupId === groupId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Un groupe ne peut pas être son propre parent.",
+        });
+      }
+
+      if (parentGroupId) {
+        const exists = await ctx.prisma.memberGroup.findUnique({
+          where: { id: parentGroupId },
+          select: { id: true },
+        });
+        if (!exists) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Groupe parent introuvable." });
+        }
+
+        // Le parent ne doit pas être un DESCENDANT du groupe (→ cycle) :
+        // on remonte la chaîne des ancêtres du parent ; si on croise le
+        // groupe, c'est qu'il est déjà un ancêtre du parent.
+        let cursor: string | null = parentGroupId;
+        const seen = new Set<string>();
+        while (cursor) {
+          if (cursor === groupId) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Cycle interdit : le parent choisi est un descendant du groupe.",
+            });
+          }
+          if (seen.has(cursor)) break;
+          seen.add(cursor);
+          const parent: { parentGroupId: string | null } | null =
+            await ctx.prisma.memberGroup.findUnique({
+              where: { id: cursor },
+              select: { parentGroupId: true },
+            });
+          cursor = parent?.parentGroupId ?? null;
+        }
+      }
+
+      await ctx.prisma.memberGroup.update({
+        where: { id: groupId },
+        data: { parentGroupId },
+      });
       return { success: true };
     }),
 
