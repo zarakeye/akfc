@@ -17,6 +17,7 @@ import { APP_ROOT } from "@config/app";
 import { trpc } from "@trpc/trpcClient";
 
 import { useFinderStore } from "@features/finder-core/state/useFinderStore";
+import { friendlySpaceFolderLabel } from "@features/finder-core/utils/spaceFolderLabel";
 import { useLongPress } from "@features/finder-core/hooks/useLongPress";
 import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
 import { useTrashMap } from "@features/finder-core/state/TrashMapContext";
@@ -382,7 +383,7 @@ export default function FinderTreeFolder({
     );
   }
 
-  let displayLabel = node.name;
+  let displayLabel = friendlySpaceFolderLabel(node.name, node.path) ?? node.name;
   if (inTrashStorage && trashEntryForName) {
     displayLabel = trashEntryForName.displayName;
   } else if (
