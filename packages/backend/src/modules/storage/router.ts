@@ -269,6 +269,36 @@ export const storageRouter = router({
   }),
 
   /**
+   * Hiérarchie des espaces collaboratifs : chemin d'espace RÉEL + parent,
+   * pour l'imbrication visuelle du finder admin (les chemins physiques
+   * restent inchangés). Réservé aux admins.
+   */
+  groupSpaceHierarchy: protectedProcedure.query(async ({ ctx }) => {
+    const me = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { role: { select: { name: true } } },
+    });
+    if (me?.role?.name !== "ADMIN") return [];
+
+    const groups = await ctx.prisma.memberGroup.findMany({
+      where: { isCollaborative: true },
+      select: { id: true, name: true, parentGroupId: true },
+    });
+    return Promise.all(
+      groups.map(async (g) => ({
+        groupId: g.id,
+        name: g.name,
+        parentGroupId: g.parentGroupId,
+        path: await resolveGroupBaseFolder({
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          groupId: g.id,
+        }),
+      })),
+    );
+  }),
+
+  /**
    * Espaces des groupes collaboratifs accessibles à l'utilisateur courant
    * (racines du finder côté membre) : chemin + droit par groupe.
    *
