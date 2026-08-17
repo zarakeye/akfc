@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
+import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
 
 /**
@@ -111,6 +112,26 @@ export const memberDocumentRouter = router({
         // Non lu = aucun reçu daté pour ce membre.
         receipts: { none: { userId, readAt: { not: null } } },
         ...(yearStart ? { publishedAt: { gte: yearStart } } : {}),
+      },
+    });
+  }),
+
+  /**
+   * Compteur de la CLOCHE collaborative : documents non lus ciblant les
+   * groupes collaboratifs accessibles au membre (héritage compris), hors
+   * ses propres dépôts. Distinct de « Documents » (perso/diffusion).
+   */
+  collaborativeUnreadCountForMe: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+    const entries = await collaborativeEntriesForMember(ctx.prisma, userId);
+    const groupIds = entries.map((e) => e.groupId);
+    if (groupIds.length === 0) return 0;
+
+    return ctx.prisma.memberDocument.count({
+      where: {
+        groups: { some: { groupId: { in: groupIds } } },
+        receipts: { none: { userId, readAt: { not: null } } },
+        NOT: { publishedById: userId },
       },
     });
   }),
