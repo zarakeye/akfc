@@ -38,6 +38,7 @@ import { listGeneralFolders } from "@backend/modules/media/services/listGeneralF
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import { assertCanWriteGroupSpace } from '@backend/modules/memberGroups/assertCanWriteGroupSpace.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
@@ -293,19 +294,7 @@ export const storageRouter = router({
             select: { id: true, name: true },
           })
         ).map((g) => ({ groupId: g.id, name: g.name, access: "EDITOR" as const }))
-      : (
-          await ctx.prisma.memberGroupMembership.findMany({
-            where: { userId: ctx.user.id, group: { isCollaborative: true } },
-            select: {
-              access: true,
-              group: { select: { id: true, name: true } },
-            },
-          })
-        ).map((m) => ({
-          groupId: m.group.id,
-          name: m.group.name,
-          access: m.access,
-        }));
+      : await collaborativeEntriesForMember(ctx.prisma, ctx.user.id);
 
     return Promise.all(
       entries.map(async (e) => ({
