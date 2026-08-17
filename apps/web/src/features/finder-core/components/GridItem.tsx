@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder, Music, Check, FileText, Play } from 'lucide-react';
+import { Folder, Users, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -13,6 +13,7 @@ import ContextMenu, {
   type ContextMenuItem,
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
+import { isGroupSpaceFolder } from '@features/finder-core/utils/spaceFolderKind';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
@@ -550,7 +551,11 @@ function CardIcon({
     // couleur d'une vue à l'autre, et suivent le thème clair/sombre.
     return (
       <div className="w-full h-full flex items-center justify-center pb-6 text-muted-foreground">
-        <Folder className="w-16 h-16" strokeWidth={1.5} />
+        {isGroupSpaceFolder(node.path) ? (
+          <Users className="w-16 h-16" strokeWidth={1.5} />
+        ) : (
+          <Folder className="w-16 h-16" strokeWidth={1.5} />
+        )}
       </div>
     );
   }
