@@ -287,13 +287,14 @@ export const storageRouter = router({
       groupId: string;
       name: string;
       access: "VIEWER" | "EDITOR";
+      parentGroupId: string | null;
     }[] = isAdmin
       ? (
           await ctx.prisma.memberGroup.findMany({
             where: { isCollaborative: true },
-            select: { id: true, name: true },
+            select: { id: true, name: true, parentGroupId: true },
           })
-        ).map((g) => ({ groupId: g.id, name: g.name, access: "EDITOR" as const }))
+        ).map((g) => ({ groupId: g.id, name: g.name, access: "EDITOR" as const, parentGroupId: g.parentGroupId }))
       : await collaborativeEntriesForMember(ctx.prisma, ctx.user.id);
 
     return Promise.all(
