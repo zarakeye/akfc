@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
+import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
 
 /**
  * Extrait le groupId d'un chemin (logique ou physique) situé dans l'espace d'un
@@ -45,11 +46,8 @@ export async function assertCanTrashPaths(params: {
         message: "Suppression hors espace de groupe réservée aux admins.",
       });
     }
-    const membership = await prisma.memberGroupMembership.findUnique({
-      where: { groupId_userId: { groupId, userId } },
-      select: { access: true },
-    });
-    if (!membership || membership.access !== "EDITOR") {
+    const access = await resolveGroupAccessForUser(prisma, userId, groupId);
+    if (access !== "EDITOR") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Suppression réservée aux éditeurs de ce groupe.",
