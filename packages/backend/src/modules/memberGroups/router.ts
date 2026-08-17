@@ -52,14 +52,28 @@ export const memberGroupRouter = router({
         name: z.string().trim().min(1).max(120),
         description: z.string().trim().max(500).optional(),
         isCollaborative: z.boolean().optional(),
+        parentGroupId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Règle « Administrateurs ancêtre de tout » : sans parent explicite,
+      // le nouveau groupe est rattaché au groupe Administrateurs.
+      const parentGroupId =
+        input.parentGroupId ??
+        (
+          await ctx.prisma.memberGroup.findFirst({
+            where: { isAdminGroup: true },
+            select: { id: true },
+          })
+        )?.id ??
+        null;
+
       const group = await ctx.prisma.memberGroup.create({
         data: {
           name: input.name,
           description: input.description,
           isCollaborative: input.isCollaborative ?? false,
+          parentGroupId,
         },
         select: { id: true },
       });
