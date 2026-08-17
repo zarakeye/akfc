@@ -116,6 +116,43 @@ const registerR2UploadInputSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 export const storageRouter = router({
+  /**
+   * Noms d'affichage EXACTS des espaces (groupe / perso), indexés par cuid.
+   * Permet au finder d'afficher « Administrateurs » au lieu de
+   * « administrateurs-<cuid> ». Noms de groupes : toujours ; noms
+   * d'utilisateurs (espaces perso) : réservés aux admins (confidentialité).
+   */
+  spaceDisplayNames: protectedProcedure.query(async ({ ctx }) => {
+    const map: Record<string, string> = {};
+
+    const groups = await ctx.prisma.memberGroup.findMany({
+      select: { id: true, name: true },
+    });
+    for (const g of groups) map[g.id] = g.name;
+
+    const me = await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { role: { select: { name: true } } },
+    });
+    if (me?.role?.name === "ADMIN") {
+      const users = await ctx.prisma.user.findMany({
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          pseudo: true,
+          email: true,
+        },
+      });
+      for (const u of users) {
+        const full = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
+        map[u.id] = full || u.pseudo || u.email;
+      }
+    }
+
+    return map;
+  }),
+
   /* ====================================================================== */
   /*  Lecture (inchangé)                                                    */
   /* ====================================================================== */
