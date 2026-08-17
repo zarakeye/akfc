@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
+import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
 
 /**
  * Garde d'ÉCRITURE dans l'espace d'un groupe collaboratif : autorise un ADMIN
@@ -23,12 +24,8 @@ export async function assertCanWriteGroupSpace(params: {
   });
   if (user?.role?.name === "ADMIN") return;
 
-  const membership = await prisma.memberGroupMembership.findUnique({
-    where: { groupId_userId: { groupId, userId } },
-    select: { access: true },
-  });
-
-  if (!membership || membership.access !== "EDITOR") {
+  const access = await resolveGroupAccessForUser(prisma, userId, groupId);
+  if (access !== "EDITOR") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Dépôt réservé aux éditeurs de ce groupe.",

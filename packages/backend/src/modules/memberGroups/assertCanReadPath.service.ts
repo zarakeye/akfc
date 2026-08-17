@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
+import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
 import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 
 /**
@@ -30,11 +31,8 @@ export async function assertCanReadPath(params: {
     });
   }
 
-  const membership = await prisma.memberGroupMembership.findUnique({
-    where: { groupId_userId: { groupId, userId } },
-    select: { access: true },
-  });
-  if (!membership) {
+  const access = await resolveGroupAccessForUser(prisma, userId, groupId);
+  if (access === "NONE") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Accès refusé à ce dossier.",
