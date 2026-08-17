@@ -39,6 +39,9 @@ export default function GroupDetailPage(): JSX.Element {
   const setAccess = trpc.memberGroup.setMemberAccess.useMutation({
     onSuccess: invalidate,
   });
+  const setParent = trpc.memberGroup.setParentGroup.useMutation({
+    onSuccess: () => void utils.memberGroup.list.invalidate(),
+  });
 
   if (groupsQuery.isLoading) return <div>Chargement…</div>;
   if (!group) return <div>Groupe introuvable.</div>;
@@ -97,6 +100,36 @@ export default function GroupDetailPage(): JSX.Element {
         />
         Espace collaboratif (dossier dédié + droits éditeur/lecteur)
       </label>
+
+      <div className="mb-6 max-w-xs space-y-1">
+        <label htmlFor="parent" className="text-sm font-medium">
+          Groupe parent
+        </label>
+        <select
+          id="parent"
+          value={group.parentGroupId ?? ""}
+          disabled={setParent.isPending}
+          onChange={(e) =>
+            setParent.mutate({
+              groupId: group.id,
+              parentGroupId: e.target.value || null,
+            })
+          }
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">(Aucun — groupe racine)</option>
+          {(groupsQuery.data ?? [])
+            .filter((g) => g.id !== group.id)
+            .map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+        </select>
+        {setParent.error && (
+          <p className="text-xs text-red-600">{setParent.error.message}</p>
+        )}
+      </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
