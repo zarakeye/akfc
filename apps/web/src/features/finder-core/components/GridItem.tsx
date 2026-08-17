@@ -15,6 +15,7 @@ import ContextMenu, {
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
+import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
 import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextContent';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
@@ -399,7 +400,9 @@ export default function GridItem({
               }
             }}
           >
-            {displayName(node.name, node.meta?.format)}
+            {isFolder
+              ? friendlySpaceFolderLabel(node.name, node.path) ?? node.name
+              : displayName(node.name, node.meta?.format)}
           </span>
         )}
       </div>
