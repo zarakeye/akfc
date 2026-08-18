@@ -7,6 +7,7 @@ import {
   Folder,
   FolderOpen,
   Users,
+  User,
   Loader2,
 } from "lucide-react";
 import clsx from "clsx";
@@ -23,7 +24,7 @@ import { useLongPress } from "@features/finder-core/hooks/useLongPress";
 import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
 import { useTrashMap } from "@features/finder-core/state/TrashMapContext";
 import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
-import { isGroupSpaceFolder } from "@features/finder-core/utils/spaceFolderKind";
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer } from "@features/finder-core/utils/spaceFolderKind";
 import ContextMenu, {
   type ContextMenuItem,
 } from "@features/finder-core/components/ContextMenu";
@@ -529,8 +530,10 @@ export default function FinderTreeFolder({
           />
         )}
 
-        {isGroupSpaceFolder(node.path) ? (
+        {isGroupSpaceFolder(node.path) || isGroupsContainer(node.path) ? (
           <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : isPersoSpaceFolder(node.path) || isPersosContainer(node.path) ? (
+          <User className="h-4 w-4 text-muted-foreground shrink-0" />
         ) : isOpen ? (
           <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
         ) : (

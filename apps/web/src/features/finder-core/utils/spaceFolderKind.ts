@@ -1,10 +1,28 @@
 /**
- * Un dossier d'ESPACE DE GROUPE : chemin `${appRoot}/groups/<slug>-<cuid>`
- * (racine d'espace, physique ou nœud synthétique de l'imbrication). Sert à lui
- * donner une icône distincte dans le finder.
+ * Nature d'un dossier d'espace/conteneur du finder, pour lui donner une icône
+ * thématique. Détection par le motif du chemin (aucune query requise).
+ *
+ *   - espace de GROUPE : `${appRoot}/groups/<slug>-<cuid>`
+ *   - espace PERSO     : `${appRoot}/persos/<slug>-<cuid>`
+ *   - conteneurs       : `${appRoot}/groups` et `${appRoot}/persos`
  */
 const GROUP_SPACE_PATH = /\/groups\/[^/]+-c[a-z0-9]{24}$/;
+const PERSO_SPACE_PATH = /\/persos\/[^/]+-c[a-z0-9]{24}$/;
+const GROUPS_CONTAINER = /^[^/]+\/groups$/;
+const PERSOS_CONTAINER = /^[^/]+\/persos$/;
 
 export function isGroupSpaceFolder(path: string): boolean {
   return GROUP_SPACE_PATH.test(path);
+}
+
+export function isPersoSpaceFolder(path: string): boolean {
+  return PERSO_SPACE_PATH.test(path);
+}
+
+export function isGroupsContainer(path: string): boolean {
+  return GROUPS_CONTAINER.test(path);
+}
+
+export function isPersosContainer(path: string): boolean {
+  return PERSOS_CONTAINER.test(path);
 }
