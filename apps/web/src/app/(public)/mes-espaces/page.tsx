@@ -1,85 +1,135 @@
 "use client";
 
-import { JSX } from "react";
-import Link from "next/link";
+import {
+  type ChangeEvent,
+  type JSX,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
+import Finder from "@features/finder-core/components/Finder";
+import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 import { trpc } from "@trpc/trpcClient";
+import {
+  memberFinderAdapter,
+  MEMBER_FINDER_ROOT,
+} from "@features/finder-adapters/member/memberFinder.adapter";
 
 /**
- * Mes espaces collaboratifs — page MEMBRE (`(public)/mes-espaces`).
- *
- * Affiche l'ARBORESCENCE des espaces accessibles (héritage compris) : groupes
- * de plus haut niveau, descendants imbriqués dessous (reconstruits à partir de
- * `parentGroupId`). Chaque espace mène à son parcours `/mes-espaces/[groupId]`.
+ * Barre de DÉPÔT superposée au finder membre. Cible l'espace COURANT (déduit de
+ * `currentPath`) si le membre y est ÉDITEUR. Flux R2 identique au dépôt 2c, puis
+ * `reloadFolderContent()` pour rafraîchir l'arbre (l'adaptateur re-fetch).
  */
-export default function MesEspacesPage(): JSX.Element {
-  const { data, isLoading, isError } =
-    trpc.storage.myCollaborativeSpaces.useQuery();
+function MemberDepositBar(): JSX.Element | null {
+  const currentPath = useFinderStore((s) => s.currentPath);
+  const { data: spaces } = trpc.storage.myCollaborativeSpaces.useQuery();
 
-  const spaces = data ?? [];
-  type Space = (typeof spaces)[number];
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const ids = new Set(spaces.map((s) => s.groupId));
-  const childrenOf = new Map<string, Space[]>();
-  const roots: Space[] = [];
-  for (const s of spaces) {
-    if (s.parentGroupId && ids.has(s.parentGroupId)) {
-      const arr = childrenOf.get(s.parentGroupId) ?? [];
-      arr.push(s);
-      childrenOf.set(s.parentGroupId, arr);
-    } else {
-      roots.push(s);
+  const createR2 = trpc.storage.createR2Upload.useMutation();
+  const registerR2 = trpc.storage.registerR2Upload.useMutation();
+  const deposit = trpc.memberDocument.depositToGroupSpace.useMutation();
+
+  const space =
+    (spaces ?? []).find(
+      (s) => currentPath === s.path || currentPath.startsWith(s.path + "/"),
+    ) ?? null;
+
+  if (!space || space.access !== "EDITOR") return null;
+  const groupId = space.groupId;
+
+  async function onFileChosen(e: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const destination = { kind: "group" as const, groupId };
+
+      const auth = await createR2.mutateAsync({
+        destination,
+        originalFileName: file.name,
+        mimeType: file.type,
+        maxBytes: file.size,
+      });
+
+      const res = await fetch(auth.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error(`Envoi échoué (HTTP ${res.status}).`);
+
+      const registered = await registerR2.mutateAsync({
+        path: auth.path,
+        expectedBytes: file.size,
+        expectedMimeType: file.type,
+        destination,
+        originalFileName: file.name,
+      });
+
+      await deposit.mutateAsync({ path: registered.path, groupId });
+      useFinderStore.getState().reloadFolderContent();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Le dépôt a échoué.");
+    } finally {
+      setUploading(false);
     }
   }
 
-  const renderNode = (s: Space, depth: number): JSX.Element => {
-    const children = childrenOf.get(s.groupId) ?? [];
-    return (
-      <li key={s.groupId}>
-        <Link
-          href={`/mes-espaces/${s.groupId}`}
-          style={{ marginLeft: `${depth * 1.25}rem` }}
-          className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-3 hover:bg-gray-50"
-        >
-          <span className="font-medium">{s.name}</span>
-          <span
-            className={
-              "rounded-full px-2 py-0.5 text-xs font-medium " +
-              (s.access === "EDITOR"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-gray-100 text-gray-600")
-            }
-          >
-            {s.access === "EDITOR" ? "éditeur" : "lecteur"}
-          </span>
-        </Link>
-        {children.length > 0 && (
-          <ul className="mt-1 space-y-1">
-            {children.map((c) => renderNode(c, depth + 1))}
-          </ul>
-        )}
-      </li>
-    );
-  };
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+      >
+        {uploading ? "Dépôt en cours…" : `Déposer dans « ${space.name} »`}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={onFileChosen}
+      />
+      {uploadError && (
+        <span className="text-sm text-red-600">{uploadError}</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * « Mes espaces » — finder MEMBRE calqué sur le finder admin (lecture seule),
+ * enraciné sur la racine virtuelle dont les enfants sont les groupes de plus
+ * haut niveau accessibles (racines multiples gérées). Dépôt superposé.
+ */
+export default function MesEspacesPage(): JSX.Element {
+  useEffect(() => {
+    // Le store s'initialise sur l'appRoot ; on le place sur la racine virtuelle.
+    useFinderStore.getState().setPath(MEMBER_FINDER_ROOT);
+  }, []);
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-6 text-2xl font-semibold">Mes espaces collaboratifs</h1>
-
-      {isLoading && <p className="text-sm text-gray-500">Chargement…</p>}
-      {isError && (
-        <p className="text-sm text-red-600">
-          Impossible de charger vos espaces pour le moment.
-        </p>
-      )}
-      {data && spaces.length === 0 && (
-        <p className="text-sm text-gray-500">
-          Vous n'appartenez à aucun espace collaboratif pour le moment.
-        </p>
-      )}
-      {spaces.length > 0 && (
-        <ul className="space-y-1">{roots.map((r) => renderNode(r, 0))}</ul>
-      )}
+    <div className="mx-auto flex h-[calc(100dvh-9rem)] max-w-6xl flex-col p-4">
+      <h1 className="mb-4 shrink-0 text-2xl font-semibold">
+        Mes espaces collaboratifs
+      </h1>
+      <MemberDepositBar />
+      <div className="min-h-0 flex-1">
+        <Finder
+          adapter={memberFinderAdapter}
+          rootPath={MEMBER_FINDER_ROOT}
+          readOnly
+        />
+      </div>
     </div>
   );
 }
