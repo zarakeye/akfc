@@ -4,6 +4,7 @@ import Link from "next/link";
 import LoginForm from "@features/auth/components/LoginForm";
 import UserMenu from "@features/app-shell/UserMenu";
 import { NotificationBell } from "@features/app-shell/NotificationBell";
+import { CollaborativeBell } from "@features/app-shell/CollaborativeBell";
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
@@ -161,6 +162,7 @@ export default function Header() {
             ? (
               <div className="flex items-center gap-3">
                 <NotificationBell />
+                <CollaborativeBell />
                 <UserMenu />
               </div>
             )
@@ -176,6 +178,7 @@ export default function Header() {
         {user && (
           <Suspense fallback={null}>
             <NotificationBell />
+            <CollaborativeBell />
           </Suspense>
         )}
         <button
