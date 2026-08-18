@@ -207,55 +207,59 @@ export default function FinderTreeFolder({
     node.children !== undefined ? node.children : (loadedChildren ?? undefined);
 
   // ─── Option B : imbrication VISUELLE des espaces de groupe ──────────────
-  // Le finder reste physique ; on range seulement les espaces selon la
-  // hiérarchie logique (parentGroupId). Chaque nœud synthétique garde son
-  // CHEMIN RÉEL → navigation + chargement du contenu inchangés.
+  // Au niveau de `groups/`, on ré-arrange les nœuds RÉELS des espaces selon
+  // la hiérarchie logique (parentGroupId). Chaque espace garde SON nœud —
+  // donc ses enfants déjà chargés par l'arbre profond — d'où aucun nœud
+  // synthétique et aucun spinner. Les chemins physiques restent intacts.
   const groupsContainerPath = `${APP_ROOT}/groups`;
   const spacePathByGroupId = new Map<string, string>();
   for (const sp of groupSpaceHierarchy ?? []) {
     spacePathByGroupId.set(sp.groupId, sp.path);
   }
-  const allSpacePaths = new Set(
-    (groupSpaceHierarchy ?? []).map((sp) => sp.path),
-  );
-  const rootSpacePaths = new Set<string>();
-  const childSpacesByParentPath = new Map<string, FinderNode[]>();
+  const parentPathBySpacePath = new Map<string, string | null>();
   for (const sp of groupSpaceHierarchy ?? []) {
-    const parentPath = sp.parentGroupId
-      ? spacePathByGroupId.get(sp.parentGroupId)
-      : undefined;
-    const synthetic: FinderNode = {
-      id: sp.path,
-      name: sp.path.split("/").pop() ?? sp.name,
-      path: sp.path,
-      type: "folder",
-      hasChildren: true,
-    };
-    if (parentPath) {
-      const arr = childSpacesByParentPath.get(parentPath) ?? [];
-      arr.push(synthetic);
-      childSpacesByParentPath.set(parentPath, arr);
-    } else {
-      rootSpacePaths.add(sp.path);
-    }
+    parentPathBySpacePath.set(
+      sp.path,
+      sp.parentGroupId
+        ? (spacePathByGroupId.get(sp.parentGroupId) ?? null)
+        : null,
+    );
   }
 
-  const syntheticChildSpaces = allSpacePaths.has(node.path)
-    ? (childSpacesByParentPath.get(node.path) ?? [])
-    : [];
+  let displayChildren: FinderNode[] | undefined = effectiveChildren;
+  if (node.path === groupsContainerPath && effectiveChildren) {
+    const spaceNodes = effectiveChildren.filter((c) =>
+      parentPathBySpacePath.has(c.path),
+    );
+    const others = effectiveChildren.filter(
+      (c) => !parentPathBySpacePath.has(c.path),
+    );
+    const childrenByParentPath = new Map<string, FinderNode[]>();
+    for (const n of spaceNodes) {
+      const pp = parentPathBySpacePath.get(n.path) ?? null;
+      if (pp && parentPathBySpacePath.has(pp)) {
+        const arr = childrenByParentPath.get(pp) ?? [];
+        arr.push(n);
+        childrenByParentPath.set(pp, arr);
+      }
+    }
+    const augment = (n: FinderNode): FinderNode => {
+      const childSpaces = childrenByParentPath.get(n.path) ?? [];
+      if (childSpaces.length === 0) return n;
+      return {
+        ...n,
+        hasChildren: true,
+        children: [...(n.children ?? []), ...childSpaces.map(augment)],
+      };
+    };
+    const roots = spaceNodes.filter((n) => {
+      const pp = parentPathBySpacePath.get(n.path) ?? null;
+      return !pp || !parentPathBySpacePath.has(pp);
+    });
+    displayChildren = [...others, ...roots.map(augment)];
+  }
 
-  const displayChildren: FinderNode[] | undefined =
-    node.path === groupsContainerPath
-      ? effectiveChildren?.filter(
-          (c) => !allSpacePaths.has(c.path) || rootSpacePaths.has(c.path),
-        )
-      : syntheticChildSpaces.length > 0
-        ? [...(effectiveChildren ?? []), ...syntheticChildSpaces]
-        : effectiveChildren;
-
-  const hasChildren =
-    (node.hasChildren ?? (effectiveChildren?.length ?? 0) > 0) ||
-    syntheticChildSpaces.length > 0;
+  const hasChildren = node.hasChildren ?? (displayChildren?.length ?? 0) > 0;
 
   const isMaterializing =
     isOpen &&
