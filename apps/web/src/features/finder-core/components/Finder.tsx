@@ -123,6 +123,12 @@ type Props = {
   isInCart?: (path: string) => boolean;
   /** En pickMode : épingle/retire un média (délégué au store panier). */
   onPickToggle?: (node: FinderNode) => void;
+  /**
+   * Mode MEMBRE / lecture seule : masque toutes les actions mutantes
+   * (multi-sélection, changement de statut, suppression). Navigation,
+   * arbre, grille, preview, recherche, filtre et bascule de vue restent.
+   */
+  readOnly?: boolean;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -136,6 +142,7 @@ export default function Finder({
   pickMode = false,
   isInCart,
   onPickToggle,
+  readOnly = false,
 }: Props): JSX.Element {
   const {
     folders,
@@ -436,6 +443,7 @@ export default function Finder({
    */
   function handleLongPress(node: FinderNode) {
     if (multiSelectActive) return;
+    if (readOnly) return;
     enterMultiSelect(node.id);
   }
 
@@ -556,7 +564,8 @@ export default function Finder({
           )}
         </div>
 
-        {multiSelectActive &&
+        {!readOnly &&
+          multiSelectActive &&
           (() => {
             const label = deleteLabel(selectedCount, selectedNodes);
             const isBinAction =
@@ -632,7 +641,7 @@ export default function Finder({
 
         {currentPath !== `${APP_ROOT}/bin` && <FinderViewModeSwitcher />}
 
-        {(() => {
+        {!readOnly && (() => {
           // Ce bouton naviguait vers la corbeille. Elle est déjà atteignable
           // par l'arbre (`AKFC/bin` y est un dossier, le pliage le préserve)
           // et par le fil d'Ariane : il occupait la place d'une action utile
