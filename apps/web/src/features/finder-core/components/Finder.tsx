@@ -587,7 +587,7 @@ export default function Finder({
       {/* ──────────────────────── HEADER : breadcrumb + actions ─────────── */}
       <div className="px-3 py-2 border-b text-sm flex flex-wrap items-center gap-2 min-h-10">
         <div className="flex-1 min-w-0">
-          <Breadcrumb adapter={adapter} />
+          <Breadcrumb adapter={adapter} rootPath={rootPath} />
         </div>
 
         <div className="w-4 h-4 flex items-center justify-center shrink-0">

@@ -26,6 +26,11 @@ type Props = {
    * cf. dispatch dans `handleDrop`).
    */
   adapter: FileAdapter;
+  /**
+   * Racine du finder. APP_ROOT côté admin ; racine VIRTUELLE côté membre —
+   * le fil s'y adapte (voir plus bas).
+   */
+  rootPath: string;
 };
 
 /**
@@ -75,7 +80,7 @@ type Props = {
  */
 const MAX_VISIBLE_SEGMENTS = 4;
 
-export default function Breadcrumb({ adapter }: Props): JSX.Element {
+export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
   const currentPath = useFinderStore((s) => s.currentPath);
   const setPath = useFinderStore((s) => s.setPath);
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
@@ -103,7 +108,34 @@ export default function Breadcrumb({ adapter }: Props): JSX.Element {
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [showHidden]);
 
-  const segments = buildPathSegments(currentPath);
+  // Noms conviviaux des espaces (cuid → nom du groupe). myCollaborativeSpaces
+  // renvoie les espaces de l'utilisateur courant (les siens en membre, tous
+  // via la passerelle en admin).
+  const { data: mySpaces } = trpc.storage.myCollaborativeSpaces.useQuery();
+  const nameByPath = new Map(
+    (mySpaces ?? []).map((sp) => [sp.path, sp.name] as const),
+  );
+
+  const rawSegments = buildPathSegments(currentPath);
+  // Racine relative au finder. Membre = racine virtuelle (≠ APP_ROOT) : on
+  // n'affiche pas akfc/groups (hors de sa portée), mais « Mes espaces » puis
+  // le fil À PARTIR de l'espace courant.
+  const isMemberRoot = rootPath !== APP_ROOT;
+  let segments = rawSegments;
+  if (isMemberRoot) {
+    const virtualRoot = { name: 'Mes espaces', path: rootPath };
+    if (currentPath === rootPath) {
+      segments = [virtualRoot];
+    } else {
+      const spaceIdx = rawSegments.findIndex((sg) => nameByPath.has(sg.path));
+      const kept = spaceIdx >= 0 ? rawSegments.slice(spaceIdx) : rawSegments;
+      segments = [virtualRoot, ...kept];
+    }
+  }
+  segments = segments.map((sg) => ({
+    ...sg,
+    name: nameByPath.get(sg.path) ?? sg.name,
+  }));
 
   // Repli : on garde la RACINE et les deux derniers segments. Les
   // intermédiaires passent dans le menu du « … ».
