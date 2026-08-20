@@ -136,6 +136,42 @@ export const memberDocumentRouter = router({
     });
   }),
 
+  /**
+   * LISTE des documents non lus des espaces collaboratifs accessibles
+   * (héritage compris), hors ses propres dépôts — pour le menu de la cloche.
+   */
+  collaborativeUnreadForMe: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+    const entries = await collaborativeEntriesForMember(ctx.prisma, userId);
+    const groupIds = entries.map((e) => e.groupId);
+    if (groupIds.length === 0) return [];
+
+    const docs = await ctx.prisma.memberDocument.findMany({
+      where: {
+        groups: { some: { groupId: { in: groupIds } } },
+        receipts: { none: { userId, readAt: { not: null } } },
+        NOT: { publishedById: userId },
+      },
+      select: {
+        id: true,
+        title: true,
+        mediaAsset: { select: { originalFileName: true } },
+        groups: { select: { group: { select: { id: true, name: true } } } },
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 20,
+    });
+
+    return docs.map((d) => ({
+      id: d.id,
+      title: d.title ?? d.mediaAsset?.originalFileName ?? "Document",
+      groupName:
+        d.groups.find((g) => groupIds.includes(g.group.id))?.group.name ??
+        d.groups[0]?.group.name ??
+        "",
+    }));
+  }),
+
   /** Non-lus ventilés : généraux (ALL_MEMBERS, bornés à l'année d'adhésion) et
    *  persos (SPECIFIC pour ce membre, toujours signalés). Pour le badge de
    *  l'item « Documents » de la navbar. */
