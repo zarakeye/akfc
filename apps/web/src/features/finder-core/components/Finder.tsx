@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { FileAdapter, FinderNode } from "@contracts/finder";
 import { APP_ROOT } from "@config/app";
+import { trpc } from "@trpc/trpcClient";
 
 import FinderBinRootView from "@features/finder-core/components/FinderBinRootView";
 import FinderViewModeSwitcher from "@features/finder-core/components/FinderViewModeSwitcher";
@@ -199,9 +200,43 @@ export default function Finder({
     return kept.filter((file) => statusOf(file) === statusFilter);
   }, [files, fileFilter, statusFilter]);
 
+  // Nesting des espaces AUSSI en grille (l'arbre le fait via B-2). Inerte
+  // pour un membre (groupSpaceHierarchy = [] hors admin ; son adaptateur
+  // gère déjà l'imbrication).
+  const { data: groupSpaceHierarchy } =
+    trpc.storage.groupSpaceHierarchy.useQuery();
+  const displayFolders = useMemo(() => {
+    const spaces = groupSpaceHierarchy ?? [];
+    if (spaces.length === 0) return folders;
+    const groupsContainerPath = `${APP_ROOT}/groups`;
+    const pathByGroupId = new Map(spaces.map((sp) => [sp.groupId, sp.path]));
+    const allSpacePaths = new Set(spaces.map((sp) => sp.path));
+    if (currentPath === groupsContainerPath) {
+      return folders.filter((f) => {
+        if (!allSpacePaths.has(f.path)) return true;
+        const sp = spaces.find((x) => x.path === f.path);
+        return !sp?.parentGroupId || !pathByGroupId.has(sp.parentGroupId);
+      });
+    }
+    const childSpaces = spaces.filter(
+      (sp) =>
+        sp.parentGroupId &&
+        pathByGroupId.get(sp.parentGroupId) === currentPath,
+    );
+    if (childSpaces.length === 0) return folders;
+    const childNodes: FinderNode[] = childSpaces.map((sp) => ({
+      id: sp.path,
+      name: sp.name,
+      path: sp.path,
+      type: "folder",
+      hasChildren: true,
+    }));
+    return [...folders, ...childNodes];
+  }, [folders, currentPath, groupSpaceHierarchy]);
+
   const sortedAllItems = useMemo(
-    () => sortNodes([...folders, ...visibleFiles], sort),
-    [folders, visibleFiles, sort],
+    () => sortNodes([...displayFolders, ...visibleFiles], sort),
+    [displayFolders, visibleFiles, sort],
   );
 
   const groups = useMemo(
@@ -823,7 +858,7 @@ export default function Finder({
                   setSortMenuPos({ x: e.clientX, y: e.clientY });
                 }}
               >
-                {folders.length === 0 && files.length === 0 && !loading ? (
+                {displayFolders.length === 0 && files.length === 0 && !loading ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-12 gap-2">
                     <span>Ce dossier est vide</span>
                   </div>
