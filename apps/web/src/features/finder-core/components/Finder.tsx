@@ -206,6 +206,10 @@ export default function Finder({
   const { data: groupSpaceHierarchy } =
     trpc.storage.groupSpaceHierarchy.useQuery();
   const displayFolders = useMemo(() => {
+    // Finder MEMBRE (readOnly) : l'imbrication est déjà faite par son
+    // adaptateur — ne pas ré-injecter ici (sinon doublons). Transform
+    // réservé au finder admin.
+    if (readOnly) return folders;
     const spaces = groupSpaceHierarchy ?? [];
     if (spaces.length === 0) return folders;
     const groupsContainerPath = `${APP_ROOT}/groups`;
@@ -232,7 +236,7 @@ export default function Finder({
       hasChildren: true,
     }));
     return [...folders, ...childNodes];
-  }, [folders, currentPath, groupSpaceHierarchy]);
+  }, [folders, currentPath, groupSpaceHierarchy, readOnly]);
 
   const sortedAllItems = useMemo(
     () => sortNodes([...displayFolders, ...visibleFiles], sort),
