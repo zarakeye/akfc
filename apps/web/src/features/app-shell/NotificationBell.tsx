@@ -2,6 +2,7 @@
 
 import { type JSX } from "react";
 import Link from "next/link";
+import { PAGE_REGISTRY } from "@/config/pageRegistry";
 import { Bell, HardDrive } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
@@ -87,6 +88,7 @@ function buildMessage(
 export function NotificationBell(): JSX.Element | null {
   const user = useSessionStore((s) => s.session?.user);
   const canSee = (user?.role?.permissions.length ?? 0) > 0;
+  const isAdmin = user?.role?.name === "ADMIN";
 
   // ─── Pourquoi useQuery et pas useEffect + useState ──────────────────────
   //
@@ -113,10 +115,36 @@ export function NotificationBell(): JSX.Element | null {
     undefined,
     { enabled: canSee },
   );
+  const { data: pageStates } = trpc.pageVisibility.all.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+  const { data: entityDrafts } =
+    trpc.pageVisibility.entityDraftCounts.useQuery(undefined, {
+      enabled: isAdmin,
+    });
 
   if (!canSee) return null;
 
-  const total = (counts?.pending ?? 0) + (counts?.bin ?? 0);
+  const pending = counts?.pending ?? 0;
+  const bin = counts?.bin ?? 0;
+  const persoPending = counts?.persoPending ?? 0;
+  const generalPending = counts?.generalPending ?? 0;
+
+  // Brouillons (admin) : pages éditoriales non publiées + entités en
+  // brouillon. S'ajoutent au badge et au dropdown.
+  const editorialDrafts = isAdmin
+    ? PAGE_REGISTRY.filter(
+        (pg) =>
+          !(pageStates ?? []).some((v) => v.key === pg.key && v.published),
+      )
+    : [];
+  const entityDraftTotal =
+    (entityDrafts?.disciplines ?? 0) +
+    (entityDrafts?.events ?? 0) +
+    (entityDrafts?.stages ?? 0);
+  const draftTotal = editorialDrafts.length + entityDraftTotal;
+
+  const total = pending + bin + draftTotal;
 
   return (
     <div className="group relative">
@@ -143,10 +171,10 @@ export function NotificationBell(): JSX.Element | null {
         aria-label={
           total > 0
             ? buildMessage(
-                counts!.pending,
-                counts!.bin,
-                counts!.persoPending,
-                counts!.generalPending,
+                pending,
+                bin,
+                persoPending,
+                generalPending,
               )
             : "Bibliothèque"
         }
@@ -173,11 +201,11 @@ export function NotificationBell(): JSX.Element | null {
           className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block"
         >
           <div className="w-max max-w-80 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
-            {counts!.pending > 0 && (
+            {pending > 0 && (
               <>
                 <p className="mb-1 font-medium">
-                  Vous avez {counts!.pending} contenu
-                  {counts!.pending > 1 ? 's' : ''} en attente
+                  Vous avez {pending} contenu
+                  {pending > 1 ? 's' : ''} en attente
                   {breakdown && breakdown.entries.length > 0 ? ' :' : ''}
                 </p>
                 {breakdown && breakdown.entries.length > 0 && (
@@ -201,11 +229,69 @@ export function NotificationBell(): JSX.Element | null {
                 )}
               </>
             )}
-            {counts!.bin > 0 && (
-              <p className={counts!.pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
-                {counts!.bin} contenu{counts!.bin > 1 ? 's' : ''} dans la
+            {bin > 0 && (
+              <p className={pending > 0 ? 'mt-1.5 border-t border-white/15 pt-1.5' : ''}>
+                {bin} contenu{bin > 1 ? 's' : ''} dans la
                 corbeille
               </p>
+            )}
+            {draftTotal > 0 && (
+              <div
+                className={
+                  pending > 0 || bin > 0
+                    ? 'mt-1.5 border-t border-white/15 pt-1.5'
+                    : ''
+                }
+              >
+                <p className="mb-1 font-medium">
+                  {draftTotal} brouillon{draftTotal > 1 ? 's' : ''} à publier :
+                </p>
+                <ul className="space-y-0.5">
+                  {editorialDrafts.map((pg) => (
+                    <li key={pg.key}>
+                      <Link
+                        href={`/dashboard/site-pages/${pg.key}`}
+                        className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
+                      >
+                        Page « {pg.label} »
+                      </Link>
+                    </li>
+                  ))}
+                  {(entityDrafts?.disciplines ?? 0) > 0 && (
+                    <li>
+                      <Link
+                        href="/dashboard/disciplines"
+                        className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
+                      >
+                        {entityDrafts!.disciplines} discipline
+                        {entityDrafts!.disciplines > 1 ? 's' : ''}
+                      </Link>
+                    </li>
+                  )}
+                  {(entityDrafts?.events ?? 0) > 0 && (
+                    <li>
+                      <Link
+                        href="/dashboard/events"
+                        className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
+                      >
+                        {entityDrafts!.events} événement
+                        {entityDrafts!.events > 1 ? 's' : ''}
+                      </Link>
+                    </li>
+                  )}
+                  {(entityDrafts?.stages ?? 0) > 0 && (
+                    <li>
+                      <Link
+                        href="/dashboard/stages"
+                        className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
+                      >
+                        {entityDrafts!.stages} stage
+                        {entityDrafts!.stages > 1 ? 's' : ''}
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
             )}
           </div>
         </div>

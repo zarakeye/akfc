@@ -67,4 +67,18 @@ export const pageVisibilityRouter = router({
       );
       return { count: input.keys.length };
     }),
+
+  /**
+   * Nombre d'entités en BROUILLON (publicationDate null) — disciplines,
+   * events, stages. Pour le compteur/tooltip de la cloche admin.
+   */
+  entityDraftCounts: protectedProcedure.query(async ({ ctx }) => {
+    await assertAdmin(ctx);
+    const [disciplines, events, stages] = await Promise.all([
+      ctx.prisma.discipline.count({ where: { publicationDate: null } }),
+      ctx.prisma.event.count({ where: { publicationDate: null } }),
+      ctx.prisma.stage.count({ where: { publicationDate: null } }),
+    ]);
+    return { disciplines, events, stages };
+  }),
 });
