@@ -45,6 +45,7 @@ export default async function HomePage(): Promise<JSX.Element> {
   // se juge sur `blocks.length` une fois le Json parsé, ce qu'une clause
   // Prisma ne sait pas exprimer sans dépendre de la forme sérialisée.
   const disciplineRows = await prisma.discipline.findMany({
+    where: { publicationDate: { not: null, lte: new Date() } },
     orderBy: { name: "asc" },
     select: {
       id: true,

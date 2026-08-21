@@ -28,6 +28,10 @@ export default async function PublicDisciplinePage({
   });
 
   if (!discipline) notFound();
+  // Brouillon (ou publication programmée future) : invisible du public.
+  if (!discipline.publicationDate || discipline.publicationDate > new Date()) {
+    notFound();
+  }
 
   const description = parsePageContentV1(discipline.description);
 
