@@ -135,6 +135,10 @@ export default async function HomePage(): Promise<JSX.Element> {
     commentGroups.map((g) => [g.postId, g._count._all]),
   );
 
+  const homeHero = await prisma.homeHero.findUnique({
+    where: { id: "home" },
+  });
+
   return (
     <div className="flex flex-col">
       {/* Hero — carousel (rien ne s'affiche tant qu'il n'y a pas de galerie "accueil") */}
@@ -155,11 +159,12 @@ export default async function HomePage(): Promise<JSX.Element> {
             className="h-full w-full object-contain"
           />
         </div>
-        <h1 className="mb-4 text-4xl font-bold">Bienvenue à l&apos;AKFC</h1>
-        <p className="mb-8 text-lg text-gray-600">
-          Un club dédié à la pratique et à la transmission des arts martiaux et
-          de leur culture, pour tous les âges et tous les niveaux. Découvrez nos
-          disciplines, nos stages et la vie du club.
+        <h1 className="mb-4 text-4xl font-bold">
+          {homeHero?.title ?? "Bienvenue à l'AKFC"}
+        </h1>
+        <p className="mb-8 whitespace-pre-line text-lg text-gray-600">
+          {homeHero?.body ??
+            "Un club dédié à la pratique et à la transmission des arts martiaux et de leur culture, pour tous les âges et tous les niveaux. Découvrez nos disciplines, nos stages et la vie du club."}
         </p>
         {/* Un seul appel à l'action. « Découvrir nos disciplines » a été
             retiré : elles s'affichent en cartes juste en dessous, chacune avec

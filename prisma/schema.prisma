@@ -1441,3 +1441,12 @@ model PageVisibility {
   published Boolean  @default(false)
   updatedAt DateTime @updatedAt
 }
+
+/// Hero de la page d'accueil (singleton, id="home") : uniquement le titre et le
+/// corps affichés dans la section d'intro. Le reste de la page d'accueil est en
+/// dur (structure figée). La publication de la page / passe par PageVisibility.
+model HomeHero {
+  id    String @id @default("home")
+  title String
+  body  String
+}
