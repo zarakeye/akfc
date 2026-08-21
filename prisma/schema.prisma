@@ -1432,3 +1432,12 @@ model MemberDocumentGroup {
   @@unique([memberDocumentId, groupId])
   @@index([groupId])
 }
+
+/// Publication par page (mode « En construction »). La clé est la clé de route
+/// publique (ex. "gallery", "about"). Absence de ligne OU published=false =
+/// page masquée aux non-admins ; published=true = visible du public/membres.
+model PageVisibility {
+  key       String   @id
+  published Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
