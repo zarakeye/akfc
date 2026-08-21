@@ -37,6 +37,8 @@ export function SitePageEditor({
       void utils.sitePage.get.invalidate({ slug });
     },
   });
+  const visibility = trpc.pageVisibility.all.useQuery();
+  const setPublished = trpc.pageVisibility.setPublished.useMutation();
 
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [contentDraft, setContentDraft] = useState<PageContentV1 | null>(null);
@@ -61,6 +63,22 @@ export function SitePageEditor({
     savedSnapshot ?? JSON.stringify({ title: persistedTitle, content: persistedContent });
   const dirty = JSON.stringify({ title, content }) !== baseline;
 
+  const published =
+    (visibility.data ?? []).find((v) => v.key === slug)?.published ?? false;
+
+  // Sauvegarde du contenu puis positionnement de l'état publié (brouillon
+  // ou publié). L'instantané n'est posé qu'au succès.
+  async function persist(publish: boolean): Promise<void> {
+    const snapshot = JSON.stringify({ title, content });
+    await save.mutateAsync({ slug, title: title.trim(), content });
+    await setPublished.mutateAsync({ key: slug, published: publish });
+    setSavedSnapshot(snapshot);
+    await Promise.all([
+      utils.sitePage.get.invalidate({ slug }),
+      utils.pageVisibility.all.invalidate(),
+    ]);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -82,22 +100,31 @@ export function SitePageEditor({
               Modifications non enregistrées
             </span>
           )}
+          <span
+            className={
+              "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold " +
+              (published
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700")
+            }
+          >
+            {published ? "Publiée" : "Brouillon"}
+          </span>
           <button
             type="button"
-            disabled={save.isPending || !dirty || title.trim() === ""}
-            onClick={() => {
-              // L'instantané est pris AVANT l'appel et posé seulement au
-              // succès : un enregistrement qui échoue ne doit pas faire
-              // croire que le contenu est à jour.
-              const snapshot = JSON.stringify({ title, content });
-              save.mutate(
-                { slug, title: title.trim(), content },
-                { onSuccess: () => setSavedSnapshot(snapshot) },
-              );
-            }}
+            disabled={save.isPending || setPublished.isPending || title.trim() === ""}
+            onClick={() => void persist(false)}
+            className="shrink-0 rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+          >
+            Enregistrer en brouillon
+          </button>
+          <button
+            type="button"
+            disabled={save.isPending || setPublished.isPending || title.trim() === ""}
+            onClick={() => void persist(true)}
             className="shrink-0 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
           >
-            {save.isPending ? "Enregistrement…" : "Enregistrer"}
+            {save.isPending || setPublished.isPending ? "…" : "Publier"}
           </button>
         </div>
       </div>
