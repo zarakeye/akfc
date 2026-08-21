@@ -88,6 +88,8 @@ function splitLegacySummary(raw: unknown): {
 }
 
 export interface DisciplineFormInput {
+  /** null = brouillon ; une date = publié. */
+  publicationDate: Date | null;
   name: string;
   slug: string;
   type: DisciplineType;
@@ -255,7 +257,7 @@ export function DisciplineForm({
     setSlugTouched(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (publish: boolean) => {
     setSubmitError(null);
 
     if (name.trim() === "") {
@@ -287,6 +289,9 @@ export function DisciplineForm({
     setIsSubmitting(true);
     try {
       await onSubmit({
+        publicationDate: publish
+          ? (initial?.publicationDate ?? new Date())
+          : null,
         name: name.trim(),
         slug: slug.trim(),
         type,
@@ -581,14 +586,22 @@ export function DisciplineForm({
         </pre>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(false)}
+          disabled={isSubmitting}
+          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+        >
+          {isSubmitting ? "Enregistrement…" : "Enregistrer en brouillon"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSubmit(true)}
           disabled={isSubmitting}
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {isSubmitting ? "Enregistrement…" : submitLabel}
+          {isSubmitting ? "Enregistrement…" : "Publier"}
         </button>
       </div>
     </div>

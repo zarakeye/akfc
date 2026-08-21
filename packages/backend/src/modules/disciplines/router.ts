@@ -107,6 +107,7 @@ const createInput = z.object({
 
   categoryId: z.number().int().positive(),
   instructorId: z.string().trim().min(1),
+  publicationDate: z.coerce.date().nullable().optional(),
 });
 
 const updateInput = z.object({
@@ -138,6 +139,7 @@ const updateInput = z.object({
   summaryMediaId: z.string().min(1).nullable().optional(),
 
   instructorId: z.string().trim().min(1).optional(),
+  publicationDate: z.coerce.date().nullable().optional(),
   // Note : `categoryId` volontairement absent — non modifiable.
 });
 
@@ -283,6 +285,7 @@ export const disciplineRouter = router({
               summaryMediaId: input.summaryMediaId ?? null,
               categoryId: input.categoryId,
               instructorId: input.instructorId,
+              publicationDate: input.publicationDate ?? null,
             },
           });
         } catch (err) {
@@ -400,6 +403,7 @@ export const disciplineRouter = router({
                 ? undefined
                 : (rest.summary as Prisma.InputJsonValue),
             summaryMediaId: rest.summaryMediaId,
+            publicationDate: rest.publicationDate,
           };
 
           updated = await tx.discipline.update({

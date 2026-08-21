@@ -348,6 +348,10 @@ model Discipline {
   /// Slug URL-safe pour la discipline, utilisé dans les URLs publiques
   slug         String?    @unique        // nullable le temps du backfill
 
+  /// Date de publication éditoriale. **null = brouillon** (non visible
+  /// publiquement). Cohérent avec Event/Stage.
+  publicationDate DateTime?
+
   /// Famille d'appartenance pour regrouper les disciplines proches (ex: « Karaté », « Aikido »).
   familyId     Int?
 
