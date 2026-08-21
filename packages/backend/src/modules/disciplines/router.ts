@@ -172,6 +172,18 @@ export const disciplineRouter = router({
     });
   }),
 
+  /**
+   * Disciplines PUBLIÉES uniquement (publicationDate non null et passée).
+   * Alimente les consommateurs publics (menu « Nos activités »). L'admin
+   * utilise `getAll` (toutes, brouillons compris).
+   */
+  getAllPublished: publicProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.discipline.findMany({
+      where: { publicationDate: { not: null, lte: new Date() } },
+      orderBy: [{ categoryId: "asc" }, { name: "asc" }],
+    });
+  }),
+
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
