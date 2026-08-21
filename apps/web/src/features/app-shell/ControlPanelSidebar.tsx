@@ -4,6 +4,8 @@ import { JSX } from "react";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { trpc } from "@trpc/trpcClient";
+import { PAGE_REGISTRY } from "@/config/pageRegistry";
 
 /**
  * Composant du barre latéral de l'application.
@@ -13,6 +15,13 @@ import { useRouter } from "next/navigation";
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
   const role = useSessionStore((state) => state.session?.user?.role);
+  const isAdmin = role?.name === "ADMIN";
+  const pageVis = trpc.pageVisibility.all.useQuery(undefined, {
+    enabled: isAdmin,
+  });
+  const editorialDraftCount = PAGE_REGISTRY.filter(
+    (pg) => !(pageVis.data ?? []).some((v) => v.key === pg.key && v.published),
+  ).length;
 
   return role && role.name === "ADMIN" ? (
     <aside className="w-60 bg-gray-800 text-white p-5">
@@ -141,6 +150,11 @@ export default function ControlPanelSidebar(): JSX.Element {
                   onClick={() => router.push("/dashboard/pages")}
                 >
                   Pages éditoriales
+                  {editorialDraftCount > 0 && (
+                    <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                      {editorialDraftCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </li>

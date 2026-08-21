@@ -5,6 +5,7 @@ import Footer from "@features/app-shell/Footer";
 import { prisma } from "@backend/prisma";
 import { BreakingNewsShell } from "@features/breaking-news/BreakingNewsShell";
 import { FirstLoginRedirect } from "@features/auth/FirstLoginRedirect";
+import { DraftPageBadge } from "@features/app-shell/DraftPageBadge";
 
 /**
  * Layout du SITE PUBLIC.
@@ -45,6 +46,7 @@ export default async function PublicLayout({
       <BreakingNewsShell news={activeNews} />
       <main className="flex-1">{children}</main>
       <Footer />
+      <DraftPageBadge />
     </div>
   );
 }
