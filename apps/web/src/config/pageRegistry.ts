@@ -1,12 +1,13 @@
 /**
- * Registre des pages publiques « toggables » (mode « En construction »).
+ * Registre des PAGES ÉDITORIALES — pages au contenu PROPRE (non dynamiques, non
+ * alimentées par un autre éditeur), avec un état publié/brouillon. Les pages
+ * « consommatrices » (disciplines, stages, events, agenda, galerie…) affichent
+ * du contenu à publication propre et NE figurent PAS ici : elles ne sont pas
+ * gatées.
  *
- * Source unique partagée par le middleware d'enforcement et le centre de
- * contrôle admin. `key` est la clé stockée dans `PageVisibility` ; `path` est la
- * route (préfixe qui couvre aussi les sous-routes de la section).
- *
- * Pages fonctionnelles (profil, documents, mes-espaces, dashboard) volontairement
- * absentes : elles ne sont pas du « contenu en construction ».
+ * `key` = clé stockée dans `PageVisibility` ; `path` = route PUBLIQUE (préfixe
+ * couvrant les sous-routes). Source unique partagée middleware + centre de
+ * contrôle « Pages éditoriales ».
  */
 export type PageRegistryEntry = {
   key: string;
@@ -16,21 +17,14 @@ export type PageRegistryEntry = {
 
 export const PAGE_REGISTRY: readonly PageRegistryEntry[] = [
   { key: "home", label: "Accueil", path: "/" },
-  { key: "about", label: "À propos", path: "/about" },
-  { key: "agenda", label: "Agenda", path: "/agenda" },
+  { key: "association", label: "L'association", path: "/about" },
   { key: "contacts", label: "Contacts", path: "/contacts" },
-  { key: "course", label: "Cours", path: "/course" },
-  { key: "disciplines", label: "Disciplines", path: "/disciplines" },
-  { key: "events", label: "Événements", path: "/events" },
-  { key: "gallery", label: "Galerie", path: "/gallery" },
-  { key: "infos", label: "Infos", path: "/infos" },
-  { key: "stages", label: "Stages", path: "/stages" },
 ] as const;
 
 /**
- * Résout un chemin de requête vers la clé de page correspondante, ou `null` si
- * la route n'est pas toggable (donc jamais gatée). Accueil = match exact ;
- * sections = match exact OU préfixe (pour couvrir leurs sous-routes).
+ * Résout un chemin de requête vers la clé de page éditoriale, ou `null` si la
+ * route n'est pas éditoriale (donc jamais gatée). Accueil = match exact ; autres
+ * = match exact OU préfixe (sous-routes incluses).
  */
 export function pageKeyForPath(pathname: string): string | null {
   for (const entry of PAGE_REGISTRY) {
@@ -45,5 +39,5 @@ export function pageKeyForPath(pathname: string): string | null {
   return null;
 }
 
-/** Toutes les clés du registre (utile pour le toggle global). */
+/** Toutes les clés du registre (utile pour un traitement en masse). */
 export const ALL_PAGE_KEYS: readonly string[] = PAGE_REGISTRY.map((e) => e.key);
