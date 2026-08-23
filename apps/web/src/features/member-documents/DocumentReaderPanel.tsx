@@ -5,12 +5,79 @@ import { X, Download, BookmarkCheck, BookmarkMinus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import { PdfViewer } from "@features/member-documents/PdfViewer";
+import ReactMarkdown from "react-markdown";
+import { useNodeTextContent } from "@features/finder-core/hooks/useNodeTextContent";
 
 type ReaderDoc = {
   id: string;
   title: string;
   readAt: string | Date | null;
+  mimeType?: string | null;
+  format?: string | null;
 };
+
+type DocKind = "pdf" | "markdown" | "text" | "other";
+
+/** Type d'aperçu depuis mimeType (fiable) puis format puis extension du titre. */
+function detectDocKind(doc: ReaderDoc): DocKind {
+  const mime = (doc.mimeType ?? "").toLowerCase();
+  const fmt = (doc.format ?? "").toLowerCase();
+  const name = (doc.title ?? "").toLowerCase();
+  const ext = name.includes(".") ? name.split(".").pop()! : "";
+  if (mime === "application/pdf" || fmt === "pdf" || ext === "pdf") return "pdf";
+  if (
+    mime === "text/markdown" ||
+    fmt === "md" || fmt === "markdown" ||
+    ext === "md" || ext === "markdown"
+  )
+    return "markdown";
+  if (
+    mime.startsWith("text/") ||
+    ["txt", "csv", "log", "json"].includes(fmt) ||
+    ["txt", "csv", "log", "json"].includes(ext)
+  )
+    return "text";
+  return "other";
+}
+
+function MarkdownDocView({ src }: { src: string }) {
+  const { content, loading, error, truncated } = useNodeTextContent(src);
+  if (loading) return <div className="p-6 text-sm text-gray-500">Chargement…</div>;
+  if (error) return <div className="p-6 text-sm text-red-600">Impossible de lire ce fichier.</div>;
+  return (
+    <div className="h-full overflow-auto bg-white p-6">
+      <div className="prose prose-sm max-w-none">
+        <ReactMarkdown>{content ?? ""}</ReactMarkdown>
+      </div>
+      {truncated && (
+        <p className="mt-4 text-xs text-gray-400">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
+      )}
+    </div>
+  );
+}
+
+function TextDocView({ src }: { src: string }) {
+  const { content, loading, error, truncated } = useNodeTextContent(src);
+  if (loading) return <div className="p-6 text-sm text-gray-500">Chargement…</div>;
+  if (error) return <div className="p-6 text-sm text-red-600">Impossible de lire ce fichier.</div>;
+  return (
+    <div className="h-full overflow-auto bg-gray-50 p-6">
+      <pre className="whitespace-pre-wrap break-words font-mono text-sm text-gray-800">{content ?? ""}</pre>
+      {truncated && (
+        <p className="mt-4 text-xs text-gray-400">Aperçu tronqué — téléchargez le fichier pour la version complète.</p>
+      )}
+    </div>
+  );
+}
+
+function UnsupportedDocView() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
+      <p className="text-sm font-medium text-gray-700">Aperçu non disponible pour ce format.</p>
+      <p className="text-xs text-gray-500">Utilisez le bouton « Télécharger » pour ouvrir le fichier.</p>
+    </div>
+  );
+}
 
 /**
  * Panneau latéral escamotable de lecture d'un document membre.
@@ -115,9 +182,20 @@ export function DocumentReaderPanel({
           </button>
         </header>
 
-        {/* Aperçu — viewer react-pdf (canvas). */}
+        {/* Aperçu selon le type de fichier. */}
         <div className="min-h-0 flex-1 bg-gray-100">
-          <PdfViewer src={src} />
+          {(() => {
+            switch (detectDocKind(doc)) {
+              case "pdf":
+                return <PdfViewer src={src} />;
+              case "markdown":
+                return <MarkdownDocView src={src} />;
+              case "text":
+                return <TextDocView src={src} />;
+              default:
+                return <UnsupportedDocView />;
+            }
+          })()}
         </div>
       </aside>
     </>
