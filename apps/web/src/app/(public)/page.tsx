@@ -7,6 +7,10 @@ import HomeCarousel from "@features/app-shell/HomeCarousel";
 
 import { prisma } from "@backend/prisma";
 import {
+  isEditorialPageGated,
+  UnderConstruction,
+} from "@features/editorial/editorialGate";
+import {
   groupReactions,
   userSelect,
   type GroupedReaction,
@@ -37,6 +41,10 @@ import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaB
  * RSC public) : les îlots le corrigent à l'hydratation pour les membres.
  */
 export default async function HomePage(): Promise<JSX.Element> {
+  if (await isEditorialPageGated("home")) {
+    return <UnderConstruction />;
+  }
+
   // Disciplines présentées sur l'accueil : celles dont la présentation
   // synthétique n'est PAS vide. Rédiger vaut donc inscription, et il n'y a ni
   // sélection ni ordre à maintenir à part.

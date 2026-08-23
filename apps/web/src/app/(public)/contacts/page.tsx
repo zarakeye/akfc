@@ -1,6 +1,10 @@
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import {
+  isEditorialPageGated,
+  UnderConstruction,
+} from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
@@ -18,6 +22,10 @@ import { CLUB_INFO } from "@features/app-shell/clubInfo";
  * renseignées, pour que la page dise déjà quelque chose avant d'être écrite.
  */
 export default async function ContactsPage(): Promise<JSX.Element> {
+  if (await isEditorialPageGated("contacts")) {
+    return <UnderConstruction />;
+  }
+
   const page = await prisma.sitePage.findUnique({
     where: { slug: "contacts" },
   });
