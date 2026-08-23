@@ -1,6 +1,10 @@
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import {
+  isEditorialPageGated,
+  UnderConstruction,
+} from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
@@ -20,6 +24,10 @@ export const dynamic = 'force-dynamic';
  * vide.
  */
 export default async function AboutPage(): Promise<JSX.Element> {
+  if (await isEditorialPageGated("association")) {
+    return <UnderConstruction />;
+  }
+
   const page = await prisma.sitePage.findUnique({
     where: { slug: "association" },
   });
