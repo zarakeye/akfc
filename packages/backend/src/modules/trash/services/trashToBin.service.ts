@@ -12,6 +12,7 @@ import {
   type MediaKind,
 } from "@backend/modules/cloudinary/utils/mediaKind.utils";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
+import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
 import {
   r2Exists,
@@ -265,6 +266,19 @@ export async function trashToBin(params: {
     ) {
       throw new Error(
         `Dossier protégé : « ${lastSegment(normalizePath(source.fullPath))} » est géré par une entité (groupe, espace perso, avatars) et ne peut pas être supprimé depuis le finder. Supprimez l'entité correspondante dans son gestionnaire.`,
+      );
+    }
+  }
+
+  // 🔒 Protection disciplines/catégories (DB-aware) : conteneur de catégorie,
+  // sous-conteneur `new`, ou dossier de discipline → non supprimables depuis
+  // le finder (passer par le gestionnaire de disciplines).
+  for (const source of sources) {
+    if (source.kind !== "folder") continue;
+    const path = normalizePath(source.fullPath);
+    if (await isProtectedDisciplineFolderPath(prisma, appRoot, path)) {
+      throw new Error(
+        `Dossier protégé : « ${lastSegment(path)} » correspond à une discipline ou une catégorie et ne peut pas être supprimé depuis le finder. Supprimez-la dans le gestionnaire de disciplines.`,
       );
     }
   }
