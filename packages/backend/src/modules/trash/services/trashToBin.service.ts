@@ -12,6 +12,11 @@ import {
   type MediaKind,
 } from "@backend/modules/cloudinary/utils/mediaKind.utils";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
+import {
+  r2Exists,
+  r2GetInfo,
+  r2MoveFile,
+} from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * trashToBin.service.ts
@@ -128,6 +133,27 @@ async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string)
   }
 }
 
+/**
+ * Backend physique d'un FICHIER : Cloudinary (images/vidéos) ou R2 (PDF/docs).
+ * Sonde Cloudinary d'abord (getAssetInfo), repli R2 (r2GetInfo). Throw si ni
+ * l'un ni l'autre ne connaît le chemin.
+ */
+async function resolveFileBackend(
+  path: string,
+): Promise<
+  | { backend: "cloudinary"; info: Awaited<ReturnType<typeof getAssetInfo>> }
+  | { backend: "r2"; info: { bytes?: number; createdAt?: Date } }
+> {
+  try {
+    const info = await getAssetInfo(path);
+    return { backend: "cloudinary", info };
+  } catch {
+    const r2 = await r2GetInfo(path);
+    if (r2) return { backend: "r2", info: r2 };
+    throw new Error(`Asset introuvable (ni Cloudinary ni R2) : ${path}`);
+  }
+}
+
 async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullPath: string }):
   Promise<"folder" | "file"> {
   const { prisma, appRoot, fullPath } = params;
@@ -147,6 +173,9 @@ async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullP
   } catch {
     // continue
   }
+
+  // 2-bis) Sinon, si R2 connaît l'objet exact => file (PDF/documents).
+  if (await r2Exists(p)) return "file";
 
   // 3) Si on a au moins un asset sous prefix => folder.
   const assets = await listAssetsByPrefix(`${p}/`);
@@ -248,11 +277,22 @@ export async function trashToBin(params: {
     let mediaKind: MediaKind | undefined;
 
     if (source.kind === "file") {
-      const info = await getAssetInfo(normalized);
-      sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
-      cloudinaryCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
-      // mediaKind: dérivé du resource_type Cloudinary (image|video|raw → image|video|document)
-      mediaKind = mediaKindFromCloudinaryResourceType(info.resource_type);
+      const resolved = await resolveFileBackend(normalized);
+      if (resolved.backend === "cloudinary") {
+        const info = resolved.info;
+        sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
+        cloudinaryCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
+        // mediaKind: dérivé du resource_type Cloudinary (image|video|raw → image|video|document)
+        mediaKind = mediaKindFromCloudinaryResourceType(info.resource_type);
+      } else {
+        // R2 : PDF/documents. Pas de resource_type Cloudinary.
+        sizeBytes =
+          typeof resolved.info.bytes === "number"
+            ? BigInt(resolved.info.bytes)
+            : undefined;
+        cloudinaryCreatedAt = resolved.info.createdAt;
+        mediaKind = "document";
+      }
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix (ex: cours1 vs cours10)
       const assets = await listAssetsByPrefix(`${normalized}/`);
@@ -279,10 +319,14 @@ export async function trashToBin(params: {
       },
     });
 
-    // 3) Déplacement Cloudinary vers storageRoot
+    // 3) Déplacement physique vers storageRoot (Cloudinary ou R2)
     if (source.kind === "file") {
-      const info = await getAssetInfo(normalized);
-      await renameAsset(normalized, storageRoot, info.resource_type);
+      const resolved = await resolveFileBackend(normalized);
+      if (resolved.backend === "cloudinary") {
+        await renameAsset(normalized, storageRoot, resolved.info.resource_type);
+      } else {
+        await r2MoveFile(normalized, storageRoot);
+      }
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix
       await moveFolderRecursively(`${normalized}/`, `${storageRoot}/`);
