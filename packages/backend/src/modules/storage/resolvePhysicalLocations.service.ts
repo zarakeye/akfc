@@ -101,18 +101,35 @@ export async function resolvePhysicalLocations(
       select: { fullPath: true },
     }),
     prisma.mediaAsset.findMany({
-      where: { appRoot, fullPath: { in: allCandidates } },
+      where: {
+        appRoot,
+        OR: [
+          { fullPath: { in: allCandidates } },
+          ...allCandidates.map((candidate) => ({
+            fullPath: { startsWith: `${candidate}.` },
+          })),
+        ],
+      },
       select: { fullPath: true },
     }),
   ]);
 
-  const existing = new Set<string>([
-    ...folders.map((row) => row.fullPath),
-    ...assets.map((row) => row.fullPath),
-  ]);
+  const folderPaths = new Set<string>(folders.map((row) => row.fullPath));
+  const assetPaths = assets.map((row) => row.fullPath);
+
+  // Un candidat "existe" si un dossier a exactement ce fullPath, ou si un
+  // MediaAsset a ce fullPath exact, ou ce chemin SUIVI d'une extension.
+  // INVARIANT projet : le node.path d'une image Cloudinary = public_id SANS
+  // extension, alors que MediaAsset.fullPath la porte (double-clé).
+  function candidateExists(candidate: string): boolean {
+    if (folderPaths.has(candidate)) return true;
+    return assetPaths.some(
+      (fp) => fp === candidate || fp.startsWith(`${candidate}.`),
+    );
+  }
 
   for (const [path, candidates] of candidatesByPath) {
-    const found = candidates.filter((candidate) => existing.has(candidate));
+    const found = candidates.filter(candidateExists);
     if (found.length === 0) {
       throw new Error(
         `[resolvePhysicalLocations] Aucun emplacement connu pour "${path}". ` +
