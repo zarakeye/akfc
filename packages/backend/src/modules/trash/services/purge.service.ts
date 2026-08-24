@@ -8,7 +8,10 @@ import {
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
 import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
-import { r2DeleteFile } from "@backend/modules/trash/services/r2TrashOps";
+import {
+  r2DeleteFile,
+  r2DeleteByPrefix,
+} from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * purge.service.ts
@@ -138,6 +141,8 @@ export async function purge(params: {
         // kind === "folder" : on supprime tout sous le préfixe.
         // deleteByPrefix est déjà tolérant (dict vide si rien).
         await deleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
+        // R2 : supprime aussi les objets R2 imbriqués (toute profondeur).
+        await r2DeleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
       }
 
       await prisma.trashEntry.update({
@@ -158,6 +163,8 @@ export async function purge(params: {
         `[purge] Vestige (no TrashEntry, physical purge): ${wrapperPath}`,
       );
       await deleteByPrefix(`${normalizePath(wrapperPath)}/`);
+      // R2 : idem sur le wrapper de corbeille.
+      await r2DeleteByPrefix(`${normalizePath(wrapperPath)}/`);
       vestiges.push(wrapperPath);
     }
 
