@@ -14,6 +14,7 @@ import {
   mediaKindFromCloudinaryResourceType,
   type CloudinaryResourceType,
 } from "@backend/modules/cloudinary/utils/mediaKind.utils";
+import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * readTrashFolder.service.ts
@@ -193,7 +194,19 @@ export async function readTrashFolder(params: {
     trashedAt: entry.trashedAt.toISOString(),
   };
 
-  const assets = await listAssetsByPrefix(storagePrefix);
+  const cloudinaryAssets = await listAssetsByPrefix(storagePrefix);
+  // R2 : les objets R2 imbriqués (documents) sont invisibles de l'API
+  // Cloudinary — on les liste et les fusionne (resourceType "raw").
+  const r2Objects = await r2ListByPrefix(
+    storagePrefix.endsWith("/") ? storagePrefix : `${storagePrefix}/`,
+  );
+  const r2Assets: ListedAsset[] = r2Objects.map((o) => ({
+    publicId: o.key,
+    bytes: o.bytes,
+    createdAt: o.createdAt ? o.createdAt.toISOString() : undefined,
+    resourceType: "raw" as const,
+  }));
+  const assets = [...cloudinaryAssets, ...r2Assets];
   const children = computeDirectChildren({
     assets,
     storagePrefix,
