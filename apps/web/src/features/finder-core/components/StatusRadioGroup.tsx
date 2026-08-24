@@ -19,7 +19,6 @@ import { useStatusChange } from '@features/finder-core/hooks/useStatusChange';
 const STATUS_OPTIONS: { value: LifecycleStatus; label: string }[] = [
   { value: 'pending', label: 'En attente' },
   { value: 'published', label: 'Validé' },
-  { value: 'bin', label: 'Corbeille' },
 ];
 
 /**
