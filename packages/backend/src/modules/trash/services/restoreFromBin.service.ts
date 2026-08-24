@@ -18,6 +18,10 @@ import {
 } from "@backend//modules/trash/utils";
 import { getAssetInfo, fileExists } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
+import {
+  r2Exists,
+  r2MoveFile,
+} from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * restoreFromBin.service.ts
@@ -254,10 +258,17 @@ export async function restoreFromBin(params: {
       await upsertFolders(prisma, appRoot, folderAncestorsOfPublicId(restoredToPath));
     }
 
-    // Move Cloudinary
+    // Move physique (Cloudinary ou R2)
     if (kind === "file") {
-      const info = await getAssetInfo(entry.storageRoot);
-      await renameAsset(entry.storageRoot, restoredToPath, info.resource_type);
+      // Détecte le backend : Cloudinary d'abord (fileExists, sans throw),
+      // sinon R2 (PDF/documents).
+      const onCloudinary = await fileExists(entry.storageRoot);
+      if (!onCloudinary && (await r2Exists(entry.storageRoot))) {
+        await r2MoveFile(entry.storageRoot, restoredToPath);
+      } else {
+        const info = await getAssetInfo(entry.storageRoot);
+        await renameAsset(entry.storageRoot, restoredToPath, info.resource_type);
+      }
     } else {
       // IMPORTANT: trailing slash pour éviter collisions cours1 vs cours10
       await moveFolderRecursively(`${normalizePath(entry.storageRoot)}/`, `${normalizePath(restoredToPath)}/`);
