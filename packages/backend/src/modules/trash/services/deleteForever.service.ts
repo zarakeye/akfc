@@ -6,7 +6,10 @@ import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/t
 import { isTrashStoragePath, normalizePath } from "@backend//modules/trash/utils";
 import { getAssetInfo, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
-import { r2DeleteFile } from "@backend/modules/trash/services/r2TrashOps";
+import {
+  r2DeleteFile,
+  r2DeleteByPrefix,
+} from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * deleteForever.service.ts
@@ -94,6 +97,8 @@ export async function deleteForever(params: {
       // préfixe, Cloudinary renvoie un dict vide sans erreur. Pas besoin
       // de try/catch ici.
       await deleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
+      // R2 : supprime aussi les objets R2 imbriqués (toute profondeur).
+      await r2DeleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
     }
 
     await prisma.trashEntry.update({
