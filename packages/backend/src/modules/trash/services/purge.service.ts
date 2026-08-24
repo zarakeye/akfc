@@ -8,6 +8,7 @@ import {
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
 import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
+import { r2DeleteFile } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * purge.service.ts
@@ -126,8 +127,11 @@ export async function purge(params: {
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           if (!message.startsWith("Asset not found")) throw err;
+          // Cloudinary ne l'a pas : peut-être un fichier R2 (PDF/docs).
+          // r2DeleteFile est idempotent (no-op si absent aussi sur R2).
+          await r2DeleteFile(entry.storageRoot);
           console.warn(
-            `[purge] Orphan asset (already gone), keeping entry purge: id=${entry.id} path=${entry.storageRoot}`,
+            `[purge] Absent de Cloudinary; suppression R2 tentée (idempotent): id=${entry.id} path=${entry.storageRoot}`,
           );
         }
       } else {

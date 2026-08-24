@@ -6,6 +6,7 @@ import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/t
 import { isTrashStoragePath, normalizePath } from "@backend//modules/trash/utils";
 import { getAssetInfo, deleteByPrefix } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
+import { r2DeleteFile } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
  * deleteForever.service.ts
@@ -76,10 +77,12 @@ export async function deleteForever(params: {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (message.startsWith("Asset not found")) {
+          // Cloudinary ne l'a pas : peut-être un fichier R2 (PDF/docs).
+          // r2DeleteFile est idempotent (no-op si absent aussi sur R2).
+          await r2DeleteFile(entry.storageRoot);
           console.warn(
-            `[deleteForever] Orphan TrashEntry (asset already gone): id=${entry.id} path=${entry.storageRoot}`,
+            `[deleteForever] Absent de Cloudinary; suppression R2 tentée (idempotent): id=${entry.id} path=${entry.storageRoot}`,
           );
-          // continue : on supprime la ligne DB ci-dessous
         } else {
           throw err;
         }
