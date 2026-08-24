@@ -13,7 +13,7 @@ import ContextMenu, {
   type ContextMenuItem,
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer } from '@features/finder-core/utils/spaceFolderKind';
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
@@ -241,13 +241,19 @@ export default function GridItem({
             } as ContextMenuItem,
           ]
         : []),
-      {
-        label: deleteLabel(targetNodes.length, targetNodes),
-        destructive: true,
-        onClick: () => {
-          void deleteNodes(targetNodes);
-        },
-      },
+      ...(targetNodes.some(
+        (n) => n.type === "folder" && isProtectedEntityFolder(n.path),
+      )
+        ? []
+        : [
+            {
+              label: deleteLabel(targetNodes.length, targetNodes),
+              destructive: true,
+              onClick: () => {
+                void deleteNodes(targetNodes);
+              },
+            } as ContextMenuItem,
+          ]),
     ];
   }
 
