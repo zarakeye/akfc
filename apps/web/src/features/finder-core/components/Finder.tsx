@@ -76,6 +76,7 @@ import {
   buildNodePool,
   resolveSelectedNodes,
 } from "@features/finder-core/utils/selectionNodes";
+import { isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
 
 /**
  * Clé localStorage utilisée pour persister la disposition (largeur) des 3
@@ -670,7 +671,10 @@ export default function Finder({
           // la bibliothèque, suppression définitive depuis la corbeille — et
           // porte les invalidations de cache. `deleteLabel` en donne le
           // libellé exact, y compris le pluriel.
-          const canDelete = selectedCount > 0;
+          const hasProtectedEntity = selectedNodes.some(
+            (n) => n.type === "folder" && isProtectedEntityFolder(n.path),
+          );
+          const canDelete = selectedCount > 0 && !hasProtectedEntity;
           const deleteButtonLabel = canDelete
             ? deleteLabel(selectedCount, selectedNodes)
             : "Supprimer";
@@ -684,6 +688,8 @@ export default function Finder({
               title={
                 canDelete
                   ? deleteButtonLabel
+                  : hasProtectedEntity
+                  ? "Un dossier d'entité (groupe, espace perso, avatars) ne se supprime pas ici"
                   : "Sélectionne un contenu ou un dossier"
               }
               className={
