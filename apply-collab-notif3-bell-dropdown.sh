@@ -123,7 +123,7 @@ import { useSessionStore } from "@lib/stores/useSessionStore";
  * finder membre `/mes-espaces`. Absente si le membre n'a aucun espace.
  */
 export function CollaborativeBell(): JSX.Element | null {
-  const user = useSessionStore((s) => s.user);
+  const user = useSessionStore((s) => s.session?.user);
   const { data: spaces } = trpc.storage.myCollaborativeSpaces.useQuery();
   const { data: unread } =
     trpc.memberDocument.collaborativeUnreadForMe.useQuery();
