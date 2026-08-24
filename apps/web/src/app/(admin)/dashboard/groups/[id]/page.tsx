@@ -2,7 +2,7 @@
 
 import { JSX, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { Input } from "@components/ui/Input";
@@ -41,6 +41,15 @@ export default function GroupDetailPage(): JSX.Element {
   });
   const setParent = trpc.memberGroup.setParentGroup.useMutation({
     onSuccess: () => void utils.memberGroup.list.invalidate(),
+  });
+
+  const router = useRouter();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const del = trpc.memberGroup.delete.useMutation({
+    onSuccess: () => {
+      void utils.memberGroup.list.invalidate();
+      router.push("/dashboard/groups");
+    },
   });
 
   if (groupsQuery.isLoading) return <div>Chargement…</div>;
@@ -205,6 +214,49 @@ export default function GroupDetailPage(): JSX.Element {
             </ul>
           )}
         </div>
+      </div>
+      <div className="mt-8 border-t border-red-200 pt-4">
+        <p className="mb-2 text-sm font-medium text-red-700">Zone dangereuse</p>
+        {group.isAdminGroup ? (
+          <p className="text-sm text-muted-foreground">
+            Le groupe Administrateurs ne peut pas être supprimé.
+          </p>
+        ) : !confirmingDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Supprimer le groupe
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Supprimer « {group.name} » ? Son espace doit être vide ; les
+              groupes inclus passeront sous son parent.
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={del.isPending}
+                onClick={() => del.mutate({ id: group.id })}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                Confirmer la suppression
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+        {del.error && (
+          <p className="mt-2 text-sm text-red-600">{del.error.message}</p>
+        )}
       </div>
     </div>
   );
