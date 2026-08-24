@@ -12,6 +12,7 @@ import {
   type MediaKind,
 } from "@backend/modules/cloudinary/utils/mediaKind.utils";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
+import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
 import {
   r2Exists,
   r2GetInfo,
@@ -252,6 +253,21 @@ export async function trashToBin(params: {
 
   // Normalise la liste et déduplique.
   const sources = await normalizeSources({ prisma, input });
+
+  // 🔒 Protection : les dossiers adossés à une ENTITÉ (espaces de groupe/perso,
+  // avatars, et les conteneurs groups/persos/avatars) ne se suppriment PAS
+  // depuis le finder — uniquement via le gestionnaire de l'entité. On refuse
+  // AVANT tout déplacement (rien n'est déplacé si un seul est protégé).
+  for (const source of sources) {
+    if (
+      source.kind === "folder" &&
+      isProtectedEntityFolderPath(normalizePath(source.fullPath))
+    ) {
+      throw new Error(
+        `Dossier protégé : « ${lastSegment(normalizePath(source.fullPath))} » est géré par une entité (groupe, espace perso, avatars) et ne peut pas être supprimé depuis le finder. Supprimez l'entité correspondante dans son gestionnaire.`,
+      );
+    }
+  }
 
   const results: TrashEntryDTO[] = [];
 
