@@ -18,6 +18,7 @@ import {
   r2Exists,
   r2GetInfo,
   r2MoveFile,
+  r2MoveFolder,
 } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
@@ -360,6 +361,9 @@ export async function trashToBin(params: {
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix
       await moveFolderRecursively(`${normalized}/`, `${storageRoot}/`);
+      // R2 : déplace aussi les objets R2 imbriqués (toute profondeur)
+      // que Cloudinary ignore — sinon ils resteraient dans le dossier vidé.
+      await r2MoveFolder(`${normalized}/`, `${storageRoot}/`);
 
       // 4) Nettoyage registry DB des dossiers :
       //    Si tu jettes un dossier, il ne doit plus exister "à l'ancien endroit".

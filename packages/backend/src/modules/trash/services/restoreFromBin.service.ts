@@ -21,6 +21,7 @@ import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmp
 import {
   r2Exists,
   r2MoveFile,
+  r2MoveFolder,
 } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
@@ -272,6 +273,11 @@ export async function restoreFromBin(params: {
     } else {
       // IMPORTANT: trailing slash pour éviter collisions cours1 vs cours10
       await moveFolderRecursively(`${normalizePath(entry.storageRoot)}/`, `${normalizePath(restoredToPath)}/`);
+      // R2 : restaure aussi les objets R2 imbriqués (toute profondeur).
+      await r2MoveFolder(
+        `${normalizePath(entry.storageRoot)}/`,
+        `${normalizePath(restoredToPath)}/`,
+      );
     }
 
     await prisma.trashEntry.update({
