@@ -32,6 +32,7 @@ export const memberGroupRouter = router({
         name: true,
         description: true,
         isCollaborative: true,
+        isAdminGroup: true,
         parentGroupId: true,
         _count: { select: { memberships: true } },
       },
@@ -41,6 +42,7 @@ export const memberGroupRouter = router({
       name: g.name,
       description: g.description,
       isCollaborative: g.isCollaborative,
+      isAdminGroup: g.isAdminGroup,
       parentGroupId: g.parentGroupId,
       memberCount: g._count.memberships,
     }));
