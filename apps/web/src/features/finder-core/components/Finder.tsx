@@ -606,15 +606,10 @@ export default function Finder({
         {!readOnly &&
           multiSelectActive &&
           (() => {
-            const label = deleteLabel(selectedCount, selectedNodes);
             const isBinAction =
               selectedNodes.length > 0 &&
               (selectedNodes[0].path === `${APP_ROOT}/bin` ||
                 selectedNodes[0].path.startsWith(`${APP_ROOT}/bin/`));
-
-            async function handleMultiDelete() {
-              await deleteNodes(selectedNodes);
-            }
 
             return (
               <>
@@ -627,21 +622,6 @@ export default function Finder({
                     selectedNodes={selectedNodes}
                   />
                 )}
-
-                <button
-                  type="button"
-                  onClick={handleMultiDelete}
-                  disabled={selectedCount === 0}
-                  title={label}
-                  className={
-                    isBinAction
-                      ? "shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                      : "shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                  }
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                  <span>{label}</span>
-                </button>
 
                 <button
                   type="button"
