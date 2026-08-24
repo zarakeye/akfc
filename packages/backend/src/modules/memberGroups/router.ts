@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGroupSpaceFolder.service";
+import { deleteGroupWithSpace } from "@backend/modules/memberGroups/deleteGroupWithSpace.service";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -120,7 +121,11 @@ export const memberGroupRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.memberGroup.delete({ where: { id: input.id } });
+      await deleteGroupWithSpace({
+        prisma: ctx.prisma,
+        appRoot: ctx.appRoot,
+        groupId: input.id,
+      });
       return { success: true };
     }),
 
