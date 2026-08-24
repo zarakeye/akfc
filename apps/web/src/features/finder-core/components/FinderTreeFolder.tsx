@@ -24,7 +24,7 @@ import { useLongPress } from "@features/finder-core/hooks/useLongPress";
 import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
 import { useTrashMap } from "@features/finder-core/state/TrashMapContext";
 import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer } from "@features/finder-core/utils/spaceFolderKind";
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
 import ContextMenu, {
   type ContextMenuItem,
 } from "@features/finder-core/components/ContextMenu";
@@ -113,13 +113,19 @@ export default function FinderTreeFolder({
           setIsRenamingFolder(true);
         },
       },
-      {
-        label: deleteLabel(targetNodes.length, targetNodes),
-        destructive: true,
-        onClick: () => {
-          void deleteNodes(targetNodes);
-        },
-      },
+      ...(targetNodes.some(
+        (n) => n.type === "folder" && isProtectedEntityFolder(n.path),
+      )
+        ? []
+        : [
+            {
+              label: deleteLabel(targetNodes.length, targetNodes),
+              destructive: true,
+              onClick: () => {
+                void deleteNodes(targetNodes);
+              },
+            } as ContextMenuItem,
+          ]),
     ];
   }
 
