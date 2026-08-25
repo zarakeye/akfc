@@ -31,7 +31,7 @@ export default function OurActivitiesMenu({
   const [hover, setHover] = useState<boolean>(false);
   // Fetch des familles et disciplines pour construire le menu. On ne fait rien côté erreur : on n'affiche rien.
   const { data: familiesData } = trpc.disciplineFamily.getAll.useQuery();
-  const { data: disciplinesData } = trpc.discipline.getAllPublished.useQuery();
+  const { data: disciplinesData } = trpc.discipline.getAllForMenu.useQuery();
   const families = familiesData ?? [];
   const disciplines = disciplinesData ?? [];
   

@@ -186,6 +186,19 @@ export const disciplineRouter = router({
     });
   }),
 
+  /**
+   * Disciplines du menu « Nos activités » : PUBLIÉES pour tous, PLUS les
+   * brouillons si la session est ADMIN. Gating SERVEUR — un visiteur
+   * non-admin ne peut pas récupérer les brouillons via cette query.
+   */
+  getAllForMenu: publicProcedure.query(async ({ ctx }) => {
+    const isAdmin = ctx.sessionClient?.user?.role?.name === "ADMIN";
+    return ctx.prisma.discipline.findMany({
+      where: isAdmin ? {} : { publicationDate: { not: null, lte: new Date() } },
+      orderBy: [{ categoryId: "asc" }, { name: "asc" }],
+    });
+  }),
+
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {

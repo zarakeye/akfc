@@ -57,6 +57,7 @@ export default function EditDisciplinePage({
   const handleSubmit = async (input: DisciplineFormInput): Promise<void> => {
     await updateMutation.mutateAsync({
       id: disciplineId,
+      publicationDate: input.publicationDate,
       name: input.name,
       slug: input.slug,
       type: input.type,
