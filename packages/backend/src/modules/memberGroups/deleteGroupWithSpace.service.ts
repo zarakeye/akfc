@@ -2,22 +2,19 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
 
 /**
- * Supprime un groupe et son espace, en cascade SÛRE.
- *
- * Invariants respectés (décisions Stéphane A→E) :
- *  - le groupe Administrateurs (isAdminGroup) n'est jamais supprimable ;
- *  - l'espace doit être VIDE de contenu géré (fichiers Cloudinary ET R2 via
- *    MediaAsset, + sous-dossiers Folder) — sinon on refuse et on invite à
- *    vider ; le layout étant PLAT, les espaces des groupes enfants sont des
- *    dossiers frères (pas sous ce chemin) → ils ne comptent pas ;
+ * Supprime un groupe et son espace, en cascade SÛRE (décisions A→E) :
+ *  - refuse le groupe Administrateurs (isAdminGroup) ;
+ *  - l'espace doit être VIDE — contrôle PHYSIQUE (isSpaceEmpty), aligné sur ce
+ *    que montre le finder (les lignes MediaAsset orphelines ne faussent rien) ;
+ *    layout plat → les espaces enfants (dossiers frères) ne comptent pas ;
  *  - les groupes enfants sont RE-PARENTÉS vers le parent du groupe supprimé
- *    (au pire Administrateurs, puisqu'on interdit sa suppression) AVANT delete,
- *    pour éviter le SetNull qui les enverrait à la racine.
+ *    (au pire Administrateurs) AVANT le delete, pour éviter le SetNull racine.
  *
- * Résolution du chemin d'espace : par le SUFFIXE `-{groupId}` dans le registre
- * Folder (stable même après renommage), avec repli sur le chemin canonique.
+ * Chemin d'espace résolu par le SUFFIXE `-{groupId}` du registre (stable au
+ * renommage), repli sur le chemin canonique.
  */
 export async function deleteGroupWithSpace(params: {
   prisma: PrismaClient;
@@ -46,7 +43,7 @@ export async function deleteGroupWithSpace(params: {
     });
   }
 
-  // ── Chemin(s) de l'espace : suffixe -{groupId} (robuste au renommage) ──
+  // Chemin(s) de l'espace : suffixe -{groupId} (robuste au renommage).
   const registered = await prisma.folder.findMany({
     where: { appRoot, fullPath: { endsWith: `-${groupId}` } },
     select: { fullPath: true },
@@ -58,23 +55,13 @@ export async function deleteGroupWithSpace(params: {
     try {
       spacePaths.add(await resolveGroupBaseFolder({ prisma, appRoot, groupId }));
     } catch {
-      // groupe non collaboratif ou espace jamais matérialisé → rien à vérifier
+      // non collaboratif / espace jamais matérialisé → rien à vérifier
     }
   }
 
-  // ── Vérifie que chaque espace est VIDE (contenu géré : fichiers + sous-dossiers) ──
+  // Vérifie que chaque espace est VIDE (contrôle physique).
   for (const sp of spacePaths) {
-    const [asset, sub] = await Promise.all([
-      prisma.mediaAsset.findFirst({
-        where: { appRoot, fullPath: { startsWith: `${sp}/` } },
-        select: { id: true },
-      }),
-      prisma.folder.findFirst({
-        where: { appRoot, fullPath: { startsWith: `${sp}/` } },
-        select: { id: true },
-      }),
-    ]);
-    if (asset || sub) {
+    if (!(await isSpaceEmpty({ prisma, appRoot, path: sp }))) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `L'espace du groupe « ${group.name} » n'est pas vide. Videz-le (fichiers et sous-dossiers) avant de supprimer le groupe.`,
@@ -82,19 +69,19 @@ export async function deleteGroupWithSpace(params: {
     }
   }
 
-  // ── Re-parente les enfants vers le parent (AVANT le delete) ──
+  // Re-parente les enfants vers le parent (AVANT le delete).
   await prisma.memberGroup.updateMany({
     where: { parentGroupId: groupId },
     data: { parentGroupId: group.parentGroupId },
   });
 
-  // ── Supprime les lignes de registre de l'espace (vide) ──
+  // Supprime les lignes de registre de l'espace (vide).
   if (spacePaths.size > 0) {
     await prisma.folder.deleteMany({
       where: { appRoot, fullPath: { in: [...spacePaths] } },
     });
   }
 
-  // ── Supprime le groupe (cascade DB : memberships + liens documents) ──
+  // Supprime le groupe (cascade DB : memberships + liens documents).
   await prisma.memberGroup.delete({ where: { id: groupId } });
 }
