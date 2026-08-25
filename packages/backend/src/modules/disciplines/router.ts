@@ -5,6 +5,8 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { requirePermission } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
+import slugify from "slugify";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
@@ -492,38 +494,64 @@ export const disciplineRouter = router({
     .use(requirePermission("manage_disciplines"))
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      // Pré-vérification des dépendances — on refuse plutôt que de cascader.
-      // Étendue à Event (nouvelle entité v2) en plus de Course/Stage/MediaAsset.
-      const [courseCount, stageCount, eventCount, mediaAssetCount] =
-        await Promise.all([
-          ctx.prisma.course.count({ where: { disciplineId: input.id } }),
-          ctx.prisma.stage.count({ where: { disciplineId: input.id } }),
-          // Via la jointure : compte aussi les événements multi-disciplines.
-          ctx.prisma.eventDiscipline.count({
-            where: { disciplineId: input.id },
-          }),
-          ctx.prisma.mediaAsset.count({ where: { disciplineId: input.id } }),
-        ]);
+      // Dépendances métier : on refuse plutôt que de cascader (Course/Stage/
+      // Event). Le contenu du DOSSIER est traité à part, par un check PHYSIQUE
+      // (isSpaceEmpty) — pas par les lignes MediaAsset, qui persistent après un
+      // vidage et donneraient un faux « non vide ».
+      const [courseCount, stageCount, eventCount] = await Promise.all([
+        ctx.prisma.course.count({ where: { disciplineId: input.id } }),
+        ctx.prisma.stage.count({ where: { disciplineId: input.id } }),
+        ctx.prisma.eventDiscipline.count({ where: { disciplineId: input.id } }),
+      ]);
 
       const deps: string[] = [];
-      if (courseCount > 0) deps.push(`${courseCount} course(s)`);
+      if (courseCount > 0) deps.push(`${courseCount} cours`);
       if (stageCount > 0) deps.push(`${stageCount} stage(s)`);
-      if (eventCount > 0) deps.push(`${eventCount} event(s)`);
-      if (mediaAssetCount > 0) deps.push(`${mediaAssetCount} media asset(s)`);
-
+      if (eventCount > 0) deps.push(`${eventCount} événement(s)`);
       if (deps.length > 0) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Cannot delete discipline: ${deps.join(
+          message: `Impossible de supprimer la discipline : ${deps.join(
             ", ",
-          )} still reference it. Migrate or delete them first.`,
+          )} y font encore référence. Traitez-les d'abord.`,
         });
       }
 
-      // Transaction : nettoyage des PageMediaReference avant le delete
-      // physique de la discipline. Cohérent avec le pattern courses :
-      // on libère les références AVANT pour ne pas laisser de rows
-      // orphelines (la table n'a pas de FK DB sur `pageId`).
+      // Résout le dossier : `${appRoot}/<slug(cat.type)>/<slug(name)>`
+      // (aligné sur resolvePendingUploadFolder / protectedDisciplineFolder).
+      const disc = await ctx.prisma.discipline.findUnique({
+        where: { id: input.id },
+        select: { id: true, name: true, categoryId: true },
+      });
+      if (!disc) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Discipline not found." });
+      }
+      const cat = await ctx.prisma.category.findUnique({
+        where: { id: disc.categoryId },
+        select: { type: true },
+      });
+      const slug = (v: string) => slugify(v, { lower: true, strict: true });
+      const folderPath = cat
+        ? `${ctx.appRoot}/${slug(cat.type)}/${slug(disc.name) || `disc-${disc.id}`}`
+        : null;
+
+      // Le dossier doit être VIDE (contrôle physique, cf. finder).
+      if (
+        folderPath &&
+        !(await isSpaceEmpty({
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          path: folderPath,
+        }))
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Le dossier de la discipline « ${disc.name} » n'est pas vide. Videz-le (fichiers et sous-dossiers) avant de supprimer la discipline.`,
+        });
+      }
+
+      // Transaction : refs média → détache les MediaAsset orphelines (dossier
+      // vérifié vide, disciplineId nullable) → supprime la ligne Folder → delete.
       return await ctx.prisma.$transaction(async (tx) => {
         await syncPageMediaReferences(tx, {
           pageType: "DISCIPLINE",
@@ -531,10 +559,19 @@ export const disciplineRouter = router({
           newContent: null,
         });
 
-        try {
-          return await tx.discipline.delete({
-            where: { id: input.id },
+        await tx.mediaAsset.updateMany({
+          where: { disciplineId: input.id },
+          data: { disciplineId: null },
+        });
+
+        if (folderPath) {
+          await tx.folder.deleteMany({
+            where: { appRoot: ctx.appRoot, fullPath: folderPath },
           });
+        }
+
+        try {
+          return await tx.discipline.delete({ where: { id: input.id } });
         } catch (err) {
           if (
             err instanceof Prisma.PrismaClientKnownRequestError &&
