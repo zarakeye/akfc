@@ -1,5 +1,6 @@
 import { JSX } from "react"
 import type { Metadata } from "next"
+import { SITE_URL } from "@/config/siteUrl";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
 import { prisma } from "@backend/prisma"
@@ -18,8 +19,10 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "AKFC",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "AKFC", template: "%s · AKFC" },
   description: "Association de Kung Fu de Chambéry",
+  robots: { index: true, follow: true },
 }
 
 interface RootLayoutProps {
