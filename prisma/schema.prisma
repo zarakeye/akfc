@@ -1454,3 +1454,21 @@ model HomeHero {
   title String
   body  String
 }
+
+/// Identité éditoriale du site (singleton, id="site").
+///
+/// Ce qu'un admin peut changer sans toucher au code ni au .env. DISTINCT de
+/// `APP_SHORT_NAME` (racine de STOCKAGE du finder/uploads, identité technique)
+/// : `shortTitle` n'est qu'un LIBELLÉ d'affichage (header, onglet, e-mails).
+model SiteSettings {
+  id            String   @id @default("site")
+  shortTitle    String   @default("AKFC")
+  longTitle     String   @default("Association de Kung Fu de Chambéry")
+  tagline       String?
+  supportEmail  String?
+  defaultLocale String   @default("fr")
+  /// Référence vers un MediaAsset (choisi au picker). null = logo embarqué.
+  /// L'asset devra être servi publiquement (garde média à élargir côté conso).
+  logoAssetId   String?
+  updatedAt     DateTime @updatedAt
+}
