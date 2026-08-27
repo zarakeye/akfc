@@ -1,8 +1,27 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
 
 const SETTINGS_ID = "site";
+
+/** Réserve l'action aux administrateurs (role.name === "ADMIN"). */
+async function assertAdmin(ctx: {
+  prisma: PrismaClient;
+  user: { id: string };
+}): Promise<void> {
+  const me = await ctx.prisma.user.findUnique({
+    where: { id: ctx.user.id },
+    select: { role: { select: { name: true } } },
+  });
+  if (me?.role?.name !== "ADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Réservé aux administrateurs.",
+    });
+  }
+}
 
 /**
  * Réglages d'identité du site (singleton). Lecture PUBLIQUE (le header, l'onglet
@@ -32,7 +51,8 @@ export const siteSettingsRouter = router({
         logoAssetId: z.string().trim().max(500).nullish(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertAdmin(ctx);
       const clean = (v: string | null | undefined): string | null =>
         v && v.trim() !== "" ? v.trim() : null;
       const data = {
