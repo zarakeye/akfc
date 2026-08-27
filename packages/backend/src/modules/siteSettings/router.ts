@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 
 const SETTINGS_ID = "site";
 
@@ -34,9 +35,25 @@ async function assertAdmin(ctx: {
  * chaîne vide traitée comme "pas de logo" (→ logo embarqué en repli).
  */
 export const siteSettingsRouter = router({
-  get: publicProcedure.query(({ ctx }) =>
-    ctx.prisma.siteSettings.findUnique({ where: { id: SETTINGS_ID } }),
-  ),
+  get: publicProcedure.query(async ({ ctx }) => {
+    const settings = await ctx.prisma.siteSettings.findUnique({
+      where: { id: SETTINGS_ID },
+    });
+    if (!settings) return null;
+
+    // URL publique du logo, résolue serveur (le Header client la consomme).
+    // Pas de filtre `published` : le logo est public par désignation (garde 3a).
+    let logoUrl: string | null = null;
+    if (settings.logoAssetId) {
+      const asset = await ctx.prisma.mediaAsset.findUnique({
+        where: { id: settings.logoAssetId },
+        select: { publicId: true, fullPath: true },
+      });
+      if (asset) logoUrl = buildMediaProxyUrl(asset, "public");
+    }
+
+    return { ...settings, logoUrl };
+  }),
 
   save: protectedProcedure
     .input(
