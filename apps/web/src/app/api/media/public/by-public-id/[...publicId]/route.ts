@@ -63,7 +63,7 @@ export async function GET(
     // « référencé ⟹ published » est verrouillé côté sync + gardes de statut,
     // mais on revérifie ici : cette route est frappable indépendamment du
     // rendu de la page.
-    const servable = await prisma.mediaAsset.findFirst({
+    let servable = await prisma.mediaAsset.findFirst({
       where: {
         publicId: id,
         status: "published",
@@ -74,6 +74,24 @@ export async function GET(
       },
       select: { id: true },
     });
+
+    // ─── Repli : le LOGO DU SITE ──────────────────────────────────────────
+    // Pas servable par la voie normale (published + placé). Reste un cas
+    // public par nature : le logo choisi par un admin dans les réglages. On
+    // l'autorise indépendamment de published/placé — le choisir EST l'acte de
+    // publication — et LUI SEUL : changer/retirer le logo révoque l'accès.
+    if (!servable) {
+      const settings = await prisma.siteSettings.findUnique({
+        where: { id: "site" },
+        select: { logoAssetId: true },
+      });
+      if (settings?.logoAssetId) {
+        servable = await prisma.mediaAsset.findFirst({
+          where: { publicId: id, id: settings.logoAssetId },
+          select: { id: true },
+        });
+      }
+    }
 
     if (!servable) return new Response("Not found", { status: 404 });
 
