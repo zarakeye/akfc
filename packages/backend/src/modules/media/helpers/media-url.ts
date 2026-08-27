@@ -11,7 +11,12 @@ export function buildMediaProxyUrl(
       audience === 'public'
         ? '/api/media/public/by-public-id'
         : '/api/media/by-public-id';
-    return `${cldPrefix}/${encodeSegments(asset.publicId)}?variant=large`;
+    // SVG : on transmet le format pour que le proxy livre le vecteur natif
+    // (sans transformation raster qui échouerait). Cf. buildAuthenticatedUrl.
+    const isSvg = asset.fullPath.toLowerCase().endsWith('.svg');
+    return `${cldPrefix}/${encodeSegments(asset.publicId)}?variant=large${
+      isSvg ? '&format=svg' : ''
+    }`;
   }
   const r2Prefix =
     audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';

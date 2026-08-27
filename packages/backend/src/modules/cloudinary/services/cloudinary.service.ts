@@ -64,8 +64,14 @@ export function buildAuthenticatedUrl(
   // zip…) : l'URL signée avec transformation retourne 404, et l'appelant
   // tombe alors sur l'image de fallback. On ne transforme donc que les
   // resource_types qui le supportent (image / video).
+  // SVG : vecteur. Le transformer (resize/raster) est inutile et Cloudinary
+  // le refuse souvent sur un asset `authenticated` → 404 puis placeholder.
+  // On le livre natif, comme `raw`. Détecté via le format autoritaire OU
+  // l'extension du public_id.
+  const isSvg =
+    format?.toLowerCase() === "svg" || publicId.toLowerCase().endsWith(".svg");
   const transformation =
-    resourceType === "raw" ? {} : (transformations[variant] ?? {});
+    resourceType === "raw" || isSvg ? {} : (transformations[variant] ?? {});
 
   // ─── Pourquoi transmettre le format ? ──────────────────────────────────
   //
