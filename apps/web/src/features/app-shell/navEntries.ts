@@ -32,7 +32,6 @@ export type NavEntry =
 export const NAV_ENTRIES: NavEntry[] = [
   { kind: "link", href: "/", label: "Accueil" },
   { kind: "link", href: "/dashboard", label: "Dashboard", requiresUser: true },
-  { kind: "link", href: "/documents", label: "Documents", requiresUser: true },
   { kind: "activities" },
   { kind: "link", href: "/gallery", label: "Galeries" },
   { kind: "link", href: "/agenda", label: "Agenda" },

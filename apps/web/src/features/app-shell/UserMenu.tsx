@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { UserPortrait } from "@features/social/UserPortrait";
+import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
 
 /**
  * UserMenu is a React component that displays a user menu when the user is connected.
@@ -63,6 +64,14 @@ export default function UserMenu(): JSX.Element | null {
           >
             Mon profil
           </Link>
+          <div className="px-4 py-2 hover:bg-gray-100">
+            <DocumentsNavLink
+              href="/documents"
+              label="Mes documents"
+              withTooltip={false}
+              className="text-sm text-gray-700"
+            />
+          </div>
           <button
             className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
             onClick={handleLogout}
