@@ -47,13 +47,25 @@ export default function SiteSettingsPage(): JSX.Element {
     setInitialized(true);
   }, [initialized, settings.isSuccess, settings.data]);
 
-  const logoImg = trpc.media.resolveByIds.useQuery(
-    { mediaIds: logoAssetId ? [logoAssetId] : [] },
-    { enabled: logoAssetId !== null },
+  const savedLogoId = settings.data?.logoAssetId ?? null;
+  const savedLogoUrl = settings.data?.logoUrl ?? null;
+
+  // Aperçu : si l'id courant est le logo ENREGISTRÉ, on prend l'URL publique
+  // (autorisée même en brouillon via la garde) → un brouillon s'aperçoit
+  // comme le produit fini. Sinon (choix pas encore enregistré) : resolveByIds
+  // (published) le temps d'enregistrer.
+  const picked = trpc.media.resolveByIds.useQuery(
+    {
+      mediaIds:
+        logoAssetId && logoAssetId !== savedLogoId ? [logoAssetId] : [],
+    },
+    { enabled: logoAssetId !== null && logoAssetId !== savedLogoId },
   );
-  const logoUrl = logoAssetId
-    ? (logoImg.data?.[logoAssetId]?.url ?? null)
-    : null;
+  const logoUrl = !logoAssetId
+    ? null
+    : logoAssetId === savedLogoId
+      ? savedLogoUrl
+      : (picked.data?.[logoAssetId]?.url ?? null);
 
   const canSave =
     shortTitle.trim() !== "" && longTitle.trim() !== "" && !save.isPending;

@@ -18,11 +18,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: { default: "AKFC", template: "%s · AKFC" },
-  description: "Association de Kung Fu de Chambéry",
-  robots: { index: true, follow: true },
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await prisma.siteSettings
+    .findUnique({ where: { id: "site" }, select: { shortTitle: true, longTitle: true, tagline: true } })
+    .catch(() => null);
+  const shortTitle = settings?.shortTitle?.trim() || "AKFC";
+  const longTitle =
+    settings?.longTitle?.trim() || "Association de Kung Fu de Chambéry";
+  const description = settings?.tagline?.trim() || longTitle;
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: { default: shortTitle, template: `%s · ${shortTitle}` },
+    description,
+    robots: { index: true, follow: true },
+  };
 }
 
 interface RootLayoutProps {

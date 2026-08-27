@@ -18,6 +18,7 @@ import {
   type NavEntry,
 } from "@features/app-shell/navEntries";
 import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
+import { trpc } from "@trpc/trpcClient";
 
 /**
  * En-tête de l'application, en deux rendus alimentés par la MÊME source
@@ -37,6 +38,11 @@ import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
 export default function Header() {
   const user = useSessionStore(state => state.session?.user);
   const pathname = usePathname();
+
+  // Identité éditable (logo + libellé) — lecture publique, repli embarqué.
+  const siteSettings = trpc.siteSettings.get.useQuery();
+  const logoUrl = siteSettings.data?.logoUrl ?? null;
+  const brand = siteSettings.data?.shortTitle ?? "AKFC";
 
   // Menu déroulant ouvert dans la BARRE (survol) et dans le PANNEAU (appui).
   // Deux états distincts : les deux rendus coexistent dans l'arbre, et un
@@ -80,14 +86,25 @@ export default function Header() {
         {/* Trois paliers : le `px-20` d'origine coûtait 160px de chaque
             côté, ce que la barre ne pouvait pas se permettre avant 1536px. */}
         <div className="flex items-center px-4 py-4 xl:px-6 xl:py-6 2xl:px-20 2xl:py-10">
-          <Image
-            src="/AKFC_logo.svg"
-            alt="AKFC logo"
-            width={100}
-            height={100}
-            priority
-            className="h-12 w-auto xl:h-16 2xl:h-25"
-          />
+          {logoUrl ? (
+            // Logo personnalisé (réglages) — <img> simple : URL de proxy
+            // dynamique, hors pipeline next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={`${brand} logo`}
+              className="h-12 w-auto xl:h-16 2xl:h-25"
+            />
+          ) : (
+            <Image
+              src="/AKFC_logo.svg"
+              alt={`${brand} logo`}
+              width={100}
+              height={100}
+              priority
+              className="h-12 w-auto xl:h-16 2xl:h-25"
+            />
+          )}
         </div>
       </Link>
 
