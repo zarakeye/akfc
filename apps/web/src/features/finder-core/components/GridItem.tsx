@@ -229,10 +229,16 @@ export default function GridItem({
           setIsRenaming(true);
         },
       },
-      {
-        label: 'Déplacer…',
-        onClick: () => setMovingNodes(targetNodes),
-      },
+      ...(targetNodes.some(
+        (n) => n.type === "folder" && isProtectedEntityFolder(n.path),
+      )
+        ? []
+        : [
+            {
+              label: 'Déplacer…',
+              onClick: () => setMovingNodes(targetNodes),
+            } as ContextMenuItem,
+          ]),
       ...(isAdmin && !isFolder && !isStatus
         ? [
             {

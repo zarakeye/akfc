@@ -16,6 +16,7 @@ import ContextMenu, {
 } from '@features/finder-core/components/ContextMenu';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
+import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
 import { storagePathOf } from '@features/finder-core/utils/storagePath';
 import { useSessionStore } from '@lib/stores/useSessionStore';
@@ -79,10 +80,16 @@ export default function FinderTableRow({
           setIsRenaming(true);
         },
       },
-      {
-        label: 'Déplacer…',
-        onClick: () => setMovingNodes(targetNodes),
-      },
+      ...(targetNodes.some(
+        (n) => n.type === "folder" && isProtectedEntityFolder(n.path),
+      )
+        ? []
+        : [
+            {
+              label: 'Déplacer…',
+              onClick: () => setMovingNodes(targetNodes),
+            } as ContextMenuItem,
+          ]),
       ...(isAdmin && !isFolder && !isStatus
         ? [
             {
