@@ -26,6 +26,7 @@ import {
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
+import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
 import { toPhysicalMoveIntents } from "@backend/modules/storage/toPhysicalMoveIntents.service";
 import {
   planMoveOperations,
@@ -567,6 +568,17 @@ export const storageRouter = router({
         });
       }
 
+      // Dossier-entité : nom PHYSIQUE immuable. Sa garde de suppression
+      // repose sur son chemin ; le renommer (déplacement du binaire)
+      // casserait cette protection. Refusé (un libellé d'affichage passera
+      // par un mécanisme séparé).
+      if (input.type === "folder" && isProtectedEntityFolderPath(input.path)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Ce dossier système ne peut pas être renommé.",
+        });
+      }
+
       // ─── FICHIER : on n'édite QUE le nom d'affichage ───────────────────
       //
       // Depuis la slugification (increment 1), la clé de stockage est un slug
@@ -663,6 +675,23 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Dossier-entité : chemin immuable, pas de déplacement du binaire.
+      // Même raison qu'au rename ; couvre aussi les sélections multiples.
+      {
+        const movedPaths =
+          input.intent.source.type === "folder"
+            ? [input.intent.source.path]
+            : input.intent.source.type === "selection"
+              ? input.intent.source.roots
+              : [];
+        if (movedPaths.some((pth) => isProtectedEntityFolderPath(pth))) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Ce dossier système ne peut pas être déplacé.",
+          });
+        }
+      }
+
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
 
       // ⚠️ L'adapter reste PHYSIQUE, toujours. On n'enveloppe JAMAIS le
