@@ -568,7 +568,7 @@ export default function FinderTreeFolder({
           </span>
         ) : (
           <span
-            className="truncate capitalize"
+            className="truncate"
             onDoubleClick={(e) => {
               // Double-clic sur le NOM : renommer. Le clic simple sur la
               // ligne garde son rôle d'ouverture / de repli.
