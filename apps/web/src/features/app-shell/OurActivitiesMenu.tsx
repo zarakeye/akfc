@@ -112,7 +112,7 @@ export default function OurActivitiesMenu({
       onMouseLeave={() => setHover(false)}
       className="relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
     >
-      <span>Nos activités</span>
+      <span className="text-lg font-bold">Nos activités</span>
       <Image
         src="/chevron-white.svg"
         alt=""
