@@ -1472,3 +1472,13 @@ model SiteSettings {
   logoAssetId   String?
   updatedAt     DateTime @updatedAt
 }
+
+/// Libellé d'AFFICHAGE d'un dossier du finder, découplé du chemin physique.
+/// Clé = chemin canonique (ex. "AKFC/groups", "AKFC/groups/<slug>-<cuid>").
+/// Permet de « renommer » un dossier — y compris les dossiers-entité — sans
+/// toucher au stockage : on édite ce libellé, le chemin reste l'identité.
+model FolderLabel {
+  path        String   @id
+  displayName String
+  updatedAt   DateTime @updatedAt
+}

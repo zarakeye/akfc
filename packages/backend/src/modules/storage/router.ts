@@ -464,6 +464,35 @@ export const storageRouter = router({
       };
     }),
 
+  // Libellés d'affichage des dossiers (découplés du chemin physique).
+  folderLabels: protectedProcedure.query(({ ctx }) =>
+    ctx.prisma.folderLabel.findMany({
+      select: { path: true, displayName: true },
+    }),
+  ),
+
+  setFolderLabel: protectedProcedure
+    .input(
+      z.object({
+        path: z.string().min(1),
+        displayName: z.string().trim().max(255),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const name = input.displayName.trim();
+      // Libellé vide = on retire l'override (retour au repli du listing).
+      if (name === "") {
+        await ctx.prisma.folderLabel.deleteMany({ where: { path: input.path } });
+        return { path: input.path, displayName: null as string | null };
+      }
+      const row = await ctx.prisma.folderLabel.upsert({
+        where: { path: input.path },
+        create: { path: input.path, displayName: name },
+        update: { displayName: name },
+      });
+      return { path: row.path, displayName: row.displayName as string | null };
+    }),
+
   getNode: protectedProcedure
     .input(
       z.object({
