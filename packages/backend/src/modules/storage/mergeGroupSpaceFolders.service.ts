@@ -1,40 +1,36 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { ListResult, StorageFolderNode } from "@contracts/storage";
+import type {
+  ListResult,
+  StorageFolderNode,
+  StorageNode,
+} from "@contracts/storage";
 
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 
 /**
- * Réinjecte, dans le listing du conteneur `groups`, les espaces des groupes
- * COLLABORATIFS connus en base — même vides.
+ * Espaces de groupe ET perso visibles même VIDES.
  *
- * Cloudinary/R2 n'ont pas de vrais dossiers : un espace sans aucun asset
- * n'existe pas physiquement et s'évapore du listing. On rétablit la vérité en
- * fusionnant les dossiers dérivés de la base avec le résultat physique.
+ * Cloudinary/R2 n'ont pas de vrais dossiers : un espace sans asset s'évapore du
+ * listing, alors que le groupe / l'utilisateur existe toujours. On réinjecte
+ * les espaces connus. Deux points : `list` (groupes, liste plate) et `getTree`
+ * (groupes + persos, arbre lu par le finder).
  *
- * Déduplication par le suffixe STABLE `-<groupId>` (et non le chemin complet) :
- * un groupe renommé a un dossier physique à l'ancien slug mais toujours le même
- * `-<groupId>` → on ne le réinjecte pas en double.
- *
- * Visibilité : admin → tous les groupes collaboratifs ; membre → ses espaces
- * accessibles. Le physique prime (aucun doublon).
+ * Dédup par le suffixe STABLE `-<id>` (robuste au renommage). Le physique prime.
  */
-export async function mergeGroupSpaceFolders(params: {
-  result: ListResult;
-  prisma: PrismaClient;
-  appRoot: string;
-  userId: string;
-}): Promise<ListResult> {
-  const { result, prisma, appRoot, userId } = params;
 
+async function collaborativeGroupIds(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<string[]> {
   const me = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: { select: { name: true } } },
   });
   const isAdmin = me?.role?.name === "ADMIN";
-
-  const groupIds = isAdmin
+  return isAdmin
     ? (
         await prisma.memberGroup.findMany({
           where: { isCollaborative: true },
@@ -42,28 +38,121 @@ export async function mergeGroupSpaceFolders(params: {
         })
       ).map((g) => g.id)
     : (await collaborativeEntriesForMember(prisma, userId)).map((e) => e.groupId);
+}
 
-  if (groupIds.length === 0) return result;
+function folderNode(path: string): StorageFolderNode {
+  return {
+    type: "folder",
+    name: path.slice(path.lastIndexOf("/") + 1),
+    path,
+    hasChildren: false,
+  };
+}
 
-  const physicalPaths = result.folders.map((f) => f.path);
+/** Espaces de GROUPE manquants parmi `existingPaths`. */
+async function missingGroupSpaceFolders(params: {
+  existingPaths: ReadonlyArray<string>;
+  prisma: PrismaClient;
+  appRoot: string;
+  userId: string;
+}): Promise<StorageFolderNode[]> {
+  const { existingPaths, prisma, appRoot, userId } = params;
+  const groupIds = await collaborativeGroupIds(prisma, userId);
   const extra: StorageFolderNode[] = [];
-
   for (const groupId of groupIds) {
-    // Déjà présent physiquement (même à un ancien slug) → on ne double pas.
-    if (physicalPaths.some((p) => p.endsWith(`-${groupId}`))) continue;
+    if (existingPaths.some((p) => p.endsWith(`-${groupId}`))) continue;
     try {
-      const path = await resolveGroupBaseFolder({ prisma, appRoot, groupId });
-      extra.push({
-        type: "folder",
-        name: path.slice(path.lastIndexOf("/") + 1),
-        path,
-        hasChildren: false,
-      });
+      extra.push(folderNode(await resolveGroupBaseFolder({ prisma, appRoot, groupId })));
     } catch {
-      // Groupe disparu entre les deux requêtes : on l'ignore.
+      // groupe disparu entre deux requêtes : ignoré.
     }
   }
+  return extra;
+}
 
+/** Espace PERSO de l'utilisateur courant, s'il manque. */
+async function missingPersoSpaceFolders(params: {
+  existingPaths: ReadonlyArray<string>;
+  prisma: PrismaClient;
+  appRoot: string;
+  userId: string;
+}): Promise<StorageFolderNode[]> {
+  const { existingPaths, prisma, appRoot, userId } = params;
+  if (existingPaths.some((p) => p.endsWith(`-${userId}`))) return [];
+  try {
+    return [folderNode(await resolvePersoBaseFolder({ prisma, appRoot, userId }))];
+  } catch {
+    return [];
+  }
+}
+
+/** Variante `list` : groupes uniquement (le finder n'utilise pas `list`). */
+export async function mergeGroupSpaceFolders(params: {
+  result: ListResult;
+  prisma: PrismaClient;
+  appRoot: string;
+  userId: string;
+}): Promise<ListResult> {
+  const { result, prisma, appRoot, userId } = params;
+  const extra = await missingGroupSpaceFolders({
+    existingPaths: result.folders.map((f) => f.path),
+    prisma,
+    appRoot,
+    userId,
+  });
   if (extra.length === 0) return result;
   return { ...result, folders: [...result.folders, ...extra] };
+}
+
+/** Variante `getTree` : réinjecte dans les nœuds conteneurs `groups` ET `persos`. */
+export async function mergeGroupSpaceFoldersIntoTree(params: {
+  root: StorageFolderNode;
+  prisma: PrismaClient;
+  appRoot: string;
+  userId: string;
+}): Promise<StorageFolderNode> {
+  const { root, prisma, appRoot, userId } = params;
+  const groupsPath = `${appRoot}/groups`;
+  const persosPath = `${appRoot}/persos`;
+
+  let groupsNode: StorageFolderNode | null = null;
+  let persosNode: StorageFolderNode | null = null;
+  const find = (n: StorageNode): void => {
+    if (n.type !== "folder") return;
+    if (n.path === groupsPath && n.children) groupsNode = n;
+    if (n.path === persosPath && n.children) persosNode = n;
+    (n.children ?? []).forEach(find);
+  };
+  find(root);
+
+  const groupExtra = groupsNode
+    ? await missingGroupSpaceFolders({
+        existingPaths: (groupsNode as StorageFolderNode).children?.map((c) => c.path) ?? [],
+        prisma,
+        appRoot,
+        userId,
+      })
+    : [];
+  const persoExtra = persosNode
+    ? await missingPersoSpaceFolders({
+        existingPaths: (persosNode as StorageFolderNode).children?.map((c) => c.path) ?? [],
+        prisma,
+        appRoot,
+        userId,
+      })
+    : [];
+  if (groupExtra.length === 0 && persoExtra.length === 0) return root;
+
+  const rebuild = (n: StorageNode): StorageNode => {
+    if (n.type !== "folder") return n;
+    if (n.path === groupsPath && n.children && groupExtra.length > 0) {
+      return { ...n, children: [...n.children, ...groupExtra] };
+    }
+    if (n.path === persosPath && n.children && persoExtra.length > 0) {
+      return { ...n, children: [...n.children, ...persoExtra] };
+    }
+    if (!n.children) return n;
+    return { ...n, children: n.children.map(rebuild) };
+  };
+  return rebuild(root) as StorageFolderNode;
 }
