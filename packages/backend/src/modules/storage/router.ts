@@ -39,6 +39,7 @@ import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
+import { mergeGroupSpaceFolders } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
 import { assertCanWriteGroupSpace } from '@backend/modules/memberGroups/assertCanWriteGroupSpace.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
@@ -402,6 +403,16 @@ export const storageRouter = router({
       });
       // Le statut vit en DB depuis l'aplatissement : on le rapatrie ici.
       await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
+      // Espaces de groupe visibles même vides : Cloudinary/R2 n'ont pas de
+      // vrais dossiers, un espace sans asset s'évaporerait du listing.
+      if (input.path === `${ctx.appRoot}/groups`) {
+        return mergeGroupSpaceFolders({
+          result,
+          prisma: ctx.prisma,
+          appRoot: ctx.appRoot,
+          userId: ctx.user.id,
+        });
+      }
       return result;
     }),
 
