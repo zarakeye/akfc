@@ -34,7 +34,7 @@ export default function UserMenu(): JSX.Element | null {
 
   return (
     <div
-      className="relative inline-block p-2"
+      className="relative inline-block xl:pb-4 xl:pr-10 cursor-pointer"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
