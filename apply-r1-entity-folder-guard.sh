@@ -2,28 +2,16 @@
 #
 # AKFC — R1 SÉCURITÉ : dossiers-entité non renommables ni déplaçables (backend).
 #
-# FAILLE : `isProtectedEntityFolderPath` n'était appliqué qu'à la SUPPRESSION
-# (trashToBin). Le RENAME et le MOVE d'un dossier n'étaient pas gardés → renommer
-# un conteneur (`groups`/`persos`/`avatars`) ou un espace (`<slug>-<cuid>`)
-# changeait son chemin, qui ne matchait alors plus la regex de protection → le
-# dossier redevenait supprimable ET déplaçable. La protection reposait sur un
-# nom modifiable : trou béant.
+# (Ancre du `move` refaite en 100 % ASCII — l'emoji ⚠️ de la version précédente
+# ne matchait pas au bit près selon l'encodage. On ancre désormais sur la
+# séquence `logical … .mutation … const deps`, unique au move.)
 #
-# FIX (enforcement SERVEUR, le seul qui compte) : `rename` et `move` refusent un
-# dossier-entité par son chemin SOURCE. Comme le chemin ne peut plus changer, la
-# garde de suppression existante redevient inviolable. Le rename de FICHIER est
-# déjà un simple UPDATE de `displayName` (aucun déplacement) → non concerné.
+# FAILLE : `isProtectedEntityFolderPath` n'était appliqué qu'à la SUPPRESSION.
+# RENAME et MOVE d'un dossier n'étaient pas gardés → renommer un dossier-entité
+# changeait son chemin, qui ne matchait plus la regex → il redevenait supprimable
+# ET déplaçable. FIX : `rename` et `move` refusent un dossier-entité par son
+# chemin SOURCE. Rename de FICHIER (simple UPDATE displayName) non concerné.
 #
-# ⚠️ SANS EFFET SUR TA RÉCUPÉRATION : `Groups`/`Persos` (majuscule) ne matchent
-# pas la regex (minuscule) → non protégés → tu peux encore les renommer vers
-# `groups`/`persos`, qui se verrouillent une fois corrigés. Applicable dès
-# maintenant pour fermer le trou sur les dossiers correctement nommés.
-#
-# R1b (cosmétique, à suivre) : masquer Renommer/Déplacer au menu contextuel sur
-# ces dossiers. Ici le serveur refuse déjà (message clair), c'est l'essentiel.
-#
-# 3 ancrages sur storage/router.ts (import + garde rename + garde move). Corps de
-# rename/move non touchés par les scripts précédents → mon snapshot matche.
 # Backend seul, typecheck backend.
 #
 # Usage : bash apply-r1-entity-folder-guard.sh
@@ -84,15 +72,19 @@ rename_guard = (
 )
 s = s.replace(rename_anchor, rename_guard)
 
-# 3. garde MOVE (tête de mutation ; couvre folder + sélection multiple)
+# 3. garde MOVE — ancre ASCII pure (unique : logical + .mutation + const deps)
 move_anchor = (
+    "        logical: z.boolean().optional(),\n"
+    "      })\n"
+    "    )\n"
     "    .mutation(async ({ ctx, input }) => {\n"
     "      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };\n"
-    "\n"
-    "      // ⚠️ L'adapter reste PHYSIQUE, toujours.\n"
 )
-assert s.count(move_anchor) == 1, "ancre tête de move introuvable/multiple"
+assert s.count(move_anchor) == 1, "ancre tête de move (ASCII) introuvable/multiple"
 move_guard = (
+    "        logical: z.boolean().optional(),\n"
+    "      })\n"
+    "    )\n"
     "    .mutation(async ({ ctx, input }) => {\n"
     "      // Dossier-entité : chemin immuable, pas de déplacement du binaire.\n"
     "      // Même raison qu'au rename ; couvre aussi les sélections multiples.\n"
@@ -112,8 +104,6 @@ move_guard = (
     "      }\n"
     "\n"
     "      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };\n"
-    "\n"
-    "      // ⚠️ L'adapter reste PHYSIQUE, toujours.\n"
 )
 s = s.replace(move_anchor, move_guard)
 
