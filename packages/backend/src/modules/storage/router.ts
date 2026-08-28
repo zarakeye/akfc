@@ -40,6 +40,10 @@ import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPa
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import { mergeGroupSpaceFolders } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
+import {
+  applyGroupSpaceNamesToFolders,
+  applyGroupSpaceNamesToTree,
+} from "@backend/modules/storage/applyGroupSpaceNames.service";
 import { assertCanWriteGroupSpace } from '@backend/modules/memberGroups/assertCanWriteGroupSpace.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
@@ -406,12 +410,19 @@ export const storageRouter = router({
       // Espaces de groupe visibles même vides : Cloudinary/R2 n'ont pas de
       // vrais dossiers, un espace sans asset s'évaporerait du listing.
       if (input.path === `${ctx.appRoot}/groups`) {
-        return mergeGroupSpaceFolders({
+        const merged = await mergeGroupSpaceFolders({
           result,
           prisma: ctx.prisma,
           appRoot: ctx.appRoot,
           userId: ctx.user.id,
         });
+        return {
+          ...merged,
+          folders: await applyGroupSpaceNamesToFolders(
+            merged.folders,
+            ctx.prisma,
+          ),
+        };
       }
       return result;
     }),
@@ -444,7 +455,12 @@ export const storageRouter = router({
         depth: input.depth,
       });
       await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
-      return result;
+      // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
+      // que lit l'adapter du finder (et le picker).
+      return {
+        ...result,
+        root: await applyGroupSpaceNamesToTree(result.root, ctx.prisma),
+      };
     }),
 
   getNode: protectedProcedure
