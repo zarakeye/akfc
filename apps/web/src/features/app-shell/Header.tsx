@@ -119,7 +119,7 @@ export default function Header() {
           }
 
           if (entry.kind === "link") {
-            const linkClass = `${NAV_GLOW} whitespace-nowrap text-[17px] 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`;
+            const linkClass = `${NAV_GLOW} whitespace-nowrap text-lg font-bold 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`;
             return (
               <Link key={entry.href} href={entry.href} className={linkClass}>
                 {entry.label}
@@ -132,9 +132,9 @@ export default function Header() {
               key={entry.label}
               onMouseEnter={() => setBarMenu(entry.label)}
               onMouseLeave={() => setBarMenu(null)}
-              className={`relative flex items-center whitespace-nowrap text-[17px] 2xl:text-[20px] ${NAV_GLOW} ${isActive(entry) ? NAV_ACTIVE : ""}`}
+              className={`relative flex items-center whitespace-nowrap text-lg font-bold 2xl:text-[20px] ${NAV_GLOW} ${isActive(entry) ? NAV_ACTIVE : ""}`}
             >
-              <span className="whitespace-nowrap">{entry.label}</span>
+              <span className="whitespace-nowrap text-lg font-bold">{entry.label}</span>
               <Image
                 src="/chevron-white.svg"
                 alt=""
