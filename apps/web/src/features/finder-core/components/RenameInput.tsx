@@ -36,6 +36,9 @@ export function RenameInput({
     <div onClick={(e) => e.stopPropagation()}>
       <input
         autoFocus
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
