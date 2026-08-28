@@ -158,12 +158,12 @@ export default async function HomePage(): Promise<JSX.Element> {
         {/* Logo inscrit dans un disque noir — agrandi pour la lisibilité.
             Le disque (rounded-full + bg-black) fait cadre ; le padding donne
             l'impression que le logo s'inscrit dedans. */}
-        <div className="mx-auto mb-6 h-48 w-48 rounded-full bg-black p-6 sm:h-56 sm:w-56 lg:h-48 lg:w-48">
+        <div className="mx-auto mb-6 h-55 w-55 rounded-full bg-black p-6 sm:h-56 sm:w-56 lg:h-55 lg:w-55">
           <Image
             src="/AKFC_logo.svg"
             alt="AKFC logo"
-            width={224}
-            height={224}
+            width={300}
+            height={300}
             priority
             className="h-full w-full object-contain"
           />

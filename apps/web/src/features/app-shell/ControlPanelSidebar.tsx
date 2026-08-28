@@ -24,7 +24,7 @@ export default function ControlPanelSidebar(): JSX.Element {
   ).length;
 
   return role && role.name === "ADMIN" ? (
-    <aside className="w-60 bg-gray-800 text-white p-5">
+    <aside className="w-60 bg-gray-800 text-white p-5 h-full overflow-y-auto">
       <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
 
       <ul className="space-y-2">
