@@ -3,69 +3,88 @@ import type { PrismaClient } from "@prisma/client";
 import type { StorageFolderNode, StorageNode } from "@contracts/storage";
 
 /**
- * Renomme les dossiers d'ESPACE DE GROUPE avec le nom EXACT du groupe en base
- * (accents/casse d'origine), au lieu du segment technique `<slug>-<cuid>`.
+ * Résout le NOM AFFICHÉ des dossiers dans le listing, sans jamais toucher au
+ * chemin (identité de stockage). Priorité :
  *
- * Le CHEMIN reste intact (`…/groups/<slug>-<cuid>` = identité de stockage) ;
- * seul le `name` affiché change. Clé = cuid, stable même si le groupe est
- * renommé (le slug du chemin peut être périmé, le nom retourné reste courant).
+ *   1. FolderLabel[path]   — libellé explicite édité par un admin (découplage).
+ *   2. memberGroup.name    — pour un espace de groupe `…/groups/<slug>-<cuid>`.
+ *   3. nom brut            — repli ; le front title-case le slug si besoin.
  *
- * Appliqué côté listing (`getTree` + `list`) : toutes les vues du finder en
- * profitent, et `friendlySpaceFolderLabel` (front) devient un no-op.
- *
- * Ne couvre QUE les espaces de groupe ; les espaces perso gardent le repli
- * front (à étendre avec une map userId → nom si besoin).
+ * Appliqué côté `list` (liste plate) et `getTree` (récursif) → toutes les vues
+ * du finder et le picker en profitent.
  */
 
 const GROUP_SPACE_RE = /\/groups\/[^/]+-(c[a-z0-9]{24})$/;
 
-function hasGroupSpace(node: StorageNode): boolean {
-  if (node.type === "folder") {
-    if (GROUP_SPACE_RE.test(node.path)) return true;
-    return (node.children ?? []).some(hasGroupSpace);
-  }
-  return false;
+type NameMaps = {
+  labelByPath: Map<string, string>;
+  groupNameByCuid: Map<string, string>;
+};
+
+function treeHasGroupSpace(node: StorageNode): boolean {
+  if (node.type !== "folder") return false;
+  if (GROUP_SPACE_RE.test(node.path)) return true;
+  return (node.children ?? []).some(treeHasGroupSpace);
 }
 
-async function groupNameByCuid(
+async function loadNameMaps(
   prisma: PrismaClient,
-): Promise<Map<string, string>> {
-  const groups = await prisma.memberGroup.findMany({
-    select: { id: true, name: true },
-  });
-  return new Map(groups.map((g) => [g.id, g.name] as const));
+  needGroups: boolean,
+): Promise<NameMaps> {
+  const [labels, groups] = await Promise.all([
+    prisma.folderLabel.findMany({ select: { path: true, displayName: true } }),
+    needGroups
+      ? prisma.memberGroup.findMany({ select: { id: true, name: true } })
+      : Promise.resolve([] as { id: string; name: string }[]),
+  ]);
+  return {
+    labelByPath: new Map(labels.map((l) => [l.path, l.displayName] as const)),
+    groupNameByCuid: new Map(groups.map((g) => [g.id, g.name] as const)),
+  };
 }
 
-function renamed(
-  node: StorageFolderNode,
-  names: Map<string, string>,
-): StorageFolderNode {
+function displayNameFor(node: StorageFolderNode, maps: NameMaps): string {
+  const label = maps.labelByPath.get(node.path);
+  if (label) return label;
   const m = node.path.match(GROUP_SPACE_RE);
-  if (!m) return node;
-  const exact = names.get(m[1]);
-  return exact ? { ...node, name: exact } : node;
+  if (m) {
+    const g = maps.groupNameByCuid.get(m[1]);
+    if (g) return g;
+  }
+  return node.name;
 }
 
-/** Renomme les dossiers de groupe d'une liste plate (résultat de `list`). */
+/** Résout les libellés d'une liste plate (résultat de `list`). */
 export async function applyGroupSpaceNamesToFolders(
   folders: ReadonlyArray<StorageFolderNode>,
   prisma: PrismaClient,
 ): Promise<StorageFolderNode[]> {
-  if (!folders.some((f) => GROUP_SPACE_RE.test(f.path))) return [...folders];
-  const names = await groupNameByCuid(prisma);
-  return folders.map((f) => renamed(f, names));
+  const maps = await loadNameMaps(
+    prisma,
+    folders.some((f) => GROUP_SPACE_RE.test(f.path)),
+  );
+  if (maps.labelByPath.size === 0 && maps.groupNameByCuid.size === 0) {
+    return [...folders];
+  }
+  return folders.map((f) => {
+    const name = displayNameFor(f, maps);
+    return name === f.name ? f : { ...f, name };
+  });
 }
 
-/** Renomme récursivement les dossiers de groupe d'un arbre (résultat de `getTree`). */
+/** Résout récursivement les libellés d'un arbre (résultat de `getTree`). */
 export async function applyGroupSpaceNamesToTree(
   root: StorageFolderNode,
   prisma: PrismaClient,
 ): Promise<StorageFolderNode> {
-  if (!hasGroupSpace(root)) return root;
-  const names = await groupNameByCuid(prisma);
+  const maps = await loadNameMaps(prisma, treeHasGroupSpace(root));
+  if (maps.labelByPath.size === 0 && maps.groupNameByCuid.size === 0) {
+    return root;
+  }
   const walk = (node: StorageNode): StorageNode => {
     if (node.type !== "folder") return node;
-    const r = renamed(node, names);
+    const name = displayNameFor(node, maps);
+    const r = name === node.name ? node : { ...node, name };
     if (!node.children) return r;
     return { ...r, children: node.children.map(walk) };
   };
