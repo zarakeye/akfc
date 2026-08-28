@@ -40,7 +40,10 @@ import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
-import { mergeGroupSpaceFolders } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
+import {
+  mergeGroupSpaceFolders,
+  mergeGroupSpaceFoldersIntoTree,
+} from "@backend/modules/storage/mergeGroupSpaceFolders.service";
 import {
   applyGroupSpaceNamesToFolders,
   applyGroupSpaceNamesToTree,
@@ -456,6 +459,13 @@ export const storageRouter = router({
         depth: input.depth,
       });
       await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
+      // Espaces de groupe ET perso visibles même vides, dans l'arbre du finder.
+      result.root = await mergeGroupSpaceFoldersIntoTree({
+        root: result.root,
+        prisma: ctx.prisma,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+      });
       // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
       // que lit l'adapter du finder (et le picker).
       return {
