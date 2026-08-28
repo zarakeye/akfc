@@ -13,6 +13,7 @@ import {
   resolveSelectedNodes,
 } from '@features/finder-core/utils/selectionNodes';
 import { storagePathOf } from '@features/finder-core/utils/storagePath';
+import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import { baseNameOf } from '@features/finder-core/utils/fileType';
 
 const BIN_PATH = `${APP_ROOT}/bin`;
@@ -112,6 +113,7 @@ export function useNodeActions(): {
   // Cf. purge.service.ts pour le détail des garde-fous.
   const purgeMutation = trpc.trash.purge.useMutation();
   const renameMutation = trpc.storage.rename.useMutation();
+  const setFolderLabelMutation = trpc.storage.setFolderLabel.useMutation();
   const moveMutation = trpc.storage.move.useMutation();
 
   // Détection du contexte global : on est "dans le bin" si le path courant
@@ -252,6 +254,22 @@ export function useNodeActions(): {
       if (!clean) return 'Le nom ne peut pas être vide.';
       if (clean === baseNameOf(node.name, node.meta?.format)) return null;
 
+      // Dossier-entité : on n'édite QUE le libellé d'affichage — le chemin
+      // est immuable (garde serveur R1). Aucun déplacement du binaire. Clé =
+      // node.path, celui que la résolution du listing (R3) va relire.
+      if (node.type === 'folder' && isProtectedEntityFolder(node.path)) {
+        try {
+          await setFolderLabelMutation.mutateAsync({
+            path: node.path,
+            displayName: clean,
+          });
+          reloadFolderContent();
+          return null;
+        } catch (err) {
+          return err instanceof Error ? err.message : 'Le renommage a échoué.';
+        }
+      }
+
       try {
         await renameMutation.mutateAsync({
           path: storagePathOf(node),
@@ -264,7 +282,7 @@ export function useNodeActions(): {
         return err instanceof Error ? err.message : 'Le renommage a échoué.';
       }
     },
-    [renameMutation, reloadFolderContent],
+    [renameMutation, setFolderLabelMutation, reloadFolderContent],
   );
 
   /**
