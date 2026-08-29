@@ -12,10 +12,10 @@ export const requirePermission = (permissionName: string) =>
       });
     }
 
-    const permissions = user.role?.permissions ?? [];
-    const hasPermission = permissions.includes(permissionName);
-
-    if (!hasPermission) {
+    // Auth collapsée sur le groupe Administrateurs : toute permission ⇒
+    // réservé aux admins (source unique user.isAdmin). Signature conservée →
+    // les sites d'appel `requirePermission(...)` ne changent pas.
+    if (!user.isAdmin) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: `Missing permission: ${permissionName}`,
@@ -35,7 +35,7 @@ export const isAdmin = t.middleware(({ ctx, next }) => {
     });
   }
 
-  if (user.role?.name !== "ADMIN") {
+  if (!user.isAdmin) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Administrator access required.",
