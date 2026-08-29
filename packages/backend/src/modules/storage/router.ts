@@ -1,3 +1,4 @@
+import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -140,11 +141,7 @@ export const storageRouter = router({
     });
     for (const g of groups) map[g.id] = g.name;
 
-    const me = await ctx.prisma.user.findUnique({
-      where: { id: ctx.user.id },
-      select: { role: { select: { name: true } } },
-    });
-    if (me?.role?.name === "ADMIN") {
+    if (await isAdminByGroup(ctx.prisma, ctx.user.id)) {
       const users = await ctx.prisma.user.findMany({
         select: {
           id: true,
@@ -283,11 +280,7 @@ export const storageRouter = router({
    * restent inchangés). Réservé aux admins.
    */
   groupSpaceHierarchy: protectedProcedure.query(async ({ ctx }) => {
-    const me = await ctx.prisma.user.findUnique({
-      where: { id: ctx.user.id },
-      select: { role: { select: { name: true } } },
-    });
-    if (me?.role?.name !== "ADMIN") return [];
+    if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) return [];
 
     const groups = await ctx.prisma.memberGroup.findMany({
       where: { isCollaborative: true },
@@ -316,11 +309,7 @@ export const storageRouter = router({
    * appartenance manuelle.
    */
   myCollaborativeSpaces: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.user.id },
-      select: { role: { select: { name: true } } },
-    });
-    const isAdmin = user?.role?.name === "ADMIN";
+    const isAdmin = await isAdminByGroup(ctx.prisma, ctx.user.id);
 
     const entries: {
       groupId: string;

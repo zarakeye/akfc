@@ -20,13 +20,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const ctx = await createTRPCContext({ req });
 
-  const userId = ctx.sessionClient?.user?.id;
-  if (userId) {
-    const me = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: { select: { name: true } } },
-    });
-    if (me?.role?.name === "ADMIN") return Response.json({ allowed: true });
+  if (ctx.sessionClient?.user?.isAdmin) {
+    return Response.json({ allowed: true });
   }
 
   const row = await ctx.prisma.pageVisibility.findUnique({ where: { key } });
