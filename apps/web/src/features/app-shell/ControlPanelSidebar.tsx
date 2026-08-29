@@ -3,19 +3,39 @@
 import { JSX } from "react";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
 import { PAGE_REGISTRY } from "@/config/pageRegistry";
 
 /**
- * Composant du barre latéral de l'application.
- * Il permet d'accéder à l'ensemble des fonctionnalités de l'application.
- * Il est conditionnellement affiché en fonction du rôle de l'utilisateur.
+ * Barre latérale du centre de contrôle (admin).
+ *
+ * Items regroupés par thèmes, pilotés par les données (voir `SECTIONS`). L'item
+ * dont l'URL correspond à la route courante est mis en surbrillance PLEINE LIGNE,
+ * en couleurs inversées.
  */
+
+type NavItem = {
+  label: string;
+  href: string;
+  /** Cible du bouton « + » (création), si l'item en a un. */
+  createHref?: string;
+  createAlt?: string;
+  /** Pastille numérique (ex. brouillons éditoriaux), affichée si > 0. */
+  badge?: number;
+};
+
+type NavSection = { title: string; items: NavItem[] };
+
+const GLOW =
+  "transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]";
+
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
+  const pathname = usePathname();
   const role = useSessionStore((state) => state.session?.user?.role);
   const isAdmin = role?.name === "ADMIN";
+
   const pageVis = trpc.pageVisibility.all.useQuery(undefined, {
     enabled: isAdmin,
   });
@@ -23,501 +43,127 @@ export default function ControlPanelSidebar(): JSX.Element {
     (pg) => !(pageVis.data ?? []).some((v) => v.key === pg.key && v.published),
   ).length;
 
-  return role && role.name === "ADMIN" ? (
+  if (!isAdmin) {
+    return <aside className="w-60 bg-gray-800 text-white p-5"></aside>;
+  }
+
+  const SECTIONS: NavSection[] = [
+    {
+      title: "Membres & accès",
+      items: [
+        { label: "Utilisateurs", href: "/dashboard/users", createHref: "/dashboard/users/create", createAlt: "Ajouter un utilisateur" },
+        { label: "Rôles", href: "/dashboard/roles", createHref: "/dashboard/roles/create", createAlt: "Créer un nouveau rôle" },
+        { label: "Permissions", href: "/dashboard/permissions", createHref: "/dashboard/permissions/create", createAlt: "Créer une permission" },
+        { label: "Groupes de membres", href: "/dashboard/groups", createHref: "/dashboard/groups/create", createAlt: "Créer un groupe de membres" },
+      ],
+    },
+    {
+      title: "Catalogue des activités",
+      items: [
+        { label: "Familles", href: "/dashboard/discipline-families", createHref: "/dashboard/discipline-families/create", createAlt: "Créer une famille de disciplines" },
+        { label: "Disciplines", href: "/dashboard/disciplines", createHref: "/dashboard/disciplines/create", createAlt: "Créer une discipline" },
+        { label: "Catégories d'activités", href: "/dashboard/categories", createHref: "/dashboard/categories/create", createAlt: "Créer un type d'activité" },
+        { label: "Origines", href: "/dashboard/origins", createHref: "/dashboard/origins/create", createAlt: "Créer une origine culturelle" },
+      ],
+    },
+    {
+      title: "Programme",
+      items: [
+        { label: "Cours", href: "/dashboard/courses", createHref: "/dashboard/courses/create", createAlt: "Créer un cours" },
+        { label: "Stages", href: "/dashboard/stages", createHref: "/dashboard/stages/create", createAlt: "Créer un nouveau stage" },
+        { label: "Évènements", href: "/dashboard/events", createHref: "/dashboard/events/create", createAlt: "Créer un nouvel évènement" },
+      ],
+    },
+    {
+      title: "Éditorial & pages",
+      items: [
+        { label: "Pages éditoriales", href: "/dashboard/pages", badge: editorialDraftCount },
+        { label: "Posts", href: "/dashboard/posts", createHref: "/dashboard/posts/create", createAlt: "Créer un post" },
+        { label: "Actualités", href: "/dashboard/breaking-news", createHref: "/dashboard/breaking-news/create", createAlt: "Créer une actualité" },
+      ],
+    },
+    {
+      title: "Médiathèque",
+      items: [
+        { label: "Bibliothèque", href: "/dashboard/library", createHref: "/dashboard/library/add", createAlt: "Ajouter une image ou une vidéo" },
+        { label: "Galeries", href: "/dashboard/galleries", createHref: "/dashboard/galleries/create", createAlt: "Créer une galerie" },
+      ],
+    },
+    {
+      title: "Configuration & outils",
+      items: [
+        { label: "Réglages du site", href: "/dashboard/settings" },
+        { label: "Laboratoire de rendu", href: "/dashboard/design-lab" },
+        { label: "Doc admin", href: "/docs/admin" },
+        { label: "Dev doc", href: "/docs/dev" },
+      ],
+    },
+  ];
+
+  const isActive = (href: string): boolean =>
+    pathname === href || (pathname?.startsWith(`${href}/`) ?? false);
+
+  return (
     <aside className="w-60 bg-gray-800 text-white p-5 h-full overflow-y-auto">
       <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
 
-      <ul className="space-y-2">
-        {["ADMIN", "COACH"].includes(role.name) && (
-          <>
-            <li>
-              <div className="flex">
-                <p className="w-full text-center">Listes</p>
-                <p className="w-full text-center">Ajout</p>
-              </div>
-            </li>
+      <nav className="space-y-5">
+        {SECTIONS.map((section) => (
+          <div key={section.title}>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              {section.title}
+            </p>
+            <ul className="space-y-0.5">
+              {section.items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <li key={item.href}>
+                    <div
+                      className={`flex items-stretch rounded ${
+                        active ? "bg-white text-gray-900" : ""
+                      }`}
+                    >
+                      <button
+                        className={`w-full py-1 pl-2 text-left cursor-pointer ${GLOW}`}
+                        onClick={() => router.push(item.href)}
+                      >
+                        {item.label}
+                        {typeof item.badge === "number" && item.badge > 0 ? (
+                          <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                            {item.badge}
+                          </span>
+                        ) : null}
+                      </button>
+                      {item.createHref ? (
+                        <button
+                          className={`flex w-9 shrink-0 cursor-pointer items-center justify-center ${GLOW}`}
+                          onClick={() => {
+                            if (item.createHref) router.push(item.createHref);
+                          }}
+                        >
+                          <Image
+                            src="/add_circle.svg"
+                            alt={item.createAlt ?? "Ajouter"}
+                            width={16}
+                            height={16}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
 
-            {/* Utilisateurs */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/users");
-                  }}
-                >
-                  Utilisateurs
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/users/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Ajouter un utilisateur"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Documentation technique */}
-            <li>
-              <button
-                className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                onClick={() => {
-                  router.push("/docs/admin");
-                }}
-              >
-                Doc admin
-              </button>
-            </li>
-            <li>
-              <button
-                className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                onClick={() => {
-                  router.push("/docs/dev");
-                }}
-              >
-                Dev doc
-              </button>
-            </li>
-
-            {/* Rôles */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/roles");
-                  }}
-                >
-                  Rôles
-                </button>
-
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/roles/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un nouveau rôle"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Permissions */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => router.push("/dashboard/permissions")}
-                >
-                  Permissions
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/permissions/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une permission"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Groupes de membres */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => router.push("/dashboard/groups")}
-                >
-                  Groupes de membres
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/groups/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un groupe de membres"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Pages éditoriales */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => router.push("/dashboard/pages")}
-                >
-                  Pages éditoriales
-                  {editorialDraftCount > 0 && (
-                    <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                      {editorialDraftCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </li>
-
-            {/* Réglages du site */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => router.push("/dashboard/settings")}
-                >
-                  Réglages du site
-                </button>
-              </div>
-            </li>
-
-            {/* Disciplines */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/disciplines");
-                  }}
-                >
-                  Disciplines
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/disciplines/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une discipline"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Familles de disciplines */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/discipline-families");
-                  }}
-                >
-                  Familles
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/discipline-families/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une famille de disciplines"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Catégories d'activités */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/categories");
-                  }}
-                >
-                  <span>Catégories d&apos;activités</span>
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/categories/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un type d'activité"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Origines culturelles */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/origins");
-                  }}
-                >
-                  Origines
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/origins/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une origine culturelle"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Cours */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/courses");
-                  }}
-                >
-                  Cours
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/courses/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un cours"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Évènements */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/events");
-                  }}
-                >
-                  Évènements
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/events/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un nouvel évènement"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Stages */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/stages");
-                  }}
-                >
-                  Stages
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/stages/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un nouveau stage"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Posts */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/posts");
-                  }}
-                >
-                  Posts
-                </button>
-                <button
-                  className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/posts/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer un post"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Actualités (BreakingNews) */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/breaking-news");
-                  }}
-                >
-                  Actualités
-                </button>
-                <button
-                  className="w-full text-left cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/breaking-news/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une actualité"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Bibliothèque */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/library");
-                  }}
-                >
-                  Bibliothèque
-                </button>
-                <button
-                  className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/library/add");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Ajouter une image ou une vidéo"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-
-            {/* Galeries */}
-            <li>
-              <div className="flex">
-                <button
-                  className="w-full pl-1 text-left cursor-pointer transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/galleries");
-                  }}
-                >
-                  Galeries
-                </button>
-                <button
-                  className="w-full cursor-pointer flex justify-center items-center transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-                  onClick={() => {
-                    router.push("/dashboard/galleries/create");
-                  }}
-                >
-                  <Image
-                    src="/add_circle.svg"
-                    alt="Créer une galerie"
-                    width={16}
-                    height={16}
-                  />
-                </button>
-              </div>
-            </li>
-          </>
-        )}
-
-        {role.name === "ADMIN" && (
-          <li>
-            <button
-              className="w-full pl-1 text-left cursor-pointer mt-5 transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
-              onClick={() => {
-                router.push("/dashboard/design-lab");
-              }}
-            >
-              Laboratoire de rendu
-            </button>
-          </li>
-        )}
-
-        <li>
-          <button
-            className="w-full text-center mt-5"
-            onClick={() => {
-              router.push("/profil");
-            }}
-          >
-            Mon profil
-          </button>
-        </li>
-      </ul>
+        <button
+          className="w-full text-center mt-2 cursor-pointer"
+          onClick={() => router.push("/profil")}
+        >
+          Mon profil
+        </button>
+      </nav>
     </aside>
-  ) : (
-    <aside className="w-60 bg-gray-800 text-white p-5"></aside>
   );
 }
