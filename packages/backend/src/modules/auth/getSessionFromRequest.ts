@@ -22,7 +22,10 @@ type SessionDB = Session & {
   }) | null;
 };
 
-function mapSessionDBToSessionClient(session: SessionDB): SessionClient {
+function mapSessionDBToSessionClient(
+  session: SessionDB,
+  isAdmin: boolean,
+): SessionClient {
   const role = session.user!.role;
 
   return {
@@ -35,6 +38,7 @@ function mapSessionDBToSessionClient(session: SessionDB): SessionClient {
       pseudo: session.user!.pseudo,
       avatar: session.user!.avatar,
       isFirstLogin: session.user!.isFirstLogin,
+      isAdmin,
       role: role
         ? {
             id: role.id,
@@ -135,5 +139,13 @@ export async function getSessionFromRequest(req?: Request): Promise<SessionClien
     return null;
   }
 
-  return mapSessionDBToSessionClient(sessionDB);
+  // Source de vérité « admin » : appartenance au groupe Administrateurs
+  // (isAdminGroup). Additif — remplacera le check sur le rôle (phases B/C).
+  const isAdmin =
+    (await prisma.memberGroupMembership.findFirst({
+      where: { userId: sessionDB.user.id, group: { isAdminGroup: true } },
+      select: { id: true },
+    })) !== null;
+
+  return mapSessionDBToSessionClient(sessionDB, isAdmin);
 }

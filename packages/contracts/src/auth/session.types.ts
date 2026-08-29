@@ -8,6 +8,7 @@ export type SessionClient = {
     pseudo: string | null;
     avatar: string | null;
     isFirstLogin: boolean;
+    isAdmin: boolean;
     role: {
       id: number;
       name: string;
