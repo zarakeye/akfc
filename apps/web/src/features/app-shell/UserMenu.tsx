@@ -55,7 +55,7 @@ export default function UserMenu(): JSX.Element | null {
       </div>
 
       {open && (
-        <div className="absolute right-0 top-10 w-60 bg-white border rounded shadow-md z-50">
+        <div className="absolute right-0 top-10 w-60 max-w-[calc(100vw-1rem)] origin-top-right bg-white border rounded shadow-md z-50">
           <p className="px-4 py-2 text-sm text-gray-700">{user.email}</p>
           <Link
             href="/profil"
