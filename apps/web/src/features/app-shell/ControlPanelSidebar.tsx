@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX } from "react";
+import { JSX, useEffect, useState } from "react";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -10,18 +10,17 @@ import { PAGE_REGISTRY } from "@/config/pageRegistry";
 /**
  * Barre latérale du centre de contrôle (admin).
  *
- * Items regroupés par thèmes, pilotés par les données (voir `SECTIONS`). L'item
- * dont l'URL correspond à la route courante est mis en surbrillance PLEINE LIGNE,
- * en couleurs inversées.
+ * Items regroupés par thèmes (voir `SECTIONS`), sections pliables/dépliables
+ * (état persistant en localStorage ; la section de la route courante reste
+ * ouverte). L'item courant est surligné PLEINE LIGNE en couleurs inversées,
+ * bouton « + » compris.
  */
 
 type NavItem = {
   label: string;
   href: string;
-  /** Cible du bouton « + » (création), si l'item en a un. */
   createHref?: string;
   createAlt?: string;
-  /** Pastille numérique (ex. brouillons éditoriaux), affichée si > 0. */
   badge?: number;
 };
 
@@ -29,6 +28,8 @@ type NavSection = { title: string; items: NavItem[] };
 
 const GLOW =
   "transition duration-300 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]";
+
+const COLLAPSE_KEY = "cp-sidebar-collapsed";
 
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
@@ -42,6 +43,32 @@ export default function ControlPanelSidebar(): JSX.Element {
   const editorialDraftCount = PAGE_REGISTRY.filter(
     (pg) => !(pageVis.data ?? []).some((v) => v.key === pg.key && v.published),
   ).length;
+
+  // Sections repliées (par titre). Persistant, chargé après montage pour éviter
+  // tout décalage d'hydratation.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSE_KEY);
+      if (raw) setCollapsed(new Set<string>(JSON.parse(raw) as string[]));
+    } catch {
+      /* localStorage indisponible : on reste tout déplié. */
+    }
+  }, []);
+
+  const toggle = (title: string): void => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      try {
+        localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...next]));
+      } catch {
+        /* pas de persistance : sans conséquence fonctionnelle. */
+      }
+      return next;
+    });
+  };
 
   if (!isAdmin) {
     return <aside className="w-60 bg-gray-800 text-white p-5"></aside>;
@@ -107,55 +134,79 @@ export default function ControlPanelSidebar(): JSX.Element {
     <aside className="w-60 bg-gray-800 text-white p-5 h-full overflow-y-auto">
       <h2 className="font-bold text-lg mb-4">Centre de contrôle</h2>
 
-      <nav className="space-y-5">
-        {SECTIONS.map((section) => (
-          <div key={section.title}>
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-              {section.title}
-            </p>
-            <ul className="space-y-0.5">
-              {section.items.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <li key={item.href}>
-                    <div
-                      className={`flex items-stretch rounded ${
-                        active ? "bg-white text-gray-900" : ""
-                      }`}
-                    >
-                      <button
-                        className={`w-full py-1 pl-2 text-left cursor-pointer ${GLOW}`}
-                        onClick={() => router.push(item.href)}
-                      >
-                        {item.label}
-                        {typeof item.badge === "number" && item.badge > 0 ? (
-                          <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                            {item.badge}
-                          </span>
-                        ) : null}
-                      </button>
-                      {item.createHref ? (
-                        <button
-                          className={`flex w-9 shrink-0 cursor-pointer items-center justify-center ${GLOW}`}
-                          onClick={() => {
-                            if (item.createHref) router.push(item.createHref);
-                          }}
+      <nav className="space-y-4">
+        {SECTIONS.map((section) => {
+          const hasActive = section.items.some((it) => isActive(it.href));
+          const open = hasActive || !collapsed.has(section.title);
+          return (
+            <div key={section.title}>
+              <button
+                onClick={() => toggle(section.title)}
+                className="mb-1 flex w-full items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200"
+              >
+                <span>{section.title}</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`h-3 w-3 shrink-0 transition-transform ${
+                    open ? "rotate-90" : ""
+                  }`}
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </button>
+
+              {open && (
+                <ul className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <li key={item.href}>
+                        <div
+                          className={`flex items-stretch rounded ${
+                            active ? "bg-white text-gray-900" : ""
+                          }`}
                         >
-                          <Image
-                            src="/add_circle.svg"
-                            alt={item.createAlt ?? "Ajouter"}
-                            width={16}
-                            height={16}
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+                          <button
+                            className={`w-full py-1 pl-2 text-left cursor-pointer ${GLOW}`}
+                            onClick={() => router.push(item.href)}
+                          >
+                            {item.label}
+                            {typeof item.badge === "number" && item.badge > 0 ? (
+                              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                                {item.badge}
+                              </span>
+                            ) : null}
+                          </button>
+                          {item.createHref ? (
+                            <button
+                              className={`flex w-9 shrink-0 cursor-pointer items-center justify-center ${GLOW}`}
+                              onClick={() => {
+                                if (item.createHref) router.push(item.createHref);
+                              }}
+                            >
+                              <Image
+                                src="/add_circle.svg"
+                                alt={item.createAlt ?? "Ajouter"}
+                                width={16}
+                                height={16}
+                                className={active ? "invert" : undefined}
+                              />
+                            </button>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          );
+        })}
 
         <button
           className="w-full text-center mt-2 cursor-pointer"
