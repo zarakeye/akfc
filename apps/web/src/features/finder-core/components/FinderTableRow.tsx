@@ -63,7 +63,7 @@ export default function FinderTableRow({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [movingNodes, setMovingNodes] = useState<FinderNode[] | null>(null);
   const [publishTarget, setPublishTarget] = useState<FinderNode | null>(null);
-  const isAdmin = useSessionStore((st) => st.session?.user?.role?.name === 'ADMIN');
+  const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } =
     useNodeActions();
