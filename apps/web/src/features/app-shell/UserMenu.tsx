@@ -32,6 +32,8 @@ export default function UserMenu(): JSX.Element | null {
   // Si pas connecté, ne pas afficher le menu
   if (!user) return null;
 
+  const isAdmin = user.role?.name === "ADMIN";
+
   return (
     <div
       className="relative inline-block xl:pb-4 xl:pr-10 cursor-pointer"
@@ -64,6 +66,15 @@ export default function UserMenu(): JSX.Element | null {
           >
             Mon profil
           </Link>
+          {isAdmin && (
+            <Link
+              href="/dashboard"
+              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              Dashboard
+            </Link>
+          )}
           <div className="px-4 py-2 hover:bg-gray-100">
             <DocumentsNavLink
               href="/documents"
