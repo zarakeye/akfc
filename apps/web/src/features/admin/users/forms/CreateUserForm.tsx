@@ -5,7 +5,7 @@ import { trpc } from "@trpc/trpcClient";
 
 export interface CreateUserFormInput {
   email: string;
-  roleId: number;
+  groupId: string;
 }
 
 export interface CreateUserFormProps {
@@ -14,22 +14,21 @@ export interface CreateUserFormProps {
 }
 
 /**
- * Form de création d'utilisateur. Pas de mode édition : côté admin, seul le
- * rôle est modifiable (sur la fiche, via `updateUserRoleById`). Le mot de
- * passe est GÉNÉRÉ côté serveur à la création et envoyé par email — l'admin
- * ne le saisit jamais.
+ * Form de création d'utilisateur. On assigne un GROUPE : l'appartenance au groupe
+ * Administrateurs confère l'admin (source de vérité unique). Le mot de passe est
+ * généré côté serveur et envoyé par email — l'admin ne le saisit jamais.
  */
 export function CreateUserForm({
   onSubmit,
   submitLabel = "Créer",
 }: CreateUserFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [roleId, setRoleId] = useState<number>(0);
+  const [groupId, setGroupId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Liste des rôles pour le sélecteur (procédure protégée `manage_roles`).
-  const { data: roles } = trpc.role.getAll.useQuery();
+  // Liste des groupes pour le sélecteur (procédure admin).
+  const { data: groups } = trpc.memberGroup.list.useQuery();
 
   const handleSubmit = async () => {
     setSubmitError(null);
@@ -37,13 +36,13 @@ export function CreateUserForm({
       setSubmitError("L'email est obligatoire.");
       return;
     }
-    if (roleId === 0) {
-      setSubmitError("Choisis un rôle.");
+    if (groupId === "") {
+      setSubmitError("Choisis un groupe.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), roleId });
+      await onSubmit({ email: email.trim(), groupId });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -64,16 +63,16 @@ export function CreateUserForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Rôle</span>
+        <span className="font-medium">Groupe</span>
         <select
-          value={roleId}
-          onChange={(e) => setRoleId(Number(e.target.value))}
+          value={groupId}
+          onChange={(e) => setGroupId(e.target.value)}
           className="rounded border border-input bg-background px-2 py-1"
         >
-          <option value={0}>— Choisir —</option>
-          {(roles ?? []).map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
+          <option value="">— Choisir —</option>
+          {(groups ?? []).map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
             </option>
           ))}
         </select>

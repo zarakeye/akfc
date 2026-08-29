@@ -98,7 +98,7 @@ export const userRouter = router({
     .input(
       z.object({
         email: z.string().email("Invalid email format"),
-        roleId: z.number(),
+        groupId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -123,7 +123,12 @@ export const userRouter = router({
         data: {
           email: input.email,
           password: hash,
-          roleId: input.roleId,
+          memberGroupMemberships: {
+            create: {
+              group: { connect: { id: input.groupId } },
+              access: "EDITOR",
+            },
+          },
         },
       });
 
