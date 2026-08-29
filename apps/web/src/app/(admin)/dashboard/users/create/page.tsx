@@ -20,7 +20,7 @@ export default function CreateUserPage(): JSX.Element {
   const handleSubmit = async (input: CreateUserFormInput): Promise<void> => {
     const res = await createMutation.mutateAsync({
       email: input.email,
-      roleId: input.roleId,
+      groupId: input.groupId,
     });
     await utils.user.getAll.invalidate();
     setCreatedId(res.user.id);
