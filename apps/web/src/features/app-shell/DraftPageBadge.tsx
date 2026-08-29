@@ -14,7 +14,7 @@ import { pageKeyForPath } from "@/config/pageRegistry";
  */
 export function DraftPageBadge(): JSX.Element | null {
   const isAdmin = useSessionStore(
-    (s) => s.session?.user?.role?.name === "ADMIN",
+    (s) => (s.session?.user?.isAdmin ?? false),
   );
   const pathname = usePathname();
   const key = pageKeyForPath(pathname);

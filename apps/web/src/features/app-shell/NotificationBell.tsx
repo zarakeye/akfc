@@ -88,7 +88,7 @@ function buildMessage(
 export function NotificationBell(): JSX.Element | null {
   const user = useSessionStore((s) => s.session?.user);
   const canSee = (user?.role?.permissions.length ?? 0) > 0;
-  const isAdmin = user?.role?.name === "ADMIN";
+  const isAdmin = (user?.isAdmin ?? false);
 
   // ─── Pourquoi useQuery et pas useEffect + useState ──────────────────────
   //

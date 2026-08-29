@@ -16,7 +16,7 @@ export async function isEditorialPageGated(key: string): Promise<boolean> {
   if (vis?.published === true) return false;
 
   const session = await getSessionFromRequest();
-  const isAdmin = session?.user?.role?.name === "ADMIN";
+  const isAdmin = (session?.user?.isAdmin ?? false);
   return !isAdmin;
 }
 

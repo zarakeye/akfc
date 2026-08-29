@@ -32,7 +32,7 @@ export default function UserMenu(): JSX.Element | null {
   // Si pas connecté, ne pas afficher le menu
   if (!user) return null;
 
-  const isAdmin = user.role?.name === "ADMIN";
+  const isAdmin = user.isAdmin;
 
   return (
     <div

@@ -327,7 +327,7 @@ export default function DragNDropForm(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mise à disposition des PDF aux membres (admin) au moment de l'envoi.
-  const isAdmin = user?.role?.name === 'ADMIN';
+  const isAdmin = (user?.isAdmin ?? false);
   const hasPdf = items.some((it) => it.file.type === 'application/pdf');
   const [publishToMembers, setPublishToMembers] = useState(false);
   const [publishAudience, setPublishAudience] = useState<

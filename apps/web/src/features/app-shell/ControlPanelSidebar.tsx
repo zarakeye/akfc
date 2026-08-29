@@ -34,8 +34,9 @@ const COLLAPSE_KEY = "cp-sidebar-collapsed";
 export default function ControlPanelSidebar(): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
-  const role = useSessionStore((state) => state.session?.user?.role);
-  const isAdmin = role?.name === "ADMIN";
+  const isAdmin = useSessionStore(
+    (state) => state.session?.user?.isAdmin ?? false,
+  );
 
   const pageVis = trpc.pageVisibility.all.useQuery(undefined, {
     enabled: isAdmin,

@@ -173,7 +173,7 @@ export default function GridItem({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();
-  const isAdmin = useSessionStore((st) => st.session?.user?.role?.name === 'ADMIN');
+  const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
 
   const isFolder = node.type === 'folder';
   const kind = node.meta?.kind;
