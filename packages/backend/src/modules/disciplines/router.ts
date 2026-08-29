@@ -192,7 +192,7 @@ export const disciplineRouter = router({
    * non-admin ne peut pas récupérer les brouillons via cette query.
    */
   getAllForMenu: publicProcedure.query(async ({ ctx }) => {
-    const isAdmin = ctx.sessionClient?.user?.role?.name === "ADMIN";
+    const isAdmin = ctx.sessionClient?.user?.isAdmin ?? false;
     return ctx.prisma.discipline.findMany({
       where: isAdmin ? {} : { publicationDate: { not: null, lte: new Date() } },
       orderBy: [{ categoryId: "asc" }, { name: "asc" }],

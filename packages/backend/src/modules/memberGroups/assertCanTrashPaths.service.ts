@@ -1,3 +1,4 @@
+import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
@@ -32,11 +33,7 @@ export async function assertCanTrashPaths(params: {
 }): Promise<void> {
   const { prisma, userId, paths } = params;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: { select: { name: true } } },
-  });
-  if (user?.role?.name === "ADMIN") return;
+  if (await isAdminByGroup(prisma, userId)) return;
 
   for (const path of paths) {
     const groupId = groupIdFromLogicalPath(path);

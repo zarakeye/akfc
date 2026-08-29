@@ -1,3 +1,4 @@
+import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
@@ -18,11 +19,7 @@ export async function assertCanWriteGroupSpace(params: {
 }): Promise<void> {
   const { prisma, userId, groupId } = params;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: { select: { name: true } } },
-  });
-  if (user?.role?.name === "ADMIN") return;
+  if (await isAdminByGroup(prisma, userId)) return;
 
   const access = await resolveGroupAccessForUser(prisma, userId, groupId);
   if (access !== "EDITOR") {
