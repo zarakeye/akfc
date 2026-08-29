@@ -1,3 +1,39 @@
+#!/usr/bin/env bash
+#
+# AKFC — ControlPanelSidebar v2 : sections pliables + surbrillance ligne COMPLÈTE.
+#
+# Sur la v1 (regroupement + surbrillance) :
+#   1. La ligne active inverse AUSSI le bouton « + » : l'icône add_circle.svg
+#      (blanche) devient invisible sur fond blanc → on lui applique `invert`
+#      quand la ligne est active (blanc → noir, visible).
+#   2. Sections PLIABLES/DÉPLIABLES avec chevron. État persistant (localStorage) ;
+#      la section contenant la route courante s'ouvre toujours (l'item actif
+#      n'est jamais caché).
+#
+# Réécriture complète (cat >). 1 fichier front, typecheck web.
+#
+# Usage : bash apply-sidebar-collapsible.sh
+#         AKFC_APPLY_ONLY=1 bash apply-sidebar-collapsible.sh   (clone)
+#
+set -euo pipefail
+
+F="apps/web/src/features/app-shell/ControlPanelSidebar.tsx"
+
+[ -f "package.json" ] || { echo "ERREUR: lance-moi à la racine du repo." >&2; exit 1; }
+[ -f "$F" ]           || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+
+if [ "${AKFC_APPLY_ONLY:-0}" != "1" ]; then
+  BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "NOTE: tu es sur '$BRANCH'. (Ctrl-C pour annuler.)"; sleep 2
+  fi
+fi
+
+if grep -q 'cp-sidebar-collapsed' "$F" 2>/dev/null; then
+  echo "déjà en v2 (sections pliables)"; exit 0
+fi
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { JSX, useEffect, useState } from "react";
@@ -218,3 +254,20 @@ export default function ControlPanelSidebar(): JSX.Element {
     </aside>
   );
 }
+TSX
+echo "réécrit  $F"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck, ni commit"; exit 0
+fi
+
+echo "typecheck web…"
+if ! pnpm --filter web typecheck > /tmp/akfc_tc.log 2>&1; then
+  echo "typecheck web KO :"; grep -nE "error TS|Error:" /tmp/akfc_tc.log | head; tail -6 /tmp/akfc_tc.log; exit 1
+fi
+echo "OK"
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modif"; exit 0; fi
+git add -A
+git commit -m "feat(dashboard): sections pliables (chevron, persistant) + surbrillance ligne complète (icône + incluse)" \
+  && echo "commit $(git rev-parse --short HEAD)"
