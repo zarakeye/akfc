@@ -44,16 +44,7 @@ export const NAV_ENTRIES: NavEntry[] = [
     ],
   },
   { kind: "link", href: "/contacts", label: "Contacts" },
-  {
-    kind: "menu",
-    label: "Documentation",
-    activePrefix: "/docs",
-    children: [
-      { href: "/docs", label: "Doc utilisateur" },
-      { href: "/docs/admin", label: "Doc admin" },
-      { href: "/docs/dev", label: "Dev doc" },
-    ],
-  },
+  { kind: "link", href: "/docs", label: "Aide" },
 ];
 
 /**
