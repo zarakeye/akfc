@@ -24,7 +24,6 @@ model User {
   birthDate             DateTime?
   phone                 String?
   image                 String?
-  roleId                Int?
   memberSince           DateTime?
   isFirstLogin          Boolean              @default(true)
   createdAt             DateTime             @default(now())
@@ -42,7 +41,6 @@ model User {
   instructorOrder       Int?
 
   // --- Auth & profil
-  role                  Role?                @relation(fields: [roleId], references: [id])
   preferences           Preferences?
   sessions              Session[]
   passwordResetTokens   PasswordResetToken[]
@@ -72,29 +70,6 @@ model User {
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
 }
 
-model Permission {
-  id          Int               @id @default(autoincrement())
-  name        String            @unique
-  description String?
-  roles       RolePermissions[]
-}
-
-model Role {
-  id          Int               @id @default(autoincrement())
-  name        String            @unique
-  description String?
-  permissions RolePermissions[]
-  users       User[]
-}
-
-model RolePermissions {
-  roleId       Int
-  permissionId Int
-  permission   Permission @relation(fields: [permissionId], references: [id])
-  role         Role       @relation(fields: [roleId], references: [id])
-
-  @@id([roleId, permissionId])
-}
 
 model Preferences {
   id           Int     @id @default(autoincrement())
