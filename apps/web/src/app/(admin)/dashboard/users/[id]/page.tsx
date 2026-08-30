@@ -14,11 +14,6 @@ export default async function UserPresentationPage({
 
   const user = await prisma.user.findUnique({
     where: { id },
-    include: {
-      role: {
-        include: { permissions: { include: { permission: true } } },
-      },
-    },
   });
   if (!user) notFound();
 
@@ -44,31 +39,6 @@ export default async function UserPresentationPage({
             <dd>{user.pseudo}</dd>
           </div>
         )}
-        <div>
-          <dt className="font-medium text-muted-foreground">Rôle</dt>
-          <dd>{user.role?.name ?? "—"}</dd>
-        </div>
-        <div className="sm:col-span-2">
-          <dt className="font-medium text-muted-foreground">
-            Permissions héritées du rôle
-          </dt>
-          <dd>
-            {user.role?.permissions && user.role.permissions.length > 0 ? (
-              <ul className="mt-1 flex flex-wrap gap-1.5">
-                {user.role.permissions.map((rp) => (
-                  <li
-                    key={rp.permission.id}
-                    className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs"
-                  >
-                    {rp.permission.name}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              "—"
-            )}
-          </dd>
-        </div>
       </dl>
     </PresentationShell>
   );

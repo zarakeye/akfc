@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
 
-type UserRow = { id: string; email: string; role: string };
+type UserRow = { id: string; email: string };
 
 /** Liste des utilisateurs — `user.getAll` (inclut le rôle). Clic → `[id]`. */
 export default function UsersTable(): JSX.Element {
@@ -18,12 +18,10 @@ export default function UsersTable(): JSX.Element {
   const rows: UserRow[] = (data ?? []).map((u) => ({
     id: u.id,
     email: u.email,
-    role: u.role?.name ?? "—",
   }));
 
   const columns: Column<UserRow>[] = [
     { property: "email", displayName: "Email", type: "string" },
-    { property: "role", displayName: "Rôle", type: "string" },
   ];
 
   return (
