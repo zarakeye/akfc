@@ -33,7 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Récupère la session
   const session = await prisma.session.findUnique({
     where: { id: payload.sessionId },
-    include: { user: { include: { role: true } } },
+    include: { user: true },
   });
 
   if (!session || session.expiresAt < new Date()) {

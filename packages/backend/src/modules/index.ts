@@ -3,11 +3,9 @@ import { router } from "@backend/trpc/core";
 import { authRouter } from "@backend/modules/auth/router";
 import { userRouter } from "@backend/modules/users/router";
 import { avatarRouter } from "@backend/modules/avatar/router";
-import { roleRouter } from "@backend/modules/roles/router";
 import { sessionRouter } from "@backend/modules/session/router";
 import { cloudinaryRouter } from "@backend/modules/cloudinary/router";
 import { trashRouter } from "@backend/modules/trash/router";
-import { permissionRouter } from "@backend/modules/permissions/router";
 import { categoryRouter } from "@backend/modules/categories/router";
 import { courseRouter } from "@backend/modules/courses/router";
 import { disciplineRouter } from "@backend/modules/disciplines/router";
@@ -42,11 +40,9 @@ export const appRouter = router({
   auth: authRouter,
   user: userRouter,
   avatar: avatarRouter,
-  role: roleRouter,
   session: sessionRouter,
   cloudinary: cloudinaryRouter,
   trash: trashRouter,
-  permission: permissionRouter,
   category: categoryRouter,
   course: courseRouter,
   discipline: disciplineRouter,
