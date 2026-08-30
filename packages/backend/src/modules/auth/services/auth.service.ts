@@ -9,20 +9,6 @@ import { TRPCError } from "@trpc/server";
 export async function loginService(email: string, password: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email },
-    // 🚀 JOIN SQL au lieu de SELECT en cascade (cf. note dans
-    // getSessionFromRequest pour le détail).
-    relationLoadStrategy: "join",
-    include: {
-      role: {
-        include: {
-          permissions: {
-            include: {
-              permission: true,
-            },
-          },
-        },
-      },
-    }
   });
 
   if (!user) {
@@ -40,15 +26,7 @@ export async function loginService(email: string, password: string): Promise<voi
     });
   }
 
-  const normalizedUser: UserEnhancedStrict = {
-    ...user,
-    role: user.role
-      ? {
-          ...user.role,
-          permissions: user.role.permissions.map((p) => p.permission),
-        }
-      : null,
-  };
+  const normalizedUser: UserEnhancedStrict = user;
   
   await createSessionJWT(normalizedUser);
 }

@@ -23,7 +23,7 @@ export function CollaborativeBell(): JSX.Element | null {
     trpc.memberDocument.collaborativeUnreadForMe.useQuery();
 
   // Managers/admins : exclus (ils ont la cloche bibliothèque + le finder admin).
-  const isManager = (user?.role?.permissions?.length ?? 0) > 0;
+  const isManager = user?.isAdmin ?? false;
   if (isManager) return null;
   if (!spaces || spaces.length === 0) return null;
 

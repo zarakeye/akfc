@@ -1,23 +1,15 @@
-import { Permission, Role, Session, User } from "@prisma/client";
+import { Session, User } from "@prisma/client";
 
-export type UserEnhanced = (User  & {
-  role: (Role & {
-    permissions: Permission[]; 
-  }) | null
-}) | null;
+/**
+ * Types "enrichis" hérités : jadis User + Role + Permission. L'auth étant passée
+ * aux groupes (isAdmin dérivé de l'appartenance au groupe Administrateurs), il ne
+ * reste que le User de base. Conservés pour ne pas casser les signatures
+ * existantes (createSessionJWT, loginService).
+ */
+export type UserEnhanced = User | null;
 
-export type UserEnhancedStrict = (User  & {
-  role: (Role & {
-    permissions: Permission[]; 
-  }) | null
-});
+export type UserEnhancedStrict = User;
 
-export type SessionEnhancedStrict = (Session & {
-  user: (User & {
-    role:( Role & {
-      permissions: (
-        Permission[]
-      )
-    }) | null
-  }) | null
-});
+export type SessionEnhancedStrict = Session & {
+  user: User | null;
+};
