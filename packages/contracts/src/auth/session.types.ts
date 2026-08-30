@@ -9,10 +9,5 @@ export type SessionClient = {
     avatar: string | null;
     isFirstLogin: boolean;
     isAdmin: boolean;
-    role: {
-      id: number;
-      name: string;
-      permissions: string[];
-    } | null;
   } | null;
 };

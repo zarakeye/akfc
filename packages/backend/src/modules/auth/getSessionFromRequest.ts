@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@backend/prisma";
 import { COOKIE_NAME } from "@contracts/auth/constants";
-import type { Permission, Role, Session, User } from "@prisma/client";
+import type { Session, User } from "@prisma/client";
 import type { SessionClient } from "@contracts/auth/session.types";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -13,21 +13,13 @@ type SessionJwtPayload = {
 };
 
 type SessionDB = Session & {
-  user: (User & {
-    role: (Role & {
-      permissions: {
-        permission: Permission;
-      }[];
-    }) | null;
-  }) | null;
+  user: User | null;
 };
 
 function mapSessionDBToSessionClient(
   session: SessionDB,
   isAdmin: boolean,
 ): SessionClient {
-  const role = session.user!.role;
-
   return {
     expiresAt: session.expiresAt,
     user: {
@@ -39,13 +31,6 @@ function mapSessionDBToSessionClient(
       avatar: session.user!.avatar,
       isFirstLogin: session.user!.isFirstLogin,
       isAdmin,
-      role: role
-        ? {
-            id: role.id,
-            name: role.name,
-            permissions: role.permissions.map((rp) => rp.permission.name),
-          }
-        : null,
     },
   };
 }
@@ -101,27 +86,8 @@ export async function getSessionFromRequest(req?: Request): Promise<SessionClien
   const sessionDB = await prisma.session.findUnique({
     where: { id: payload.sessionId },
     // 🚀 Force Prisma à produire un JOIN SQL au lieu de N SELECT séquentiels.
-    // Pour cette query qui traverse Session → User → Role → RolePermissions
-    // → Permission (4 niveaux d'include), le mode 'query' par défaut émettait
-    // 5 SELECT en cascade — soit 5 round-trips DB par requête HTTP. Avec
-    // 'join', Prisma émet 1 seul SELECT avec des LATERAL JOIN.
-    // C'est un findUnique (donc 0 ou 1 ligne), il n'y a aucun risque
-    // de multiplication de lignes liée aux relations 1-N.
-    relationLoadStrategy: "join",
     include: {
-      user: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      },
+      user: true,
     },
   });
 
