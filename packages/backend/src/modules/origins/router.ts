@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * origins/router.ts
@@ -22,7 +22,7 @@ import { requirePermission } from "@backend/trpc/middleware";
  * Conventions :
  *   - Lectures   : `publicProcedure` (les origines alimentent le site
  *                  public, comme les disciplines).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_disciplines"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  Pas de permission dédiée pour la v1 — les origines
  *                  sont logiquement liées au domaine de gestion des
  *                  disciplines. À séparer en `manage_origins` si besoin.
@@ -154,7 +154,7 @@ export const originRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -185,7 +185,7 @@ export const originRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -215,7 +215,7 @@ export const originRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Pré-vérification des dépendances — on refuse plutôt que de

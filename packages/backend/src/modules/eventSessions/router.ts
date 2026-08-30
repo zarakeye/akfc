@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * eventSessions/router.ts
@@ -22,7 +22,7 @@ import { requirePermission } from "@backend/trpc/middleware";
  * Conventions :
  *   - Lectures   : `publicProcedure` (les sessions d'un event public
  *                  doivent être visibles).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_events"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  Réutilise la permission du domaine Event — une session
  *                  n'est rien sans son event parent.
  */
@@ -120,7 +120,7 @@ export const eventSessionRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // Vérifie que l'event parent existe.
@@ -162,7 +162,7 @@ export const eventSessionRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -193,7 +193,7 @@ export const eventSessionRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       try {

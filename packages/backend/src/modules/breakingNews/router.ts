@@ -6,7 +6,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * Router des BreakingNews — les actualités courtes du club.
@@ -25,7 +25,7 @@ import { requirePermission } from "@backend/trpc/middleware";
  *   - Lecture publique : `getActive` uniquement (publiées ET non
  *     expirées) — un brouillon ou une actu périmée n'existe pas
  *     publiquement.
- *   - Tout le reste : `requirePermission("manage_breaking_news")`.
+ *   - Tout le reste : `isAdmin`.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -94,7 +94,7 @@ export const breakingNewsRouter = router({
 
   /** Liste admin complète — brouillons d'abord (nulls first), puis par date. */
   getAllAdmin: protectedProcedure
-    .use(requirePermission("manage_breaking_news"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.breakingNews.findMany({
         orderBy: [
@@ -105,7 +105,7 @@ export const breakingNewsRouter = router({
     }),
 
   getByIdAdmin: protectedProcedure
-    .use(requirePermission("manage_breaking_news"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const news = await ctx.prisma.breakingNews.findUnique({
@@ -121,7 +121,7 @@ export const breakingNewsRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_breaking_news"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.breakingNews.create({
@@ -136,7 +136,7 @@ export const breakingNewsRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_breaking_news"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -160,7 +160,7 @@ export const breakingNewsRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_breaking_news"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       try {

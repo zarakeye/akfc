@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
@@ -31,7 +31,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *
  * Conventions :
  *   - Lectures   : `publicProcedure` (les events alimentent le site public).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_events"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  Permission dédiée — si elle n'existe pas encore dans
  *                  ton seed, à ajouter (cf. NOTES.md de cette livraison).
  *
@@ -208,7 +208,7 @@ export const eventRouter = router({
    * Réservé à l'admin (requirePermission).
    */
   getAllAdmin: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.event.findMany({
         orderBy: [
@@ -272,7 +272,7 @@ export const eventRouter = router({
    * Alimente la page d'édition `/dashboard/events/[id]/edit`.
    */
   getByIdAdmin: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const event = await ctx.prisma.event.findUnique({
@@ -324,7 +324,7 @@ export const eventRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction ───────────────────────────────────
@@ -402,7 +402,7 @@ export const eventRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, content, summary, ...rest } = input;
@@ -555,7 +555,7 @@ export const eventRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_events"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Les EventSession liées seront supprimées en cascade

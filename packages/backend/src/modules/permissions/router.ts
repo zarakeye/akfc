@@ -2,11 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 export const permissionRouter = router({
   getAll: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.permission.findMany({
         relationLoadStrategy: "join",
@@ -20,7 +20,7 @@ export const permissionRouter = router({
     }),
 
   getById: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const permission = await ctx.prisma.permission.findUnique({
@@ -38,7 +38,7 @@ export const permissionRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const exists = await ctx.prisma.permission.findUnique({
@@ -60,7 +60,7 @@ export const permissionRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(
       z.object({
         id: z.number(),
@@ -87,7 +87,7 @@ export const permissionRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const linked = await ctx.prisma.rolePermissions.count({
@@ -107,7 +107,7 @@ export const permissionRouter = router({
     }),
 
   assignToRole: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(z.object({ permissionId: z.number(), roleId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.rolePermissions.upsert({
@@ -128,7 +128,7 @@ export const permissionRouter = router({
     }),
 
   removeFromRole: protectedProcedure
-    .use(requirePermission("manage_permissions"))
+    .use(isAdmin)
     .input(z.object({ permissionId: z.number(), roleId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.rolePermissions.deleteMany({

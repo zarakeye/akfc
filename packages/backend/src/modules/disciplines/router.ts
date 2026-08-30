@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
 import slugify from "slugify";
@@ -19,7 +19,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  * Conventions :
  *   - Lectures   : `publicProcedure` (les disciplines alimentent potentiellement
  *                  le site public, au même titre que les catégories).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_disciplines"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *
  * Règles métier :
  *   - `categoryId` N'EST PAS modifiable via `update`. Déplacer une discipline
@@ -237,7 +237,7 @@ export const disciplineRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction (lectures simples) ────────────────
@@ -357,7 +357,7 @@ export const disciplineRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -504,7 +504,7 @@ export const disciplineRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Dépendances métier : on refuse plutôt que de cascader (Course/Stage/

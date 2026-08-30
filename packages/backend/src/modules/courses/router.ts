@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
@@ -25,7 +25,7 @@ import { pageContentSchemaV1 } from "@contracts/page";
  *
  * Conventions :
  *   - Lectures   : `publicProcedure` (les cours alimentent le site public).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_courses"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *
  * ─── Composite de page et intégrité référentielle ────────────────────────
  *
@@ -180,7 +180,7 @@ export const courseRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_courses"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction (lectures simples) ────────────────
@@ -264,7 +264,7 @@ export const courseRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_courses"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -341,7 +341,7 @@ export const courseRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_courses"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.prisma.$transaction(async (tx) => {

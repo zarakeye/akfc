@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
@@ -24,7 +24,7 @@ import { pageContentSchemaV1 } from "@contracts/page";
  *     l'auteur est celui qui écrit.
  *
  * Lectures publiques (`getAll` published, `getById`), écritures sous
- * `requirePermission("manage_posts")`.
+ * `isAdmin`.
  *
  * Le `delete` nettoie aussi les réactions polymorphes (du post + de ses
  * commentaires), puisque `Reaction` n'a pas de FK DB.
@@ -62,7 +62,7 @@ export const postRouter = router({
 
   /** Tous les posts, brouillons inclus (back-office). */
   getAllAdmin: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.post.findMany({
         orderBy: [
@@ -96,7 +96,7 @@ export const postRouter = router({
    * Alimente la fiche et l'édition admin.
    */
   getByIdAdmin: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const post = await ctx.prisma.post.findUnique({
@@ -109,7 +109,7 @@ export const postRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       return await ctx.prisma.$transaction(async (tx) => {
@@ -133,7 +133,7 @@ export const postRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, content, ...rest } = input;
@@ -173,7 +173,7 @@ export const postRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Ids des commentaires (pour nettoyer leurs réactions polymorphes).
