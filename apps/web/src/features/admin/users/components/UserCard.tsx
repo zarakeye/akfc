@@ -76,7 +76,6 @@ export default function UserCard({
           Date de naissance: {new Date(user.birthDate).toLocaleDateString()}
         </p>
       )}
-      {user?.role && <p className="text-gray-600">Rôle: {user.role.name}</p>}
     </div>
   );
 }

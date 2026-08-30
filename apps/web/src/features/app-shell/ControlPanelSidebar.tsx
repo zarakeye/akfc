@@ -80,8 +80,6 @@ export default function ControlPanelSidebar(): JSX.Element {
       title: "Membres & accès",
       items: [
         { label: "Utilisateurs", href: "/dashboard/users", createHref: "/dashboard/users/create", createAlt: "Ajouter un utilisateur" },
-        { label: "Rôles", href: "/dashboard/roles", createHref: "/dashboard/roles/create", createAlt: "Créer un nouveau rôle" },
-        { label: "Permissions", href: "/dashboard/permissions", createHref: "/dashboard/permissions/create", createAlt: "Créer une permission" },
         { label: "Groupes de membres", href: "/dashboard/groups", createHref: "/dashboard/groups/create", createAlt: "Créer un groupe de membres" },
       ],
     },
