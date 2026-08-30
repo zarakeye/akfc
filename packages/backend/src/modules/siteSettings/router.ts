@@ -12,11 +12,7 @@ async function assertAdmin(ctx: {
   prisma: PrismaClient;
   user: { id: string };
 }): Promise<void> {
-  const me = await ctx.prisma.user.findUnique({
-    where: { id: ctx.user.id },
-    select: { role: { select: { name: true } } },
-  });
-  if (me?.role?.name !== "ADMIN") {
+  if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Réservé aux administrateurs.",

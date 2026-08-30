@@ -26,11 +26,11 @@ export async function GET(req: NextRequest): Promise<Response> {
   if (!userId) {
     return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
   }
-  const me = await ctx.prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: { select: { name: true } } },
+  const admin = await ctx.prisma.memberGroupMembership.findFirst({
+    where: { userId, group: { isAdminGroup: true } },
+    select: { id: true },
   });
-  if (me?.role?.name !== "ADMIN") {
+  if (!admin) {
     return NextResponse.json(
       { error: "Réservé aux administrateurs." },
       { status: 403 },
