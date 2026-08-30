@@ -25,11 +25,7 @@ async function collaborativeGroupIds(
   prisma: PrismaClient,
   userId: string,
 ): Promise<string[]> {
-  const me = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: { select: { name: true } } },
-  });
-  const isAdmin = me?.role?.name === "ADMIN";
+  const isAdmin = await isAdminByGroup(prisma, userId);
   return isAdmin
     ? (
         await prisma.memberGroup.findMany({
