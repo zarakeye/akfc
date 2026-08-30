@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * stageSessions/router.ts
@@ -18,7 +18,7 @@ import { requirePermission } from "@backend/trpc/middleware";
  * Conventions :
  *   - Lectures   : `publicProcedure` (les sessions d'un stage public doivent
  *                  être visibles pour que le site public puisse les afficher).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_stages"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  On réutilise la permission du domaine Stage — une session
  *                  n'est rien sans son stage parent.
  *
@@ -119,7 +119,7 @@ export const stageSessionRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // Vérifie que le stage parent existe.
@@ -161,7 +161,7 @@ export const stageSessionRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -192,7 +192,7 @@ export const stageSessionRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       try {

@@ -3,7 +3,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { slugSchema } from "@contracts/slug/slug.schema";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
@@ -21,7 +21,7 @@ import { z } from "zod";
  * `CAROUSEL_SLUG` sert de carousel d'accueil.
  *
  * - Lectures publiques : `getBySlug`, `getCarousel`.
- * - Écritures + lectures admin : `requirePermission("manage_galleries")`.
+ * - Écritures + lectures admin : `isAdmin`.
  */
 
 /** Slug réservé pour le carousel de la page d'accueil. */
@@ -98,7 +98,7 @@ export const galleryRouter = router({
   /* ----- Lectures admin ----- */
 
   getAll: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.gallery.findMany({
         orderBy: { sortOrder: "asc" },
@@ -114,7 +114,7 @@ export const galleryRouter = router({
     }),
 
   getById: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const gallery = await ctx.prisma.gallery.findUnique({
@@ -224,7 +224,7 @@ export const galleryRouter = router({
   /* ----- Écritures ----- */
 
   create: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -244,7 +244,7 @@ export const galleryRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -265,7 +265,7 @@ export const galleryRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Les GalleryItem sont supprimés en cascade (FK onDelete: Cascade).
@@ -281,7 +281,7 @@ export const galleryRouter = router({
    * pour un écran admin en drag-and-drop. Transactionnel.
    */
   setItems: protectedProcedure
-    .use(requirePermission("manage_galleries"))
+    .use(isAdmin)
     .input(
       z.object({
         galleryId: z.number().int().positive(),

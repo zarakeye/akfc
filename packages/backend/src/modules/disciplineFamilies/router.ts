@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 import { slugSchema } from "@contracts/slug/slug.schema";
 
@@ -22,7 +22,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *
  * Conventions (calquées sur `origins`) :
  *   - Lectures   : `publicProcedure` (alimente le menu et les sélecteurs admin).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_disciplines"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  Pas de permission dédiée — les familles relèvent du domaine
  *                  de gestion des disciplines. À séparer en
  *                  `manage_discipline_families` si besoin un jour.
@@ -116,7 +116,7 @@ export const disciplineFamilyRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -142,7 +142,7 @@ export const disciplineFamilyRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
@@ -175,7 +175,7 @@ export const disciplineFamilyRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_disciplines"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Refus si des disciplines y sont encore rattachées — on ne casse

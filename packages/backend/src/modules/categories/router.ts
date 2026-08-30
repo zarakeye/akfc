@@ -1,5 +1,5 @@
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -45,7 +45,7 @@ export const categoryRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_categories"))
+    .use(isAdmin)
     .input(z.object({ type: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const exists = await ctx.prisma.category.findUnique({
@@ -67,7 +67,7 @@ export const categoryRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_categories"))
+    .use(isAdmin)
     .input(
       z.object({
         id: z.number(),
@@ -93,7 +93,7 @@ export const categoryRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_categories"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       // Garde : on refuse la suppression tant que des entités y sont

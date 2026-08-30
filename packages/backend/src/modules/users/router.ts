@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission, isAdmin } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
@@ -14,7 +14,7 @@ import { updateUserRoleByIdSchema } from "@contracts/forms/updateUserRoleById.sc
 
 export const userRouter = router({
   getAll: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
@@ -34,7 +34,7 @@ export const userRouter = router({
     }),
 
   getById: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
@@ -64,7 +64,7 @@ export const userRouter = router({
     }),
 
   getByEmail: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .input(z.object({ email: z.string().email() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
@@ -94,7 +94,7 @@ export const userRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .input(
       z.object({
         email: z.string().email("Invalid email format"),
@@ -165,7 +165,7 @@ export const userRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.user.delete({
@@ -211,7 +211,7 @@ export const userRouter = router({
   }),
 
   updateUserRoleById: protectedProcedure
-    .use(requirePermission("manage_users"))
+    .use(isAdmin)
     .input(updateUserRoleByIdSchema)
     .mutation(async ({ ctx, input }) => {
       const actorId = ctx.sessionClient.user.id;

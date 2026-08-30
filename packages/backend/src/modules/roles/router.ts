@@ -2,11 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { protectedProcedure, router } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 export const roleRouter = router({
   getAll: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.role.findMany({
         orderBy: { id: "asc" },
@@ -14,7 +14,7 @@ export const roleRouter = router({
     }),
 
   getById: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const role = await ctx.prisma.role.findUnique({
@@ -32,7 +32,7 @@ export const roleRouter = router({
     }),
 
   getByIdWithPermissions: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const role = await ctx.prisma.role.findUnique({
@@ -58,7 +58,7 @@ export const roleRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .input(
       z.object({
         name: z.string().min(1),
@@ -100,7 +100,7 @@ export const roleRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .input(
       z.object({
         id: z.number().int(),
@@ -151,7 +151,7 @@ export const roleRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_roles"))
+    .use(isAdmin)
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.role.delete({

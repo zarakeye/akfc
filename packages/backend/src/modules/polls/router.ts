@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * Router des sondages rattachés aux posts.
@@ -65,7 +65,7 @@ export const pollRouter = router({
 
   /** Crée le sondage d'un post (refuse si le post en a déjà un). */
   create: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(
       z.object({
         postId: z.number().int(),
@@ -172,7 +172,7 @@ export const pollRouter = router({
 
   /** Supprime un sondage (et ses options/votes en cascade). */
   delete: protectedProcedure
-    .use(requirePermission("manage_posts"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.poll.delete({ where: { id: input.id } });

@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
-import { requirePermission } from "@backend/trpc/middleware";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
@@ -24,7 +24,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *
  * Conventions :
  *   - Lectures   : `publicProcedure` (les stages alimentent le site public).
- *   - Écritures  : `protectedProcedure.use(requirePermission("manage_stages"))`.
+ *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *
  * ─── Évolution v2 (migration domain_v2_expansion) ─────────────────────────
  *
@@ -294,7 +294,7 @@ export const stageRouter = router({
    * Tri : programmés/brouillons d'abord (nulls first), puis par création.
    */
   getAllAdmin: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .query(async ({ ctx }) => {
       return ctx.prisma.stage.findMany({
         orderBy: [
@@ -324,7 +324,7 @@ export const stageRouter = router({
    * Alimente la page d'édition `/dashboard/stages/[id]/edit`.
    */
   getByIdAdmin: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const stage = await ctx.prisma.stage.findUnique({
@@ -367,7 +367,7 @@ export const stageRouter = router({
     }),
 
   create: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       // ─── Validations pré-transaction ───────────────────────────────────
@@ -463,7 +463,7 @@ export const stageRouter = router({
     }),
 
   update: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const {
@@ -671,7 +671,7 @@ export const stageRouter = router({
     }),
 
   delete: protectedProcedure
-    .use(requirePermission("manage_stages"))
+    .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       // Les StageSession liées seront supprimées en cascade
