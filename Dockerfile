@@ -43,7 +43,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages ./packages
 COPY . .
-RUN pnpm prisma generate
+RUN rm -rf node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/client \
+  node_modules/.prisma/client 2>/dev/null || true
+RUN pnpm prisma generate --schema=prisma/schema.prisma
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_APP_SHORT_NAME
 ARG NEXT_PUBLIC_APP_FULL_NAME
