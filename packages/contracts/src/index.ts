@@ -24,11 +24,8 @@ export * from '@contracts/cloudinary/upload.schema';
 /* -------------------------------------------------------------------------- */
 export * from '@contracts/forms/createPermissionForm.schema';
 export * from '@contracts/forms/saveCategoryForm.schema';
-export * from '@contracts/forms/createUserForm.schema';
-export * from '@contracts/forms/saveRoleForm.schema';
 export * from '@contracts/forms/form-action.types';
 export * from '@contracts/forms/updateMeForm.schema';
-export * from '@contracts/forms/updateUserRoleById.schema';
 
 export * from '@contracts/upload/upload.schema';
 

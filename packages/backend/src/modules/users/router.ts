@@ -10,7 +10,6 @@ import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
 import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
-import { updateUserRoleByIdSchema } from "@contracts/forms/updateUserRoleById.schema";
 
 export const userRouter = router({
   getAll: protectedProcedure
@@ -18,18 +17,6 @@ export const userRouter = router({
     .query(async ({ ctx }) => {
       return ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
-        relationLoadStrategy: "join",
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
       });
     }),
 
@@ -39,18 +26,6 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
-        relationLoadStrategy: "join",
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
       });
 
       if (!user) {
@@ -69,18 +44,6 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { email: input.email },
-        relationLoadStrategy: "join",
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
       });
 
       if (!user) {
@@ -189,7 +152,6 @@ export const userRouter = router({
         phone: true,
         birthDate: true,
         isFirstLogin: true,
-        role: true,
       },
     });
 
@@ -209,49 +171,6 @@ export const userRouter = router({
 
     return userProfile satisfies UserProfile;
   }),
-
-  updateUserRoleById: protectedProcedure
-    .use(isAdmin)
-    .input(updateUserRoleByIdSchema)
-    .mutation(async ({ ctx, input }) => {
-      const actorId = ctx.sessionClient.user.id;
-
-      if (actorId === input.userId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You cannot change your own role.",
-        });
-      }
-
-      const role = await ctx.prisma.role.findUnique({
-        where: { id: input.roleId },
-        select: { id: true },
-      });
-
-      if (!role) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Role not found",
-        });
-      }
-
-      const user = await ctx.prisma.user.update({
-        where: { id: input.userId },
-        data: { roleId: input.roleId },
-        relationLoadStrategy: "join",
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: { permission: true },
-              },
-            },
-          },
-        },
-      });
-
-      return user;
-    }),
 
   getProfileById: protectedProcedure
     .use(isAdmin)
