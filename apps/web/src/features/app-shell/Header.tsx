@@ -162,7 +162,7 @@ export default function Header() {
       </nav>
 
       {/* ── Authentification (≥ lg) ───────────────────────────────────── */}
-      <div className="hidden shrink-0 xl:block">
+      <div className="hidden shrink-0 pr-4 xl:block xl:pr-6">
         <Suspense fallback={<div>Chargement...</div>}>
           {user
             ? (
