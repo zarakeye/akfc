@@ -9,6 +9,12 @@ import type {
   UploadDestination,
   UploadAssetRequest,
 } from "@contracts/cloudinary/upload.types";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  getMediaS3Client,
+  getMediaBucket,
+} from "@backend/modules/cloudinary/backends/minioClient";
 
 export async function createUploadSignatures(params: {
   prisma: PrismaClient;
@@ -75,6 +81,30 @@ export async function createUploadSignatures(params: {
     }
   }
 
+  // Mode sandbox (STORAGE_DRIVER=local) : on presign un PUT MinIO par asset
+  // (clé = publicId complet, extensionless — cohérent avec la livraison).
+  // En cloudinary, cette map reste vide → `uploadUrl` restera undefined.
+  const localUploadUrls = new Map<string, string>();
+  if (process.env.STORAGE_DRIVER === "local") {
+    const s3 = getMediaS3Client();
+    const bucket = getMediaBucket();
+    await Promise.all(
+      assets.map(async (asset) => {
+        const full = `${folder}/${safeBaseName(asset.fileName)}`;
+        const url = await getSignedUrl(
+          s3,
+          new PutObjectCommand({
+            Bucket: bucket,
+            Key: full,
+            ContentType: asset.mimeType,
+          }),
+          { expiresIn: 5 * 60 },
+        );
+        localUploadUrls.set(asset.fileName, url);
+      }),
+    );
+  }
+
   return assets.map((asset) => {
     const publicId = safeBaseName(asset.fileName);
     const fullPublicId = `${folder}/${publicId}`;
@@ -118,6 +148,8 @@ export async function createUploadSignatures(params: {
       signature,
       apiKey: process.env.CLOUDINARY_API_KEY!,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+      // Présent seulement en mode local → le front PUT au lieu de POST.
+      uploadUrl: localUploadUrls.get(asset.fileName),
     };
   });
 }
