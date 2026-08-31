@@ -15,8 +15,8 @@ const ADMIN_GROUP_NAME = "Administrateurs";
 export async function ensureAdminGroup(
   prisma: PrismaClient,
   appRoot: string,
-): Promise<{ groupId: string; adminsLinked: number }> {
-  let group = await prisma.memberGroup.findFirst({
+): Promise<{ groupId: string }> {
+    let group = await prisma.memberGroup.findFirst({
     where: { isAdminGroup: true },
     select: { id: true },
   });
@@ -32,20 +32,7 @@ export async function ensureAdminGroup(
     });
   }
 
-  const admins = await prisma.user.findMany({
-    where: { role: { name: "ADMIN" } },
-    select: { id: true },
-  });
-
-  for (const admin of admins) {
-    await prisma.memberGroupMembership.upsert({
-      where: { groupId_userId: { groupId: group.id, userId: admin.id } },
-      create: { groupId: group.id, userId: admin.id, access: "EDITOR" },
-      update: {},
-    });
-  }
-
   await ensureGroupSpaceFolder({ prisma, appRoot, groupId: group.id });
 
-  return { groupId: group.id, adminsLinked: admins.length };
+  return { groupId: group.id };
 }

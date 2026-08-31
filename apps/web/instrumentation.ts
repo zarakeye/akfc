@@ -60,9 +60,9 @@ export async function register() {
   }
 
   try {
-    const { adminsLinked } = await ensureAdminGroup(prisma, APP_ROOT);
+    await ensureAdminGroup(prisma, APP_ROOT);
     console.log(
-      `[instrumentation] ensureAdminGroup: groupe Administrateurs garanti, ${adminsLinked} admin(s) inscrit(s) pour appRoot="${APP_ROOT}"`
+      `[instrumentation] ensureAdminGroup: groupe Administrateurs garanti pour appRoot="${APP_ROOT}"`
     );
   } catch (err) {
     console.error(
