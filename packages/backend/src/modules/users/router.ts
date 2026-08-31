@@ -189,7 +189,6 @@ export const userRouter = router({
           phone: true,
           birthDate: true,
           isFirstLogin: true,
-          role: true,
         },
       });
 
@@ -374,7 +373,11 @@ export const userRouter = router({
    */
   listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
-      where: { role: { name: "ADMIN" } },
+      where: {
+        memberGroupMemberships: {
+          some: { group: { isAdminGroup: true } },
+        },
+      },
       select: {
         id: true,
         firstName: true,

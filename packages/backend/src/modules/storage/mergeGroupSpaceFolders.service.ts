@@ -1,3 +1,4 @@
+import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import type { PrismaClient } from "@prisma/client";
 
 import type {
