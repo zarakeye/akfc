@@ -1,10 +1,33 @@
 /**
  * Façade média — point d'import unique des ~25 consommateurs.
  *
- * Phase 2a : passthrough pur vers le backend Cloudinary (le service historique,
- * déplacé dans `backends/cloudinaryBackend.ts`). Aucun changement de
- * comportement. En Phase 2b, ce fichier deviendra un SÉLECTEUR qui re-exporte
- * soit le backend Cloudinary soit un backend local, selon `STORAGE_DRIVER` —
- * sans que les consommateurs changent quoi que ce soit.
+ * Sélectionne le backend selon `STORAGE_DRIVER` (défaut `cloudinary`) et
+ * re-exporte ses fonctions sous les noms historiques : les consommateurs
+ * importent d'ici sans rien changer. Le backend local (MinIO + imgproxy) sera
+ * branché en Phase 3 — il suffira de remplacer la branche `local`.
  */
-export * from "@backend/modules/cloudinary/backends/cloudinaryBackend";
+import { cloudinaryBackend } from "@backend/modules/cloudinary/backends/cloudinaryBackend";
+import type { MediaBackend } from "@backend/modules/cloudinary/backends/media.types";
+
+const backend: MediaBackend =
+  process.env.STORAGE_DRIVER === "local"
+    ? cloudinaryBackend // TODO Phase 3 : localBackend (MinIO + imgproxy)
+    : cloudinaryBackend;
+
+export const buildAuthenticatedUrl = backend.buildAuthenticatedUrl;
+export const fetchAuthenticatedAsset = backend.fetchAuthenticatedAsset;
+export const getAssetInfo = backend.getAssetInfo;
+export const fileExists = backend.fileExists;
+export const listAuthenticatedResources = backend.listAuthenticatedResources;
+export const deleteByPrefix = backend.deleteByPrefix;
+export const deleteCloudinaryFolderRecursive = backend.deleteCloudinaryFolderRecursive;
+export const buildVideoPosterUrl = backend.buildVideoPosterUrl;
+export const fetchVideoPoster = backend.fetchVideoPoster;
+
+export type {
+  Variant,
+  ResourceType,
+  ListAuthenticatedResourcesResult,
+  GetAssetInfoResult,
+  MediaBackend,
+} from "@backend/modules/cloudinary/backends/media.types";
