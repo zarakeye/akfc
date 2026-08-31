@@ -555,6 +555,31 @@ export default function DragNDropForm(): JSX.Element {
       toUpload.map(async (item): Promise<CloudinaryUploadOutcome> => {
         const sig = sigByItemId.get(item.id)!;
         try {
+          // Mode sandbox (MinIO) : la signature porte un `uploadUrl` presigné.
+          // PUT direct du fichier — pas de réponse Cloudinary, on fabrique
+          // l'asset depuis le fichier + la signature.
+          if (sig.uploadUrl) {
+            const putRes = await fetch(sig.uploadUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': item.file.type },
+              body: item.file,
+            });
+            if (!putRes.ok) {
+              const text = await putRes.text();
+              throw new Error(`MinIO HTTP ${putRes.status}: ${text.slice(0, 200)}`);
+            }
+            return {
+              ok: true,
+              itemId: item.id,
+              cloudinaryAsset: {
+                publicId: `${sig.folder}/${sig.publicId}`,
+                secureUrl: '',
+                resourceType: sig.resourceType,
+                format: item.file.type.split('/')[1],
+                bytes: item.file.size,
+              },
+            };
+          }
           const formData = new FormData();
           formData.append('file', item.file);
           formData.append('api_key', sig.apiKey);
