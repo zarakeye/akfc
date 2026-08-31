@@ -7,12 +7,11 @@
  * branché en Phase 3 — il suffira de remplacer la branche `local`.
  */
 import { cloudinaryBackend } from "@backend/modules/cloudinary/backends/cloudinaryBackend";
+import { localBackend } from "@backend/modules/cloudinary/backends/localBackend";
 import type { MediaBackend } from "@backend/modules/cloudinary/backends/media.types";
 
 const backend: MediaBackend =
-  process.env.STORAGE_DRIVER === "local"
-    ? cloudinaryBackend // TODO Phase 3 : localBackend (MinIO + imgproxy)
-    : cloudinaryBackend;
+  process.env.STORAGE_DRIVER === "local" ? localBackend : cloudinaryBackend;
 
 export const buildAuthenticatedUrl = backend.buildAuthenticatedUrl;
 export const fetchAuthenticatedAsset = backend.fetchAuthenticatedAsset;
