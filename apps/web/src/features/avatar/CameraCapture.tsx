@@ -46,9 +46,6 @@ export function CameraCapture({
   // Flash logiciel : surface blanche affichée brièvement à la capture
   // (mode "capture") — distinct de l'illumination persistante (mode "on").
   const [screenFlash, setScreenFlash] = useState(false);
-  // Le flash logiciel ne compense l'absence de flash frontal que sur petit
-  // écran / mobile. Sur grand écran, il éblouit sans raison.
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,18 +91,10 @@ export function CameraCapture({
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 640px)");
-    const update = () => setIsSmallScreen(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  // Flash logiciel autorisé uniquement sans flash matériel ET sur petit écran.
-  // `flashAvailable` conditionne l'affichage du bouton flash.
-  const softwareFlashAllowed = !hasTorch && isSmallScreen;
+  // Flash disponible sur TOUT écran : torch si le matériel l'a, sinon flash
+  // logiciel (illumination de l'écran). `flashAvailable` est donc toujours
+  // vrai et conditionne l'affichage du bouton flash.
+  const softwareFlashAllowed = !hasTorch;
   const flashAvailable = hasTorch || softwareFlashAllowed;
 
   const stopStream = () => {
