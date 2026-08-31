@@ -5,34 +5,19 @@ import {
   setCached,
   invalidate as invalidateResourcesCache,
 } from "@backend/modules/cloudinary/cache/resourcesCache";
+import type {
+  ResourceType,
+  Variant,
+  ListAuthenticatedResourcesResult,
+  GetAssetInfoResult,
+  MediaBackend,
+} from "@backend/modules/cloudinary/backends/media.types";
 
 /* -------------------------------------------------------------------------- */
 /*                                  TYPES                                     */
 /* -------------------------------------------------------------------------- */
 
-export type ResourceType = "image" | "video" | "raw";
-export type Variant = "thumb" | "small" | "medium" | "large" | "original";
-
-export interface ListAuthenticatedResourcesResult {
-  publicId: string;
-  url: string;
-  /**
-   * Format technique de l'asset (`jpg`, `png`, `mp4`, ...).
-   *
-   * L'API Cloudinary `resources` retourne ce champ pour chaque asset ;
-   * on le préserve ici pour qu'il puisse remonter jusqu'au `FileNode`
-   * du tree et au front (qui s'en sert pour calculer `kind` = image/video/document).
-   */
-  format?: string;
-}
-
-interface GetAssetInfoResult {
-  resource_type: ResourceType;
-  bytes?: number;
-  created_at?: string;
-  asset_id?: string;
-  format?: string;
-}
+// Types déplacés dans backends/media.types.ts (importés ci-dessus).
 
 /* -------------------------------------------------------------------------- */
 /*                              CONFIG TRANSFO                                */
@@ -504,3 +489,19 @@ export async function fetchVideoPoster(
     return null;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/*                    BACKEND (implémente MediaBackend)                       */
+/* -------------------------------------------------------------------------- */
+
+export const cloudinaryBackend: MediaBackend = {
+  buildAuthenticatedUrl,
+  fetchAuthenticatedAsset,
+  getAssetInfo,
+  fileExists,
+  listAuthenticatedResources,
+  deleteByPrefix,
+  deleteCloudinaryFolderRecursive,
+  buildVideoPosterUrl,
+  fetchVideoPoster,
+};
