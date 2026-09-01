@@ -1,3 +1,30 @@
+#!/usr/bin/env bash
+#
+# AKFC — Sandbox, PHASE 5a : l'app dans le compose (câblage complet).
+#
+# Réécrit docker-compose.sandbox.yml en ajoutant, aux briques de la Phase 1 :
+#   - migrator : applique les migrations sur la base sandbox (one-shot) ;
+#   - app      : l'app AKFC (build standalone), en mode STORAGE_DRIVER=local ;
+#   - mailpit  : faux SMTP + UI web (les mails de bienvenue sont capturés) ;
+#   - imgproxy : signature ACTIVÉE (KEY/SALT), partagée avec l'app.
+#
+# Toutes les env sont injectées ici (self-contained). R2_* → MinIO (bucket
+# `documents`) ; MEDIA_S3_* → MinIO (bucket `media`) ; CLOUDINARY_* = bidon.
+#
+# ⚠ Sauvegarde l'ancien compose (Phase 1) en .bak avant réécriture.
+# Ne touche à AUCUN fichier de l'app. Pas de commit.
+#
+# Usage : bash sandbox-phase5a-app.sh
+#
+set -euo pipefail
+
+F="docker-compose.sandbox.yml"
+[ -f "package.json" ] || { echo "ERREUR: lance-moi à la racine du repo." >&2; exit 1; }
+[ -f "Dockerfile" ]   || { echo "ERREUR: Dockerfile absent à la racine (attendu par le build)." >&2; exit 1; }
+
+[ -f "$F" ] && cp "$F" "$F.bak" && echo "ancien compose sauvegardé : $F.bak"
+
+cat > "$F" <<'YAML'
 # ══════════════════════════════════════════════════════════════════════════
 #  AKFC — Sandbox recruteurs (stack complète)
 #
@@ -93,22 +120,6 @@ services:
       DIRECT_DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
       PRISMA_CLIENT_ENGINE_TYPE: "library"
 
-  # Peuple la base de comptes de démo + contenu, puis s'arrête. Idempotent.
-  seeder:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: migrator
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
-    environment:
-      DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
-      DIRECT_DATABASE_URL: "postgresql://akfc:sandbox@postgres:5432/akfc_db?schema=public"
-      PRISMA_CLIENT_ENGINE_TYPE: "library"
-      APP_SHORT_NAME: "AKFC"
-    command: ["sh", "-c", "pnpm prisma generate && node prisma/seed.sandbox.mjs"]
-
   app:
     build:
       context: .
@@ -119,8 +130,6 @@ services:
         NEXT_PUBLIC_APP_FULL_NAME: "AKFC — Sandbox de démonstration"
     depends_on:
       migrator:
-        condition: service_completed_successfully
-      seeder:
         condition: service_completed_successfully
       minio-init:
         condition: service_started
@@ -150,7 +159,6 @@ services:
       # ── Média local : MinIO + imgproxy ──
       STORAGE_DRIVER: "local"
       MEDIA_S3_ENDPOINT: "http://minio:9000"
-      MEDIA_S3_PUBLIC_ENDPOINT: "http://localhost:9000"
       MEDIA_S3_ACCESS_KEY_ID: "sandbox"
       MEDIA_S3_SECRET_ACCESS_KEY: "sandbox-secret"
       MEDIA_S3_BUCKET: "media"
@@ -179,3 +187,33 @@ services:
 volumes:
   sandbox_pgdata:
   sandbox_minio:
+YAML
+echo "écrit  $F"
+
+echo "validation compose…"
+if docker compose -f "$F" config >/dev/null 2>/tmp/akfc_compose.log; then
+  echo "OK — compose valide."
+else
+  echo "compose KO :"; cat /tmp/akfc_compose.log; exit 1
+fi
+
+cat <<'EOF'
+
+════════ DÉMARRAGE (premier build ~ quelques minutes) ════════
+  docker compose -f docker-compose.sandbox.yml up -d --build
+  docker compose -f docker-compose.sandbox.yml logs -f app
+
+Attendus :
+  - migrator : "All migrations have been successfully applied" puis exited(0)
+  - app      : "✓ Ready" sans erreur Prisma/env
+  - http://localhost:3010  → l'app répond (page publique)
+  - http://localhost:9001  → console MinIO (sandbox / sandbox-secret)
+  - http://localhost:8025  → Mailpit (vide pour l'instant)
+
+⚠ Pas encore de compte pour se connecter : c'est le rôle du SEED (Phase 5b) —
+  admins + membres de démo + contenu + images d'exemple dans MinIO.
+
+Si l'app crashe au boot (env manquante, connexion DB, client Prisma), colle-moi :
+  docker compose -f docker-compose.sandbox.yml logs migrator | tail -20
+  docker compose -f docker-compose.sandbox.yml logs app | tail -30
+EOF

@@ -41,3 +41,31 @@ export function getMediaS3Client(): S3Client {
 export function getMediaBucket(): string {
   return readEnv("MEDIA_S3_BUCKET");
 }
+
+/**
+ * Client S3 dédié au PRESIGNING d'URLs destinées au NAVIGATEUR.
+ *
+ * Il utilise l'endpoint PUBLIC (`MEDIA_S3_PUBLIC_ENDPOINT`, ex. localhost:9000)
+ * car le presigned est consommé côté client — `minio:9000` (nom Docker) n'y
+ * est pas résoluble. Le checksum SDK par défaut (CRC calculé sur un corps vide
+ * au presign) est désactivé : le navigateur ne le recalcule pas et MinIO le
+ * rejetterait. Fallback sur l'endpoint interne si le public n'est pas défini.
+ */
+let cachedPresign: S3Client | null = null;
+
+export function getMediaPresignClient(): S3Client {
+  if (cachedPresign) return cachedPresign;
+  const publicEndpoint =
+    process.env.MEDIA_S3_PUBLIC_ENDPOINT ?? readEnv("MEDIA_S3_ENDPOINT");
+  cachedPresign = new S3Client({
+    region: "us-east-1",
+    endpoint: publicEndpoint,
+    forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    credentials: {
+      accessKeyId: readEnv("MEDIA_S3_ACCESS_KEY_ID"),
+      secretAccessKey: readEnv("MEDIA_S3_SECRET_ACCESS_KEY"),
+    },
+  });
+  return cachedPresign;
+}

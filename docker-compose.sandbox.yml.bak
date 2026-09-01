@@ -1,0 +1,70 @@
+# ══════════════════════════════════════════════════════════════════════════
+#  AKFC — Sandbox recruteurs (infra, Phase 1)
+#
+#  Briques de démo self-hosted :
+#    postgres  — base (volume)
+#    minio     — stockage S3 local (remplace R2 + stocke les images)
+#    imgproxy  — transformations d'images à la volée (modèle Cloudinary)
+#
+#  L'app AKFC sera ajoutée en Phase 5. Reset de tout : `docker compose -f
+#  docker-compose.sandbox.yml down -v`.
+# ══════════════════════════════════════════════════════════════════════════
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: akfc
+      POSTGRES_PASSWORD: sandbox
+      POSTGRES_DB: akfc_db
+    ports:
+      - "5433:5432"        # 5433 hôte → évite de heurter un Postgres local
+    volumes:
+      - sandbox_pgdata:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: sandbox
+      MINIO_ROOT_PASSWORD: sandbox-secret
+    ports:
+      - "9000:9000"        # API S3
+      - "9001:9001"        # Console web (http://localhost:9001)
+    volumes:
+      - sandbox_minio:/data
+
+  # Crée les buckets une fois MinIO prêt, puis s'arrête.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 sandbox sandbox-secret; do
+        echo 'attente minio...'; sleep 1;
+      done;
+      mc mb -p local/media || true;
+      mc mb -p local/documents || true;
+      mc anonymous set download local/media || true;
+      echo 'buckets media + documents prets';
+      "
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    depends_on:
+      - minio
+    environment:
+      IMGPROXY_USE_S3: "true"
+      IMGPROXY_S3_ENDPOINT: "http://minio:9000"
+      IMGPROXY_S3_REGION: "us-east-1"
+      AWS_ACCESS_KEY_ID: "sandbox"
+      AWS_SECRET_ACCESS_KEY: "sandbox-secret"
+      # Phase 1 : pas de KEY/SALT → URLs non signées (préfixe /insecure/).
+      # La signature sera activée en Phase 3, avec le driver local.
+      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
+    ports:
+      - "8888:8080"        # http://localhost:8888
+
+volumes:
+  sandbox_pgdata:
+  sandbox_minio:
