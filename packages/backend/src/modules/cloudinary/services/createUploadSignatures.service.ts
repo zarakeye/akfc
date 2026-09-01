@@ -12,7 +12,7 @@ import type {
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
-  getMediaS3Client,
+  getMediaPresignClient,
   getMediaBucket,
 } from "@backend/modules/cloudinary/backends/minioClient";
 
@@ -86,7 +86,7 @@ export async function createUploadSignatures(params: {
   // En cloudinary, cette map reste vide → `uploadUrl` restera undefined.
   const localUploadUrls = new Map<string, string>();
   if (process.env.STORAGE_DRIVER === "local") {
-    const s3 = getMediaS3Client();
+    const s3 = getMediaPresignClient();
     const bucket = getMediaBucket();
     await Promise.all(
       assets.map(async (asset) => {
