@@ -68,17 +68,34 @@ export async function resolvePendingUploadFolder(params: {
 
   /* ── Destination club générique (sans discipline ni catégorie) ── */
   if (destination.kind === "common_repository") {
-    // Pas de sous-dossier → dépôt à la racine de `general/`.
-    if (!destination.folder) {
-      return `${appRoot}/common_repository`;
+    // Regroupement par (utilisateur + intitulé). Le segment personnel isole
+    // chaque déposant (homonymes distincts par le cuid) ; l'intitulé regroupe
+    // les dépôts successifs d'une même personne au même sujet. Le libellé
+    // humain accentué est traité séparément (passe 2b).
+    const person = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true, pseudo: true },
+    });
+    const personName =
+      [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim() ||
+      person?.pseudo ||
+      "";
+    const personSlug = slug(personName) || `user-${userId}`;
+    const base = `${appRoot}/common_repository/${personSlug}-${userId}`;
+
+    // Intitulé fourni → conteneur slugifié ; vide → conteneur horodaté unique.
+    const containerSlug = destination.containerName
+      ? slug(destination.containerName)
+      : "";
+    if (containerSlug) {
+      return `${base}/${containerSlug}`;
     }
-    const folderSlug = slug(destination.folder);
-    if (!folderSlug) {
-      throw new Error(
-        "General folder name must contain at least one slug-friendly character",
-      );
-    }
-    return `${appRoot}/common_repository/${folderSlug}`;
+    const stamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .replace("T", "_")
+      .slice(0, 19);
+    return `${base}/depot-${stamp}`;
   }
 
   /* ── Destination événement ── */
