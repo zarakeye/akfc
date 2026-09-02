@@ -33,7 +33,7 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
     kind: z.literal("common_repository"),
     // Sous-dossier OPTIONNEL sous `general/` (existant ou créé à la volée).
     // Absent → dépôt à la racine de `general/`.
-    folder: z.string().trim().min(1).max(120).optional(),
+    containerName: z.string().trim().min(1).max(120).optional(),
   }),
   // `perso`   : espace personnel de l'admin. Aucune identité transportée ici —
   //             le dossier cible est dérivé côté serveur de `ctx.user.id`, si

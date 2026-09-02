@@ -109,7 +109,7 @@ const formSchema = z.discriminatedUnion('destinationKind', [
   z.object({
     destinationKind: z.literal('common_repository'),
     // Sous-dossier optionnel sous « Général » (vide = racine).
-    generalFolder: z.string().trim().max(120).optional(),
+    containerName: z.string().trim().max(120).optional(),
   }),
   z.object({
     destinationKind: z.literal('event'),
@@ -274,11 +274,11 @@ export default function DragNDropForm(): JSX.Element {
   );
   const disciplines = disciplinesQuery.data ?? [];
 
-  const generalFoldersQuery = trpc.storage.listCommonRepositoryFolders.useQuery(
+  const containerFoldersQuery = trpc.storage.listCommonRepositoryFolders.useQuery(
     undefined,
     { enabled: destinationKind === 'common_repository' },
   );
-  const generalFolders = generalFoldersQuery.data ?? [];
+  const containerFolders = containerFoldersQuery.data ?? [];
 
   // Évènements existants (créés par les admins) pour le picker.
   const eventsQuery = trpc.event.listForUpload.useQuery(undefined, {
@@ -756,7 +756,7 @@ export default function DragNDropForm(): JSX.Element {
         disciplineIds: eventDisciplineIds,
       };
     } else {
-      const folder = values.generalFolder?.trim();
+      const folder = values.containerName?.trim();
       destination = { kind: 'common_repository', folder: folder ? folder : undefined };
     }
 
@@ -905,7 +905,7 @@ export default function DragNDropForm(): JSX.Element {
             checked={destinationKind === 'common_repository'}
             onChange={() => setValue('destinationKind', 'common_repository')}
           />
-          Vers « Général »
+          Vers « Dépôt commun »
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -1091,16 +1091,16 @@ export default function DragNDropForm(): JSX.Element {
 
       {destinationKind === 'common_repository' && (
         <div>
-          <label className="block font-semibold mb-1">Dossier (optionnel)</label>
+          <label className="block font-semibold mb-1">Nom du dossier de dépôt</label>
           <input
             type="text"
-            list="akfc-general-folders"
-            {...register('generalFolder')}
+            list="akfc-common-repository-folders"
+            {...register('containerName')}
             className="border rounded p-2 w-full"
-            placeholder="Vide = racine de « Général »"
+            placeholder="Nom du dossier de dépôt"
           />
-          <datalist id="akfc-general-folders">
-            {generalFolders.map((folder) => (
+          <datalist id="akfc-common-repository-folders">
+            {containerFolders.map((folder) => (
               <option key={folder} value={folder} />
             ))}
           </datalist>
