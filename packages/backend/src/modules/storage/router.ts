@@ -49,7 +49,7 @@ import {
   applyGroupSpaceNamesToFolders,
   applyGroupSpaceNamesToTree,
 } from "@backend/modules/storage/applyGroupSpaceNames.service";
-import { assertCanWriteGroupSpace } from '@backend/modules/memberGroups/assertCanWriteGroupSpace.service';
+import { assertUploadDestinationAllowed } from '@backend/modules/storage/assertUploadDestinationAllowed.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
 /**
@@ -800,13 +800,11 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.destination.kind === "group") {
-        await assertCanWriteGroupSpace({
-          prisma: ctx.prisma,
-          userId: ctx.user.id,
-          groupId: input.destination.groupId,
-        });
-      }
+      await assertUploadDestinationAllowed({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        destination: input.destination,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
 
       switch (input.provider) {
@@ -836,13 +834,11 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.destination.kind === "group") {
-        await assertCanWriteGroupSpace({
-          prisma: ctx.prisma,
-          userId: ctx.user.id,
-          groupId: input.destination.groupId,
-        });
-      }
+      await assertUploadDestinationAllowed({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        destination: input.destination,
+      });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
 
       switch (input.provider) {
@@ -871,13 +867,11 @@ export const storageRouter = router({
   createR2Upload: protectedProcedure
     .input(createR2UploadAuthorizationSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.destination.kind === "group") {
-        await assertCanWriteGroupSpace({
-          prisma: ctx.prisma,
-          userId: ctx.user.id,
-          groupId: input.destination.groupId,
-        });
-      }
+      await assertUploadDestinationAllowed({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        destination: input.destination,
+      });
       // Le chemin se calcule ICI, une seule fois, avec la même règle que
       // Cloudinary. `buildR2Path` (client) n'existe plus.
       const folder = await resolvePendingUploadFolder({
@@ -911,13 +905,11 @@ export const storageRouter = router({
   registerR2Upload: protectedProcedure
     .input(registerR2UploadInputSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.destination.kind === "group") {
-        await assertCanWriteGroupSpace({
-          prisma: ctx.prisma,
-          userId: ctx.user.id,
-          groupId: input.destination.groupId,
-        });
-      }
+      await assertUploadDestinationAllowed({
+        prisma: ctx.prisma,
+        userId: ctx.user.id,
+        destination: input.destination,
+      });
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
