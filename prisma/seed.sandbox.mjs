@@ -6,7 +6,6 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 const DEMO_PASSWORD = "sandbox-demo";
 
 async function ensureAdminGroup() {
@@ -77,19 +76,7 @@ async function main() {
     });
   }
 
-  // Dossiers racines (immuables)
-  for (const f of [
-    { fullPath: `${APP_ROOT}/pending`, status: "pending" },
-    { fullPath: `${APP_ROOT}/published`, status: "published" },
-    { fullPath: `${APP_ROOT}/bin`, status: "bin" },
-  ]) {
-    await prisma.folder.upsert({
-      where: { appRoot_fullPath: { appRoot: APP_ROOT, fullPath: f.fullPath } },
-      update: {},
-      create: { appRoot: APP_ROOT, fullPath: f.fullPath, status: f.status },
-    });
-  }
-  console.log("✅ Catégories + dossiers prêts");
+  console.log("✅ Catégories prêtes");
 
   console.log("");
   console.log("   Admin  : admin@akfc.demo  /  " + DEMO_PASSWORD);

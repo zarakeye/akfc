@@ -10,7 +10,7 @@ import { physicalCandidates } from '@backend/modules/storage/logicalPath';
  * Le segment survit au move pending→published (qui ne change que le segment de
  * statut), donc un dossier reste listé quel que soit l'état de ses contenus.
  */
-export async function listGeneralFolders(params: {
+export async function listCommonRepositoryFolders(params: {
   prisma: PrismaClient;
   appRoot: string;
 }): Promise<string[]> {
@@ -20,7 +20,7 @@ export async function listGeneralFolders(params: {
     where: {
       appRoot,
       status: { in: ["pending", "published"] },
-      fullPath: { contains: "/general/" },
+      fullPath: { contains: "/common_repository/" },
     },
     select: { fullPath: true },
   });
@@ -30,7 +30,7 @@ export async function listGeneralFolders(params: {
   // — le plat, `pending/`, `published/`. Les deux premiers étaient codés en
   // dur ici ; le troisième, celui qui reçoit désormais les uploads, aurait
   // manqué, et le dossier aurait disparu du select sans un mot.
-  const prefixes = physicalCandidates(`${appRoot}/general`, appRoot).map(
+  const prefixes = physicalCandidates(`${appRoot}/common_repository`, appRoot).map(
     (candidate) => `${candidate}/`,
   );
   const names = new Set<string>();

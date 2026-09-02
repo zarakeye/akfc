@@ -107,7 +107,7 @@ const formSchema = z.discriminatedUnion('destinationKind', [
       }),
   }),
   z.object({
-    destinationKind: z.literal('general'),
+    destinationKind: z.literal('common_repository'),
     // Sous-dossier optionnel sous « Général » (vide = racine).
     generalFolder: z.string().trim().max(120).optional(),
   }),
@@ -135,7 +135,7 @@ type Destination =
       proposedDisciplineName: string;
     }
   | {
-      kind: 'general';
+      kind: 'common_repository';
       folder?: string;
     }
   | {
@@ -274,9 +274,9 @@ export default function DragNDropForm(): JSX.Element {
   );
   const disciplines = disciplinesQuery.data ?? [];
 
-  const generalFoldersQuery = trpc.storage.listGeneralFolders.useQuery(
+  const generalFoldersQuery = trpc.storage.listCommonRepositoryFolders.useQuery(
     undefined,
-    { enabled: destinationKind === 'general' },
+    { enabled: destinationKind === 'common_repository' },
   );
   const generalFolders = generalFoldersQuery.data ?? [];
 
@@ -757,7 +757,7 @@ export default function DragNDropForm(): JSX.Element {
       };
     } else {
       const folder = values.generalFolder?.trim();
-      destination = { kind: 'general', folder: folder ? folder : undefined };
+      destination = { kind: 'common_repository', folder: folder ? folder : undefined };
     }
 
     const cloudinaryItems = toUpload.filter((it) => it.backend === 'cloudinary');
@@ -902,8 +902,8 @@ export default function DragNDropForm(): JSX.Element {
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            checked={destinationKind === 'general'}
-            onChange={() => setValue('destinationKind', 'general')}
+            checked={destinationKind === 'common_repository'}
+            onChange={() => setValue('destinationKind', 'common_repository')}
           />
           Vers « Général »
         </label>
@@ -1089,7 +1089,7 @@ export default function DragNDropForm(): JSX.Element {
         </div>
       )}
 
-      {destinationKind === 'general' && (
+      {destinationKind === 'common_repository' && (
         <div>
           <label className="block font-semibold mb-1">Dossier (optionnel)</label>
           <input

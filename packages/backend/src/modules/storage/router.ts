@@ -36,7 +36,7 @@ import {
 import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service";
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
-import { listGeneralFolders } from "@backend/modules/media/services/listGeneralFolders.service";
+import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
@@ -97,7 +97,7 @@ const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
   }),
   // Espace club partagé, sans discipline ni catégorie.
   z.object({
-    kind: z.literal('general'),
+    kind: z.literal('common_repository'),
     folder: z.string().trim().min(1).max(120).optional(),
   }),
   // Contenus d'un événement (parité avec `general`).
@@ -172,14 +172,14 @@ export const storageRouter = router({
    * sur la présence d'au moins une permission.
    */
   getAttentionCounts: protectedProcedure.query(async ({ ctx }) => {
-    const [pending, bin, generalPending, persoCounts] = await Promise.all([
+    const [pending, bin, commonRepositoryPending, persoCounts] = await Promise.all([
       ctx.prisma.mediaAsset.count({ where: { status: "pending" } }),
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
       ctx.prisma.mediaAsset.count({
         where: {
           status: "pending",
           appRoot: ctx.appRoot,
-          fullPath: { contains: "/general/" },
+          fullPath: { contains: "/common_repository/" },
         },
       }),
       countPersoImages({
@@ -191,7 +191,7 @@ export const storageRouter = router({
     return {
       pending,
       bin,
-      generalPending,
+      commonRepositoryPending,
       persoPending: persoCounts.pending,
     };
   }),
@@ -218,13 +218,13 @@ export const storageRouter = router({
       counts.set(folder, (counts.get(folder) ?? 0) + 1);
     }
 
-    const generalRoot = `${ctx.appRoot}/general`;
+    const commonRepositoryRoot = `${ctx.appRoot}/common_repository`;
     const persosRoot = `${ctx.appRoot}/persos`;
 
     const entries = Array.from(counts.entries()).map(([path, count]) => {
-      let kind: "general" | "perso" | "folder" = "folder";
-      if (path === generalRoot || path.startsWith(`${generalRoot}/`)) {
-        kind = "general";
+      let kind: "common_repository" | "perso" | "folder" = "folder";
+      if (path === commonRepositoryRoot || path.startsWith(`${commonRepositoryRoot}/`)) {
+        kind = "common_repository";
       } else if (path.startsWith(`${persosRoot}/`)) {
         // Personnel de l'utilisateur courant uniquement : le dossier porte
         // son id. Ceux des autres restent des dossiers ordinaires.
@@ -270,8 +270,8 @@ export const storageRouter = router({
    * Sous-dossiers existants sous `general/` (pending + published), pour peupler
    * le select « dossier existant » de l'uploader général.
    */
-  listGeneralFolders: protectedProcedure.query(async ({ ctx }) => {
-    return listGeneralFolders({ prisma: ctx.prisma, appRoot: ctx.appRoot });
+  listCommonRepositoryFolders: protectedProcedure.query(async ({ ctx }) => {
+    return listCommonRepositoryFolders({ prisma: ctx.prisma, appRoot: ctx.appRoot });
   }),
 
   /**

@@ -30,7 +30,7 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
   //             d'espace partagé de fait entre admins (pas de permissions :
   //             club petit, confiance).
   z.object({
-    kind: z.literal("general"),
+    kind: z.literal("common_repository"),
     // Sous-dossier OPTIONNEL sous `general/` (existant ou créé à la volée).
     // Absent → dépôt à la racine de `general/`.
     folder: z.string().trim().min(1).max(120).optional(),

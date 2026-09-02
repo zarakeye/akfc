@@ -37,16 +37,16 @@ function buildMessage(
   pending: number,
   bin: number,
   persoPending: number,
-  generalPending: number,
+  commonRepositoryPending: number,
 ): string {
   const s = (n: number) => (n > 1 ? "s" : "");
 
   // Types de contenus en attente : personnels / dossier « général » /
   // disciplines (le reste).
-  const rest = Math.max(0, pending - persoPending - generalPending);
+  const rest = Math.max(0, pending - persoPending - commonRepositoryPending);
   const typesCount =
     (persoPending > 0 ? 1 : 0) +
-    (generalPending > 0 ? 1 : 0) +
+    (commonRepositoryPending > 0 ? 1 : 0) +
     (rest > 0 ? 1 : 0);
 
   // Partie « en attente » (sans « Vous avez » ni corbeille).
@@ -58,8 +58,8 @@ function buildMessage(
       if (persoPending > 0) {
         breakdown.push(`${persoPending} personnel${s(persoPending)}`);
       }
-      if (generalPending > 0) {
-        breakdown.push(`${generalPending} dans le dossier « général »`);
+      if (commonRepositoryPending > 0) {
+        breakdown.push(`${commonRepositoryPending} dans le Dépôt commun`);
       }
       const dont =
         breakdown.length > 0 ? ` dont ${breakdown.join(" et ")}` : "";
@@ -67,9 +67,9 @@ function buildMessage(
     } else if (persoPending > 0) {
       // Uniquement du perso → libellé dédié.
       attente = `${persoPending} contenu${s(persoPending)} personnel${s(persoPending)} en attente`;
-    } else if (generalPending > 0) {
+    } else if (commonRepositoryPending > 0) {
       // Uniquement du général → libellé dédié.
-      attente = `${generalPending} contenu${s(generalPending)} en attente dans le dossier « général »`;
+      attente = `${commonRepositoryPending} contenu${s(commonRepositoryPending)} en attente dans le Dépôt commun`;
     } else {
       // Uniquement des disciplines (non nommées).
       attente = `${pending} contenu${s(pending)} en attente`;
@@ -128,7 +128,7 @@ export function NotificationBell(): JSX.Element | null {
   const pending = counts?.pending ?? 0;
   const bin = counts?.bin ?? 0;
   const persoPending = counts?.persoPending ?? 0;
-  const generalPending = counts?.generalPending ?? 0;
+  const commonRepositoryPending = counts?.commonRepositoryPending ?? 0;
 
   // Brouillons (admin) : pages éditoriales non publiées + entités en
   // brouillon. S'ajoutent au badge et au dropdown.
@@ -174,7 +174,7 @@ export function NotificationBell(): JSX.Element | null {
                 pending,
                 bin,
                 persoPending,
-                generalPending,
+                commonRepositoryPending,
               )
             : "Bibliothèque"
         }
@@ -217,7 +217,7 @@ export function NotificationBell(): JSX.Element | null {
                           className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
                         >
                           {entry.count} dans{' '}
-                          {entry.kind === 'general'
+                          {entry.kind === 'common_repository'
                             ? 'le stockage général'
                             : entry.kind === 'perso'
                               ? 'votre stockage personnel'
