@@ -66,6 +66,15 @@ export default function UserMenu(): JSX.Element | null {
           >
             Mon profil
           </Link>
+          {!isAdmin && (
+            <Link
+              href="/deposer"
+              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              Déposer un ou plusieurs fichiers
+            </Link>
+          )}
           {isAdmin && (
             <Link
               href="/dashboard"
