@@ -49,9 +49,16 @@ export default function ControlPanelSidebar(): JSX.Element {
   // tout décalage d'hydratation.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   useEffect(() => {
+    // Lecture unique au montage d'un état CLIENT-ONLY (localStorage). Pas
+    // d'initializer paresseux dans useState : le serveur n'a pas localStorage,
+    // l'état initial diffèrerait entre SSR (vide) et client → mismatch
+    // d'hydratation. Le setState au montage est donc le pattern SSR-safe.
     try {
       const raw = localStorage.getItem(COLLAPSE_KEY);
-      if (raw) setCollapsed(new Set<string>(JSON.parse(raw) as string[]));
+      if (raw) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCollapsed(new Set<string>(JSON.parse(raw) as string[]));
+      }
     } catch {
       /* localStorage indisponible : on reste tout déplié. */
     }
