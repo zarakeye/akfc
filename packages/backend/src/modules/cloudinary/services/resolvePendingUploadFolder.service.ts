@@ -67,10 +67,10 @@ export async function resolvePendingUploadFolder(params: {
   const { prisma, destination, appRoot, userId } = params;
 
   /* ── Destination club générique (sans discipline ni catégorie) ── */
-  if (destination.kind === "general") {
+  if (destination.kind === "common_repository") {
     // Pas de sous-dossier → dépôt à la racine de `general/`.
     if (!destination.folder) {
-      return `${appRoot}/general`;
+      return `${appRoot}/common_repository`;
     }
     const folderSlug = slug(destination.folder);
     if (!folderSlug) {
@@ -78,7 +78,7 @@ export async function resolvePendingUploadFolder(params: {
         "General folder name must contain at least one slug-friendly character",
       );
     }
-    return `${appRoot}/general/${folderSlug}`;
+    return `${appRoot}/common_repository/${folderSlug}`;
   }
 
   /* ── Destination événement ── */

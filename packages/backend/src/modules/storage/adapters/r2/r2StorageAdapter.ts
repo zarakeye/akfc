@@ -386,7 +386,7 @@ export function createR2StorageAdapter(
           categoryId = input.destination.categoryId;
           proposedDisciplineName = input.destination.proposedDisciplineName;
           break;
-        case "general":
+        case "common_repository":
           // Espace club partagé, sans discipline ni catégorie
           // (categoryId reste null).
           break;
