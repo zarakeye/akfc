@@ -54,6 +54,9 @@ export type MediaMeta = {
   format?: string;
   kind?: 'image' | 'video' | 'document';
 
+  /** Nom lisible de l'expéditeur (Dépôt commun) — depuis MediaAsset. */
+  uploaderName?: string;
+
   // ─── Enrichissement Phase 1 (depuis MediaAsset DB) ──────────────────────
   /**
    * Statut de cycle de vie, depuis `MediaAsset.status` en DB.
