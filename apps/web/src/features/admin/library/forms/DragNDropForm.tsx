@@ -15,6 +15,7 @@ import { pickBackend, type StorageProvider } from '@contracts/storage';
 import type { PictureItem } from '@features/gallery-crop/types/picture.types';
 import type { CropResult } from '@features/gallery-crop/types/cropper.types';
 import Cropper from '@features/gallery-crop/components/Cropper';
+import { PdfThumbnail } from '@features/common-repository/PdfThumbnail';
 
 /**
  * DragNDropForm — multi-backend (Cloudinary + R2)
@@ -1158,6 +1159,8 @@ export default function DragNDropForm(): JSX.Element {
                       }
                     }}
                   />
+                ) : it.file.type === 'application/pdf' ? (
+                  <PdfThumbnail file={it.file} width={128} />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
                     <span className="text-3xl mb-1">
