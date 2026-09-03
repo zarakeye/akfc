@@ -28,7 +28,7 @@ import type {
 
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 
-import { getR2Client, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
+import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
 import { parsePathToDestination } from "@backend/modules/media/services/parsePathToDestination";
 
 /**
@@ -297,7 +297,7 @@ export function createR2StorageAdapter(
       assertUploadPathSafe(input.path, appRoot);
       assertUploadConstraints(input);
 
-      const s3 = getR2Client();
+      const s3 = getR2PresignClient();
       const Bucket = getR2Bucket();
       const expiresInSeconds = 5 * 60;
       const expiresAtMs = Date.now() + expiresInSeconds * 1000;
