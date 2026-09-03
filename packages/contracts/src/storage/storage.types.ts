@@ -46,6 +46,8 @@ export type StorageMetadata = {
   format?: string;
   /** MIME type complet quand disponible */
   mimeType?: string;
+  /** Nom lisible de l'expéditeur (depuis MediaAsset.uploaderUserId). */
+  uploaderName?: string;
   /**
    * Statut de cycle de vie, depuis `MediaAsset.status` en DB. Rempli par le
    * listing (adapter) — le chemin étant désormais plat, il ne peut plus être
