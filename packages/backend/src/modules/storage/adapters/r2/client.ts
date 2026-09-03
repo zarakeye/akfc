@@ -47,6 +47,8 @@ export function getR2Client(): S3Client {
   cached = new S3Client({
     region: "auto",
     endpoint: readEnv("R2_ENDPOINT"),
+    // MinIO exige le path-style ; R2 (prod) ne définit pas la var → false.
+    forcePathStyle: process.env.R2_FORCE_PATH_STYLE === "true",
     credentials: {
       accessKeyId: readEnv("R2_ACCESS_KEY_ID"),
       secretAccessKey: readEnv("R2_SECRET_ACCESS_KEY"),
@@ -58,6 +60,32 @@ export function getR2Client(): S3Client {
 
 export function getR2Bucket(): string {
   return readEnv("R2_BUCKET");
+}
+
+/**
+ * Client S3 dédié au PRESIGNING d'URLs consommées par le NAVIGATEUR.
+ * En prod : R2_PUBLIC_ENDPOINT absent → endpoint R2 public (Cloudflare),
+ * joignable par le client. En sandbox : R2_PUBLIC_ENDPOINT=localhost:9000
+ * (car `minio:9000`, nom Docker, n'est pas résoluble côté navigateur).
+ * Checksum SDK désactivé (CRC calculé sur corps vide → rejeté par MinIO).
+ */
+let cachedPresign: S3Client | null = null;
+
+export function getR2PresignClient(): S3Client {
+  if (cachedPresign) return cachedPresign;
+  const publicEndpoint =
+    process.env.R2_PUBLIC_ENDPOINT ?? readEnv("R2_ENDPOINT");
+  cachedPresign = new S3Client({
+    region: "auto",
+    endpoint: publicEndpoint,
+    forcePathStyle: process.env.R2_FORCE_PATH_STYLE === "true",
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    credentials: {
+      accessKeyId: readEnv("R2_ACCESS_KEY_ID"),
+      secretAccessKey: readEnv("R2_SECRET_ACCESS_KEY"),
+    },
+  });
+  return cachedPresign;
 }
 
 /**

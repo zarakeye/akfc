@@ -5,7 +5,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
 
-/** Réserve l'action aux administrateurs (role.name === "ADMIN"). */
+/** Réserve l'action aux administrateurs (appartenance au groupe Administrateurs). */
 async function assertAdmin(ctx: {
   prisma: PrismaClient;
   user: { id: string };

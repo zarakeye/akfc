@@ -163,6 +163,8 @@ services:
       R2_ACCESS_KEY_ID: "sandbox"
       R2_SECRET_ACCESS_KEY: "sandbox-secret"
       R2_BUCKET: "documents"
+      R2_FORCE_PATH_STYLE: "true"
+      R2_PUBLIC_ENDPOINT: "http://localhost:9000"
 
       # ── Cloudinary : bidon (non utilisé en mode local) ──
       CLOUDINARY_CLOUD_NAME: "sandbox"

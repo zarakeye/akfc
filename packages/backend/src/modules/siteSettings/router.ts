@@ -8,7 +8,7 @@ import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 
 const SETTINGS_ID = "site";
 
-/** Réserve l'action aux administrateurs (role.name === "ADMIN"). */
+/** Réserve l'action aux administrateurs (appartenance au groupe Administrateurs). */
 async function assertAdmin(ctx: {
   prisma: PrismaClient;
   user: { id: string };
