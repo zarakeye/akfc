@@ -3,6 +3,7 @@
 import { JSX, useState } from "react";
 import { trpc } from "@trpc/trpcClient";
 import Cropper from "@features/gallery-crop/components/Cropper";
+import { PdfThumbnail } from "@features/common-repository/PdfThumbnail";
 import type { PictureItem } from "@features/gallery-crop/types/picture.types";
 import type { CropResult } from "@features/gallery-crop/types/cropper.types";
 
@@ -265,6 +266,8 @@ export function CommonRepositoryUpload(): JSX.Element {
                     className="h-full w-full cursor-pointer object-contain"
                     onClick={() => !busy && setItemToCrop(it)}
                   />
+                ) : it.file.type === "application/pdf" ? (
+                  <PdfThumbnail file={it.file} width={128} />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
                     <span className="mb-1 text-3xl">
