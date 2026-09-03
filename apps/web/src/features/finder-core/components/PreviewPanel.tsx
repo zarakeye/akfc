@@ -158,6 +158,7 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
           metadata={metadata}
           loading={metadataLoading}
           error={metadataError}
+          uploaderName={file.meta?.uploaderName}
         />
       )}
 
@@ -420,10 +421,12 @@ function MetadataBlock({
   metadata,
   loading,
   error,
+  uploaderName,
 }: {
   metadata: FinderNodeMetadata | null;
   loading: boolean;
   error: string | null;
+  uploaderName?: string;
 }): JSX.Element | null {
   if (loading) {
     return (
@@ -455,7 +458,9 @@ function MetadataBlock({
   const updated = formatDate(metadata.updatedAt);
   if (updated) rows.push({ label: 'Modifié le', value: updated });
 
-  if (rows.length === 0) return null;
+  if (uploaderName) rows.push({ label: 'Déposé par', value: uploaderName });
+
+  if (rows.length === 0 && !uploaderName) return null;
 
   return (
     <div className="border-t border-gray-100 pt-3">

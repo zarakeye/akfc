@@ -188,6 +188,7 @@ function mapFileToFinderNode(
       format,
       kind: kindFromFormat(format, name),
       status: file.metadata?.status,
+      uploaderName: file.metadata?.uploaderName,
     },
   };
 }
