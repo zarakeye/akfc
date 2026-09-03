@@ -43,6 +43,8 @@ export function CommonRepositoryUpload(): JSX.Element {
   const registerUploaded = trpc.storage.registerUploadedAsset.useMutation();
   const createR2Upload = trpc.storage.createR2Upload.useMutation();
   const registerR2Upload = trpc.storage.registerR2Upload.useMutation();
+  const { data: myContainers = [] } =
+    trpc.storage.listMyCommonRepositoryContainers.useQuery();
 
   const destination = {
     kind: "common_repository" as const,
@@ -236,6 +238,27 @@ export function CommonRepositoryUpload(): JSX.Element {
           disabled={busy}
         />
       </label>
+
+      {myContainers.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium">Ou reprendre un dépôt existant</span>
+          <select
+            className="rounded border border-input bg-background px-2 py-1"
+            disabled={busy}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) setContainerName(e.target.value);
+            }}
+          >
+            <option value="">— Choisir un de mes dépôts —</option>
+            {myContainers.map((c) => (
+              <option key={c.subject} value={c.subject}>
+                {c.subject}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Fichiers</span>
