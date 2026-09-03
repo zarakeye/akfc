@@ -81,21 +81,19 @@ export async function resolvePendingUploadFolder(params: {
       person?.pseudo ||
       "";
     const personSlug = slug(personName) || `user-${userId}`;
-    const base = `${appRoot}/common_repository/${personSlug}-${userId}`;
-
-    // Intitulé fourni → conteneur slugifié ; vide → conteneur horodaté unique.
-    const containerSlug = destination.containerName
+    // Un SEUL segment : `{sujet}_{personne}-{cuid}` — le sujet en tête, lisible
+    // sans déplier. Regroupement par (sujet + personne) : deux dépôts au même
+    // sujet par la même personne retombent dans le même dossier. Sujet vide →
+    // fourre-tout `depot_{personne}-{cuid}`. Chaque partie slugifiée à part,
+    // jointe par un `_` littéral (préservé par slug()).
+    const personSegment = `${personSlug}-${userId}`;
+    const subjectSlug = destination.containerName
       ? slug(destination.containerName)
       : "";
-    if (containerSlug) {
-      return `${base}/${containerSlug}`;
-    }
-    const stamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .replace("T", "_")
-      .slice(0, 19);
-    return `${base}/depot-${stamp}`;
+    const segment = subjectSlug
+      ? `${subjectSlug}_${personSegment}`
+      : `depot_${personSegment}`;
+    return `${appRoot}/common_repository/${segment}`;
   }
 
   /* ── Destination événement ── */

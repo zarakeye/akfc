@@ -1,3 +1,32 @@
+#!/usr/bin/env bash
+#
+# AKFC — Dépôt commun : vignettes + cropper sur la page membre (comme l'admin).
+#
+# Réécrit CommonRepositoryUpload : items PictureItem { id, file, originalFile,
+# previewUrl }, vignettes (image → previewUrl ; sinon icône + nom), et le Cropper
+# maison réutilisé (@features/gallery-crop) — clic sur une image → recadrage →
+# remplace le fichier de l'item. L'upload envoie item.file (recadré si recadré).
+#
+# Front seul, typecheck web. Prérequis : A3 (le composant existe).
+#
+# Usage : bash apply-depot-commun-thumbs-cropper.sh
+#         AKFC_APPLY_ONLY=1 bash apply-depot-commun-thumbs-cropper.sh   (clone)
+#
+set -euo pipefail
+
+COMP="apps/web/src/features/common-repository/CommonRepositoryUpload.tsx"
+
+[ -f "package.json" ] || { echo "ERREUR: lance-moi à la racine du repo." >&2; exit 1; }
+[ -f "$COMP" ]        || { echo "ERREUR: $COMP introuvable — applique d'abord A3." >&2; exit 1; }
+
+if [ "${AKFC_APPLY_ONLY:-0}" != "1" ]; then
+  BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "NOTE: tu es sur '$BRANCH'. (Ctrl-C pour annuler.)"; sleep 2
+  fi
+fi
+
+cat > "$COMP" <<'TSX'
 "use client";
 
 import { JSX, useState } from "react";
@@ -315,3 +344,20 @@ export function CommonRepositoryUpload(): JSX.Element {
     </div>
   );
 }
+TSX
+echo "réécrit  $COMP (vignettes + cropper)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck, ni commit"; exit 0
+fi
+
+echo "typecheck web…"
+if ! pnpm --filter web typecheck > /tmp/akfc_tc.log 2>&1; then
+  echo "typecheck web KO :"; grep -nE "error TS|Cropper|PictureItem|CropResult" /tmp/akfc_tc.log | head -20; tail -6 /tmp/akfc_tc.log; exit 1
+fi
+echo "OK"
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modif"; exit 0; fi
+git add -A
+git commit -m "feat(depot-commun): vignettes + cropper maison sur la page membre (comme l'admin)" \
+  && echo "commit $(git rev-parse --short HEAD)"
