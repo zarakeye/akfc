@@ -37,6 +37,7 @@ import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
+import { listMyCommonRepositoryContainers } from "@backend/modules/media/services/listMyCommonRepositoryContainers.service";
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
@@ -272,6 +273,15 @@ export const storageRouter = router({
    */
   listCommonRepositoryFolders: protectedProcedure.query(async ({ ctx }) => {
     return listCommonRepositoryFolders({ prisma: ctx.prisma, appRoot: ctx.appRoot });
+  }),
+
+  // Sujets des dépôts de l'utilisateur courant (page membre) — scopé user.
+  listMyCommonRepositoryContainers: protectedProcedure.query(async ({ ctx }) => {
+    return listMyCommonRepositoryContainers({
+      prisma: ctx.prisma,
+      appRoot: ctx.appRoot,
+      userId: ctx.user.id,
+    });
   }),
 
   /**
