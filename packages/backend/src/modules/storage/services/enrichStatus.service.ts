@@ -38,7 +38,7 @@ function candidateKeys(file: StorageFileNode): string[] {
   return keys;
 }
 
-type ResolvedMeta = { status?: LifecycleStatus; human?: string };
+type ResolvedMeta = { status?: LifecycleStatus; human?: string; uploaderName?: string };
 
 async function metaByKey(
   prisma: PrismaClient,
@@ -59,8 +59,28 @@ async function metaByKey(
       status: true,
       displayName: true,
       originalFileName: true,
+      uploaderUserId: true,
     },
   });
+
+  // Résolution batchée des noms d'expéditeur (un lookup pour tout le lot).
+  const uploaderIds = [
+    ...new Set(rows.map((r) => r.uploaderUserId).filter(Boolean)),
+  ] as string[];
+  const users = uploaderIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: uploaderIds } },
+        select: { id: true, firstName: true, lastName: true, pseudo: true },
+      })
+    : [];
+  const nameById = new Map(
+    users.map((u) => [
+      u.id,
+      [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
+        u.pseudo ||
+        "Utilisateur",
+    ]),
+  );
 
   for (const row of rows) {
     // La cle de stockage (publicId) est desormais slugifiee : c'est ici qu'on
@@ -68,7 +88,10 @@ async function metaByKey(
     // l'extension/format est geree par les helpers d'affichage du front.
     const human = row.displayName?.trim() || row.originalFileName || undefined;
     const status = isLifecycleStatus(row.status) ? row.status : undefined;
-    const meta: ResolvedMeta = { status, human };
+    const uploaderName = row.uploaderUserId
+      ? nameById.get(row.uploaderUserId)
+      : undefined;
+    const meta: ResolvedMeta = { status, human, uploaderName };
     if (row.publicId) map.set(row.publicId, meta);
     if (row.fullPath) map.set(row.fullPath, meta);
   }
@@ -90,8 +113,12 @@ export async function enrichFilesWithStatus(
     for (const key of candidateKeys(file)) {
       const hit = byKey.get(key);
       if (hit) {
-        if (hit.status) {
-          file.metadata = { ...(file.metadata ?? {}), status: hit.status };
+        if (hit.status || hit.uploaderName) {
+          file.metadata = {
+            ...(file.metadata ?? {}),
+            ...(hit.status ? { status: hit.status } : {}),
+            ...(hit.uploaderName ? { uploaderName: hit.uploaderName } : {}),
+          };
         }
         // Le `name` stocke est le slug ; on affiche le nom humain quand connu.
         if (hit.human) file.name = hit.human;
