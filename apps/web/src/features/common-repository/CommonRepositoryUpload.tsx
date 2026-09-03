@@ -2,15 +2,18 @@
 
 import { JSX, useState } from "react";
 import { trpc } from "@trpc/trpcClient";
+import Cropper from "@features/gallery-crop/components/Cropper";
+import type { PictureItem } from "@features/gallery-crop/types/picture.types";
+import type { CropResult } from "@features/gallery-crop/types/cropper.types";
 
 /**
  * Dépôt membre dans le Dépôt commun (common_repository).
  *
- * Version minimale et autonome du flux d'upload : dropzone + nom de conteneur,
- * puis, par fichier, image/vidéo → Cloudinary (ou presigned PUT MinIO en
- * sandbox), document → R2. Pas de gestion de conflit/overwrite ni de
- * destinations admin (le backend, durci, refuserait de toute façon). L'expéditeur
- * et l'horodatage sont enregistrés par fichier côté serveur.
+ * Dropzone + nom de conteneur + VIGNETTES + CROPPER (le composant maison de
+ * gallery-crop, comme l'uploader admin) : clic sur une image → recadrage → le
+ * fichier recadré remplace l'original avant l'envoi. Par fichier : image/vidéo →
+ * Cloudinary (ou presigned PUT MinIO en sandbox), sinon → R2. Pas de gestion de
+ * conflit ni de destinations admin (le backend, durci, refuserait de toute façon).
  */
 
 type UploadState = "idle" | "uploading" | "done" | "error";
@@ -21,8 +24,16 @@ function pickBackend(mimeType: string): "cloudinary" | "r2" {
     : "r2";
 }
 
+function iconForMime(mime: string): string {
+  if (mime === "application/pdf") return "📄";
+  if (mime.startsWith("video/")) return "🎬";
+  if (mime.startsWith("image/")) return "🖼️";
+  return "📁";
+}
+
 export function CommonRepositoryUpload(): JSX.Element {
-  const [files, setFiles] = useState<File[]>([]);
+  const [items, setItems] = useState<PictureItem[]>([]);
+  const [itemToCrop, setItemToCrop] = useState<PictureItem | null>(null);
   const [containerName, setContainerName] = useState<string>("");
   const [state, setState] = useState<UploadState>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -37,16 +48,45 @@ export function CommonRepositoryUpload(): JSX.Element {
     containerName: containerName.trim() || undefined,
   };
 
-  const uploadCloudinary = async (batch: File[]): Promise<number> => {
+  const onPick = (fileList: FileList | null) => {
+    // Révoque les anciennes URL avant de repartir sur une nouvelle sélection.
+    items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+    const picked = Array.from(fileList ?? []);
+    setItems(
+      picked.map((f) => ({
+        id: crypto.randomUUID(),
+        file: f,
+        originalFile: f,
+        previewUrl: URL.createObjectURL(f),
+      })),
+    );
+  };
+
+  const handleCrop = ({ pictureId, croppedFile }: CropResult) => {
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== pictureId) return it;
+        URL.revokeObjectURL(it.previewUrl);
+        return {
+          ...it,
+          file: croppedFile,
+          previewUrl: URL.createObjectURL(croppedFile),
+        };
+      }),
+    );
+    setItemToCrop(null);
+  };
+
+  const uploadCloudinary = async (batch: PictureItem[]): Promise<number> => {
     if (batch.length === 0) return 0;
     const signatures = await createUploadAuth.mutateAsync({
       provider: "cloudinary",
       destination,
       allowOverwrite: false,
-      assets: batch.map((f) => ({
-        fileName: f.name,
-        mimeType: f.type,
-        mediaType: f.type.startsWith("video/")
+      assets: batch.map((it) => ({
+        fileName: it.file.name,
+        mimeType: it.file.type,
+        mediaType: it.file.type.startsWith("video/")
           ? ("video" as const)
           : ("image" as const),
       })),
@@ -67,7 +107,7 @@ export function CommonRepositoryUpload(): JSX.Element {
     }[] = [];
 
     for (let i = 0; i < batch.length; i++) {
-      const file = batch[i];
+      const file = batch[i].file;
       const sig = signatures[i];
       if (sig.uploadUrl) {
         const put = await fetch(sig.uploadUrl, {
@@ -124,7 +164,8 @@ export function CommonRepositoryUpload(): JSX.Element {
     return registered.assets.length;
   };
 
-  const uploadR2 = async (file: File): Promise<void> => {
+  const uploadR2 = async (item: PictureItem): Promise<void> => {
+    const file = item.file;
     const auth = await createR2Upload.mutateAsync({
       destination,
       originalFileName: file.name,
@@ -147,24 +188,25 @@ export function CommonRepositoryUpload(): JSX.Element {
   };
 
   const handleSubmit = async () => {
-    if (files.length === 0) {
+    if (items.length === 0) {
       setMessage("Choisis au moins un fichier.");
       return;
     }
     setState("uploading");
     setMessage(null);
     try {
-      const cloudinaryFiles = files.filter((f) => pickBackend(f.type) === "cloudinary");
-      const r2Files = files.filter((f) => pickBackend(f.type) === "r2");
+      const cloud = items.filter((it) => pickBackend(it.file.type) === "cloudinary");
+      const r2 = items.filter((it) => pickBackend(it.file.type) === "r2");
 
-      const nCloud = await uploadCloudinary(cloudinaryFiles);
-      for (const f of r2Files) await uploadR2(f);
+      const nCloud = await uploadCloudinary(cloud);
+      for (const it of r2) await uploadR2(it);
 
       setState("done");
       setMessage(
-        `${nCloud + r2Files.length} fichier(s) déposé(s) dans le Dépôt commun.`,
+        `${nCloud + r2.length} fichier(s) déposé(s) dans le Dépôt commun.`,
       );
-      setFiles([]);
+      items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+      setItems([]);
       setContainerName("");
     } catch (err) {
       setState("error");
@@ -175,11 +217,11 @@ export function CommonRepositoryUpload(): JSX.Element {
   const busy = state === "uploading";
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 p-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold">Déposer un ou plusieurs fichiers</h1>
       <p className="text-sm text-muted-foreground">
         Vos fichiers sont déposés dans le Dépôt commun. Les administrateurs les
-        retrouveront et les classeront.
+        retrouveront et les classeront. Cliquez une image pour la recadrer.
       </p>
 
       <label className="flex flex-col gap-1 text-sm">
@@ -199,24 +241,53 @@ export function CommonRepositoryUpload(): JSX.Element {
         <input
           type="file"
           multiple
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          onChange={(e) => onPick(e.target.files)}
           className="rounded border border-input bg-background px-2 py-1"
           disabled={busy}
         />
       </label>
 
-      {files.length > 0 && (
-        <ul className="text-sm text-muted-foreground">
-          {files.map((f) => (
-            <li key={f.name}>• {f.name}</li>
-          ))}
-        </ul>
+      {items.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {items.map((it) => {
+            const isImage = it.file.type.startsWith("image/");
+            return (
+              <div
+                key={it.id}
+                className="relative h-32 w-32 overflow-hidden rounded border bg-gray-50"
+              >
+                {isImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={it.previewUrl}
+                    alt=""
+                    title="Cliquer pour recadrer"
+                    className="h-full w-full cursor-pointer object-contain"
+                    onClick={() => !busy && setItemToCrop(it)}
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
+                    <span className="mb-1 text-3xl">
+                      {iconForMime(it.file.type)}
+                    </span>
+                    <span
+                      className="w-full truncate text-xs text-gray-700"
+                      title={it.file.name}
+                    >
+                      {it.file.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={busy || files.length === 0}
+        disabled={busy || items.length === 0}
         className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {busy ? "Dépôt en cours…" : "Déposer"}
@@ -228,6 +299,18 @@ export function CommonRepositoryUpload(): JSX.Element {
         >
           {message}
         </p>
+      )}
+
+      {itemToCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="max-h-full overflow-auto rounded-lg bg-white p-4">
+            <Cropper
+              picture={itemToCrop}
+              onCrop={handleCrop}
+              onCancel={() => setItemToCrop(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
