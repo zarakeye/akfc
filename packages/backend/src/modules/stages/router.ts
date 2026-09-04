@@ -290,6 +290,21 @@ export const stageRouter = router({
   }),
 
   /**
+   * Liste pour l'uploader (cascade) : TOUS les stages, id + label + slug.
+   * protectedProcedure → accessible aux membres (dépôt vers un stage). La
+   * lecture du CONTENU déposé reste admin (assertCanReadPath).
+   */
+  listForUpload: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.stage.findMany({
+      select: { id: true, label: true, slug: true },
+      orderBy: [
+        { publicationDate: { sort: "desc", nulls: "first" } },
+        { createdAt: "desc" },
+      ],
+    });
+  }),
+
+  /**
    * Liste admin de TOUS les stages — brouillons et programmés inclus.
    * Tri : programmés/brouillons d'abord (nulls first), puis par création.
    */
