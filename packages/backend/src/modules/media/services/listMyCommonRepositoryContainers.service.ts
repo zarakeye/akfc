@@ -60,11 +60,11 @@ export async function listMyCommonRepositoryContainers(params: {
         userId,
         subject,
       });
-      const row = await prisma.commonRepositoryLabel.findUnique({
+      const row = await prisma.folderLabel.findUnique({
         where: { path },
-        select: { label: true },
+        select: { displayName: true },
       });
-      return { subject, label: row?.label };
+      return { subject, label: row?.displayName };
     }),
   );
   return withLabels;

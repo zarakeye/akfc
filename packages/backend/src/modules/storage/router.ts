@@ -297,10 +297,10 @@ export const storageRouter = router({
         userId: ctx.user.id,
         subject: input.subject,
       });
-      await ctx.prisma.commonRepositoryLabel.upsert({
+      await ctx.prisma.folderLabel.upsert({
         where: { path },
-        update: { label: input.label },
-        create: { path, label: input.label },
+        update: { displayName: input.label },
+        create: { path, displayName: input.label },
       });
       return { ok: true };
     }),
