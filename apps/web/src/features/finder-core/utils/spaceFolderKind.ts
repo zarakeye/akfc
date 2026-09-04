@@ -10,6 +10,7 @@ const GROUP_SPACE_PATH = /\/groups\/[^/]+-c[a-z0-9]{24}$/;
 const PERSO_SPACE_PATH = /\/persos\/[^/]+-c[a-z0-9]{24}$/;
 const GROUPS_CONTAINER = /^[^/]+\/groups$/;
 const PERSOS_CONTAINER = /^[^/]+\/persos$/;
+const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common_repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
 
@@ -40,6 +41,7 @@ export function isProtectedEntityFolder(path: string): boolean {
   return (
     GROUPS_CONTAINER.test(path) ||
     PERSOS_CONTAINER.test(path) ||
+    COMMON_REPOSITORY_CONTAINER.test(path) ||
     AVATARS_CONTAINER.test(path) ||
     GROUP_SPACE_PATH.test(path) ||
     PERSO_SPACE_PATH.test(path) ||
