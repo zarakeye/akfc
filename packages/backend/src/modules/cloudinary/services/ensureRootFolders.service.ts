@@ -59,6 +59,13 @@ export async function ensureRootFolders(
     create: { path: `${appRoot}/common_repository`, displayName: "Dépôt commun" },
   });
 
+  // Libellé d'affichage de la corbeille (path `bin` inchangé).
+  await prisma.folderLabel.upsert({
+    where: { path: `${appRoot}/bin` },
+    update: { displayName: "Corbeille" },
+    create: { path: `${appRoot}/bin`, displayName: "Corbeille" },
+  });
+
   return { created, total: ROOT_FOLDER_STATUSES.length };
 }
 
