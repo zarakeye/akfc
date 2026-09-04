@@ -93,19 +93,11 @@ const formSchema = z.discriminatedUnion('destinationKind', [
       .positive({ message: 'Choisis une discipline' }),
   }),
   z.object({
-    destinationKind: z.literal('new-discipline'),
-    categoryId: z
-      .number({ message: 'Choisis une catégorie' })
+    destinationKind: z.literal('stage'),
+    stageId: z
+      .number({ message: 'Sélectionne un stage.' })
       .int()
-      .positive({ message: 'Choisis une catégorie' }),
-    proposedDisciplineName: z
-      .string()
-      .trim()
-      .min(1, { message: 'Nom requis' })
-      .max(120, { message: 'Maximum 120 caractères' })
-      .refine((v) => /[a-zA-Z0-9]/.test(v), {
-        message: 'Le nom doit contenir au moins une lettre ou un chiffre',
-      }),
+      .positive('Sélectionne un stage.'),
   }),
   z.object({
     destinationKind: z.literal('common_repository'),
@@ -131,13 +123,12 @@ type Destination =
       disciplineId: number;
     }
   | {
-      kind: 'new-discipline';
-      categoryId: number;
-      proposedDisciplineName: string;
+      kind: 'stage';
+      stageId: number;
     }
   | {
       kind: 'common_repository';
-      folder?: string;
+      containerName?: string;
     }
   | {
       kind: 'event';
@@ -282,6 +273,10 @@ export default function DragNDropForm(): JSX.Element {
   const containerFolders = containerFoldersQuery.data ?? [];
 
   // Évènements existants (créés par les admins) pour le picker.
+  const stagesQuery = trpc.stage.listForUpload.useQuery(undefined, {
+    enabled: destinationKind === 'stage',
+  });
+  const stagesForUpload = stagesQuery.data ?? [];
   const eventsQuery = trpc.event.listForUpload.useQuery(undefined, {
     enabled: destinationKind === 'event',
   });
@@ -744,11 +739,10 @@ export default function DragNDropForm(): JSX.Element {
         categoryId: values.categoryId,
         disciplineId: values.disciplineId,
       };
-    } else if (values.destinationKind === 'new-discipline') {
+    } else if (values.destinationKind === 'stage') {
       destination = {
-        kind: 'new-discipline',
-        categoryId: values.categoryId,
-        proposedDisciplineName: values.proposedDisciplineName.trim(),
+        kind: 'stage',
+        stageId: values.stageId,
       };
     } else if (values.destinationKind === 'event') {
       destination = {
@@ -757,8 +751,11 @@ export default function DragNDropForm(): JSX.Element {
         disciplineIds: eventDisciplineIds,
       };
     } else {
-      const folder = values.containerName?.trim();
-      destination = { kind: 'common_repository', folder: folder ? folder : undefined };
+      const containerName = values.containerName?.trim();
+      destination = {
+        kind: 'common_repository',
+        containerName: containerName ? containerName : undefined,
+      };
     }
 
     const cloudinaryItems = toUpload.filter((it) => it.backend === 'cloudinary');
@@ -888,147 +885,101 @@ export default function DragNDropForm(): JSX.Element {
       <input ref={fileInputRef} type="file" multiple hidden />
 
       {/* Destination : discipline, « Général » ou évènement */}
+      {/* Niveau 1 : type de destination */}
       <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            checked={
-              destinationKind === 'existing-discipline' ||
-              destinationKind === 'new-discipline'
-            }
-            onChange={() => setValue('destinationKind', 'existing-discipline')}
-          />
-          Vers une discipline
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            checked={destinationKind === 'common_repository'}
-            onChange={() => setValue('destinationKind', 'common_repository')}
-          />
-          Vers « Dépôt commun »
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            checked={destinationKind === 'event'}
-            onChange={() => setValue('destinationKind', 'event')}
-          />
-          Vers un évènement
-        </label>
+        {([
+          ['existing-discipline', 'Vers une discipline'],
+          ['stage', 'Vers un stage'],
+          ['event', 'Vers un évènement'],
+          ['common_repository', 'Vers « Dépôt commun »'],
+        ] as const).map(([kind, label]) => (
+          <label key={kind} className="flex items-center gap-2">
+            <input
+              type="radio"
+              checked={destinationKind === kind}
+              onChange={() => setValue('destinationKind', kind)}
+            />
+            {label}
+          </label>
+        ))}
       </div>
 
-      {(destinationKind === 'existing-discipline' ||
-        destinationKind === 'new-discipline') && (
-        <>
-          {/* Catégorie */}
-      <div>
-        <label className="block font-semibold mb-1">Catégorie</label>
-        <select
-          {...register('categoryId', { valueAsNumber: true })}
-          className="border rounded p-2 w-full"
-        >
-          <option value="">— Choisir une catégorie —</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.type}
-            </option>
-          ))}
-        </select>
-        {'categoryId' in errors && errors.categoryId && (
-          <p className="text-sm text-red-600 mt-1">
-            {errors.categoryId.message}
-          </p>
-        )}
-      </div>
-
-      {/* Choix kind */}
-      {typeof categoryId === 'number' && categoryId > 0 && (
-        <>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                value="existing-discipline"
-                {...register('destinationKind')}
-              />
-              Discipline existante
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                value="new-discipline"
-                {...register('destinationKind')}
-              />
-              Nouvelle (à valider)
-            </label>
-          </div>
-
-          {destinationKind === 'existing-discipline' && (
-            <div>
-              <label className="block font-semibold mb-1">Discipline</label>
-              <Controller
-                name="disciplineId"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    value={field.value ?? ''}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === '' ? undefined : Number(e.target.value)
-                      )
-                    }
-                    onBlur={field.onBlur}
-                    className="border rounded p-2 w-full"
-                    disabled={disciplinesQuery.isLoading}
-                  >
-                    <option value="">— Choisir une discipline —</option>
-                    {disciplines.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              />
-              {disciplinesQuery.isLoading && (
-                <p className="text-sm text-gray-500 mt-1">Chargement…</p>
-              )}
-              {'disciplineId' in errors && errors.disciplineId && (
-                <p className="text-sm text-red-600 mt-1">
-                  {errors.disciplineId.message}
-                </p>
-              )}
-            </div>
-          )}
-
-          {destinationKind === 'new-discipline' && (
-            <div>
-              <label className="block font-semibold mb-1">
-                Nom de la nouvelle discipline
-              </label>
-              <input
-                type="text"
-                {...register('proposedDisciplineName')}
+      {/* Niveau 2 : discipline existante */}
+      {destinationKind === 'existing-discipline' && (
+        <div>
+          <label className="block font-semibold mb-1">Discipline</label>
+          <Controller
+            name="disciplineId"
+            control={control}
+            render={({ field }) => (
+              <select
+                value={field.value ?? ''}
+                onChange={(e) => {
+                  const id =
+                    e.target.value === '' ? undefined : Number(e.target.value);
+                  field.onChange(id);
+                  // categoryId dérivé de la discipline choisie (une seule
+                  // catégorie « Cours » — plus de select catégorie).
+                  const d = disciplines.find((x) => x.id === id);
+                  if (d) setValue('categoryId', d.categoryId);
+                }}
+                onBlur={field.onBlur}
                 className="border rounded p-2 w-full"
-                placeholder="Ex : Stage été 2026 — Kali"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Cette discipline sera proposée à un admin pour validation.
-              </p>
-              {'proposedDisciplineName' in errors &&
-                errors.proposedDisciplineName && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {errors.proposedDisciplineName.message}
-                  </p>
-                )}
-            </div>
+                disabled={disciplinesQuery.isLoading}
+              >
+                <option value="">— Choisir une discipline —</option>
+                {disciplines.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {disciplinesQuery.isLoading && (
+            <p className="text-sm text-gray-500 mt-1">Chargement…</p>
           )}
-        </>
-      )}
-        </>
+          {'disciplineId' in errors && errors.disciplineId && (
+            <p className="text-sm text-red-600 mt-1">
+              {errors.disciplineId.message}
+            </p>
+          )}
+        </div>
       )}
 
+      {/* Niveau 2 : stage existant */}
+      {destinationKind === 'stage' && (
+        <div>
+          <label className="block font-semibold mb-1">Stage</label>
+          {stagesQuery.isLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : stagesForUpload.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              Aucun stage. Les stages sont créés par les admins.
+            </p>
+          ) : (
+            <select
+              {...register('stageId', { valueAsNumber: true })}
+              defaultValue=""
+              className="border rounded p-2 w-full"
+            >
+              <option value="" disabled>
+                — Choisir un stage —
+              </option>
+              {stagesForUpload.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {'stageId' in errors && errors.stageId && (
+            <p className="text-sm text-red-600 mt-1">{errors.stageId.message}</p>
+          )}
+        </div>
+      )}
+
+      {/* Niveau 2 : évènement + disciplines d'enrichissement (admin) */}
       {destinationKind === 'event' && (
         <div className="flex flex-col gap-3">
           <div>
@@ -1061,7 +1012,6 @@ export default function DragNDropForm(): JSX.Element {
               </p>
             )}
           </div>
-
           <div>
             <label className="block font-semibold mb-1">
               Disciplines présentées (optionnel)
@@ -1090,6 +1040,7 @@ export default function DragNDropForm(): JSX.Element {
         </div>
       )}
 
+      {/* Niveau 2 : Dépôt commun (fallback) */}
       {destinationKind === 'common_repository' && (
         <div>
           <label className="block font-semibold mb-1">Nom du dossier de dépôt</label>
