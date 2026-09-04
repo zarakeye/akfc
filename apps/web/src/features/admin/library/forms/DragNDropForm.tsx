@@ -886,6 +886,7 @@ export default function DragNDropForm(): JSX.Element {
 
       {/* Destination : discipline, « Général » ou évènement */}
       {/* Niveau 1 : type de destination */}
+      {/* Niveau 1 : type de destination */}
       <div className="flex flex-wrap gap-4">
         {([
           ['existing-discipline', 'Vers une discipline'],
