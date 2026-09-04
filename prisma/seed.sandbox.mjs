@@ -68,7 +68,7 @@ async function main() {
   console.log("✅ Comptes de démo prêts");
 
   // Catégories
-  for (const type of ["Cours", "Stage", "Event"]) {
+  for (const type of ["Cours"]) {
     await prisma.category.upsert({
       where: { type },
       update: {},
