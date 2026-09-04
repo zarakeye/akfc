@@ -43,8 +43,9 @@ export function CommonRepositoryUpload(): JSX.Element {
   const registerUploaded = trpc.storage.registerUploadedAsset.useMutation();
   const createR2Upload = trpc.storage.createR2Upload.useMutation();
   const registerR2Upload = trpc.storage.registerR2Upload.useMutation();
-  const { data: myContainers = [] } =
+  const { data: myContainers = [], refetch: refetchContainers } =
     trpc.storage.listMyCommonRepositoryContainers.useQuery();
+  const setLabel = trpc.storage.setCommonRepositoryLabel.useMutation();
 
   const destination = {
     kind: "common_repository" as const,
@@ -204,6 +205,16 @@ export function CommonRepositoryUpload(): JSX.Element {
       const nCloud = await uploadCloudinary(cloud);
       for (const it of r2) await uploadR2(it);
 
+      // Libellé humain accentué du conteneur (le texte saisi), pour l'affichage.
+      const typed = containerName.trim();
+      if (typed) {
+        try {
+          await setLabel.mutateAsync({ subject: typed, label: typed });
+          await refetchContainers();
+        } catch {
+          /* le libellé est cosmétique : on n'échoue pas le dépôt pour ça. */
+        }
+      }
       setState("done");
       setMessage(
         `${nCloud + r2.length} fichier(s) déposé(s) dans le Dépôt commun.`,
@@ -253,7 +264,7 @@ export function CommonRepositoryUpload(): JSX.Element {
             <option value="">— Choisir un de mes dépôts —</option>
             {myContainers.map((c) => (
               <option key={c.subject} value={c.subject}>
-                {c.subject}
+                {c.label ?? c.subject}
               </option>
             ))}
           </select>

@@ -1457,3 +1457,11 @@ model FolderLabel {
   displayName String
   updatedAt   DateTime @updatedAt
 }
+
+model CommonRepositoryLabel {
+  // path physique du conteneur (ex. AKFC/common_repository/{sujet}_{personne}-{cuid})
+  path      String   @id
+  // libellé humain saisi par le déposant (accents/casse préservés)
+  label     String
+  updatedAt DateTime @updatedAt
+}
