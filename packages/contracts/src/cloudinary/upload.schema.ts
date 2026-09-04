@@ -50,6 +50,13 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
     eventId: z.number().int().positive(),
     disciplineIds: z.array(z.number().int().positive()).default([]),
   }),
+  // `stage` : contenus d'un stage existant (interne ou externe au club).
+  // Le stage est créé par les admins ; on en choisit un ici. Rattachement
+  // par le chemin `stages/…` (MediaAsset n'a pas de stageId).
+  z.object({
+    kind: z.literal("stage"),
+    stageId: z.number().int().positive(),
+  }),
   // Espace d'un groupe collaboratif : dépôt réservé aux éditeurs/admins
   // (garde côté router). Rattachement par le chemin `groups/…`.
   z.object({

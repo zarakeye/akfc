@@ -78,6 +78,20 @@ export async function resolvePendingUploadFolder(params: {
     });
   }
 
+  /* ── Destination stage ── */
+  if (destination.kind === "stage") {
+    const stage = await prisma.stage.findUnique({
+      where: { id: destination.stageId },
+      select: { id: true, slug: true },
+    });
+    if (!stage) {
+      throw new Error(`Stage not found (id=${destination.stageId})`);
+    }
+    // `Stage.slug` est nullable (le temps du backfill) → fallback sur l'id.
+    const stageSlug = stage.slug ? slug(stage.slug) : `stage-${stage.id}`;
+    return `${appRoot}/stages/${stageSlug || `stage-${stage.id}`}`;
+  }
+
   /* ── Destination événement ── */
   if (destination.kind === "event") {
     const event = await prisma.event.findUnique({

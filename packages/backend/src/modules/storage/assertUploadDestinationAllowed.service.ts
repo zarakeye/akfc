@@ -3,7 +3,6 @@ import type { PrismaClient } from "@prisma/client";
 
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 
 /**
  * Autorise (ou refuse) une destination d'upload selon l'utilisateur.
@@ -25,26 +24,11 @@ export async function assertUploadDestinationAllowed(params: {
   destination: UploadDestination;
 }): Promise<void> {
   const { prisma, userId, destination } = params;
-  switch (destination.kind) {
-    case "group":
-      await assertCanWriteGroupSpace({
-        prisma,
-        userId,
-        groupId: destination.groupId,
-      });
-      return;
-    case "common_repository":
-    case "perso":
-      return;
-    case "existing-discipline":
-    case "new-discipline":
-    case "event":
-      if (!(await isAdminByGroup(prisma, userId))) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cette destination est réservée aux administrateurs.",
-        });
-      }
-      return;
+  // `group` : droit d'écriture sur l'espace. Toutes les autres destinations
+  // (entités discipline/stage/event, common_repository, perso) sont ouvertes
+  // à TOUT UTILISATEUR CONNECTÉ pour l'ÉCRITURE : un membre peut déposer, le
+  // contenu part `pending`, et la LECTURE reste admin (assertCanReadPath).
+  if (destination.kind === "group") {
+    await assertCanWriteGroupSpace({ prisma, userId, groupId: destination.groupId });
   }
 }
