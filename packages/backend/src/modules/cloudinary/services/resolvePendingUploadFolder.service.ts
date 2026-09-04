@@ -4,6 +4,7 @@ import slugify from "slugify";
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
 
 /**
  * resolvePendingUploadFolder.service.ts
@@ -68,32 +69,13 @@ export async function resolvePendingUploadFolder(params: {
 
   /* ── Destination club générique (sans discipline ni catégorie) ── */
   if (destination.kind === "common_repository") {
-    // Regroupement par (utilisateur + intitulé). Le segment personnel isole
-    // chaque déposant (homonymes distincts par le cuid) ; l'intitulé regroupe
-    // les dépôts successifs d'une même personne au même sujet. Le libellé
-    // humain accentué est traité séparément (passe 2b).
-    const person = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { firstName: true, lastName: true, pseudo: true },
+    // Chemin du conteneur = source unique partagée avec setCommonRepositoryLabel.
+    return commonRepositoryContainerPath({
+      prisma,
+      appRoot,
+      userId,
+      subject: destination.containerName,
     });
-    const personName =
-      [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim() ||
-      person?.pseudo ||
-      "";
-    const personSlug = slug(personName) || `user-${userId}`;
-    // Un SEUL segment : `{sujet}_{personne}-{cuid}` — le sujet en tête, lisible
-    // sans déplier. Regroupement par (sujet + personne) : deux dépôts au même
-    // sujet par la même personne retombent dans le même dossier. Sujet vide →
-    // fourre-tout `depot_{personne}-{cuid}`. Chaque partie slugifiée à part,
-    // jointe par un `_` littéral (préservé par slug()).
-    const personSegment = `${personSlug}-${userId}`;
-    const subjectSlug = destination.containerName
-      ? slug(destination.containerName)
-      : "";
-    const segment = subjectSlug
-      ? `${subjectSlug}_${personSegment}`
-      : `depot_${personSegment}`;
-    return `${appRoot}/common_repository/${segment}`;
   }
 
   /* ── Destination événement ── */

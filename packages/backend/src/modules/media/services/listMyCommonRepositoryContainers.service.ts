@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { physicalCandidates } from "@backend/modules/storage/logicalPath";
+import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
 
 /**
  * Sujets des dépôts de l'utilisateur courant dans common_repository.
@@ -16,7 +17,7 @@ export async function listMyCommonRepositoryContainers(params: {
   prisma: PrismaClient;
   appRoot: string;
   userId: string;
-}): Promise<{ subject: string }[]> {
+}): Promise<{ subject: string; label?: string }[]> {
   const { prisma, appRoot, userId } = params;
 
   const assets = await prisma.mediaAsset.findMany({
@@ -48,7 +49,23 @@ export async function listMyCommonRepositoryContainers(params: {
     }
   }
 
-  return [...subjects]
-    .sort((a, b) => a.localeCompare(b, "fr"))
-    .map((subject) => ({ subject }));
+  const subjectList = [...subjects].sort((a, b) => a.localeCompare(b, "fr"));
+
+  // Libellés humains (accentués), s'ils existent, joints par path conteneur.
+  const withLabels = await Promise.all(
+    subjectList.map(async (subject) => {
+      const path = await commonRepositoryContainerPath({
+        prisma,
+        appRoot,
+        userId,
+        subject,
+      });
+      const row = await prisma.commonRepositoryLabel.findUnique({
+        where: { path },
+        select: { label: true },
+      });
+      return { subject, label: row?.label };
+    }),
+  );
+  return withLabels;
 }

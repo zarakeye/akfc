@@ -38,6 +38,7 @@ import { countPersoImages } from "@backend/modules/media/services/countPersoImag
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
 import { listMyCommonRepositoryContainers } from "@backend/modules/media/services/listMyCommonRepositoryContainers.service";
+import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
@@ -283,6 +284,26 @@ export const storageRouter = router({
       userId: ctx.user.id,
     });
   }),
+
+  // Pose le libellé humain d'un conteneur de dépôt (appelé par le front après
+  // un dépôt réussi). Le path est dérivé de ctx.user.id → un membre ne peut
+  // labelliser QUE ses propres conteneurs.
+  setCommonRepositoryLabel: protectedProcedure
+    .input(z.object({ subject: z.string().trim().min(1).max(120), label: z.string().trim().min(1).max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      const path = await commonRepositoryContainerPath({
+        prisma: ctx.prisma,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+        subject: input.subject,
+      });
+      await ctx.prisma.commonRepositoryLabel.upsert({
+        where: { path },
+        update: { label: input.label },
+        create: { path, label: input.label },
+      });
+      return { ok: true };
+    }),
 
   /**
    * Hiérarchie des espaces collaboratifs : chemin d'espace RÉEL + parent,
