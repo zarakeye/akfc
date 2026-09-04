@@ -1,3 +1,37 @@
+#!/usr/bin/env bash
+#
+# AKFC — Chantier B, B5 : uploader MEMBRE en cascade (type → entité) + fallback Dépôt commun.
+#
+# Réécrit CommonRepositoryUpload : un sélecteur de destination en tête —
+#   1) Type : Discipline / Stage / Event / Dépôt commun
+#   2) Entité (si type ≠ Dépôt commun) : select alimenté par
+#      discipline.getAll / stage.listForUpload / event.listForUpload
+# Le `destination` devient dynamique ; TOUTE la mécanique d'upload (2 flux
+# cloudinary/r2, vignettes, cropper, PdfThumbnail) est réutilisée telle quelle.
+# Le bloc containerName + select des dépôts + setLabel ne s'affiche QUE pour le
+# fallback « Dépôt commun ».
+#
+# Réécriture intégrale (le fichier n'est pas dans mon snapshot). typecheck web.
+#
+# Usage : bash apply-B5-member-cascade.sh
+#         AKFC_APPLY_ONLY=1 bash apply-B5-member-cascade.sh   (clone)
+#
+set -euo pipefail
+
+F="apps/web/src/features/common-repository/CommonRepositoryUpload.tsx"
+[ -f "package.json" ] || { echo "ERREUR: lance-moi à la racine du repo." >&2; exit 1; }
+[ -f "$F" ]           || { echo "ERREUR: $F introuvable (applique A3 d'abord)." >&2; exit 1; }
+
+if [ "${AKFC_APPLY_ONLY:-0}" != "1" ]; then
+  BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    echo "NOTE: tu es sur '$BRANCH'. (Ctrl-C pour annuler.)"; sleep 2
+  fi
+fi
+
+cp "$F" "$F.bak" && echo "sauvegarde : $F.bak"
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { JSX, useMemo, useState } from "react";
@@ -461,3 +495,20 @@ export function CommonRepositoryUpload(): JSX.Element {
     </div>
   );
 }
+TSX
+echo "réécrit  $F (cascade)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then
+  echo "APPLY_ONLY — pas de typecheck, ni commit"; exit 0
+fi
+
+echo "typecheck web…"
+if ! pnpm --filter web typecheck > /tmp/akfc_tc.log 2>&1; then
+  echo "typecheck web KO :"; grep -nE "error TS|destination|entityId|listForUpload|getAll" /tmp/akfc_tc.log | head -20; tail -6 /tmp/akfc_tc.log; exit 1
+fi
+echo "OK"
+
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modif"; exit 0; fi
+git add -A
+git commit -m "feat(B5): uploader membre en cascade (discipline/stage/event) + fallback Dépôt commun" \
+  && echo "commit $(git rev-parse --short HEAD)"
