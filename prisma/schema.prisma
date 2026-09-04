@@ -70,7 +70,6 @@ model User {
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
 }
 
-
 model Preferences {
   id           Int     @id @default(autoincrement())
   displayEmail Boolean @default(false)
@@ -685,8 +684,6 @@ model Event {
   /// `ALL_AGES` pour les événements tout public).
   audience Audience
 
-
-
   /// Noms libres des disciplines NON enseignées présentées lors de
   /// l'événement (0..N) — ex. « Calligraphie chinoise ». Remplace
   /// `externalDisciplineLabel` (singulier).
@@ -1191,7 +1188,6 @@ model GalleryItem {
   @@index([galleryId, sortOrder])
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════
 // BREAKING NEWS — la « voix du club »
 // ═══════════════════════════════════════════════════════════════════════
@@ -1293,7 +1289,6 @@ model SiteStyle {
   updatedAt DateTime @updatedAt
 }
 
-
 enum DocumentAudience {
   ALL_MEMBERS
   SPECIFIC
@@ -1351,7 +1346,6 @@ model DocumentReceipt {
   @@unique([memberDocumentId, userId])
   @@index([userId])
 }
-
 
 /// Droit d'un membre dans l'espace d'un groupe collaboratif.
 enum MemberGroupAccess {
@@ -1456,12 +1450,4 @@ model FolderLabel {
   path        String   @id
   displayName String
   updatedAt   DateTime @updatedAt
-}
-
-model CommonRepositoryLabel {
-  // path physique du conteneur (ex. AKFC/common_repository/{sujet}_{personne}-{cuid})
-  path      String   @id
-  // libellé humain saisi par le déposant (accents/casse préservés)
-  label     String
-  updatedAt DateTime @updatedAt
 }
