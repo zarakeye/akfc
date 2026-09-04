@@ -89,6 +89,10 @@ export default function FinderTreeFolder({
   const isActive = node.path === currentPath;
 
   const isStatus = isStatusFolder(node.path);
+  // La corbeille (bin) est un status folder, mais on autorise l'édition de
+  // son LABEL d'affichage (renameNode route bin → setFolderLabel ; le path
+  // physique `bin` reste). Drag/select/suppression restent interdits.
+  const isRenamableRoot = node.path === `${APP_ROOT}/bin`;
 
   const longPress = useLongPress(() => {
     if (isStatus) return;
@@ -105,6 +109,17 @@ export default function FinderTreeFolder({
 
   function buildMenuItems(): ContextMenuItem[] {
     const targetNodes = effectiveNodesFor(node);
+    if (isRenamableRoot) {
+      return [
+        {
+          label: "Renommer",
+          onClick: () => {
+            setRenameError(null);
+            setIsRenamingFolder(true);
+          },
+        },
+      ];
+    }
     return [
       {
         label: "Renommer",
@@ -468,7 +483,7 @@ export default function FinderTreeFolder({
       <div
         onClick={handleRowClick}
         onContextMenu={
-          isStatus
+          isStatus && !isRenamableRoot
             ? undefined
             : (e) => {
                 e.preventDefault();
@@ -573,7 +588,7 @@ export default function FinderTreeFolder({
               // Double-clic sur le NOM : renommer. Le clic simple sur la
               // ligne garde son rôle d'ouverture / de repli.
               e.stopPropagation();
-              if (!isStatus) {
+              if (!isStatus || isRenamableRoot) {
                 setRenameError(null);
                 setIsRenamingFolder(true);
               }
