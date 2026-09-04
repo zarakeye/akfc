@@ -22,6 +22,7 @@ import {
 
 import {
   createUploadSignaturesSchema,
+  uploadDestinationSchema,
   registerUploadedAssetsSchema,
 } from "@contracts/cloudinary/upload.schema";
 
@@ -86,41 +87,13 @@ import { buildUploadFileName } from '@backend/modules/storage/services/buildUplo
  * Forme identique à ce que `DragNDropForm` construit déjà côté frontend
  * pour Cloudinary — on réutilise.
  */
-const r2UploadDestinationSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('existing-discipline'),
-    categoryId: z.number().int().positive(),
-    disciplineId: z.number().int().positive(),
-  }),
-  z.object({
-    kind: z.literal('new-discipline'),
-    categoryId: z.number().int().positive(),
-    proposedDisciplineName: z.string().min(1).max(120),
-  }),
-  // Espace club partagé, sans discipline ni catégorie.
-  z.object({
-    kind: z.literal('common_repository'),
-    folder: z.string().trim().min(1).max(120).optional(),
-  }),
-  // Contenus d'un événement (parité avec `general`).
-  z.object({
-    kind: z.literal('event'),
-    eventId: z.number().int().positive(),
-    disciplineIds: z.array(z.number().int().positive()).default([]),
-  }),
-  // Espace d'un groupe collaboratif (dépôt gardé côté procédure).
-  z.object({
-    kind: z.literal('group'),
-    groupId: z.string(),
-  }),
-]);
 
 const registerR2UploadInputSchema = z.object({
   path: z.string().min(1),
   expectedBytes: z.number().int().positive(),
   expectedMimeType: z.string().min(1),
   // Phase 2 — nouveaux champs requis pour créer la row MediaAsset
-  destination: r2UploadDestinationSchema,
+  destination: uploadDestinationSchema,
   originalFileName: z.string().min(1).max(255),
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { JSX, useMemo, useState } from "react";
 import { trpc } from "@trpc/trpcClient";
 import Cropper from "@features/gallery-crop/components/Cropper";
 import { PdfThumbnail } from "@features/common-repository/PdfThumbnail";
@@ -8,16 +8,20 @@ import type { PictureItem } from "@features/gallery-crop/types/picture.types";
 import type { CropResult } from "@features/gallery-crop/types/cropper.types";
 
 /**
- * Dépôt membre dans le Dépôt commun (common_repository).
+ * Uploader MEMBRE en cascade.
  *
- * Dropzone + nom de conteneur + VIGNETTES + CROPPER (le composant maison de
- * gallery-crop, comme l'uploader admin) : clic sur une image → recadrage → le
- * fichier recadré remplace l'original avant l'envoi. Par fichier : image/vidéo →
- * Cloudinary (ou presigned PUT MinIO en sandbox), sinon → R2. Pas de gestion de
- * conflit ni de destinations admin (le backend, durci, refuserait de toute façon).
+ *   1) Type de destination : Discipline / Stage / Event / Dépôt commun.
+ *   2) Entité existante (si type ≠ Dépôt commun) : discipline / stage / event.
+ *   3) Dépôt → le contenu part `pending` (géré par l'admin). La LECTURE reste
+ *      admin ; le membre ne fait qu'écrire.
+ *
+ * Le « Dépôt commun » est le fallback (rien ne correspond) : nom de conteneur
+ * libre + reprise d'un dépôt existant. Toute la mécanique d'upload (2 flux
+ * cloudinary/r2, vignettes, cropper) est commune à toutes les destinations.
  */
 
 type UploadState = "idle" | "uploading" | "done" | "error";
+type DestKind = "discipline" | "stage" | "event" | "common_repository";
 
 function pickBackend(mimeType: string): "cloudinary" | "r2" {
   return mimeType.startsWith("image/") || mimeType.startsWith("video/")
@@ -33,6 +37,8 @@ function iconForMime(mime: string): string {
 }
 
 export function CommonRepositoryUpload(): JSX.Element {
+  const [destKind, setDestKind] = useState<DestKind>("common_repository");
+  const [entityId, setEntityId] = useState<number | "">("");
   const [items, setItems] = useState<PictureItem[]>([]);
   const [itemToCrop, setItemToCrop] = useState<PictureItem | null>(null);
   const [containerName, setContainerName] = useState<string>("");
@@ -47,13 +53,58 @@ export function CommonRepositoryUpload(): JSX.Element {
     trpc.storage.listMyCommonRepositoryContainers.useQuery();
   const setLabel = trpc.storage.setCommonRepositoryLabel.useMutation();
 
-  const destination = {
-    kind: "common_repository" as const,
-    containerName: containerName.trim() || undefined,
-  };
+  // Listes d'entités (niveau 2). Chargées à la demande selon le type choisi.
+  const disciplines = trpc.discipline.getAll.useQuery(undefined, {
+    enabled: destKind === "discipline",
+  });
+  const stages = trpc.stage.listForUpload.useQuery(undefined, {
+    enabled: destKind === "stage",
+  });
+  const events = trpc.event.listForUpload.useQuery(undefined, {
+    enabled: destKind === "event",
+  });
+
+  // Options du select entité selon le type.
+  const entityOptions = useMemo<{ id: number; label: string }[]>(() => {
+    if (destKind === "discipline")
+      return (disciplines.data ?? []).map((d) => ({ id: d.id, label: d.name }));
+    if (destKind === "stage")
+      return (stages.data ?? []).map((s) => ({ id: s.id, label: s.label }));
+    if (destKind === "event")
+      return (events.data ?? []).map((e) => ({ id: e.id, label: e.label }));
+    return [];
+  }, [destKind, disciplines.data, stages.data, events.data]);
+
+  // categoryId de la discipline choisie (nécessaire pour existing-discipline).
+  const categoryIdOfDiscipline = useMemo<number | null>(() => {
+    if (destKind !== "discipline" || entityId === "") return null;
+    const d = (disciplines.data ?? []).find((x) => x.id === entityId);
+    return d?.categoryId ?? null;
+  }, [destKind, entityId, disciplines.data]);
+
+  // Construit la destination d'upload selon le choix.
+  const destination = useMemo(() => {
+    if (destKind === "discipline" && entityId !== "" && categoryIdOfDiscipline)
+      return {
+        kind: "existing-discipline" as const,
+        categoryId: categoryIdOfDiscipline,
+        disciplineId: entityId,
+      };
+    if (destKind === "stage" && entityId !== "")
+      return { kind: "stage" as const, stageId: entityId };
+    if (destKind === "event" && entityId !== "")
+      return { kind: "event" as const, eventId: entityId, disciplineIds: [] };
+    return {
+      kind: "common_repository" as const,
+      containerName: containerName.trim() || undefined,
+    };
+  }, [destKind, entityId, categoryIdOfDiscipline, containerName]);
+
+  const isCommon = destination.kind === "common_repository";
+  // Une entité est requise mais pas encore choisie ?
+  const entityMissing = destKind !== "common_repository" && entityId === "";
 
   const onPick = (fileList: FileList | null) => {
-    // Révoque les anciennes URL avant de repartir sur une nouvelle sélection.
     items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
     const picked = Array.from(fileList ?? []);
     setItems(
@@ -196,6 +247,10 @@ export function CommonRepositoryUpload(): JSX.Element {
       setMessage("Choisis au moins un fichier.");
       return;
     }
+    if (entityMissing) {
+      setMessage("Choisis une destination.");
+      return;
+    }
     setState("uploading");
     setMessage(null);
     try {
@@ -205,20 +260,20 @@ export function CommonRepositoryUpload(): JSX.Element {
       const nCloud = await uploadCloudinary(cloud);
       for (const it of r2) await uploadR2(it);
 
-      // Libellé humain accentué du conteneur (le texte saisi), pour l'affichage.
-      const typed = containerName.trim();
-      if (typed) {
-        try {
-          await setLabel.mutateAsync({ subject: typed, label: typed });
-          await refetchContainers();
-        } catch {
-          /* le libellé est cosmétique : on n'échoue pas le dépôt pour ça. */
+      // Libellé humain seulement pour le Dépôt commun (les entités ont leur nom).
+      if (isCommon) {
+        const typed = containerName.trim();
+        if (typed) {
+          try {
+            await setLabel.mutateAsync({ subject: typed, label: typed });
+            await refetchContainers();
+          } catch {
+            /* le libellé est cosmétique : on n'échoue pas le dépôt pour ça. */
+          }
         }
       }
       setState("done");
-      setMessage(
-        `${nCloud + r2.length} fichier(s) déposé(s) dans le Dépôt commun.`,
-      );
+      setMessage(`${nCloud + r2.length} fichier(s) déposé(s).`);
       items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
       setItems([]);
       setContainerName("");
@@ -234,41 +289,95 @@ export function CommonRepositoryUpload(): JSX.Element {
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold">Déposer un ou plusieurs fichiers</h1>
       <p className="text-sm text-muted-foreground">
-        Vos fichiers sont déposés dans le Dépôt commun. Les administrateurs les
-        retrouveront et les classeront. Cliquez une image pour la recadrer.
+        Choisissez une destination. Le contenu déposé sera classé par les
+        administrateurs. Cliquez une image pour la recadrer.
       </p>
 
+      {/* Niveau 1 : type de destination */}
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Nom du dossier de dépôt (optionnel)</span>
-        <input
-          type="text"
-          value={containerName}
-          onChange={(e) => setContainerName(e.target.value)}
-          placeholder="ex. Photos du stage de bâton long"
+        <span className="font-medium">Destination</span>
+        <select
           className="rounded border border-input bg-background px-2 py-1"
           disabled={busy}
-        />
+          value={destKind}
+          onChange={(e) => {
+            setDestKind(e.target.value as DestKind);
+            setEntityId("");
+          }}
+        >
+          <option value="discipline">Une discipline (cours)</option>
+          <option value="stage">Un stage</option>
+          <option value="event">Un événement</option>
+          <option value="common_repository">
+            Aucune de ces destinations (Dépôt commun)
+          </option>
+        </select>
       </label>
 
-      {myContainers.length > 0 && (
+      {/* Niveau 2 : entité existante */}
+      {!isCommon && (
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Ou reprendre un dépôt existant</span>
+          <span className="font-medium">
+            {destKind === "discipline"
+              ? "Discipline"
+              : destKind === "stage"
+                ? "Stage"
+                : "Événement"}
+          </span>
           <select
             className="rounded border border-input bg-background px-2 py-1"
             disabled={busy}
-            value=""
-            onChange={(e) => {
-              if (e.target.value) setContainerName(e.target.value);
-            }}
+            value={entityId === "" ? "" : String(entityId)}
+            onChange={(e) =>
+              setEntityId(e.target.value ? Number(e.target.value) : "")
+            }
           >
-            <option value="">— Choisir un de mes dépôts —</option>
-            {myContainers.map((c) => (
-              <option key={c.subject} value={c.subject}>
-                {c.label ?? c.subject}
+            <option value="">— Choisir —</option>
+            {entityOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
               </option>
             ))}
           </select>
         </label>
+      )}
+
+      {/* Dépôt commun : nom de conteneur + reprise d'un dépôt existant */}
+      {isCommon && (
+        <>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Nom du dossier de dépôt (optionnel)</span>
+            <input
+              type="text"
+              value={containerName}
+              onChange={(e) => setContainerName(e.target.value)}
+              placeholder="ex. Photos du stage de bâton long"
+              className="rounded border border-input bg-background px-2 py-1"
+              disabled={busy}
+            />
+          </label>
+
+          {myContainers.length > 0 && (
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Ou reprendre un dépôt existant</span>
+              <select
+                className="rounded border border-input bg-background px-2 py-1"
+                disabled={busy}
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) setContainerName(e.target.value);
+                }}
+              >
+                <option value="">— Choisir un de mes dépôts —</option>
+                {myContainers.map((c) => (
+                  <option key={c.subject} value={c.subject}>
+                    {c.label ?? c.subject}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </>
       )}
 
       <label className="flex flex-col gap-1 text-sm">
@@ -324,7 +433,7 @@ export function CommonRepositoryUpload(): JSX.Element {
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={busy || items.length === 0}
+        disabled={busy || items.length === 0 || entityMissing}
         className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
         {busy ? "Dépôt en cours…" : "Déposer"}
