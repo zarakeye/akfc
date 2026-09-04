@@ -23,6 +23,9 @@ export async function register() {
   const { ensureAdminGroup } = await import(
     "@backend/modules/memberGroups/ensureAdminGroup.service"
   );
+  const { ensureCategoryFolderLabels } = await import(
+    "@backend/modules/cloudinary/services/ensureCategoryFolderLabels.service"
+  );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 
@@ -67,6 +70,18 @@ export async function register() {
   } catch (err) {
     console.error(
       "[instrumentation] ensureAdminGroup failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const { ensured } = await ensureCategoryFolderLabels(prisma, APP_ROOT);
+    console.log(
+      `[instrumentation] ensureCategoryFolderLabels: ${ensured} libellé(s) de catégorie garanti(s) pour appRoot="${APP_ROOT}"`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureCategoryFolderLabels failed — app will still start",
       err
     );
   }
