@@ -2,15 +2,15 @@
  * Nature d'un dossier d'espace/conteneur du finder, pour lui donner une icône
  * thématique. Détection par le motif du chemin (aucune query requise).
  *
- *   - espace de GROUPE : `${appRoot}/groups/<slug>-<cuid>`
- *   - espace PERSO     : `${appRoot}/persos/<slug>-<cuid>`
- *   - conteneurs       : `${appRoot}/groups` et `${appRoot}/persos`
+ *   - espace de GROUPE : `${appRoot}/collaborative-group-spaces/<slug>-<cuid>`
+ *   - espace PERSO     : `${appRoot}/personal-spaces/<slug>-<cuid>`
+ *   - conteneurs       : collaborative-group-spaces, personal-spaces, avatars
  */
-const GROUP_SPACE_PATH = /\/groups\/[^/]+-c[a-z0-9]{24}$/;
-const PERSO_SPACE_PATH = /\/persos\/[^/]+-c[a-z0-9]{24}$/;
-const GROUPS_CONTAINER = /^[^/]+\/groups$/;
-const PERSOS_CONTAINER = /^[^/]+\/persos$/;
-const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common_repository$/;
+const GROUP_SPACE_PATH = /\/collaborative-group-spaces\/[^/]+-c[a-z0-9]{24}$/;
+const PERSO_SPACE_PATH = /\/personal-spaces\/[^/]+-c[a-z0-9]{24}$/;
+const GROUPS_CONTAINER = /^[^/]+\/collaborative-group-spaces$/;
+const PERSOS_CONTAINER = /^[^/]+\/personal-spaces$/;
+const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common-repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
 
@@ -28,6 +28,10 @@ export function isGroupsContainer(path: string): boolean {
 
 export function isPersosContainer(path: string): boolean {
   return PERSOS_CONTAINER.test(path);
+}
+
+export function isAvatarsContainer(path: string): boolean {
+  return AVATARS_CONTAINER.test(path);
 }
 
 /**
