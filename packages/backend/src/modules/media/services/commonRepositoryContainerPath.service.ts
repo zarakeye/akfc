@@ -35,5 +35,5 @@ export async function commonRepositoryContainerPath(params: {
   const segment = subjectSlug
     ? `${subjectSlug}_${personSegment}`
     : `depot_${personSegment}`;
-  return `${appRoot}/common_repository/${segment}`;
+  return `${appRoot}/common-repository/${segment}`;
 }

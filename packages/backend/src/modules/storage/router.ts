@@ -154,7 +154,7 @@ export const storageRouter = router({
         where: {
           status: "pending",
           appRoot: ctx.appRoot,
-          fullPath: { contains: "/common_repository/" },
+          fullPath: { contains: "/common-repository/" },
         },
       }),
       countPersoImages({
@@ -193,8 +193,8 @@ export const storageRouter = router({
       counts.set(folder, (counts.get(folder) ?? 0) + 1);
     }
 
-    const commonRepositoryRoot = `${ctx.appRoot}/common_repository`;
-    const persosRoot = `${ctx.appRoot}/persos`;
+    const commonRepositoryRoot = `${ctx.appRoot}/common-repository`;
+    const persosRoot = `${ctx.appRoot}/personal-spaces`;
 
     const entries = Array.from(counts.entries()).map(([path, count]) => {
       let kind: "common_repository" | "perso" | "folder" = "folder";
@@ -406,7 +406,7 @@ export const storageRouter = router({
       await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
       // Espaces de groupe visibles même vides : Cloudinary/R2 n'ont pas de
       // vrais dossiers, un espace sans asset s'évaporerait du listing.
-      if (input.path === `${ctx.appRoot}/groups`) {
+      if (input.path === `${ctx.appRoot}/collaborative-group-spaces`) {
         const merged = await mergeGroupSpaceFolders({
           result,
           prisma: ctx.prisma,

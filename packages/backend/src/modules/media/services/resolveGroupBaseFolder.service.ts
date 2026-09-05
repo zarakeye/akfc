@@ -40,5 +40,5 @@ export async function resolveGroupBaseFolder(params: {
 
   const groupSlug = slug(group.name) || `group-${groupId}`;
 
-  return `${appRoot}/groups/${groupSlug}-${groupId}`;
+  return `${appRoot}/collaborative-group-spaces/${groupSlug}-${groupId}`;
 }

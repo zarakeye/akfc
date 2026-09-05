@@ -14,7 +14,7 @@ import type { StorageFolderNode, StorageNode } from "@contracts/storage";
  * du finder et le picker en profitent.
  */
 
-const GROUP_SPACE_RE = /\/groups\/[^/]+-(c[a-z0-9]{24})$/;
+const GROUP_SPACE_RE = /\/collaborative-group-spaces\/[^/]+-(c[a-z0-9]{24})$/;
 
 type NameMaps = {
   labelByPath: Map<string, string>;

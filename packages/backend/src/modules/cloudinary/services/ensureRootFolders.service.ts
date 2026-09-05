@@ -51,12 +51,12 @@ export async function ensureRootFolders(
   }
 
   // Libellé humain FIXE du Dépôt commun : le path reste
-  // `${appRoot}/common_repository` (racine structurelle), seul l'affichage
+  // `${appRoot}/common-repository` (racine structurelle), seul l'affichage
   // change (le finder lit FolderLabel[path]). Forcé → auto-cicatrisation.
   await prisma.folderLabel.upsert({
-    where: { path: `${appRoot}/common_repository` },
+    where: { path: `${appRoot}/common-repository` },
     update: { displayName: "Dépôt commun" },
-    create: { path: `${appRoot}/common_repository`, displayName: "Dépôt commun" },
+    create: { path: `${appRoot}/common-repository`, displayName: "Dépôt commun" },
   });
 
   // Libellé d'affichage de la corbeille (path `bin` inchangé).
@@ -83,7 +83,7 @@ export function isRootFolder(appRoot: string, fullPath: string): boolean {
   if (normalized === appRoot) return true;
   // Racine structurelle du Dépôt commun : jamais renommable/supprimable
   // (la renommer casserait resolver + query + finder + permissions).
-  if (normalized === `${appRoot}/common_repository`) return true;
+  if (normalized === `${appRoot}/common-repository`) return true;
 
   for (const status of ROOT_FOLDER_STATUSES) {
     if (normalized === `${appRoot}/${status}`) return true;
