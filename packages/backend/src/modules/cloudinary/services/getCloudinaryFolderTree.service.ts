@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { listAuthenticatedResources } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { buildCloudinaryTreeV1 } from "@backend/modules/cloudinary/tree";
+import { isBinPath } from "@backend/modules/storage/logicalPath";
 import {
   folderAncestorsOfPublicId,
   upsertFolders,
@@ -95,12 +96,17 @@ export async function getCloudinaryFolderTree(
   const promise = (async () => {
     // 1) Récupérer les assets réels sous le préfixe (image / video / raw, paginés).
     const resources = await listAuthenticatedResources(normalizedPath);
+    console.log("[getTree]", normalizedPath, "→", resources.length, "resources", resources.map(r => r.publicId));
 
     // 2) Découvrir tous les dossiers ancêtres de chaque asset, et les upsert
     //    dans le registre DB. C'est ce qui permet aux dossiers vides de survivre.
-    const discoveredFolderPaths = resources.flatMap((r: { publicId: string }) =>
-      folderAncestorsOfPublicId(r.publicId)
-    );
+    const discoveredFolderPaths = resources
+      .flatMap((r: { publicId: string }) => folderAncestorsOfPublicId(r.publicId))
+      // La corbeille est PLATE : on ne persiste jamais ses dossiers ancêtres
+      // (`bin/.trash/<uuid>/…`) comme placeholders — sinon une arborescence de
+      // dossiers vides survit à la suppression du contenu.
+      .filter((path) => !isBinPath(`${appRoot}/${path}`.replace(/\/+/g, "/"), appRoot)
+                        && !isBinPath(path, appRoot));
     await upsertFolders(prisma, discoveredFolderPaths, appRoot);
 
     // 3) Lire le registre DB filtré par préfixe — il contient à la fois les

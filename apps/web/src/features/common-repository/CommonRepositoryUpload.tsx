@@ -315,7 +315,7 @@ export function CommonRepositoryUpload(): JSX.Element {
       </label>
 
       {/* Niveau 2 : entité existante */}
-      {!isCommon && (
+      {destKind !== "common_repository" && (
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">
             {destKind === "discipline"
@@ -343,7 +343,7 @@ export function CommonRepositoryUpload(): JSX.Element {
       )}
 
       {/* Dépôt commun : nom de conteneur + reprise d'un dépôt existant */}
-      {isCommon && (
+      {destKind === "common_repository" && (
         <>
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium">Nom du dossier de dépôt (optionnel)</span>

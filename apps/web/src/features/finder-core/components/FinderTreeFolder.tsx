@@ -93,6 +93,11 @@ export default function FinderTreeFolder({
   // son LABEL d'affichage (renameNode route bin → setFolderLabel ; le path
   // physique `bin` reste). Drag/select/suppression restent interdits.
   const isRenamableRoot = node.path === `${APP_ROOT}/bin`;
+  // La corbeille a sa PROPRE vue plate (FinderBinRootView) dans la grille.
+  // Dans l'arbre, elle reste une FEUILLE : pas de chevron, pas de descente
+  // dans `.trash/<uuid>/…` (ce qui produisait une 2e arborescence de la
+  // corbeille). Le clic navigue vers la vue plate (handleRowClick → onOpen).
+  const isBinRoot = node.path === `${APP_ROOT}/bin`;
 
   const longPress = useLongPress(() => {
     if (isStatus) return;
@@ -423,7 +428,7 @@ export default function FinderTreeFolder({
     }
   }
 
-  const showChevron = hasChildren;
+  const showChevron = hasChildren && !isBinRoot;
 
   // ─── Skip visuel du `.trash` ET des wrappers uuid ────────────────────────
   if (isTrashRootSkipNode || isTrashWrapperNode) {
@@ -614,7 +619,7 @@ export default function FinderTreeFolder({
         </div>
       )}
 
-      {isOpen && displayChildren && displayChildren.length > 0 && (
+      {!isBinRoot && isOpen && displayChildren && displayChildren.length > 0 && (
         <div className="ml-3 pl-3 border-l border-border">
           {displayChildren.map((child) =>
             child.type === "folder" ? (
