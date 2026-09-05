@@ -109,8 +109,8 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
   userId: string;
 }): Promise<StorageFolderNode> {
   const { root, prisma, appRoot, userId } = params;
-  const groupsPath = `${appRoot}/groups`;
-  const persosPath = `${appRoot}/persos`;
+  const groupsPath = `${appRoot}/collaborative-group-spaces`;
+  const persosPath = `${appRoot}/personal-spaces`;
 
   let groupsNode: StorageFolderNode | null = null;
   let persosNode: StorageFolderNode | null = null;
@@ -123,11 +123,11 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
   find(root);
 
   // Dépôt commun : racine toujours visible (carte mentale admin), même vide.
-  const commonRepoPath = `${appRoot}/common_repository`;
+  const commonRepoPath = `${appRoot}/common-repository`;
   let hasCommonRepo = false;
   const findCommon = (n: StorageNode): void => {
     if (n.type !== "folder") return;
-    if (n.path === commonRepoPath || n.path.endsWith("/common_repository")) {
+    if (n.path === commonRepoPath || n.path.endsWith("/common-repository")) {
       hasCommonRepo = true;
     }
     (n.children ?? []).forEach(findCommon);

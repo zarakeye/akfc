@@ -12,12 +12,12 @@
  * → leur protection est DB-aware et vit ailleurs (incrément 1c). Ce module ne
  * couvre QUE les entités à préfixe fixe.
  */
-const GROUPS_CONTAINER = /^[^/]+\/groups$/;
-const PERSOS_CONTAINER = /^[^/]+\/persos$/;
-const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common_repository$/;
+const GROUPS_CONTAINER = /^[^/]+\/collaborative-group-spaces$/;
+const PERSOS_CONTAINER = /^[^/]+\/personal-spaces$/;
+const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common-repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
-const GROUP_SPACE = /\/groups\/[^/]+-c[a-z0-9]{24}$/;
-const PERSO_SPACE = /\/persos\/[^/]+-c[a-z0-9]{24}$/;
+const GROUP_SPACE = /\/collaborative-group-spaces\/[^/]+-c[a-z0-9]{24}$/;
+const PERSO_SPACE = /\/personal-spaces\/[^/]+-c[a-z0-9]{24}$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
 
 /** True si `path` désigne un dossier-entité à préfixe fixe (protégé). */

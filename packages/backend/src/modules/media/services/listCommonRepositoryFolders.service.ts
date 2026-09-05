@@ -20,7 +20,7 @@ export async function listCommonRepositoryFolders(params: {
     where: {
       appRoot,
       status: { in: ["pending", "published"] },
-      fullPath: { contains: "/common_repository/" },
+      fullPath: { contains: "/common-repository/" },
     },
     select: { fullPath: true },
   });
@@ -30,7 +30,7 @@ export async function listCommonRepositoryFolders(params: {
   // — le plat, `pending/`, `published/`. Les deux premiers étaient codés en
   // dur ici ; le troisième, celui qui reçoit désormais les uploads, aurait
   // manqué, et le dossier aurait disparu du select sans un mot.
-  const prefixes = physicalCandidates(`${appRoot}/common_repository`, appRoot).map(
+  const prefixes = physicalCandidates(`${appRoot}/common-repository`, appRoot).map(
     (candidate) => `${candidate}/`,
   );
   const names = new Set<string>();

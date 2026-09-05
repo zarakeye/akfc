@@ -89,7 +89,7 @@ export async function resolvePendingUploadFolder(params: {
     }
     // `Stage.slug` est nullable (le temps du backfill) → fallback sur l'id.
     const stageSlug = stage.slug ? slug(stage.slug) : `stage-${stage.id}`;
-    return `${appRoot}/stages/${stageSlug || `stage-${stage.id}`}`;
+    return `${appRoot}/seminars/${stageSlug || `stage-${stage.id}`}`;
   }
 
   /* ── Destination événement ── */

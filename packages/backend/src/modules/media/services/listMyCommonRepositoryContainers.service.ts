@@ -24,12 +24,12 @@ export async function listMyCommonRepositoryContainers(params: {
     where: {
       appRoot,
       uploaderUserId: userId,
-      fullPath: { contains: "/common_repository/" },
+      fullPath: { contains: "/common-repository/" },
     },
     select: { fullPath: true },
   });
 
-  const prefixes = physicalCandidates(`${appRoot}/common_repository`, appRoot).map(
+  const prefixes = physicalCandidates(`${appRoot}/common-repository`, appRoot).map(
     (candidate) => `${candidate}/`,
   );
   const tail = `-${userId}`;
