@@ -1,7 +1,7 @@
 /**
  * Étiquette conviviale des dossiers d'ESPACE (groupe / perso) du finder.
  *
- * Chemin d'un espace : `${appRoot}/groups|persos/<slug>-<cuid>` (cuid = id DB,
+ * Chemin d'un espace : `${appRoot}/collaborative-group-spaces|personal-spaces/<slug>-<cuid>` (cuid = id DB,
  * garant d'unicité/stabilité au renommage). Illisible tel quel. On affiche le
  * nom EXACT (résolu par le backend via `storage.spaceDisplayNames`, indexé par
  * cuid) ; à défaut (map absente), on retire le cuid et on titre-case le slug.
@@ -10,7 +10,7 @@
  * dossiers ordinaires) → l'appelant garde `node.name`.
  */
 const CUID_RE = /-(c[a-z0-9]{24})$/;
-const SPACE_ROOT_PATH = /\/(groups|persos)\/[^/]+$/;
+const SPACE_ROOT_PATH = /\/(collaborative-group-spaces|personal-spaces)\/[^/]+$/;
 
 function slugFallback(slug: string): string {
   return slug

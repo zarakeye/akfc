@@ -1,7 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
-import { Folder, Users, User, Music, Check, FileText, Play } from 'lucide-react';
+import { Folder, Users, User, CircleUserRound, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
@@ -13,7 +13,7 @@ import ContextMenu, {
   type ContextMenuItem,
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
@@ -567,6 +567,8 @@ function CardIcon({
           <Users className="w-16 h-16" strokeWidth={1.5} />
         ) : isPersoSpaceFolder(node.path) || isPersosContainer(node.path) ? (
           <User className="w-16 h-16" strokeWidth={1.5} />
+        ) : isAvatarsContainer(node.path) ? (
+          <CircleUserRound className="w-16 h-16" strokeWidth={1.5} />
         ) : (
           <Folder className="w-16 h-16" strokeWidth={1.5} />
         )}
