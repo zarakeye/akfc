@@ -116,6 +116,14 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
     (mySpaces ?? []).map((sp) => [sp.path, sp.name] as const),
   );
 
+  // Libellés d'affichage des dossiers (FolderLabel[path]) — MÊME source que
+  // la grille et la tree (résolus côté back par applyGroupSpaceNames). Sans
+  // ça, le fil montrait le slug brut alors que la grille montre le libellé.
+  const { data: folderLabels } = trpc.storage.folderLabels.useQuery();
+  const labelByPath = new Map(
+    (folderLabels ?? []).map((l) => [l.path, l.displayName] as const),
+  );
+
   const rawSegments = buildPathSegments(currentPath);
   // Racine relative au finder. Membre = racine virtuelle (≠ APP_ROOT) : on
   // n'affiche pas akfc/groups (hors de sa portée), mais « Mes espaces » puis
@@ -134,7 +142,9 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
   }
   segments = segments.map((sg) => ({
     ...sg,
-    name: nameByPath.get(sg.path) ?? sg.name,
+    // Priorité alignée sur le back (applyGroupSpaceNames) :
+    // FolderLabel[path] > nom d'espace (groupe/perso) > slug brut.
+    name: labelByPath.get(sg.path) ?? nameByPath.get(sg.path) ?? sg.name,
   }));
 
   // Repli : on garde la RACINE et les deux derniers segments. Les
