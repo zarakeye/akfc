@@ -23,7 +23,6 @@ import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 import { friendlySpaceFolderLabel } from "@features/finder-core/utils/spaceFolderLabel";
 import { useLongPress } from "@features/finder-core/hooks/useLongPress";
 import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
-import { useTrashMap } from "@features/finder-core/state/TrashMapContext";
 import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
 import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
 import ContextMenu, {
@@ -153,15 +152,6 @@ export default function FinderTreeFolder({
   const trashToBinMutation = trpc.trash.trashToBin.useMutation();
   const { data: groupSpaceHierarchy } = trpc.storage.groupSpaceHierarchy.useQuery();
 
-  const trashMap = useTrashMap();
-
-  const inTrashStorage =
-    node.path.includes("/.trash/") || node.path.endsWith("/.trash");
-  const isTrashRootSkipNode = node.name === ".trash";
-
-  const isTrashWrapperNode = Boolean(node.path.match(/\/bin\/\.trash\/[^/]+$/));
-
-  const trashEntryForName = trashMap.get(node.name);
 
   const [loadedChildren, setLoadedChildren] = useState<FinderNode[] | null>(
     null,
@@ -182,46 +172,6 @@ export default function FinderTreeFolder({
     autoLoadTriggeredRef.current = false;
   }, [reloadKey]);
 
-  useEffect(() => {
-    if (!isTrashRootSkipNode && !isTrashWrapperNode) return;
-    if (autoLoadTriggeredRef.current) return;
-    if (node.children && node.children.length > 0) return;
-    if (loadedChildren !== null) return;
-    if (!adapter.getTree) return;
-
-    async function autoLoad() {
-      const cached = useFinderStore.getState().contentCache.get(node.path);
-      if (cached) {
-        autoLoadTriggeredRef.current = true;
-        setLoadedChildren([...cached.folders, ...cached.files]);
-        return;
-      }
-
-      autoLoadTriggeredRef.current = true;
-      setIsLoading(true);
-
-      try {
-        const { root } = await adapter.getTree!({ path: node.path, depth: 1 });
-        const children = root.children ?? [];
-        setLoadedChildren(children);
-        useFinderStore.getState().cacheChildrenAt(node.path, children);
-      } catch (err) {
-        console.error("[FinderTreeFolder] auto-load skip-node failed", err);
-        setLoadError("Erreur chargement contenu corbeille");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void autoLoad();
-  }, [
-    isTrashRootSkipNode,
-    isTrashWrapperNode,
-    node.path,
-    node.children,
-    loadedChildren,
-    adapter,
-  ]);
 
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -293,9 +243,7 @@ export default function FinderTreeFolder({
     isOpen &&
     hasChildren &&
     node.children === undefined &&
-    loadedChildren === null &&
-    !isTrashRootSkipNode &&
-    !isTrashWrapperNode;
+    loadedChildren === null;
 
   function handleToggleOpen(e: React.MouseEvent) {
     e.stopPropagation();
@@ -431,52 +379,8 @@ export default function FinderTreeFolder({
 
   const showChevron = hasChildren && !isBinRoot;
 
-  // ─── Skip visuel du `.trash` ET des wrappers uuid ────────────────────────
-  if (isTrashRootSkipNode || isTrashWrapperNode) {
-    return (
-      <>
-        {effectiveChildren?.map((child) =>
-          child.type === "folder" ? (
-            <FinderTreeFolder
-              key={child.path}
-              node={child}
-              adapter={adapter}
-              currentPath={currentPath}
-              onOpen={onOpen}
-              openPaths={openPaths}
-              onToggleOpen={onToggleOpen}
-              onDragStart={onDragStart}
-              onLongPress={onLongPress}
-              pickMode={pickMode}
-              isInCart={isInCart}
-              onPickToggle={onPickToggle}
-            />
-          ) : (
-            <FinderTreeFile
-              key={child.path}
-              node={child}
-              onDragStart={onDragStart}
-              onLongPress={onLongPress}
-              pickMode={pickMode}
-              isInCart={isInCart}
-              onPickToggle={onPickToggle}
-            />
-          ),
-        )}
-      </>
-    );
-  }
-
-  let displayLabel = friendlySpaceFolderLabel(node.name, node.path) ?? node.name;
-  if (inTrashStorage && trashEntryForName) {
-    displayLabel = trashEntryForName.displayName;
-  } else if (
-    inTrashStorage &&
-    !trashEntryForName &&
-    node.path.match(/\/bin\/\.trash\/[^/]+$/)
-  ) {
-    displayLabel = "Élément supprimé";
-  }
+  const displayLabel =
+    friendlySpaceFolderLabel(node.name, node.path) ?? node.name;
 
   return (
     <div

@@ -1,22 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import type { FinderNode } from '@contracts/finder';
 import type { FileAdapter } from '@contracts/finder';
-import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
 
-import { trpc } from '@trpc/trpcClient';
-import { APP_ROOT } from '@config/app';
 
 import FinderTreeFolder from './FinderTreeFolder';
 import FinderTreeFile from './FinderTreeFile';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import {
-  TrashMapProvider,
-  type TrashMap,
-} from '@features/finder-core/state/TrashMapContext';
 
 /**
  * FinderTree — composant racine de la TreeView du finder.
@@ -107,21 +100,7 @@ export default function FinderTree({
     });
   }
 
-  const { data: trashListData } = trpc.trash.listBin.useQuery(
-    { appRoot: APP_ROOT, limit: 100 },
-    { refetchOnWindowFocus: false, staleTime: 10_000 }
-  );
-
   const reloadKey = useFinderStore((s) => s.reloadKey);
-
-  const trashMap: TrashMap = useMemo(() => {
-    const map = new Map() as TrashMap;
-    const items: TrashEntryDTO[] = trashListData?.items ?? [];
-    for (const entry of items) {
-      map.set(entry.id, { displayName: entry.displayName, kind: entry.kind });
-    }
-    return map;
-  }, [trashListData]);
 
   const supportsTree = typeof adapter.getTree === 'function';
 
@@ -226,9 +205,6 @@ export default function FinderTree({
   const topLevelChildren = rootNode.children;
 
   return (
-    <TrashMapProvider value={trashMap}>
-      {/* `min-h-full` : sans hauteur, le vide sous l'arbre appartiendrait au
-          panneau et non à ce div — le clic n'y serait jamais capté. */}
       <div className="space-y-0.5 min-h-full" onClick={onVoidClick}>
         {topLevelChildren.map((child) =>
           child.type === 'folder' ? (
@@ -259,6 +235,5 @@ export default function FinderTree({
           ),
         )}
       </div>
-    </TrashMapProvider>
   );
 }
