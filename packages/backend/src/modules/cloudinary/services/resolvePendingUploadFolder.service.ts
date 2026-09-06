@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
+import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
 
 import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
@@ -134,7 +135,7 @@ export async function resolvePendingUploadFolder(params: {
     throw new Error(`Category not found (id=${destination.categoryId})`);
   }
 
-  const categorySegment = slug(category.type);
+  const categorySegment = categoryStorageSegment(category.type);
 
   if (destination.kind === "existing-discipline") {
     const discipline = await prisma.discipline.findUnique({

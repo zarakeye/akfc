@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
+import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
 
 // Mêmes options que resolvePendingUploadFolder → le path colle à celui des uploads.
 const SLUG_OPTIONS = { lower: true, strict: true } as const;
@@ -19,7 +20,7 @@ export async function ensureCategoryFolderLabels(
 ): Promise<{ ensured: number }> {
   const categories = await prisma.category.findMany({ select: { type: true } });
   for (const c of categories) {
-    const path = `${appRoot}/${slugify(c.type, SLUG_OPTIONS)}`;
+    const path = `${appRoot}/${categoryStorageSegment(c.type)}`;
     await prisma.folderLabel.upsert({
       where: { path },
       update: { displayName: c.type },
