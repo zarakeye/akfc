@@ -4,7 +4,7 @@ import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveG
 
 /**
  * Rend l'espace d'un groupe COLLABORATIF visible (même vide) dans le finder, en
- * créant ses lignes de registre `Folder` — le conteneur `groups/` et l'espace
+ * créant ses lignes de registre `Folder` — le conteneur `collaborative-group-spaces/` et l'espace
  * lui-même. Le finder lit `Folder` par PRÉFIXE (sans filtre de statut), donc
  * une ligne suffit à afficher le dossier vide.
  *
@@ -24,7 +24,7 @@ export async function ensureGroupSpaceFolder(params: {
 
   const base = await resolveGroupBaseFolder({ prisma, appRoot, groupId });
 
-  for (const fullPath of [`${appRoot}/groups`, base]) {
+  for (const fullPath of [`${appRoot}/collaborative-group-spaces`, base]) {
     await prisma.folder.upsert({
       where: { appRoot_fullPath: { appRoot, fullPath } },
       create: { appRoot, fullPath, status: "published" },
