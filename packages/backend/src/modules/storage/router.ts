@@ -62,6 +62,8 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
 import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
+import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
+import { scopePersoSpaceInTree } from "@backend/modules/storage/scopePersoSpace.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import {
   mergeGroupSpaceFolders,
@@ -486,8 +488,24 @@ export const storageRouter = router({
       // fusionner. On lit directement le backend. Le flag `logical` est
       // désormais sans effet sur la lecture.
       const reader = backend;
+      // Perso : quand la grille demande le conteneur personal-space
+      // (adapter.list = getTree depth1), on lit en réalité le sous-espace de
+      // l'utilisateur courant → il ne voit QUE son contenu (privé + illusion).
+      const persoContainer = `${ctx.appRoot}/personal-space`;
+      let readPath = input.path;
+      if (input.path === persoContainer) {
+        try {
+          readPath = await resolvePersoBaseFolder({
+            prisma: ctx.prisma,
+            appRoot: ctx.appRoot,
+            userId: ctx.user.id,
+          });
+        } catch {
+          readPath = input.path;
+        }
+      }
       const result = await reader.getTree({
-        path: input.path,
+        path: readPath,
         depth: input.depth,
       });
       // Corbeille = feuille : jamais de `.trash` dans l'arbre du finder.
@@ -510,6 +528,15 @@ export const storageRouter = router({
           result.root,
           ctx.prisma,
           ctx.appRoot,
+        );
+      }
+      // Perso : dans l'arbre racine, aplatir personal-space sur le contenu du
+      // sous-espace de l'utilisateur courant (masque les autres admins).
+      if (input.path === ctx.appRoot) {
+        result.root = scopePersoSpaceInTree(
+          result.root,
+          ctx.appRoot,
+          ctx.user.id,
         );
       }
       // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
