@@ -10,6 +10,7 @@ import { APP_ROOT } from '@config/app';
 import { trpc } from '@trpc/trpcClient';
 
 import { buildPathSegments } from '@features/finder-core/utils/path';
+import { isPersoSpaceFolder } from '@features/finder-core/utils/spaceFolderKind';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import {
   FINDER_DRAG_MIME,
@@ -140,6 +141,10 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
       segments = [virtualRoot, ...kept];
     }
   }
+  // Perso : masquer le segment du sous-espace `<slug>-<userId>` — l'admin
+  // ne voit que « Espace personnel » puis son contenu (illusion d'espace
+  // unique). La navigation reste sur le chemin physique réel.
+  segments = segments.filter((sg) => !isPersoSpaceFolder(sg.path));
   segments = segments.map((sg) => ({
     ...sg,
     // Priorité alignée sur le back (applyGroupSpaceNames) :
