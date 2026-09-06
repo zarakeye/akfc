@@ -7,6 +7,24 @@ import { TRPCError } from "@trpc/server";
  * alphanumériques. Exclut les points internes d'un libellé (« (ep. BAZZE) »).
  */
 const EXTENSION_PATTERN = /\.[A-Za-z0-9]{1,8}$/;
+
+/**
+ * La corbeille est une FEUILLE dans l'arbre du finder : on n'expose jamais son
+ * sous-arbre physique `.trash/<uuid>/…`. On elague recursivement les enfants du
+ * noeud dont le chemin est exactement `binPath`. (La vue plate lit trash.listBin,
+ * le drill-down passe par `list` — aucun ne depend de getTree.)
+ */
+function stripBinSubtree(node: StorageFolderNode, binPath: string): void {
+  for (const child of node.children ?? []) {
+    if (child.type !== "folder") continue;
+    if (child.path === binPath) {
+      child.children = [];
+      child.hasChildren = false;
+    } else {
+      stripBinSubtree(child, binPath);
+    }
+  }
+}
 import {
   enrichFilesWithStatus,
   enrichTreeWithStatus,
@@ -18,6 +36,7 @@ import {
   storageProviderSchema,
   storageMoveIntentSchema,
   createR2UploadAuthorizationSchema,
+  type StorageFolderNode,
 } from "@contracts/storage";
 
 import {
@@ -451,6 +470,8 @@ export const storageRouter = router({
         path: input.path,
         depth: input.depth,
       });
+      // Corbeille = feuille : jamais de `.trash` dans l'arbre du finder.
+      stripBinSubtree(result.root, `${ctx.appRoot}/bin`);
       await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
       // Espaces de groupe ET perso visibles même vides, dans l'arbre du finder.
       result.root = await mergeGroupSpaceFoldersIntoTree({
