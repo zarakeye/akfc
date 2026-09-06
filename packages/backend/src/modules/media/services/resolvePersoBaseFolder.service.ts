@@ -43,5 +43,5 @@ export async function resolvePersoBaseFolder(params: {
   const personSlug =
     slug(fullName) || slug(user.pseudo ?? "") || `user-${userId}`;
 
-  return `${appRoot}/personal-spaces/${personSlug}-${userId}`;
+  return `${appRoot}/personal-space/${personSlug}-${userId}`;
 }

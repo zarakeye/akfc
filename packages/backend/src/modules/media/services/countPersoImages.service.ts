@@ -32,7 +32,7 @@ export async function countPersoImages(params: {
       uploaderUserId: userId,
       resourceType: "image",
       status: { in: ["pending", "published"] },
-      fullPath: { contains: "/personal-spaces/" },
+      fullPath: { contains: "/personal-space/" },
     },
     _count: true,
   });

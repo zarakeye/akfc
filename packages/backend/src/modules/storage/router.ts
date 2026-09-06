@@ -218,7 +218,7 @@ export const storageRouter = router({
     }
 
     const commonRepositoryRoot = `${ctx.appRoot}/common-repository`;
-    const persosRoot = `${ctx.appRoot}/personal-spaces`;
+    const persosRoot = `${ctx.appRoot}/personal-space`;
 
     const entries = Array.from(counts.entries()).map(([path, count]) => {
       let kind: "common_repository" | "perso" | "folder" = "folder";
@@ -501,7 +501,7 @@ export const storageRouter = router({
         userId: ctx.user.id,
       });
       // Racines principales visibles même vides (courses/seminars/events/
-      // personal-spaces/collaborative-group-spaces/common-repository).
+      // personal-space/collaborative-group-spaces/common-repository).
       result.root = await ensureContentRootsInTree(
         result.root,
         ctx.prisma,

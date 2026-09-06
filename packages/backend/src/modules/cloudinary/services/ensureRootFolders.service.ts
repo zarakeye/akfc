@@ -69,7 +69,7 @@ export async function ensureRootFolders(
   // Libellés FR des autres racines : chemins EN, affichage humain via
   // FolderLabel (forcés → auto-cicatrisation, comme bin/common-repository).
   const ROOT_LABELS: Array<{ segment: string; label: string }> = [
-    { segment: "personal-spaces", label: "Espaces personnels" },
+    { segment: "personal-space", label: "Espaces personnels" },
     { segment: "collaborative-group-spaces", label: "Espaces de groupes collaboratifs" },
     { segment: "seminars", label: "Stages" },
     { segment: "events", label: "Événements" },
