@@ -13,6 +13,7 @@ const PERSOS_CONTAINER = /^[^/]+\/personal-spaces$/;
 const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common-repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
+const BIN_ROOT = /^[^/]+\/bin$/;
 
 export function isGroupSpaceFolder(path: string): boolean {
   return GROUP_SPACE_PATH.test(path);
@@ -32,6 +33,10 @@ export function isPersosContainer(path: string): boolean {
 
 export function isAvatarsContainer(path: string): boolean {
   return AVATARS_CONTAINER.test(path);
+}
+
+export function isBinRoot(path: string): boolean {
+  return BIN_ROOT.test(path);
 }
 
 /**
