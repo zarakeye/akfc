@@ -25,8 +25,11 @@ export function buildUploadFileName(originalFileName: string): string {
     : originalFileName;
   const ext = hasExt ? originalFileName.slice(dotIdx).toLowerCase() : '';
 
+  // Underscores et séparateurs → tirets AVANT slugify (sinon strict les
+  // SUPPRIME et colle les tokens : baccalaureat_stephane → baccalaureatstephane).
   const safeBase =
-    slugify(baseName, { lower: true, strict: true }) || 'fichier';
+    slugify(baseName.replace(/_+/g, ' '), { lower: true, strict: true }) ||
+    'fichier';
 
   return `${safeBase}${ext}`;
 }
