@@ -66,6 +66,23 @@ export async function ensureRootFolders(
     create: { path: `${appRoot}/bin`, displayName: "Corbeille" },
   });
 
+  // Libellés FR des autres racines : chemins EN, affichage humain via
+  // FolderLabel (forcés → auto-cicatrisation, comme bin/common-repository).
+  const ROOT_LABELS: Array<{ segment: string; label: string }> = [
+    { segment: "personal-spaces", label: "Espaces personnels" },
+    { segment: "collaborative-group-spaces", label: "Espaces de groupes collaboratifs" },
+    { segment: "seminars", label: "Stages" },
+    { segment: "events", label: "Événements" },
+  ];
+  for (const { segment, label } of ROOT_LABELS) {
+    const path = `${appRoot}/${segment}`;
+    await prisma.folderLabel.upsert({
+      where: { path },
+      update: { displayName: label },
+      create: { path, displayName: label },
+    });
+  }
+
   return { created, total: ROOT_FOLDER_STATUSES.length };
 }
 
