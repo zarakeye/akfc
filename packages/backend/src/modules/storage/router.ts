@@ -68,6 +68,10 @@ import {
   mergeGroupSpaceFoldersIntoTree,
 } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
 import {
+  ensureContentRootsInTree,
+  missingContentRootFolders,
+} from "@backend/modules/storage/ensureContentRoots.service";
+import {
   applyGroupSpaceNamesToFolders,
   applyGroupSpaceNamesToTree,
 } from "@backend/modules/storage/applyGroupSpaceNames.service";
@@ -440,6 +444,21 @@ export const storageRouter = router({
           ),
         };
       }
+      // Racine du finder : racines principales visibles même vides (grille).
+      if (input.path === ctx.appRoot) {
+        const missing = await missingContentRootFolders(
+          result.folders.map((f) => f.path),
+          ctx.prisma,
+          ctx.appRoot,
+        );
+        return {
+          ...result,
+          folders: await applyGroupSpaceNamesToFolders(
+            [...result.folders, ...missing],
+            ctx.prisma,
+          ),
+        };
+      }
       return result;
     }),
 
@@ -480,6 +499,13 @@ export const storageRouter = router({
         appRoot: ctx.appRoot,
         userId: ctx.user.id,
       });
+      // Racines principales visibles même vides (courses/seminars/events/
+      // personal-spaces/collaborative-group-spaces/common-repository).
+      result.root = await ensureContentRootsInTree(
+        result.root,
+        ctx.prisma,
+        ctx.appRoot,
+      );
       // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
       // que lit l'adapter du finder (et le picker).
       return {
