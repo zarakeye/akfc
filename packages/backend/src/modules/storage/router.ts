@@ -502,11 +502,16 @@ export const storageRouter = router({
       });
       // Racines principales visibles même vides (courses/seminars/events/
       // personal-space/collaborative-group-spaces/common-repository).
-      result.root = await ensureContentRootsInTree(
-        result.root,
-        ctx.prisma,
-        ctx.appRoot,
-      );
+      // Uniquement à la RACINE : la grille fait adapter.list = getTree
+      // depth1 sur CHAQUE dossier ; sans cette garde on injecterait les
+      // racines de contenu dans tous les dossiers.
+      if (input.path === ctx.appRoot) {
+        result.root = await ensureContentRootsInTree(
+          result.root,
+          ctx.prisma,
+          ctx.appRoot,
+        );
+      }
       // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
       // que lit l'adapter du finder (et le picker).
       return {
