@@ -25,6 +25,7 @@ import { useLongPress } from "@features/finder-core/hooks/useLongPress";
 import { useNodeActions } from "@features/finder-core/hooks/useNodeActions";
 import { isStatusFolder } from "@features/finder-core/utils/statusFolders";
 import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from "@features/finder-core/utils/spaceFolderKind";
+import { BinIcon } from "@features/finder-core/components/BinIcon";
 import ContextMenu, {
   type ContextMenuItem,
 } from "@features/finder-core/components/ContextMenu";
@@ -461,7 +462,9 @@ export default function FinderTreeFolder({
           />
         )}
 
-        {isGroupSpaceFolder(node.path) || isGroupsContainer(node.path) ? (
+        {isBinRoot ? (
+          <BinIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : isGroupSpaceFolder(node.path) || isGroupsContainer(node.path) ? (
           <Users className="h-4 w-4 text-muted-foreground shrink-0" />
         ) : isPersoSpaceFolder(node.path) || isPersosContainer(node.path) ? (
           <User className="h-4 w-4 text-muted-foreground shrink-0" />

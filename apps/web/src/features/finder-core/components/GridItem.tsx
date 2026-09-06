@@ -13,7 +13,8 @@ import ContextMenu, {
   type ContextMenuItem,
 } from '@features/finder-core/components/ContextMenu';
 import { isStatusFolder } from '@features/finder-core/utils/statusFolders';
-import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
+import { isGroupSpaceFolder, isPersoSpaceFolder, isGroupsContainer, isPersosContainer, isAvatarsContainer, isBinRoot, isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
+import { BinIcon } from '@features/finder-core/components/BinIcon';
 import type { TriState } from '@features/finder-core/utils/triState';
 import { getFileExtension, isAudioFile, isPdfFile, videoPosterUrl, isTextFile, displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 import { friendlySpaceFolderLabel } from '@features/finder-core/utils/spaceFolderLabel';
@@ -563,7 +564,9 @@ function CardIcon({
     // couleur d'une vue à l'autre, et suivent le thème clair/sombre.
     return (
       <div className="w-full h-full flex items-center justify-center pb-6 text-muted-foreground">
-        {isGroupSpaceFolder(node.path) || isGroupsContainer(node.path) ? (
+        {isBinRoot(node.path) ? (
+          <BinIcon className="w-16 h-16" />
+        ) : isGroupSpaceFolder(node.path) || isGroupsContainer(node.path) ? (
           <Users className="w-16 h-16" strokeWidth={1.5} />
         ) : isPersoSpaceFolder(node.path) || isPersosContainer(node.path) ? (
           <User className="w-16 h-16" strokeWidth={1.5} />
