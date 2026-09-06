@@ -8,7 +8,7 @@ import { categoryStorageSegment } from "@backend/modules/cloudinary/services/cat
  * dossiers vides). Chemin physique EN ; l'affichage humain est résolu ensuite
  * par les FolderLabel (applyGroupSpaceNames).
  */
-async function requiredRootPaths(
+export async function requiredRootPaths(
   prisma: PrismaClient,
   appRoot: string,
 ): Promise<string[]> {

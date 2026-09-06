@@ -70,6 +70,7 @@ import {
 import {
   ensureContentRootsInTree,
   missingContentRootFolders,
+  requiredRootPaths,
 } from "@backend/modules/storage/ensureContentRoots.service";
 import {
   applyGroupSpaceNamesToFolders,
@@ -521,6 +522,12 @@ export const storageRouter = router({
     }),
   ),
 
+  // Racines de contenu (label-only) : le front y route « Renommer » vers
+  // l'édition du FolderLabel plutôt que le rename physique.
+  contentRootPaths: protectedProcedure.query(({ ctx }) =>
+    requiredRootPaths(ctx.prisma, ctx.appRoot),
+  ),
+
   setFolderLabel: protectedProcedure
     .input(
       z.object({
@@ -656,6 +663,21 @@ export const storageRouter = router({
           code: "FORBIDDEN",
           message: "Ce dossier système ne peut pas être renommé.",
         });
+      }
+
+      // Racine de contenu (catégorie / stages / events / espaces / dépôt) :
+      // nom PHYSIQUE immuable aussi. Son « Renommer » édite le FolderLabel
+      // côté client ; un rename physique casserait le lien catégorie↔dossier
+      // et les gardes. Refusé ici (défense en profondeur).
+      if (input.type === "folder") {
+        const roots = await requiredRootPaths(ctx.prisma, ctx.appRoot);
+        if (roots.includes(input.path)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "Cette racine ne se renomme pas physiquement (libellé éditable).",
+          });
+        }
       }
 
       // ─── FICHIER : on n'édite QUE le nom d'affichage ───────────────────

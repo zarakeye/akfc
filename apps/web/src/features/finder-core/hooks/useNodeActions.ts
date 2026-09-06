@@ -114,6 +114,7 @@ export function useNodeActions(): {
   const purgeMutation = trpc.trash.purge.useMutation();
   const renameMutation = trpc.storage.rename.useMutation();
   const setFolderLabelMutation = trpc.storage.setFolderLabel.useMutation();
+  const { data: contentRootPaths } = trpc.storage.contentRootPaths.useQuery();
   const moveMutation = trpc.storage.move.useMutation();
 
   // Détection du contexte global : on est "dans le bin" si le path courant
@@ -257,7 +258,11 @@ export function useNodeActions(): {
       // Dossier-entité : on n'édite QUE le libellé d'affichage — le chemin
       // est immuable (garde serveur R1). Aucun déplacement du binaire. Clé =
       // node.path, celui que la résolution du listing (R3) va relire.
-      if (node.type === 'folder' && isProtectedEntityFolder(node.path)) {
+      if (
+        node.type === 'folder' &&
+        (isProtectedEntityFolder(node.path) ||
+          (contentRootPaths ?? []).includes(node.path))
+      ) {
         try {
           await setFolderLabelMutation.mutateAsync({
             path: node.path,
@@ -282,7 +287,7 @@ export function useNodeActions(): {
         return err instanceof Error ? err.message : 'Le renommage a échoué.';
       }
     },
-    [renameMutation, setFolderLabelMutation, reloadFolderContent],
+    [renameMutation, setFolderLabelMutation, reloadFolderContent, contentRootPaths],
   );
 
   /**
