@@ -190,7 +190,7 @@ export default function FinderTreeFolder({
   // la hiérarchie logique (parentGroupId). Chaque espace garde SON nœud —
   // donc ses enfants déjà chargés par l'arbre profond — d'où aucun nœud
   // synthétique et aucun spinner. Les chemins physiques restent intacts.
-  const groupsContainerPath = `${APP_ROOT}/groups`;
+  const groupsContainerPath = `${APP_ROOT}/collaborative-group-spaces`;
   const spacePathByGroupId = new Map<string, string>();
   for (const sp of groupSpaceHierarchy ?? []) {
     spacePathByGroupId.set(sp.groupId, sp.path);

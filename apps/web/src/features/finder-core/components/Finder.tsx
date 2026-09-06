@@ -213,7 +213,7 @@ export default function Finder({
     if (readOnly) return folders;
     const spaces = groupSpaceHierarchy ?? [];
     if (spaces.length === 0) return folders;
-    const groupsContainerPath = `${APP_ROOT}/groups`;
+    const groupsContainerPath = `${APP_ROOT}/collaborative-group-spaces`;
     const pathByGroupId = new Map(spaces.map((sp) => [sp.groupId, sp.path]));
     const allSpacePaths = new Set(spaces.map((sp) => sp.path));
     if (currentPath === groupsContainerPath) {

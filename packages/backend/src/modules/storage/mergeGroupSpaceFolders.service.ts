@@ -110,7 +110,7 @@ export async function mergeGroupSpaceFoldersIntoTree(params: {
 }): Promise<StorageFolderNode> {
   const { root, prisma, appRoot, userId } = params;
   const groupsPath = `${appRoot}/collaborative-group-spaces`;
-  const persosPath = `${appRoot}/personal-spaces`;
+  const persosPath = `${appRoot}/personal-space`;
 
   let groupsNode: StorageFolderNode | null = null;
   let persosNode: StorageFolderNode | null = null;

@@ -13,11 +13,11 @@
  * couvre QUE les entités à préfixe fixe.
  */
 const GROUPS_CONTAINER = /^[^/]+\/collaborative-group-spaces$/;
-const PERSOS_CONTAINER = /^[^/]+\/personal-spaces$/;
+const PERSOS_CONTAINER = /^[^/]+\/personal-space$/;
 const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common-repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
 const GROUP_SPACE = /\/collaborative-group-spaces\/[^/]+-c[a-z0-9]{24}$/;
-const PERSO_SPACE = /\/personal-spaces\/[^/]+-c[a-z0-9]{24}$/;
+const PERSO_SPACE = /\/personal-space\/[^/]+-c[a-z0-9]{24}$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
 
 /** True si `path` désigne un dossier-entité à préfixe fixe (protégé). */

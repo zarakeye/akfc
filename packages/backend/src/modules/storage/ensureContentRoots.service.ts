@@ -17,7 +17,7 @@ export async function requiredRootPaths(
     ...categories.map((c) => `${appRoot}/${categoryStorageSegment(c.type)}`),
     `${appRoot}/seminars`,
     `${appRoot}/events`,
-    `${appRoot}/personal-spaces`,
+    `${appRoot}/personal-space`,
     `${appRoot}/collaborative-group-spaces`,
     `${appRoot}/common-repository`,
   ];

@@ -3,13 +3,13 @@
  * thématique. Détection par le motif du chemin (aucune query requise).
  *
  *   - espace de GROUPE : `${appRoot}/collaborative-group-spaces/<slug>-<cuid>`
- *   - espace PERSO     : `${appRoot}/personal-spaces/<slug>-<cuid>`
- *   - conteneurs       : collaborative-group-spaces, personal-spaces, avatars
+ *   - espace PERSO     : `${appRoot}/personal-space/<slug>-<cuid>`
+ *   - conteneurs       : collaborative-group-spaces, personal-space, avatars
  */
 const GROUP_SPACE_PATH = /\/collaborative-group-spaces\/[^/]+-c[a-z0-9]{24}$/;
-const PERSO_SPACE_PATH = /\/personal-spaces\/[^/]+-c[a-z0-9]{24}$/;
+const PERSO_SPACE_PATH = /\/personal-space\/[^/]+-c[a-z0-9]{24}$/;
 const GROUPS_CONTAINER = /^[^/]+\/collaborative-group-spaces$/;
-const PERSOS_CONTAINER = /^[^/]+\/personal-spaces$/;
+const PERSOS_CONTAINER = /^[^/]+\/personal-space$/;
 const COMMON_REPOSITORY_CONTAINER = /^[^/]+\/common-repository$/;
 const AVATARS_CONTAINER = /^[^/]+\/avatars$/;
 const AVATAR_FOLDER = /\/avatars\/[^/]+$/;
