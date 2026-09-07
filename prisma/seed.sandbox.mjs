@@ -51,7 +51,7 @@ async function main() {
 
   const adminGroupId = await ensureAdminGroup();
 
-  await ensureUser({
+  const adminId = await ensureUser({
     email: "admin@akfc.demo",
     firstName: "Admin",
     hash,
@@ -67,16 +67,40 @@ async function main() {
   });
   console.log("✅ Comptes de démo prêts");
 
-  // Catégories
-  for (const type of ["Cours"]) {
-    await prisma.category.upsert({
-      where: { type },
-      update: {},
-      create: { type },
+  // Catégorie « Cours » — physique `courses` via categoryStorageSegment.
+  const coursCategory = await prisma.category.upsert({
+    where: { type: "Cours" },
+    update: {},
+    create: { type: "Cours" },
+    select: { id: true },
+  });
+
+  console.log("✅ Catégorie « Cours » prête");
+
+  // Disciplines (les « cours »). Le NOM porte accents/espaces ; le dossier
+  // physique est slugifié à l'upload par le code → `courses/<slug>`. Le `slug`
+  // sert aux URLs publiques. Instructeur = l'admin (champ requis).
+  const DISCIPLINES = [
+    { name: "Kali Escrima", slug: "kali-escrima" },
+    { name: "Taolu multi-styles", slug: "taolu-multi-styles" },
+    { name: "Tchoy Lee Fut", slug: "tchoy-lee-fut" },
+    { name: "Taïchi Chuan", slug: "taichi-chuan" },
+  ];
+  for (const d of DISCIPLINES) {
+    await prisma.discipline.upsert({
+      where: { categoryId_name: { categoryId: coursCategory.id, name: d.name } },
+      update: { slug: d.slug },
+      create: {
+        name: d.name,
+        slug: d.slug,
+        type: "MARTIAL_ART",
+        categoryId: coursCategory.id,
+        instructorId: adminId,
+      },
     });
   }
 
-  console.log("✅ Catégories prêtes");
+  console.log("✅ Disciplines prêtes");
 
   console.log("");
   console.log("   Admin  : admin@akfc.demo  /  " + DEMO_PASSWORD);
