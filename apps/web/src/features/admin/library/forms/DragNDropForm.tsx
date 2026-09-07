@@ -15,7 +15,7 @@ import { pickBackend, type StorageProvider } from '@contracts/storage';
 import type { PictureItem } from '@features/gallery-crop/types/picture.types';
 import type { CropResult } from '@features/gallery-crop/types/cropper.types';
 import Cropper from '@features/gallery-crop/components/Cropper';
-import { PdfThumbnail } from '@features/common-repository/PdfThumbnail';
+import { PdfThumbnail } from '@features/common-repository/PdfThumbnailClient';
 
 /**
  * DragNDropForm — multi-backend (Cloudinary + R2)
