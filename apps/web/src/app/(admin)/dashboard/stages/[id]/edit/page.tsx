@@ -2,7 +2,7 @@
 
 import { JSX, use, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import {
@@ -25,7 +25,10 @@ export default function EditStagePage({
   const stageId = Number(id);
   const utils = trpc.useUtils();
   const updateMutation = trpc.stage.update.useMutation();
+  const deleteMutation = trpc.stage.delete.useMutation();
   const [done, setDone] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const {
     data: stage,
@@ -48,6 +51,23 @@ export default function EditStagePage({
     setDone(true);
   };
 
+  const handleDelete = async (): Promise<void> => {
+    if (
+      !window.confirm(
+        "Supprimer définitivement ce stage ? Cette action est irréversible.",
+      )
+    )
+      return;
+    setDeleting(true);
+    try {
+      await deleteMutation.mutateAsync({ id: stageId });
+      await utils.stage.getAllAdmin.invalidate();
+      setDeleted(true);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div>
       <Link
@@ -64,12 +84,27 @@ export default function EditStagePage({
           target={`/dashboard/stages/${stageId}`}
           message="Stage mis à jour."
         />
+      ) : deleted ? (
+        <SuccessRedirect target="/dashboard/stages" message="Stage supprimé." />
       ) : (
-        <StageForm
-          initial={stage}
-          onSubmit={handleSubmit}
-          submitLabel="Enregistrer"
-        />
+        <>
+          <StageForm
+            initial={stage}
+            onSubmit={handleSubmit}
+            submitLabel="Enregistrer"
+          />
+          <div className="mt-8 border-t pt-4">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="inline-flex items-center gap-1 rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? "Suppression…" : "Supprimer le stage"}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
