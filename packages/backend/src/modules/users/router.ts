@@ -342,6 +342,34 @@ export const userRouter = router({
     return rows;
   }),
 
+  /**
+   * Vivier d'AFFECTATION du select instructeur (≠ « titulaires » réels).
+   * Résout l'œuf-et-la-poule : membres du groupe ADMIN (le staff) OU déjà
+   * rattachés (pour ne perdre aucun instructeur existant, même non-admin).
+   * `getInstructors` / `listPublicInstructors` restent la vérité publique.
+   */
+  getAssignableInstructors: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.user.findMany({
+      where: {
+        OR: [
+          { memberGroupMemberships: { some: { group: { isAdminGroup: true } } } },
+          { disciplinesAsInstructor: { some: {} } },
+          { coursesAsInstructor: { some: {} } },
+          { stagesAsPrimaryAnimator: { some: {} } },
+          { stagesAsAnimator: { some: {} } },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        pseudo: true,
+        email: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+  }),
+
   getInstructors: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {

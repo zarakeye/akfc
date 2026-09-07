@@ -47,7 +47,7 @@ export function InstructorSelect({
   id,
   className,
 }: InstructorSelectProps) {
-  const { data: instructors, isLoading } = trpc.user.getInstructors.useQuery();
+  const { data: instructors, isLoading } = trpc.user.getAssignableInstructors.useQuery();
 
   return (
     <select
