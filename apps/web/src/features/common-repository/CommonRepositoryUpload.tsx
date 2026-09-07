@@ -3,7 +3,7 @@
 import { JSX, useMemo, useState } from "react";
 import { trpc } from "@trpc/trpcClient";
 import Cropper from "@features/gallery-crop/components/Cropper";
-import { PdfThumbnail } from "@features/common-repository/PdfThumbnail";
+import { PdfThumbnail } from "@features/common-repository/PdfThumbnailClient";
 import type { PictureItem } from "@features/gallery-crop/types/picture.types";
 import type { CropResult } from "@features/gallery-crop/types/cropper.types";
 
