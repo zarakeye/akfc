@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
+import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
 
 /**
  * Protège les dossiers adossés aux DISCIPLINES / CATÉGORIES. Contrairement aux
@@ -33,7 +34,7 @@ export async function isProtectedDisciplineFolderPath(
   // Conteneur de catégorie : `${appRoot}/<slug(type)>`
   if (segs.length === 1) {
     const cats = await prisma.category.findMany({ select: { type: true } });
-    return cats.some((c) => slug(c.type) === segs[0]);
+    return cats.some((c) => categoryStorageSegment(c.type) === segs[0]);
   }
 
   // `${appRoot}/<cat>/<disc>` : dossier de discipline ou conteneur `new`
@@ -41,7 +42,7 @@ export async function isProtectedDisciplineFolderPath(
     const [catSeg, second] = segs;
     const cat = (
       await prisma.category.findMany({ select: { id: true, type: true } })
-    ).find((c) => slug(c.type) === catSeg);
+    ).find((c) => categoryStorageSegment(c.type) === catSeg);
     if (!cat) return false;
     if (second === "new") return true;
     const discs = await prisma.discipline.findMany({

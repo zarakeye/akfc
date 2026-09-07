@@ -7,6 +7,7 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
 import slugify from "slugify";
+import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
@@ -545,7 +546,7 @@ export const disciplineRouter = router({
       });
       const slug = (v: string) => slugify(v, { lower: true, strict: true });
       const folderPath = cat
-        ? `${ctx.appRoot}/${slug(cat.type)}/${slug(disc.name) || `disc-${disc.id}`}`
+        ? `${ctx.appRoot}/${categoryStorageSegment(cat.type)}/${slug(disc.name) || `disc-${disc.id}`}`
         : null;
 
       // Le dossier doit être VIDE (contrôle physique, cf. finder).
