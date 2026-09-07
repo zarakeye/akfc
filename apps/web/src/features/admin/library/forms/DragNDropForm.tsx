@@ -253,17 +253,17 @@ export default function DragNDropForm(): JSX.Element {
   const destinationKind = watch('destinationKind');
   const categoryId = watch('categoryId');
 
-  useEffect(() => {
-    setValue('disciplineId', undefined as unknown as number);
-  }, [categoryId, setValue]);
 
   // -------------------------------
   // Disciplines de la catégorie sélectionnée
   // -------------------------------
-  const disciplinesQuery = trpc.discipline.getAllByCategory.useQuery(
-    { categoryId: categoryId ?? 0 },
-    { enabled: typeof categoryId === 'number' && categoryId > 0 }
-  );
+  // Une seule catégorie « Cours » → on liste TOUTES les disciplines dès que le
+  // mode « discipline existante » est actif (le select catégorie qui amorçait
+  // `categoryId` a été retiré). Le `categoryId` de la destination est dérivé de
+  // la discipline choisie (onChange du select), pas l'inverse.
+  const disciplinesQuery = trpc.discipline.getAll.useQuery(undefined, {
+    enabled: destinationKind === 'existing-discipline',
+  });
   const disciplines = disciplinesQuery.data ?? [];
 
   const containerFoldersQuery = trpc.storage.listCommonRepositoryFolders.useQuery(
