@@ -175,17 +175,22 @@ export default function HomeCarousel(): JSX.Element | null {
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {items.map((item) => (
+          <div
+            key={item.mediaAssetId}
+            className="relative min-w-0 flex-[0_0_100%] h-[40vh]"
+          >
+            {/* BACKGROUND FLOU */}
             <div
-              key={item.mediaAssetId}
-              className="relative min-w-0 flex-[0_0_100%]"
-            >
+              className="absolute inset-0 -z-10 bg-cover bg-center blur-2xl scale-110"
+              style={{ backgroundImage: `url(${item.posterUrl ?? item.url})` }}
+            />
+
+            {/* WRAPPER DU MEDIA */}
+            <div className="flex h-full w-full items-center justify-center overflow-hidden">
               {item.kind === 'video' ? (
                 <video
                   ref={(el) => {
                     if (el) {
-                      // Forcer la PROPRIÉTÉ muted : l'attribut JSX ne la fixe
-                      // pas toujours, et sans elle la politique autoplay bloque
-                      // `play()` (rejet avalé → seul le poster s'affiche).
                       el.muted = true;
                       videoRefs.current.set(item.mediaAssetId, el);
                     } else {
@@ -199,18 +204,18 @@ export default function HomeCarousel(): JSX.Element | null {
                   preload="metadata"
                   onEnded={handleVideoEnded}
                   onTimeUpdate={handleTimeUpdate}
-                  className="h-[40vh] w-full object-cover"
+                  className="max-h-full max-w-full object-contain"
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={item.url}
                   alt=""
-                  className="h-[40vh] w-full object-cover"
+                  className="max-h-full max-w-full object-contain"
                 />
               )}
             </div>
-          ))}
+          </div>
+        ))}
         </div>
       </div>
 
