@@ -3,6 +3,7 @@
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 import { trpcClient } from '@trpc/trpcClient';
 
@@ -175,42 +176,50 @@ export default function HomeCarousel(): JSX.Element | null {
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {items.map((item) => (
-            <div
-              key={item.mediaAssetId}
-              className="relative min-w-0 flex-[0_0_100%]"
-            >
-              {item.kind === 'video' ? (
-                <video
-                  ref={(el) => {
-                    if (el) {
-                      // Forcer la PROPRIÉTÉ muted : l'attribut JSX ne la fixe
-                      // pas toujours, et sans elle la politique autoplay bloque
-                      // `play()` (rejet avalé → seul le poster s'affiche).
-                      el.muted = true;
-                      videoRefs.current.set(item.mediaAssetId, el);
-                    } else {
-                      videoRefs.current.delete(item.mediaAssetId);
-                    }
-                  }}
-                  src={item.url}
-                  poster={item.posterUrl ?? undefined}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  onEnded={handleVideoEnded}
-                  onTimeUpdate={handleTimeUpdate}
-                  className="h-[40vh] w-full object-cover"
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.url}
-                  alt=""
-                  className="h-[40vh] w-full object-cover"
-                />
-              )}
-            </div>
-          ))}
+  <div
+    key={item.mediaAssetId}
+    className="relative min-w-0 flex-[0_0_100%] h-[40vh]"
+  >
+    {/* BACKGROUND FLOU */}
+    <div
+      className="absolute inset-0 -z-10 bg-cover bg-center blur-2xl scale-110"
+      style={{ backgroundImage: `url(${item.posterUrl ?? item.url})` }}
+    />
+
+    {/* WRAPPER DU MEDIA */}
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      {item.kind === 'video' ? (
+        <video
+          ref={(el) => {
+            if (el) {
+              el.muted = true;
+              videoRefs.current.set(item.mediaAssetId, el);
+            } else {
+              videoRefs.current.delete(item.mediaAssetId);
+            }
+          }}
+          src={item.url}
+          poster={item.posterUrl ?? undefined}
+          muted
+          playsInline
+          preload="metadata"
+          onEnded={handleVideoEnded}
+          onTimeUpdate={handleTimeUpdate}
+          className="max-h-full max-w-full object-contain"
+        />
+      ) : (
+        <Image
+          src={item.url}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-contain"
+        />
+      )}
+    </div>
+  </div>
+))}
+
         </div>
       </div>
 
