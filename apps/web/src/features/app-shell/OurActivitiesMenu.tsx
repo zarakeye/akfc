@@ -81,9 +81,6 @@ export default function OurActivitiesMenu({
 
         {hover && (
           <div className="flex flex-col border-l border-gray-700 pl-4">
-            <Link href="/agenda" className="block py-2 text-white/80">
-              Agenda — stages et évènements
-            </Link>
             {groups.map((family) => (
               <div key={family.id} className="mt-2">
                 <p className="text-sm font-bold uppercase tracking-wide text-gray-400">
