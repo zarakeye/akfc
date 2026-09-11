@@ -82,7 +82,7 @@ function formatSessionDate(date: Date): string {
  * callbacks CRUD en props. L'appelant (page d'édition Stage ou Event)
  * fournit les implémentations branchées sur le bon store / router et
  * injecte le `parentId` au `onCreate`. Ce composant ne sait pas s'il
- * manipule des StageSession ou des EventSession.
+ * manipule des SeminarSession ou des EventSession.
  *
  * `editingId` pilote l'affichage du form inline :
  *   - `null`   → aucune édition, juste la liste + bouton « ajouter »

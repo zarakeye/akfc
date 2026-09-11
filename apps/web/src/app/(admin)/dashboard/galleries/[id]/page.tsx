@@ -32,7 +32,7 @@ export default async function GalleryPresentationPage({
     include: {
       items: { orderBy: { sortOrder: "asc" }, include: { mediaAsset: true } },
       discipline: { select: { name: true } },
-      stage: { select: { label: true } },
+      seminar: { select: { label: true } },
       event: { select: { label: true } },
     },
   });
@@ -40,7 +40,7 @@ export default async function GalleryPresentationPage({
 
   const theme =
     gallery.discipline?.name ??
-    gallery.stage?.label ??
+    gallery.seminar?.label ??
     gallery.event?.label ??
     (gallery.slug === CAROUSEL_SLUG ? "Carousel d'accueil" : "—");
 

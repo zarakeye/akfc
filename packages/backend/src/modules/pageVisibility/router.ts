@@ -74,7 +74,7 @@ export const pageVisibilityRouter = router({
     const [disciplines, events, stages] = await Promise.all([
       ctx.prisma.discipline.count({ where: { publicationDate: null } }),
       ctx.prisma.event.count({ where: { publicationDate: null } }),
-      ctx.prisma.stage.count({ where: { publicationDate: null } }),
+      ctx.prisma.seminar.count({ where: { publicationDate: null } }),
     ]);
     return { disciplines, events, stages };
   }),

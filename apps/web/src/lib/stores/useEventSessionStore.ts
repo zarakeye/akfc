@@ -5,7 +5,7 @@ import type { EventSession } from "@prisma/client";
 /**
  * useEventSessionStore
  *
- * Clone structurel de `useStageSessionStore` pour les `EventSession`.
+ * Clone structurel de `useSeminarSessionStore` pour les `EventSession`.
  * Cache mono-event, `beginTime`/`endTime` en HHMM, dates en `Date`.
  */
 

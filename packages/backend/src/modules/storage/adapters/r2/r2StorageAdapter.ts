@@ -399,9 +399,9 @@ export function createR2StorageAdapter(
           // Espace de groupe collaboratif : rattachement par le chemin
           // (`groups/…`), sans catégorie ni discipline (comme `general`).
           break;
-        case "stage":
-          // Contenus d'un stage : rattachement par le chemin (`stages/…`),
-          // sans catégorie ni discipline (MediaAsset n'a pas de stageId).
+        case "seminar":
+          // Contenus d'un séminaire : rattachement par le chemin (`seminars/…`),
+          // sans catégorie ni discipline (MediaAsset n'a pas de seminarId).
           break;
         case "perso":
           // R2 perso toujours reporté (photos Cloudinary d'abord).

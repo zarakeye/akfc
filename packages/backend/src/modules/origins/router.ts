@@ -224,7 +224,7 @@ export const originRouter = router({
       // ces entités.
       const [disciplineCount, stageCount, eventCount] = await Promise.all([
         ctx.prisma.discipline.count({ where: { originId: input.id } }),
-        ctx.prisma.stage.count({ where: { originId: input.id } }),
+        ctx.prisma.seminar.count({ where: { originId: input.id } }),
         ctx.prisma.event.count({ where: { originId: input.id } }),
       ]);
 

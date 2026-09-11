@@ -6,27 +6,27 @@ import { ArrowLeft } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import {
-  StageForm,
-  type StageFormInput,
-} from "@features/admin/stages/forms/StageForm";
+  SeminarForm,
+  type SeminarFormInput,
+} from "@features/admin/seminars/forms/SeminarForm";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
 
-/** Création d'un stage — `/(admin)/dashboard/stages/create`. */
+/** Création d'un stage — `/(admin)/dashboard/seminars/create`. */
 export default function CreateStagePage(): JSX.Element {
   const utils = trpc.useUtils();
-  const createMutation = trpc.stage.create.useMutation();
+  const createMutation = trpc.seminar.create.useMutation();
   const [createdId, setCreatedId] = useState<number | null>(null);
 
-  const handleSubmit = async (input: StageFormInput): Promise<void> => {
+  const handleSubmit = async (input: SeminarFormInput): Promise<void> => {
     const created = await createMutation.mutateAsync(input);
-    await utils.stage.getAllAdmin.invalidate();
+    await utils.seminar.getAllAdmin.invalidate();
     setCreatedId(created.id);
   };
 
   return (
     <div>
       <Link
-        href="/dashboard/stages"
+        href="/dashboard/seminars"
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -36,11 +36,11 @@ export default function CreateStagePage(): JSX.Element {
 
       {createdId != null ? (
         <SuccessRedirect
-          target={`/dashboard/stages/${createdId}`}
+          target={`/dashboard/seminars/${createdId}`}
           message="Stage créé."
         />
       ) : (
-        <StageForm onSubmit={handleSubmit} submitLabel="Créer" />
+        <SeminarForm onSubmit={handleSubmit} submitLabel="Créer" />
       )}
     </div>
   );

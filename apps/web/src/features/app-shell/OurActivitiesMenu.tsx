@@ -8,7 +8,7 @@ import { trpc } from "@trpc/trpcClient";
  * Menu public « Nos activités ».
  *
  * En tête : deux accès directs aux listes publiques — « Tous les stages »
- * (`/stages`) et « Tous les évènements » (`/events`). En dessous, les
+ * (`/seminars`) et « Tous les évènements » (`/events`). En dessous, les
  * disciplines regroupées par famille (familles triées par `sortOrder`,
  * disciplines par nom, les sans-famille sous « Autres »), liens vers
  * `/disciplines/[slug]`.

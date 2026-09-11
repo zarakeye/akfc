@@ -9,8 +9,8 @@ import { trashRouter } from "@backend/modules/trash/router";
 import { categoryRouter } from "@backend/modules/categories/router";
 import { courseRouter } from "@backend/modules/courses/router";
 import { disciplineRouter } from "@backend/modules/disciplines/router";
-import { stageRouter } from "@backend/modules/stages/router";
-import { stageSessionRouter } from "@backend/modules/stageSessions/router";
+import { seminarRouter } from "@backend/modules/seminars/router";
+import { seminarSessionRouter } from "@backend/modules/seminarSessions/router";
 import { eventRouter } from "@backend/modules/events/router";
 import { eventSessionRouter } from "@backend/modules/eventSessions/router";
 import { postRouter } from "@backend/modules/posts/router";
@@ -47,8 +47,8 @@ export const appRouter = router({
   course: courseRouter,
   discipline: disciplineRouter,
   origin: originRouter,
-  stage: stageRouter,
-  stageSession: stageSessionRouter,
+  seminar: seminarRouter,
+  seminarSession: seminarSessionRouter,
   event: eventRouter,
   eventSession: eventSessionRouter,
   post: postRouter,

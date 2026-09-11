@@ -6,8 +6,8 @@ import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 
 /**
- * StagesTable — `trpc.stage.getAll`. Rattachement résolu : discipline du club,
- * sinon label externe, sinon origine culturelle. Clic → `/(admin)/dashboard/stages/[id]`.
+ * SeminarsTable — `trpc.seminar.getAll`. Rattachement résolu : discipline du club,
+ * sinon label externe, sinon origine culturelle. Clic → `/(admin)/dashboard/seminars/[id]`.
  */
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -25,9 +25,9 @@ type StageRow = {
   rattachement: string;
 };
 
-export default function StagesTable(): JSX.Element {
+export default function SeminarsTable(): JSX.Element {
   const router = useRouter();
-  const { data: stages, isLoading, isError } = trpc.stage.getAllAdmin.useQuery();
+  const { data: stages, isLoading, isError } = trpc.seminar.getAllAdmin.useQuery();
   const { data: disciplines } = trpc.discipline.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
 
@@ -71,7 +71,7 @@ export default function StagesTable(): JSX.Element {
       columns={columns}
       rows={rows}
       onRowClick={(row: StageRow | null) => {
-        if (row) router.push(`/dashboard/stages/${row.id}`);
+        if (row) router.push(`/dashboard/seminars/${row.id}`);
       }}
     />
   );

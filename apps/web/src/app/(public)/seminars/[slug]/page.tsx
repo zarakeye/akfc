@@ -17,7 +17,7 @@ import {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Page publique d'un Stage par slug — `/stages/[slug]`.
+ * Page publique d'un Stage par slug — `/seminars/[slug]`.
  *
  * Rend les deux composites (description et program) édités au PageBuilder,
  * plus l'en-tête riche (rattachement, animateurs, prérequis) et la liste
@@ -34,7 +34,7 @@ export default async function PublicStagePage({
 }): Promise<JSX.Element> {
   const { slug } = await params;
 
-  const stage = await prisma.stage.findUnique({
+  const stage = await prisma.seminar.findUnique({
     where: { slug },
     include: {
       discipline: {
@@ -174,7 +174,7 @@ export default async function PublicStagePage({
           <h2 className="text-2xl font-bold">Sessions</h2>
           {stage.sessions.length > 0 && (
             <a
-              href={`/api/calendar/stages/${stage.id}`}
+              href={`/api/calendar/seminars/${stage.id}`}
               download
               className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
             >

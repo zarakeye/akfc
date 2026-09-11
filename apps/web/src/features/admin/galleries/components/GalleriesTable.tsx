@@ -42,7 +42,7 @@ export default function GalleriesTable(): JSX.Element {
     const facettes = [
       g.discipline?.name,
       g.category?.type,
-      g.stage?.label,
+      g.seminar?.label,
       g.event?.label,
       g.origin?.name,
     ].filter((v): v is string => Boolean(v));

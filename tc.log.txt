@@ -1,0 +1,238 @@
+
+> akfc_2@0.1.0 check /Users/stephanebazze/akfc
+> pnpm clean && pnpm --filter backend typecheck && pnpm typecheck
+
+
+> akfc_2@0.1.0 clean /Users/stephanebazze/akfc
+> rm -rf apps/web/.next node_modules/.cache
+
+
+> @workspace/backend@0.0.0 typecheck /Users/stephanebazze/akfc/packages/backend
+> tsc --noEmit
+
+
+> akfc_2@0.1.0 typecheck /Users/stephanebazze/akfc
+> pnpm --filter web typecheck
+
+
+> web@ typecheck /Users/stephanebazze/akfc/apps/web
+> tsc --noEmit
+
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(35,7): error TS2353: Object literal may only specify known properties, and 'stage' does not exist in type 'GalleryInclude<DefaultArgs>'.
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(42,13): error TS2551: Property 'discipline' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'. Did you mean 'disciplineId'?
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(43,13): error TS2339: Property 'stage' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'.
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(44,13): error TS2551: Property 'event' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'. Did you mean 'eventId'?
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(68,16): error TS2339: Property 'items' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'.
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(74,20): error TS2339: Property 'items' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'.
+src/app/(admin)/dashboard/galleries/[id]/page.tsx(74,31): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/(admin)/dashboard/origins/[id]/page.tsx(22,12): error TS2339: Property 'stage' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(27,31): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(28,31): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(37,12): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(49,17): error TS2551: Property 'stage' does not exist on type 'TRPCContextPropsBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; member...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(50,17): error TS2551: Property 'stage' does not exist on type 'TRPCContextPropsBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; member...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/edit/page.tsx(64,19): error TS2551: Property 'stage' does not exist on type 'TRPCContextPropsBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; member...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/[id]/page.tsx(36,30): error TS2339: Property 'stage' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/(admin)/dashboard/stages/[id]/page.tsx(81,18): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/app/(admin)/dashboard/stages/[id]/page.tsx(93,23): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/app/(admin)/dashboard/stages/create/page.tsx(17,31): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/app/(admin)/dashboard/stages/create/page.tsx(22,17): error TS2551: Property 'stage' does not exist on type 'TRPCContextPropsBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; member...'. Did you mean 'storage'?
+src/app/(public)/about/instructeurs/page.tsx(28,15): error TS2561: Object literal may only specify known properties, but 'stagesAsPrimaryAnimator' does not exist in type 'UserWhereInput'. Did you mean to write 'seminarsAsPrimaryAnimator'?
+src/app/(public)/about/instructeurs/page.tsx(29,15): error TS2353: Object literal may only specify known properties, and 'stagesAsAnimator' does not exist in type 'UserWhereInput'.
+src/app/(public)/agenda/page.tsx(56,12): error TS2339: Property 'stage' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/(public)/agenda/page.tsx(81,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/app/(public)/agenda/page.tsx(82,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(37,30): error TS2339: Property 'stage' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/(public)/stages/[slug]/page.tsx(82,14): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(83,11): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(84,14): error TS7006: Parameter 'n' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(149,45): error TS7006: Parameter 'req' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(149,50): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/(public)/stages/[slug]/page.tsx(191,34): error TS7006: Parameter 'session' implicitly has an 'any' type.
+src/app/api/calendar/stages/[id]/route.ts(25,30): error TS2339: Property 'stage' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/api/calendar/stages/[id]/route.ts(36,56): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/features/admin/galleries/actions/createGalleryForm.action.ts(73,9): error TS2353: Object literal may only specify known properties, and 'stageId' does not exist in type 'Without<GalleryCreateInput, GalleryUncheckedCreateInput> & GalleryUncheckedCreateInput'.
+src/features/admin/galleries/actions/createGalleryForm.action.ts(73,40): error TS2339: Property 'stageId' does not exist on type '{ title: string; slug: string; visibility: "PUBLIC" | "MEMBERS"; sortOrder: number; date: string; disciplineId: string; categoryId: string; seminarId: string; eventId: string; originId: string; }'.
+src/features/admin/galleries/actions/updateGalleryForm.action.ts(58,9): error TS2353: Object literal may only specify known properties, and 'stageId' does not exist in type 'Without<GalleryUpdateInput, GalleryUncheckedUpdateInput> & GalleryUncheckedUpdateInput'.
+src/features/admin/galleries/actions/updateGalleryForm.action.ts(58,40): error TS2339: Property 'stageId' does not exist on type '{ id: number; title: string; slug: string; visibility: "PUBLIC" | "MEMBERS"; sortOrder: number; date: string; disciplineId: string; categoryId: string; seminarId: string; eventId: string; originId: string; }'.
+src/features/admin/galleries/components/GalleriesTable.tsx(45,9): error TS2339: Property 'stage' does not exist on type '{ discipline: { name: string; id: number; } | null; seminar: { id: number; label: string; } | null; event: { id: number; label: string; } | null; _count: { items: number; }; origin: { name: string; id: number; } | null; category: { ...; } | null; } & { ...; }'.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(68,5): error TS2322: Type 'Resolver<{ title: string; slug: string; visibility: "PUBLIC" | "MEMBERS"; sortOrder: number; date: string; disciplineId: string; categoryId: string; seminarId: string; eventId: string; originId: string; }, any, { ...; }>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+  Types of parameters 'values' and 'values' are incompatible.
+    Property 'seminarId' is missing in type 'FormValues' but required in type '{ title: string; slug: string; visibility: "PUBLIC" | "MEMBERS"; sortOrder: number; date: string; disciplineId: string; categoryId: string; seminarId: string; eventId: string; originId: string; }'.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(93,33): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(148,7): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(186,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(215,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(254,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(278,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(300,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/CreateGalleryForm.tsx(320,71): error TS2339: Property 'label' does not exist on type '{ id: number; }'.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(74,5): error TS2322: Type 'Resolver<{ title: string; slug: string; originId: string; categoryId: string; disciplineId: string; eventId: string; sortOrder: number; visibility: "PUBLIC" | "MEMBERS"; date: string; }, any, { title: string; ... 7 more ...; date: string; }>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<FormValues>' is not assignable to type 'ResolverOptions<{ title: string; slug: string; originId: string; categoryId: string; disciplineId: string; eventId: string; sortOrder: number; visibility: "PUBLIC" | "MEMBERS"; date: string; }>'.
+      Types of property 'names' are incompatible.
+        Type '(keyof FormValues)[] | undefined' is not assignable to type '("title" | "slug" | "originId" | "categoryId" | "disciplineId" | "eventId" | "sortOrder" | "visibility" | "date")[] | undefined'.
+          Type '(keyof FormValues)[]' is not assignable to type '("title" | "slug" | "originId" | "categoryId" | "disciplineId" | "eventId" | "sortOrder" | "visibility" | "date")[]'.
+            Type 'keyof FormValues' is not assignable to type '"title" | "slug" | "originId" | "categoryId" | "disciplineId" | "eventId" | "sortOrder" | "visibility" | "date"'.
+              Type '"stageId"' is not assignable to type '"title" | "slug" | "originId" | "categoryId" | "disciplineId" | "eventId" | "sortOrder" | "visibility" | "date"'.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(83,9): error TS2322: Type 'true' is not assignable to type 'never'.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(97,24): error TS2339: Property 'stageId' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(97,57): error TS2339: Property 'stageId' does not exist on type '{ id: number; title: string; slug: string; originId: number | null; categoryId: number | null; disciplineId: number | null; eventId: number | null; sortOrder: number; visibility: Visibility; date: Date | null; seminarId: number | null; }'.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(117,33): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(177,7): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(217,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(245,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(284,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(308,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(330,11): error TS2322: Type 'Control<FormValues, any, TFieldValues>' is not assignable to type 'Control<FormValues, any, FormValues>'.
+  The types of '_options.resolver' are incompatible between these types.
+    Type 'Resolver<FormValues, any, TFieldValues> | undefined' is not assignable to type 'Resolver<FormValues, any, FormValues> | undefined'.
+      Type 'Resolver<FormValues, any, TFieldValues>' is not assignable to type 'Resolver<FormValues, any, FormValues>'.
+        Type 'ResolverResult<FormValues, TFieldValues> | Promise<ResolverResult<FormValues, TFieldValues>>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+          Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverResult<FormValues, FormValues> | Promise<ResolverResult<FormValues, FormValues>>'.
+            Type 'ResolverSuccess<TFieldValues>' is not assignable to type 'ResolverSuccess<FormValues>'.
+              Type 'TFieldValues' is not assignable to type 'FormValues'.
+                Type 'FieldValues' is missing the following properties from type 'FormValues': title, slug, visibility, sortOrder, and 6 more.
+src/features/admin/galleries/forms/UpdateGalleryForm.tsx(348,71): error TS2339: Property 'label' does not exist on type '{ id: number; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(276,28): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/features/admin/library/forms/DragNDropForm.tsx(509,7): error TS2322: Type 'Destination' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Property 'groupId' is missing in type '{ kind: "stage"; stageId: number; }' but required in type '{ kind: "group"; groupId: string; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(531,11): error TS2322: Type 'Destination' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Property 'groupId' is missing in type '{ kind: "stage"; stageId: number; }' but required in type '{ kind: "group"; groupId: string; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(628,9): error TS2322: Type 'Destination' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Property 'groupId' is missing in type '{ kind: "stage"; stageId: number; }' but required in type '{ kind: "group"; groupId: string; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(661,9): error TS2322: Type 'Destination' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Property 'groupId' is missing in type '{ kind: "stage"; stageId: number; }' but required in type '{ kind: "group"; groupId: string; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(684,9): error TS2322: Type 'Destination' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Property 'groupId' is missing in type '{ kind: "stage"; stageId: number; }' but required in type '{ kind: "group"; groupId: string; }'.
+src/features/admin/library/forms/DragNDropForm.tsx(970,37): error TS7006: Parameter 'st' implicitly has an 'any' type.
+src/features/admin/stages/components/StagesTable.tsx(30,53): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/features/admin/stages/components/StagesTable.tsx(49,48): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/features/admin/stages/forms/StageForm.tsx(4,15): error TS2305: Module '"@prisma/client"' has no exported member 'Stage'.
+src/features/admin/stages/forms/StageForm.tsx(144,14): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/features/admin/stages/forms/StageForm.tsx(145,16): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/features/common-repository/CommonRepositoryUpload.tsx(60,23): error TS2551: Property 'stage' does not exist on type 'CreateTRPCReactBase<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberG...'. Did you mean 'storage'?
+src/features/common-repository/CommonRepositoryUpload.tsx(72,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/features/common-repository/CommonRepositoryUpload.tsx(139,7): error TS2322: Type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; stageId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; } | { kind: "stage"; stageId: number; ... 4 more ...; containerName?: undefined; } | { ...; } | { ...; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "event"; eventId: number; disciplineIds?: number[] | undefined; }'.
+      Types of property 'kind' are incompatible.
+        Type '"stage"' is not assignable to type '"event"'.
+src/features/common-repository/CommonRepositoryUpload.tsx(216,7): error TS2322: Type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; stageId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; } | { kind: "stage"; stageId: number; ... 4 more ...; containerName?: undefined; } | { ...; } | { ...; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "event"; eventId: number; disciplineIds?: number[] | undefined; }'.
+      Types of property 'kind' are incompatible.
+        Type '"stage"' is not assignable to type '"event"'.
+src/features/common-repository/CommonRepositoryUpload.tsx(225,7): error TS2322: Type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; stageId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; } | { kind: "stage"; stageId: number; ... 4 more ...; containerName?: undefined; } | { ...; } | { ...; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "event"; eventId: number; disciplineIds?: number[] | undefined; }'.
+      Types of property 'kind' are incompatible.
+        Type '"stage"' is not assignable to type '"event"'.
+src/features/common-repository/CommonRepositoryUpload.tsx(240,7): error TS2322: Type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; stageId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; } | { kind: "stage"; stageId: number; ... 4 more ...; containerName?: undefined; } | { ...; } | { ...; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+  Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "existing-discipline"; categoryId: number; disciplineId: number; } | { kind: "new-discipline"; categoryId: number; proposedDisciplineName: string; } | { kind: "common_repository"; containerName?: string | undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+    Type '{ kind: "stage"; stageId: number; categoryId?: undefined; disciplineId?: undefined; eventId?: undefined; disciplineIds?: undefined; containerName?: undefined; }' is not assignable to type '{ kind: "event"; eventId: number; disciplineIds?: number[] | undefined; }'.
+      Types of property 'kind' are incompatible.
+        Type '"stage"' is not assignable to type '"event"'.
+src/lib/stores/useStageSessionStore.ts(3,15): error TS2305: Module '"@prisma/client"' has no exported member 'StageSession'.
+src/lib/stores/useStageSessionStore.ts(51,39): error TS2339: Property 'stageSession' does not exist on type 'TRPCClient<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberGroup: Bui...'.
+src/lib/stores/useStageSessionStore.ts(60,38): error TS2339: Property 'stageSession' does not exist on type 'TRPCClient<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberGroup: Bui...'.
+src/lib/stores/useStageSessionStore.ts(70,38): error TS2339: Property 'stageSession' does not exist on type 'TRPCClient<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberGroup: Bui...'.
+src/lib/stores/useStageSessionStore.ts(80,22): error TS2339: Property 'stageSession' does not exist on type 'TRPCClient<BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<{ homeHero: BuiltRouter<{ ctx: TRPCContext; meta: object; errorShape: DefaultErrorShape; transformer: true; }, DecorateCreateRouterOptions<...>>; ... 28 more ...; memberGroup: Bui...'.
+/Users/stephanebazze/akfc/apps/web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  web@ typecheck: `tsc --noEmit`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.

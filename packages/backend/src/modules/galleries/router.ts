@@ -69,7 +69,7 @@ const galleryWithItems = {
 
 const themeFields = {
   disciplineId: z.number().int().positive().nullable().optional(),
-  stageId: z.number().int().positive().nullable().optional(),
+  seminarId: z.number().int().positive().nullable().optional(),
   eventId: z.number().int().positive().nullable().optional(),
   categoryId: z.number().int().positive().nullable().optional(),
   originId: z.number().int().positive().nullable().optional(),
@@ -105,7 +105,7 @@ export const galleryRouter = router({
         include: {
           _count: { select: { items: true } },
           discipline: { select: { id: true, name: true } },
-          stage: { select: { id: true, label: true } },
+          seminar: { select: { id: true, label: true } },
           event: { select: { id: true, label: true } },
           category: { select: { id: true, type: true } },
           origin: { select: { id: true, name: true } },

@@ -1,0 +1,28 @@
+-- Renommage Stage → Seminar (métadonnée pure ; validé en transaction au préalable).
+ALTER TABLE "Stage" RENAME TO "Seminar";
+ALTER TABLE "StageSession" RENAME TO "SeminarSession";
+ALTER TABLE "_StageAnimators" RENAME TO "_SeminarAnimators";
+ALTER TABLE "SeminarSession" RENAME COLUMN "stageId" TO "seminarId";
+ALTER TABLE "Gallery" RENAME COLUMN "stageId" TO "seminarId";
+ALTER SEQUENCE "Stage_id_seq" RENAME TO "Seminar_id_seq";
+ALTER SEQUENCE "StageSession_id_seq" RENAME TO "SeminarSession_id_seq";
+ALTER TABLE "Seminar" RENAME CONSTRAINT "Stage_disciplineId_fkey" TO "Seminar_disciplineId_fkey";
+ALTER TABLE "Seminar" RENAME CONSTRAINT "Stage_originId_fkey" TO "Seminar_originId_fkey";
+ALTER TABLE "Seminar" RENAME CONSTRAINT "Stage_primaryAnimatorId_fkey" TO "Seminar_primaryAnimatorId_fkey";
+ALTER TABLE "SeminarSession" RENAME CONSTRAINT "StageSession_stageId_fkey" TO "SeminarSession_seminarId_fkey";
+ALTER TABLE "Gallery" RENAME CONSTRAINT "Gallery_stageId_fkey" TO "Gallery_seminarId_fkey";
+ALTER TABLE "_SeminarAnimators" RENAME CONSTRAINT "_StageAnimators_A_fkey" TO "_SeminarAnimators_A_fkey";
+ALTER TABLE "_SeminarAnimators" RENAME CONSTRAINT "_StageAnimators_B_fkey" TO "_SeminarAnimators_B_fkey";
+ALTER INDEX "Stage_pkey" RENAME TO "Seminar_pkey";
+ALTER INDEX "Stage_slug_key" RENAME TO "Seminar_slug_key";
+ALTER INDEX "Stage_disciplineId_label_key" RENAME TO "Seminar_disciplineId_label_key";
+ALTER INDEX "StageSession_pkey" RENAME TO "SeminarSession_pkey";
+ALTER INDEX "StageSession_stageId_date_beginTime_key" RENAME TO "SeminarSession_seminarId_date_beginTime_key";
+ALTER INDEX "_StageAnimators_AB_pkey" RENAME TO "_SeminarAnimators_AB_pkey";
+ALTER INDEX "Stage_disciplineId_idx" RENAME TO "Seminar_disciplineId_idx";
+ALTER INDEX "Stage_originId_idx" RENAME TO "Seminar_originId_idx";
+ALTER INDEX "Stage_primaryAnimatorId_idx" RENAME TO "Seminar_primaryAnimatorId_idx";
+ALTER INDEX "Stage_publicationDate_idx" RENAME TO "Seminar_publicationDate_idx";
+ALTER INDEX "StageSession_date_idx" RENAME TO "SeminarSession_date_idx";
+ALTER INDEX "StageSession_stageId_idx" RENAME TO "SeminarSession_seminarId_idx";
+ALTER INDEX "_StageAnimators_B_index" RENAME TO "_SeminarAnimators_B_index";

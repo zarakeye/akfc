@@ -58,8 +58,8 @@ model User {
   // --- Domaine métier (nouvelles relations)
   disciplinesAsInstructor   Discipline[]  @relation("DisciplineInstructor")
   coursesAsInstructor       Course[]      @relation("CourseInstructor")
-  stagesAsPrimaryAnimator   Stage[]       @relation("StagePrimaryAnimator")
-  stagesAsAnimator          Stage[]       @relation("StageAnimators")
+  seminarsAsPrimaryAnimator Seminar[]     @relation("SeminarPrimaryAnimator")
+  seminarsAsAnimator        Seminar[]     @relation("SeminarAnimators")
   uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
   eventsAsOrganizer         Event[]       @relation("EventOrganizer")  // ← AJOUT
 
@@ -252,7 +252,7 @@ model Origin {
   disciplines Discipline[]
 
   /// Stages rattachés à cette origine (notamment les stages hors-club).
-  stages Stage[]
+  seminars Seminar[]
 
   /// Événements rattachés à cette origine.
   events Event[]
@@ -394,7 +394,7 @@ model Discipline {
   courses Course[]
 
   /// Stages ponctuels rattachés à cette discipline.
-  stages Stage[]
+  seminars Seminar[]
 
   /// Événements rattachés à cette discipline.
 
@@ -505,7 +505,7 @@ model Course {
 /// quand `disciplineId` est non-null (Postgres considère NULL ≠ NULL
 /// pour les unique constraints). Pour les stages externes, la
 /// prévention des doublons de label vit côté UI/validation.
-model Stage {
+model Seminar {
   /// Identifiant entier auto-incrémenté.
   id Int @id @default(autoincrement())
 
@@ -572,13 +572,13 @@ model Stage {
   origin Origin? @relation(fields: [originId], references: [id])
 
   /// Animateur principal.
-  primaryAnimator User @relation("StagePrimaryAnimator", fields: [primaryAnimatorId], references: [id])
+  primaryAnimator User @relation("SeminarPrimaryAnimator", fields: [primaryAnimatorId], references: [id])
 
   /// Animateurs secondaires (many-to-many).
-  animators User[] @relation("StageAnimators")
+  animators User[] @relation("SeminarAnimators")
 
   /// Sessions individuelles qui composent ce stage.
-  sessions StageSession[]
+  sessions SeminarSession[]
 
   slug String?  @unique // nullable le temps du backfill
 
@@ -600,12 +600,12 @@ model Stage {
 /// Pas de PageBuilder ici — les sessions sont des données structurées
 /// secondaires. Le contenu riche vit dans `Stage.description` et
 /// `Stage.program`.
-model StageSession {
+model SeminarSession {
   /// Identifiant entier auto-incrémenté.
   id Int @id @default(autoincrement())
 
   /// Stage parent (NOT NULL, cascade en suppression).
-  stageId Int
+  seminarId Int
 
   /// Date de la séance (jour calendaire).
   date DateTime
@@ -628,10 +628,10 @@ model StageSession {
 
   /// Stage parent. `onDelete: Cascade` : si le stage est supprimé,
   /// ses sessions le sont aussi.
-  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  seminar Seminar @relation(fields: [seminarId], references: [id], onDelete: Cascade)
 
-  @@unique([stageId, date, beginTime])
-  @@index([stageId])
+  @@unique([seminarId, date, beginTime])
+  @@index([seminarId])
   @@index([date])
 }
 
@@ -1159,8 +1159,8 @@ model Gallery {
   // les facettes de la future recherche.
   disciplineId Int?
   discipline   Discipline? @relation(fields: [disciplineId], references: [id])
-  stageId      Int?
-  stage        Stage?      @relation(fields: [stageId], references: [id])
+  seminarId    Int?
+  seminar      Seminar?    @relation(fields: [seminarId], references: [id])
   eventId      Int?
   event        Event?      @relation(fields: [eventId], references: [id])
   categoryId   Int?

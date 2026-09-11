@@ -21,7 +21,7 @@ function animatorName(a: {
 }
 
 /**
- * Présentation admin d'un stage — `/(admin)/dashboard/stages/[id]`.
+ * Présentation admin d'un stage — `/(admin)/dashboard/seminars/[id]`.
  * Deux composites (description + programme) → deux PageRenderer.
  */
 export default async function StagePresentationPage({
@@ -30,11 +30,11 @@ export default async function StagePresentationPage({
   params: Promise<{ id: string }>;
 }): Promise<JSX.Element> {
   const { id } = await params;
-  const stageId = Number(id);
-  if (!Number.isFinite(stageId)) notFound();
+  const seminarId = Number(id);
+  if (!Number.isFinite(seminarId)) notFound();
 
-  const stage = await prisma.stage.findUnique({
-    where: { id: stageId },
+  const stage = await prisma.seminar.findUnique({
+    where: { id: seminarId },
     include: {
       discipline: { select: { name: true } },
       origin: { select: { name: true, flag: true } },
@@ -55,8 +55,8 @@ export default async function StagePresentationPage({
   return (
     <PresentationShell
       title={stage.label}
-      listHref="/dashboard/stages"
-      editHref={`/dashboard/stages/${stage.id}/edit`}
+      listHref="/dashboard/seminars"
+      editHref={`/dashboard/seminars/${stage.id}/edit`}
     >
       <dl className="mb-6 grid grid-cols-1 gap-3 border-b border-border pb-6 text-sm sm:grid-cols-2">
         <div>

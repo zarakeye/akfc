@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Stage, Audience } from "@prisma/client";
+import type { Seminar, Audience } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
 import {
@@ -28,7 +28,7 @@ import {
 /*  Types                                                                  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-export interface StageFormInput {
+export interface SeminarFormInput {
   label: string;
   slug: string;
   audience: Audience;
@@ -47,11 +47,11 @@ export interface StageFormInput {
   publicationDate: Date | null;
 }
 
-export interface StageFormProps {
+export interface SeminarFormProps {
   /** Pré-remplissage en mode édition. Absent en création. */
-  initial?: Stage & { animators?: { id: string }[] };
+  initial?: Seminar & { animators?: { id: string }[] };
   /** Appelée à la soumission. */
-  onSubmit: (input: StageFormInput) => Promise<void>;
+  onSubmit: (input: SeminarFormInput) => Promise<void>;
   /** Libellé du bouton de soumission. Default "Enregistrer". */
   submitLabel?: string;
 }
@@ -105,20 +105,20 @@ function localInputToDate(v: string): Date | null {
  *
  * Le `slug` suit le label tant que l'admin n'y a pas touché (pattern
  * `DisciplineForm`), puis devient indépendant — stable au renommage.
- * Alimente `/stages/[slug]`.
+ * Alimente `/seminars/[slug]`.
  *
  * Le label est `@@unique([disciplineId, label])` côté schéma quand
  * disciplineId est non-null — la collision remonte du router en
  * CONFLICT (de même que le slug `@unique`).
  *
- * Les `StageSession[]` (séances datées) sont **gérées séparément** —
+ * Les `SeminarSession[]` (séances datées) sont **gérées séparément** —
  * pas dans ce form.
  */
-export function StageForm({
+export function SeminarForm({
   initial,
   onSubmit,
   submitLabel = "Enregistrer",
-}: StageFormProps) {
+}: SeminarFormProps) {
   const [label, setLabel] = useState<string>(initial?.label ?? "");
   const [slug, setSlug] = useState<string>(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState<boolean>(!!initial);

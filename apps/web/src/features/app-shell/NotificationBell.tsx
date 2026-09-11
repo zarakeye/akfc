@@ -282,7 +282,7 @@ export function NotificationBell(): JSX.Element | null {
                   {(entityDrafts?.stages ?? 0) > 0 && (
                     <li>
                       <Link
-                        href="/dashboard/stages"
+                        href="/dashboard/seminars"
                         className="block rounded px-1 py-0.5 hover:bg-white/10 hover:underline"
                       >
                         {entityDrafts!.stages} stage
