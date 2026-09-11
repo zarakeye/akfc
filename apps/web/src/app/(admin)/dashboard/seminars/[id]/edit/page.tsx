@@ -6,14 +6,14 @@ import { ArrowLeft, Trash2 } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import {
-  StageForm,
-  type StageFormInput,
-} from "@features/admin/stages/forms/StageForm";
+  SeminarForm,
+  type SeminarFormInput,
+} from "@features/admin/seminars/forms/SeminarForm";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
 
 /**
- * Édition d'un stage — `/(admin)/dashboard/stages/[id]/edit`.
- * `getById` (inclut `animators`) → `StageForm initial` → `stage.update` →
+ * Édition d'un stage — `/(admin)/dashboard/seminars/[id]/edit`.
+ * `getById` (inclut `animators`) → `SeminarForm initial` → `stage.update` →
  * invalidation → `SuccessRedirect` vers la fiche.
  */
 export default function EditStagePage({
@@ -22,10 +22,10 @@ export default function EditStagePage({
   params: Promise<{ id: string }>;
 }): JSX.Element {
   const { id } = use(params);
-  const stageId = Number(id);
+  const seminarId = Number(id);
   const utils = trpc.useUtils();
-  const updateMutation = trpc.stage.update.useMutation();
-  const deleteMutation = trpc.stage.delete.useMutation();
+  const updateMutation = trpc.seminar.update.useMutation();
+  const deleteMutation = trpc.seminar.delete.useMutation();
   const [done, setDone] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -34,9 +34,9 @@ export default function EditStagePage({
     data: stage,
     isLoading,
     isError,
-  } = trpc.stage.getByIdAdmin.useQuery(
-    { id: stageId },
-    { enabled: Number.isFinite(stageId) && stageId > 0 },
+  } = trpc.seminar.getByIdAdmin.useQuery(
+    { id: seminarId },
+    { enabled: Number.isFinite(seminarId) && seminarId > 0 },
   );
 
   if (isLoading) return <div>Chargement du stage…</div>;
@@ -44,10 +44,10 @@ export default function EditStagePage({
     return <div className="text-red-600">Stage introuvable.</div>;
   }
 
-  const handleSubmit = async (input: StageFormInput): Promise<void> => {
-    await updateMutation.mutateAsync({ id: stageId, ...input });
-    await utils.stage.getAllAdmin.invalidate();
-    await utils.stage.getByIdAdmin.invalidate({ id: stageId });
+  const handleSubmit = async (input: SeminarFormInput): Promise<void> => {
+    await updateMutation.mutateAsync({ id: seminarId, ...input });
+    await utils.seminar.getAllAdmin.invalidate();
+    await utils.seminar.getByIdAdmin.invalidate({ id: seminarId });
     setDone(true);
   };
 
@@ -60,8 +60,8 @@ export default function EditStagePage({
       return;
     setDeleting(true);
     try {
-      await deleteMutation.mutateAsync({ id: stageId });
-      await utils.stage.getAllAdmin.invalidate();
+      await deleteMutation.mutateAsync({ id: seminarId });
+      await utils.seminar.getAllAdmin.invalidate();
       setDeleted(true);
     } finally {
       setDeleting(false);
@@ -71,7 +71,7 @@ export default function EditStagePage({
   return (
     <div>
       <Link
-        href={`/dashboard/stages/${stageId}`}
+        href={`/dashboard/seminars/${seminarId}`}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -81,14 +81,14 @@ export default function EditStagePage({
 
       {done ? (
         <SuccessRedirect
-          target={`/dashboard/stages/${stageId}`}
+          target={`/dashboard/seminars/${seminarId}`}
           message="Stage mis à jour."
         />
       ) : deleted ? (
-        <SuccessRedirect target="/dashboard/stages" message="Stage supprimé." />
+        <SuccessRedirect target="/dashboard/seminars" message="Stage supprimé." />
       ) : (
         <>
-          <StageForm
+          <SeminarForm
             initial={stage}
             onSubmit={handleSubmit}
             submitLabel="Enregistrer"

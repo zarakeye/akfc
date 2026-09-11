@@ -42,7 +42,7 @@ function formatDate(date: Date): string {
 export default async function AgendaPage(): Promise<JSX.Element> {
   const now = new Date();
 
-  // Filtre de publication repris tel quel des pages /stages et /events :
+  // Filtre de publication repris tel quel des pages /seminars et /events :
   // inventer une seconde règle créerait deux vérités sur ce qui est public.
   const publicFilter = { publicationDate: { not: null, lte: now } };
   const nextSession = {
@@ -52,8 +52,8 @@ export default async function AgendaPage(): Promise<JSX.Element> {
     select: { date: true },
   };
 
-  const [stages, events] = await Promise.all([
-    prisma.stage.findMany({
+  const [seminars, events] = await Promise.all([
+    prisma.seminar.findMany({
       where: { ...publicFilter, sessions: { some: { date: { gte: now } } } },
       select: {
         id: true,
@@ -78,7 +78,7 @@ export default async function AgendaPage(): Promise<JSX.Element> {
   ]);
 
   const entries = [
-    ...stages.map((row) => ({ kind: "stage" as const, row })),
+    ...seminars.map((row) => ({ kind: "seminar" as const, row })),
     ...events.map((row) => ({ kind: "event" as const, row })),
   ]
     .map(({ kind, row }) => ({
@@ -106,9 +106,9 @@ export default async function AgendaPage(): Promise<JSX.Element> {
     title: entry.row.label,
     subtitle: entry.date ? `Prochaine date : ${formatDate(entry.date)}` : undefined,
     href: entry.row.slug
-      ? `/${entry.kind === "stage" ? "stages" : "events"}/${entry.row.slug}`
+      ? `/${entry.kind === "seminar" ? "seminars" : "events"}/${entry.row.slug}`
       : null,
-    linkLabel: entry.kind === "stage" ? "Voir le stage" : "Voir l'événement",
+    linkLabel: entry.kind === "seminar" ? "Voir le stage" : "Voir l'événement",
     imageUrl: entry.row.summaryMediaId
       ? (images[entry.row.summaryMediaId]?.url ?? null)
       : null,

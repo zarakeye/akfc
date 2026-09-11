@@ -19,7 +19,7 @@ export default async function OriginPresentationPage({
 
   const [disciplineCount, stageCount, eventCount] = await Promise.all([
     prisma.discipline.count({ where: { originId } }),
-    prisma.stage.count({ where: { originId } }),
+    prisma.seminar.count({ where: { originId } }),
     prisma.event.count({ where: { originId } }),
   ]);
 

@@ -38,13 +38,13 @@ interface FormValues {
   // Facettes cumulables — "" = aucune, sinon l'id en string (DOM).
   disciplineId: string;
   categoryId: string;
-  stageId: string;
+  seminarId: string;
   eventId: string;
   originId: string;
 }
 
 type FacetName =
-  "disciplineId" | "categoryId" | "stageId" | "eventId" | "originId";
+  "disciplineId" | "categoryId" | "seminarId" | "eventId" | "originId";
 
 /**
  * Types de catégorie qui débloquent une facette conditionnelle (doit
@@ -80,7 +80,7 @@ export function UpdateGalleryForm({
         date: true,
         disciplineId: true,
         categoryId: true,
-        stageId: true,
+        seminarId: true,
         eventId: true,
         originId: true,
       }),
@@ -94,7 +94,7 @@ export function UpdateGalleryForm({
       disciplineId:
         gallery.disciplineId != null ? String(gallery.disciplineId) : "",
       categoryId: gallery.categoryId != null ? String(gallery.categoryId) : "",
-      stageId: gallery.stageId != null ? String(gallery.stageId) : "",
+      seminarId: gallery.seminarId != null ? String(gallery.seminarId) : "",
       eventId: gallery.eventId != null ? String(gallery.eventId) : "",
       originId: gallery.originId != null ? String(gallery.originId) : "",
     },
@@ -114,7 +114,7 @@ export function UpdateGalleryForm({
   // Limite v1 assumée : stages/events listés = publiés uniquement.
   const { data: disciplines } = trpc.discipline.getAll.useQuery();
   const { data: categories } = trpc.category.getAll.useQuery();
-  const { data: stages } = trpc.stage.getAll.useQuery();
+  const { data: stages } = trpc.seminar.getAll.useQuery();
   const { data: events } = trpc.event.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
 
@@ -129,7 +129,7 @@ export function UpdateGalleryForm({
   // non concernée réinitialise ensuite le champ (useEffect ci-dessous).
   const showStage =
     selectedCategoryType === CATEGORY_TYPE_STAGE ||
-    Boolean(form.watch("stageId"));
+    Boolean(form.watch("seminarId"));
   const showEvent =
     selectedCategoryType === CATEGORY_TYPE_EVENT ||
     Boolean(form.watch("eventId"));
@@ -147,9 +147,9 @@ export function UpdateGalleryForm({
     if (selectedCategoryId === initialCategoryRef.current) return;
     if (
       selectedCategoryType !== CATEGORY_TYPE_STAGE &&
-      form.getValues("stageId")
+      form.getValues("seminarId")
     ) {
-      form.setValue("stageId", "");
+      form.setValue("seminarId", "");
     }
     if (
       selectedCategoryType !== CATEGORY_TYPE_EVENT &&
@@ -345,7 +345,7 @@ export function UpdateGalleryForm({
         {/* Facettes cumulables — "" = aucune ; l'action convertit en null. */}
         {facetField("disciplineId", "Discipline", disciplines, (d) => d.name)}
         {facetField("categoryId", "Catégorie", categories, (c) => c.type)}
-        {showStage && facetField("stageId", "Stage", stages, (s) => s.label)}
+        {showStage && facetField("seminarId", "Stage", stages, (s) => s.label)}
         {showEvent &&
           facetField("eventId", "Évènement", events, (e) => e.label)}
         {facetField("originId", "Origine", origins, (o) => o.name)}

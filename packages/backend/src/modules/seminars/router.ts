@@ -277,13 +277,13 @@ async function assertOriginExists(
 /*                                  ROUTER                                    */
 /* -------------------------------------------------------------------------- */
 
-export const stageRouter = router({
+export const seminarRouter = router({
   /**
    * Liste publique des stages PUBLIÉS (publicationDate non null et passée).
    * L'admin utilise `getAllAdmin` (inclut brouillons et programmés).
    */
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.stage.findMany({
+    return ctx.prisma.seminar.findMany({
       where: { publicationDate: { not: null, lte: new Date() } },
       orderBy: [{ disciplineId: "asc" }, { label: "asc" }],
     });
@@ -295,7 +295,7 @@ export const stageRouter = router({
    * lecture du CONTENU déposé reste admin (assertCanReadPath).
    */
   listForUpload: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.stage.findMany({
+    return ctx.prisma.seminar.findMany({
       select: { id: true, label: true, slug: true },
       orderBy: [
         { publicationDate: { sort: "desc", nulls: "first" } },
@@ -311,7 +311,7 @@ export const stageRouter = router({
   getAllAdmin: protectedProcedure
     .use(isAdmin)
     .query(async ({ ctx }) => {
-      return ctx.prisma.stage.findMany({
+      return ctx.prisma.seminar.findMany({
         orderBy: [
           { publicationDate: { sort: "desc", nulls: "first" } },
           { createdAt: "desc" },
@@ -325,7 +325,7 @@ export const stageRouter = router({
   getAllByDiscipline: publicProcedure
     .input(z.object({ disciplineId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      return ctx.prisma.stage.findMany({
+      return ctx.prisma.seminar.findMany({
         where: {
           disciplineId: input.disciplineId,
           publicationDate: { not: null, lte: new Date() },
@@ -342,7 +342,7 @@ export const stageRouter = router({
     .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const stage = await ctx.prisma.stage.findUnique({
+      const stage = await ctx.prisma.seminar.findUnique({
         where: { id: input.id },
         relationLoadStrategy: "join",
         include: {
@@ -364,7 +364,7 @@ export const stageRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: slugSchema }))
     .query(async ({ ctx, input }) => {
-      const stage = await ctx.prisma.stage.findFirst({
+      const stage = await ctx.prisma.seminar.findFirst({
         where: {
           slug: input.slug,
           publicationDate: { not: null, lte: new Date() },
@@ -401,7 +401,7 @@ export const stageRouter = router({
       return await ctx.prisma.$transaction(async (tx) => {
         let created;
         try {
-          created = await tx.stage.create({
+          created = await tx.seminar.create({
             data: {
               disciplineId: input.disciplineId ?? null,
               externalDisciplineLabel: input.externalDisciplineLabel ?? null,
@@ -499,7 +499,7 @@ export const stageRouter = router({
       //   2. Validation « au moins un des trois » : on vérifie que la
       //      combinaison après merge satisfait toujours la règle
 
-      const existing = await ctx.prisma.stage.findUnique({
+      const existing = await ctx.prisma.seminar.findUnique({
         where: { id },
         select: {
           disciplineId: true,
@@ -584,7 +584,7 @@ export const stageRouter = router({
       return await ctx.prisma.$transaction(async (tx) => {
         let updated;
         try {
-          const data: Prisma.StageUncheckedUpdateInput = {
+          const data: Prisma.SeminarUncheckedUpdateInput = {
             disciplineId: rest.disciplineId,
             externalDisciplineLabel: rest.externalDisciplineLabel,
             originId: rest.originId,
@@ -616,7 +616,7 @@ export const stageRouter = router({
               : {}),
           };
 
-          updated = await tx.stage.update({
+          updated = await tx.seminar.update({
             where: { id },
             data,
             relationLoadStrategy: "join",
@@ -669,7 +669,7 @@ export const stageRouter = router({
         // fourni : composite et image se modifient séparément, et traiter
         // l'un sans l'autre laisserait la référence de l'autre à l'abandon.
         if (summary !== undefined || rest.summaryMediaId !== undefined) {
-          const row = await tx.stage.findUnique({
+          const row = await tx.seminar.findUnique({
             where: { id },
             select: { summary: true, summaryMediaId: true },
           });
@@ -713,7 +713,7 @@ export const stageRouter = router({
         });
 
         try {
-          return await tx.stage.delete({
+          return await tx.seminar.delete({
             where: { id: input.id },
           });
         } catch (err) {
@@ -732,4 +732,4 @@ export const stageRouter = router({
     }),
 });
 
-export default stageRouter;
+export default seminarRouter;

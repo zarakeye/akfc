@@ -25,8 +25,8 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
           OR: [
             { disciplinesAsInstructor: { some: {} } },
             { coursesAsInstructor: { some: {} } },
-            { stagesAsPrimaryAnimator: { some: {} } },
-            { stagesAsAnimator: { some: {} } },
+            { seminarsAsPrimaryAnimator: { some: {} } },
+            { seminarsAsAnimator: { some: {} } },
           ],
         },
       ],

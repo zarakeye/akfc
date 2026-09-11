@@ -514,7 +514,7 @@ export const disciplineRouter = router({
       // vidage et donneraient un faux « non vide ».
       const [courseCount, stageCount, eventCount] = await Promise.all([
         ctx.prisma.course.count({ where: { disciplineId: input.id } }),
-        ctx.prisma.stage.count({ where: { disciplineId: input.id } }),
+        ctx.prisma.seminar.count({ where: { disciplineId: input.id } }),
         ctx.prisma.eventDiscipline.count({ where: { disciplineId: input.id } }),
       ]);
 

@@ -7,7 +7,7 @@
 export interface TimeInputProps {
   /**
    * Heure stockée au **format HHMM** (entier compact), aligné sur
-   * `Course.beginTime`, `StageSession.beginTime`, `EventSession.beginTime`
+   * `Course.beginTime`, `SeminarSession.beginTime`, `EventSession.beginTime`
    * dans le schéma Prisma.
    *
    * Convention :

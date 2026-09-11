@@ -31,13 +31,13 @@ interface FormValues {
   // Facettes cumulables — "" = aucune, sinon l'id en string (DOM).
   disciplineId: string;
   categoryId: string;
-  stageId: string;
+  seminarId: string;
   eventId: string;
   originId: string;
 }
 
 type FacetName =
-  "disciplineId" | "categoryId" | "stageId" | "eventId" | "originId";
+  "disciplineId" | "categoryId" | "seminarId" | "eventId" | "originId";
 
 /**
  * Types de catégorie qui débloquent une facette conditionnelle. La valeur
@@ -74,7 +74,7 @@ export function CreateGalleryForm({
       date: "",
       disciplineId: "",
       categoryId: "",
-      stageId: "",
+      seminarId: "",
       eventId: "",
       originId: "",
     },
@@ -90,7 +90,7 @@ export function CreateGalleryForm({
   // Limite v1 assumée : stages/events listés = publiés uniquement.
   const { data: disciplines } = trpc.discipline.getAll.useQuery();
   const { data: categories } = trpc.category.getAll.useQuery();
-  const { data: stages } = trpc.stage.getAll.useQuery();
+  const { data: stages } = trpc.seminar.getAll.useQuery();
   const { data: events } = trpc.event.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
   const [state, formAction, isPending] = useActionState<
@@ -111,8 +111,8 @@ export function CreateGalleryForm({
   // réinitialise sa valeur — sinon on soumettrait un id fantôme incohérent
   // avec la catégorie choisie.
   useEffect(() => {
-    if (!showStage && form.getValues("stageId")) {
-      form.setValue("stageId", "");
+    if (!showStage && form.getValues("seminarId")) {
+      form.setValue("seminarId", "");
     }
     if (!showEvent && form.getValues("eventId")) {
       form.setValue("eventId", "");
@@ -317,7 +317,7 @@ export function CreateGalleryForm({
             justifie (type "Stage" ou "Event"). */}
         {facetField("disciplineId", "Discipline", disciplines, (d) => d.name)}
         {facetField("categoryId", "Catégorie", categories, (c) => c.type)}
-        {showStage && facetField("stageId", "Stage", stages, (s) => s.label)}
+        {showStage && facetField("seminarId", "Stage", stages, (s) => s.label)}
         {showEvent &&
           facetField("eventId", "Évènement", events, (e) => e.label)}
         {facetField("originId", "Origine", origins, (o) => o.name)}

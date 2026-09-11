@@ -103,7 +103,7 @@ export default function ControlPanelSidebar(): JSX.Element {
       title: "Programme",
       items: [
         { label: "Cours", href: "/dashboard/courses", createHref: "/dashboard/courses/create", createAlt: "Créer un cours" },
-        { label: "Stages", href: "/dashboard/stages", createHref: "/dashboard/stages/create", createAlt: "Créer un nouveau stage" },
+        { label: "Stages", href: "/dashboard/seminars", createHref: "/dashboard/seminars/create", createAlt: "Créer un nouveau stage" },
         { label: "Évènements", href: "/dashboard/events", createHref: "/dashboard/events/create", createAlt: "Créer un nouvel évènement" },
       ],
     },

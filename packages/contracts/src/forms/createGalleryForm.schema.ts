@@ -18,7 +18,7 @@ export const createGalleryFormSchema = z.object({
   date: z.string(),
   disciplineId: facetIdString,
   categoryId: facetIdString,
-  stageId: facetIdString,
+  seminarId: facetIdString,
   eventId: facetIdString,
   originId: facetIdString,
 });

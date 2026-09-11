@@ -21,7 +21,7 @@ import type { CropResult } from "@features/gallery-crop/types/cropper.types";
  */
 
 type UploadState = "idle" | "uploading" | "done" | "error";
-type DestKind = "discipline" | "stage" | "event" | "common_repository";
+type DestKind = "discipline" | "seminar" | "event" | "common_repository";
 
 function pickBackend(mimeType: string): "cloudinary" | "r2" {
   return mimeType.startsWith("image/") || mimeType.startsWith("video/")
@@ -57,8 +57,8 @@ export function CommonRepositoryUpload(): JSX.Element {
   const disciplines = trpc.discipline.getAll.useQuery(undefined, {
     enabled: destKind === "discipline",
   });
-  const stages = trpc.stage.listForUpload.useQuery(undefined, {
-    enabled: destKind === "stage",
+  const stages = trpc.seminar.listForUpload.useQuery(undefined, {
+    enabled: destKind === "seminar",
   });
   const events = trpc.event.listForUpload.useQuery(undefined, {
     enabled: destKind === "event",
@@ -68,7 +68,7 @@ export function CommonRepositoryUpload(): JSX.Element {
   const entityOptions = useMemo<{ id: number; label: string }[]>(() => {
     if (destKind === "discipline")
       return (disciplines.data ?? []).map((d) => ({ id: d.id, label: d.name }));
-    if (destKind === "stage")
+    if (destKind === "seminar")
       return (stages.data ?? []).map((s) => ({ id: s.id, label: s.label }));
     if (destKind === "event")
       return (events.data ?? []).map((e) => ({ id: e.id, label: e.label }));
@@ -90,8 +90,8 @@ export function CommonRepositoryUpload(): JSX.Element {
         categoryId: categoryIdOfDiscipline,
         disciplineId: entityId,
       };
-    if (destKind === "stage" && entityId !== "")
-      return { kind: "stage" as const, stageId: entityId };
+    if (destKind === "seminar" && entityId !== "")
+      return { kind: "seminar" as const, seminarId: entityId };
     if (destKind === "event" && entityId !== "")
       return { kind: "event" as const, eventId: entityId, disciplineIds: [] };
     return {
@@ -306,7 +306,7 @@ export function CommonRepositoryUpload(): JSX.Element {
           }}
         >
           <option value="discipline">Une discipline (cours)</option>
-          <option value="stage">Un stage</option>
+          <option value="seminar">Un stage</option>
           <option value="event">Un événement</option>
           <option value="common_repository">
             Aucune de ces destinations (Dépôt commun)
@@ -320,7 +320,7 @@ export function CommonRepositoryUpload(): JSX.Element {
           <span className="font-medium">
             {destKind === "discipline"
               ? "Discipline"
-              : destKind === "stage"
+              : destKind === "seminar"
                 ? "Stage"
                 : "Événement"}
           </span>

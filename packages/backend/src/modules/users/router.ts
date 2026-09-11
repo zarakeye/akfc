@@ -254,8 +254,8 @@ export const userRouter = router({
           select: {
             disciplinesAsInstructor: true,
             coursesAsInstructor: true,
-            stagesAsPrimaryAnimator: true,
-            stagesAsAnimator: true,
+            seminarsAsPrimaryAnimator: true,
+            seminarsAsAnimator: true,
           },
         },
       },
@@ -266,8 +266,8 @@ export const userRouter = router({
       c &&
         (c.disciplinesAsInstructor > 0 ||
           c.coursesAsInstructor > 0 ||
-          c.stagesAsPrimaryAnimator > 0 ||
-          c.stagesAsAnimator > 0),
+          c.seminarsAsPrimaryAnimator > 0 ||
+          c.seminarsAsAnimator > 0),
     );
 
     return {
@@ -318,8 +318,8 @@ export const userRouter = router({
             OR: [
               { disciplinesAsInstructor: { some: {} } },
               { coursesAsInstructor: { some: {} } },
-              { stagesAsPrimaryAnimator: { some: {} } },
-              { stagesAsAnimator: { some: {} } },
+              { seminarsAsPrimaryAnimator: { some: {} } },
+              { seminarsAsAnimator: { some: {} } },
             ],
           },
         ],
@@ -355,8 +355,8 @@ export const userRouter = router({
           { memberGroupMemberships: { some: { group: { isAdminGroup: true } } } },
           { disciplinesAsInstructor: { some: {} } },
           { coursesAsInstructor: { some: {} } },
-          { stagesAsPrimaryAnimator: { some: {} } },
-          { stagesAsAnimator: { some: {} } },
+          { seminarsAsPrimaryAnimator: { some: {} } },
+          { seminarsAsAnimator: { some: {} } },
         ],
       },
       select: {
@@ -376,8 +376,8 @@ export const userRouter = router({
         OR: [
           { disciplinesAsInstructor: { some: {} } },
           { coursesAsInstructor: { some: {} } },
-          { stagesAsPrimaryAnimator: { some: {} } },
-          { stagesAsAnimator: { some: {} } },
+          { seminarsAsPrimaryAnimator: { some: {} } },
+          { seminarsAsAnimator: { some: {} } },
         ],
       },
       select: {

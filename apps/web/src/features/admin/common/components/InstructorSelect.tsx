@@ -25,7 +25,7 @@ export interface InstructorSelectProps {
  * Sélecteur d'instructeur branché sur `user.getInstructors` — une
  * nouvelle procédure tRPC qui ramène tout user ayant **au moins une
  * relation d'instruction** (`disciplinesAsInstructor`,
- * `coursesAsInstructor`, `stagesAsPrimaryAnimator`, `stagesAsAnimator`).
+ * `coursesAsInstructor`, `seminarsAsPrimaryAnimator`, `seminarsAsAnimator`).
  *
  * C'est une définition **factuelle** de l'instructeur : qui anime
  * déjà quelque chose dans le club. Volontaire pour éviter de dépendre

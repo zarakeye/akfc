@@ -6,23 +6,23 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
 import { isAdmin } from "@backend/trpc/middleware";
 
 /**
- * stageSessions/router.ts
+ * seminarSessions/router.ts
  *
- * CRUD StageSession — une session concrète d'un Stage (un jour, des horaires,
- * éventuellement un lieu). Un Stage peut avoir plusieurs sessions si son
+ * CRUD SeminarSession — une session concrète d'un Seminar (un jour, des horaires,
+ * éventuellement un lieu). Un Seminar peut avoir plusieurs sessions si son
  * programme s'étale sur plusieurs journées.
  *
- * Unicité : `(stageId, date, beginTime)`. Deux sessions du même stage à
+ * Unicité : `(seminarId, date, beginTime)`. Deux sessions du même seminar à
  * la même date et la même heure ne sont pas autorisées.
  *
  * Conventions :
- *   - Lectures   : `publicProcedure` (les sessions d'un stage public doivent
+ *   - Lectures   : `publicProcedure` (les sessions d'un seminar public doivent
  *                  être visibles pour que le site public puisse les afficher).
  *   - Écritures  : `protectedProcedure.use(isAdmin)`.
- *                  On réutilise la permission du domaine Stage — une session
- *                  n'est rien sans son stage parent.
+ *                  On réutilise la permission du domaine Seminar — une session
+ *                  n'est rien sans son seminar parent.
  *
- * Note cascade : la suppression d'un Stage efface toutes ses sessions
+ * Note cascade : la suppression d'un Seminar efface toutes ses sessions
  * automatiquement (onDelete: Cascade défini dans le schéma Prisma).
  */
 
@@ -49,7 +49,7 @@ const endTimeSchema = hhmmSchema;
 
 const createInput = z
   .object({
-    stageId: z.number().int().positive(),
+    seminarId: z.number().int().positive(),
     date: z.coerce.date(),
     beginTime: beginTimeSchema,
     endTime: endTimeSchema,
@@ -69,8 +69,8 @@ const updateInput = z
     endTime: endTimeSchema.optional(),
     location: z.string().trim().min(1).max(255).nullable().optional(),
     notes: z.string().trim().min(1).max(2000).nullable().optional(),
-    // Note : `stageId` volontairement absent — non modifiable.
-    // Une session orpheline n'a pas de sens ; pour changer de stage, on
+    // Note : `seminarId` volontairement absent — non modifiable.
+    // Une session orpheline n'a pas de sens ; pour changer de seminar, on
     // supprime et on recrée.
   })
   .refine(
@@ -88,15 +88,15 @@ const updateInput = z
 /*                                  ROUTER                                    */
 /* -------------------------------------------------------------------------- */
 
-export const stageSessionRouter = router({
+export const seminarSessionRouter = router({
   /**
-   * Liste toutes les sessions d'un stage donné, triées par date puis heure.
+   * Liste toutes les sessions d'un seminar donné, triées par date puis heure.
    */
-  getAllByStage: publicProcedure
-    .input(z.object({ stageId: z.number().int().positive() }))
+  getAllBySeminar: publicProcedure
+    .input(z.object({ seminarId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      return ctx.prisma.stageSession.findMany({
-        where: { stageId: input.stageId },
+      return ctx.prisma.seminarSession.findMany({
+        where: { seminarId: input.seminarId },
         orderBy: [{ date: "asc" }, { beginTime: "asc" }],
       });
     }),
@@ -104,14 +104,14 @@ export const stageSessionRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const session = await ctx.prisma.stageSession.findUnique({
+      const session = await ctx.prisma.seminarSession.findUnique({
         where: { id: input.id },
       });
 
       if (!session) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Stage session not found.",
+          message: "Seminar session not found.",
         });
       }
 
@@ -122,22 +122,22 @@ export const stageSessionRouter = router({
     .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
-      // Vérifie que le stage parent existe.
-      const stage = await ctx.prisma.stage.findUnique({
-        where: { id: input.stageId },
+      // Vérifie que le seminar parent existe.
+      const seminar = await ctx.prisma.seminar.findUnique({
+        where: { id: input.seminarId },
         select: { id: true },
       });
-      if (!stage) {
+      if (!seminar) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Stage not found (id=${input.stageId}).`,
+          message: `Seminar not found (id=${input.seminarId}).`,
         });
       }
 
       try {
-        return await ctx.prisma.stageSession.create({
+        return await ctx.prisma.seminarSession.create({
           data: {
-            stageId: input.stageId,
+            seminarId: input.seminarId,
             date: input.date,
             beginTime: input.beginTime,
             endTime: input.endTime,
@@ -153,7 +153,7 @@ export const stageSessionRouter = router({
           throw new TRPCError({
             code: "CONFLICT",
             message:
-              "A session already exists for this stage at this date and beginTime.",
+              "A session already exists for this seminar at this date and beginTime.",
           });
         }
         throw err;
@@ -167,7 +167,7 @@ export const stageSessionRouter = router({
       const { id, ...rest } = input;
 
       try {
-        return await ctx.prisma.stageSession.update({
+        return await ctx.prisma.seminarSession.update({
           where: { id },
           data: rest,
         });
@@ -177,13 +177,13 @@ export const stageSessionRouter = router({
             throw new TRPCError({
               code: "CONFLICT",
               message:
-                "A session already exists for this stage at this date and beginTime.",
+                "A session already exists for this seminar at this date and beginTime.",
             });
           }
           if (err.code === "P2025") {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Stage session not found.",
+              message: "Seminar session not found.",
             });
           }
         }
@@ -196,7 +196,7 @@ export const stageSessionRouter = router({
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.prisma.stageSession.delete({
+        return await ctx.prisma.seminarSession.delete({
           where: { id: input.id },
         });
       } catch (err) {
@@ -206,7 +206,7 @@ export const stageSessionRouter = router({
         ) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Stage session not found.",
+            message: "Seminar session not found.",
           });
         }
         throw err;
@@ -214,4 +214,4 @@ export const stageSessionRouter = router({
     }),
 });
 
-export default stageSessionRouter;
+export default seminarSessionRouter;

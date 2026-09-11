@@ -93,8 +93,8 @@ const formSchema = z.discriminatedUnion('destinationKind', [
       .positive({ message: 'Choisis une discipline' }),
   }),
   z.object({
-    destinationKind: z.literal('stage'),
-    stageId: z
+    destinationKind: z.literal('seminar'),
+    seminarId: z
       .number({ message: 'Sélectionne un stage.' })
       .int()
       .positive('Sélectionne un stage.'),
@@ -123,8 +123,8 @@ type Destination =
       disciplineId: number;
     }
   | {
-      kind: 'stage';
-      stageId: number;
+      kind: 'seminar';
+      seminarId: number;
     }
   | {
       kind: 'common_repository';
@@ -273,8 +273,8 @@ export default function DragNDropForm(): JSX.Element {
   const containerFolders = containerFoldersQuery.data ?? [];
 
   // Évènements existants (créés par les admins) pour le picker.
-  const stagesQuery = trpc.stage.listForUpload.useQuery(undefined, {
-    enabled: destinationKind === 'stage',
+  const stagesQuery = trpc.seminar.listForUpload.useQuery(undefined, {
+    enabled: destinationKind === 'seminar',
   });
   const stagesForUpload = stagesQuery.data ?? [];
   const eventsQuery = trpc.event.listForUpload.useQuery(undefined, {
@@ -739,10 +739,10 @@ export default function DragNDropForm(): JSX.Element {
         categoryId: values.categoryId,
         disciplineId: values.disciplineId,
       };
-    } else if (values.destinationKind === 'stage') {
+    } else if (values.destinationKind === 'seminar') {
       destination = {
-        kind: 'stage',
-        stageId: values.stageId,
+        kind: 'seminar',
+        seminarId: values.seminarId,
       };
     } else if (values.destinationKind === 'event') {
       destination = {
@@ -890,7 +890,7 @@ export default function DragNDropForm(): JSX.Element {
       <div className="flex flex-wrap gap-4">
         {([
           ['existing-discipline', 'Vers une discipline'],
-          ['stage', 'Vers un stage'],
+          ['seminar', 'Vers un stage'],
           ['event', 'Vers un évènement'],
           ['common_repository', 'Vers « Dépôt commun »'],
         ] as const).map(([kind, label]) => (
@@ -949,7 +949,7 @@ export default function DragNDropForm(): JSX.Element {
       )}
 
       {/* Niveau 2 : stage existant */}
-      {destinationKind === 'stage' && (
+      {destinationKind === 'seminar' && (
         <div>
           <label className="block font-semibold mb-1">Stage</label>
           {stagesQuery.isLoading ? (
@@ -960,7 +960,7 @@ export default function DragNDropForm(): JSX.Element {
             </p>
           ) : (
             <select
-              {...register('stageId', { valueAsNumber: true })}
+              {...register('seminarId', { valueAsNumber: true })}
               defaultValue=""
               className="border rounded p-2 w-full"
             >
@@ -974,8 +974,8 @@ export default function DragNDropForm(): JSX.Element {
               ))}
             </select>
           )}
-          {'stageId' in errors && errors.stageId && (
-            <p className="text-sm text-red-600 mt-1">{errors.stageId.message}</p>
+          {'seminarId' in errors && errors.seminarId && (
+            <p className="text-sm text-red-600 mt-1">{errors.seminarId.message}</p>
           )}
         </div>
       )}

@@ -88,7 +88,7 @@ function toDatetimeLocalValue(date: Date | null): string {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Formulaire d'édition d'un `Event`. Plus simple que StageForm :
+ * Formulaire d'édition d'un `Event`. Plus simple que SeminarForm :
  *
  *   1. **Identité et publication** — label, slug, audience, organisateur,
  *      date de publication (vide = brouillon)

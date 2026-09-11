@@ -2,12 +2,12 @@ import { prisma } from "@backend/prisma";
 import { buildICalendar, type ICalEventInput } from "@lib/calendar/ical";
 
 /**
- * GET /api/calendar/stages/[id]
+ * GET /api/calendar/seminars/[id]
  *
  * Renvoie un fichier `.ics` regroupant toutes les sessions du stage,
  * importable dans n'importe quel agenda (Google, Apple, Outlook).
  *
- * Chaque `StageSession` devient un `VEVENT` daté en heure locale du
+ * Chaque `SeminarSession` devient un `VEVENT` daté en heure locale du
  * club (TZID=Europe/Paris). Pas de garde de publication : un stage est
  * toujours public (contrairement à Event). Si tu veux restreindre,
  * ajoute une condition ici.
@@ -17,13 +17,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const { id } = await params;
-  const stageId = Number(id);
-  if (!Number.isFinite(stageId)) {
+  const seminarId = Number(id);
+  if (!Number.isFinite(seminarId)) {
     return new Response("Invalid id", { status: 400 });
   }
 
-  const stage = await prisma.stage.findUnique({
-    where: { id: stageId },
+  const stage = await prisma.seminar.findUnique({
+    where: { id: seminarId },
     include: {
       sessions: { orderBy: [{ date: "asc" }, { beginTime: "asc" }] },
     },

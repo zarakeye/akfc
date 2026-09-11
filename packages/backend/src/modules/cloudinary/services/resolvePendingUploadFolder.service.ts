@@ -79,18 +79,18 @@ export async function resolvePendingUploadFolder(params: {
     });
   }
 
-  /* ── Destination stage ── */
-  if (destination.kind === "stage") {
-    const stage = await prisma.stage.findUnique({
-      where: { id: destination.stageId },
+  /* ── Destination seminar ── */
+  if (destination.kind === "seminar") {
+    const seminar = await prisma.seminar.findUnique({
+      where: { id: destination.seminarId },
       select: { id: true, slug: true },
     });
-    if (!stage) {
-      throw new Error(`Stage not found (id=${destination.stageId})`);
+    if (!seminar) {
+      throw new Error(`Seminar not found (id=${destination.seminarId})`);
     }
-    // `Stage.slug` est nullable (le temps du backfill) → fallback sur l'id.
-    const stageSlug = stage.slug ? slug(stage.slug) : `stage-${stage.id}`;
-    return `${appRoot}/seminars/${stageSlug || `stage-${stage.id}`}`;
+    // `Seminar.slug` est nullable (le temps du backfill) → fallback sur l'id.
+    const seminarSlug = seminar.slug ? slug(seminar.slug) : `seminar-${seminar.id}`;
+    return `${appRoot}/seminars/${seminarSlug || `seminar-${seminar.id}`}`;
   }
 
   /* ── Destination événement ── */

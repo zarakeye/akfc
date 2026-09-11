@@ -35,7 +35,7 @@ export const updateGalleryFormAction = async (
     date: str('date'),
     disciplineId: str('disciplineId'),
     categoryId: str('categoryId'),
-    stageId: str('stageId'),
+    seminarId: str('seminarId'),
     eventId: str('eventId'),
     originId: str('originId'),
   });
@@ -55,7 +55,7 @@ export const updateGalleryFormAction = async (
         date: toDate(result.data.date),
         disciplineId: toFacetId(result.data.disciplineId),
         categoryId: toFacetId(result.data.categoryId),
-        stageId: toFacetId(result.data.stageId),
+        seminarId: toFacetId(result.data.seminarId),
         eventId: toFacetId(result.data.eventId),
         originId: toFacetId(result.data.originId),
       },

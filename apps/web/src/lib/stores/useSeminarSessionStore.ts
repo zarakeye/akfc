@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { trpcClient } from "@trpc/trpcClient";
-import type { StageSession } from "@prisma/client";
+import type { SeminarSession } from "@prisma/client";
 
 /**
- * useStageSessionStore
+ * useSeminarSessionStore
  *
- * Cache local des `StageSession` du stage actuellement édité. Le cache
- * est mono-stage : chaque `fetchByStage` écrase les sessions du stage
+ * Cache local des `SeminarSession` du stage actuellement édité. Le cache
+ * est mono-stage : chaque `fetchBySeminar` écrase les sessions du stage
  * précédent. Suffisant pour l'usage admin (on édite un stage à la fois).
  *
  * `beginTime` / `endTime` au format **HHMM** (cohérent avec le reste —
@@ -14,8 +14,8 @@ import type { StageSession } from "@prisma/client";
  * les accepte via `z.coerce.date()`.
  */
 
-export type CreateStageSessionInput = {
-  stageId: number;
+export type CreateSeminarSessionInput = {
+  seminarId: number;
   date: Date;
   beginTime: number;
   endTime: number;
@@ -23,7 +23,7 @@ export type CreateStageSessionInput = {
   notes?: string | null;
 };
 
-export type UpdateStageSessionInput = {
+export type UpdateSeminarSessionInput = {
   id: number;
   date?: Date;
   beginTime?: number;
@@ -32,32 +32,32 @@ export type UpdateStageSessionInput = {
   notes?: string | null;
 };
 
-export interface StageSessionStoreState {
-  sessions: StageSession[];
-  setSessions: (sessions: StageSession[]) => void;
+export interface SeminarSessionStoreState {
+  sessions: SeminarSession[];
+  setSessions: (sessions: SeminarSession[]) => void;
 
-  fetchByStage: (stageId: number) => Promise<void>;
-  createSession: (input: CreateStageSessionInput) => Promise<StageSession>;
-  updateSession: (input: UpdateStageSessionInput) => Promise<StageSession>;
+  fetchBySeminar: (seminarId: number) => Promise<void>;
+  createSession: (input: CreateSeminarSessionInput) => Promise<SeminarSession>;
+  updateSession: (input: UpdateSeminarSessionInput) => Promise<SeminarSession>;
   deleteSession: (id: number) => Promise<void>;
 }
 
-export const useStageSessionStore = create<StageSessionStoreState>((set): StageSessionStoreState => ({
+export const useSeminarSessionStore = create<SeminarSessionStoreState>((set): SeminarSessionStoreState => ({
   sessions: [],
 
-  setSessions: (sessions: StageSession[]) => set({ sessions }),
+  setSessions: (sessions: SeminarSession[]) => set({ sessions }),
 
-  fetchByStage: async (stageId: number): Promise<void> => {
-    const sessions = await trpcClient.stageSession.getAllByStage.query({
-      stageId,
+  fetchBySeminar: async (seminarId: number): Promise<void> => {
+    const sessions = await trpcClient.seminarSession.getAllBySeminar.query({
+      seminarId,
     });
     set({ sessions });
   },
 
   createSession: async (
-    input: CreateStageSessionInput,
-  ): Promise<StageSession> => {
-    const created = await trpcClient.stageSession.create.mutate(input);
+    input: CreateSeminarSessionInput,
+  ): Promise<SeminarSession> => {
+    const created = await trpcClient.seminarSession.create.mutate(input);
     set((state) => ({
       sessions: [...state.sessions, created].sort(sortByDateThenTime),
     }));
@@ -65,9 +65,9 @@ export const useStageSessionStore = create<StageSessionStoreState>((set): StageS
   },
 
   updateSession: async (
-    input: UpdateStageSessionInput,
-  ): Promise<StageSession> => {
-    const updated = await trpcClient.stageSession.update.mutate(input);
+    input: UpdateSeminarSessionInput,
+  ): Promise<SeminarSession> => {
+    const updated = await trpcClient.seminarSession.update.mutate(input);
     set((state) => ({
       sessions: state.sessions
         .map((s) => (s.id === updated.id ? updated : s))
@@ -77,7 +77,7 @@ export const useStageSessionStore = create<StageSessionStoreState>((set): StageS
   },
 
   deleteSession: async (id: number): Promise<void> => {
-    await trpcClient.stageSession.delete.mutate({ id });
+    await trpcClient.seminarSession.delete.mutate({ id });
     set((state) => ({
       sessions: state.sessions.filter((s) => s.id !== id),
     }));
@@ -89,8 +89,8 @@ export const useStageSessionStore = create<StageSessionStoreState>((set): StageS
  * sur l'ordre que renvoie le router (`orderBy: [date asc, beginTime asc]`).
  */
 function sortByDateThenTime(
-  a: StageSession,
-  b: StageSession,
+  a: SeminarSession,
+  b: SeminarSession,
 ): number {
   const dateDiff =
     new Date(a.date).getTime() - new Date(b.date).getTime();
