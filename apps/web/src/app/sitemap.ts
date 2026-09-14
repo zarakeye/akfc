@@ -7,13 +7,19 @@ import { SITE_URL } from "@/config/siteUrl";
 /**
  * sitemap.xml généré par Next.
  *
- * Rassemble les routes publiques STABLES du site vitrine. Les 3 pages
- * éditoriales (accueil, association, contacts) ne sont listées que si elles
- * sont PUBLIÉES : une page en brouillon rend « en construction » pour les
- * visiteurs, l'annoncer aux moteurs serait contre-productif. Les routes
- * réservées aux membres (documents, profil, espaces) sont exclues, et les
- * CONTENUS dynamiques publiés (disciplines, events, stages) viendront enrichir
- * ce sitemap à l'incrément suivant.
+ * Rassemble les routes publiques du site vitrine :
+ *  - 3 pages ÉDITORIALES (accueil, association, contacts) — listées seulement
+ *    si PUBLIÉES (PageVisibility) : une page en brouillon rend « en
+ *    construction » côté public, l'annoncer aux moteurs serait contre-productif.
+ *  - 3 pages TOUJOURS PUBLIQUES (instructeurs, galerie, agenda).
+ *  - les CONTENUS dynamiques PUBLIÉS : séminaires, disciplines, events.
+ *
+ * Règle de publication d'un contenu dynamique : slug non nul, publicationDate
+ * non nulle et <= maintenant (un contenu daté dans le futur est programmé, pas
+ * encore public → non indexé). lastModified = publicationDate.
+ *
+ * Les routes réservées aux membres (documents, profil, espaces) et utilitaires
+ * (course, infos légales) sont exclues.
  */
 export const dynamic = "force-dynamic";
 
@@ -27,6 +33,12 @@ const EDITORIAL: readonly Editorial[] = [
 
 const abs = (path: string): string =>
   path === "/" ? `${SITE_URL}/` : `${SITE_URL}${path}`;
+
+/** Sélection commune : publié = slug + publicationDate (passée). */
+const publishedWhere = {
+  slug: { not: null },
+  publicationDate: { not: null, lte: new Date() },
+} as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -52,5 +64,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: publishedAt.get(e.key) ?? now,
   }));
 
-  return [...editorialEntries, ...alwaysPublic];
+  // Contenus dynamiques publiés (séminaires, disciplines, events).
+  const [seminars, disciplines, events] = await Promise.all([
+    prisma.seminar.findMany({
+      where: publishedWhere,
+      select: { slug: true, publicationDate: true },
+    }),
+    prisma.discipline.findMany({
+      where: publishedWhere,
+      select: { slug: true, publicationDate: true },
+    }),
+    prisma.event.findMany({
+      where: publishedWhere,
+      select: { slug: true, publicationDate: true },
+    }),
+  ]);
+
+  const dynamicEntries: MetadataRoute.Sitemap = [
+    ...seminars.map((s) => ({
+      url: abs(`/seminars/${s.slug}`),
+      lastModified: s.publicationDate ?? now,
+    })),
+    ...disciplines.map((d) => ({
+      url: abs(`/disciplines/${d.slug}`),
+      lastModified: d.publicationDate ?? now,
+    })),
+    ...events.map((e) => ({
+      url: abs(`/events/${e.slug}`),
+      lastModified: e.publicationDate ?? now,
+    })),
+  ];
+
+  return [...editorialEntries, ...alwaysPublic, ...dynamicEntries];
 }
