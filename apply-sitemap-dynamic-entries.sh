@@ -1,3 +1,27 @@
+#!/usr/bin/env bash
+#
+# AKFC — SEO : enrichit sitemap.ts avec les contenus dynamiques publiés.
+#
+# Garde l'existant (3 éditoriales gatées + 3 « toujours publiques ») et ajoute
+# les fiches PUBLIÉES : séminaires, disciplines, events. Règle de publication :
+#   slug != null ET publicationDate != null ET publicationDate <= maintenant
+# (le <= now évite d'exposer un contenu programmé dans le futur).
+# URLs : /seminars/<slug>, /disciplines/<slug>, /events/<slug>
+# (cohérent avec les 301 /stages→/seminars). lastModified = publicationDate.
+#
+# Exclus (volontaire) : /course/[id] (créneaux, ni slug ni publication),
+# /infos/[slug] (SitePage légales, pas de flag publié).
+#
+# Périmètre : apps/web/src/app/sitemap.ts. Un typecheck.
+# Usage : bash apply-sitemap-dynamic-entries.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/app/sitemap.ts"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+if grep -q 'prisma.seminar.findMany' "$F" 2>/dev/null; then echo "— déjà enrichi"; exit 0; fi
+
+cat > "$F" <<'TSX'
 import type { MetadataRoute } from "next";
 
 import { prisma } from "@backend/prisma";
@@ -97,3 +121,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [...editorialEntries, ...alwaysPublic, ...dynamicEntries];
 }
+TSX
+echo "  ok  sitemap.ts"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -15 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"
+git add -A
+git commit -m "feat(seo): sitemap enrichi — séminaires/disciplines/events publiés" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
