@@ -145,6 +145,7 @@ export default function Cropper({
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const seededGrid = useRef(false);
 
   const zoom = useTransformWithUndo(initialTransform?.zoom ?? 1, { commitDelay: 250 });
   const rotation = useTransformWithUndo(initialTransform?.rotation ?? 0, { commitDelay: 250 });
@@ -168,15 +169,12 @@ export default function Cropper({
     return () => ro.disconnect();
   }, [responsive]);
 
-  // Seed de la grille depuis la recette (fractions → px selon le workspace réel).
+  // Seed zoom/rotation depuis la recette (au montage). La grille est seedée
+  // dans le onload de l'image (layout stable → largeur réelle) — voir plus bas.
   useEffect(() => {
     if (!initialTransform) return;
-    const raf = requestAnimationFrame(() => {
-      const ws = workspaceSize();
-      const gf = initialTransform.gridFrac;
-      setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
-    });
-    return () => cancelAnimationFrame(raf);
+    zoom.set(initialTransform.zoom);
+    rotation.set(initialTransform.rotation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -185,6 +183,12 @@ export default function Cropper({
     img.src = picture.previewUrl;
     img.onload = () => {
       imgRef.current = img;
+      if (initialTransform && !seededGrid.current) {
+        seededGrid.current = true;
+        const ws = workspaceSize();
+        const gf = initialTransform.gridFrac;
+        setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
+      }
       renderPreview();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
