@@ -1,3 +1,29 @@
+#!/usr/bin/env bash
+#
+# AKFC — Cropper avatar (v2), INCRÉMENT 2 : AvatarUploader (le tampon).
+#
+# - recette (CropRecipe) + fichier ORIGINAL en state ;
+# - vignette « Nouveau » CLIQUABLE → rouvre le Cropper seedé (image non croppée) ;
+# - forme en state (défaut cercle, persiste session) → radius vignettes + Cropper ;
+# - Cropper invoqué en mode avatar : enableTheme + controls="responsive"
+#   + shape/onShapeChange + initialTransform ;
+# - toSquareFile RETIRÉ du flux ; une nouvelle source écrase la proposition ;
+# - ✓/✗ consomment la recette.
+#
+# CameraCapture : INTOUCHÉ. toSquareFile.ts laissé sur le disque (plus importé).
+# Un typecheck.
+# Usage : bash apply-avatar-cropper-v2-inc2.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/features/avatar/AvatarUploader.tsx"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+if [ "${AKFC_APPLY_ONLY:-0}" != "1" ]; then
+  BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  [ "$BR" = "main" ] || [ "$BR" = "master" ] && { echo "NOTE: branche '$BR'."; sleep 2; } || true
+fi
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
@@ -416,3 +442,19 @@ export function AvatarUploader({
     </div>
   );
 }
+TSX
+echo "  ok  AvatarUploader.tsx"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -20 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"
+git add -A
+git commit -m "feat(avatar): cropper avatar complet — tampon réouvrable, thème persistant, responsive, formes" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
