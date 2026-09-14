@@ -2,36 +2,32 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useDropzone } from "react-dropzone";
-import {
-  Camera,
-  Check,
-  ImageUp,
-  Loader2,
-  Trash2,
-  Video,
-  X,
-} from "lucide-react";
+import { Camera, Check, ImageUp, Loader2, Trash2, Video, X } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import { useAvatarVersionStore } from "@lib/stores/useAvatarVersionStore";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import Cropper from "@features/gallery-crop/components/Cropper";
 import type { PictureItem } from "@features/gallery-crop/types/picture.types";
-import type { CropResult } from "@features/gallery-crop/types/cropper.types";
-import { toSquareFile } from "@features/avatar/toSquareFile";
+import type {
+  CropResult,
+  CropRecipe,
+  Shape,
+} from "@features/gallery-crop/types/cropper.types";
 import { CameraCapture } from "@features/avatar/CameraCapture";
 
 /**
  * AvatarUploader — trois sources (glisser-déposer, picker fichier, caméra
- * frontale) convergent vers le Cropper, puis un carré 1:1 (toSquareFile).
+ * frontale) convergent vers le Cropper (mode avatar : thème persistant,
+ * curseurs responsive, formes cercle/carré). La grille étant carrée, le rendu
+ * est déjà 1:1 — pas de post-traitement.
  *
- * FLUX AVEC CONFIRMATION (option A) : le crop ne déclenche PAS l'upload. Il
- * produit une preview LOCALE, affichée à côté de l'avatar actuel (avant /
- * après, séparés d'une barre verticale). L'upload+register+bump n'a lieu
- * qu'au clic « valider » (✓) ; « annuler » (✗) jette la preview et garde
- * l'ancien. Rien n'écrase Cloudinary tant que l'utilisateur n'a pas confirmé.
+ * CONFIRMATION (option A) : le crop ne déclenche PAS l'upload. Il produit une
+ * proposition LOCALE (« Nouveau ») ; l'upload n'a lieu qu'au clic ✓.
  *
- * Le refresh partout (header, posts…) passe par le store de version.
+ * TAMPON : « Nouveau » porte sa RECETTE (zoom, rotation, position en fractions,
+ * forme) + le fichier ORIGINAL non croppé. Cliquer la vignette rouvre le
+ * Cropper exactement dans cet état. La recette est CONSOMMÉE à ✓ ou ✗.
  */
 
 function avatarUrl(publicId: string | null, version?: number): string | null {
@@ -62,21 +58,18 @@ export function AvatarUploader({
   );
 
   const [itemToCrop, setItemToCrop] = useState<PictureItem | null>(null);
+  const [cropSeed, setCropSeed] = useState<CropRecipe | null>(null);
+  const [shape, setShape] = useState<Shape>("circle");
+
   const [cameraOpen, setCameraOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Vrai depuis la validation jusqu'au chargement RÉSEAU de la nouvelle
-  // image : garde le spinner affiché jusqu'à l'apparition effective du
-  // nouvel avatar (sinon trou visuel entre la fin de l'upload et le rendu).
   const [awaitingImage, setAwaitingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Preview LOCALE du nouveau cliché (post-crop, avant upload). Tant qu'elle
-  // est non-null, on est en mode confirmation (avant / après).
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
-  // Après validation : on garde la preview blob affichée SOUS le spinner en
-  // mode normal (image conservée, instantanée) pendant que l'image réseau
-  // charge — évite tout trou/clignotement. Libérée au onLoad réseau.
+  const [pendingRecipe, setPendingRecipe] = useState<CropRecipe | null>(null);
+  const [pendingOriginal, setPendingOriginal] = useState<File | null>(null);
   const [settlingUrl, setSettlingUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -86,7 +79,6 @@ export function AvatarUploader({
     [data?.publicId, version],
   );
 
-  // Libère les objectURL (preview + transition) au démontage.
   useEffect(() => {
     return () => {
       if (pendingUrl) URL.revokeObjectURL(pendingUrl);
@@ -94,8 +86,20 @@ export function AvatarUploader({
     };
   }, [pendingUrl, settlingUrl]);
 
-  const startCrop = (file: File) => {
+  const avatarRadius = shape === "circle" ? "rounded-full" : "rounded-2xl";
+
+  const dropPending = () => {
+    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+    setPendingFile(null);
+    setPendingUrl(null);
+    setPendingRecipe(null);
+    setPendingOriginal(null);
+  };
+
+  const beginFreshCrop = (file: File) => {
     setError(null);
+    dropPending();
+    setCropSeed(null);
     setItemToCrop({
       id: crypto.randomUUID(),
       file,
@@ -104,41 +108,56 @@ export function AvatarUploader({
     });
   };
 
+  const reopenPending = () => {
+    if (!pendingOriginal || !pendingRecipe) return;
+    setError(null);
+    setShape(pendingRecipe.shape);
+    setCropSeed(pendingRecipe);
+    setItemToCrop({
+      id: crypto.randomUUID(),
+      file: pendingOriginal,
+      originalFile: pendingOriginal,
+      previewUrl: URL.createObjectURL(pendingOriginal),
+    });
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
     multiple: false,
     noClick: true,
     onDrop: (files) => {
-      if (files[0]) startCrop(files[0]);
+      if (files[0]) beginFreshCrop(files[0]);
     },
   });
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (file) startCrop(file);
+    if (file) beginFreshCrop(file);
   };
 
   const onCameraCapture = (file: File) => {
     setCameraOpen(false);
-    startCrop(file);
+    beginFreshCrop(file);
   };
 
-  // Crop terminé → preview LOCALE (pas d'upload). Passe en mode confirmation.
-  const handleCrop = async ({ croppedFile }: CropResult) => {
+  const closeCropper = () => {
     setItemToCrop(null);
-    setError(null);
-    try {
-      const squared = await toSquareFile(croppedFile);
-      if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-      setPendingFile(squared);
-      setPendingUrl(URL.createObjectURL(squared));
-    } catch {
-      setError("Impossible de préparer l'image.");
-    }
+    setCropSeed(null);
   };
 
-  // ✓ valider : upload + register + bump (le remplacement effectif).
+  const handleCrop = ({ croppedFile, recipe }: CropResult) => {
+    const original = itemToCrop?.originalFile ?? null;
+    setItemToCrop(null);
+    setCropSeed(null);
+    setError(null);
+    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+    setPendingFile(croppedFile);
+    setPendingUrl(URL.createObjectURL(croppedFile));
+    setPendingRecipe(recipe ?? null);
+    setPendingOriginal(original);
+  };
+
   const confirmPending = async () => {
     if (!pendingFile) return;
     setBusy(true);
@@ -159,26 +178,19 @@ export function AvatarUploader({
       const res = await fetch(url, { method: "POST", body: formData });
       if (!res.ok) throw new Error(`Cloudinary HTTP ${res.status}`);
 
-      // publicId UNIQUE : on le repasse à register, qui pointe User.avatar
-      // dessus et supprime l'ancien. L'URL change donc naturellement
-      // (nouveau publicId) → refresh partout, reload compris.
       const registered = await register.mutateAsync({
         publicId: sig.fullPublicId,
       });
       await utils.avatar.getMine.invalidate();
-      // Synchronise la session (le header et les vues lisant la session
-      // affichent le nouvel avatar immédiatement, sans attendre un reload).
       setSessionAvatar(registered.publicId);
       if (userId) bumpAvatar(userId);
       onChanged?.(registered.publicId);
 
-      // Transfère la preview blob vers settlingUrl : elle reste affichée
-      // SOUS le spinner en mode normal (image conservée, instantanée) jusqu'au
-      // chargement de l'image réseau. On ferme le mode confirmation SANS
-      // révoquer le blob (settlingUrl le réutilise).
       setSettlingUrl(pendingUrl);
       setPendingFile(null);
       setPendingUrl(null);
+      setPendingRecipe(null); // recette consommée
+      setPendingOriginal(null);
       setAwaitingImage(true);
       setBusy(false);
     } catch (err) {
@@ -189,14 +201,10 @@ export function AvatarUploader({
     }
   };
 
-  // ✗ annuler : jette la preview, garde l'ancien.
   const cancelPending = () => {
-    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-    setPendingFile(null);
-    setPendingUrl(null);
+    dropPending();
   };
 
-  // Image réseau chargée : on peut libérer la preview blob et cacher le spinner.
   const handleSettled = () => {
     setAwaitingImage(false);
     if (settlingUrl) {
@@ -229,20 +237,12 @@ export function AvatarUploader({
         /* -------- MODE CONFIRMATION : avant / après -------- */
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-stretch gap-4">
-            {/* Avant (actuel) */}
             <div className="flex flex-col items-center gap-1.5">
-              <span className="text-xs uppercase tracking-wide text-gray-400">
-                Actuel
-              </span>
-              <div className="h-32 w-32 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+              <span className="text-xs uppercase tracking-wide text-gray-400">Actuel</span>
+              <div className={`h-32 w-32 overflow-hidden border border-gray-200 bg-gray-100 ${avatarRadius}`}>
                 {currentUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- proxy signé
-                  <img
-                    key={currentUrl}
-                    src={currentUrl}
-                    alt="Avatar actuel"
-                    className="h-full w-full object-cover"
-                  />
+                  <img key={currentUrl} src={currentUrl} alt="Avatar actuel" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-gray-400">
                     <Camera className="h-8 w-8" />
@@ -251,27 +251,29 @@ export function AvatarUploader({
               </div>
             </div>
 
-            {/* Barre verticale de séparation */}
             <div className="w-px self-stretch bg-gray-300" />
 
-            {/* Après (nouveau) + boutons ✓ / ✗ */}
             <div className="flex flex-col items-center gap-1.5">
-              <span className="text-xs uppercase tracking-wide text-emerald-600">
-                Nouveau
-              </span>
-              <div className="relative h-32 w-32 overflow-hidden rounded-full border-2 border-emerald-400 bg-gray-100">
+              <span className="text-xs uppercase tracking-wide text-emerald-600">Nouveau</span>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={reopenPending}
+                title="Rouvrir le recadrage dans le même état"
+                className={`group relative h-32 w-32 overflow-hidden border-2 border-emerald-400 bg-gray-100 ${avatarRadius} disabled:cursor-default`}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element -- blob local */}
-                <img
-                  src={pendingUrl}
-                  alt="Nouvel avatar"
-                  className="h-full w-full object-cover"
-                />
-                {busy && (
+                <img src={pendingUrl} alt="Nouvel avatar" className="h-full w-full object-cover" />
+                {busy ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                   </div>
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-xs font-medium text-white opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
+                    Ré-éditer
+                  </span>
                 )}
-              </div>
+              </button>
               <div className="mt-1 flex items-center gap-2">
                 <button
                   type="button"
@@ -306,33 +308,19 @@ export function AvatarUploader({
             }`}
           >
             <input {...getInputProps()} />
-            <div className="relative h-32 w-32 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-              {/* Pendant la transition (awaitingImage) on affiche la preview
-                  blob locale (settlingUrl) — instantanée, c'est l'image
-                  conservée. Sinon l'avatar réseau (currentUrl). */}
+            <div className={`relative h-32 w-32 overflow-hidden border border-gray-200 bg-gray-100 ${avatarRadius}`}>
               {awaitingImage && settlingUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- blob local
-                <img
-                  src={settlingUrl}
-                  alt="Votre avatar"
-                  className="h-full w-full object-cover"
-                />
+                <img src={settlingUrl} alt="Votre avatar" className="h-full w-full object-cover" />
               ) : currentUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- proxy signé
-                <img
-                  key={currentUrl}
-                  src={currentUrl}
-                  alt="Votre avatar"
-                  className="h-full w-full object-cover"
-                />
+                <img key={currentUrl} src={currentUrl} alt="Votre avatar" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-gray-400">
                   <Camera className="h-8 w-8" />
                 </div>
               )}
 
-              {/* Préchargement RÉSEAU de la nouvelle image, caché : son onLoad
-                  libère la preview et coupe le spinner (bascule vers currentUrl). */}
               {awaitingImage && currentUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- préchargement
                 <img
@@ -353,9 +341,7 @@ export function AvatarUploader({
               )}
             </div>
             <p className="text-xs text-gray-400">
-              {isDragActive
-                ? "Déposez l'image ici"
-                : "ou glissez une image ici"}
+              {isDragActive ? "Déposez l'image ici" : "ou glissez une image ici"}
             </p>
           </div>
 
@@ -405,8 +391,18 @@ export function AvatarUploader({
 
       {itemToCrop && (
         <Cropper
+          key={itemToCrop.id}
           picture={itemToCrop}
-          onCancel={() => setItemToCrop(null)}
+          enableTheme
+          controls="responsive"
+          shape={shape}
+          onShapeChange={setShape}
+          initialTransform={
+            cropSeed
+              ? { zoom: cropSeed.zoom, rotation: cropSeed.rotation, gridFrac: cropSeed.gridFrac }
+              : undefined
+          }
+          onCancel={closeCropper}
           onCrop={handleCrop}
         />
       )}
