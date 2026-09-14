@@ -183,11 +183,20 @@ export default function Cropper({
     img.src = picture.previewUrl;
     img.onload = () => {
       imgRef.current = img;
-      if (initialTransform && !seededGrid.current) {
+      if (!seededGrid.current) {
         seededGrid.current = true;
         const ws = workspaceSize();
-        const gf = initialTransform.gridFrac;
-        setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
+        if (initialTransform) {
+          // Réouverture : grille depuis la recette (fractions → px).
+          const gf = initialTransform.gridFrac;
+          setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
+        } else if (responsive) {
+          // Crop neuf (avatar) : carré 60 % CENTRÉ sur la largeur réelle.
+          const side = ws * 0.6;
+          const off = (ws - side) / 2;
+          setGrid({ x: off, y: off, width: side, height: side });
+        }
+        // sinon (galerie) : on garde le défaut {150,150,200,200}.
       }
       renderPreview();
     };
