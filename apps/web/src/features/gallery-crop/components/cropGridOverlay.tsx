@@ -1,75 +1,41 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { CropGrid } from '@/features/gallery-crop/types/cropper.types';
+import type { CropGrid, Shape } from '@/features/gallery-crop/types/cropper.types';
 
 type Props = {
   grid: CropGrid;
   setGrid: React.Dispatch<React.SetStateAction<CropGrid>>;
   workspaceRef: React.RefObject<HTMLDivElement | null>;
+  shape?: Shape;
 };
 
-export default function CropGridOverlay({
-  grid,
-  setGrid,
-  workspaceRef,
-}: Props) {
-  // const dragging = useRef<boolean>(false);
+export default function CropGridOverlay({ grid, setGrid, workspaceRef, shape = 'rect' }: Props) {
   const gridRef = useRef<HTMLDivElement | null>(null);
-  const dragStart = useRef<{
-    mouseX: number;
-    mouseY: number;
-    gridX: number;
-    gridY: number;
-  } | null>(null);
+  const dragStart = useRef<{ mouseX: number; mouseY: number; gridX: number; gridY: number } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
-
-    dragStart.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      gridX: grid.x,
-      gridY: grid.y,
-    };
+    dragStart.current = { mouseX: e.clientX, mouseY: e.clientY, gridX: grid.x, gridY: grid.y };
   };
 
-
-  // const [workspaceRect, setWorkspaceRect] = useState<DOMRect | null>(null);
-
-  /* 📐 mesurer le workspace une fois monté */
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
       const start = dragStart.current;
       const workspace = workspaceRef.current;
-
       if (!start || !workspace) return;
-
       const dx = e.clientX - start.mouseX;
       const dy = e.clientY - start.mouseY;
-
-      const workspaceRect = workspace.getBoundingClientRect();
-
+      const rect = workspace.getBoundingClientRect();
       setGrid((prev) => ({
         ...prev,
-        x: Math.min(
-          Math.max(start.gridX + dx, 0),
-          workspaceRect.width - prev.width
-        ),
-        y: Math.min(
-          Math.max(start.gridY + dy, 0),
-          workspaceRect.height - prev.height
-        ),
+        x: Math.min(Math.max(start.gridX + dx, 0), rect.width - prev.width),
+        y: Math.min(Math.max(start.gridY + dy, 0), rect.height - prev.height),
       }));
     };
-
-    const onPointerUp = () => {
-      dragStart.current = null;
-    };
-
+    const onPointerUp = () => { dragStart.current = null; };
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
-
     return () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
@@ -80,18 +46,18 @@ export default function CropGridOverlay({
     <div
       ref={gridRef}
       onPointerDown={onPointerDown}
-      className="absolute border-2 border-white/90 pointer-events-auto cursor-move select-none touch-none"
+      className="absolute border-2 border-white/90 pointer-events-auto cursor-move select-none touch-none overflow-hidden"
       style={{
         left: grid.x,
         top: grid.y,
         width: grid.width,
         height: grid.height,
+        borderRadius: shape === 'circle' ? '9999px' : undefined,
       }}
     >
-      {/* Grid lines 3x3 */}
-      <div className="w-full h-full grid grid-cols-3 grid-rows-3 ">
+      <div className="w-full h-full grid grid-cols-3 grid-rows-3">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="border border-gray-300" />
+          <div key={i} className="border border-gray-300/60" />
         ))}
       </div>
     </div>
