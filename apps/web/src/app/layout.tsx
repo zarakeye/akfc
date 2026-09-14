@@ -31,6 +31,23 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: shortTitle, template: `%s · ${shortTitle}` },
     description,
     robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      siteName: shortTitle,
+      locale: "fr_FR",
+      url: SITE_URL,
+      title: longTitle,
+      description,
+      images: [
+        { url: "/og-default.png", width: 1200, height: 630, alt: longTitle },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: longTitle,
+      description,
+      images: ["/og-default.png"],
+    },
   };
 }
 
