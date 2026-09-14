@@ -169,12 +169,38 @@ export default function Cropper({
     return () => ro.disconnect();
   }, [responsive]);
 
-  // Seed zoom/rotation depuis la recette (au montage). La grille est seedée
-  // dans le onload de l'image (layout stable → largeur réelle) — voir plus bas.
+  // Seed zoom/rotation depuis la recette (au montage).
   useEffect(() => {
     if (!initialTransform) return;
     zoom.set(initialTransform.zoom);
     rotation.set(initialTransform.rotation);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Seed de la GRILLE dès que le workspace a une largeur réelle, via
+  // ResizeObserver — indépendant du timing de chargement de l'image (marche
+  // donc pour un fichier disque ET une capture caméra décodée instantanément).
+  useEffect(() => {
+    const el = workspaceRef.current;
+    if (!el) return;
+    const seed = (w: number) => {
+      if (!w || seededGrid.current) return;
+      seededGrid.current = true;
+      if (initialTransform) {
+        const gf = initialTransform.gridFrac;
+        setGrid({ x: gf.x * w, y: gf.y * w, width: gf.width * w, height: gf.height * w });
+      } else if (responsive) {
+        const side = w * 0.6;
+        const off = (w - side) / 2;
+        setGrid({ x: off, y: off, width: side, height: side });
+      }
+      // sinon (galerie) : on garde le défaut {150,150,200,200}.
+    };
+    seed(el.getBoundingClientRect().width);
+    if (seededGrid.current) return;
+    const ro = new ResizeObserver((entries) => seed(entries[0].contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -183,21 +209,6 @@ export default function Cropper({
     img.src = picture.previewUrl;
     img.onload = () => {
       imgRef.current = img;
-      if (!seededGrid.current) {
-        seededGrid.current = true;
-        const ws = workspaceSize();
-        if (initialTransform) {
-          // Réouverture : grille depuis la recette (fractions → px).
-          const gf = initialTransform.gridFrac;
-          setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
-        } else if (responsive) {
-          // Crop neuf (avatar) : carré 60 % CENTRÉ sur la largeur réelle.
-          const side = ws * 0.6;
-          const off = (ws - side) / 2;
-          setGrid({ x: off, y: off, width: side, height: side });
-        }
-        // sinon (galerie) : on garde le défaut {150,150,200,200}.
-      }
       renderPreview();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
