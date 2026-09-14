@@ -1,3 +1,246 @@
+#!/usr/bin/env bash
+#
+# AKFC — Cropper avatar (v2), INCRÉMENT 1 : thème persistant + Cropper opt-in.
+#
+# - store useCropperTheme (zustand + persist localStorage), défaut sombre,
+#   propre au cropper.
+# - types : Shape, GridFraction, CropRecipe, CropResult.recipe?, props opt-in.
+# - cropMaskOverlay / cropGridOverlay : prop `shape`.
+# - Cropper : branche GALERIE (controls horizontal, clair) = code serveur
+#   VERBATIM (inchangée) ; branche AVATAR opt-in via props
+#   enableTheme (+ toggle lune/soleil lisant le store), controls="responsive"
+#   (curseurs verticaux à droite si large, horizontaux dessous sinon, aperçu
+#   toujours visible, champ éditable + undo + reset), shape/onShapeChange,
+#   initialTransform (seed), recipe renvoyée dans onCrop.
+#
+# Les 3 consommateurs actuels ne passent aucune nouvelle prop → inchangés.
+# Un typecheck.
+# Usage : bash apply-avatar-cropper-v2-inc1.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+GC="apps/web/src/features/gallery-crop"
+ST="apps/web/src/lib/stores"
+for f in "$GC/components/Cropper.tsx" "$GC/components/cropMaskOverlay.tsx" \
+         "$GC/components/cropGridOverlay.tsx" "$GC/types/cropper.types.ts" \
+         "$GC/hooks/useTransformWithUndo.ts"; do
+  [ -f "$f" ] || { echo "ERREUR: $f introuvable." >&2; exit 1; }
+done
+[ -d "$ST" ] || { echo "ERREUR: $ST introuvable." >&2; exit 1; }
+if [ "${AKFC_APPLY_ONLY:-0}" != "1" ]; then
+  BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  [ "$BR" = "main" ] || [ "$BR" = "master" ] && { echo "NOTE: branche '$BR'."; sleep 2; } || true
+fi
+
+# ---------- store thème ----------
+cat > "$ST/useCropperTheme.ts" <<'TSX'
+"use client";
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+export type CropperTheme = "light" | "dark";
+
+interface CropperThemeStore {
+  theme: CropperTheme;
+  toggle: () => void;
+  setTheme: (theme: CropperTheme) => void;
+}
+
+/**
+ * Thème (clair/sombre) DU CROPPER, persisté (localStorage) et propre au
+ * cropper — n'affecte que lui, jamais le reste de l'app. Défaut sombre.
+ * Utilisé uniquement quand le Cropper est monté avec `enableTheme`.
+ */
+export const useCropperTheme = create<CropperThemeStore>()(
+  persist(
+    (set) => ({
+      theme: "dark",
+      toggle: () =>
+        set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
+      setTheme: (theme) => set({ theme }),
+    }),
+    { name: "akfc-cropper-theme" },
+  ),
+);
+TSX
+echo "  ok  useCropperTheme.ts"
+
+# ---------- types ----------
+cat > "$GC/types/cropper.types.ts" <<'TSX'
+import { PictureItem } from "@/features/gallery-crop/types/picture.types";
+
+export type Shape = "rect" | "circle";
+
+export type CropGrid = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/** Grille en FRACTIONS (0–1) du workspace → indépendante de l'écran. */
+export type GridFraction = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/** La « recette » : de quoi rouvrir le cropper exactement dans le même état. */
+export type CropRecipe = {
+  zoom: number;
+  rotation: number;
+  gridFrac: GridFraction;
+  shape: Shape;
+};
+
+export type CropResult = {
+  pictureId: string;
+  croppedFile: File;
+  /** Présent seulement si le consommateur exploite la recette (avatar). */
+  recipe?: CropRecipe;
+};
+
+export type CropperProps = {
+  picture: PictureItem;
+  onCancel: () => void;
+  onCrop: (result: CropResult) => void;
+  /** Active le thème clair/sombre du cropper (+ toggle lune/soleil). */
+  enableTheme?: boolean;
+  /** Disposition des curseurs. Défaut "horizontal" (galerie). */
+  controls?: "horizontal" | "responsive";
+  /** Forme du masque d'affichage. Défaut "rect". */
+  shape?: Shape;
+  /** Fourni → affiche les boutons cercle/carré. */
+  onShapeChange?: (shape: Shape) => void;
+  /** Seed initial (rouvrir sur une recette). */
+  initialTransform?: {
+    zoom: number;
+    rotation: number;
+    gridFrac: GridFraction;
+  };
+};
+
+export type ViewportTransform = {
+  zoom: number;
+  rotation: number;
+  workspaceWidth: number;
+  workspaceHeight: number;
+  imageWidth: number;
+  imageHeight: number;
+};
+TSX
+echo "  ok  cropper.types.ts"
+
+# ---------- cropMaskOverlay ----------
+cat > "$GC/components/cropMaskOverlay.tsx" <<'TSX'
+'use client';
+
+import type { CropGrid, Shape } from '@/features/gallery-crop/types/cropper.types';
+
+type Props = {
+  grid: CropGrid;
+  shape?: Shape;
+};
+
+export default function CropMaskOverlay({ grid, shape = 'rect' }: Props) {
+  return (
+    <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
+      <defs>
+        <mask id="crop-mask">
+          <rect x="0" y="0" width="100%" height="100%" fill="white" />
+          {shape === 'circle' ? (
+            <circle
+              cx={grid.x + grid.width / 2}
+              cy={grid.y + grid.height / 2}
+              r={Math.min(grid.width, grid.height) / 2}
+              fill="black"
+            />
+          ) : (
+            <rect x={grid.x} y={grid.y} width={grid.width} height={grid.height} fill="black" />
+          )}
+        </mask>
+      </defs>
+      <rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.6)" mask="url(#crop-mask)" />
+    </svg>
+  );
+}
+TSX
+echo "  ok  cropMaskOverlay.tsx"
+
+# ---------- cropGridOverlay ----------
+cat > "$GC/components/cropGridOverlay.tsx" <<'TSX'
+'use client';
+
+import { useEffect, useRef } from 'react';
+import type { CropGrid, Shape } from '@/features/gallery-crop/types/cropper.types';
+
+type Props = {
+  grid: CropGrid;
+  setGrid: React.Dispatch<React.SetStateAction<CropGrid>>;
+  workspaceRef: React.RefObject<HTMLDivElement | null>;
+  shape?: Shape;
+};
+
+export default function CropGridOverlay({ grid, setGrid, workspaceRef, shape = 'rect' }: Props) {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const dragStart = useRef<{ mouseX: number; mouseY: number; gridX: number; gridY: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    dragStart.current = { mouseX: e.clientX, mouseY: e.clientY, gridX: grid.x, gridY: grid.y };
+  };
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const start = dragStart.current;
+      const workspace = workspaceRef.current;
+      if (!start || !workspace) return;
+      const dx = e.clientX - start.mouseX;
+      const dy = e.clientY - start.mouseY;
+      const rect = workspace.getBoundingClientRect();
+      setGrid((prev) => ({
+        ...prev,
+        x: Math.min(Math.max(start.gridX + dx, 0), rect.width - prev.width),
+        y: Math.min(Math.max(start.gridY + dy, 0), rect.height - prev.height),
+      }));
+    };
+    const onPointerUp = () => { dragStart.current = null; };
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [setGrid, workspaceRef]);
+
+  return (
+    <div
+      ref={gridRef}
+      onPointerDown={onPointerDown}
+      className="absolute border-2 border-white/90 pointer-events-auto cursor-move select-none touch-none overflow-hidden"
+      style={{
+        left: grid.x,
+        top: grid.y,
+        width: grid.width,
+        height: grid.height,
+        borderRadius: shape === 'circle' ? '9999px' : undefined,
+      }}
+    >
+      <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className="border border-gray-300/60" />
+        ))}
+      </div>
+    </div>
+  );
+}
+TSX
+echo "  ok  cropGridOverlay.tsx"
+
+# ---------- Cropper ----------
+cat > "$GC/components/Cropper.tsx" <<'TSX'
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -347,3 +590,19 @@ export default function Cropper({
     </div>
   );
 }
+TSX
+echo "  ok  Cropper.tsx"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -20 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK (galerie/bibliothèque inchangées)"
+git add -A
+git commit -m "feat(cropper): thème persistant + Cropper opt-in avatar (responsive, formes, recette)" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
