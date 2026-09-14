@@ -153,7 +153,7 @@ export default function Cropper({
   const [wide, setWide] = useState(true);
 
   const workspaceSize = useCallback(() => {
-    return workspaceRef.current?.getBoundingClientRect().width ?? WORKSPACE;
+    return workspaceRef.current?.getBoundingClientRect().width || WORKSPACE;
   }, []);
 
   // Responsive : largeur dispo du panneau.
@@ -171,9 +171,12 @@ export default function Cropper({
   // Seed de la grille depuis la recette (fractions → px selon le workspace réel).
   useEffect(() => {
     if (!initialTransform) return;
-    const ws = workspaceSize();
-    const gf = initialTransform.gridFrac;
-    setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
+    const raf = requestAnimationFrame(() => {
+      const ws = workspaceSize();
+      const gf = initialTransform.gridFrac;
+      setGrid({ x: gf.x * ws, y: gf.y * ws, width: gf.width * ws, height: gf.height * ws });
+    });
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
