@@ -159,9 +159,14 @@ export default function HomeCarousel(): JSX.Element | null {
         break;
       }
     }
-    const f = (pstar - list[i0].base) / (list[i0].w + GAP);
+    // interpolation PAR MORCEAUX : tuile scalée par s, gap non scalé → le
+    // centre d'une tuile mappe exactement sur son centre scalé (centrage juste).
     const scaledLeft = sc[i0] - (list[i0].w * s[i0]) / 2;
-    const pstarScaled = scaledLeft + f * (list[i0].w * s[i0] + GAP);
+    const localRuban = pstar - list[i0].base;
+    const pstarScaled =
+      localRuban <= list[i0].w
+        ? scaledLeft + localRuban * s[i0]
+        : scaledLeft + list[i0].w * s[i0] + (localRuban - list[i0].w);
 
     for (let i = 0; i < n; i++) {
       const el = nodeRefs.current.get(list[i].it.mediaAssetId);
@@ -169,7 +174,7 @@ export default function HomeCarousel(): JSX.Element | null {
       let cx = half + (sc[i] - pstarScaled);
       const k = Math.round((half - cx) / SW);
       cx += k * SW;
-      if (Math.abs(cx - half) > cw * 1.6) {
+      if (Math.abs(cx - half) > cw * 2.2) {
         el.style.visibility = "hidden";
         continue;
       }
