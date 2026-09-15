@@ -1,3 +1,25 @@
+#!/usr/bin/env bash
+#
+# AKFC — HomeCarousel : ruban à inertie v4 (axe scalé continu + DOM-direct).
+#
+# Intègre la mécanique validée en maquette v4 :
+#  - animation DOM-direct (RAF écrit les transforms, pas de setState/frame) → fluide ;
+#  - ancrage CONTINU sur un axe scalé → passage au centre SANS bond ;
+#  - zéro chevauchement (espacement = demi-largeurs scalées + gap) ;
+#  - débordement franc + fondu des bords ; focus central ;
+#  - chevrons/drag → mode manuel + aimant ; play/pause (drift) ;
+#  - vidéos : poster + bouton play centré, lecture en place au centre.
+# Fetch tRPC conservé, largeur depuis item.width/height (bornée, fallback).
+#
+# Périmètre : apps/web/src/features/app-shell/HomeCarousel.tsx. Un typecheck.
+# Usage : bash apply-home-carousel-v4.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/features/app-shell/HomeCarousel.tsx"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -413,3 +435,19 @@ export default function HomeCarousel(): JSX.Element | null {
     </section>
   );
 }
+TSX
+echo "  ok  HomeCarousel.tsx"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -20 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"
+git add -A
+git commit -m "feat(home): carrousel ruban v4 (axe scalé continu, DOM-direct, zéro chevauchement, sans bond)" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
