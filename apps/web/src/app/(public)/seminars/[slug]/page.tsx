@@ -11,6 +11,7 @@ import {
   formatSessionDate,
   AUDIENCE_LABELS,
 } from "@lib/format";
+import type { Metadata } from "next";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Page                                                                   */
@@ -27,6 +28,38 @@ import {
  * (brouillon) ou dans le futur (programmé) n'est pas visible publiquement
  * → `notFound()`. Cohérent avec le filtrage public du router.
  */
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const entity = await prisma.seminar
+    .findUnique({ where: { slug }, select: { label: true, publicationDate: true } })
+    .catch(() => null);
+
+  const published =
+    !!entity &&
+    !!entity.publicationDate &&
+    entity.publicationDate <= new Date();
+
+  if (!published || !entity) {
+    return { robots: { index: false, follow: false } };
+  }
+
+  const name = entity.label;
+  const description = `${name} — stage à l'AKFC, association de kung-fu de Chambéry. Présentation, informations et actualités.`;
+  const url = `/seminars/${slug}`;
+
+  return {
+    title: name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "article", url, title: name, description },
+  };
+}
+
 export default async function PublicStagePage({
   params,
 }: {
