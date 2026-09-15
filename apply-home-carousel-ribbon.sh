@@ -1,3 +1,24 @@
+#!/usr/bin/env bash
+#
+# AKFC — HomeCarousel : ruban à inertie (remplace le rendu plein-cadre + flou).
+#
+# Réécrit HomeCarousel.tsx : ruban infini hauteur fixe / largeur libre par
+# média (ratio conservé → fini le fond flou envahissant sur les portraits).
+# Drag + lancer (friction), aimant central, mise en évidence de l'image centrale,
+# fondu des bords, chevrons, play/pause (drift). Tuiles vidéo : poster + bouton
+# play centré (clic → manuel + centre + joue en place ; fin → reste en manuel).
+# Fetch tRPC conservé. Supprime : fond flou, titre, barre de progression,
+# bullets, et la dépendance embla DANS ce composant.
+#
+# Périmètre : apps/web/src/features/app-shell/HomeCarousel.tsx. Un typecheck.
+# Usage : bash apply-home-carousel-ribbon.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/features/app-shell/HomeCarousel.tsx"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+
+cat > "$F" <<'TSX'
 "use client";
 
 import {
@@ -398,3 +419,24 @@ export default function HomeCarousel(): JSX.Element | null {
     </section>
   );
 }
+TSX
+echo "  ok  HomeCarousel.tsx"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -20 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"
+git add -A
+git commit -m "feat(home): carrousel en ruban à inertie (fin du fond flou ; drag/lancer, aimant, focus central, vidéos)" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
+
+echo ""
+echo "Note : la dépendance embla-carousel-react n'est plus utilisée PAR CE composant."
+echo "Vérifie qu'aucun autre fichier ne l'importe avant de la retirer du package.json :"
+echo "  grep -rn 'embla-carousel' apps/web/src --include=*.tsx --include=*.ts | grep -v node_modules"

@@ -10,6 +10,7 @@ import {
   formatSessionDate,
   AUDIENCE_LABELS,
 } from "@lib/format";
+import type { Metadata } from "next";
 
 /**
  * Page publique d'un Event par slug — `/evenements/[slug]`.
@@ -23,6 +24,38 @@ import {
  * du router. Le `getBySlug`, lui, ne filtre pas (il peut servir une
  * preview admin), donc le contrôle se fait ici, côté page publique.
  */
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const entity = await prisma.event
+    .findUnique({ where: { slug }, select: { label: true, publicationDate: true } })
+    .catch(() => null);
+
+  const published =
+    !!entity &&
+    !!entity.publicationDate &&
+    entity.publicationDate <= new Date();
+
+  if (!published || !entity) {
+    return { robots: { index: false, follow: false } };
+  }
+
+  const name = entity.label;
+  const description = `${name} — évènement à l'AKFC, association de kung-fu de Chambéry. Présentation, informations et actualités.`;
+  const url = `/events/${slug}`;
+
+  return {
+    title: name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "article", url, title: name, description },
+  };
+}
+
 export default async function PublicEventPage({
   params,
 }: {

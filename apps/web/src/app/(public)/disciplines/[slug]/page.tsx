@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { prisma } from "@backend/prisma";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
+import type { Metadata } from "next";
 
 /**
  * Page publique d'une Discipline par slug — `/disciplines/[slug]`.
@@ -12,6 +13,38 @@ import { parsePageContentV1 } from "@contracts/page";
  * composite `description` rendu via PageRenderer (blocs du builder, dont le
  * bloc media-text). Accessible depuis le menu « Nos activités » du header.
  */
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const entity = await prisma.discipline
+    .findUnique({ where: { slug }, select: { name: true, publicationDate: true } })
+    .catch(() => null);
+
+  const published =
+    !!entity &&
+    !!entity.publicationDate &&
+    entity.publicationDate <= new Date();
+
+  if (!published || !entity) {
+    return { robots: { index: false, follow: false } };
+  }
+
+  const name = entity.name;
+  const description = `${name} — discipline enseignée à l'AKFC, association de kung-fu de Chambéry. Présentation, informations et actualités.`;
+  const url = `/disciplines/${slug}`;
+
+  return {
+    title: name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "article", url, title: name, description },
+  };
+}
+
 export default async function PublicDisciplinePage({
   params,
 }: {
