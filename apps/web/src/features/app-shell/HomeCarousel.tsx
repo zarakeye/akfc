@@ -126,7 +126,10 @@ export default function HomeCarousel(): JSX.Element | null {
     const list = geo.list;
     const n = list.length;
     if (n === 0 || W <= 0) return 0;
-    const cw = cwRef.current;
+    // Largeur LIVE du conteneur (jamais périmée). Le composant renvoie null tant
+    // que le fetch n'a pas résolu, donc la mesure par effet peut ne jamais avoir
+    // lieu ; on lit donc clientWidth ici, à chaque frame.
+    const cw = containerRef.current?.clientWidth || cwRef.current;
     const half = cw / 2;
     const range = cw * EMPH_RANGE;
 
