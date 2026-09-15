@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  JSX,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 
 import { trpcClient } from "@trpc/trpcClient";
@@ -29,26 +22,23 @@ type Carousel = {
   items: CarouselItem[];
 } | null;
 
-/* ►►► Constantes de réglage (validées en maquette) ◄◄◄ */
-const H = 320; // hauteur du ruban (px)
-const GAP = 18; // espace entre médias (px)
-const MIN_RATIO = 0.4; // garde-fous de ratio (w/h)
+/* ►►► Réglages (validés en maquette v4) ◄◄◄ */
+const H = 320;
+const GAP = 22;
+const MIN_RATIO = 0.4;
 const MAX_RATIO = 2.5;
-const DEFAULT_RATIO = 1.5; // si width/height inconnus
-const FRICTION = 0.94; // décélération du lancer
-const SNAP_V = 0.7; // seuil d'enclenchement de l'aimant (px/frame)
-const SNAP_EASE = 0.16; // vitesse de calage
-const DRIFT_V = 0.5; // vitesse du défilement auto (px/frame)
-const DRIFT_EASE = 0.03; // retour vers le drift après un lancer
-const EMPH_SCALE = 0.3; // agrandissement max au centre
-const EMPH_RANGE = 0.42; // portée du focus (fraction largeur conteneur)
-const THROW_MULT = 16; // sensibilité du lancer
+const DEFAULT_RATIO = 1.5;
+const FRICTION = 0.94;
+const SNAP_V = 0.7;
+const SNAP_EASE = 0.16;
+const DRIFT_V = 0.5;
+const DRIFT_EASE = 0.03;
+const EMPH_SCALE = 0.32;
+const EMPH_RANGE = 0.5;
+const EMPH_POW = 1.7;
+const THROW_MULT = 16;
 
-type Geo = {
-  it: CarouselItem;
-  w: number;
-  center: number;
-};
+type Geo = { it: CarouselItem; w: number; base: number; center: number };
 
 function ratioOf(it: CarouselItem): number {
   const r =
@@ -57,14 +47,13 @@ function ratioOf(it: CarouselItem): number {
 }
 
 /**
- * HomeCarousel — ruban à inertie (façon manège).
+ * HomeCarousel — ruban à inertie (axe scalé continu, DOM-direct).
  *
  * Hauteur fixe, largeur libre par média (ratio conservé) → portraits hauts &
- * étroits, paysages larges, côte à côte, SANS fond flou. Boucle infinie ; drag
- * + lancer avec friction ; aimant central ; média central mis en évidence ;
- * fondu des bords ; chevrons ; play/pause (drift). Vidéos : poster + bouton
- * play centré (clic → passe en manuel, centre la tuile, joue en place ; à la
- * fin l'overlay revient et on reste en manuel).
+ * étroits, paysages larges, côte à côte, SANS fond flou. Boucle infinie ;
+ * drag/lancer + friction ; aimant central ; focus central ; zéro chevauchement ;
+ * débordement franc + fondu des bords. Chevrons/drag coupent la rotation
+ * continue (play/pause). Vidéos : poster + bouton play centré, lecture en place.
  */
 export default function HomeCarousel(): JSX.Element | null {
   const [carousel, setCarousel] = useState<Carousel>(null);
@@ -82,7 +71,6 @@ export default function HomeCarousel(): JSX.Element | null {
     };
   }, []);
 
-  // Médias affichables (image/vidéo uniquement).
   const items = useMemo<CarouselItem[]>(
     () =>
       (carousel?.items ?? []).filter(
@@ -91,12 +79,11 @@ export default function HomeCarousel(): JSX.Element | null {
     [carousel],
   );
 
-  // Géométrie : largeur + centre cumulés, total W.
   const geo = useMemo<{ list: Geo[]; W: number }>(() => {
     let x = 0;
     const list: Geo[] = items.map((it) => {
       const w = ratioOf(it) * H;
-      const g: Geo = { it, w, center: x + w / 2 };
+      const g: Geo = { it, w, base: x, center: x + w / 2 };
       x += w + GAP;
       return g;
     });
@@ -104,45 +91,104 @@ export default function HomeCarousel(): JSX.Element | null {
   }, [items]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [cw, setCw] = useState(1000);
+  const cwRef = useRef(1000);
+  const nodeRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
   const offset = useRef(0);
   const velocity = useRef(0);
   const target = useRef<number | null>(null);
   const dragging = useRef(false);
-  const nearestDelta = useRef(0);
-  const [, setFrame] = useState(0);
+  const playingRef = useRef(true);
   const [playing, setPlaying] = useState(true);
-  const playingRef = useRef(playing);
   playingRef.current = playing;
-
-  const drag = useRef({ lastX: 0, lastT: 0, vx: 0 });
-  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
-  // Réinitialise la position quand le contenu change (fetch async).
+  const drag = useRef({ lastX: 0, lastT: 0, vx: 0 });
+
   useEffect(() => {
     offset.current = 0;
     velocity.current = 0;
     target.current = null;
   }, [geo.W]);
 
-  // Mesure du conteneur.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((e) => setCw(e[0].contentRect.width));
+    const ro = new ResizeObserver((e) => (cwRef.current = e[0].contentRect.width));
     ro.observe(el);
-    setCw(el.getBoundingClientRect().width);
+    cwRef.current = el.getBoundingClientRect().width;
     return () => ro.disconnect();
   }, []);
 
-  // Boucle physique.
+  const layout = useCallback((): number => {
+    const W = geo.W;
+    const list = geo.list;
+    const n = list.length;
+    if (n === 0 || W <= 0) return 0;
+    const cw = cwRef.current;
+    const half = cw / 2;
+    const range = cw * EMPH_RANGE;
+
+    const pstar = ((offset.current % W) + W) % W;
+
+    const s = new Array<number>(n);
+    const nlin = new Array<number>(n);
+    for (let i = 0; i < n; i++) {
+      let d = list[i].center - pstar;
+      if (d > W / 2) d -= W;
+      if (d < -W / 2) d += W;
+      nlin[i] = d;
+      const t = Math.max(0, 1 - Math.abs(d) / range);
+      s[i] = 1 + EMPH_SCALE * Math.pow(t, EMPH_POW);
+    }
+
+    const sc = new Array<number>(n);
+    sc[0] = (list[0].w * s[0]) / 2;
+    for (let i = 1; i < n; i++) {
+      sc[i] =
+        sc[i - 1] + (list[i - 1].w * s[i - 1]) / 2 + GAP + (list[i].w * s[i]) / 2;
+    }
+    const SW =
+      sc[n - 1] + (list[n - 1].w * s[n - 1]) / 2 + GAP + (list[0].w * s[0]) / 2;
+
+    let i0 = n - 1;
+    for (let i = 0; i < n; i++) {
+      if (pstar >= list[i].base && pstar < list[i].base + list[i].w + GAP) {
+        i0 = i;
+        break;
+      }
+    }
+    const f = (pstar - list[i0].base) / (list[i0].w + GAP);
+    const scaledLeft = sc[i0] - (list[i0].w * s[i0]) / 2;
+    const pstarScaled = scaledLeft + f * (list[i0].w * s[i0] + GAP);
+
+    for (let i = 0; i < n; i++) {
+      const el = nodeRefs.current.get(list[i].it.mediaAssetId);
+      if (!el) continue;
+      let cx = half + (sc[i] - pstarScaled);
+      const k = Math.round((half - cx) / SW);
+      cx += k * SW;
+      if (Math.abs(cx - half) > cw * 1.6) {
+        el.style.visibility = "hidden";
+        continue;
+      }
+      const emph = (s[i] - 1) / EMPH_SCALE;
+      el.style.visibility = "visible";
+      el.style.transform = `translate(${cx - list[i].w / 2}px, -50%) scale(${s[i]})`;
+      el.style.filter = `brightness(${0.5 + 0.5 * emph})`;
+      el.style.zIndex = String(Math.round(emph * 100));
+    }
+
+    let f2 = 0;
+    for (let i = 1; i < n; i++) if (Math.abs(nlin[i]) < Math.abs(nlin[f2])) f2 = i;
+    return nlin[f2];
+  }, [geo]);
+
   useEffect(() => {
     if (geo.W <= 0) return;
     let raf = 0;
     const tick = () => {
-      const W = geo.W;
       if (!dragging.current) {
         if (target.current != null) {
           offset.current += (target.current - offset.current) * SNAP_EASE;
@@ -159,16 +205,16 @@ export default function HomeCarousel(): JSX.Element | null {
           velocity.current *= FRICTION;
           if (Math.abs(velocity.current) < SNAP_V) {
             velocity.current = 0;
-            target.current = offset.current + nearestDelta.current;
+            target.current = offset.current + layout();
           }
         }
       }
-      setFrame((f) => (f + 1) % 1000000);
+      layout();
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [geo.W]);
+  }, [geo.W, layout]);
 
   const goManual = useCallback(() => setPlaying(false), []);
 
@@ -205,30 +251,41 @@ export default function HomeCarousel(): JSX.Element | null {
       goManual();
       const W = geo.W;
       if (W <= 0) return;
-      const center = cw / 2;
-      const norm = ((offset.current % W) + W) % W;
-      const centers: number[] = [];
+      const pstar = ((offset.current % W) + W) % W;
+      let best: number | null = null;
+      let bestD = Infinity;
       geo.list.forEach((g) => {
-        [-1, 0, 1].forEach((k) => centers.push(g.center - norm + k * W));
+        let d = g.center - pstar;
+        if (d > W / 2) d -= W;
+        if (d < -W / 2) d += W;
+        if (dir > 0 && d > 1 && d < bestD) {
+          bestD = d;
+          best = d;
+        }
+        if (dir < 0 && d < -1 && -d < bestD) {
+          bestD = -d;
+          best = d;
+        }
       });
-      centers.sort((a, b) => a - b);
-      let targetSc: number | undefined;
-      if (dir > 0) {
-        targetSc = centers.find((sc) => sc > center + 1);
-      } else {
-        const cand = centers.filter((sc) => sc < center - 1);
-        targetSc = cand[cand.length - 1];
-      }
-      if (targetSc == null) return;
-      target.current = offset.current + (targetSc - center);
+      if (best == null) return;
+      target.current = offset.current + best;
     },
-    [geo, cw, goManual],
+    [geo, goManual],
   );
 
   const playVideo = useCallback(
-    (id: string, sc: number) => {
+    (id: string) => {
       goManual();
-      target.current = offset.current + (sc - cw / 2);
+      // centre la tuile puis joue en place
+      const W = geo.W;
+      const pstar = ((offset.current % W) + W) % W;
+      const g = geo.list.find((x) => x.it.mediaAssetId === id);
+      if (g) {
+        let d = g.center - pstar;
+        if (d > W / 2) d -= W;
+        if (d < -W / 2) d += W;
+        target.current = offset.current + d;
+      }
       setActiveVideo(id);
       const v = videoRefs.current.get(id);
       if (v) {
@@ -236,53 +293,10 @@ export default function HomeCarousel(): JSX.Element | null {
         void v.play().catch(() => {});
       }
     },
-    [cw, goManual],
+    [geo, goManual],
   );
 
   if (geo.list.length === 0) return null;
-
-  // Rendu : chaque média à ses positions enroulées visibles.
-  const W = geo.W;
-  const center = cw / 2;
-  const norm = ((offset.current % W) + W) % W;
-  const range = cw * EMPH_RANGE;
-  let bestAbs = Infinity;
-  let bestDelta = 0;
-  type R = {
-    g: Geo;
-    k: number;
-    left: number;
-    sc: number;
-    scale: number;
-    bright: number;
-    z: number;
-  };
-  const rendered: R[] = [];
-  geo.list.forEach((g) => {
-    [-1, 0, 1].forEach((k) => {
-      const sc = g.center - norm + k * W;
-      const left = sc - g.w / 2;
-      if (left > -g.w - 40 && left < cw + g.w + 40) {
-        const dist = Math.abs(sc - center);
-        const t = Math.max(0, 1 - dist / range);
-        const emph = t * t * (3 - 2 * t);
-        rendered.push({
-          g,
-          k,
-          left,
-          sc,
-          scale: 1 + EMPH_SCALE * emph,
-          bright: 0.5 + 0.5 * emph,
-          z: Math.round(emph * 100),
-        });
-        if (dist < bestAbs) {
-          bestAbs = dist;
-          bestDelta = sc - center;
-        }
-      }
-    });
-  });
-  nearestDelta.current = bestDelta;
 
   return (
     <section className="relative">
@@ -297,26 +311,27 @@ export default function HomeCarousel(): JSX.Element | null {
         style={{
           height: H * (1 + EMPH_SCALE) + 8,
           WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, black 9%, black 91%, transparent 100%)",
+            "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
           maskImage:
-            "linear-gradient(to right, transparent 0%, black 9%, black 91%, transparent 100%)",
+            "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
         }}
       >
-        {rendered.map(({ g, k, left, sc, scale, bright, z }) => {
+        {geo.list.map((g) => {
           const item = g.it;
           const isVideo = item.kind === "video";
           const showPlay = isVideo && activeVideo !== item.mediaAssetId;
           return (
             <div
-              key={`${item.mediaAssetId}-${k}`}
-              className="absolute top-1/2 overflow-hidden rounded-xl bg-black/20 shadow-lg"
+              key={item.mediaAssetId}
+              ref={(el) => {
+                if (el) nodeRefs.current.set(item.mediaAssetId, el);
+                else nodeRefs.current.delete(item.mediaAssetId);
+              }}
+              className="absolute left-0 top-1/2 overflow-hidden rounded-xl bg-black/20 shadow-lg will-change-transform"
               style={{
-                left,
                 width: g.w,
                 height: H,
-                transform: `translateY(-50%) scale(${scale})`,
-                filter: `brightness(${bright})`,
-                zIndex: z,
+                transform: "translate(-9999px,-50%)",
               }}
             >
               {isVideo ? (
@@ -347,7 +362,7 @@ export default function HomeCarousel(): JSX.Element | null {
                 <button
                   type="button"
                   onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => playVideo(item.mediaAssetId, sc)}
+                  onClick={() => playVideo(item.mediaAssetId)}
                   aria-label="Lire la vidéo"
                   className="absolute left-1/2 top-1/2 z-[150] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/75"
                 >
