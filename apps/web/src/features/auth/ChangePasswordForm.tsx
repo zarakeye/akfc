@@ -7,19 +7,16 @@ import { z } from "zod";
 
 import { trpc } from "@trpc/trpcClient";
 import { changePasswordSchema } from "@contracts/auth/auth.schema";
+import { PasswordField } from "@features/auth/PasswordField";
 
 /**
- * ChangePasswordForm — changement de mot de passe pour l'utilisateur connecté.
- *
- * Autonome (comme AvatarUploader) : ne dépend pas du submit du profil. Vérifie
- * la confirmation côté client (refine), délègue la vérification du mot de passe
- * ACTUEL au serveur (trpc.auth.changePassword). En cas de succès, le serveur a
- * déconnecté les autres appareils ; la session courante reste active.
+ * ChangePasswordForm — changement de mot de passe (utilisateur connecté).
+ * Confirmation vérifiée côté client (refine) ; mot de passe ACTUEL vérifié côté
+ * serveur. Succès → le serveur a déconnecté les autres appareils ; session
+ * courante conservée. Champs masqués + toggle œil (PasswordField partagé).
  */
 const formSchema = changePasswordSchema
-  .extend({
-    confirmPassword: z.string().min(1, "Confirmation requise"),
-  })
+  .extend({ confirmPassword: z.string().min(1, "Confirmation requise") })
   .refine((d) => d.newPassword === d.confirmPassword, {
     path: ["confirmPassword"],
     message: "Les mots de passe ne correspondent pas",
@@ -52,9 +49,7 @@ export default function ChangePasswordForm(): JSX.Element {
         newPassword: values.newPassword,
       });
       reset();
-      setOkMsg(
-        "Mot de passe modifié. Les autres appareils ont été déconnectés.",
-      );
+      setOkMsg("Mot de passe modifié. Les autres appareils ont été déconnectés.");
     } catch (e) {
       setErrMsg(
         e instanceof Error ? e.message : "Impossible de changer le mot de passe.",
@@ -76,50 +71,24 @@ export default function ChangePasswordForm(): JSX.Element {
       )}
 
       <div className="grid gap-2">
-        <label className="grid gap-1">
-          <span className="text-sm">Mot de passe actuel</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            className="border rounded px-3 py-2"
-            {...register("currentPassword")}
-          />
-          {errors.currentPassword?.message && (
-            <span className="text-xs text-red-600">
-              {errors.currentPassword.message}
-            </span>
-          )}
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm">Nouveau mot de passe</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="border rounded px-3 py-2"
-            {...register("newPassword")}
-          />
-          {errors.newPassword?.message && (
-            <span className="text-xs text-red-600">
-              {errors.newPassword.message}
-            </span>
-          )}
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm">Confirmer le nouveau mot de passe</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="border rounded px-3 py-2"
-            {...register("confirmPassword")}
-          />
-          {errors.confirmPassword?.message && (
-            <span className="text-xs text-red-600">
-              {errors.confirmPassword.message}
-            </span>
-          )}
-        </label>
+        <PasswordField
+          label="Mot de passe actuel"
+          autoComplete="current-password"
+          error={errors.currentPassword?.message}
+          {...register("currentPassword")}
+        />
+        <PasswordField
+          label="Nouveau mot de passe"
+          autoComplete="new-password"
+          error={errors.newPassword?.message}
+          {...register("newPassword")}
+        />
+        <PasswordField
+          label="Confirmer le nouveau mot de passe"
+          autoComplete="new-password"
+          error={errors.confirmPassword?.message}
+          {...register("confirmPassword")}
+        />
       </div>
 
       <button
