@@ -5,6 +5,8 @@ import { trpcClient } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
 import { AUTH_ERRORS } from "@features/auth/errors/auth.errors";
+import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -15,6 +17,7 @@ export default function LoginForm(): JSX.Element {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginSuccess = useSessionStore((state) => state.loginSuccess);
   const router = useRouter();
@@ -106,19 +109,31 @@ export default function LoginForm(): JSX.Element {
           className="border rounded bg-white px-2 py-1"
         />
 
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            if (error) setError(null);
-          }}
-          placeholder="Password"
-          required
-          aria-invalid={!!error && (!password || password.length < 12)}
-          className="border rounded bg-white px-2 py-1"
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="Password"
+            required
+            aria-invalid={!!error && (!password || password.length < 12)}
+            className="border rounded bg-white px-2 py-1 pr-9"
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 transition-colors hover:text-gray-700"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       <button
@@ -136,6 +151,13 @@ export default function LoginForm(): JSX.Element {
       </button>
 
       {error && <p className="text-red-500">{error}</p>}
+
+      <Link
+        href="/auth/forgot-password"
+        className="text-sm text-blue-600 hover:underline"
+      >
+        Mot de passe oublié ?
+      </Link>
     </form>
   );
 }
