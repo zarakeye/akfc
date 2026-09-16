@@ -13,6 +13,9 @@ import { prisma } from "@backend/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
+import { verifyPassword } from "@backend/lib/auth/password";
+import { getToken, verifyJwt } from "@backend/lib/session/session.server";
+import { changePasswordSchema } from "@contracts/auth/auth.schema";
 
 /**
  * Router frontend-facing, permanently called by the client.
@@ -57,6 +60,61 @@ export const authRouter = router({
       success: true,
     };
   }),
+
+  /**
+   * Changement de mot de passe (utilisateur connecté).
+   * Vérifie le mot de passe actuel, refuse un nouveau identique, re-hash, et
+   * DÉCONNECTE LES AUTRES APPAREILS (supprime leurs sessions ; garde la
+   * courante via le sessionId du cookie).
+   */
+  changePassword: protectedProcedure
+    .input(changePasswordSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.sessionClient.user.id;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { password: true },
+      });
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+      }
+
+      const ok = await verifyPassword(input.currentPassword, user.password);
+      if (!ok) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Mot de passe actuel incorrect",
+        });
+      }
+
+      const same = await verifyPassword(input.newPassword, user.password);
+      if (same) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Le nouveau mot de passe doit être différent de l'actuel",
+        });
+      }
+
+      const hashed = await bcrypt.hash(input.newPassword, 12);
+      const payload = verifyJwt(await getToken());
+      const currentSessionId = payload?.sessionId ?? null;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: { password: hashed },
+        });
+        await tx.session.deleteMany({
+          where: {
+            userId,
+            ...(currentSessionId ? { NOT: { id: currentSessionId } } : {}),
+          },
+        });
+      });
+
+      return { success: true };
+    }),
 
   getSession: publicProcedure.query(async ({ ctx }) => {
     return ctx.sessionClient;
