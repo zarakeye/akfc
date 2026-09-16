@@ -3,6 +3,7 @@
 import { JSX, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
+import { PasswordField } from "@features/auth/PasswordField";
 
 /**
  * /auth/reset-password?token=...
@@ -81,36 +82,30 @@ function ResetPasswordForm(): JSX.Element {
       )}
 
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="grid gap-1">
-          <span className="text-sm">Nouveau mot de passe</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="border rounded px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Min. 12 caractères"
-            disabled={!token || resetPassword.isPending || done}
-          />
-          {!passwordOk && password.length > 0 && (
-            <span className="text-xs text-red-600">Minimum 12 caractères.</span>
-          )}
-        </label>
+        <PasswordField
+          label="Nouveau mot de passe"
+          autoComplete="new-password"
+          placeholder="Min. 12 caractères"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={!token || resetPassword.isPending || done}
+          error={
+            !passwordOk && password.length > 0 ? "Minimum 12 caractères." : undefined
+          }
+        />
 
-        <label className="grid gap-1">
-          <span className="text-sm">Confirmer</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            className="border rounded px-3 py-2"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-            disabled={!token || resetPassword.isPending || done}
-          />
-          {passwordConfirm.length > 0 && !confirmOk && (
-            <span className="text-xs text-red-600">La confirmation ne correspond pas.</span>
-          )}
-        </label>
+        <PasswordField
+          label="Confirmer"
+          autoComplete="new-password"
+          value={passwordConfirm}
+          onChange={(e) => setPasswordConfirm(e.target.value)}
+          disabled={!token || resetPassword.isPending || done}
+          error={
+            passwordConfirm.length > 0 && !confirmOk
+              ? "La confirmation ne correspond pas."
+              : undefined
+          }
+        />
 
         <button
           type="submit"
