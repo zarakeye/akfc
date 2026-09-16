@@ -152,8 +152,7 @@ export default function HomeCarousel(): JSX.Element | null {
       sc[i] =
         sc[i - 1] + (list[i - 1].w * s[i - 1]) / 2 + GAP + (list[i].w * s[i]) / 2;
     }
-    const SW =
-      sc[n - 1] + (list[n - 1].w * s[n - 1]) / 2 + GAP + (list[0].w * s[0]) / 2;
+    const SW = sc[n - 1] + (list[n - 1].w * s[n - 1]) / 2 + GAP;
 
     let i0 = n - 1;
     for (let i = 0; i < n; i++) {
