@@ -22,7 +22,7 @@ type Carousel = {
   items: CarouselItem[];
 } | null;
 
-/* ►►► Réglages (validés en maquette v4) ◄◄◄ */
+/* ►►► Réglages ◄◄◄ */
 const H = 320;
 const GAP = 22;
 const MIN_RATIO = 0.4;
@@ -37,6 +37,7 @@ const EMPH_SCALE = 0.32;
 const EMPH_RANGE = 0.5;
 const EMPH_POW = 1.7;
 const THROW_MULT = 16;
+const CULL = 1.3; // marge de rendu (× largeur écran) de chaque côté
 
 type Geo = { it: CarouselItem; w: number; base: number; center: number };
 
@@ -46,15 +47,6 @@ function ratioOf(it: CarouselItem): number {
   return Math.min(MAX_RATIO, Math.max(MIN_RATIO, r));
 }
 
-/**
- * HomeCarousel — ruban à inertie (axe scalé continu, DOM-direct).
- *
- * Hauteur fixe, largeur libre par média (ratio conservé) → portraits hauts &
- * étroits, paysages larges, côte à côte, SANS fond flou. Boucle infinie ;
- * drag/lancer + friction ; aimant central ; focus central ; zéro chevauchement ;
- * débordement franc + fondu des bords. Chevrons/drag coupent la rotation
- * continue (play/pause). Vidéos : poster + bouton play centré, lecture en place.
- */
 export default function HomeCarousel(): JSX.Element | null {
   const [carousel, setCarousel] = useState<Carousel>(null);
 
@@ -90,8 +82,16 @@ export default function HomeCarousel(): JSX.Element | null {
     return { list, W: x };
   }, [items]);
 
+  // Nombre de copies par image pour couvrir l'écran même si le ruban est étroit.
+  const copies = useMemo(() => {
+    if (geo.W <= 0) return 1;
+    const ASSUMED_CW = 2600; // couvre la plupart des écrans
+    const window = ASSUMED_CW * (1 + 2 * CULL);
+    return Math.min(11, Math.max(1, Math.ceil(window / geo.W) + 1));
+  }, [geo.W]);
+  const mid = Math.floor(copies / 2);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const cwRef = useRef(1000);
   const nodeRefs = useRef<Map<string, HTMLElement>>(new Map());
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
@@ -112,24 +112,13 @@ export default function HomeCarousel(): JSX.Element | null {
     target.current = null;
   }, [geo.W]);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((e) => (cwRef.current = e[0].contentRect.width));
-    ro.observe(el);
-    cwRef.current = el.getBoundingClientRect().width;
-    return () => ro.disconnect();
-  }, []);
-
   const layout = useCallback((): number => {
     const W = geo.W;
     const list = geo.list;
     const n = list.length;
     if (n === 0 || W <= 0) return 0;
-    // Largeur LIVE du conteneur (jamais périmée). Le composant renvoie null tant
-    // que le fetch n'a pas résolu, donc la mesure par effet peut ne jamais avoir
-    // lieu ; on lit donc clientWidth ici, à chaque frame.
-    const cw = containerRef.current?.clientWidth || cwRef.current;
+    const cw = containerRef.current?.clientWidth || 0;
+    if (cw <= 0) return 0;
     const half = cw / 2;
     const range = cw * EMPH_RANGE;
 
@@ -161,8 +150,6 @@ export default function HomeCarousel(): JSX.Element | null {
         break;
       }
     }
-    // interpolation PAR MORCEAUX : tuile scalée par s, gap non scalé → le
-    // centre d'une tuile mappe exactement sur son centre scalé (centrage juste).
     const scaledLeft = sc[i0] - (list[i0].w * s[i0]) / 2;
     const localRuban = pstar - list[i0].base;
     const pstarScaled =
@@ -170,27 +157,33 @@ export default function HomeCarousel(): JSX.Element | null {
         ? scaledLeft + localRuban * s[i0]
         : scaledLeft + list[i0].w * s[i0] + (localRuban - list[i0].w);
 
+    const limit = cw * CULL;
     for (let i = 0; i < n; i++) {
-      const el = nodeRefs.current.get(list[i].it.mediaAssetId);
-      if (!el) continue;
-      let cx = half + (sc[i] - pstarScaled);
-      const k = Math.round((half - cx) / SW);
-      cx += k * SW;
-      if (Math.abs(cx - half) > cw * 2.2) {
-        el.style.visibility = "hidden";
-        continue;
-      }
+      let cx0 = half + (sc[i] - pstarScaled);
+      const k = Math.round((half - cx0) / SW);
+      cx0 += k * SW;
       const emph = (s[i] - 1) / EMPH_SCALE;
-      el.style.visibility = "visible";
-      el.style.transform = `translate(${cx - list[i].w / 2}px, -50%) scale(${s[i]})`;
-      el.style.filter = `brightness(${0.5 + 0.5 * emph})`;
-      el.style.zIndex = String(Math.round(emph * 100));
+      const bright = 0.5 + 0.5 * emph;
+      const z = String(Math.round(emph * 100));
+      for (let c = 0; c < copies; c++) {
+        const el = nodeRefs.current.get(`${list[i].it.mediaAssetId}#${c}`);
+        if (!el) continue;
+        const cx = cx0 + (c - mid) * SW;
+        if (cx < -limit || cx > cw + limit) {
+          el.style.visibility = "hidden";
+          continue;
+        }
+        el.style.visibility = "visible";
+        el.style.transform = `translate(${cx - list[i].w / 2}px, -50%) scale(${s[i]})`;
+        el.style.filter = `brightness(${bright})`;
+        el.style.zIndex = z;
+      }
     }
 
     let f2 = 0;
     for (let i = 1; i < n; i++) if (Math.abs(nlin[i]) < Math.abs(nlin[f2])) f2 = i;
     return nlin[f2];
-  }, [geo]);
+  }, [geo, copies, mid]);
 
   useEffect(() => {
     if (geo.W <= 0) return;
@@ -283,7 +276,6 @@ export default function HomeCarousel(): JSX.Element | null {
   const playVideo = useCallback(
     (id: string) => {
       goManual();
-      // centre la tuile puis joue en place
       const W = geo.W;
       const pstar = ((offset.current % W) + W) % W;
       const g = geo.list.find((x) => x.it.mediaAssetId === id);
@@ -294,13 +286,13 @@ export default function HomeCarousel(): JSX.Element | null {
         target.current = offset.current + d;
       }
       setActiveVideo(id);
-      const v = videoRefs.current.get(id);
+      const v = videoRefs.current.get(`${id}#${mid}`); // copie centrale
       if (v) {
         v.currentTime = 0;
         void v.play().catch(() => {});
       }
     },
-    [geo, goManual],
+    [geo, goManual, mid],
   );
 
   if (geo.list.length === 0) return null;
@@ -323,62 +315,67 @@ export default function HomeCarousel(): JSX.Element | null {
             "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
         }}
       >
-        {geo.list.map((g) => {
-          const item = g.it;
-          const isVideo = item.kind === "video";
-          const showPlay = isVideo && activeVideo !== item.mediaAssetId;
-          return (
-            <div
-              key={item.mediaAssetId}
-              ref={(el) => {
-                if (el) nodeRefs.current.set(item.mediaAssetId, el);
-                else nodeRefs.current.delete(item.mediaAssetId);
-              }}
-              className="absolute left-0 top-1/2 overflow-hidden rounded-xl bg-black/20 shadow-lg will-change-transform"
-              style={{
-                width: g.w,
-                height: H,
-                transform: "translate(-9999px,-50%)",
-              }}
-            >
-              {isVideo ? (
-                <video
-                  ref={(el) => {
-                    if (el) videoRefs.current.set(item.mediaAssetId, el);
-                    else videoRefs.current.delete(item.mediaAssetId);
-                  }}
-                  src={item.url}
-                  poster={item.posterUrl ?? undefined}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  onEnded={() => setActiveVideo(null)}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.url}
-                  alt=""
-                  draggable={false}
-                  className="h-full w-full object-cover"
-                />
-              )}
+        {geo.list.flatMap((g) =>
+          Array.from({ length: copies }, (_, c) => {
+            const item = g.it;
+            const isVideo = item.kind === "video";
+            const isMid = c === mid;
+            const showPlay = isVideo && activeVideo !== item.mediaAssetId;
+            return (
+              <div
+                key={`${item.mediaAssetId}#${c}`}
+                ref={(el) => {
+                  const key = `${item.mediaAssetId}#${c}`;
+                  if (el) nodeRefs.current.set(key, el);
+                  else nodeRefs.current.delete(key);
+                }}
+                className="absolute left-0 top-1/2 overflow-hidden rounded-xl bg-black/20 shadow-lg will-change-transform"
+                style={{
+                  width: g.w,
+                  height: H,
+                  transform: "translate(-9999px,-50%)",
+                }}
+              >
+                {isVideo ? (
+                  <video
+                    ref={(el) => {
+                      const key = `${item.mediaAssetId}#${c}`;
+                      if (el) videoRefs.current.set(key, el);
+                      else videoRefs.current.delete(key);
+                    }}
+                    src={isMid ? item.url : undefined}
+                    poster={item.posterUrl ?? undefined}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    onEnded={() => setActiveVideo(null)}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.url}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full object-cover"
+                  />
+                )}
 
-              {showPlay && (
-                <button
-                  type="button"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => playVideo(item.mediaAssetId)}
-                  aria-label="Lire la vidéo"
-                  className="absolute left-1/2 top-1/2 z-[150] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/75"
-                >
-                  <Play className="h-7 w-7 translate-x-[2px]" fill="currentColor" />
-                </button>
-              )}
-            </div>
-          );
-        })}
+                {showPlay && (
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => playVideo(item.mediaAssetId)}
+                    aria-label="Lire la vidéo"
+                    className="absolute left-1/2 top-1/2 z-[150] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/75"
+                  >
+                    <Play className="h-7 w-7 translate-x-[2px]" fill="currentColor" />
+                  </button>
+                )}
+              </div>
+            );
+          }),
+        )}
       </div>
 
       {geo.list.length > 1 && (
@@ -407,11 +404,7 @@ export default function HomeCarousel(): JSX.Element | null {
               aria-label={playing ? "Mettre en pause" : "Reprendre le défilement"}
               className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-gray-700 backdrop-blur transition-colors hover:bg-white"
             >
-              {playing ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? "Pause" : "Lecture"}
             </button>
           </div>
