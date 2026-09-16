@@ -1,3 +1,26 @@
+#!/usr/bin/env bash
+#
+# AKFC — HomeCarousel : version FINALE (multi-copies → fin du pop).
+#
+# Regroupe tous les correctifs validés :
+#  - largeur conteneur lue en direct (centrage juste même après le null de fetch) ;
+#  - interpolation PAR MORCEAUX (tuile scalée, gap non scalé) → centre exact ;
+#  - période de bouclage SW correcte (couture = GAP) ;
+#  - MULTI-COPIES : chaque image est rendue à plusieurs laps → elle peut être
+#    visible des DEUX côtés à la fois quand le ruban est plus étroit que l'écran
+#    (peu de photos) → plus de "pop" gauche→droite. Nb de copies calculé selon
+#    largeur ruban vs écran.
+#  - vidéos : la copie centrale (mid) joue en place.
+#
+# Périmètre : HomeCarousel.tsx (réécriture complète). Un typecheck.
+# Usage : bash apply-home-carousel-final.sh
+#
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/features/app-shell/HomeCarousel.tsx"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -413,3 +436,19 @@ export default function HomeCarousel(): JSX.Element | null {
     </section>
   );
 }
+TSX
+echo "  ok  HomeCarousel.tsx (version finale multi-copies)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY — pas de typecheck ni commit"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+if node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null; then TC="check"; else TC="typecheck"; fi
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ — pas de commit. Erreurs :"
+  grep -nE "error TS|Error:|erreur" /tmp/akfc_tc.log | head -20 || true
+  tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"
+git add -A
+git commit -m "fix(home): carrousel multi-copies (fin du pop quand le ruban est plus étroit que l'écran)" > /tmp/akfc_commit.log 2>&1 \
+  && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit: rien ou échec"; tail -3 /tmp/akfc_commit.log; }
