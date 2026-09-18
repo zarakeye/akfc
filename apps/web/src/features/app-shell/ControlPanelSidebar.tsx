@@ -42,7 +42,7 @@ export default function ControlPanelSidebar(): JSX.Element {
     enabled: isAdmin,
   });
   const editorialDraftCount = PAGE_REGISTRY.filter(
-    (pg) => !(pageVis.data ?? []).some((v) => v.key === pg.key && v.published),
+    (pg) => !(pageVis.data ?? []).some((v: { key: string; published: boolean }) => v.key === pg.key && v.published),
   ).length;
 
   // Sections repliées (par titre). Persistant, chargé après montage pour éviter
