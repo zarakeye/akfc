@@ -1,7 +1,14 @@
 "use client";
 
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  Infinity as InfinityIcon,
+  GalleryHorizontalEnd,
+} from "lucide-react";
 
 import { trpcClient } from "@trpc/trpcClient";
 
@@ -23,7 +30,9 @@ type Carousel = {
 } | null;
 
 /* ►►► Réglages ◄◄◄ */
-const H = 320;
+const H_MAX = 320;
+const H_MIN = 170;
+const NET = 0.84; // fraction "nette" (hors fondus) de la largeur
 const GAP = 22;
 const MIN_RATIO = 0.4;
 const MAX_RATIO = 2.5;
@@ -37,8 +46,9 @@ const EMPH_SCALE = 0.32;
 const EMPH_RANGE = 0.5;
 const EMPH_POW = 1.7;
 const THROW_MULT = 16;
-const CULL = 1.3; // marge de rendu (× largeur écran) de chaque côté
+const DIAPO_DWELL = 3000; // ms au centre en mode diapo
 
+type AutoMode = "continu" | "diapo";
 type Geo = { it: CarouselItem; w: number; base: number; center: number };
 
 function ratioOf(it: CarouselItem): number {
@@ -71,6 +81,35 @@ export default function HomeCarousel(): JSX.Element | null {
     [carousel],
   );
 
+  const [cw, setCw] = useState(1000);
+  const [playing, setPlaying] = useState(true);
+  const [autoMode, setAutoMode] = useState<AutoMode>("continu");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
+  const autoModeRef = useRef(autoMode);
+  autoModeRef.current = autoMode;
+  const activeRef = useRef(0);
+  const nlinRef = useRef<number[]>([]);
+  const diapoRest = useRef<number | null>(null);
+
+  // Hauteur responsive : la tuile la plus large (au scale central) tient dans
+  // la zone nette (hors fondus).
+  const ratioMax = useMemo(
+    () => (items.length ? Math.max(...items.map(ratioOf)) : 1),
+    [items],
+  );
+  const H = useMemo(
+    () =>
+      Math.max(
+        H_MIN,
+        Math.min(H_MAX, (NET * cw) / (ratioMax * (1 + EMPH_SCALE))),
+      ),
+    [cw, ratioMax],
+  );
+
   const geo = useMemo<{ list: Geo[]; W: number }>(() => {
     let x = 0;
     const list: Geo[] = items.map((it) => {
@@ -80,13 +119,12 @@ export default function HomeCarousel(): JSX.Element | null {
       return g;
     });
     return { list, W: x };
-  }, [items]);
+  }, [items, H]);
 
-  // Nombre de copies par image pour couvrir l'écran même si le ruban est étroit.
+  // Copies par contenu pour couvrir l'écran quand le ruban est étroit.
   const copies = useMemo(() => {
     if (geo.W <= 0) return 1;
-    const ASSUMED_CW = 2600; // couvre la plupart des écrans
-    const window = ASSUMED_CW * (1 + 2 * CULL);
+    const window = 2600 * (1 + 2 * 1.3);
     return Math.min(11, Math.max(1, Math.ceil(window / geo.W) + 1));
   }, [geo.W]);
   const mid = Math.floor(copies / 2);
@@ -99,11 +137,6 @@ export default function HomeCarousel(): JSX.Element | null {
   const velocity = useRef(0);
   const target = useRef<number | null>(null);
   const dragging = useRef(false);
-  const playingRef = useRef(true);
-  const [playing, setPlaying] = useState(true);
-  playingRef.current = playing;
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
-
   const drag = useRef({ lastX: 0, lastT: 0, vx: 0 });
 
   useEffect(() => {
@@ -112,15 +145,24 @@ export default function HomeCarousel(): JSX.Element | null {
     target.current = null;
   }, [geo.W]);
 
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((e) => setCw(e[0].contentRect.width));
+    ro.observe(el);
+    setCw(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
   const layout = useCallback((): number => {
     const W = geo.W;
     const list = geo.list;
     const n = list.length;
     if (n === 0 || W <= 0) return 0;
-    const cw = containerRef.current?.clientWidth || 0;
-    if (cw <= 0) return 0;
-    const half = cw / 2;
-    const range = cw * EMPH_RANGE;
+    const cwl = containerRef.current?.clientWidth || cw;
+    if (cwl <= 0) return 0;
+    const half = cwl / 2;
+    const range = cwl * EMPH_RANGE;
 
     const pstar = ((offset.current % W) + W) % W;
 
@@ -134,6 +176,7 @@ export default function HomeCarousel(): JSX.Element | null {
       const t = Math.max(0, 1 - Math.abs(d) / range);
       s[i] = 1 + EMPH_SCALE * Math.pow(t, EMPH_POW);
     }
+    nlinRef.current = nlin;
 
     const sc = new Array<number>(n);
     sc[0] = (list[0].w * s[0]) / 2;
@@ -151,13 +194,13 @@ export default function HomeCarousel(): JSX.Element | null {
       }
     }
     const scaledLeft = sc[i0] - (list[i0].w * s[i0]) / 2;
-    const localRuban = pstar - list[i0].base;
+    const local = pstar - list[i0].base;
     const pstarScaled =
-      localRuban <= list[i0].w
-        ? scaledLeft + localRuban * s[i0]
-        : scaledLeft + list[i0].w * s[i0] + (localRuban - list[i0].w);
+      local <= list[i0].w
+        ? scaledLeft + local * s[i0]
+        : scaledLeft + list[i0].w * s[i0] + (local - list[i0].w);
 
-    const limit = cw * CULL;
+    const limit = cwl * 1.3;
     for (let i = 0; i < n; i++) {
       let cx0 = half + (sc[i] - pstarScaled);
       const k = Math.round((half - cx0) / SW);
@@ -169,11 +212,13 @@ export default function HomeCarousel(): JSX.Element | null {
         const el = nodeRefs.current.get(`${list[i].it.mediaAssetId}#${c}`);
         if (!el) continue;
         const cx = cx0 + (c - mid) * SW;
-        if (cx < -limit || cx > cw + limit) {
+        if (cx < -limit || cx > cwl + limit) {
           el.style.visibility = "hidden";
           continue;
         }
         el.style.visibility = "visible";
+        el.style.width = `${list[i].w}px`;
+        el.style.height = `${H}px`;
         el.style.transform = `translate(${cx - list[i].w / 2}px, -50%) scale(${s[i]})`;
         el.style.filter = `brightness(${bright})`;
         el.style.zIndex = z;
@@ -182,8 +227,19 @@ export default function HomeCarousel(): JSX.Element | null {
 
     let f2 = 0;
     for (let i = 1; i < n; i++) if (Math.abs(nlin[i]) < Math.abs(nlin[f2])) f2 = i;
+    if (f2 !== activeRef.current) {
+      activeRef.current = f2;
+      setActiveIndex(f2);
+    }
     return nlin[f2];
-  }, [geo, copies, mid]);
+  }, [geo, cw, H, copies, mid]);
+
+  const nextDelta = useCallback((): number => {
+    const nl = nlinRef.current;
+    let best = Infinity;
+    for (const d of nl) if (d > 1 && d < best) best = d;
+    return best === Infinity ? 0 : best;
+  }, []);
 
   useEffect(() => {
     if (geo.W <= 0) return;
@@ -196,16 +252,26 @@ export default function HomeCarousel(): JSX.Element | null {
             offset.current = target.current;
             target.current = null;
             velocity.current = 0;
+            diapoRest.current = null;
           }
         } else if (playingRef.current) {
-          velocity.current += (DRIFT_V - velocity.current) * DRIFT_EASE;
-          offset.current += velocity.current;
+          if (autoModeRef.current === "diapo") {
+            if (diapoRest.current == null) diapoRest.current = performance.now();
+            if (performance.now() - diapoRest.current >= DIAPO_DWELL) {
+              diapoRest.current = null;
+              target.current = offset.current + nextDelta();
+            }
+          } else {
+            velocity.current += (DRIFT_V - velocity.current) * DRIFT_EASE;
+            offset.current += velocity.current;
+          }
         } else {
           offset.current += velocity.current;
           velocity.current *= FRICTION;
           if (Math.abs(velocity.current) < SNAP_V) {
             velocity.current = 0;
-            target.current = offset.current + layout();
+            const nl = nlinRef.current;
+            if (nl.length) target.current = offset.current + nl[activeRef.current];
           }
         }
       }
@@ -214,9 +280,12 @@ export default function HomeCarousel(): JSX.Element | null {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [geo.W, layout]);
+  }, [geo.W, layout, nextDelta]);
 
-  const goManual = useCallback(() => setPlaying(false), []);
+  const goManual = useCallback(() => {
+    setPlaying(false);
+    diapoRest.current = null;
+  }, []);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -246,18 +315,21 @@ export default function HomeCarousel(): JSX.Element | null {
     velocity.current = -drag.current.vx * THROW_MULT;
   }, []);
 
+  const goToIndex = useCallback(
+    (i: number) => {
+      goManual();
+      const nl = nlinRef.current;
+      if (nl[i] != null) target.current = offset.current + nl[i];
+    },
+    [goManual],
+  );
   const step = useCallback(
     (dir: number) => {
       goManual();
-      const W = geo.W;
-      if (W <= 0) return;
-      const pstar = ((offset.current % W) + W) % W;
+      const nl = nlinRef.current;
       let best: number | null = null;
       let bestD = Infinity;
-      geo.list.forEach((g) => {
-        let d = g.center - pstar;
-        if (d > W / 2) d -= W;
-        if (d < -W / 2) d += W;
+      nl.forEach((d) => {
         if (dir > 0 && d > 1 && d < bestD) {
           bestD = d;
           best = d;
@@ -267,26 +339,19 @@ export default function HomeCarousel(): JSX.Element | null {
           best = d;
         }
       });
-      if (best == null) return;
-      target.current = offset.current + best;
+      if (best != null) target.current = offset.current + best;
     },
-    [geo, goManual],
+    [goManual],
   );
 
   const playVideo = useCallback(
     (id: string) => {
       goManual();
-      const W = geo.W;
-      const pstar = ((offset.current % W) + W) % W;
-      const g = geo.list.find((x) => x.it.mediaAssetId === id);
-      if (g) {
-        let d = g.center - pstar;
-        if (d > W / 2) d -= W;
-        if (d < -W / 2) d += W;
-        target.current = offset.current + d;
-      }
+      const nl = nlinRef.current;
+      const idx = geo.list.findIndex((g) => g.it.mediaAssetId === id);
+      if (idx >= 0 && nl[idx] != null) target.current = offset.current + nl[idx];
       setActiveVideo(id);
-      const v = videoRefs.current.get(`${id}#${mid}`); // copie centrale
+      const v = videoRefs.current.get(`${id}#${mid}`);
       if (v) {
         v.currentTime = 0;
         void v.play().catch(() => {});
@@ -294,6 +359,12 @@ export default function HomeCarousel(): JSX.Element | null {
     },
     [geo, goManual, mid],
   );
+
+  const changeMode = useCallback((m: AutoMode) => {
+    setAutoMode(m);
+    diapoRest.current = null;
+    target.current = null;
+  }, []);
 
   if (geo.list.length === 0) return null;
 
@@ -308,7 +379,7 @@ export default function HomeCarousel(): JSX.Element | null {
         onPointerLeave={endDrag}
         className="relative select-none touch-none cursor-grab overflow-hidden active:cursor-grabbing"
         style={{
-          height: H * (1 + EMPH_SCALE) + 8,
+          height: H_MAX * (1 + EMPH_SCALE) + 8,
           WebkitMaskImage:
             "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
           maskImage:
@@ -349,7 +420,7 @@ export default function HomeCarousel(): JSX.Element | null {
                     playsInline
                     preload="metadata"
                     onEnded={() => setActiveVideo(null)}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -357,7 +428,7 @@ export default function HomeCarousel(): JSX.Element | null {
                     src={item.url}
                     alt=""
                     draggable={false}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
                 )}
 
@@ -397,7 +468,55 @@ export default function HomeCarousel(): JSX.Element | null {
             <ChevronRight className="h-6 w-6" />
           </button>
 
-          <div className="mt-3 flex justify-center">
+          {/* Pastilles (une par contenu) */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            {geo.list.map((g, i) => (
+              <button
+                key={g.it.mediaAssetId}
+                type="button"
+                onClick={() => goToIndex(i)}
+                aria-label={`Aller au contenu ${i + 1}`}
+                aria-current={i === activeIndex}
+                className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                  i === activeIndex
+                    ? "bg-emerald-500"
+                    : "bg-gray-800 hover:bg-gray-600"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Toggle mode + play/pause */}
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <div className="inline-flex overflow-hidden rounded-full border border-black/10">
+              <button
+                type="button"
+                onClick={() => changeMode("continu")}
+                title="Défilement continu"
+                aria-pressed={autoMode === "continu"}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
+                  autoMode === "continu"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white/70 text-gray-700 hover:bg-white"
+                }`}
+              >
+                <InfinityIcon className="h-4 w-4" /> Continu
+              </button>
+              <button
+                type="button"
+                onClick={() => changeMode("diapo")}
+                title="Mode diaporama (3 s / contenu)"
+                aria-pressed={autoMode === "diapo"}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
+                  autoMode === "diapo"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white/70 text-gray-700 hover:bg-white"
+                }`}
+              >
+                <GalleryHorizontalEnd className="h-4 w-4" /> Diapo
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setPlaying((p) => !p)}
