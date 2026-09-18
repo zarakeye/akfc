@@ -1,3 +1,15 @@
+#!/usr/bin/env bash
+# AKFC — HomeCarousel v5 : hauteur responsive + toggle continu/diapo + pastilles.
+# Conserve : multi-copies, largeur live, interpolation par morceaux, couture SW,
+# vidéos (copie centrale joue au clic). Ajoute : H responsive (image entière,
+# object-contain), modes continu/diapo (3 s), pastilles cliquables.
+# Usage : bash apply-home-carousel-v5.sh
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+F="apps/web/src/features/app-shell/HomeCarousel.tsx"
+[ -f "$F" ] || { echo "ERREUR: $F introuvable." >&2; exit 1; }
+
+cat > "$F" <<'TSX'
 "use client";
 
 import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -532,3 +544,15 @@ export default function HomeCarousel(): JSX.Element | null {
     </section>
   );
 }
+TSX
+echo "  ok  HomeCarousel.tsx (v5)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY"; exit 0; fi
+if [ -z "$(git status --porcelain 2>/dev/null)" ]; then echo "aucune modification"; exit 0; fi
+TC=$(node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null && echo check || echo typecheck)
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ :"; grep -nE "error TS|Error:" /tmp/akfc_tc.log | head -20; tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"; git add -A
+git commit -m "feat(home): carrousel v5 — hauteur responsive, modes continu/diapo, pastilles cliquables" >/tmp/c.log 2>&1 && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
