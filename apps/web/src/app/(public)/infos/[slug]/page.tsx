@@ -4,6 +4,7 @@ import { prisma } from "@backend/prisma";
 import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
+import type { Metadata } from "next";
 
 /**
  * Route publique GÉNÉRIQUE des pages de contenu.
@@ -20,6 +21,24 @@ import { PageRenderer } from "@features/page-builder/PageRenderer";
  * pied de page y renvoie en permanence, et un lien de navigation qui tombe
  * sur une erreur est bien pire qu'une page qui s'annonce vide.
  */
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const page = await prisma.sitePage
+    .findUnique({ where: { slug }, select: { title: true } })
+    .catch(() => null);
+  const title = page?.title ?? "Information";
+  return {
+    title,
+    description: `${title} — AKFC, Association Kung-Fu Chambéry (Savoie).`,
+    alternates: { canonical: `/infos/${slug}` },
+  };
+}
+
 export default async function InfoPage({
   params,
 }: {

@@ -7,6 +7,7 @@ import { PageRenderer } from "@features/page-builder";
 import { parsePageContentV1 } from "@contracts/page";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
+import type { Metadata } from "next";
 
 /**
  * /about/instructeurs — les instructeurs TITULAIRES qui se sont présentés.
@@ -16,6 +17,8 @@ import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
  * rattachement a un enseignement ET bio non nulle — repris ici pour rester
  * un seul rendu serveur sans aller-retour tRPC.
  */
+export const metadata: Metadata = { title: "Nos instructeurs" };
+
 export default async function InstructeursPage(): Promise<JSX.Element> {
   const instructors = await prisma.user.findMany({
     where: {
