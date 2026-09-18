@@ -128,6 +128,41 @@ export function MediaTextEditor({
             }
           />
         </div>
+
+        {/* Option 3 : logo du site (référence dynamique, hors finder) */}
+        <div className="space-y-1">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            …ou le logo du site
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...block,
+                media:
+                  block.media && block.media.kind === "site-logo"
+                    ? undefined
+                    : {
+                        kind: "site-logo",
+                        caption:
+                          block.media && "caption" in block.media
+                            ? block.media.caption
+                            : undefined,
+                      },
+              })
+            }
+            className={
+              block.media && block.media.kind === "site-logo"
+                ? "rounded border border-foreground px-3 py-1 text-sm"
+                : "rounded border px-3 py-1 text-sm hover:bg-muted"
+            }
+          >
+            {block.media && block.media.kind === "site-logo"
+              ? "Logo du site sélectionné (cliquer pour retirer)"
+              : "Utiliser le logo du site"}
+          </button>
+        </div>
+
       </div>
 
       {/* Texte */}
