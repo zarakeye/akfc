@@ -83,12 +83,15 @@ export function FloatTextView({
   block,
   resolveMedia,
   resolveAvatar,
+  siteLogo,
 }: BlockViewProps<FloatTextBlockV1>) {
   const resolvedMedia = !block.media
     ? null
     : block.media.kind === "avatar"
       ? (resolveAvatar?.(block.media.userId) ?? null)
-      : resolveMedia(block.media.mediaId);
+      : block.media.kind === "site-logo"
+        ? (siteLogo ?? null)
+        : resolveMedia(block.media.mediaId);
   const mediaCaption = block.media?.caption;
 
   const hasText =

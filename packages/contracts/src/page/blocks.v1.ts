@@ -162,9 +162,20 @@ const avatarMediaItemSchema = z.object({
  * référence avatar. Discriminé par `kind`. L'ancien format (objet
  * `{ mediaId }` sans `kind`) est traité comme `library` par le preprocess.
  */
+/**
+ * Référence LOGIQUE au logo du site (pas au binaire). Unique — aucun id. Résolue
+ * dynamiquement au rendu via SiteSettings : si l'admin change le logo, toutes les
+ * pages qui l'utilisent suivent. Le logo vit hors finder (clé R2 système).
+ */
+const siteLogoMediaItemSchema = z.object({
+  kind: z.literal("site-logo"),
+  caption: z.string().optional(),
+});
+
 const mediaTextItemSchema = z.discriminatedUnion("kind", [
   libraryMediaItemSchema,
   avatarMediaItemSchema,
+  siteLogoMediaItemSchema,
 ]);
 
 const mediaTextBlockSchema = blockBaseSchema.extend({

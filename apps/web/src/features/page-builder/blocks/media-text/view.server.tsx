@@ -78,6 +78,7 @@ export function MediaTextView({
   block,
   resolveMedia,
   resolveAvatar,
+  siteLogo,
   mediaSide = "left",
 }: BlockViewProps<MediaTextBlockV1>) {
   // Média unique résolu (ou null). Selon le kind : média de bibliothèque
@@ -86,7 +87,9 @@ export function MediaTextView({
     ? null
     : block.media.kind === "avatar"
       ? (resolveAvatar?.(block.media.userId) ?? null)
-      : resolveMedia(block.media.mediaId);
+      : block.media.kind === "site-logo"
+        ? (siteLogo ?? null)
+        : resolveMedia(block.media.mediaId);
   const mediaCaption = block.media?.caption;
 
   // Texte : présent uniquement si content non vide.
