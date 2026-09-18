@@ -168,7 +168,7 @@ export default async function HomePage(): Promise<JSX.Element> {
 
   const siteSettings = await prisma.siteSettings.findUnique({
     where: { id: "site" },
-    select: { logoKey: true, updatedAt: true },
+    select: { logoKey: true, updatedAt: true, shortTitle: true },
   });
   const heroLogoSrc = siteSettings?.logoKey
     ? `/api/media/site-logo?v=${siteSettings.updatedAt.getTime()}`
@@ -191,13 +191,13 @@ export default async function HomePage(): Promise<JSX.Element> {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={heroLogoSrc}
-              alt="AKFC logo"
+              alt={`${siteSettings?.shortTitle ?? "AKFC"} logo`}
               className="h-full w-full object-contain"
             />
           ) : (
             <Image
               src="/AKFC_logo.svg"
-              alt="AKFC logo"
+              alt={`${siteSettings?.shortTitle ?? "AKFC"} logo`}
               width={250}
               height={250}
               priority

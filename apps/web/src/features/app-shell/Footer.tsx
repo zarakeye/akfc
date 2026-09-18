@@ -27,7 +27,7 @@ import { prisma } from "@backend/prisma";
  */
 export default async function Footer(): Promise<JSX.Element> {
   const settings = await prisma.siteSettings
-    .findUnique({ where: { id: "site" }, select: { logoKey: true, updatedAt: true } })
+    .findUnique({ where: { id: "site" }, select: { logoKey: true, updatedAt: true, shortTitle: true } })
     .catch(() => null);
   const logoSrc = settings?.logoKey
     ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
@@ -71,11 +71,11 @@ export default async function Footer(): Promise<JSX.Element> {
               {settings?.logoKey ? (
                 // logo custom (URL dynamique R2, hors pipeline next/image)
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoSrc} alt="AKFC" className="h-16 w-auto" />
+                <img src={logoSrc} alt={settings?.shortTitle ?? "AKFC"} className="h-16 w-auto" />
               ) : (
                 <Image
                   src="/AKFC_logo.svg"
-                  alt="AKFC"
+                  alt={settings?.shortTitle ?? "AKFC"}
                   width={80}
                   height={80}
                   className="h-16 w-auto"
@@ -201,7 +201,7 @@ export default async function Footer(): Promise<JSX.Element> {
       {/* ── Barre du bas ──────────────────────────────────────────────── */}
       <div className="border-t border-white/10">
         <div className="akfc-page flex flex-col items-center justify-between gap-3 py-6 text-xs text-white/60 sm:flex-row">
-          <p>© {year} AKFC. Tous droits réservés.</p>
+          <p>© {year} {settings?.shortTitle ?? "AKFC"}. Tous droits réservés.</p>
 
           {CLUB_INFO.legalMentions.length > 0 && (
             <p className="text-center">
