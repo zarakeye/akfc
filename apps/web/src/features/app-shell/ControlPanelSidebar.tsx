@@ -173,7 +173,7 @@ export default function ControlPanelSidebar(): JSX.Element {
                     return (
                       <li key={item.href}>
                         <div
-                          className={`flex items-stretch rounded ${
+                          className={`flex items-stretch rounded-r-full rounded-l-full ${
                             active ? "bg-white text-gray-900" : ""
                           }`}
                         >
