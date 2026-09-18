@@ -1,3 +1,48 @@
+#!/usr/bin/env bash
+# AKFC — Logo R2 (Volet 1, incrément 2 : UI Réglages).
+#  - backend : mutation clearLogo (rétablit le logo embarqué).
+#  - front : bloc « Logo du site » = upload SVG direct (uploadLogo), aperçu depuis
+#    logoUrl avec repli /AKFC_logo.svg (corrige le "Chargement…" permanent),
+#    bouton "Rétablir le logo embarqué". Supprime MediaPicker/resolveByPaths/Ids.
+# Usage : bash apply-logo-r2-2-ui.sh
+set -euo pipefail
+[ -f "package.json" ] || { echo "ERREUR: racine du repo." >&2; exit 1; }
+ROUTER="packages/backend/src/modules/siteSettings/router.ts"
+PAGE="apps/web/src/app/(admin)/dashboard/settings/page.tsx"
+for f in "$ROUTER" "$PAGE"; do [ -f "$f" ] || { echo "ERREUR: $f introuvable." >&2; exit 1; }; done
+
+# ---------- backend : clearLogo ----------
+python3 - "$ROUTER" <<'PY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); s = p.read_text(encoding="utf-8")
+if "clearLogo" in s:
+    print("  — router : clearLogo déjà présent"); sys.exit(0)
+anchor = "      return { success: true };\n    }),\n});"
+assert s.count(anchor) == 1, f"ancre fin uploadLogo ×{s.count(anchor)}"
+add = """      return { success: true };
+    }),
+
+  /**
+   * Rétablit le logo embarqué : efface la clé R2 (l'objet system/logo.svg reste
+   * mais n'est plus référencé — écrasé au prochain upload). Le consommateur
+   * retombe alors sur le SVG embarqué.
+   */
+  clearLogo: protectedProcedure.mutation(async ({ ctx }) => {
+    await assertAdmin(ctx);
+    await ctx.prisma.siteSettings.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID },
+      update: { logoKey: null },
+    });
+    return { success: true };
+  }),
+});"""
+p.write_text(s.replace(anchor, add), encoding="utf-8")
+print("  ok  router : clearLogo ajouté")
+PY
+
+# ---------- front : réécriture de la page settings ----------
+cat > "$PAGE" <<'TSX'
 "use client";
 
 import { useEffect, useRef, useState, type JSX } from "react";
@@ -251,3 +296,15 @@ export default function SiteSettingsPage(): JSX.Element {
     </div>
   );
 }
+TSX
+echo "  ok  page settings réécrite (upload logo SVG)"
+
+if [ "${AKFC_APPLY_ONLY:-0}" = "1" ]; then echo "APPLY_ONLY"; exit 0; fi
+echo "prisma generate…"; { pnpm --filter @workspace/backend exec prisma generate || pnpm exec prisma generate || npx --yes prisma generate; } > /tmp/akfc_gen.log 2>&1 || { echo "⚠ generate :"; tail -5 /tmp/akfc_gen.log; }
+TC=$(node -e "process.exit((require('./package.json').scripts||{}).check?0:1)" 2>/dev/null && echo check || echo typecheck)
+echo "typecheck via: pnpm $TC"
+if ! pnpm "$TC" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ typecheck ÉCHOUÉ :"; grep -nE "error TS|Error:" /tmp/akfc_tc.log | head -20; tail -4 /tmp/akfc_tc.log; exit 1
+fi
+echo "✅ typecheck OK"; git add -A
+git commit -m "feat(site-settings): UI logo — upload SVG direct (R2) + clearLogo, fin du picker finder" >/tmp/c.log 2>&1 && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
