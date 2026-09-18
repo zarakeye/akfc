@@ -8,6 +8,7 @@ import {
 import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,8 @@ export const dynamic = 'force-dynamic';
  * navigation qui tombe sur une erreur est bien pire qu'une page qui s'annonce
  * vide.
  */
+export const metadata: Metadata = { title: "L'association" };
+
 export default async function AboutPage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("association")) {
     return <UnderConstruction />;

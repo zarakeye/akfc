@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
 import HomeCarousel from "@features/app-shell/HomeCarousel";
+import { LocalBusinessJsonLd } from "@features/seo/LocalBusinessJsonLd";
 
 import { prisma } from "@backend/prisma";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@features/common/SummaryCards";
 import { parsePageContentV1 } from "@contracts/page";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
+import type { Metadata } from "next";
 
 /**
  * Page d'accueil PUBLIQUE du club (AKFC).
@@ -40,6 +42,22 @@ import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaB
  * `reactedByMe` est volontairement false côté serveur (pas de session en
  * RSC public) : les îlots le corrigent à l'hydratation pour les membres.
  */
+
+export const metadata: Metadata = {
+  title: {
+    absolute:
+      "AKFC — Association Kung-Fu Chambéry : taï-chi, kali & arts martiaux",
+  },
+  description:
+    "AKFC (Association Kung-Fu Chambéry) : cours de kung-fu, taï-chi, kali et arts martiaux chinois à la MJC de Chambéry (Savoie), pour tous publics.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "AKFC — Association Kung-Fu Chambéry",
+    description:
+      "Cours de kung-fu, taï-chi, kali et arts martiaux chinois à la MJC de Chambéry (Savoie).",
+  },
+};
+
 export default async function HomePage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("home")) {
     return <UnderConstruction />;
@@ -151,6 +169,7 @@ export default async function HomePage(): Promise<JSX.Element> {
   return (
     <div className="flex flex-col">
       {/* Hero — carousel (rien ne s'affiche tant qu'il n'y a pas de galerie "accueil") */}
+      <LocalBusinessJsonLd />
       <HomeCarousel />
 
       {/* Intro */}

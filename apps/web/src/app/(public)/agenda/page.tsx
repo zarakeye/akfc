@@ -9,6 +9,7 @@ import {
   SummaryCards,
   type SummaryCardData,
 } from "@features/common/SummaryCards";
+import type { Metadata } from "next";
 
 /**
  * « Agenda » — stages et événements à venir, mêlés et triés par date.
@@ -38,6 +39,8 @@ function formatDate(date: Date): string {
     year: "numeric",
   });
 }
+
+export const metadata: Metadata = { title: "Agenda" };
 
 export default async function AgendaPage(): Promise<JSX.Element> {
   const now = new Date();

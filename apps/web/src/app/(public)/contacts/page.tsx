@@ -9,6 +9,7 @@ import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { CLUB_INFO } from "@features/app-shell/clubInfo";
+import type { Metadata } from "next";
 
 /**
  * « Contacts ».
@@ -21,6 +22,8 @@ import { CLUB_INFO } from "@features/app-shell/clubInfo";
  * coordonnées de `clubInfo` s'affichent en complément dès qu'elles sont
  * renseignées, pour que la page dise déjà quelque chose avant d'être écrite.
  */
+export const metadata: Metadata = { title: "Contacts" };
+
 export default async function ContactsPage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("contacts")) {
     return <UnderConstruction />;
