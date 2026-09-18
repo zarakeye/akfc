@@ -5,6 +5,10 @@ import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
+import {
+  putSiteLogo,
+  SITE_LOGO_KEY,
+} from "@backend/modules/siteSettings/services/siteLogo.service";
 
 const SETTINGS_ID = "site";
 
@@ -41,7 +45,12 @@ export const siteSettingsRouter = router({
     // URL publique du logo, résolue serveur (le Header client la consomme).
     // Pas de filtre `published` : le logo est public par désignation (garde 3a).
     let logoUrl: string | null = null;
-    if (settings.logoAssetId) {
+    if (settings.logoKey) {
+      // Logo R2 hors finder : servi par la route dédiée, invalidé par ?v=.
+      const v = settings.updatedAt.getTime();
+      logoUrl = `/api/media/site-logo?v=${v}`;
+    } else if (settings.logoAssetId) {
+      // Rétro-compat : ancien logo choisi au picker (MediaAsset).
       const asset = await ctx.prisma.mediaAsset.findUnique({
         where: { id: settings.logoAssetId },
         select: { publicId: true, fullPath: true },
@@ -82,5 +91,38 @@ export const siteSettingsRouter = router({
         create: { id: SETTINGS_ID, ...data },
         update: data,
       });
+    }),
+
+  /**
+   * Upload du logo du site (admin). SVG ≤ 512 Ko, envoyé en base64 (petit
+   * fichier, pas de flux presign). Écrit R2 (system/logo.svg, hors finder) puis
+   * mémorise logoKey. Le logo n'est JAMAIS un MediaAsset.
+   */
+  uploadLogo: protectedProcedure
+    .input(
+      z.object({
+        dataBase64: z.string().min(1),
+        mimeType: z.literal("image/svg+xml"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertAdmin(ctx);
+      const buf = Buffer.from(input.dataBase64, "base64");
+      if (buf.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier vide." });
+      }
+      if (buf.length > 512 * 1024) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Logo trop volumineux (max 512 Ko).",
+        });
+      }
+      await putSiteLogo(buf, input.mimeType);
+      await ctx.prisma.siteSettings.upsert({
+        where: { id: SETTINGS_ID },
+        create: { id: SETTINGS_ID, logoKey: SITE_LOGO_KEY },
+        update: { logoKey: SITE_LOGO_KEY },
+      });
+      return { success: true };
     }),
 });
