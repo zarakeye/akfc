@@ -125,4 +125,19 @@ export const siteSettingsRouter = router({
       });
       return { success: true };
     }),
+
+  /**
+   * Rétablit le logo embarqué : efface la clé R2 (l'objet system/logo.svg reste
+   * mais n'est plus référencé — écrasé au prochain upload). Le consommateur
+   * retombe alors sur le SVG embarqué.
+   */
+  clearLogo: protectedProcedure.mutation(async ({ ctx }) => {
+    await assertAdmin(ctx);
+    await ctx.prisma.siteSettings.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID },
+      update: { logoKey: null },
+    });
+    return { success: true };
+  }),
 });

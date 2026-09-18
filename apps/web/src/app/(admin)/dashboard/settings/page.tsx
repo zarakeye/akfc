@@ -1,26 +1,31 @@
 "use client";
 
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 
-import { trpc, trpcClient } from "@/core/trpc/trpcClient";
-import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
-import { APP_ROOT } from "@config/app";
+import { trpc } from "@/core/trpc/trpcClient";
 
 /**
- * Réglages du site — identité éditable par un admin (ce qui, avant, vivait dans
- * le .env réservé au dev). Ne touche PAS aux identités techniques : la racine de
- * stockage (`APP_SHORT_NAME`), les URL de déploiement, SMTP et clés cloud
- * restent au .env.
+ * Réglages du site — identité éditable par un admin.
  *
- * Le logo réutilise les rouages de la carte de discipline : le picker rend des
- * CHEMINS, convertis en identifiant de MediaAsset (media.resolveByPaths) ; on
- * stocke l'id. L'aperçu se résout via media.resolveByIds.
+ * Le LOGO est autonome (comme l'avatar) : upload SVG direct vers R2 via
+ * siteSettings.uploadLogo (clé système hors finder). Aucune dépendance au
+ * MediaPicker ni aux résolutions d'assets. Aperçu depuis logoUrl, avec repli
+ * sur le SVG embarqué (`/AKFC_logo.svg`) — donc jamais de "chargement" bloqué.
+ * Le reste du formulaire (titres, accroche, e-mail, langue) est inchangé.
  */
+const EMBEDDED_LOGO = "/AKFC_logo.svg";
+const MAX_LOGO_BYTES = 512 * 1024;
+
 export default function SiteSettingsPage(): JSX.Element {
   const utils = trpc.useUtils();
   const settings = trpc.siteSettings.get.useQuery();
   const save = trpc.siteSettings.save.useMutation({
+    onSuccess: () => void utils.siteSettings.get.invalidate(),
+  });
+  const uploadLogo = trpc.siteSettings.uploadLogo.useMutation({
+    onSuccess: () => void utils.siteSettings.get.invalidate(),
+  });
+  const clearLogo = trpc.siteSettings.clearLogo.useMutation({
     onSuccess: () => void utils.siteSettings.get.invalidate(),
   });
 
@@ -30,11 +35,9 @@ export default function SiteSettingsPage(): JSX.Element {
   const [tagline, setTagline] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
   const [defaultLocale, setDefaultLocale] = useState("fr");
-  const [logoAssetId, setLogoAssetId] = useState<string | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // Initialisation UNE FOIS quand la requête a répondu (data peut être null si
-  // aucune ligne n'existe encore → on prépose les valeurs par défaut du modèle).
   useEffect(() => {
     if (initialized || !settings.isSuccess) return;
     const s = settings.data;
@@ -43,29 +46,39 @@ export default function SiteSettingsPage(): JSX.Element {
     setTagline(s?.tagline ?? "");
     setSupportEmail(s?.supportEmail ?? "");
     setDefaultLocale(s?.defaultLocale ?? "fr");
-    setLogoAssetId(s?.logoAssetId ?? null);
     setInitialized(true);
   }, [initialized, settings.isSuccess, settings.data]);
 
-  const savedLogoId = settings.data?.logoAssetId ?? null;
-  const savedLogoUrl = settings.data?.logoUrl ?? null;
+  const hasCustomLogo = Boolean(settings.data?.logoKey);
+  const logoSrc = settings.data?.logoUrl ?? EMBEDDED_LOGO;
 
-  // Aperçu : si l'id courant est le logo ENREGISTRÉ, on prend l'URL publique
-  // (autorisée même en brouillon via la garde) → un brouillon s'aperçoit
-  // comme le produit fini. Sinon (choix pas encore enregistré) : resolveByIds
-  // (published) le temps d'enregistrer.
-  const picked = trpc.media.resolveByIds.useQuery(
-    {
-      mediaIds:
-        logoAssetId && logoAssetId !== savedLogoId ? [logoAssetId] : [],
-    },
-    { enabled: logoAssetId !== null && logoAssetId !== savedLogoId },
-  );
-  const logoUrl = !logoAssetId
-    ? null
-    : logoAssetId === savedLogoId
-      ? savedLogoUrl
-      : (picked.data?.[logoAssetId]?.url ?? null);
+  const onPickLogo = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setLogoError(null);
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = ""; // permet de re-choisir le même fichier
+    if (!file) return;
+    const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+    if (!isSvg) {
+      setLogoError("Le logo doit être un fichier SVG.");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError("Logo trop volumineux (max 512 Ko).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = typeof reader.result === "string" ? reader.result : "";
+      const dataBase64 = res.split(",")[1] ?? "";
+      if (!dataBase64) {
+        setLogoError("Lecture du fichier impossible.");
+        return;
+      }
+      uploadLogo.mutate({ dataBase64, mimeType: "image/svg+xml" });
+    };
+    reader.onerror = () => setLogoError("Lecture du fichier impossible.");
+    reader.readAsDataURL(file);
+  };
 
   const canSave =
     shortTitle.trim() !== "" && longTitle.trim() !== "" && !save.isPending;
@@ -77,7 +90,6 @@ export default function SiteSettingsPage(): JSX.Element {
       tagline: tagline.trim() === "" ? null : tagline.trim(),
       supportEmail: supportEmail.trim() === "" ? "" : supportEmail.trim(),
       defaultLocale: defaultLocale.trim() || "fr",
-      logoAssetId,
     });
   };
 
@@ -162,44 +174,59 @@ export default function SiteSettingsPage(): JSX.Element {
           </span>
         </label>
 
-        {/* Logo */}
+        {/* Logo — upload SVG direct (R2, hors finder) */}
         <div className="space-y-2">
           <span className="block text-sm font-medium">Logo du site</span>
           <div className="flex items-start gap-3">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-300 bg-gray-50">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={logoUrl}
-                  alt="Logo du site"
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <span className="px-2 text-center text-xs text-gray-400">
-                  {logoAssetId ? "Chargement…" : "Logo embarqué"}
-                </span>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoSrc}
+                alt="Logo du site"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={() => setPickerOpen(true)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-100"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadLogo.isPending}
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 disabled:opacity-50"
               >
-                {logoAssetId ? "Remplacer le logo" : "Choisir un logo"}
+                {uploadLogo.isPending
+                  ? "Envoi…"
+                  : hasCustomLogo
+                    ? "Remplacer le logo"
+                    : "Importer un logo"}
               </button>
-              {logoAssetId && (
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/svg+xml,.svg"
+                onChange={onPickLogo}
+                className="hidden"
+              />
+              {hasCustomLogo && (
                 <button
                   type="button"
-                  onClick={() => setLogoAssetId(null)}
-                  className="text-left text-xs text-gray-500 hover:text-red-600"
+                  onClick={() => clearLogo.mutate()}
+                  disabled={clearLogo.isPending}
+                  className="text-left text-xs text-gray-500 hover:text-red-600 disabled:opacity-50"
                 >
-                  Rétablir le logo embarqué
+                  {clearLogo.isPending ? "…" : "Rétablir le logo embarqué"}
                 </button>
               )}
               <span className="text-xs text-gray-400">
-                Choisi dans la bibliothèque média.
+                Fichier SVG, 512 Ko max. Stocké hors bibliothèque média.
               </span>
+              {logoError && (
+                <span className="text-xs text-red-600">{logoError}</span>
+              )}
+              {uploadLogo.error && (
+                <span className="text-xs text-red-600">
+                  {uploadLogo.error.message}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -221,29 +248,6 @@ export default function SiteSettingsPage(): JSX.Element {
           )}
         </div>
       </div>
-
-      {pickerOpen && (
-        <MediaPicker
-          open
-          adapter={finderStorageAdapter}
-          rootPath={APP_ROOT}
-          onClose={() => setPickerOpen(false)}
-          onSubmit={(paths) => {
-            setPickerOpen(false);
-            if (paths.length === 0) return;
-            // Le picker rend des CHEMINS ; conversion en identifiant via la même
-            // route que le builder, pour une référence identique.
-            void trpcClient.media.resolveByPaths
-              .query({ appRoot: APP_ROOT, paths })
-              .then((resolved) => {
-                const found = Object.values(resolved).find(
-                  (id): id is string => id !== null,
-                );
-                if (found) setLogoAssetId(found);
-              });
-          }}
-        />
-      )}
     </div>
   );
 }
