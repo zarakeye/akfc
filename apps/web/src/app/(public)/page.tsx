@@ -166,6 +166,14 @@ export default async function HomePage(): Promise<JSX.Element> {
     where: { id: "home" },
   });
 
+  const siteSettings = await prisma.siteSettings.findUnique({
+    where: { id: "site" },
+    select: { logoKey: true, updatedAt: true },
+  });
+  const heroLogoSrc = siteSettings?.logoKey
+    ? `/api/media/site-logo?v=${siteSettings.updatedAt.getTime()}`
+    : "/AKFC_logo.svg";
+
   return (
     <div className="flex flex-col">
       {/* Hero — carousel (rien ne s'affiche tant qu'il n'y a pas de galerie "accueil") */}
@@ -178,14 +186,24 @@ export default async function HomePage(): Promise<JSX.Element> {
             Le disque (rounded-full + bg-black) fait cadre ; le padding donne
             l'impression que le logo s'inscrit dedans. */}
         <div className="mx-auto mb-6 h-80 w-80 rounded-full bg-black p-10 sm:h-56 sm:w-56 lg:h-80 lg:w-80">
-          <Image
-            src="/AKFC_logo.svg"
-            alt="AKFC logo"
-            width={250}
-            height={250}
-            priority
-            className="h-full w-full object-contain"
-          />
+          {siteSettings?.logoKey ? (
+            // logo custom (URL dynamique R2)
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={heroLogoSrc}
+              alt="AKFC logo"
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <Image
+              src="/AKFC_logo.svg"
+              alt="AKFC logo"
+              width={250}
+              height={250}
+              priority
+              className="h-full w-full object-contain"
+            />
+          )}
         </div>
         <h1 className="mb-4 text-4xl font-bold">
           {homeHero?.title ?? "Bienvenue à l'AKFC"}

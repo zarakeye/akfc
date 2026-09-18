@@ -5,6 +5,7 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide
 
 import { NAV_ENTRIES } from "@features/app-shell/navEntries";
 import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
+import { prisma } from "@backend/prisma";
 
 /**
  * Pied de page du site public.
@@ -24,7 +25,14 @@ import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
  * de `lg`. Les seuils suivent le moment où une colonne devient illisible,
  * pas une grille arbitraire.
  */
-export default function Footer(): JSX.Element {
+export default async function Footer(): Promise<JSX.Element> {
+  const settings = await prisma.siteSettings
+    .findUnique({ where: { id: "site" }, select: { logoKey: true, updatedAt: true } })
+    .catch(() => null);
+  const logoSrc = settings?.logoKey
+    ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
+    : "/AKFC_logo.svg";
+
   const year = new Date().getFullYear();
 
   // Navigation aplatie : les entrées d'un menu déroulant deviennent des
@@ -60,13 +68,19 @@ export default function Footer(): JSX.Element {
           {/* ── Identité ────────────────────────────────────────────── */}
           <div className="flex flex-col gap-4">
             <Link href="/" className="inline-flex">
-              <Image
-                src="/AKFC_logo.svg"
-                alt="AKFC"
-                width={80}
-                height={80}
-                className="h-16 w-auto"
-              />
+              {settings?.logoKey ? (
+                // logo custom (URL dynamique R2, hors pipeline next/image)
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoSrc} alt="AKFC" className="h-16 w-auto" />
+              ) : (
+                <Image
+                  src="/AKFC_logo.svg"
+                  alt="AKFC"
+                  width={80}
+                  height={80}
+                  className="h-16 w-auto"
+                />
+              )}
             </Link>
             {CLUB_INFO.tagline !== "" && (
               <p className="text-sm text-white/70">{CLUB_INFO.tagline}</p>
