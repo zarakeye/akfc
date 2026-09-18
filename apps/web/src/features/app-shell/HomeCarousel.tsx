@@ -33,6 +33,7 @@ type Carousel = {
 const H_MAX = 320;
 const H_MIN = 170;
 const NET = 0.84; // fraction "nette" (hors fondus) de la largeur
+const H_RATIO = 1.5; // ratio de référence pour la hauteur (évite qu'un panorama écrase le ruban)
 const GAP = 22;
 const MIN_RATIO = 0.4;
 const MAX_RATIO = 2.5;
@@ -97,17 +98,10 @@ export default function HomeCarousel(): JSX.Element | null {
 
   // Hauteur responsive : la tuile la plus large (au scale central) tient dans
   // la zone nette (hors fondus).
-  const ratioMax = useMemo(
-    () => (items.length ? Math.max(...items.map(ratioOf)) : 1),
-    [items],
-  );
   const H = useMemo(
     () =>
-      Math.max(
-        H_MIN,
-        Math.min(H_MAX, (NET * cw) / (ratioMax * (1 + EMPH_SCALE))),
-      ),
-    [cw, ratioMax],
+      Math.max(H_MIN, Math.min(H_MAX, (NET * cw) / (H_RATIO * (1 + EMPH_SCALE)))),
+    [cw],
   );
 
   const geo = useMemo<{ list: Geo[]; W: number }>(() => {
@@ -167,14 +161,21 @@ export default function HomeCarousel(): JSX.Element | null {
     const pstar = ((offset.current % W) + W) % W;
 
     const s = new Array<number>(n);
+    const emphN = new Array<number>(n);
     const nlin = new Array<number>(n);
+    const maxScaledW = NET * cwl; // largeur nette : le scale ne doit jamais la dépasser
     for (let i = 0; i < n; i++) {
       let d = list[i].center - pstar;
       if (d > W / 2) d -= W;
       if (d < -W / 2) d += W;
       nlin[i] = d;
       const t = Math.max(0, 1 - Math.abs(d) / range);
-      s[i] = 1 + EMPH_SCALE * Math.pow(t, EMPH_POW);
+      const e = Math.pow(t, EMPH_POW);
+      emphN[i] = e;
+      // Scale voulu (grossissement central) BORNÉ pour tenir dans la zone nette :
+      // une image large sur petit écran voit son scale plafonné (voire < 1 →
+      // elle RÉDUIT) au lieu de déborder. Ratio conservé, image entière.
+      s[i] = Math.min(1 + EMPH_SCALE * e, maxScaledW / list[i].w);
     }
     nlinRef.current = nlin;
 
@@ -205,9 +206,8 @@ export default function HomeCarousel(): JSX.Element | null {
       let cx0 = half + (sc[i] - pstarScaled);
       const k = Math.round((half - cx0) / SW);
       cx0 += k * SW;
-      const emph = (s[i] - 1) / EMPH_SCALE;
-      const bright = 0.5 + 0.5 * emph;
-      const z = String(Math.round(emph * 100));
+      const bright = 0.5 + 0.5 * emphN[i];
+      const z = String(Math.round(emphN[i] * 100));
       for (let c = 0; c < copies; c++) {
         const el = nodeRefs.current.get(`${list[i].it.mediaAssetId}#${c}`);
         if (!el) continue;
@@ -379,7 +379,7 @@ export default function HomeCarousel(): JSX.Element | null {
         onPointerLeave={endDrag}
         className="relative select-none touch-none cursor-grab overflow-hidden active:cursor-grabbing"
         style={{
-          height: H_MAX * (1 + EMPH_SCALE) + 8,
+          height: H * (1 + EMPH_SCALE) + 8,
           WebkitMaskImage:
             "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
           maskImage:
