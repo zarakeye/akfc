@@ -1439,6 +1439,9 @@ model SiteSettings {
   /// Référence vers un MediaAsset (choisi au picker). null = logo embarqué.
   /// L'asset devra être servi publiquement (garde média à élargir côté conso).
   logoAssetId   String?
+  /// Clé R2 RÉSERVÉE du logo (ex. "system/logo.svg"), hors arborescence
+  /// finder : le logo n'est PAS un MediaAsset. Servi via /api/media/site-logo.
+  logoKey       String?
   updatedAt     DateTime @updatedAt
 }
 
