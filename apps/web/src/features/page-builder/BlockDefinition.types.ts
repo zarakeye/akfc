@@ -121,6 +121,12 @@ export interface BlockViewProps<TBlock extends PageBlockV1> {
    */
   resolveAvatar?: (userId: string) => ResolvedMedia | null;
   /**
+   * Logo du site résolu (unique). Fourni par le PageRenderer depuis
+   * SiteSettings (repli embarqué). Utilisé par les items { kind: "site-logo" }
+   * des blocs media-text / float-text.
+   */
+  siteLogo?: ResolvedMedia | null;
+  /**
    * Côté d'affichage des médias, calculé par le PageRenderer selon la
    * POSITION du bloc parmi les blocs `media-text` (alternance automatique :
    * 1er → "left", 2e → "right", etc.). Optionnel — seul le bloc media-text

@@ -65,7 +65,13 @@ export function MediaTextPreview({
   const m = block.media ?? null;
   // Clé de dépendance stable selon le kind.
   const mediaKey =
-    m == null ? null : m.kind === "avatar" ? `avatar:${m.userId}` : m.mediaId;
+    m == null
+      ? null
+      : m.kind === "avatar"
+        ? `avatar:${m.userId}`
+        : m.kind === "site-logo"
+          ? "site-logo"
+          : m.mediaId;
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +108,25 @@ export function MediaTextPreview({
             setMedia(null);
             setResolution("missing");
           }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setMedia(null);
+          setResolution("error");
+        });
+    } else if (m.kind === "site-logo") {
+      // Logo du site : URL publique via siteSettings.get (repli embarqué).
+      void trpcClient.siteSettings.get
+        .query()
+        .then((s) => {
+          if (cancelled) return;
+          setMedia({
+            url: s?.logoUrl ?? "/AKFC_logo.svg",
+            kind: "image",
+            posterUrl: null,
+            caption: m.caption,
+          });
+          setResolution("ready");
         })
         .catch(() => {
           if (cancelled) return;

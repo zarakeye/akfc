@@ -100,6 +100,24 @@ export async function PageRenderer({ content }: PageRendererProps) {
   const resolveAvatar = (userId: string): ResolvedMedia | null =>
     avatarMap[userId] ?? null;
 
+  // Logo du site (unique, hors finder) : résolu une fois, repli embarqué.
+  const siteSettingsRow = await prisma.siteSettings.findUnique({
+    where: { id: "site" },
+    select: { logoKey: true, updatedAt: true },
+  });
+  const siteLogo: ResolvedMedia | null = {
+    url: siteSettingsRow?.logoKey
+      ? `/api/media/site-logo?v=${siteSettingsRow.updatedAt.getTime()}`
+      : "/AKFC_logo.svg",
+    kind: "image",
+    posterUrl: null,
+    mimeType: "image/svg+xml",
+    fileName: "logo.svg",
+    width: null,
+    height: null,
+    duration: null,
+  };
+
   if (content.blocks.length === 0) {
     return null;
   }
@@ -137,6 +155,7 @@ export async function PageRenderer({ content }: PageRendererProps) {
             block={block}
             resolveMedia={resolveMedia}
             resolveAvatar={resolveAvatar}
+            siteLogo={siteLogo}
             mediaSide={sideFor(block.id)}
           />
         );
