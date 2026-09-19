@@ -37,10 +37,21 @@ export default async function PublicLayout({
     take: 20,
   });
 
+  // Identité (logo + libellé) lue côté serveur → passée au Header en valeur
+  // initiale, pour un logo présent dès le 1er rendu (plus de flash/latence).
+  const siteSettings = await prisma.siteSettings.findUnique({
+    where: { id: "site" },
+    select: { logoKey: true, updatedAt: true, shortTitle: true },
+  });
+  const initialLogoUrl = siteSettings?.logoKey
+    ? `/api/media/site-logo?v=${siteSettings.updatedAt.getTime()}`
+    : null;
+  const initialBrand = siteSettings?.shortTitle ?? "AKFC";
+
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <div className="sticky top-0 z-50 bg-background">
-        <Header />
+        <Header initialLogoUrl={initialLogoUrl} initialBrand={initialBrand} />
         <FirstLoginRedirect />
       </div>
       <BreakingNewsShell news={activeNews} />

@@ -34,14 +34,22 @@ import { trpc } from "@trpc/trpcClient";
  * Logo à gauche, burger à droite : c'est la convention, le logo garde sa
  * place du desktop, et le pouce couvre mieux la moitié droite de l'écran.
  */
-export default function Header() {
+export default function Header({
+  initialLogoUrl = null,
+  initialBrand = "AKFC",
+}: {
+  initialLogoUrl?: string | null;
+  initialBrand?: string;
+} = {}) {
   const user = useSessionStore(state => state.session?.user);
   const pathname = usePathname();
 
   // Identité éditable (logo + libellé) — lecture publique, repli embarqué.
   const siteSettings = trpc.siteSettings.get.useQuery();
-  const logoUrl = siteSettings.data?.logoUrl ?? null;
-  const brand = siteSettings.data?.shortTitle ?? "AKFC";
+  // Valeur initiale (préchargée par le layout serveur) → logo présent dès le
+  // 1er rendu ; la query ne fait ensuite que rafraîchir en arrière-plan.
+  const logoUrl = siteSettings.data?.logoUrl ?? initialLogoUrl;
+  const brand = siteSettings.data?.shortTitle ?? initialBrand;
 
   // Menu déroulant ouvert dans la BARRE (survol) et dans le PANNEAU (appui).
   // Deux états distincts : les deux rendus coexistent dans l'arbre, et un

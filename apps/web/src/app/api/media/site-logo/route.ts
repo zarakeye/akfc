@@ -28,7 +28,11 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     });
     return NextResponse.redirect(signedUrl, {
       status: 302,
-      headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" },
+      headers: {
+        // Le SVG change rarement et l'URL porte ?v=updatedAt (busting au
+        // changement) → cache long : instantané après la 1re visite.
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
     });
   } catch (err) {
     console.error("[api/media/site-logo] presign failed", err);
