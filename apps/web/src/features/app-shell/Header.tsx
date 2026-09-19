@@ -100,7 +100,7 @@ export default function Header({
             <img
               src={logoUrl}
               alt={`${brand} logo`}
-              className="h-12 w-auto xl:h-16 2xl:h-25"
+              className="h-15 w-auto xl:h-16 2xl:h-25"
             />
           ) : (
             <Image
@@ -109,7 +109,7 @@ export default function Header({
               width={100}
               height={100}
               priority
-              className="h-12 w-auto xl:h-16 2xl:h-25"
+              className="h-15 w-auto xl:h-16 2xl:h-25"
             />
           )}
         </div>
