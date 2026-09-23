@@ -11,7 +11,7 @@ import type { Metadata } from "next";
  *
  * Entête de métadonnées (école, classification, famille, origine) puis le
  * composite `description` rendu via PageRenderer (blocs du builder, dont le
- * bloc media-text). Accessible depuis le menu « Nos activités » du header.
+ * bloc media-text). Accessible depuis le menu « Nos disciplines » du header.
  */
 
 export async function generateMetadata({

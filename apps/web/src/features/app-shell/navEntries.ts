@@ -5,7 +5,7 @@
  * de `lg`) et le panneau du menu burger (en dessous). Écrire la liste des
  * liens deux fois garantirait qu'on en ajoute un d'un seul côté.
  *
- * `activities` est une entrée à part parce que « Nos activités » n'est pas
+ * `activities` est une entrée à part parce que « Nos disciplines » n'est pas
  * une liste figée : il se construit sur les familles et disciplines chargées
  * depuis la base. C'est un composant, pas des données.
  */
@@ -61,3 +61,15 @@ export const NAV_GLOW =
  * il devenait ingérable.
  */
 export const NAV_ACTIVE = "font-bold underline underline-offset-4";
+
+/**
+ * Item de SOUS-MENU correspondant à la page courante — sans gras.
+ * Barre (déroulant clair) : fond émeraude + liseré gauche en ombre interne
+ * (pas de bordure : le texte ne se décale pas). Panneau (fond noir) : texte émeraude.
+ *
+ * ⚠ Ne jamais poser NAV_ACTIVE sur un CONTENEUR qui englobe un déroulant : la
+ * graisse s'hérite à tous ses items. L'état actif d'un menu se pose sur son libellé.
+ */
+export const NAV_SUB_ACTIVE_BAR =
+  "bg-emerald-100 text-emerald-800 shadow-[inset_4px_0_0_#059669] hover:bg-emerald-100";
+export const NAV_SUB_ACTIVE_PANEL = "text-emerald-400";

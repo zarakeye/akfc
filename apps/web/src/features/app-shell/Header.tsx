@@ -13,6 +13,8 @@ import { useSessionStore } from "@lib/stores/useSessionStore";
 import OurActivitiesMenu from "@features/app-shell/OurActivitiesMenu";
 import {
   NAV_ACTIVE,
+  NAV_SUB_ACTIVE_BAR,
+  NAV_SUB_ACTIVE_PANEL,
   NAV_ENTRIES,
   NAV_GLOW,
   type NavEntry,
@@ -28,7 +30,7 @@ import { trpc } from "@trpc/trpcClient";
  *
  * Le burger ne règle pas qu'un problème de place. Les menus déroulants de la
  * barre s'ouvrent au SURVOL, geste qui n'existe pas sur un écran tactile :
- * « Nos activités », « Qui sommes-nous ? » et « Documentation » y étaient
+ * « Nos disciplines », « Qui sommes-nous ? » et « Documentation » y étaient
  * inaccessibles. Le panneau les ouvre à l'APPUI.
  *
  * Logo à gauche, burger à droite : c'est la convention, le logo garde sa
@@ -140,9 +142,9 @@ export default function Header({
               key={entry.label}
               onMouseEnter={() => setBarMenu(entry.label)}
               onMouseLeave={() => setBarMenu(null)}
-              className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW} ${isActive(entry) ? NAV_ACTIVE : ""}`}
+              className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW}`}
             >
-              <span className="whitespace-nowrap text-lg font-bold">{entry.label}</span>
+              <span className={`whitespace-nowrap text-lg font-bold ${isActive(entry) ? NAV_ACTIVE : ""}`}>{entry.label}</span>
               <Image
                 src="/chevron-white.svg"
                 alt=""
@@ -158,7 +160,8 @@ export default function Header({
                   <Link
                     key={child.href}
                     href={child.href}
-                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+                    aria-current={pathname === child.href ? "page" : undefined}
+                    className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
                   >
                     {child.label}
                   </Link>
@@ -226,7 +229,7 @@ export default function Header({
               changé » mais « l'utilisateur a touché un lien, il en a fini
               avec le menu » — et cet événement-là était disponible.
               
-              Délégation plutôt qu'un `onClick` par lien : « Nos activités »
+              Délégation plutôt qu'un `onClick` par lien : « Nos disciplines »
               est un composant à part dont les liens viennent de la base, et
               il faudrait lui passer un rappel de fermeture, comme à tout
               menu qu'on ajoutera ensuite. Le test porte sur les liens seuls,
@@ -292,7 +295,8 @@ export default function Header({
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="block py-2 text-white/80"
+                            aria-current={pathname === child.href ? "page" : undefined}
+                            className={`block py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_PANEL : "text-white/80"}`}
                           >
                             {child.label}
                           </Link>
