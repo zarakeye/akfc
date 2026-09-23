@@ -37,7 +37,7 @@ export default async function Footer(): Promise<JSX.Element> {
 
   // Navigation aplatie : les entrées d'un menu déroulant deviennent des
   // liens ordinaires — un footer ne se déroule pas. Les entrées réservées
-  // aux personnes connectées sont écartées, et « Nos activités » est
+  // aux personnes connectées sont écartées, et « Nos disciplines » est
   // remplacé par le lien vers la liste des disciplines, sa version statique.
   const navLinks: { href: string; label: string }[] = [
     { href: "/disciplines", label: "Nos disciplines" },

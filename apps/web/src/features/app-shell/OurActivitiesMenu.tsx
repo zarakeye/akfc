@@ -2,10 +2,16 @@
 import { JSX, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import {
+  NAV_ACTIVE,
+  NAV_SUB_ACTIVE_BAR,
+  NAV_SUB_ACTIVE_PANEL,
+} from "@features/app-shell/navEntries";
 import { trpc } from "@trpc/trpcClient";
 
 /**
- * Menu public « Nos activités ».
+ * Menu public « Nos disciplines ».
  *
  * En tête : deux accès directs aux listes publiques — « Tous les stages »
  * (`/seminars`) et « Tous les évènements » (`/events`). En dessous, les
@@ -29,11 +35,20 @@ export default function OurActivitiesMenu({
   variant?: "bar" | "panel";
 } = {}): JSX.Element {
   const [hover, setHover] = useState<boolean>(false);
+  // Page active : le libellé s'active sur toute page discipline, l'item sur SA discipline.
+  const pathname = usePathname();
+  const onDisciplines = pathname.startsWith("/disciplines/");
+  const isCurrent = (slug: string): boolean => pathname === `/disciplines/${slug}`;
   // Fetch des familles et disciplines pour construire le menu. On ne fait rien côté erreur : on n'affiche rien.
   const { data: familiesData } = trpc.disciplineFamily.getAll.useQuery();
   const { data: disciplinesData } = trpc.discipline.getAllForMenu.useQuery();
   const families = familiesData ?? [];
-  const disciplines = disciplinesData ?? [];
+  // Une discipline sans slug n'a pas de page : son lien mènerait à /disciplines/null.
+  // (Les admins reçoivent aussi les brouillons.) Le type guard rend `slug` non nul.
+  type MenuDiscipline = NonNullable<typeof disciplinesData>[number];
+  const disciplines = (disciplinesData ?? []).filter(
+    (d): d is MenuDiscipline & { slug: string } => d.slug !== null,
+  );
   
   // On regroupe les disciplines par famille, triées par `sortOrder` pour les familles et par nom pour les disciplines. Les familles sans discipline sont filtrées.
   const groups = [...families]
@@ -66,9 +81,9 @@ export default function OurActivitiesMenu({
           type="button"
           onClick={() => setHover(!hover)}
           aria-expanded={hover}
-          className="flex items-center justify-between py-3 text-left text-lg text-white"
+          className={`flex items-center justify-between py-3 text-left text-lg text-white ${onDisciplines ? NAV_ACTIVE : ""}`}
         >
-          <span>Nos activités</span>
+          <span>Nos disciplines</span>
           <Image
             src="/chevron-white.svg"
             alt=""
@@ -93,7 +108,8 @@ export default function OurActivitiesMenu({
                   <Link
                     key={d.id}
                     href={`/disciplines/${d.slug}`}
-                    className="block py-2 text-white/80"
+                    aria-current={isCurrent(d.slug) ? "page" : undefined}
+                    className={`block py-2 ${isCurrent(d.slug) ? NAV_SUB_ACTIVE_PANEL : "text-white/80"}`}
                   >
                     {d.name}
                   </Link>
@@ -112,7 +128,7 @@ export default function OurActivitiesMenu({
       onMouseLeave={() => setHover(false)}
       className="relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
     >
-      <span className="text-lg font-bold">Nos activités</span>
+      <span className={`text-lg font-bold ${onDisciplines ? NAV_ACTIVE : ""}`}>Nos disciplines</span>
       <Image
         src="/chevron-white.svg"
         alt=""
@@ -154,7 +170,8 @@ export default function OurActivitiesMenu({
                     <li key={d.id}>
                       <Link
                         href={`/disciplines/${d.slug}`}
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+                        aria-current={isCurrent(d.slug) ? "page" : undefined}
+                        className={`block px-4 py-2 ${isCurrent(d.slug) ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
                       >
                         {d.name}
                       </Link>
