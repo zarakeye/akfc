@@ -5,14 +5,18 @@
  * du contenu à publication propre et NE figurent PAS ici : elles ne sont pas
  * gatées.
  *
- * `key` = clé stockée dans `PageVisibility` ; `path` = route PUBLIQUE (préfixe
- * couvrant les sous-routes). Source unique partagée middleware + centre de
- * contrôle « Pages éditoriales ».
+ * `key` = clé stockée dans `PageVisibility` ; `path` = route PUBLIQUE, en
+ * correspondance EXACTE. Les sous-routes ne sont rattachées que si l'entrée
+ * déclare `includeSubroutes: true` — sinon une page consommatrice imbriquée
+ * (ex. /about/instructeurs) hériterait à tort de l'état de sa page parente.
+ * Source unique partagée avec le centre de contrôle « Pages éditoriales ».
  */
 export type PageRegistryEntry = {
   key: string;
   label: string;
   path: string;
+  /** Rattacher aussi les sous-routes (path + "/..."). Défaut : false. */
+  includeSubroutes?: boolean;
 };
 
 export const PAGE_REGISTRY: readonly PageRegistryEntry[] = [
@@ -32,7 +36,11 @@ export function pageKeyForPath(pathname: string): string | null {
       if (pathname === "/") return entry.key;
       continue;
     }
-    if (pathname === entry.path || pathname.startsWith(entry.path + "/")) {
+    if (
+      pathname === entry.path ||
+      (entry.includeSubroutes === true &&
+        pathname.startsWith(entry.path + "/"))
+    ) {
       return entry.key;
     }
   }
