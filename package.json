@@ -12,7 +12,7 @@
     "typecheck": "pnpm --filter web typecheck",
     "lint": "pnpm --filter web lint",
     "postinstall": "pnpm prisma generate",
-    "check": "pnpm clean && pnpm --filter backend typecheck && pnpm typecheck"
+    "check": "node scripts/check-next-conventions.mjs && pnpm clean && pnpm --filter backend typecheck && pnpm typecheck"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
