@@ -9,7 +9,7 @@ import { pageKeyForPath } from "@/config/pageRegistry";
 
 /**
  * Badge flottant « Page non publiée » — visible uniquement d'un ADMIN sur une
- * page éditoriale en brouillon (le middleware laisse l'admin voir la vraie page ;
+ * page éditoriale en brouillon (isEditorialPageGated laisse l'admin voir la vraie page ;
  * ce badge lui rappelle qu'elle n'est pas encore publique).
  */
 export function DraftPageBadge(): JSX.Element | null {
