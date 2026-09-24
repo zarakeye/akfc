@@ -1432,119 +1432,202 @@ model SiteStyle {
   updatedAt DateTime @updatedAt
 }
 
+/// Diffusion d'un MemberDocument.
 enum DocumentAudience {
+  /// Tous les membres, y compris ceux qui adhèrent après la publication.
+  /// Les groupes et destinataires éventuellement présents sont ignorés.
   ALL_MEMBERS
+  /// Diffusion ciblée : membres DIRECTS des groupes visés (MemberDocumentGroup)
+  /// et/ou membres désignés nommément (MemberDocumentRecipient).
   SPECIFIC
 }
 
 /// Document du club mis à disposition des membres (compte rendu d'AG, carte
-/// d'affiliation…). Surcouche « publié aux membres » posée sur un fichier du
-/// finder : référence le MediaAsset, ne duplique ni son chemin ni son URL.
+/// d'affiliation…), avec un statut de lecture par membre.
+/// Surcouche posée sur un fichier du finder : référence le MediaAsset sans
+/// dupliquer ni son chemin ni son URL. Un fichier ne se publie qu'une fois
+/// (mediaAssetId unique).
 model MemberDocument {
+  /// Identifiant CUID.
   id           String     @id @default(cuid())
+  /// Fichier publié (unique).
   mediaAssetId String     @unique
+  /// Fichier (1–1, MediaAsset.memberDocument). Supprimer le fichier supprime
+  /// la publication (CASCADE).
   mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
 
-  /// Titre affiché ; à défaut, le displayName de l'asset.
+  /// Titre affiché. À défaut : nom affiché du fichier, puis son nom d'origine.
   title String?
 
-  /// ALL_MEMBERS = diffusé à tous (nouveaux membres inclus d'office).
-  /// SPECIFIC    = ciblé : groupes (`groups`, appartenance résolue dynamiquement)
-  /// ET/OU membres ad hoc (`recipients`). Un doc peut viser plusieurs groupes.
+  /// Diffusion : à tous, ou ciblée (voir DocumentAudience).
   audience DocumentAudience @default(ALL_MEMBERS)
 
+  /// Date de publication. Ordonne les listes (plus récent d'abord) et borne les
+  /// documents « non lus » d'un membre (voir User.memberSince).
   publishedAt   DateTime @default(now())
+  /// Membre qui a publié. null si son compte a été supprimé.
   publishedById String?
+  /// Éditeur (N–1, User.memberDocumentsPublished). Détaché à la suppression du
+  /// membre (SET NULL).
   publishedBy   User?    @relation("MemberDocumentPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
 
+  /// Membres désignés nommément (1–N, MemberDocumentRecipient.memberDocument).
+  /// Pris en compte en SPECIFIC uniquement.
   recipients MemberDocumentRecipient[]
+  /// Groupes visés (1–N, MemberDocumentGroup.memberDocument). Pris en compte en
+  /// SPECIFIC uniquement.
   groups     MemberDocumentGroup[]
+  /// Statuts de lecture par membre (1–N, DocumentReceipt.memberDocument).
   receipts   DocumentReceipt[]
 
   @@index([audience])
 }
 
-/// Destinataire explicite d'un MemberDocument SPECIFIC. Vide pour ALL_MEMBERS.
+/// Membre désigné nommément comme destinataire d'un document ciblé (SPECIFIC).
 model MemberDocumentRecipient {
+  /// Identifiant CUID.
   id               String         @id @default(cuid())
+  /// Document.
   memberDocumentId String
+  /// Document (N–1, MemberDocument.recipients). Lien effacé avec le document.
   memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  /// Destinataire.
   userId           String
+  /// Destinataire (N–1, User.memberDocumentRecipients). Lien effacé avec le membre.
   user             User           @relation("MemberDocumentRecipient", fields: [userId], references: [id], onDelete: Cascade)
 
+  // Un destinataire au plus une fois par document.
   @@unique([memberDocumentId, userId])
   @@index([userId])
 }
 
-/// Statut de lecture par membre. Absence de ligne = jamais ouvert.
-/// `readAt` null = marqué non lu (garde le signal de la cloche).
+/// Statut de lecture d'un document par un membre.
+/// Pas de ligne, ou `readAt` null → non lu : le document est signalé par la
+/// cloche des documents (s'il est publié depuis l'année d'adhésion du membre).
 model DocumentReceipt {
+  /// Identifiant CUID.
   id               String         @id @default(cuid())
+  /// Document.
   memberDocumentId String
+  /// Document (N–1, MemberDocument.receipts). Statut effacé avec le document.
   memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  /// Membre lecteur.
   userId           String
+  /// Membre (N–1, User.documentReceipts). Statut effacé avec le membre.
   user             User           @relation("DocumentReceiptUser", fields: [userId], references: [id], onDelete: Cascade)
+  /// Date de lecture : posée à l'ouverture de l'aperçu (markRead), remise à
+  /// null quand le membre re-marque le document non lu (markUnread).
   readAt           DateTime?
 
+  // Un statut par membre et par document.
   @@unique([memberDocumentId, userId])
   @@index([userId])
 }
 
-/// Droit d'un membre dans l'espace d'un groupe collaboratif.
+/// Droit d'un membre sur l'espace d'un groupe COLLABORATIF
+/// (MemberGroupMembership.access). Sans effet sur la diffusion des documents.
 enum MemberGroupAccess {
+  /// Consultation seule de l'espace (assertCanReadPath).
   VIEWER
+  /// Consultation, écriture et mise à la corbeille dans l'espace
+  /// (assertCanWriteGroupSpace, assertCanTrashPaths).
   EDITOR
 }
 
-/// Groupe de membres (ex. « Bureau »), géré dans le panneau de contrôle. Sert
-/// de liste de diffusion : l'appartenance est résolue DYNAMIQUEMENT, donc un
-/// membre ajouté hérite des documents déjà publiés au groupe.
+/// Groupe de membres (ex. « Bureau »), géré dans le panneau de contrôle.
+///
+/// Deux usages, cumulables :
+/// - DIFFUSION de documents : un MemberDocument ciblé peut viser le groupe.
+///   L'appartenance est résolue à la lecture : un membre ajouté reçoit aussi
+///   les documents déjà publiés. Seuls les membres DIRECTS sont concernés (la
+///   hiérarchie n'intervient pas).
+/// - ESPACE COLLABORATIF (`isCollaborative`) : un dossier du finder réservé au
+///   groupe, sous collaborative-group-spaces/{slug}-{id}, avec un droit par
+///   membre (MemberGroupMembership.access).
+///
+/// Hiérarchie (`parentGroup`) : un membre d'un groupe obtient, sur les espaces
+/// de TOUS ses groupes descendants, le même niveau d'accès (le plus élevé
+/// l'emporte : EDITOR > VIEWER). Les administrateurs passent outre ces droits.
+///
+/// Suppression (deleteGroupWithSpace) : refusée pour le groupe Administrateurs ;
+/// exige un espace vide ; les sous-groupes sont d'abord rattachés au parent du
+/// groupe supprimé. Adhésions et ciblages de documents disparaissent avec lui.
 model MemberGroup {
+  /// Identifiant CUID. Sert aussi de suffixe au dossier de l'espace (stable
+  /// quand le groupe est renommé).
   id          String   @id @default(cuid())
+  /// Nom affiché.
   name        String
+  /// Description libre, affichée dans le panneau de contrôle.
   description String?
-  /// Diffusion (défaut) vs espace collaboratif (dossier finder dédié + droits).
+  /// Vrai : le groupe dispose d'un espace collaboratif dans le finder.
+  /// Faux (défaut) : simple liste de diffusion de documents.
   isCollaborative Boolean @default(false)
-  /// Groupe « Administrateurs » UNIQUE (le plus privilégié) : son espace
-  /// deviendra l'ex-dossier « general ». Singleton garanti par ensureAdminGroup.
+  /// Groupe « Administrateurs » : ses membres sont les administrateurs du site.
+  /// Créé au démarrage s'il manque (ensureAdminGroup), toujours collaboratif,
+  /// non supprimable. Unique par convention : aucune contrainte en base
+  /// n'empêche un second groupe marqué ; c'est ensureAdminGroup qui s'en charge.
   isAdminGroup Boolean @default(false)
+  /// Création du groupe.
   createdAt   DateTime @default(now())
 
-  /// Inclusion / imbrication (arbre) : le groupe parent. Ses membres
-  /// héritent de l'accès aux espaces des groupes descendants (voir 3b).
+  /// Groupe parent ; null = groupe racine. Un parent ne peut pas être un
+  /// descendant du groupe (cycle refusé par memberGroup.setParentGroup).
   parentGroupId String?
+  /// Parent (N–1, MemberGroup.childGroups). Filet de sécurité : si le parent
+  /// disparaît sans passer par deleteGroupWithSpace, le groupe devient racine
+  /// (SET NULL).
   parentGroup   MemberGroup?  @relation("GroupHierarchy", fields: [parentGroupId], references: [id], onDelete: SetNull)
+  /// Sous-groupes (1–N, MemberGroup.parentGroup).
   childGroups   MemberGroup[] @relation("GroupHierarchy")
 
+  /// Adhésions (1–N, MemberGroupMembership.group). Effacées avec le groupe.
   memberships MemberGroupMembership[]
+  /// Documents qui ciblent ce groupe (1–N, MemberDocumentGroup.group). Les liens
+  /// sont effacés avec le groupe ; les documents restent.
   documents   MemberDocumentGroup[]
 
   @@index([parentGroupId])
 }
 
-/// Appartenance d'un membre à un groupe (un membre peut être dans plusieurs).
+/// Appartenance d'un membre à un groupe. Un membre peut appartenir à plusieurs
+/// groupes, une seule fois par groupe.
 model MemberGroupMembership {
+  /// Identifiant CUID.
   id      String      @id @default(cuid())
+  /// Groupe.
   groupId String
+  /// Groupe (N–1, MemberGroup.memberships). Adhésion effacée avec le groupe.
   group   MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// Membre.
   userId  String
+  /// Membre (N–1, User.memberGroupMemberships). Adhésion effacée avec le membre.
   user    User        @relation("MemberGroupMembership", fields: [userId], references: [id], onDelete: Cascade)
-  /// Droit dans l'espace d'un groupe COLLABORATIF : EDITOR = dépôt/suppression,
-  /// VIEWER = consultation seule. Sans effet sur une liste de diffusion.
+  /// Droit du membre sur l'espace du groupe, si celui-ci est COLLABORATIF (voir
+  /// MemberGroupAccess). Sans effet sur la diffusion des documents.
   access  MemberGroupAccess @default(EDITOR)
 
+  // Un membre au plus une fois par groupe.
   @@unique([groupId, userId])
   @@index([userId])
 }
 
-/// Groupe visé par un MemberDocument ciblé. Un document peut en viser plusieurs.
+/// Groupe visé par un document ciblé (SPECIFIC). Un document peut viser
+/// plusieurs groupes, chacun une seule fois. Seuls les membres DIRECTS du
+/// groupe reçoivent le document : la hiérarchie des groupes n'intervient pas.
 model MemberDocumentGroup {
+  /// Identifiant CUID.
   id               String         @id @default(cuid())
+  /// Document.
   memberDocumentId String
+  /// Document (N–1, MemberDocument.groups). Lien effacé avec le document.
   memberDocument   MemberDocument @relation(fields: [memberDocumentId], references: [id], onDelete: Cascade)
+  /// Groupe visé.
   groupId          String
+  /// Groupe (N–1, MemberGroup.documents). Lien effacé avec le groupe.
   group            MemberGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
+  // Un groupe au plus une fois par document.
   @@unique([memberDocumentId, groupId])
   @@index([groupId])
 }
