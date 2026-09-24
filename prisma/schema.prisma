@@ -14,103 +14,231 @@ datasource db {
 // USER & AUTH
 // ============================================================================
 
+/// Membre de l'association, et compte de connexion au site.
+///
+/// Création : par un administrateur (`user.create`), avec un mot de passe généré
+/// côté serveur et envoyé par e-mail ; le membre est inscrit d'office dans un
+/// groupe (accès EDITOR). Être administrateur ne dépend d'aucun champ de ce
+/// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
+///
+/// Suppression d'un membre (actions réelles en base) :
+/// - BLOQUÉE (RESTRICT) tant qu'il est auteur de posts, commentaires, réactions
+///   ou votes, instructeur principal d'une discipline, animateur principal d'un
+///   séminaire, organisateur d'un évènement, uploader d'un média, ou qu'il
+///   possède une ligne Preferences ;
+/// - EFFACE avec lui (CASCADE) : sessions, jetons de réinitialisation, adhésions
+///   aux groupes, destinations et accusés de lecture de documents, liens de
+///   co-animation de séminaires ;
+/// - DÉTACHE (SET NULL) : créneaux dont il est l'instructeur attitré, documents
+///   dont il est l'éditeur, entrées du journal d'audit.
 model User {
+  /// Identifiant CUID.
   id                    String               @id @default(cuid())
+  /// Prénom. Facultatif : le nom affiché retombe sur `pseudo`, puis sur `email`
+  /// (formatUserName).
   firstName             String?
+  /// Nom de famille. Facultatif (même repli que `firstName`).
   lastName              String?
+  /// Adresse e-mail, unique : c'est l'identifiant de connexion.
   email                 String               @unique
+  /// ⚠ Inutilisé : jamais lu, seulement écrit à `false` par les services de
+  /// restauration de médias. Vestige probable d'une ancienne librairie
+  /// d'authentification. Candidat à suppression.
   emailVerified         Boolean              @default(false)
+  /// Empreinte bcrypt (coût 12) du mot de passe, jamais le mot de passe en clair.
+  /// Exception : l'utilisateur technique « Legacy Import » (services de
+  /// restauration) porte une valeur non bcrypt et ne se connecte pas.
   password              String
+  /// Date de naissance, saisie par le membre dans son profil. Facultative.
   birthDate             DateTime?
+  /// Numéro de téléphone, saisi par le membre dans son profil. Facultatif.
   phone                 String?
+  /// ⚠ Jamais écrit par le code : seulement lu en repli quand `avatar` est vide
+  /// (portraitUrl). Vestige probable d'une ancienne librairie
+  /// d'authentification ; le portrait réel est `avatar`. Candidat à suppression.
   image                 String?
+  /// Date d'adhésion. Borne les documents « non lus » : seuls comptent ceux
+  /// publiés depuis le 1er janvier de l'année d'adhésion. null → pas de borne.
+  /// ⚠ Aucun écran ni code ne l'écrit : il ne se renseigne qu'en base.
   memberSince           DateTime?
+  /// Vrai tant que le membre n'a pas enregistré son profil : FirstLoginRedirect
+  /// le ramène sur /profil/edit. Repasse à false à l'enregistrement du profil et
+  /// à la réinitialisation du mot de passe par e-mail. N'impose PAS de changer
+  /// le mot de passe temporaire reçu à la création.
   isFirstLogin          Boolean              @default(true)
+  /// Création du compte.
   createdAt             DateTime             @default(now())
+  /// Dernière modification de la ligne (tenue à jour par Prisma).
   updatedAt             DateTime             @default(now()) @updatedAt
+  /// Présentation libre du profil, en texte brut. Distincte de `instructorBio`.
   aboutMe               String?
+  /// Nom d'usage, affiché quand prénom et nom manquent.
   pseudo                String?
+  /// Portrait : publicId Cloudinary de l'image recadrée. Servi publiquement par
+  /// /api/media/public/avatar/[userId] : l'URL porte l'id du membre, jamais le
+  /// publicId. null → pas de portrait.
   avatar                String?
 
-  // Présentation publique d'un instructeur titulaire (page /about/instructeurs).
-  // `instructorBio` = contenu de builder (JSON), meme format que les
-  // descriptions de discipline. `instructorOrder` fixe l'ordre d'affichage ;
-  // repli sur le nom quand il est nul. NB : distinct de `aboutMe`, qui reste
-  // le texte simple du profil.
+  /// Présentation publique d'instructeur (page /about/instructeurs) : contenu de
+  /// builder (PageContentV1, JSON), même format que les descriptions de
+  /// discipline. Le membre n'apparaît sur la page que si ce champ est renseigné
+  /// ET qu'il instruit une discipline ou un créneau, ou anime un séminaire.
   instructorBio         Json?
+  /// Rang d'affichage sur /about/instructeurs, croissant. null → après les
+  /// membres classés. Égalités départagées par nom puis prénom.
   instructorOrder       Int?
 
-  // --- Auth & profil
+  // ── Authentification ─────────────────────────────────────────────────────
+  /// Préférences d'affichage (0..1, Preferences.user ; clé portée par
+  /// Preferences.userId). Pas encore branchées. Une ligne existante bloque la
+  /// suppression du membre (RESTRICT).
   preferences           Preferences?
+  /// Sessions de connexion ouvertes (1–N, Session.user). Effacées avec le membre.
   sessions              Session[]
+  /// Jetons de réinitialisation de mot de passe (1–N, PasswordResetToken.user).
+  /// Effacés avec le membre.
   passwordResetTokens   PasswordResetToken[]
 
-  // --- Audit
+  // ── Audit (⚠ modèle inutilisé) ────────────────────────────────────────────
+  /// Entrées dont il est l'auteur (1–N, AuditLog.actor). Détachées à sa suppression.
   auditLogsAsActor      AuditLog[]           @relation("AuditActor")
+  /// Entrées dont il est la cible (1–N, AuditLog.targetUser). Détachées à sa
+  /// suppression.
   auditLogsAsTargetUser AuditLog[]           @relation("AuditTargetUser")
 
-  // --- Posts/comments/likes
+  // ── Vie sociale ──────────────────────────────────────────────────────────
+  /// Posts rédigés (1–N, Post.author). Bloquent la suppression du membre.
   posts                 Post[]
+  /// Commentaires rédigés (1–N, Comment.author). Bloquent la suppression du membre.
   comments              Comment[]
-  reactions Reaction[]        // ← AJOUT
-  pollVotes PollVote[]        // ← AJOUT
-  
-  // --- Domaine métier (nouvelles relations)
-  disciplinesAsInstructor   Discipline[]  @relation("DisciplineInstructor")
-  coursesAsInstructor       Course[]      @relation("CourseInstructor")
-  seminarsAsPrimaryAnimator Seminar[]     @relation("SeminarPrimaryAnimator")
-  seminarsAsAnimator        Seminar[]     @relation("SeminarAnimators")
-  uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
-  eventsAsOrganizer         Event[]       @relation("EventOrganizer")  // ← AJOUT
+  /// Réactions données (1–N, Reaction.user). Bloquent la suppression du membre.
+  reactions Reaction[]
+  /// Votes aux sondages (1–N, PollVote.user). Bloquent la suppression du membre.
+  pollVotes PollVote[]
 
-  // --- Documents membres
+  // ── Enseignement et médias ───────────────────────────────────────────────
+  /// Disciplines dont il est l'instructeur principal (1–N, Discipline.instructor).
+  /// Bloquent sa suppression.
+  disciplinesAsInstructor   Discipline[]  @relation("DisciplineInstructor")
+  /// Créneaux dont il est l'instructeur attitré (1–N, Course.instructor). À sa
+  /// suppression, le créneau retombe sur l'instructeur principal de la discipline.
+  coursesAsInstructor       Course[]      @relation("CourseInstructor")
+  /// Séminaires dont il est l'animateur principal (1–N, Seminar.primaryAnimator).
+  /// Bloquent sa suppression.
+  seminarsAsPrimaryAnimator Seminar[]     @relation("SeminarPrimaryAnimator")
+  /// Séminaires qu'il co-anime (N–N, Seminar.animators, table _SeminarAnimators).
+  /// Liens effacés avec lui.
+  seminarsAsAnimator        Seminar[]     @relation("SeminarAnimators")
+  /// Médias qu'il a téléversés (1–N, MediaAsset.uploader). Bloquent sa suppression.
+  uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
+  /// Évènements qu'il organise (1–N, Event.organizer). Bloquent sa suppression.
+  eventsAsOrganizer         Event[]       @relation("EventOrganizer")
+
+  // ── Documents membres et groupes ─────────────────────────────────────────
+  /// Documents qu'il a publiés (1–N, MemberDocument.publishedBy). À sa
+  /// suppression, les documents restent, sans éditeur.
   memberDocumentsPublished  MemberDocument[]          @relation("MemberDocumentPublisher")
+  /// Documents dont il est destinataire (1–N, MemberDocumentRecipient.user).
+  /// Effacés avec lui.
   memberDocumentRecipients  MemberDocumentRecipient[] @relation("MemberDocumentRecipient")
+  /// Accusés de lecture de documents (1–N, DocumentReceipt.user). Effacés avec lui.
   documentReceipts          DocumentReceipt[]         @relation("DocumentReceiptUser")
+  /// Adhésions aux groupes de membres (1–N, MemberGroupMembership.user).
+  /// Effacées avec lui.
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
 }
 
+/// Préférences d'affichage d'un membre (une ligne au plus par membre).
+/// Fonctionnalité PRÉVUE mais pas encore branchée : aucun code ne lit ni
+/// n'écrit ce modèle pour l'instant. D'autres préférences sont envisagées
+/// (par exemple : photo réelle ou avatar « persona »).
+/// ⚠ Au branchement : passer la relation `user` en onDelete: Cascade, sinon
+/// la ligne de préférences bloquera la suppression du membre (RESTRICT).
 model Preferences {
+  /// Identifiant auto-incrémenté.
   id           Int     @id @default(autoincrement())
+  /// Montrer son adresse e-mail sur son profil.
   displayEmail Boolean @default(false)
+  /// Montrer son numéro de téléphone sur son profil.
   displayPhone Boolean @default(false)
+  /// Thème sombre de l'interface.
   darkMode     Boolean @default(true)
+  /// Membre concerné (unique : une ligne au plus par membre).
   userId       String  @unique
+  /// Texte libre (usage à préciser).
   description  String?
+  /// Membre (1–1, User.preferences). RESTRICT : une ligne existante bloque la
+  /// suppression du membre (voir l'avertissement du modèle).
   user         User    @relation(fields: [userId], references: [id])
 }
 
+/// Session de connexion, stockée en base. Le cookie ne porte qu'un JWT contenant
+/// l'`id` de cette ligne : supprimer la ligne déconnecte l'appareil à sa
+/// prochaine requête (déconnexion ; changement de mot de passe, qui supprime les
+/// sessions des autres appareils).
 model Session {
+  /// Identifiant CUID, embarqué dans le JWT du cookie de session.
   id        String   @id @default(cuid())
+  /// Membre connecté.
   userId    String
+  /// Ouverture de la session (connexion).
   createdAt DateTime @default(now())
+  /// Fin de validité : ouverture + 7 jours (SESSION_DURATION_MS). Une session
+  /// expirée est refusée, et supprimée au moment où elle est présentée.
   expiresAt DateTime
+  /// Membre (N–1, User.sessions). Session effacée avec le membre (CASCADE).
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Jeton de réinitialisation de mot de passe (« mot de passe oublié »).
+/// Le jeton en clair (32 octets aléatoires, 64 caractères hexadécimaux) n'existe
+/// que dans le lien envoyé par e-mail ; seule son empreinte SHA-256 est stockée.
+/// Usage unique, valable 30 minutes.
 model PasswordResetToken {
+  /// Identifiant CUID.
   id        String    @id @default(cuid())
+  /// Émission. Sert aussi d'anti-rafale : une nouvelle demande moins de 2 minutes
+  /// après la précédente n'envoie rien (RESET_TOKEN_COOLDOWN_MS).
   createdAt DateTime  @default(now())
+  /// Émission + 30 minutes (RESET_TOKEN_TTL_MS). Au-delà, le jeton est refusé.
   expiresAt DateTime
+  /// Date d'utilisation. Non null → jeton consommé, refusé ensuite.
   usedAt    DateTime?
 
+  /// Empreinte SHA-256 (hexadécimale) du jeton, unique. Le lien est vérifié en
+  /// hachant le jeton reçu.
   tokenHash String @unique
+  /// Membre qui a demandé la réinitialisation.
   userId    String
+  /// Membre (N–1, User.passwordResetTokens). Jeton effacé avec le membre (CASCADE).
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// Adresse IP à l'origine de la demande. Enregistrée, jamais lue par le code.
   requestIp String?
+  /// Navigateur à l'origine de la demande. Enregistré, jamais lu par le code.
   userAgent String?
 
+  // Recherche du dernier jeton d'un membre (anti-rafale).
   @@index([userId, createdAt])
+  // Aucune purge des jetons expirés n'existe : cet index ne sert pas encore.
   @@index([expiresAt])
 }
 
+/// Jeton de vérification générique (identifiant, valeur, expiration).
+/// ⚠ Inutilisé : aucun code ne lit ni n'écrit ce modèle. Vestige probable d'une
+/// ancienne librairie d'authentification. Candidat à suppression.
 model Verification {
+  /// Identifiant, fourni par l'appelant (aucune valeur par défaut).
   id         String   @id
+  /// Ce qui est vérifié (par exemple une adresse e-mail).
   identifier String
+  /// Valeur secrète attendue.
   value      String
+  /// Fin de validité.
   expiresAt  DateTime
+  /// Création.
   createdAt  DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt  DateTime @default(now()) @updatedAt
 }
 
@@ -118,19 +246,31 @@ model Verification {
 // AUDIT
 // ============================================================================
 
+/// Journal d'audit des actions sensibles.
+/// ⚠ Inutilisé : aucun code n'écrit ni ne lit ce journal. Candidat à suppression.
+/// Les commentaires de champ décrivent l'intention apparente du modèle.
 model AuditLog {
+  /// Identifiant CUID.
   id        String   @id @default(cuid())
+  /// Date de l'action.
   createdAt DateTime @default(now())
 
+  /// Membre auteur de l'action. null si inconnu ou compte supprimé (SET NULL).
   actorUserId String?
+  /// Copie de l'e-mail de l'auteur, lisible même après suppression de son compte.
   actorEmail  String?
 
+  /// Nature de l'action.
   action AuditAction
 
+  /// Membre visé par l'action. null si sans objet ou compte supprimé (SET NULL).
   targetUserId String?
+  /// Détails libres de l'action (JSON).
   meta         Json?
 
+  /// Auteur (N–1, User.auditLogsAsActor). Détaché à la suppression du membre.
   actor      User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  /// Cible (N–1, User.auditLogsAsTargetUser). Détachée à la suppression du membre.
   targetUser User? @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@index([actorUserId])
@@ -138,7 +278,10 @@ model AuditLog {
   @@index([action, createdAt])
 }
 
+/// Actions consignées dans AuditLog. ⚠ Inutilisé (voir AuditLog).
 enum AuditAction {
+  /// Changement de rôle d'un membre. Notion caduque : User n'a plus de rôle,
+  /// l'administration passe par le groupe « Administrateurs ».
   USER_ROLE_CHANGED
 }
 
