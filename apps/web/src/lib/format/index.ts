@@ -24,6 +24,17 @@ export const AUDIENCE_LABELS: Record<string, string> = {
   ALL_AGES: "Tous publics",
 };
 
+/** `Day` → libellé affichable (majuscule initiale). */
+export const DAY_LABELS: Record<string, string> = {
+  MONDAY: "Lundi",
+  TUESDAY: "Mardi",
+  WEDNESDAY: "Mercredi",
+  THURSDAY: "Jeudi",
+  FRIDAY: "Vendredi",
+  SATURDAY: "Samedi",
+  SUNDAY: "Dimanche",
+};
+
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Utilisateurs                                                           */
 /* ─────────────────────────────────────────────────────────────────────── */

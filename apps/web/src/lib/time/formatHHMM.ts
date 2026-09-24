@@ -16,3 +16,15 @@ export function formatHHMM(hhmm: number): string {
   const m = hhmm % 100;
   return `${h}h${String(m).padStart(2, "0")}`;
 }
+
+/**
+ * Variante compacte : les minutes nulles sont omises.
+ *
+ *   formatHHMMCompact(1800)  // "18h"
+ *   formatHHMMCompact(1830)  // "18h30"
+ */
+export function formatHHMMCompact(hhmm: number): string {
+  const h = Math.floor(hhmm / 100);
+  const m = hhmm % 100;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
