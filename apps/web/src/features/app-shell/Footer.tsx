@@ -5,6 +5,7 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide
 
 import { NAV_ENTRIES } from "@features/app-shell/navEntries";
 import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
+import { buildFooterSchedule } from "@features/app-shell/buildFooterSchedule";
 import { prisma } from "@backend/prisma";
 
 /**
@@ -26,6 +27,23 @@ import { prisma } from "@backend/prisma";
  * pas une grille arbitraire.
  */
 export default async function Footer(): Promise<JSX.Element> {
+  // Créneaux des disciplines PUBLIÉES pour la colonne « Horaires ». Le footer est rendu
+  // sur TOUTES les pages : une erreur ici ne doit jamais casser le site → repli statique.
+  const now = new Date();
+  const schedule = buildFooterSchedule(
+    await prisma.course
+      .findMany({
+        where: { discipline: { publicationDate: { not: null, lte: now } } },
+        select: {
+          day: true,
+          beginTime: true,
+          endTime: true,
+          audience: true,
+          discipline: { select: { id: true, name: true, slug: true } },
+        },
+      })
+      .catch(() => []),
+  );
   const settings = await prisma.siteSettings
     .findUnique({ where: { id: "site" }, select: { logoKey: true, updatedAt: true, shortTitle: true } })
     .catch(() => null);
@@ -174,7 +192,32 @@ export default async function Footer(): Promise<JSX.Element> {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/50">
               Horaires
             </h2>
-            {CLUB_INFO.hours.length > 0 ? (
+            {schedule.length > 0 ? (
+              <ul className="flex flex-col gap-3 text-sm text-white/80">
+                {schedule.map((g) => (
+                  <li key={g.id}>
+                    {g.slug ? (
+                      <Link
+                        href={`/disciplines/${g.slug}`}
+                        className="font-bold text-white transition-colors hover:text-emerald-300"
+                      >
+                        {g.name}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-white">{g.name}</span>
+                    )}
+                    <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 pl-3">
+                      {g.days.map((d) => (
+                        <div key={d.day} className="contents">
+                          <dt>{d.label} :</dt>
+                          <dd>{d.slots}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </li>
+                ))}
+              </ul>
+            ) : CLUB_INFO.hours.length > 0 ? (
               <ul className="flex flex-col gap-2 text-sm text-white/80">
                 {CLUB_INFO.hours.map((line) => (
                   <li key={line} className="flex gap-2">
