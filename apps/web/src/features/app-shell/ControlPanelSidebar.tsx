@@ -128,7 +128,7 @@ export default function ControlPanelSidebar(): JSX.Element {
         { label: "Réglages du site", href: "/dashboard/settings" },
         { label: "Laboratoire de rendu", href: "/dashboard/design-lab" },
         { label: "Doc admin", href: "/docs/admin" },
-        { label: "Dev doc", href: "/docs/dev" },
+        { label: "Doc dev", href: "/docs/dev" },
       ],
     },
   ];
