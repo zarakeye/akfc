@@ -7,10 +7,7 @@ import type { TrashEntryDTO } from "@contracts/trash/trash.dto";
 
 import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@backend/modules/trash/utils";
 import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
-import {
-  mediaKindFromCloudinaryResourceType,
-  type MediaKind,
-} from "@backend/modules/cloudinary/utils/mediaKind.utils";
+import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
 import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
@@ -34,7 +31,7 @@ import {
  *   - displayName (nom affiché dans le bin)
  *   - storageRoot (prefix réel caché)
  *   - sizeBytes (somme bytes du sous-arbre / fichier)
- *   - cloudinaryCreatedAt (max created_at)
+ *   - providerCreatedAt (max created_at)
  *
  * IMPORTANT :
  * - Aucune action ne doit toucher à `.trash` en dehors du trashRouter.
@@ -141,6 +138,22 @@ async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string)
  * Sonde Cloudinary d'abord (getAssetInfo), repli R2 (r2GetInfo). Throw si ni
  * l'un ni l'autre ne connaît le chemin.
  */
+/**
+ * Type MIME d'un fichier connu en base. Seul moyen de reconnaître l'audio :
+ * R2 n'expose que taille et date, et Cloudinary range l'audio parmi les vidéos.
+ */
+async function knownMimeType(
+  prisma: PrismaClient,
+  appRoot: string,
+  path: string,
+): Promise<string | null> {
+  const asset = await prisma.mediaAsset.findFirst({
+    where: { appRoot, OR: [{ fullPath: path }, { publicId: path }] },
+    select: { mimeType: true },
+  });
+  return asset?.mimeType ?? null;
+}
+
 async function resolveFileBackend(
   path: string,
 ): Promise<
@@ -189,7 +202,7 @@ async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullP
 
 function computeAggregateFromAssets(assets: Array<{ bytes?: number; created_at?: string }>): {
   sizeBytes?: bigint;
-  cloudinaryCreatedAt?: Date;
+  providerCreatedAt?: Date;
 } {
   let total = 0;
   let hasBytes = false;
@@ -211,7 +224,7 @@ function computeAggregateFromAssets(assets: Array<{ bytes?: number; created_at?:
 
   return {
     sizeBytes: hasBytes ? BigInt(total) : undefined,
-    cloudinaryCreatedAt: maxCreated ?? undefined,
+    providerCreatedAt: maxCreated ?? undefined,
   };
 }
 
@@ -304,7 +317,7 @@ export async function trashToBin(params: {
 
     // 1) Calcul des agrégats (sizeBytes + createdAt) et du mediaKind
     let sizeBytes: bigint | undefined;
-    let cloudinaryCreatedAt: Date | undefined;
+    let providerCreatedAt: Date | undefined;
     let mediaKind: MediaKind | undefined;
 
     if (source.kind === "file") {
@@ -312,24 +325,26 @@ export async function trashToBin(params: {
       if (resolved.backend === "cloudinary") {
         const info = resolved.info;
         sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
-        cloudinaryCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
-        // mediaKind: dérivé du resource_type Cloudinary (image|video|raw → image|video|document)
-        mediaKind = mediaKindFromCloudinaryResourceType(info.resource_type);
+        providerCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
+        mediaKind = deriveMediaKind(
+          info.resource_type ?? null,
+          await knownMimeType(prisma, appRoot, normalized),
+        );
       } else {
         // R2 : PDF/documents. Pas de resource_type Cloudinary.
         sizeBytes =
           typeof resolved.info.bytes === "number"
             ? BigInt(resolved.info.bytes)
             : undefined;
-        cloudinaryCreatedAt = resolved.info.createdAt;
-        mediaKind = "document";
+        providerCreatedAt = resolved.info.createdAt;
+        mediaKind = deriveMediaKind(null, await knownMimeType(prisma, appRoot, normalized));
       }
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix (ex: cours1 vs cours10)
       const assets = await listAssetsByPrefix(`${normalized}/`);
       const agg = computeAggregateFromAssets(assets);
       sizeBytes = agg.sizeBytes;
-      cloudinaryCreatedAt = agg.cloudinaryCreatedAt;
+      providerCreatedAt = agg.providerCreatedAt;
       // mediaKind reste undefined pour un folder (pas de type unique applicable)
     }
 
@@ -345,7 +360,7 @@ export async function trashToBin(params: {
         storageRoot,
         trashedAt: new Date(),
         sizeBytes,
-        cloudinaryCreatedAt,
+        providerCreatedAt,
         mediaKind,
       },
     });
@@ -399,7 +414,7 @@ export async function trashToBin(params: {
       previousPathShort: buildPreviousPathShort(normalized),
       trashedAt: new Date().toISOString(),
       sizeBytes: bigIntToSafeNumber(sizeBytes),
-      createdAt: cloudinaryCreatedAt ? cloudinaryCreatedAt.toISOString() : undefined,
+      createdAt: providerCreatedAt ? providerCreatedAt.toISOString() : undefined,
       mediaKind,
     });
   }

@@ -83,6 +83,8 @@ model User {
   /// builder (PageContentV1, JSON), même format que les descriptions de
   /// discipline. Le membre n'apparaît sur la page que si ce champ est renseigné
   /// ET qu'il instruit une discipline ou un créneau, ou anime un séminaire.
+  /// Les fichiers de la bibliothèque qu'elle utilise sont déclarés dans
+  /// PageMediaReference (INSTRUCTOR_BIO), ce qui permet de les servir.
   instructorBio         Json?
   /// Rang d'affichage sur /about/instructeurs, croissant. null → après les
   /// membres classés. Égalités départagées par nom puis prénom.
@@ -1056,7 +1058,7 @@ model MediaAsset {
 // FOLDERS & TRASH
 // ============================================================================
 
-/// Registre des dossiers du finder (table « CloudinaryFolder », nom historique).
+/// Registre des dossiers du finder.
 /// Les stockages objet ne connaissent pas les dossiers vides : ce registre les
 /// matérialise pour qu'un dossier s'affiche même sans fichier. Alimenté au
 /// parcours de l'arborescence, aux déplacements et aux restaurations depuis la
@@ -1081,11 +1083,9 @@ model Folder {
   @@unique([appRoot, fullPath])
   @@index([appRoot])
   @@index([appRoot, status])
-  @@map("CloudinaryFolder")
 }
 
-/// Statut d'un dossier du registre (type « CloudinaryFolderStatus » en base,
-/// nom historique). Déduit du chemin par statusFromPath.
+/// Statut d'un dossier du registre, déduit du chemin par statusFromPath.
 enum FolderStatus {
   /// Chemin sous …/pending/…, ou sans segment de statut reconnu.
   pending
@@ -1093,8 +1093,6 @@ enum FolderStatus {
   published
   /// Chemin sous …/bin/… (corbeille).
   bin
-
-  @@map("CloudinaryFolderStatus")
 }
 
 /// Élément (fichier ou dossier) placé dans la corbeille, avec sa provenance
@@ -1135,12 +1133,13 @@ model TrashEntry {
   /// Taille en octets : celle du fichier, ou le total des fichiers contenus
   /// pour un dossier.
   sizeBytes           BigInt?
-  /// Date de création chez le fournisseur ; pour un dossier, la plus récente
-  /// des fichiers contenus. ⚠ Nom trompeur : renseignée aussi pour R2.
-  cloudinaryCreatedAt DateTime?
+  /// Date de création chez le fournisseur (Cloudinary ou R2) ; pour un
+  /// dossier, la plus récente des fichiers contenus.
+  providerCreatedAt DateTime?
 
-  /// Nature du fichier : image, video ou document. null pour un dossier.
-  /// ⚠ Tout fichier R2 est classé « document », y compris l'audio.
+  /// Nature du fichier : image, video, audio ou document, déduite de son type
+  /// MIME (deriveMediaKind). null pour un dossier. Les entrées antérieures
+  /// classent l'audio en « document ».
   mediaKind String?
 
   @@index([appRoot])
@@ -1310,10 +1309,9 @@ model PollVote {
 /// Lien entre un contenu de builder et un fichier de la médiathèque qu'il
 /// utilise. Tenu à jour dans la même transaction que l'enregistrement du
 /// contenu (syncPageMediaReferences), par les routeurs des pages de site,
-/// disciplines, posts, évènements, cours et séminaires ; supprimer le contenu
-/// supprime ses liens.
-/// ⚠ Les bios d'instructeur (User.instructorBio) ne sont PAS synchronisées :
-/// un fichier utilisé seulement là n'est ni protégé, ni servi aux visiteurs.
+/// disciplines, posts, évènements, cours, séminaires et bios d'instructeur ;
+/// supprimer le contenu supprime ses liens. Les liens des bios existantes
+/// sont rattrapés au démarrage (ensureInstructorBioMediaReferences).
 ///
 /// Deux rôles :
 /// - PROTECTION : tant qu'un lien existe, le fichier ne peut pas être supprimé
@@ -1346,17 +1344,16 @@ model PageMediaReference {
   @@index([pageType, pageId])
 }
 
-/// Type de contenu référenceur dans PageMediaReference.
-/// Les valeurs STAGE_* désignent les séminaires (Seminar) : elles datent de
-/// l'ancien nom du modèle et n'ont pas été renommées (renommer une valeur
-/// d'enum exige une migration de données).
+/// Type de contenu référenceur dans PageMediaReference. Un contenu qui porte
+/// plusieurs composites de builder a une valeur par composite (sauf
+/// Discipline, dont les deux composites sont fusionnés).
 enum PageReferencerKind {
   /// Cours : Course.content.
   COURSE
   /// Séminaire : Seminar.description.
-  STAGE_DESCRIPTION
+  SEMINAR_DESCRIPTION
   /// Séminaire : Seminar.program.
-  STAGE_PROGRAM
+  SEMINAR_PROGRAM
   /// Post : Post.content.
   POST
   /// Discipline : Discipline.description ET Discipline.summary, fusionnés.
@@ -1366,9 +1363,12 @@ enum PageReferencerKind {
   /// Page de contenu éditoriale : SitePage.content (ex. « L'association »).
   SITE_PAGE
   /// Séminaire : Seminar.summary (présentation synthétique, carte d'agenda).
-  STAGE_SUMMARY
+  SEMINAR_SUMMARY
   /// Évènement : Event.summary (présentation synthétique, carte d'agenda).
   EVENT_SUMMARY
+  /// Bio d'instructeur : User.instructorBio (pageId = id du membre). Liens
+  /// effacés avec le membre (users.delete).
+  INSTRUCTOR_BIO
 }
 
 // ─────────────────────────────────────────────────────────────────────────

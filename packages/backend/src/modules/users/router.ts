@@ -10,6 +10,8 @@ import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
 import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
+import { parsePageContentV1 } from "@contracts/page";
+import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 export const userRouter = router({
   getAll: protectedProcedure
@@ -131,8 +133,17 @@ export const userRouter = router({
     .use(isAdmin)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.user.delete({
-        where: { id: input.id },
+      return ctx.prisma.$transaction(async (tx) => {
+        // `pageId` n'a pas de clé étrangère : sans ce nettoyage, les liens de
+        // la bio bloqueraient pour toujours la suppression de ses images.
+        await syncPageMediaReferences(tx, {
+          pageType: "INSTRUCTOR_BIO",
+          pageId: input.id,
+          newContent: null,
+        });
+        return tx.user.delete({
+          where: { id: input.id },
+        });
       });
     }),
 
@@ -286,14 +297,23 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.sessionClient.user.id;
-      await ctx.prisma.user.update({
-        where: { id: userId },
-        data: {
-          instructorBio: input.bio ?? Prisma.DbNull,
-          ...(input.order !== undefined
-            ? { instructorOrder: input.order }
-            : {}),
-        },
+      await ctx.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            instructorBio: input.bio ?? Prisma.DbNull,
+            ...(input.order !== undefined
+              ? { instructorOrder: input.order }
+              : {}),
+          },
+        });
+        // Déclare les fichiers de la bibliothèque utilisés par la bio : sans
+        // ce lien, ils ne sont ni protégés, ni servis aux visiteurs.
+        await syncPageMediaReferences(tx, {
+          pageType: "INSTRUCTOR_BIO",
+          pageId: userId,
+          newContent: input.bio ? parsePageContentV1(input.bio) : null,
+        });
       });
       return { success: true };
     }),

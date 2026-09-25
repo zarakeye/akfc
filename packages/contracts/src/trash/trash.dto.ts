@@ -61,7 +61,7 @@ export type TrashEntryDTO = {
    *   - les folders n'ont pas de mediaKind unique
    *   - les entries antérieures à l'introduction du champ ont NULL en DB
    */
-  mediaKind?: "image" | "video" | "document";
+  mediaKind?: "image" | "video" | "audio" | "document";
 };
 
 export type ListBinInput = {

@@ -1,0 +1,411 @@
+// Aperçu du LOT 3 — blocs tels qu'ils seront écrits dans prisma/schema.prisma
+
+/// Fichier de la médiathèque (finder), quel que soit son stockage.
+///
+/// Stockage, choisi d'après le type à l'upload (pickBackend) :
+/// - images et vidéos → Cloudinary : `publicId` renseigné ;
+/// - tout le reste (audio, documents, archives, types inconnus) → Cloudflare
+///   R2 : `publicId` null.
+/// Pour un fichier existant, c'est `publicId` qui indique son stockage.
+///
+/// `fullPath` est la clé universelle du fichier :
+/// - Cloudinary : `{publicId}.{format}` ;
+/// - R2 : la clé de l'objet, extension comprise.
+/// Un nouvel upload arrive sur un chemin SANS segment de statut (ex.
+/// AKFC/seminars/{slug}/…) : le statut vit dans `status`. Des fichiers plus
+/// anciens portent encore le statut dans leur chemin (…/pending/…,
+/// …/published/…) ; le finder fusionne ces emplacements en une seule vue.
+///
+/// Servi aux visiteurs (routes /api/media/public/…) seulement s'il est
+/// `published` ET placé : référencé par un contenu (PageMediaReference) ou
+/// présent dans une galerie PUBLIC.
+model MediaAsset {
+  /// Identifiant CUID.
+  id                     String   @id @default(cuid())
+
+  // ── Identité de stockage ─────────────────────────────────────────────────
+  /// Identifiant Cloudinary (chemin sans extension). null → fichier stocké sur R2.
+  publicId               String?  @unique
+  /// URL de diffusion Cloudinary, enregistrée à l'upload. Jamais utilisée pour
+  /// servir le fichier : tout passe par les routes proxy de l'application.
+  /// null pour R2.
+  secureUrl              String?
+  /// Type de ressource Cloudinary : image, video ou raw. null pour R2.
+  resourceType           String?
+  /// Clé universelle et unique du fichier (voir le modèle). Change quand le
+  /// fichier est déplacé ou renommé.
+  fullPath               String   @unique
+
+  // ── Fichier ──────────────────────────────────────────────────────────────
+  /// Type MIME.
+  mimeType               String
+  /// Format ou extension (ex. jpg, pdf).
+  format                 String?
+  /// Nom du fichier au moment de l'upload.
+  originalFileName       String
+  /// Nom affiché dans le finder et les listes. null → nom d'origine.
+  displayName            String?
+  /// Description libre.
+  description            String?
+  /// Taille en octets.
+  bytes                  Int
+  /// Largeur en pixels (images, vidéos).
+  width                  Int?
+  /// Hauteur en pixels (images, vidéos).
+  height                 Int?
+  /// Durée en secondes (audio, vidéo).
+  duration               Float?
+
+  // ── Métier ───────────────────────────────────────────────────────────────
+  /// Racine applicative (variable APP_SHORT_NAME, ex. « AKFC ») : premier
+  /// segment de tous les chemins.
+  appRoot                String
+  /// Cycle de vie : "pending" (en attente, valeur d'un nouvel upload),
+  /// "published" (publié) ou "bin" (à la corbeille). Texte libre en base :
+  /// seul le code garantit ces valeurs.
+  status                 String
+  /// Catégorie d'enseignement du fichier. null → sans catégorie.
+  categoryId             Int?
+  /// Discipline du fichier. null → sans discipline (ou discipline
+  /// « proposée », voir `proposedDisciplineName`).
+  disciplineId           Int?
+  /// Nom d'une discipline « proposée » à l'upload, pas encore créée ; le
+  /// fichier serait rangé sous {catégorie}/new/{slug}.
+  /// ⚠ Code mort : le serveur accepte cette option, mais aucun écran ne la
+  /// propose. Seuls les services d'import le renseignent, d'après un ancien
+  /// chemin …/new/…. Rien ne rattache ensuite le fichier à la discipline.
+  proposedDisciplineName String?
+  /// Date d'évènement saisie à l'upload. ⚠ Écrite, jamais relue par le code.
+  eventDate              DateTime?
+
+  /// Évènement auquel le fichier est rattaché (upload vers un évènement).
+  /// null → aucun, cas de la grande majorité des fichiers.
+  eventId                Int?
+
+  // ── Provenance ───────────────────────────────────────────────────────────
+  /// Membre qui a téléversé le fichier.
+  uploaderUserId         String
+  /// Date réelle d'upload chez le fournisseur (reprise de Cloudinary ou de R2
+  /// pour les fichiers importés après coup). C'est la date exposée par l'API.
+  uploadedAt             DateTime @default(now())
+
+  /// Création de la ligne.
+  createdAt DateTime @default(now())
+  /// Dernière modification de la ligne (tenue à jour par Prisma).
+  updatedAt DateTime @updatedAt
+
+  /// Catégorie (N–1, Category.mediaAssets). Détachée si la catégorie est
+  /// supprimée (SET NULL).
+  category   Category?    @relation(fields: [categoryId], references: [id])
+  /// Discipline (N–1, Discipline.mediaAssets). Détachée si la discipline est
+  /// supprimée (SET NULL).
+  discipline Discipline? @relation(fields: [disciplineId], references: [id])
+  /// Évènement (N–1, Event.mediaAssets). Détaché si l'évènement est supprimé
+  /// (SET NULL).
+  event      Event?      @relation(fields: [eventId], references: [id])
+  /// Auteur de l'upload (N–1, User.uploadedMediaAssets). Bloque la suppression
+  /// du membre (RESTRICT).
+  uploader   User        @relation("UserMediaUploads", fields: [uploaderUserId], references: [id])
+
+  /// Contenus qui utilisent le fichier (1–N, PageMediaReference.mediaAsset).
+  /// Tant qu'il en existe, le fichier ne peut pas être supprimé (RESTRICT).
+  pageReferences PageMediaReference[]
+
+  /// Présences dans des galeries (1–N, GalleryItem.mediaAsset). Effacées avec
+  /// le fichier.
+  galleryItems GalleryItem[]
+
+  /// Publication aux membres comme document (0..1, MemberDocument.mediaAsset).
+  /// Effacée avec le fichier.
+  memberDocument MemberDocument?
+
+  /// Identifiant Cloudinary immuable (asset_id) : clé de réconciliation après
+  /// un déplacement, quand publicId, fullPath et status ont changé. null pour
+  /// R2 et pour les lignes antérieures à cette colonne.
+  cloudinaryAssetId      String?  @unique
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([disciplineId])
+  @@index([eventId])
+  @@index([uploaderUserId])
+  @@index([uploadedAt])
+  @@index([appRoot, fullPath])
+}
+
+/// Registre des dossiers du finder (table « CloudinaryFolder », nom historique).
+/// Les stockages objet ne connaissent pas les dossiers vides : ce registre les
+/// matérialise pour qu'un dossier s'affiche même sans fichier. Alimenté au
+/// parcours de l'arborescence, aux déplacements et aux restaurations depuis la
+/// corbeille ; dossiers racines créés au démarrage (ensureRootFolders) ;
+/// dossiers vidés élagués (pruneEmptyFolders).
+model Folder {
+  /// Identifiant CUID.
+  id        String       @id @default(cuid())
+  /// Racine applicative (voir MediaAsset.appRoot).
+  appRoot   String
+  /// Chemin complet du dossier, unique par racine.
+  fullPath  String
+  /// Statut déduit du chemin (statusFromPath), à l'inscription et au
+  /// renommage du dossier : vestige de l'époque où le statut était un
+  /// segment du chemin.
+  status    FolderStatus
+  /// Inscription du dossier.
+  createdAt DateTime     @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
+  updatedAt DateTime     @updatedAt
+
+  @@unique([appRoot, fullPath])
+  @@index([appRoot])
+  @@index([appRoot, status])
+  @@map("CloudinaryFolder")
+}
+
+/// Statut d'un dossier du registre (type « CloudinaryFolderStatus » en base,
+/// nom historique). Déduit du chemin par statusFromPath.
+enum FolderStatus {
+  /// Chemin sous …/pending/…, ou sans segment de statut reconnu.
+  pending
+  /// Chemin sous …/published/….
+  published
+  /// Chemin sous …/bin/… (corbeille).
+  bin
+
+  @@map("CloudinaryFolderStatus")
+}
+
+/// Élément (fichier ou dossier) placé dans la corbeille, avec sa provenance
+/// pour pouvoir le restaurer. Créé au passage en corbeille (trashToBin), AVANT
+/// le déplacement physique vers {appRoot}/bin/.trash/{id}/{displayName}.
+/// Suppression définitive : depuis la vue corbeille, par identifiant
+/// (deleteForever), ou depuis le finder, par chemin (purge). Aucune purge
+/// automatique n'existe.
+model TrashEntry {
+  /// Identifiant UUID, réservé avant le déplacement ; il figure dans le chemin
+  /// de rangement.
+  id      String           @id @default(uuid())
+  /// Racine applicative (voir MediaAsset.appRoot).
+  appRoot String
+  /// Fichier ou dossier.
+  kind    TrashEntryKind
+  /// Dans la corbeille, restauré, ou supprimé définitivement.
+  status  TrashEntryStatus @default(IN_BIN)
+
+  /// Nom de l'élément au moment de sa mise à la corbeille.
+  displayName  String
+  /// Chemin d'origine, utilisé pour la restauration.
+  previousPath String
+  /// Emplacement de rangement : {appRoot}/bin/.trash/{id}/{displayName}.
+  storageRoot  String
+
+  /// Mise à la corbeille.
+  trashedAt DateTime @default(now())
+
+  /// Restauration. null tant que l'élément n'a pas été restauré.
+  restoredAt     DateTime?
+  /// Chemin effectif de la restauration.
+  restoredToPath String?
+
+  /// Suppression définitive. null tant qu'elle n'a pas eu lieu.
+  deletedAt DateTime?
+
+  /// Taille en octets : celle du fichier, ou le total des fichiers contenus
+  /// pour un dossier.
+  sizeBytes           BigInt?
+  /// Date de création chez le fournisseur ; pour un dossier, la plus récente
+  /// des fichiers contenus. ⚠ Nom trompeur : renseignée aussi pour R2.
+  cloudinaryCreatedAt DateTime?
+
+  /// Nature du fichier : image, video ou document. null pour un dossier.
+  /// ⚠ Tout fichier R2 est classé « document », y compris l'audio.
+  mediaKind String?
+
+  @@index([appRoot])
+  @@index([appRoot, status, trashedAt])
+  @@index([appRoot, previousPath])
+  @@index([appRoot, kind])
+}
+
+/// Nature d'un élément de corbeille.
+enum TrashEntryKind {
+  /// Dossier, avec tout son contenu.
+  folder
+  /// Fichier seul.
+  file
+}
+
+/// État d'un élément de corbeille.
+enum TrashEntryStatus {
+  /// Dans la corbeille, restaurable.
+  IN_BIN
+  /// Restauré (voir restoredAt, restoredToPath).
+  RESTORED
+  /// Supprimé définitivement (voir deletedAt) : le fichier n'existe plus.
+  DELETED
+}
+
+/// Lien entre un contenu de builder et un fichier de la médiathèque qu'il
+/// utilise. Tenu à jour dans la même transaction que l'enregistrement du
+/// contenu (syncPageMediaReferences), par les routeurs des pages de site,
+/// disciplines, posts, évènements, cours et séminaires ; supprimer le contenu
+/// supprime ses liens.
+/// ⚠ Les bios d'instructeur (User.instructorBio) ne sont PAS synchronisées :
+/// un fichier utilisé seulement là n'est ni protégé, ni servi aux visiteurs.
+///
+/// Deux rôles :
+/// - PROTECTION : tant qu'un lien existe, le fichier ne peut pas être supprimé
+///   (RESTRICT), et le faire sortir de « published » est refusé ;
+/// - DIFFUSION : un fichier publié et référencé peut être servi aux visiteurs.
+///
+/// `pageId` n'a pas de clé étrangère : selon `pageType`, il désigne des
+/// enregistrements de modèles différents. L'intégrité de ce côté est tenue
+/// par l'application.
+model PageMediaReference {
+  /// Identifiant CUID.
+  id           String             @id @default(cuid())
+  /// Fichier référencé.
+  mediaAssetId String
+  /// Type de contenu qui utilise le fichier (voir PageReferencerKind).
+  pageType     PageReferencerKind
+  /// Identifiant du contenu, en texte (les identifiants numériques sont
+  /// convertis).
+  pageId       String
+
+  /// Création du lien.
+  createdAt    DateTime           @default(now())
+
+  /// Fichier (N–1, MediaAsset.pageReferences). Le lien BLOQUE la suppression
+  /// du fichier (RESTRICT).
+  mediaAsset   MediaAsset         @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  // Un lien au plus par fichier et par contenu.
+  @@unique([mediaAssetId, pageType, pageId])
+  @@index([pageType, pageId])
+}
+
+/// Type de contenu référenceur dans PageMediaReference.
+/// Les valeurs STAGE_* désignent les séminaires (Seminar) : elles datent de
+/// l'ancien nom du modèle et n'ont pas été renommées (renommer une valeur
+/// d'enum exige une migration de données).
+enum PageReferencerKind {
+  /// Cours : Course.content.
+  COURSE
+  /// Séminaire : Seminar.description.
+  STAGE_DESCRIPTION
+  /// Séminaire : Seminar.program.
+  STAGE_PROGRAM
+  /// Post : Post.content.
+  POST
+  /// Discipline : Discipline.description ET Discipline.summary, fusionnés.
+  DISCIPLINE
+  /// Évènement : Event.content.
+  EVENT
+  /// Page de contenu éditoriale : SitePage.content (ex. « L'association »).
+  SITE_PAGE
+  /// Séminaire : Seminar.summary (présentation synthétique, carte d'agenda).
+  STAGE_SUMMARY
+  /// Évènement : Event.summary (présentation synthétique, carte d'agenda).
+  EVENT_SUMMARY
+}
+
+/// Visibilité d'un contenu. Utilisée aujourd'hui par Gallery seulement.
+enum Visibility {
+  /// Visible par tous, y compris les visiteurs anonymes.
+  PUBLIC
+  /// Réservé aux membres connectés ; un visiteur anonyme reçoit « introuvable ».
+  MEMBERS
+}
+
+/// Galerie d'images : une sélection ordonnée de fichiers de la médiathèque
+/// (GalleryItem), sans nouvel upload. Rattachements facultatifs et
+/// CUMULABLES (discipline, séminaire, évènement, catégorie, origine) : ce
+/// sont les facettes de filtrage de la vue publique.
+/// La galerie de slug « home-carousel » alimente le carrousel de la page
+/// d'accueil ; elle est exclue des listes de galeries.
+model Gallery {
+  /// Identifiant auto-incrémenté.
+  id         Int        @id @default(autoincrement())
+  /// Segment d'URL, unique. « home-carousel » est réservé au carrousel d'accueil.
+  slug       String     @unique
+  /// Titre affiché.
+  title      String
+  /// Qui peut voir la galerie (voir Visibility). Ses images ne sont servies
+  /// aux visiteurs anonymes que si elle est PUBLIC.
+  visibility Visibility @default(PUBLIC)
+  /// Rang : ordre des listes d'administration, et départage à date égale dans
+  /// la vue publique.
+  sortOrder  Int        @default(0)
+
+  /// Date de la galerie (jour du séminaire ou de l'évènement photographié). La
+  /// vue publique trie par date décroissante, galeries sans date en dernier.
+  date DateTime?
+
+  /// Discipline associée. null → aucune.
+  disciplineId Int?
+  /// Discipline (N–1, Discipline.galleries). Détachée si la discipline est
+  /// supprimée (SET NULL).
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+  /// Séminaire associé. null → aucun.
+  seminarId    Int?
+  /// Séminaire (N–1, Seminar.galleries). Détaché si le séminaire est supprimé
+  /// (SET NULL).
+  seminar      Seminar?    @relation(fields: [seminarId], references: [id])
+  /// Évènement associé. null → aucun.
+  eventId      Int?
+  /// Évènement (N–1, Event.galleries). Détaché si l'évènement est supprimé
+  /// (SET NULL).
+  event        Event?      @relation(fields: [eventId], references: [id])
+  /// Catégorie associée. null → aucune.
+  categoryId   Int?
+  /// Catégorie (N–1, Category.galleries). Détachée si la catégorie est
+  /// supprimée (SET NULL).
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  /// Origine associée. null → aucune.
+  originId     Int?
+  /// Origine (N–1, Origin.galleries). Détachée si l'origine est supprimée
+  /// (SET NULL).
+  origin       Origin?     @relation(fields: [originId], references: [id])
+
+  /// Images de la galerie (1–N, GalleryItem.gallery). Effacées avec la galerie.
+  items GalleryItem[]
+
+  @@index([sortOrder])
+  @@index([date])
+}
+
+/// Présence d'un fichier de la médiathèque dans une galerie, à un rang donné.
+/// Un fichier n'apparaît qu'une fois par galerie.
+model GalleryItem {
+  /// Identifiant auto-incrémenté.
+  id           Int        @id @default(autoincrement())
+  /// Galerie.
+  galleryId    Int
+  /// Galerie (N–1, Gallery.items). Effacé avec la galerie.
+  gallery      Gallery    @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  /// Fichier affiché.
+  mediaAssetId String
+  /// Fichier (N–1, MediaAsset.galleryItems). Effacé avec le fichier (CASCADE) :
+  /// contrairement aux contenus, une galerie ne protège pas ses fichiers.
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  /// Rang dans la galerie, croissant.
+  sortOrder    Int        @default(0)
+
+  // Un fichier au plus une fois par galerie.
+  @@unique([galleryId, mediaAssetId])
+  @@index([galleryId, sortOrder])
+}
+
+/// Nom AFFICHÉ d'un dossier du finder, découplé de son chemin physique.
+/// Les dossiers portent des noms physiques en anglais (courses, seminars,
+/// events…) ; ce libellé leur donne leur nom affiché (ex. « Cours »), et
+/// permet de renommer un dossier, y compris un dossier rattaché à une entité,
+/// sans toucher au stockage.
+model FolderLabel {
+  /// Chemin complet du dossier, identité du libellé (ex. « AKFC/courses »,
+  /// « AKFC/collaborative-group-spaces/{slug}-{id} »).
+  path        String   @id
+  /// Nom affiché.
+  displayName String
+  /// Dernière modification (tenue à jour par Prisma).
+  updatedAt   DateTime @updatedAt
+}

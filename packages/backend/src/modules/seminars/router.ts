@@ -49,7 +49,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  * comme on l'a fait pour Course (sous-chantier 4) et Discipline
  * (livraison 1). Le Stage porte **deux composites séparés** —
  * `description` et `program` — qui ont donc deux syncs distinctes,
- * avec leurs `pageType` respectifs : `STAGE_DESCRIPTION` et `STAGE_PROGRAM`.
+ * avec leurs `pageType` respectifs : `SEMINAR_DESCRIPTION` et `SEMINAR_PROGRAM`.
  *
  * ─── Garde métier sur la catégorie de discipline ────────────────────────
  *
@@ -454,12 +454,12 @@ export const seminarRouter = router({
         // leur propre composite, donc leurs propres références médias.
         // Cohérent avec le `PageReferencerKind` enum qui les distingue.
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_DESCRIPTION",
+          pageType: "SEMINAR_DESCRIPTION",
           pageId: String(created.id),
           newContent: input.description,
         });
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_PROGRAM",
+          pageType: "SEMINAR_PROGRAM",
           pageId: String(created.id),
           newContent: input.program,
         });
@@ -467,7 +467,7 @@ export const seminarRouter = router({
         // celle-ci vit hors composite et échapperait au recensement sans
         // `extraMediaIds`.
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_SUMMARY",
+          pageType: "SEMINAR_SUMMARY",
           pageId: String(created.id),
           newContent: input.summary ?? { version: 1, blocks: [] },
           extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
@@ -653,14 +653,14 @@ export const seminarRouter = router({
         // Syncs conditionnels — chaque composite indépendamment.
         if (description !== undefined) {
           await syncPageMediaReferences(tx, {
-            pageType: "STAGE_DESCRIPTION",
+            pageType: "SEMINAR_DESCRIPTION",
             pageId: String(id),
             newContent: description,
           });
         }
         if (program !== undefined) {
           await syncPageMediaReferences(tx, {
-            pageType: "STAGE_PROGRAM",
+            pageType: "SEMINAR_PROGRAM",
             pageId: String(id),
             newContent: program,
           });
@@ -674,7 +674,7 @@ export const seminarRouter = router({
             select: { summary: true, summaryMediaId: true },
           });
           await syncPageMediaReferences(tx, {
-            pageType: "STAGE_SUMMARY",
+            pageType: "SEMINAR_SUMMARY",
             pageId: String(id),
             newContent: parsePageContentV1(row?.summary),
             extraMediaIds: row?.summaryMediaId ? [row.summaryMediaId] : [],
@@ -697,17 +697,17 @@ export const seminarRouter = router({
         // Sync des deux composites : libération de toutes les références
         // médias de ce stage. `newContent: null` = mode delete du helper.
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_DESCRIPTION",
+          pageType: "SEMINAR_DESCRIPTION",
           pageId: String(input.id),
           newContent: null,
         });
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_PROGRAM",
+          pageType: "SEMINAR_PROGRAM",
           pageId: String(input.id),
           newContent: null,
         });
         await syncPageMediaReferences(tx, {
-          pageType: "STAGE_SUMMARY",
+          pageType: "SEMINAR_SUMMARY",
           pageId: String(input.id),
           newContent: null,
         });
