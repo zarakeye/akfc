@@ -1137,138 +1137,182 @@ enum TrashEntryStatus {
 // POSTS / COMMENTS / LIKES
 // ============================================================================
 
-/// Article éditorial — actualité, compte-rendu, annonce.
-///
-/// **Indépendant de toute discipline** : un Post peut parler du club
-/// en général, d'un événement de la vie associative, d'une actualité
-/// culturelle. Pas de rattachement à Discipline/Course/Stage.
-///
-/// **Statut de publication** : convention `publicationDate === null`
-/// = brouillon non visible publiquement, `publicationDate !== null`
-/// = publié (à la date donnée, qui peut être dans le futur pour une
-/// publication programmée).
+/// Article du mur : actualité, compte rendu, annonce, réflexion. Commentable,
+/// avec réactions et, en option, un sondage. Indépendant de toute discipline.
+/// Suppression : ses commentaires et son sondage suivent en base (CASCADE) ;
+/// ses réactions et celles de ses commentaires sont effacées par le routeur
+/// (elles n'ont pas de clé étrangère), ainsi que ses liens média.
 model Post {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Titre de l'article.
+  /// Titre.
   title String
 
-  /// Composite Json édité au PageBuilder : corps de l'article complet.
-  ///
-  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  /// Corps de l'article, édité au PageBuilder (PageContentV1).
   content Json
 
-  /// Auteur de l'article (NOT NULL).
+  /// Auteur (obligatoire).
   authorId String
 
+  /// Création.
   createdAt DateTime  @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime  @updatedAt
 
-  /// Date de publication. **null = brouillon** (non visible publiquement).
-  /// Une date dans le futur = publication programmée.
+  /// Date de publication. null → brouillon, invisible du public. Une date
+  /// future programme la publication.
   publicationDate DateTime?
 
-  /// Auteur de l'article.
+  /// Auteur (N–1, User.posts). Le membre ne peut pas être supprimé tant qu'il
+  /// en a (RESTRICT).
   author User @relation(fields: [authorId], references: [id])
 
-  /// Commentaires des utilisateurs sur l'article.
+  /// Commentaires (1–N, Comment.post). Effacés avec le post.
   comments Comment[]
 
-  poll     Poll?              // ← AJOUT (sondage optionnel = vote activable)
+  /// Sondage facultatif (0..1, Poll.post) : sa présence active le vote sur le
+  /// post. Effacé avec le post.
+  poll     Poll?
 
   @@index([publicationDate])
 }
 
-/// Commentaire sur un Post. Arborescent : `parentId` pointe vers le
-/// commentaire auquel celui-ci répond (null = commentaire racine).
-/// `content` est un document ProseMirror (Json) : tiptap bridé côté front
-/// (gras/italique/liens), sans titres, sans images, sans PageBuilder.
+/// Commentaire d'un post, en arborescence : `parentId` désigne le commentaire
+/// auquel il répond (null → commentaire racine).
+/// Suppression (par son auteur) : le routeur efface les réactions de toute la
+/// sous-arborescence, puis la base supprime les réponses en cascade.
 model Comment {
+  /// Identifiant auto-incrémenté.
   id        Int      @id @default(autoincrement())
+  /// Texte, document ProseMirror (JSON). L'éditeur limite la mise en forme
+  /// (gras, italique, liens ; ni titres, ni images, ni blocs).
   content   Json
+  /// Auteur.
   authorId  String
+  /// Post commenté.
   postId    Int
+  /// Commentaire parent. null → commentaire racine.
   parentId  Int?
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
+  /// Auteur (N–1, User.comments). Le membre ne peut pas être supprimé tant
+  /// qu'il en a (RESTRICT).
   author  User      @relation(fields: [authorId], references: [id])
+  /// Post (N–1, Post.comments). Commentaire effacé avec le post.
   post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// Commentaire parent (N–1, Comment.replies). Réponse effacée avec lui.
   parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  /// Réponses directes (1–N, Comment.parent).
   replies Comment[] @relation("CommentReplies")
 
   @@index([postId])
   @@index([parentId])
 }
 
-/// Cible d'une réaction. Polymorphe : une réaction peut porter sur un
-/// Post ou un Comment, distingués par `targetType` + `targetId`.
+/// Nature de la cible d'une réaction (Reaction.targetType).
 enum ReactionTarget {
+  /// Post : targetId = Post.id.
   POST
+  /// Commentaire : targetId = Comment.id.
   COMMENT
 }
 
-/// Réaction emoji d'un utilisateur sur un Post ou un Comment.
-/// Le pouce levé n'est qu'un cas particulier : `emoji = "👍"`.
-/// Polymorphe par convention (`targetType` + `targetId`) : pas de FK
-/// Prisma vers Post/Comment, donc la suppression des réactions d'une
-/// cible supprimée se fait **côté router** (voir note plus bas).
+/// Réaction emoji d'un membre sur un post ou un commentaire (le pouce levé
+/// n'est qu'un cas : emoji « 👍 »). Polymorphe par convention (`targetType` +
+/// `targetId`) : sans clé étrangère vers la cible, ce sont les routeurs qui
+/// effacent les réactions quand un post ou un commentaire est supprimé.
 model Reaction {
+  /// Identifiant auto-incrémenté.
   id         Int            @id @default(autoincrement())
+  /// Emoji. L'interface en propose six ; le serveur accepte toute chaîne de 1 à
+  /// 32 caractères.
   emoji      String
+  /// Membre qui réagit.
   userId     String
+  /// Nature de la cible (voir ReactionTarget).
   targetType ReactionTarget
+  /// Identifiant de la cible (post ou commentaire), sans clé étrangère.
   targetId   Int
+  /// Date de la réaction.
   createdAt  DateTime       @default(now())
 
+  /// Membre (N–1, User.reactions). Le membre ne peut pas être supprimé tant
+  /// qu'il en a (RESTRICT).
   user User @relation(fields: [userId], references: [id])
 
+  // Un même emoji au plus une fois par membre et par cible.
   @@unique([userId, targetType, targetId, emoji])
   @@index([targetType, targetId])
 }
 
-/// Sondage rattaché à un Post (au plus un par post — `postId @unique`).
-/// Sa simple présence = « vote activé » sur le post. `multiple` autorise
-/// plusieurs choix par votant ; sinon un seul (règle appliquée au router).
+/// Sondage d'un post (un au plus : `postId` unique) ; sa présence active le
+/// vote. Règles appliquées par le serveur : vote refusé après `closesAt` ; un
+/// seul choix si `multiple` est faux ; un nouveau vote remplace le précédent.
 model Poll {
+  /// Identifiant auto-incrémenté.
   id        Int       @id @default(autoincrement())
+  /// Post porteur (unique).
   postId    Int       @unique
+  /// Question posée.
   question  String
+  /// Vrai : plusieurs choix par votant ; faux : un seul.
   multiple  Boolean   @default(false)
+  /// Clôture. null → pas de clôture ; une fois passée, les votes sont refusés.
   closesAt  DateTime?
+  /// Création.
   createdAt DateTime  @default(now())
 
+  /// Post (1–1, Post.poll). Sondage effacé avec le post.
   post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// Options de réponse (1–N, PollOption.poll). Effacées avec le sondage.
   options PollOption[]
 }
 
-/// Une option de réponse d'un sondage.
+/// Option de réponse d'un sondage.
 model PollOption {
+  /// Identifiant auto-incrémenté.
   id        Int    @id @default(autoincrement())
+  /// Sondage.
   pollId    Int
+  /// Libellé affiché.
   label     String
+  /// Rang d'affichage, croissant.
   sortOrder Int    @default(0)
 
+  /// Sondage (N–1, Poll.options). Option effacée avec lui.
   poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  /// Votes pour cette option (1–N, PollVote.option). Effacés avec elle.
   votes PollVote[]
 
   @@index([pollId])
 }
 
-/// Vote d'un utilisateur pour une option. `pollId` est dénormalisé pour
-/// pouvoir appliquer la règle « un seul choix » (mode non-multiple) et
-/// requêter les votes par sondage sans jointure.
+/// Vote d'un membre pour une option. `pollId` est une copie (sans clé
+/// étrangère) du sondage de l'option : elle permet d'appliquer la règle du
+/// choix unique et de lire les votes d'un sondage sans jointure.
 model PollVote {
+  /// Identifiant auto-incrémenté.
   id        Int      @id @default(autoincrement())
+  /// Option choisie.
   optionId  Int
+  /// Sondage de l'option (copie, sans clé étrangère).
   pollId    Int
+  /// Votant.
   userId    String
+  /// Date du vote.
   createdAt DateTime @default(now())
 
+  /// Option (N–1, PollOption.votes). Vote effacé avec l'option.
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  /// Votant (N–1, User.pollVotes). Le membre ne peut pas être supprimé tant
+  /// qu'il a voté (RESTRICT).
   user   User       @relation(fields: [userId], references: [id])
 
+  // Un membre vote au plus une fois pour une option donnée.
   @@unique([optionId, userId])
   @@index([pollId, userId])
 }
@@ -1436,33 +1480,33 @@ model GalleryItem {
 // BREAKING NEWS — la « voix du club »
 // ═══════════════════════════════════════════════════════════════════════
 
-/// Actualité courte, diffusée par le ruban défilant et la sidebar
-/// escamotable du site public. Distincte de Post (réflexions commentables,
-/// avec interactions) : la BreakingNews est UNIDIRECTIONNELLE — pas
-/// d'auteur affiché (c'est le club qui parle), pas de commentaires, pas
-/// de réactions.
-///
-/// `publicationDate` suit le pattern maison (Stage/Event/Post) :
-/// null = brouillon, future = programmée, passée = publiée.
-/// `expiresAt` retire l'actu du ruban et de la sidebar après échéance
-/// (null = sans expiration) — une actu est éphémère par nature.
+/// Actualité courte, diffusée par le ruban défilant et le panneau latéral
+/// escamotable du site public. À sens unique, contrairement à Post : pas
+/// d'auteur affiché (c'est le club qui parle), ni commentaires ni réactions.
 model BreakingNews {
+  /// Identifiant auto-incrémenté.
   id    Int    @id @default(autoincrement())
+  /// Titre.
   title String
 
-  /// Corps court en texte brut — le ruban défile mal du texte riche,
-  /// et une actu de deux lignes n'a pas besoin de ProseMirror.
+  /// Corps court, en texte brut : le ruban défile mal du texte riche.
   body String
 
-  /// Lien optionnel, interne (« /#post-12 » — un vote sur le mur) ou
-  /// externe. C'est le CTA de la fiche Announcement, PAS la cible du
-  /// clic sur le ruban (qui ouvre la sidebar).
+  /// Lien facultatif, interne (ex. « /#post-12 ») ou externe : bouton d'action
+  /// de la fiche dans le panneau latéral, PAS la cible du clic sur le ruban
+  /// (qui ouvre le panneau).
   href String?
 
+  /// Date de publication. null → brouillon ; une date future programme la
+  /// publication.
   publicationDate DateTime?
+  /// Échéance : passée, l'actualité quitte le ruban et le panneau. null → sans
+  /// échéance.
   expiresAt       DateTime?
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
   @@index([publicationDate])
@@ -1486,51 +1530,46 @@ model EventDiscipline {
   @@index([disciplineId])
 }
 
-/// Réglage typographique du rendu des blocs du builder.
-///
-/// Ligne UNIQUE (id figé à 1) : ce réglage vaut pour tout le site, il n'y a
-/// rien à multiplier. `variables` porte les `--akfc-*` sous forme
-/// { "--akfc-leading": "1.65", … } — un JSON plutôt qu'une colonne par
-/// variable, pour qu'ajouter un curseur au laboratoire ne demande pas une
-/// migration.
-///
-/// Source de vérité : cette ligne. Les valeurs de `globals.css` ne servent
-/// que de repli, tant qu'aucun réglage n'a été enregistré.
-/// Page de contenu éditoriale du site : un titre, un composite PageBuilder,
-/// une URL stable. « L'association » en est la première.
-///
-/// La clé primaire est le SLUG et non un entier : ces pages sont désignées
-/// par leur nom dans les URLs et dans le code, jamais par un rang.
+/// Page de contenu éditoriale : un titre, un composite PageBuilder, une URL
+/// stable. Sert « L'association » (/about) et les pages d'information
+/// (/infos/{slug} : mentions légales…).
+/// Clé primaire = slug : ces pages sont désignées par leur nom, dans les URL
+/// comme dans le code.
 model SitePage {
-  /// Clé stable, également segment d'URL (« association »).
+  /// Clé stable, également segment d'URL (ex. « association »).
   slug String @id
 
   /// Titre affiché en tête de page.
   title String
 
-  /// Contenu composite édité au PageBuilder, format `PageContentV1`.
+  /// Contenu, édité au PageBuilder (PageContentV1).
   content Json @default("{\"version\":1,\"blocks\":[]}")
 
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 }
 
+/// Réglages typographiques du rendu des contenus du builder, pour tout le site
+/// (ligne unique, id 1). Source de vérité : cette ligne ; les valeurs de
+/// globals.css ne servent que de repli tant qu'aucun réglage n'est enregistré.
 model SiteStyle {
+  /// Identifiant fixe : 1.
   id        Int      @id @default(1)
+  /// Variables CSS `--akfc-*` (ex. { "--akfc-leading": "1.65" }). Un JSON
+  /// plutôt qu'une colonne par variable : ajouter un curseur au laboratoire
+  /// ne demande pas de migration.
   variables Json
 
   /// Longueur maximale d'une présentation synthétique de discipline, en
-  /// caractères de texte brut.
-  ///
-  /// Colonne à part et non entrée de `variables` : ce n'est pas une propriété
-  /// CSS et cela ne finira jamais dans une balise `<style>`.
+  /// caractères de texte brut. Colonne à part : ce n'est pas une propriété
+  /// CSS.
   summaryMaxChars Int @default(600)
 
-  /// Hauteur repliée des cartes d'accueil, en pixels.
-  ///
-  /// Une hauteur et non un nombre de caractères : c'est elle qui rend les
-  /// cartes égales, les mots n'ayant pas tous la même longueur.
+  /// Hauteur repliée des cartes de l'accueil, en pixels : une hauteur (et non
+  /// un nombre de caractères) rend les cartes égales.
   cardCollapsedHeight Int @default(220)
 
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 }
 
@@ -1734,42 +1773,61 @@ model MemberDocumentGroup {
   @@index([groupId])
 }
 
-/// Publication par page (mode « En construction »). La clé est la clé de route
-/// publique (ex. "gallery", "about"). Absence de ligne OU published=false =
-/// page masquée aux non-admins ; published=true = visible du public/membres.
+/// Publication d'une page éditoriale (mode « En construction »). Clés : celles
+/// du registre des pages (pageRegistry : « home », « association »,
+/// « contacts »). Pas de ligne, ou `published` faux → la page affiche « Page
+/// en construction » aux non-administrateurs (isEditorialPageGated).
 model PageVisibility {
+  /// Clé de la page (voir pageRegistry).
   key       String   @id
+  /// Vrai : page visible de tous.
   published Boolean  @default(false)
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 }
 
-/// Hero de la page d'accueil (singleton, id="home") : uniquement le titre et le
-/// corps affichés dans la section d'intro. Le reste de la page d'accueil est en
-/// dur (structure figée). La publication de la page / passe par PageVisibility.
+/// Introduction de la page d'accueil (ligne unique, id « home ») : le titre
+/// et le texte de la section d'accueil. Le reste de la page est structuré par
+/// le code. La publication de l'accueil passe par PageVisibility (clé « home »).
 model HomeHero {
+  /// Identifiant fixe : « home ».
   id    String @id @default("home")
+  /// Titre de la section d'accueil.
   title String
+  /// Texte de la section d'accueil.
   body  String
 }
 
-/// Identité éditoriale du site (singleton, id="site").
-///
-/// Ce qu'un admin peut changer sans toucher au code ni au .env. DISTINCT de
-/// `APP_SHORT_NAME` (racine de STOCKAGE du finder/uploads, identité technique)
-/// : `shortTitle` n'est qu'un LIBELLÉ d'affichage (header, onglet, e-mails).
+/// Identité éditoriale du site (ligne unique, id « site ») : ce qu'un
+/// administrateur change sans toucher au code, dans Réglages du site.
+/// Distincte de APP_SHORT_NAME (racine technique du stockage) : `shortTitle`
+/// n'est qu'un libellé d'affichage.
 model SiteSettings {
+  /// Identifiant fixe : « site ».
   id            String   @id @default("site")
+  /// Libellé court : en-tête, onglet, pied de page (copyright), texte
+  /// alternatif du logo.
   shortTitle    String   @default("AKFC")
+  /// Libellé long, lu par le layout racine.
   longTitle     String   @default("Association de Kung Fu de Chambéry")
+  /// Accroche facultative : pied de page ; lue aussi par le layout racine.
   tagline       String?
+  /// E-mail de contact facultatif, cité dans l'e-mail de bienvenue.
   supportEmail  String?
+  /// ⚠ Sans effet : aucun code ne le lit (la langue de <html> est fixée à
+  /// « fr »), malgré l'aide de la page Réglages.
   defaultLocale String   @default("fr")
-  /// Référence vers un MediaAsset (choisi au picker). null = logo embarqué.
-  /// L'asset devra être servi publiquement (garde média à élargir côté conso).
+  /// ⚠ Vestige de l'ancien logo, choisi au picker (MediaAsset). Plus renseigné :
+  /// la page Réglages ne l'envoie plus, et chaque enregistrement le remet à
+  /// null. Encore lu en repli par siteSettings.get et par la route publique
+  /// des images. Candidat à suppression.
   logoAssetId   String?
-  /// Clé R2 RÉSERVÉE du logo (ex. "system/logo.svg"), hors arborescence
-  /// finder : le logo n'est PAS un MediaAsset. Servi via /api/media/site-logo.
+  /// Clé R2 RÉSERVÉE du logo (« system/logo.svg »), hors finder : le logo n'est
+  /// pas un MediaAsset. Posée par siteSettings.uploadLogo, effacée par
+  /// clearLogo ; servie par /api/media/site-logo. null → logo embarqué.
   logoKey       String?
+  /// Dernière modification (tenue à jour par Prisma). Sert aussi de version
+  /// du logo (?v=…) pour contourner les caches.
   updatedAt     DateTime @updatedAt
 }
 
