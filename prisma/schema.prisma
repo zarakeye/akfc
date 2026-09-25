@@ -291,45 +291,45 @@ enum AuditAction {
 // DOMAINE MÉTIER — Category → Discipline
 // ============================================================================
 
-/// Catégorisation haute des disciplines enseignées par le club.
-///
-/// `MARTIAL_ART` regroupe toutes les pratiques martiales (Karaté, Aikido, etc.).
-/// `CALLIGRAPHY` regroupe les pratiques calligraphiques (shodō, etc.).
-///
-/// Cet enum reste volontairement court — il distingue les grands champs
-/// pratiqués, pas les écoles ou styles (qui sont des `String?` libres
-/// sur Discipline). À étendre si de nouveaux champs apparaissent dans
-/// l'offre du club (méditation, tai-chi, etc.).
+/// Champ de pratique d'une discipline. Volontairement court : il distingue
+/// les grands champs, pas les écoles ni les styles (champs libres de
+/// Discipline). Affiché en administration (« Art martial », « Calligraphie »).
 enum DisciplineType {
+  /// Art martial (ex. kung-fu, kali).
   MARTIAL_ART
+  /// Calligraphie.
   CALLIGRAPHY
 }
 
-/// Public visé par un cours ou un stage.
-///
-/// Détermine notamment l'accessibilité au passage de grade : les
-/// adolescents n'y ont pas accès, les autres audiences oui (cette
-/// règle métier vit côté applicatif, pas en contrainte DB).
+/// Public visé par un cours, un séminaire ou un évènement.
+/// Règle du club, NON appliquée par le code : pas de passage de grade pour
+/// les adolescents.
 enum Audience {
   /// Enfants (typiquement moins de 12 ans).
   KIDS
-  /// Adolescents (12-17 ans environ). Pas de passage de grade pour
-  /// cette audience.
+  /// Adolescents (environ 12 à 17 ans).
   TEENAGERS
   /// Adultes (18 ans et plus).
   ADULTS
-  /// Cours/stage ouvert à toutes les tranches d'âge.
+  /// Tous publics.
   ALL_AGES
 }
 
 /// Jour de la semaine d'un créneau récurrent (Course).
 enum Day {
+  /// Lundi.
   MONDAY
+  /// Mardi.
   TUESDAY
+  /// Mercredi.
   WEDNESDAY
+  /// Jeudi.
   THURSDAY
+  /// Vendredi.
   FRIDAY
+  /// Samedi.
   SATURDAY
+  /// Dimanche.
   SUNDAY
 }
 
@@ -337,219 +337,216 @@ enum Day {
 // ORIGINES CULTURELLES
 // ============================================================================
 
-/// Racine culturelle d'une discipline ou d'un événement (« Japon »,
-/// « Okinawa », « Chine », « Philippines »).
-///
-/// Remplace l'ancien champ `Discipline.origin: String?` libre, qui
-/// laissait coexister doublons orthographiques (« Japon » et « japon »
-/// et « JAPAN »...). En faisant une entité dédiée, on gagne :
-///
-/// - Pas de doublons (contrainte `@unique` sur `name` et `slug`)
-/// - Possibilité d'ajouter des métadonnées culturelles riches (région,
-///   période historique, drapeau emoji)
-/// - Regroupement transverse possible (toutes les disciplines / stages
-///   / events d'origine japonaise)
-/// - Tri manuel via `sortOrder` pour ne pas dépendre de l'alphabétique
-///
-/// Volontairement **pas de PageBuilder** sur ce modèle pour la v1 :
-/// `description` reste un `String?` simple. Si tu veux plus tard une
-/// page riche par origine, on migrera ce champ en `Json` (comme on l'a
-/// fait pour Discipline).
+/// Origine culturelle d'une discipline, d'un séminaire ou d'un évènement
+/// (ex. « Chine », « Philippines »). Entité dédiée plutôt que texte libre :
+/// pas de doublons orthographiques (nom et slug uniques), métadonnées
+/// culturelles, regroupement transverse. Gérée en administration ; pas de
+/// page publique d'origine.
 model Origin {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Nom d'affichage (unique). « Japon », « Okinawa », « Chine ».
+  /// Nom affiché, unique (ex. « Chine »).
   name String @unique
 
-  /// Slug URL-safe (unique). « japon », « okinawa ». Sert pour des URLs
-  /// type `/origines/japon`.
+  /// Slug unique. Aucune page publique ne l'utilise aujourd'hui.
   slug String @unique
 
-  /// Description culturelle libre. Texte simple ; pas de PageBuilder
-  /// pour l'instant.
+  /// Description culturelle, en texte simple.
   description String?
 
-  /// Pays moderne. Peut différer du `name` quand `name` désigne une
-  /// région (`name = "Okinawa"`, `country = "Japon"`).
+  /// Pays moderne. Peut différer de `name` quand celui-ci désigne une région
+  /// (ex. name « Fujian », country « Chine »).
   country String?
 
-  /// Région ou sous-région culturelle. « Okinawa », « Shandong ».
+  /// Région ou sous-région culturelle (ex. « Fujian »).
   region String?
 
-  /// Drapeau — emoji unicode (« 🇯🇵 ») ou code ISO 3166 alpha-2 (« JP »).
-  /// Format libre, à formaliser côté UI.
+  /// Drapeau : emoji (« 🇨🇳 ») ou code ISO 3166 alpha-2 (« CN »). Format libre.
   flag String?
 
-  /// Période historique d'ancrage de la culture (« Période Edo »,
-  /// « Dynastie Tang »). Champ pédagogique pour AKFC qui ancre ses
-  /// pratiques dans une histoire.
+  /// Période historique d'ancrage (ex. « Dynastie Qing »).
   historicalPeriod String?
 
-  /// Ordre d'affichage manuel dans les listes. Default 0. Plus petit
-  /// = affiché en premier. Permet de ne pas dépendre de l'alphabétique.
+  /// Rang d'affichage dans les listes, croissant (puis par nom).
   sortOrder Int @default(0)
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Disciplines rattachées à cette origine.
+  /// Disciplines de cette origine (1–N, Discipline.origin). Détachées à sa
+  /// suppression (SET NULL).
   disciplines Discipline[]
 
-  /// Stages rattachés à cette origine (notamment les stages hors-club).
+  /// Séminaires de cette origine (1–N, Seminar.origin), notamment ceux sans
+  /// discipline du club. Détachés à sa suppression (SET NULL).
   seminars Seminar[]
 
-  /// Événements rattachés à cette origine.
+  /// Évènements de cette origine (1–N, Event.origin). Détachés à sa
+  /// suppression (SET NULL).
   events Event[]
 
   @@index([sortOrder])
 
-  /// Galeries rattachées à cette origine.
+  /// Galeries associées (1–N, Gallery.origin). Détachées à sa suppression
+  /// (SET NULL).
   galleries Gallery[]
 }
 
-/// Grosse maille de classification des disciplines.
-///
-/// Sert d'ancre pour grouper les Discipline et les MediaAsset
-/// (rangement de la bibliothèque). Le champ `type` porte le nom de la
-/// catégorie (« martial_art », « calligraphy », « cultural »...) — il
-/// est nommé `type` historiquement mais sémantiquement c'est un libellé.
-///
-/// Modèle volontairement minimaliste : les catégories sont stables et
-/// rarement éditées par l'admin.
+/// Catégorie d'enseignement, la plus grosse maille de classement (ex.
+/// « Cours »). Regroupe des disciplines et range la médiathèque : le dossier
+/// physique d'une catégorie est {appRoot}/{segment}, où le segment vient de
+/// categoryStorageSegment (« Cours » → « courses », sinon le slug du
+/// libellé) ; son nom affiché est le libellé (FolderLabel).
 model Category {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Nom de la catégorie (unique). Sert aussi de slug fonctionnel.
+  /// Libellé de la catégorie, unique (ex. « Cours »). Nommé `type` pour des
+  /// raisons historiques. Détermine le segment de son dossier physique.
   type String @unique
 
-  /// Disciplines appartenant à cette catégorie.
+  /// Disciplines de la catégorie (1–N, Discipline.category). Bloquent la
+  /// suppression de la catégorie (RESTRICT).
   disciplines Discipline[]
 
-  /// Assets média rattachés à cette catégorie.
+  /// Fichiers classés dans la catégorie (1–N, MediaAsset.category). Détachés
+  /// à sa suppression (SET NULL).
   mediaAssets MediaAsset[]
 
-  /// Galeries rattachées à cette catégorie.
+  /// Galeries associées (1–N, Gallery.category). Détachées à sa suppression
+  /// (SET NULL).
   galleries Gallery[]
 }
 
+/// Famille de disciplines proches. Sert à regrouper les disciplines dans le
+/// menu public « Nos disciplines » : familles triées par `sortOrder`,
+/// familles vides masquées, disciplines sans famille listées à part.
 model DisciplineFamily {
+  /// Identifiant auto-incrémenté.
   id        Int      @id @default(autoincrement())
+  /// Nom affiché, unique.
   name      String   @unique
+  /// Slug unique. Aucune page publique de famille ne l'utilise aujourd'hui.
   slug      String   @unique
+  /// Rang d'affichage, croissant (puis par nom).
   sortOrder Int      @default(0)
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
+  /// Disciplines de la famille (1–N, Discipline.family). Détachées à sa
+  /// suppression (SET NULL).
   disciplines Discipline[]
 
   @@index([sortOrder])
 }
 
-/// Une discipline enseignée par le club, au sens conceptuel.
-///
-/// Le Karaté Shotokan en tant que tel — pas un créneau, pas un événement.
-/// Indépendante du temps et du lieu. Les créneaux récurrents qui
-/// l'enseignent sont des `Course`, les événements ponctuels sont des
-/// `Stage`, et les manifestations culturelles plus larges sont des
-/// `Event`.
+/// Discipline enseignée par le club, au sens conceptuel (ex. Tchoy Lee Fut) :
+/// indépendante du temps et du lieu. Ses créneaux hebdomadaires sont des
+/// Course ; les séminaires (« stages » dans l'interface) et les évènements
+/// peuvent s'y rattacher.
+/// Page publique : /disciplines/{slug}, une fois publiée.
+/// Suppression : bloquée tant qu'il reste des créneaux (RESTRICT) ; les
+/// séminaires, fichiers et galeries sont détachés (SET NULL), les liens
+/// d'évènements effacés (CASCADE).
 model Discipline {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Nom d'affichage de la discipline (« Karaté Shotokan »).
+  /// Nom affiché. Unique au sein de sa catégorie.
   name String
 
-  /// Champ pratique : MARTIAL_ART ou CALLIGRAPHY.
+  /// Champ de pratique (voir DisciplineType).
   type DisciplineType
 
-  /// Slug URL-safe pour la discipline, utilisé dans les URLs publiques
-  slug         String?    @unique        // nullable le temps du backfill
+  /// Segment d'URL de la page publique, unique. Obligatoire à la création
+  /// (routeur) ; nul seulement pour d'anciennes lignes, qui n'ont alors ni
+  /// page publique ni entrée dans le sitemap.
+  slug         String?    @unique
 
-  /// Date de publication éditoriale. **null = brouillon** (non visible
-  /// publiquement). Cohérent avec Event/Stage.
+  /// Date de publication. null → brouillon, invisible du public. Une date
+  /// future programme la publication (les pages publiques filtrent sur
+  /// « date passée »).
   publicationDate DateTime?
 
-  /// Famille d'appartenance pour regrouper les disciplines proches (ex: « Karaté », « Aikido »).
+  /// Famille, pour le regroupement dans le menu public. null → sans famille.
   familyId     Int?
 
-  /// Relation vers la famille d'appartenance (nullable pour les disciplines proposées qui n'ont pas encore de famille créée).
+  /// Famille (N–1, DisciplineFamily.disciplines). Détachée si la famille est
+  /// supprimée (SET NULL).
   family DisciplineFamily? @relation(fields: [familyId], references: [id])
 
-  /// École spécifique (« Shōtōkan », « Aikikai »). Texte libre.
+  /// École (ex. « Shaolin du Sud »). Texte libre.
   school String?
 
-  /// Classification (« Sport olympique », « Art martial traditionnel »).
-  /// Texte libre.
+  /// Classification (ex. « Art martial traditionnel »). Texte libre.
   classification String?
 
-  /// Origine culturelle de la discipline. Relation vers le modèle
-  /// `Origin` introduit dans la migration v2. Nullable pour permettre
-  /// une création progressive (rattacher l'origine plus tard).
+  /// Origine culturelle. null → non renseignée.
   originId Int?
 
-  /// Page de présentation de la discipline, éditée au PageBuilder.
-  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
-  /// Default = composite vide.
+  /// Page complète de la discipline, éditée au PageBuilder (PageContentV1).
   description Json @default("{\"version\":1,\"blocks\":[]}")
 
-  /// Présentation SYNTHÉTIQUE de la discipline, éditée au PageBuilder
-  /// restreint (bloc « texte enrobant une image » uniquement).
-  /// Alimente la carte de la page d'accueil, qui renvoie vers la page
-  /// complète construite depuis `description`.
-  ///
-  /// Même format que `description` (`PageContentV1`) : aucune conversion, et
-  /// `PageRenderer` s'y applique tel quel. Un composite VIDE signifie « pas
-  /// de présentation synthétique » — c'est l'interrupteur d'apparition sur
-  /// l'accueil, sans booléen supplémentaire.
+  /// Présentation SYNTHÉTIQUE, éditée au PageBuilder restreint (bloc « texte
+  /// enrobant une image » uniquement). Alimente la carte de la page
+  /// d'accueil, qui renvoie vers la page complète. Même format que
+  /// `description`. Composite VIDE → pas de carte sur l'accueil.
   summary Json @default("{\"version\":1,\"blocks\":[]}")
 
-  /// Image de la carte de présentation synthétique.
-  ///
-  /// Identifiant de `MediaAsset` en texte simple et non relation Prisma :
-  /// c'est la convention des blocs du PageBuilder, qui stockent des `mediaId`
-  /// bruts. Deux régimes de référence pour la même chose seraient une source
-  /// de confusion durable.
+  /// Image de la carte d'accueil : identifiant de MediaAsset en texte simple
+  /// (sans clé étrangère), comme dans les blocs du PageBuilder. Déclarée dans
+  /// PageMediaReference avec les composites (type DISCIPLINE), donc protégée
+  /// et servie comme eux.
   summaryMediaId String?
 
-  /// Catégorie d'appartenance (NOT NULL).
+  /// Catégorie (obligatoire).
   categoryId Int
 
-  /// Instructeur principal — celui qui porte la responsabilité pédagogique
-  /// de la discipline. NOT NULL : chaque discipline a forcément un
-  /// référent.
-  ///
-  /// Distinct de `Course.instructorId` qui est l'instructeur SPÉCIFIQUE
-  /// d'un créneau particulier (peut diverger de l'instructeur principal).
+  /// Instructeur principal, responsable pédagogique de la discipline
+  /// (obligatoire). Un créneau peut avoir son propre instructeur
+  /// (Course.instructorId).
   instructorId String
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
+  /// Catégorie (N–1, Category.disciplines). La catégorie ne peut pas être
+  /// supprimée tant qu'elle a des disciplines (RESTRICT).
   category Category @relation(fields: [categoryId], references: [id])
 
-  /// Origine culturelle (peut être null).
+  /// Origine (N–1, Origin.disciplines). Détachée si l'origine est supprimée
+  /// (SET NULL).
   origin Origin? @relation(fields: [originId], references: [id])
 
-  /// Relation vers l'instructeur principal de la discipline.
+  /// Instructeur principal (N–1, User.disciplinesAsInstructor). Le membre ne
+  /// peut pas être supprimé tant qu'il l'est (RESTRICT).
   instructor User @relation("DisciplineInstructor", fields: [instructorId], references: [id])
 
-  /// Cours hebdomadaires récurrents de cette discipline.
+  /// Créneaux hebdomadaires (1–N, Course.discipline). Bloquent la
+  /// suppression de la discipline (RESTRICT).
   courses Course[]
 
-  /// Stages ponctuels rattachés à cette discipline.
+  /// Séminaires rattachés (1–N, Seminar.discipline). Détachés à la
+  /// suppression de la discipline (SET NULL).
   seminars Seminar[]
 
-  /// Événements rattachés à cette discipline.
-
-  /// Assets média (photos, vidéos d'illustration) rattachés à cette discipline.
+  /// Fichiers de la médiathèque classés dans la discipline (1–N,
+  /// MediaAsset.discipline). Détachés à sa suppression (SET NULL).
   mediaAssets MediaAsset[]
 
-  /// Galeries rattachées à cette discipline.
+  /// Galeries associées (1–N, Gallery.discipline). Détachées à sa
+  /// suppression (SET NULL).
   galleries   Gallery[]
 
-  /// Événements où cette discipline est présentée (0..N).
+  /// Évènements où la discipline est présentée (1–N,
+  /// EventDiscipline.discipline). Liens effacés avec elle (CASCADE).
   eventLinks EventDiscipline[]
 
   @@unique([categoryId, name])
@@ -565,62 +562,54 @@ model Discipline {
 // OCCURRENCES
 // ============================================================================
 
-/// Un créneau hebdomadaire récurrent d'une discipline.
-///
-/// Le créneau existe en tant qu'entité — il a un jour, une heure, une
-/// audience — et revient chaque semaine. Un cours = un créneau, pas
-/// une séance individuelle.
-///
-/// L'unicité `(disciplineId, day, beginTime, audience)` définit ce
-/// qu'est un « doublon » : pas deux cours identiques sur la même
-/// combinaison.
+/// Créneau hebdomadaire récurrent d'une discipline : un jour, une heure, un
+/// public, chaque semaine. Un cours = un créneau, pas une séance datée.
+/// Ses horaires alimentent la colonne « Horaires » du pied de page.
+/// L'unicité (discipline, jour, heure de début, public) définit un doublon.
 model Course {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Discipline enseignée pendant ce créneau (NOT NULL).
+  /// Discipline enseignée (obligatoire).
   disciplineId Int
 
-  /// Public visé. Détermine l'accessibilité au passage de grade
-  /// (cf. enum `Audience`).
+  /// Public visé (voir Audience).
   audience Audience
 
-  /// Jour de la semaine où le créneau a lieu.
+  /// Jour de la semaine.
   day Day
 
-  /// Heure de début au format HHMM (1830 = 18h30, 905 = 9h05).
-  /// Heure locale du club (pas de timezone).
+  /// Heure de début au format HHMM (1830 = 18h30, 905 = 9h05), heure locale
+  /// du club.
   beginTime Int
 
-  /// Heure de fin au format HHMM. Doit être strictement > beginTime.
+  /// Heure de fin au format HHMM, strictement après `beginTime` (vérifié par
+  /// le routeur et le formulaire).
   endTime Int
 
-  /// Instructeur spécifique de ce créneau. **Nullable** par design :
-  /// si null, l'instructeur principal de la discipline s'applique par
-  /// défaut. Si non-null, surcharge ce créneau-là (par exemple, un
-  /// assistant qui anime un cours alors que le sensei principal en
-  /// anime un autre).
+  /// Instructeur attitré du créneau. null → l'instructeur principal de la
+  /// discipline s'applique.
   instructorId String?
 
-  /// Prérequis libres pour suivre le cours (« ceinture jaune minimum »,
-  /// « 14 ans révolus », etc.).
+  /// Prérequis libres (ex. « 14 ans révolus »). Affichés en administration
+  /// seulement.
   requisites String[]
 
-  /// Composite Json édité au PageBuilder. Décrit le cours
-  /// (présentation, programme, photos) — pas de champ `description`
-  /// séparé, tout vit dans ce composite.
-  ///
-  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
-  /// Lecture sécurisée via `parsePageContentV1(raw)`.
+  /// Présentation du cours (programme, photos…), éditée au PageBuilder
+  /// (PageContentV1) : tout le contenu riche vit ici.
   content Json
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Discipline enseignée.
+  /// Discipline (N–1, Discipline.courses). Le créneau empêche la suppression
+  /// de la discipline (RESTRICT).
   discipline Discipline @relation(fields: [disciplineId], references: [id])
 
-  /// Instructeur spécifique du créneau (peut être null — voir le champ).
+  /// Instructeur attitré (N–1, User.coursesAsInstructor). À sa suppression, le
+  /// créneau retombe sur l'instructeur principal (SET NULL).
   instructor User? @relation("CourseInstructor", fields: [instructorId], references: [id])
 
   @@unique([disciplineId, day, beginTime, audience])
@@ -628,106 +617,96 @@ model Course {
   @@index([instructorId])
 }
 
-/// Un événement ponctuel, généralement intensif, d'une ou plusieurs
-/// sessions consécutives.
+/// Séminaire (« stage » dans l'interface) : manifestation ponctuelle et
+/// intensive (souvent un week-end, parfois avec un intervenant invité),
+/// composée d'une ou plusieurs séances. Les dates vivent dans ses séances
+/// (SeminarSession) : le séminaire lui-même n'est pas daté.
+/// Deux composites : `description` (ce que c'est) et `program` (ce qu'on y fait).
 ///
-/// Plus dense qu'un Course récurrent — typiquement un weekend ou une
-/// semaine avec un intervenant invité. Porte **deux composites
-/// séparés** : `description` (ce que c'est et pourquoi) et `program`
-/// (ce qu'on va y faire).
-///
-/// La date n'est pas portée par Stage lui-même mais par ses
-/// `StageSession[]` — un Stage est un container, pas un événement daté.
-///
-/// **Rattachement flexible** (depuis la migration v2) : un Stage peut
-/// être rattaché à une discipline enseignée du club (`disciplineId`),
-/// à une discipline externe nommée librement (`externalDisciplineLabel`),
-/// ou simplement à une origine culturelle (`originId`). Les trois sont
-/// optionnels — la validation Zod côté router exige qu'au moins l'un
-/// d'eux soit renseigné pour qu'un stage ait du contexte.
-///
-/// ⚠️ La contrainte `@@unique([disciplineId, label])` ne s'applique que
-/// quand `disciplineId` est non-null (Postgres considère NULL ≠ NULL
-/// pour les unique constraints). Pour les stages externes, la
-/// prévention des doublons de label vit côté UI/validation.
+/// Rattachement : à une discipline du club (`disciplineId`), à une discipline
+/// extérieure nommée librement (`externalDisciplineLabel`) et/ou à une
+/// origine (`originId`). Le routeur exige au moins l'un des trois.
+/// ⚠ L'unicité (disciplineId, label) ne joue que si `disciplineId` est non
+/// null (en SQL, NULL ≠ NULL) : sans discipline, rien n'empêche un doublon de
+/// libellé.
+/// Page publique : /seminars/{slug}, une fois publié.
 model Seminar {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Discipline du stage (peut être null pour les stages externes).
+  /// Discipline du club concernée. null → séminaire sans discipline du club.
   disciplineId Int?
 
-  /// Nom libre d'une discipline non enseignée (« Calligraphie chinoise »).
-  /// Sert quand le stage porte sur un domaine que le club n'enseigne
-  /// pas — typiquement intervenant extérieur.
+  /// Nom libre d'une discipline que le club n'enseigne pas (ex. « Calligraphie
+  /// chinoise »), typiquement avec un intervenant extérieur.
   externalDisciplineLabel String?
 
-  /// Origine culturelle rattachée. Permet le regroupement par culture
-  /// quand pas de discipline rattachée.
+  /// Origine culturelle, pour le regroupement quand il n'y a pas de discipline.
   originId Int?
 
-  /// Nom du stage (« Stage Sensei Tanaka 2026 »).
-  /// Unique par discipline quand `disciplineId` est non-null.
+  /// Nom du séminaire. Unique par discipline quand `disciplineId` est non null.
   label String
 
-  /// Public visé. Détermine l'accessibilité au passage de grade.
+  /// Public visé (voir Audience).
   audience Audience
 
-  /// Composite Json édité au PageBuilder : présentation du stage,
-  /// contexte, intervenants, photos.
-  ///
-  /// Format : `PageContentV1`.
+  /// Présentation : contexte, intervenants, photos (PageContentV1).
   description Json
 
-  /// Composite Json édité au PageBuilder : programme détaillé,
-  /// session par session, techniques abordées, supports remis.
-  ///
-  /// Format : `PageContentV1`.
+  /// Programme : séance par séance, techniques abordées, supports (PageContentV1).
   program Json
 
   /// Présentation SYNTHÉTIQUE, éditée au builder restreint (texte seul).
-  /// Alimente la carte de la page « Agenda », qui renvoie ici.
-  /// Composite VIDE = pas de carte.
+  /// Alimente la carte de la page « Agenda », qui renvoie ici. Composite VIDE
+  /// → pas de carte.
   summary Json @default("{\"version\":1,\"blocks\":[]}")
 
-  /// Image de la carte d'agenda. Identifiant de `MediaAsset` en texte
-  /// simple, comme les blocs du PageBuilder — pas de clé étrangère, pour
-  /// n'avoir qu'un seul régime de référence.
+  /// Image de la carte d'agenda : identifiant de MediaAsset en texte simple
+  /// (sans clé étrangère), comme dans les blocs du PageBuilder. Déclarée dans
+  /// PageMediaReference avec le composite `summary` (SEMINAR_SUMMARY).
   summaryMediaId String?
 
-  /// Inscriptions préalables. Tableau de chaînes (typiquement emails
-  /// ou identifiants utilisateur, à formaliser).
+  /// ⚠ Malgré son nom, ce sont des PRÉREQUIS (un par ligne), affichés sous
+  /// « Prérequis » sur la page publique : l'équivalent de Course.requisites.
   preRegistered String[]
 
-  /// Animateur principal du stage (NOT NULL — l'équivalent du sensei
-  /// en chef pour ce stage).
+  /// Animateur principal (obligatoire).
   primaryAnimatorId String
 
-  /// Date de publication. **null = brouillon** (non visible publiquement).
-  /// Une date dans le futur = publication programmée. Cohérent avec Post et Event.
+  /// Date de publication. null → brouillon, invisible du public. Une date
+  /// future programme la publication.
   publicationDate DateTime?
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Discipline (peut être null pour les stages externes).
+  /// Discipline (N–1, Discipline.seminars). Détachée si la discipline est
+  /// supprimée (SET NULL).
   discipline Discipline? @relation(fields: [disciplineId], references: [id])
 
-  /// Origine culturelle (peut être null).
+  /// Origine (N–1, Origin.seminars). Détachée si l'origine est supprimée
+  /// (SET NULL).
   origin Origin? @relation(fields: [originId], references: [id])
 
-  /// Animateur principal.
+  /// Animateur principal (N–1, User.seminarsAsPrimaryAnimator). Le membre ne
+  /// peut pas être supprimé tant qu'il l'est (RESTRICT).
   primaryAnimator User @relation("SeminarPrimaryAnimator", fields: [primaryAnimatorId], references: [id])
 
-  /// Animateurs secondaires (many-to-many).
+  /// Co-animateurs (N–N, User.seminarsAsAnimator, table _SeminarAnimators).
   animators User[] @relation("SeminarAnimators")
 
-  /// Sessions individuelles qui composent ce stage.
+  /// Séances (1–N, SeminarSession.seminar). Effacées avec le séminaire.
   sessions SeminarSession[]
 
-  slug String?  @unique // nullable le temps du backfill
+  /// Segment d'URL de la page publique, unique. Obligatoire à la création
+  /// (routeur) ; nul seulement pour d'anciennes lignes, alors sans page
+  /// publique ni entrée dans le sitemap.
+  slug String?  @unique
 
-  /// Assets média (photos, vidéos d'illustration) rattachés à ce stage.
+  /// Galeries associées (1–N, Gallery.seminar). Détachées à sa suppression
+  /// (SET NULL).
   galleries   Gallery[]
 
   @@unique([disciplineId, label])
@@ -737,44 +716,41 @@ model Seminar {
   @@index([publicationDate])
 }
 
-/// Une séance individuelle d'un Stage.
-///
-/// Un stage de weekend peut compter 4 sessions : samedi matin, samedi
-/// après-midi, dimanche matin, dimanche après-midi.
-///
-/// Pas de PageBuilder ici — les sessions sont des données structurées
-/// secondaires. Le contenu riche vit dans `Stage.description` et
-/// `Stage.program`.
+/// Séance d'un séminaire (ex. samedi matin). Porte la date et les horaires ;
+/// pas de contenu riche, qui vit dans le séminaire.
 model SeminarSession {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Stage parent (NOT NULL, cascade en suppression).
+  /// Séminaire parent.
   seminarId Int
 
-  /// Date de la séance (jour calendaire).
+  /// Jour de la séance.
   date DateTime
 
   /// Heure de début au format HHMM.
   beginTime Int
 
-  /// Heure de fin au format HHMM. Doit être > beginTime.
+  /// Heure de fin au format HHMM, strictement après `beginTime` (vérifié par
+  /// le routeur et le formulaire).
   endTime Int
 
-  /// Lieu de la séance — texte libre (« Dojo principal »,
-  /// « Gymnase Jean Moulin »). Optionnel.
+  /// Lieu, en texte libre (ex. « Dojo principal »).
   location String?
 
-  /// Notes libres (« apporter son propre keikogi », etc.).
+  /// Notes libres (ex. « apporter sa tenue »).
   notes String?
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Stage parent. `onDelete: Cascade` : si le stage est supprimé,
-  /// ses sessions le sont aussi.
+  /// Séminaire parent (N–1, Seminar.sessions). Séance effacée avec lui
+  /// (CASCADE).
   seminar Seminar @relation(fields: [seminarId], references: [id], onDelete: Cascade)
 
+  // Une séance au plus par séminaire, jour et heure de début.
   @@unique([seminarId, date, beginTime])
   @@index([seminarId])
   @@index([date])
@@ -784,93 +760,84 @@ model SeminarSession {
 // ÉVÉNEMENTS
 // ============================================================================
 
-/// Événement ponctuel non récurrent — repas, conférence, journée
-/// portes ouvertes, atelier culturel.
-///
-/// **Différences avec Stage** :
-///
-/// - Pas obligatoirement rattaché à une discipline (`disciplineId` nullable)
-/// - Pas obligatoirement rattaché à une origine non plus (les deux
-///   relations sont optionnelles, mais on peut les combiner)
-/// - Un seul composite Json (`content`) — pas la dichotomie description
-///   / program de Stage. L'événement est typiquement plus "léger" en
-///   structure
-/// - `publicationDate?` pour gérer brouillons (cf. convention Post)
-/// - Plus simple côté animation : un seul `organizerId`, pas de
-///   distinction primary/secondary
-///
-/// La date n'est pas portée par Event lui-même mais par ses
-/// `EventSession[]` — comme Stage, un Event est un container temporel.
+/// Évènement ponctuel : repas, conférence, portes ouvertes, forum des
+/// associations, atelier culturel… Plus léger qu'un séminaire : un seul
+/// composite (`content`), un seul organisateur. Les dates vivent dans ses
+/// séances (EventSession).
+/// Rattachements facultatifs et cumulables : disciplines du club
+/// (EventDiscipline), disciplines extérieures nommées librement
+/// (`externalDisciplineLabels`), origine (`originId`).
+/// Page publique : /events/{slug}, une fois publié.
 model Event {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Nom de l'événement (« Repas de fin d'année 2026 », « Conférence
-  /// sur le bouddhisme zen »).
+  /// Nom de l'évènement (ex. « Repas de fin d'année »).
   label String
 
-  /// Composite Json édité au PageBuilder : présentation complète de
-  /// l'événement (contexte, intervenants, photos, programme).
-  ///
-  /// Format : `PageContentV1` (cf. `packages/contracts/src/page`).
+  /// Présentation complète (contexte, intervenants, programme, photos),
+  /// éditée au PageBuilder (PageContentV1).
   content Json @default("{\"version\":1,\"blocks\":[]}")
 
   /// Présentation SYNTHÉTIQUE, éditée au builder restreint (texte seul).
-  /// Alimente la carte de la page « Agenda », qui renvoie ici.
-  /// Composite VIDE = pas de carte.
+  /// Alimente la carte de la page « Agenda », qui renvoie ici. Composite VIDE
+  /// → pas de carte.
   summary Json @default("{\"version\":1,\"blocks\":[]}")
 
-  /// Image de la carte d'agenda. Identifiant de `MediaAsset` en texte
-  /// simple, comme les blocs du PageBuilder — pas de clé étrangère, pour
-  /// n'avoir qu'un seul régime de référence.
+  /// Image de la carte d'agenda : identifiant de MediaAsset en texte simple
+  /// (sans clé étrangère), comme dans les blocs du PageBuilder. Déclarée dans
+  /// PageMediaReference avec le composite `summary` (EVENT_SUMMARY).
   summaryMediaId String?
 
-  /// Public visé. NOT NULL — forcer le choix explicite (utiliser
-  /// `ALL_AGES` pour les événements tout public).
+  /// Public visé (obligatoire ; ALL_AGES pour un évènement tout public).
   audience Audience
 
-  /// Noms libres des disciplines NON enseignées présentées lors de
-  /// l'événement (0..N) — ex. « Calligraphie chinoise ». Remplace
-  /// `externalDisciplineLabel` (singulier).
+  /// Noms libres des disciplines que le club n'enseigne pas, présentées lors
+  /// de l'évènement (ex. « Calligraphie chinoise »).
   externalDisciplineLabels String[] @default([])
 
-  /// Origine culturelle rattachée. Nullable. Permet de regrouper les
-  /// événements par culture quand pertinent.
+  /// Origine culturelle. null → aucune.
   originId Int?
 
-  /// Organisateur de l'événement (NOT NULL). User responsable.
+  /// Organisateur responsable (obligatoire).
   organizerId String
 
-  /// Date de publication. **null = brouillon** (non visible publiquement).
-  /// Date dans le futur = publication programmée. Cohérent avec Post.
+  /// Date de publication. null → brouillon, invisible du public. Une date
+  /// future programme la publication.
   publicationDate DateTime?
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Discipline rattachée (peut être null).
-
-  /// Origine rattachée (peut être null).
+  /// Origine (N–1, Origin.events). Détachée si l'origine est supprimée
+  /// (SET NULL).
   origin Origin? @relation(fields: [originId], references: [id])
 
-  /// Organisateur (User).
+  /// Organisateur (N–1, User.eventsAsOrganizer). Le membre ne peut pas être
+  /// supprimé tant qu'il l'est (RESTRICT).
   organizer User @relation("EventOrganizer", fields: [organizerId], references: [id])
 
-  /// Sessions individuelles qui composent l'événement (peut n'en
-  /// contenir qu'une).
+  /// Séances (1–N, EventSession.event), au moins une en pratique. Effacées
+  /// avec l'évènement.
   sessions EventSession[]
 
-  slug String?  @unique// nullable le temps du backfill
+  /// Segment d'URL de la page publique, unique. Obligatoire à la création
+  /// (routeur) ; nul seulement pour d'anciennes lignes, alors sans page
+  /// publique ni entrée dans le sitemap.
+  slug String?  @unique
 
-  /// Assets média (photos, vidéos d'illustration) rattachés à cet événement.
+  /// Galeries associées : une sélection montée par les administrateurs
+  /// (1–N, Gallery.event). Détachées à sa suppression (SET NULL).
   galleries   Gallery[]
 
-  /// Disciplines ENSEIGNÉES présentées lors de l'événement (0..N).
+  /// Disciplines du club présentées (1–N, EventDiscipline.event). Liens
+  /// effacés avec l'évènement.
   disciplineLinks EventDiscipline[]
 
-  /// Photos/vidéos déposées POUR cet événement. Distinct des `galleries`,
-  /// qui sont une curation montée par les admins : ici c'est le contenu brut
-  /// rattaché à l'événement.
+  /// Fichiers déposés POUR l'évènement (1–N, MediaAsset.event) : le contenu
+  /// brut, distinct des galeries. Détachés à sa suppression (SET NULL).
   mediaAssets MediaAsset[]
 
   @@index([originId])
@@ -878,40 +845,40 @@ model Event {
   @@index([publicationDate])
 }
 
-/// Une session individuelle d'un Event.
-///
-/// Cloné sur `StageSession` — même rôle : porter la date et l'heure
-/// d'une séance. Un événement à une seule date a un seul `EventSession`.
-/// Un événement en plusieurs soirées en a plusieurs.
+/// Séance d'un évènement : sa date et ses horaires. Un évènement d'un soir en
+/// a une ; un évènement sur plusieurs dates en a plusieurs.
 model EventSession {
-  /// Identifiant entier auto-incrémenté.
+  /// Identifiant auto-incrémenté.
   id Int @id @default(autoincrement())
 
-  /// Event parent (NOT NULL, cascade en suppression).
+  /// Évènement parent.
   eventId Int
 
-  /// Date de la séance (jour calendaire).
+  /// Jour de la séance.
   date DateTime
 
   /// Heure de début au format HHMM.
   beginTime Int
 
-  /// Heure de fin au format HHMM. Doit être > beginTime.
+  /// Heure de fin au format HHMM, strictement après `beginTime` (vérifié par
+  /// le routeur et le formulaire).
   endTime Int
 
-  /// Lieu de la séance — texte libre.
+  /// Lieu, en texte libre.
   location String?
 
   /// Notes libres.
   notes String?
 
+  /// Création.
   createdAt DateTime @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
   updatedAt DateTime @updatedAt
 
-  /// Event parent. `onDelete: Cascade` — supprimer un Event supprime
-  /// ses sessions.
+  /// Évènement parent (N–1, Event.sessions). Séance effacée avec lui (CASCADE).
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
+  // Une séance au plus par évènement, jour et heure de début.
   @@unique([eventId, date, beginTime])
   @@index([eventId])
   @@index([date])
@@ -1501,17 +1468,18 @@ model BreakingNews {
   @@index([publicationDate])
 }
 
-/// Jointure explicite Event <-> Discipline : un événement présente 0..N
-/// disciplines ENSEIGNÉES (forum des associations, démonstration
-/// multi-disciplines), une discipline apparaît dans 0..N événements.
-///
-/// Explicite (et non M2M implicite) pour maîtriser la forme SQL de la table
-/// et pouvoir y porter des métadonnées plus tard si le besoin apparaît.
+/// Discipline du club présentée lors d'un évènement (ex. forum des
+/// associations, démonstration). Jointure explicite plutôt qu'implicite, pour
+/// maîtriser la table et pouvoir y ajouter des informations plus tard.
 model EventDiscipline {
+  /// Évènement.
   eventId      Int
+  /// Discipline présentée.
   disciplineId Int
 
+  /// Évènement (N–1, Event.disciplineLinks). Lien effacé avec l'évènement.
   event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  /// Discipline (N–1, Discipline.eventLinks). Lien effacé avec la discipline.
   discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
 
   @@id([eventId, disciplineId])
