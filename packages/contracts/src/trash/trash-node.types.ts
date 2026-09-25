@@ -48,7 +48,7 @@ export type TrashFileNode = {
    * Catégorisation applicative du média (calculée par l'adapter de stockage).
    * Optionnelle : un asset orphelin de métadonnées peut ne pas en avoir.
    */
-  mediaKind?: "image" | "video" | "document";
+  mediaKind?: "image" | "video" | "audio" | "document";
 
   meta: TrashMeta;
 };

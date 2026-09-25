@@ -26,6 +26,9 @@ export async function register() {
   const { ensureCategoryFolderLabels } = await import(
     "@backend/modules/cloudinary/services/ensureCategoryFolderLabels.service"
   );
+  const { ensureInstructorBioMediaReferences } = await import(
+    "@backend/modules/media/services/ensureInstructorBioMediaReferences.service"
+  );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 
@@ -82,6 +85,18 @@ export async function register() {
   } catch (err) {
     console.error(
       "[instrumentation] ensureCategoryFolderLabels failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const { synced, failed } = await ensureInstructorBioMediaReferences(prisma);
+    console.log(
+      `[instrumentation] ensureInstructorBioMediaReferences: ${synced} bio(s) synchronisée(s), ${failed} en échec`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureInstructorBioMediaReferences failed — app will still start",
       err
     );
   }

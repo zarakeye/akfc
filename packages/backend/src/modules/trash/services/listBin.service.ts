@@ -62,7 +62,7 @@ export async function listBin(params: {
       storageRoot: true,
       trashedAt: true,
       sizeBytes: true,
-      cloudinaryCreatedAt: true,
+      providerCreatedAt: true,
       mediaKind: true,
     },
   });
@@ -80,12 +80,15 @@ export async function listBin(params: {
     previousPathShort: buildPreviousPathShort(r.previousPath),
     trashedAt: r.trashedAt.toISOString(),
     sizeBytes: bigIntToSafeNumber(r.sizeBytes),
-    createdAt: r.cloudinaryCreatedAt ? r.cloudinaryCreatedAt.toISOString() : undefined,
+    createdAt: r.providerCreatedAt ? r.providerCreatedAt.toISOString() : undefined,
     publicId: r.kind === "file" ? r.storageRoot : undefined,
     // mediaKind: stocké en String? côté DB, narrow vers le type strict du contrat.
     // Les rows antérieures à la migration auront NULL → undefined.
     mediaKind:
-      r.mediaKind === "image" || r.mediaKind === "video" || r.mediaKind === "document"
+      r.mediaKind === "image" ||
+      r.mediaKind === "video" ||
+      r.mediaKind === "audio" ||
+      r.mediaKind === "document"
         ? r.mediaKind
         : undefined,
   }));
