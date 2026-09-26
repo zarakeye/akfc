@@ -46,3 +46,11 @@ next-env.d.ts
 
 # seed
 prisma/seed.js
+
+# Dumps de base et secrets : jamais versionnés
+*.sql
+!prisma/migrations/**/*.sql
+*.dump
+.env
+.env.*
+!.env.example
