@@ -17,7 +17,7 @@
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.1.6",
-    "@tiptap/core": "^3.27.1",
+    "@tiptap/core": "^3.30.5",
     "@tiptap/html": "^3.27.1",
     "@workspace/finder-core": "workspace:*",
     "embla-carousel-autoplay": "^8.6.0",
