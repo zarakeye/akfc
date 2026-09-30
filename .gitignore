@@ -54,3 +54,8 @@ prisma/seed.js
 .env
 .env.*
 !.env.example
+
+# Fichiers d'identifiants : jamais versionnés
+.seed-credentials.txt
+*credential*.txt
+*secret*.txt
