@@ -164,10 +164,16 @@ export const authRouter = router({
         },
       });
 
-      await sendPasswordResetEmail({
-        toEmail: user.email,
-        token,
-      });
+      try {
+        await sendPasswordResetEmail({ toEmail: user.email, token });
+      } catch (err) {
+        // Jamais le jeton dans les journaux. Réponse identique en cas d'échec : sinon, une
+        // erreur trahirait qu'un compte existe pour l'adresse saisie.
+        console.error(
+          "[auth] e-mail de réinitialisation non envoyé :",
+          err instanceof Error ? err.message : err,
+        );
+      }
 
       return { ok: true as const };
     }),
