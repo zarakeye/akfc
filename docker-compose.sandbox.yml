@@ -145,7 +145,6 @@ services:
       APP_SHORT_NAME: "AKFC"
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"
-      APP_DOLMAIN: "sandbox.local"
 
       # ── Média local : MinIO + imgproxy ──
       STORAGE_DRIVER: "local"

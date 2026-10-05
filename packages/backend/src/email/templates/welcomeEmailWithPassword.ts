@@ -1,25 +1,15 @@
 'use server';
 
-import nodemail from "nodemailer";
-
 import { prisma } from "@backend/prisma";
-
-const transporter = nodemail.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD
-  }
-});
+import { getMailTransport, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
 
 /**
- * Send a password email to the user.
- * @param {string} to - the recipient's email address
- * @param {string} subject - the email subject
- * @param {string} password - the temporary password
- * @returns {Promise<void>} - a promise that resolves when the email has been sent
+ * E-mail de bienvenue envoyé à la création d'un compte, avec le mot de passe provisoire.
+ * Expéditeur : SMTP_FROM_NOREPLY (ex. noreply@akfc.fr). Réponses dirigées vers SMTP_REPLY_TO
+ * (ex. contact@akfc.fr) : un membre qui répond arrive dans la boîte du club.
+ * @param to - adresse du nouveau membre (c'est aussi son identifiant)
+ * @param subject - conservé pour compatibilité d'appel : le sujet est construit ici
+ * @param password - mot de passe provisoire
  */
 export default async function sendPasswordEmail(to: string, subject: string, password: string): Promise<void> {
   // Identité affichée : SiteSettings gagne, l'env reste le repli.
@@ -32,31 +22,58 @@ export default async function sendPasswordEmail(to: string, subject: string, pas
     settings?.longTitle?.trim() || process.env.APP_FULL_NAME || shortTitle;
   const supportEmail =
     settings?.supportEmail?.trim() || process.env.APP_SUPPORT_EMAIL || "";
-  // URL canonique (infra, pas éditable admin) — alignée sur siteUrl.ts.
-  const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXTAUTH_URL ||
-    "https://akfc.fr"
-  ).replace(/\/+$/, "");
+  const siteUrl = siteBaseUrl();
+  const replyTo = mailReplyTo();
+  const signinUrl = `${siteUrl}/auth/signin`;
 
-  const mailInfo = {
-    from: `${shortTitle} <${process.env.SMTP_FROM_NOREPLY}@${process.env.APP_DOLMAIN}>`,
+  const contactText = replyTo
+    ? "Pour nous écrire, réponds simplement à ce message."
+    : supportEmail
+      ? `Pour nous écrire : ${supportEmail}.`
+      : "";
+  const contactHtml = replyTo
+    ? "Pour nous écrire, réponds simplement à ce message."
+    : supportEmail
+      ? `Pour nous écrire : <a href="mailto:${esc(supportEmail)}">${esc(supportEmail)}</a>.`
+      : "";
+
+  await getMailTransport().sendMail({
+    from: mailFrom(shortTitle),
     to,
-    subject: `Création de compte ${shortTitle} réussie`,
+    replyTo,
+    subject: `Bienvenue à l'${shortTitle} : ton compte est créé`,
+    text: [
+      `Bienvenue à l'${shortTitle} !`,
+      "",
+      `Félicitations, ton compte sur le site de l'${longTitle} a bien été créé.`,
+      "",
+      `Identifiant : ${to}`,
+      `Mot de passe provisoire : ${password}`,
+      "",
+      "Ce mot de passe est temporaire : lors de ta première connexion, tu devras le changer et compléter tes informations personnelles.",
+      "",
+      `Se connecter : ${signinUrl}`,
+      "",
+      `Bonne année d'entraînement au sein de l'${longTitle} !`,
+      contactText ? `\n${contactText}` : "",
+    ].join("\n"),
     html: `
-      <div style="font-family: Arial, sans-serif; maw-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333;">Bienvenue à l'${shortTitle}, ${longTitle}</h2>
-      <p>Felicitations, ton compte a bien été créé !</p>
-      <p>Ton identifiant est : <strong>${to}</strong> et ton mot de passe provisoire : <strong>${password}</strong></p>
-      <p>Ce mot de passe est temporaire. Lors de ta première connexion, tu devras le changer et renseigner tes informations personnelles.</p>
-      <p>Si tu as des questions, n'hesitez pas a nous contacter sur <a href="mailto:${supportEmail}">${supportEmail}</a></p>
-      </div>
-      <p style="text-align: center; font-size: 12px; color: #888;">Cet email a été envoyé automatiquement par l'application ${longTitle} et ne peut recevoir aucun message.</p>
-      <p>Bonne année d'entraînement au sein de l'${longTitle}!</p>
-      <a href="${siteUrl}/auth/signin" style="background: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Se connecter</a>
-    `,
-  };
-
-  await transporter.sendMail(mailInfo);
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Bienvenue à l'${esc(shortTitle)} !</h2>
+        <p>Félicitations, ton compte sur le site de l'${esc(longTitle)} a bien été créé.</p>
+        <p>Ton identifiant est : <strong>${esc(to)}</strong><br>
+           Ton mot de passe provisoire : <strong>${esc(password)}</strong></p>
+        <p>Ce mot de passe est temporaire : lors de ta première connexion, tu devras le changer et compléter tes informations personnelles.</p>
+        <p style="margin: 24px 0;">
+          <a href="${signinUrl}" style="background: #0070f3; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Se connecter</a>
+        </p>
+        <p>Bonne année d'entraînement au sein de l'${esc(longTitle)} !</p>
+        ${contactHtml ? `<p style="font-size: 13px; color: #555;">${contactHtml}</p>` : ""}
+      </div>`,
+  });
+  void subject;
 }
 
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+}

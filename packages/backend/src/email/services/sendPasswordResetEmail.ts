@@ -1,5 +1,5 @@
 import { prisma } from "@backend/prisma";
-import { getMailTransport, isMailConfigured, mailFrom, siteBaseUrl } from "@backend/email/mailer";
+import { getMailTransport, isMailConfigured, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";
 
 /**
  * Envoie le lien de réinitialisation de mot de passe (« mot de passe oublié »).
@@ -30,6 +30,7 @@ export async function sendPasswordResetEmail(params: { toEmail: string; token: s
   await getMailTransport().sendMail({
     from: mailFrom(name),
     to: toEmail,
+    replyTo: mailReplyTo(),
     subject: `${name} — réinitialisation de votre mot de passe`,
     text: [
       "Bonjour,",

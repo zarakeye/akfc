@@ -19,6 +19,8 @@ export function getMailTransport(): Transporter {
       host: process.env.SMTP_HOST,
       port,
       secure: port === 465,
+      // 587 = port de soumission : STARTTLS exigé (jamais d'identifiants en clair).
+      requireTLS: port === 587,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
     });
   }
@@ -33,6 +35,14 @@ export function mailFrom(displayName: string): string {
   const noreply = process.env.SMTP_FROM_NOREPLY?.trim();
   const address = noreply && noreply.includes("@") ? noreply : (process.env.SMTP_USER ?? "");
   return `${displayName} <${address}>`;
+}
+
+/**
+ * Adresse de réponse des e-mails automatiques (SMTP_REPLY_TO, ex. contact@akfc.fr) : un membre qui
+ * répond écrit au club et non à l'adresse d'envoi. Non définie : pas d'en-tête Reply-To.
+ */
+export function mailReplyTo(): string | undefined {
+  return process.env.SMTP_REPLY_TO?.trim() || undefined;
 }
 
 /** URL publique canonique du site (même règle que l'e-mail de bienvenue et config/siteUrl.ts). */
