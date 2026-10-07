@@ -20,7 +20,7 @@ import { formatTicketRef } from "./ticketRef";
 
 const DEFAULT_RESPONSE_DAYS = 7;
 const MAX_SUBJECT = 200;
-const MAX_BODY = 20_000;
+export const MAX_BODY = 20_000;
 
 type Db = PrismaClient;
 
@@ -33,13 +33,13 @@ function forbidden(message = "Vous ne pouvez pas traiter cette demande."): never
 function notFound(): never {
   throw new TRPCError({ code: "NOT_FOUND", message: "Demande introuvable." });
 }
-function cleanText(value: string, max: number, field: string): string {
+export function cleanText(value: string, max: number, field: string): string {
   const v = value.replace(/\r\n/g, "\n").trim();
   if (!v) bad(`${field} est vide.`);
   if (v.length > max) bad(`${field} dépasse ${max} caractères.`);
   return v;
 }
-function displayName(u: { firstName: string | null; lastName: string | null; email: string }): string {
+export function displayName(u: { firstName: string | null; lastName: string | null; email: string }): string {
   return [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email;
 }
 
@@ -164,7 +164,14 @@ export async function transferTicket(db: Db, ticketId: string, actorId: string, 
 /* ── Messages ───────────────────────────────────────────────────────── */
 
 /** Réponse du club. Sans responsable, l'auteur devient responsable. */
-export async function replyToTicket(db: Db, ticketId: string, authorId: string, body: string) {
+export async function replyToTicket(
+  db: Db,
+  ticketId: string,
+  authorId: string,
+  body: string,
+  /** Message-ID de l'e-mail parti au demandeur : servira à rattacher sa réponse. */
+  emailMessageId?: string | null,
+) {
   const t = await loadForHandler(db, ticketId, authorId);
   if (t.status === "CLOSED") bad("Cette demande est close : rouvrez-la avant de répondre.");
   const text = cleanText(body, MAX_BODY, "La réponse");
@@ -180,7 +187,7 @@ export async function replyToTicket(db: Db, ticketId: string, authorId: string, 
       await tx.ticketEvent.create({ data: { ticketId: t.id, type: "TAKEN", actorId: authorId, createdAt: now } });
     }
     const m = await tx.ticketMessage.create({
-      data: { ticketId: t.id, direction: "OUT", authorId, authorName: displayName(author), body: text, createdAt: now },
+      data: { ticketId: t.id, direction: "OUT", authorId, authorName: displayName(author), body: text, emailMessageId: emailMessageId ?? null, createdAt: now },
       select: { id: true, createdAt: true },
     });
     await tx.ticket.update({
@@ -259,7 +266,22 @@ export async function addIncomingMessage(db: Db, input: IncomingMessageInput) {
   return { duplicate: false as const, reopened: reopen };
 }
 
-/* ── Clôture ────────────────────────────────────────────────────────── */
+/* ── Clôture / réouverture ──────────────────────────────────────────── */
+
+/** Réouverture par le club (une demande close à tort). Le demandeur, lui, rouvre en écrivant. */
+export async function reopenTicket(db: Db, ticketId: string, userId: string) {
+  const t = await loadForHandler(db, ticketId, userId);
+  if (t.status !== "CLOSED") return { changed: false };
+  const now = new Date();
+  await db.$transaction([
+    db.ticket.update({
+      where: { id: t.id },
+      data: { status: t.assigneeId ? "IN_PROGRESS" : "WAITING", closedAt: null },
+    }),
+    db.ticketEvent.create({ data: { ticketId: t.id, type: "REOPENED", actorId: userId, createdAt: now } }),
+  ]);
+  return { changed: true };
+}
 
 export async function closeTicket(db: Db, ticketId: string, userId: string) {
   const t = await loadForHandler(db, ticketId, userId);
