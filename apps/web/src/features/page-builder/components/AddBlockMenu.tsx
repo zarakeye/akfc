@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import type { PageBlockKindV1 } from "@contracts/page";
 
 import { ALL_BLOCK_DEFINITIONS } from "../blockRegistry";
+import { BlockPreviewCard } from "./BlockPreviews";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Props                                                                  */
@@ -45,6 +46,8 @@ export interface AddBlockMenuProps {
  */
 export function AddBlockMenu({ onAdd, allowedBlocks }: AddBlockMenuProps) {
   const [open, setOpen] = useState(false);
+  // Type survolé (ou ciblé au clavier) : son aperçu s'affiche à côté du menu.
+  const [hovered, setHovered] = useState<PageBlockKindV1 | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -99,7 +102,10 @@ export function AddBlockMenu({ onAdd, allowedBlocks }: AddBlockMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute left-1/2 z-10 mt-1 w-56 -translate-x-1/2 rounded-md border border-border bg-popover p-1 shadow-md">
+        <div
+          className="absolute left-1/2 z-10 mt-1 w-56 -translate-x-1/2 rounded-md border border-border bg-popover p-1 shadow-md"
+          onMouseLeave={() => setHovered(null)}
+        >
           {definitions.map((def) => (
             <button
               key={def.kind}
@@ -107,13 +113,25 @@ export function AddBlockMenu({ onAdd, allowedBlocks }: AddBlockMenuProps) {
               onClick={() => {
                 onAdd(def.kind);
                 setOpen(false);
+                setHovered(null);
               }}
+              onMouseEnter={() => setHovered(def.kind)}
+              onFocus={() => setHovered(def.kind)}
+              onBlur={() => setHovered(null)}
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-popover-foreground transition-colors hover:bg-muted"
             >
               {def.icon}
               {def.label}
             </button>
           ))}
+          {hovered && (
+            <div className="pointer-events-none absolute left-full top-0 ml-2 hidden sm:block" role="tooltip">
+              <BlockPreviewCard
+                kind={hovered}
+                label={definitions.find((d) => d.kind === hovered)?.label ?? ""}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
