@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties, type JSX } from "react";
 
 import { trpc } from "@/core/trpc/trpcClient";
+import { RealBlocksPreview } from "./RealBlocksPreview";
 
 /**
  * Laboratoire de réglage du rendu des blocs.
@@ -436,129 +437,12 @@ export function BlockStyleLab(): JSX.Element {
         </div>
         </section>
 
-        {/* Les trois blocs de collection. Ils lisent les mêmes variables que
-            le reste depuis que leurs vues ont cessé de coder leurs
-            espacements en dur — sans quoi les curseurs n'auraient eu aucune
-            prise sur eux et le laboratoire aurait montré du faux. */}
-        {/* Ce bloc PERD son filet, volontairement : il faut au moins une
-            frontière nue pour lire l'écart entre blocs seul. Le suivant
-            garde le sien, et montre l'autre cas. */}
-        <section id="lab-blocs" className="space-y-6">
-          <div>
-            <h3
-              id="lab-collections"
-              className="mb-2 text-xs uppercase tracking-wide text-muted-foreground"
-            >
-              Galerie d&apos;images
-            </h3>
-            <div
-              className="grid sm:grid-cols-2 lg:grid-cols-3"
-              style={{ gap: "var(--akfc-item-gap)" }}
-            >
-              {[0, 1, 2].map((i) => (
-                <figure key={i} className="m-0">
-                  <div className="flex aspect-[4/3] items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-                    image {i + 1}
-                  </div>
-                  <figcaption
-                    className="mt-1 text-muted-foreground"
-                    style={{ fontSize: "var(--akfc-caption-size)" }}
-                  >
-                    Légende de l&apos;image {i + 1}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Collection audio
-            </h3>
-            <ul
-              className="flex flex-col"
-              style={{ gap: "var(--akfc-item-gap)" }}
-            >
-              {[0, 1].map((i) => (
-                <li
-                  key={i}
-                  className="rounded-md border border-border bg-card"
-                  style={{ padding: "var(--akfc-card-padding)" }}
-                >
-                  <p className="mb-2 text-sm font-medium">Piste {i + 1}</p>
-                  <div className="h-8 rounded bg-muted" />
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Liste de documents
-            </h3>
-            <ul
-              className="flex flex-col"
-              style={{ gap: "var(--akfc-item-gap)" }}
-            >
-              {[0, 1].map((i) => (
-                <li key={i}>
-                  <span
-                    className="flex items-center gap-3 rounded-md border border-border bg-card"
-                    style={{ padding: "var(--akfc-card-padding)" }}
-                  >
-                    <span className="h-5 w-5 shrink-0 rounded bg-muted" />
-                    <span className="flex-1 text-sm">
-                      Document {i + 1}.pdf
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section id="lab-float" className="akfc-rule-h">
-          <div className="akfc-float-scope">
-            <div className="akfc-float" style={{ "--akfc-float-side": "left" } as CSSProperties}>
-              <figure className="akfc-float-figure m-0">
-                <div className="flex aspect-square w-full items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
-                  image
-                </div>
-              </figure>
-              <div className="akfc-prose prose max-w-none">
-                <p>
-                  Texte enrobant une image flottante. Il commence à droite de
-                  l&apos;image, l&apos;épouse sur toute sa hauteur, puis se
-                  poursuit sous elle en reprenant toute la largeur. Réglez la
-                  largeur de l&apos;image et la gouttière d&apos;enrobage pour
-                  voir la coulée s&apos;ajuster.
-                </p>
-                <p>
-                  Un deuxième paragraphe pour garantir que le texte dépasse la
-                  hauteur de l&apos;image et redescende sous elle — c&apos;est
-                  là qu&apos;on juge l&apos;enrobage.
-                </p>
-              </div>
-              <div className="akfc-float-clear" />
-            </div>
-          </div>
-        </section>
-
-        <section id="lab-pleine-largeur" className="akfc-rule-h">
-          <article className="akfc-prose prose max-w-none">
-            <h2>Bloc pleine largeur</h2>
-            <p>
-              Ce second bloc est séparé du premier par un filet horizontal, et
-              montre le rendu du texte sans colonne — le cas d&apos;un bloc
-              tiptap seul.
-            </p>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non
-              risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing
-              nec, ultricies sed, dolor. Cras elementum ultrices diam.
-            </p>
-          </article>
-        </section>
+        {/* Tous les types de blocs, par leurs VRAIES vues (celles du site) sur des données
+            d'exemple : galeries (grille, carrousel, mosaïque), média-texte (image, logo,
+            avatar, alternés), texte enrobant (gauche, droite), audio, documents, texte.
+            Remplace les imitations d'avant, qui ne couvraient ni toutes les variantes ni
+            les blocs à venir (RealBlocksPreview l'impose à la compilation). */}
+        <RealBlocksPreview />
           </div>
         </div>
       </div>
