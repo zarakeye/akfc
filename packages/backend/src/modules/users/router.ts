@@ -22,8 +22,20 @@ export const userRouter = router({
       const users = await ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
         omit: { password: true },
+        include: {
+          memberGroupMemberships: {
+            select: { group: { select: { id: true, name: true, isAdminGroup: true } } },
+          },
+        },
       });
-      return users.map((u) => ({ ...u, isDemo: isDemoEmail(u.email) }));
+      return users.map(({ memberGroupMemberships, ...u }) => ({
+        ...u,
+        isDemo: isDemoEmail(u.email),
+        // Groupes du membre : Administrateurs d'abord, puis ordre alphabétique.
+        groups: memberGroupMemberships
+          .map((m) => m.group)
+          .sort((a, b) => Number(b.isAdminGroup) - Number(a.isAdminGroup) || a.name.localeCompare(b.name, "fr")),
+      }));
     }),
 
   getById: protectedProcedure
