@@ -108,6 +108,21 @@ export async function register() {
   }
 
   try {
+    const { startTicketRecapSchedule } = await import(
+      "@backend/modules/tickets/recap.service"
+    );
+    const { started, hour } = startTicketRecapSchedule(prisma);
+    console.log(
+      `[instrumentation] récapitulatif des demandes : ${started ? `chaque jour à ${hour} h (heure de Paris)` : "désactivé"}`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] startTicketRecapSchedule failed — app will still start",
+      err
+    );
+  }
+
+  try {
     const { ensured } = await ensureCategoryFolderLabels(prisma, APP_ROOT);
     console.log(
       `[instrumentation] ensureCategoryFolderLabels: ${ensured} libellé(s) de catégorie garanti(s) pour appRoot="${APP_ROOT}"`
