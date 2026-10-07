@@ -1,3 +1,4 @@
+import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -444,6 +445,8 @@ export const memberDocumentRouter = router({
       id: u.id,
       name:
         [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email,
+      email: u.email,
+      isDemo: isDemoEmail(u.email),
     }));
   }),
 

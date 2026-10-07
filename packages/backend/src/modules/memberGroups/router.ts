@@ -1,3 +1,4 @@
+import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -206,7 +207,13 @@ export const memberGroupRouter = router({
         },
       });
       return memberships
-        .map((m) => ({ id: m.user.id, name: memberName(m.user), access: m.access }))
+        .map((m) => ({
+          id: m.user.id,
+          name: memberName(m.user),
+          email: m.user.email,
+          isDemo: isDemoEmail(m.user.email),
+          access: m.access,
+        }))
         .sort((a, b) => a.name.localeCompare(b.name, "fr"));
     }),
 

@@ -6,6 +6,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
 import sendPasswordEmail from "@backend/email/templates/welcomeEmailWithPassword";
+import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
@@ -17,9 +18,12 @@ export const userRouter = router({
   getAll: protectedProcedure
     .use(isAdmin)
     .query(async ({ ctx }) => {
-      return ctx.prisma.user.findMany({
+      // Jamais l'empreinte du mot de passe vers le navigateur.
+      const users = await ctx.prisma.user.findMany({
         orderBy: { id: "asc" },
+        omit: { password: true },
       });
+      return users.map((u) => ({ ...u, isDemo: isDemoEmail(u.email) }));
     }),
 
   getById: protectedProcedure
@@ -28,6 +32,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
+        omit: { password: true },
       });
 
       if (!user) {
@@ -46,6 +51,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { email: input.email },
+        omit: { password: true },
       });
 
       if (!user) {
@@ -95,11 +101,13 @@ export const userRouter = router({
             },
           },
         },
+        omit: { password: true },
       });
 
       // Email de bienvenue avec le mot de passe temporaire. Un échec d'envoi
       // ne doit pas annuler la création — on le logue sans jeter.
-      try {
+      // Compte de démonstration : son adresse ne peut rien recevoir, pas d'e-mail.
+      if (!isDemoEmail(input.email)) try {
         await sendPasswordEmail(
           input.email,
           `Bienvenue`,
