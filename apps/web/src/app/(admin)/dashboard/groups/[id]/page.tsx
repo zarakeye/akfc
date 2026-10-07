@@ -8,12 +8,14 @@ import { ArrowLeft } from "lucide-react";
 import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { trpc } from "@trpc/trpcClient";
+import { DemoAccountsToggle, MemberLabel } from "@features/admin/common/DemoAccounts";
 
 /** Fiche d'un groupe — `/(admin)/dashboard/groups/[id]`. */
 export default function GroupDetailPage(): JSX.Element {
   const params = useParams<{ id: string }>();
   const groupId = params.id;
   const utils = trpc.useUtils();
+  const [showDemo, setShowDemo] = useState(false);
 
   const groupsQuery = trpc.memberGroup.list.useQuery();
   const group = (groupsQuery.data ?? []).find((g) => g.id === groupId) ?? null;
@@ -60,6 +62,9 @@ export default function GroupDetailPage(): JSX.Element {
   const candidates = (allMembersQuery.data ?? []).filter(
     (m) => !memberIds.has(m.id),
   );
+  // Comptes de démonstration masqués par défaut dans « Ajouter » (un membre déjà présent reste visible).
+  const demoCandidates = candidates.filter((m) => m.isDemo).length;
+  const visibleCandidates = showDemo ? candidates : candidates.filter((m) => !m.isDemo);
   const currentName = name || group.name;
 
   return (
@@ -152,7 +157,7 @@ export default function GroupDetailPage(): JSX.Element {
                   key={m.id}
                   className="flex items-center justify-between rounded px-2 py-1 text-sm hover:bg-muted/50"
                 >
-                  <span>{m.name}</span>
+                  <MemberLabel name={m.name} email={m.email} isDemo={m.isDemo} />
                   <span className="flex items-center gap-2">
                     {group.isCollaborative && (
                       <button
@@ -188,18 +193,23 @@ export default function GroupDetailPage(): JSX.Element {
 
         <div>
           <p className="mb-2 text-sm font-medium">Ajouter</p>
-          {candidates.length === 0 ? (
+          <DemoAccountsToggle
+            count={demoCandidates}
+            shown={showDemo}
+            onToggle={() => setShowDemo((v) => !v)}
+          />
+          {visibleCandidates.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Tous les membres sont dans le groupe.
             </p>
           ) : (
             <ul className="max-h-72 space-y-1 overflow-auto">
-              {candidates.map((m) => (
+              {visibleCandidates.map((m) => (
                 <li
                   key={m.id}
                   className="flex items-center justify-between rounded px-2 py-1 text-sm hover:bg-muted/50"
                 >
-                  <span>{m.name}</span>
+                  <MemberLabel name={m.name} email={m.email} isDemo={m.isDemo} />
                   <button
                     type="button"
                     onClick={() =>
