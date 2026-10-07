@@ -30,11 +30,13 @@ import { memberGroupRouter } from "@backend/modules/memberGroups/router";
 import { homeHeroRouter } from "@backend/modules/homeHero/router";
 import { siteSettingsRouter } from "@backend/modules/siteSettings/router";
 import { pageVisibilityRouter } from "@backend/modules/pageVisibility/router";
+import { ticketRouter } from "@backend/modules/tickets/router";
 
 export const appRouter = router({
   homeHero: homeHeroRouter,
   siteSettings: siteSettingsRouter,
   pageVisibility: pageVisibilityRouter,
+  ticket: ticketRouter,
   siteStyle: siteStyleRouter,
   sitePage: sitePageRouter,
   auth: authRouter,
