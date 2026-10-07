@@ -9,6 +9,7 @@ import { parsePageContentV1 } from "@contracts/page";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { CLUB_INFO } from "@features/app-shell/clubInfo";
+import { ContactForm } from "@features/contact/ContactForm";
 import type { Metadata } from "next";
 
 /**
@@ -48,13 +49,18 @@ export default async function ContactsPage(): Promise<JSX.Element> {
       ) : (
         !hasInfo && (
           <p className="akfc-measure-block text-muted-foreground">
-            Cette page n&apos;a pas encore été rédigée.
+            Pour toute question, écrivez-nous avec le formulaire ci-dessous.
           </p>
         )
       )}
 
+      <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <section className="rounded-lg border border-border p-6">
+        <ContactForm />
+      </section>
+
       {hasInfo && (
-        <div className="akfc-measure-block mt-8 rounded-lg border border-border p-6">
+        <div className="rounded-lg border border-border p-6">
           <h2 className="mb-4 text-lg font-semibold">Coordonnées</h2>
           <ul className="flex flex-col gap-2 text-sm">
             {CLUB_INFO.address.map((line) => (
@@ -83,6 +89,7 @@ export default async function ContactsPage(): Promise<JSX.Element> {
           </ul>
         </div>
       )}
+      </div>
     </div>
   );
 }
