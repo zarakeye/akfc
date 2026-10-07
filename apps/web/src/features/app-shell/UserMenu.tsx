@@ -4,6 +4,7 @@ import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSessionStore } from "@lib/stores/useSessionStore";
+import { trpc } from "@trpc/trpcClient";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
 
@@ -19,6 +20,7 @@ export default function UserMenu(): JSX.Element | null {
   const router = useRouter();
   const logout = useSessionStore((s) => s.logout);
   const user = useSessionStore((s) => s.session?.user);
+  const ticketAccess = trpc.ticket.access.useQuery(undefined, { enabled: Boolean(user) });
 
   /**
    * Logs out the user by clearing the session and redirecting to the homepage.
@@ -82,6 +84,20 @@ export default function UserMenu(): JSX.Element | null {
               onClick={() => setOpen(false)}
             >
               Dashboard
+            </Link>
+          )}
+          {ticketAccess.data?.canHandle && (
+            <Link
+              href="/dashboard/tickets"
+              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              Demandes reçues
+              {ticketAccess.data.open > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                  {ticketAccess.data.open}
+                </span>
+              )}
             </Link>
           )}
           <div className="px-4 py-2 hover:bg-gray-100">

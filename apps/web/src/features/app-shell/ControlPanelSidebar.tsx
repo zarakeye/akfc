@@ -41,6 +41,10 @@ export default function ControlPanelSidebar(): JSX.Element {
   const pageVis = trpc.pageVisibility.all.useQuery(undefined, {
     enabled: isAdmin,
   });
+  // Demandes : admins ET membres d'un groupe responsable (Support…). Le serveur décide.
+  const isLoggedIn = useSessionStore((state) => Boolean(state.session?.user));
+  const ticketAccess = trpc.ticket.access.useQuery(undefined, { enabled: isLoggedIn });
+  const canHandleTickets = ticketAccess.data?.canHandle === true;
   const editorialDraftCount = PAGE_REGISTRY.filter(
     (pg) => !(pageVis.data ?? []).some((v: { key: string; published: boolean }) => v.key === pg.key && v.published),
   ).length;
@@ -78,11 +82,16 @@ export default function ControlPanelSidebar(): JSX.Element {
     });
   };
 
-  if (!isAdmin) {
+  if (!isAdmin && !canHandleTickets) {
     return <aside className="w-60 bg-gray-800 text-white p-5"></aside>;
   }
 
-  const SECTIONS: NavSection[] = [
+  const TICKETS_SECTION: NavSection = {
+    title: "Demandes",
+    items: [{ label: "Demandes reçues", href: "/dashboard/tickets", badge: ticketAccess.data?.open ?? 0 }],
+  };
+
+  const ADMIN_SECTIONS: NavSection[] = [
     {
       title: "Membres & accès",
       items: [
@@ -131,6 +140,11 @@ export default function ControlPanelSidebar(): JSX.Element {
         { label: "Doc dev", href: "/docs/dev" },
       ],
     },
+  ];
+
+  const SECTIONS: NavSection[] = [
+    ...(canHandleTickets ? [TICKETS_SECTION] : []),
+    ...(isAdmin ? ADMIN_SECTIONS : []),
   ];
 
   const isActive = (href: string): boolean =>
