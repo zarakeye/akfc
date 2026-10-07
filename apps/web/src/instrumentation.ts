@@ -23,6 +23,9 @@ export async function register() {
   const { ensureAdminGroup } = await import(
     "@backend/modules/memberGroups/ensureAdminGroup.service"
   );
+  const { ensureTicketCategories } = await import(
+    "@backend/modules/tickets/ensureTicketCategories.service"
+  );
   const { ensureCategoryFolderLabels } = await import(
     "@backend/modules/cloudinary/services/ensureCategoryFolderLabels.service"
   );
@@ -73,6 +76,18 @@ export async function register() {
   } catch (err) {
     console.error(
       "[instrumentation] ensureAdminGroup failed — app will still start",
+      err
+    );
+  }
+
+  try {
+    const { created, supportGroupCreated } = await ensureTicketCategories(prisma);
+    console.log(
+      `[instrumentation] ensureTicketCategories: ${created.length} catégorie(s) créée(s)${supportGroupCreated ? ", groupe Support créé" : ""}`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureTicketCategories failed — app will still start",
       err
     );
   }

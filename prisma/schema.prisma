@@ -148,6 +148,20 @@ model User {
   /// Adhésions aux groupes de membres (1–N, MemberGroupMembership.user).
   /// Effacées avec lui.
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
+
+  // ── Demandes (tickets) ───────────────────────────────────────────────────
+  /// Demandes qu'il a adressées au club (1–N, Ticket.requester). Conservées
+  /// sans lien à sa suppression.
+  ticketsRequested          Ticket[]                  @relation("TicketRequester")
+  /// Demandes dont il est responsable (1–N, Ticket.assignee). Remises « sans
+  /// responsable » à sa suppression.
+  ticketsAssigned           Ticket[]                  @relation("TicketAssignee")
+  /// Messages de demandes dont il est l'auteur (1–N, TicketMessage.author).
+  ticketMessages            TicketMessage[]           @relation("TicketMessageAuthor")
+  /// Évènements d'historique dont il est l'auteur (1–N, TicketEvent.actor).
+  ticketEventsAsActor       TicketEvent[]             @relation("TicketEventActor")
+  /// Transferts de demandes qu'il a reçus (1–N, TicketEvent.toUser).
+  ticketEventsAsTarget      TicketEvent[]             @relation("TicketEventTarget")
 }
 
 /// Préférences d'affichage d'un membre (une ligne au plus par membre).
@@ -1727,6 +1741,9 @@ model MemberGroup {
   /// Documents qui ciblent ce groupe (1–N, MemberDocumentGroup.group). Les liens
   /// sont effacés avec le groupe ; les documents restent.
   documents   MemberDocumentGroup[]
+  /// Catégories de demandes dont ce groupe est responsable (1–N,
+  /// TicketCategory.group). Empêchent sa suppression.
+  ticketCategories TicketCategory[]
 
   @@index([parentGroupId])
 }
@@ -1829,6 +1846,9 @@ model SiteSettings {
   /// Dernière modification (tenue à jour par Prisma). Sert aussi de version
   /// du logo (?v=…) pour contourner les caches.
   updatedAt     DateTime @updatedAt
+  /// Délai de PREMIÈRE réponse promis aux demandeurs, en jours (7 par défaut).
+  /// Fixe l'échéance de chaque nouvelle demande (Ticket.dueAt).
+  ticketResponseDays Int  @default(7)
 }
 
 /// Nom AFFICHÉ d'un dossier du finder, découplé de son chemin physique.
@@ -1844,4 +1864,183 @@ model FolderLabel {
   displayName String
   /// Dernière modification (tenue à jour par Prisma).
   updatedAt   DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DEMANDES (TICKETS) — suivi des messages adressés au club
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Étape d'une demande. Le délai promis est un délai de RÉPONSE (première
+/// réponse), pas de résolution.
+enum TicketStatus {
+  /// Personne ne s'en occupe encore.
+  WAITING
+  /// Un responsable s'en occupe (ou le demandeur a relancé après une réponse).
+  IN_PROGRESS
+  /// Le club a répondu ; en attente d'un éventuel retour du demandeur.
+  ANSWERED
+  /// Traitée. Un nouveau message du demandeur la rouvre.
+  CLOSED
+}
+
+/// Sens d'un message d'une demande.
+enum TicketMessageDirection {
+  /// Du demandeur vers le club (formulaire ou e-mail).
+  IN
+  /// Du club vers le demandeur (réponse depuis le site).
+  OUT
+}
+
+/// Nature d'un évènement de l'historique d'une demande.
+enum TicketEventType {
+  /// Création de la demande.
+  CREATED
+  /// Prise en charge (« je m'en occupe »).
+  TAKEN
+  /// Passage de relais à une autre personne, avec une note.
+  TRANSFERRED
+  /// Message reçu du demandeur.
+  MESSAGE_IN
+  /// Réponse envoyée par le club.
+  MESSAGE_OUT
+  /// Clôture.
+  CLOSED
+  /// Réouverture (nouveau message après clôture).
+  REOPENED
+}
+
+/// Catégorie de demande : décide du GROUPE responsable et de l'adresse de
+/// réponse (alias de contact@). Créées au démarrage par ensureTicketCategories
+/// (« gestion » → groupe Administrateurs, « support » → groupe Support).
+model TicketCategory {
+  /// Identifiant CUID.
+  id        String  @id @default(cuid())
+  /// Clé technique stable (« gestion », « support »).
+  key       String  @unique
+  /// Nom affiché (« Gestion du club », « Support du site »).
+  label     String
+  /// Adresse de réponse des messages envoyés pour cette catégorie (Reply-To),
+  /// alias de la boîte contact@ (« admin@akfc.fr », « support@akfc.fr »).
+  replyTo   String
+  /// Groupe responsable : ses membres traitent les demandes et reçoivent le
+  /// récapitulatif.
+  groupId   String
+  /// Groupe responsable (N–1, MemberGroup.ticketCategories). Le groupe ne peut
+  /// pas être supprimé tant qu'une catégorie le désigne.
+  group     MemberGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  /// Ordre d'affichage dans le formulaire.
+  position  Int     @default(0)
+  /// Proposée dans le formulaire de contact.
+  isActive  Boolean @default(true)
+  /// Demandes de cette catégorie (1–N, Ticket.category).
+  tickets   Ticket[]
+}
+
+/// Demande adressée au club, numérotée (référence affichée « AKFC-0042 »).
+model Ticket {
+  /// Identifiant CUID.
+  id               String       @id @default(cuid())
+  /// Numéro séquentiel, base de la référence affichée (AKFC-0042). Jamais
+  /// modifié, même en cas de transfert.
+  number           Int          @unique @default(autoincrement())
+  /// Objet de la demande.
+  subject          String
+  /// Étape de la demande.
+  status           TicketStatus @default(WAITING)
+  /// Catégorie.
+  categoryId       String
+  /// Catégorie (N–1, TicketCategory.tickets). Ne peut pas être supprimée tant
+  /// qu'elle a des demandes.
+  category         TicketCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// Membre demandeur, s'il était connecté (null : e-mail d'une personne
+  /// extérieure, ou compte supprimé depuis).
+  requesterId      String?
+  /// Membre demandeur (N–1, User.ticketsRequested). Demande conservée, sans
+  /// lien, à la suppression du compte.
+  requester        User?        @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  /// Adresse du demandeur : destinataire des réponses. Toujours renseignée.
+  requesterEmail   String
+  /// Nom du demandeur, tel qu'affiché.
+  requesterName    String?
+  /// Responsable actuel (null : personne).
+  assigneeId       String?
+  /// Responsable actuel (N–1, User.ticketsAssigned). Demande remise « sans
+  /// responsable » à la suppression du compte.
+  assignee         User?        @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  /// Échéance de la PREMIÈRE réponse : création + délai réglé dans SiteSettings.
+  /// Fixée à la création, jamais repoussée (ni par un transfert, ni par une relance).
+  dueAt            DateTime
+  /// Date de la première réponse du club (null : pas encore de réponse).
+  firstResponseAt  DateTime?
+  /// Date de clôture (null : ouverte).
+  closedAt         DateTime?
+  /// Création.
+  createdAt        DateTime     @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
+  updatedAt        DateTime     @updatedAt
+  /// Messages échangés (1–N, TicketMessage.ticket).
+  messages         TicketMessage[]
+  /// Historique (1–N, TicketEvent.ticket).
+  events           TicketEvent[]
+
+  @@index([status])
+  @@index([categoryId, status])
+  @@index([assigneeId])
+}
+
+/// Message d'une demande, entrant (demandeur) ou sortant (club).
+model TicketMessage {
+  /// Identifiant CUID.
+  id             String   @id @default(cuid())
+  /// Demande.
+  ticketId       String
+  /// Demande (N–1, Ticket.messages). Messages effacés avec elle.
+  ticket         Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  /// Sens du message.
+  direction      TicketMessageDirection
+  /// Auteur, si c'est un membre (réponse du club ou demandeur connecté).
+  authorId       String?
+  /// Auteur (N–1, User.ticketMessages). Message conservé, sans lien, à la
+  /// suppression du compte.
+  author         User?    @relation("TicketMessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  /// Nom de l'auteur tel qu'affiché (conservé même si le compte disparaît).
+  authorName     String?
+  /// Adresse d'origine d'un message reçu par e-mail.
+  fromEmail      String?
+  /// Texte du message (brut, sans HTML).
+  body           String
+  /// Identifiant « Message-ID » de l'e-mail d'origine : empêche d'importer deux
+  /// fois le même message lors de la relève de la boîte.
+  emailMessageId String?  @unique
+  /// Date du message.
+  createdAt      DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+/// Évènement de l'historique d'une demande (qui, quoi, quand).
+model TicketEvent {
+  /// Identifiant CUID.
+  id        String          @id @default(cuid())
+  /// Demande.
+  ticketId  String
+  /// Demande (N–1, Ticket.events). Historique effacé avec elle.
+  ticket    Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  /// Nature de l'évènement.
+  type      TicketEventType
+  /// Membre à l'origine de l'évènement (null : le système, ou un demandeur extérieur).
+  actorId   String?
+  /// Membre à l'origine (N–1, User.ticketEventsAsActor). Conservé sans lien à
+  /// la suppression du compte.
+  actor     User?           @relation("TicketEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  /// Destinataire d'un transfert (TRANSFERRED uniquement).
+  toUserId  String?
+  /// Destinataire d'un transfert (N–1, User.ticketEventsAsTarget).
+  toUser    User?           @relation("TicketEventTarget", fields: [toUserId], references: [id], onDelete: SetNull)
+  /// Note d'un transfert (obligatoire pour TRANSFERRED).
+  note      String?
+  /// Date de l'évènement.
+  createdAt DateTime        @default(now())
+
+  @@index([ticketId, createdAt])
 }
