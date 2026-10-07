@@ -81,7 +81,7 @@ const nextConfig: NextConfig = {
   // chunks (Server Components, Route Handlers, Server Actions, etc.).
   // Sans ça, chaque chunk a son propre module Prisma → multiples
   // PrismaClient instanciés → cold start + DEALLOCATE ALL à chaque requête.
-  serverExternalPackages: ["@prisma/client", "cloudinary", "cloudinary-core"],
+  serverExternalPackages: ["@prisma/client", "cloudinary", "cloudinary-core", "imapflow", "mailparser"],
   images: {
     remotePatterns: [
       {

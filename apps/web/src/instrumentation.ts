@@ -93,6 +93,21 @@ export async function register() {
   }
 
   try {
+    const { startTicketMailboxPolling } = await import(
+      "@backend/modules/tickets/imapIntake.service"
+    );
+    const started = startTicketMailboxPolling(prisma);
+    console.log(
+      `[instrumentation] relève des réponses aux demandes : ${started ? "active" : "désactivée (TICKET_IMAP_HOST absent)"}`
+    );
+  } catch (err) {
+    console.error(
+      "[instrumentation] startTicketMailboxPolling failed — app will still start",
+      err
+    );
+  }
+
+  try {
     const { ensured } = await ensureCategoryFolderLabels(prisma, APP_ROOT);
     console.log(
       `[instrumentation] ensureCategoryFolderLabels: ${ensured} libellé(s) de catégorie garanti(s) pour appRoot="${APP_ROOT}"`

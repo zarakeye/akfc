@@ -31,6 +31,18 @@ async function siteName(): Promise<string> {
   return s?.shortTitle?.trim() || process.env.APP_SHORT_NAME || "AKFC";
 }
 
+/**
+ * Adresse de réponse donnée au DEMANDEUR. Relève active (TICKET_IMAP_HOST) : l'adresse d'envoi
+ * (noreply@), relevée par le site, pour que sa réponse rejoigne la demande. Sinon : l'adresse de
+ * la catégorie (admin@, support@), lue par un humain.
+ */
+function requesterReplyTo(categoryReplyTo: string): string {
+  if (!process.env.TICKET_IMAP_HOST?.trim()) return categoryReplyTo;
+  const from = mailFrom("x");
+  const m = from.match(/<([^>]+)>/);
+  return m?.[1] || categoryReplyTo;
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 }
@@ -64,7 +76,7 @@ export async function sendTicketAcknowledgement(t: TicketMailData): Promise<void
   await getMailTransport().sendMail({
     from: mailFrom(name),
     to: t.requester.email,
-    replyTo: t.category.replyTo,
+    replyTo: requesterReplyTo(t.category.replyTo),
     subject: ticketSubject(t.number, t.subject),
     text: [
       hello,
@@ -174,7 +186,7 @@ export async function sendTicketReply(r: TicketReplyData): Promise<string | null
     from: mailFrom(`${name} — ${r.category.label}`),
     to: r.to.email,
     bcc: archiveBcc(),
-    replyTo: r.category.replyTo,
+    replyTo: requesterReplyTo(r.category.replyTo),
     subject: `Re: ${ticketSubject(r.number, r.subject)}`,
     text: [
       r.body,
@@ -194,4 +206,41 @@ export async function sendTicketReply(r: TicketReplyData): Promise<string | null
       ${r.quoted ? `<p style="margin-top: 24px; color: #555; font-size: 13px;">Votre message du ${escapeHtml(when)} :</p>${quotedHtml(r.quoted.body)}` : ""}`),
   });
   return info.messageId ?? null;
+}
+
+/* ── Nouveau message du demandeur (relève de noreply@) ───────────────── */
+
+export type TicketFollowUpData = {
+  id: string;
+  number: number;
+  subject: string;
+  body: string;
+  from: { email: string; name: string | null };
+  category: { label: string; replyTo: string };
+  reopened: boolean;
+  assigneeName: string | null;
+};
+
+/** Avis au club : le demandeur a répondu (adresse de la catégorie, lien direct). */
+export async function sendTicketFollowUpNotification(f: TicketFollowUpData): Promise<void> {
+  const ref = formatTicketRef(f.number);
+  if (!isMailConfigured()) {
+    if (process.env.NODE_ENV !== "production") console.log(`[DEV] nouveau message ${ref} → ${f.category.replyTo}`);
+    return;
+  }
+  const name = await siteName();
+  const who = f.from.name ? `${f.from.name} <${f.from.email}>` : f.from.email;
+  const link = `${siteBaseUrl()}/dashboard/tickets/${f.id}`;
+  const state = f.reopened ? "La demande était close : elle est rouverte." : f.assigneeName ? `Responsable : ${f.assigneeName}.` : "Personne n'en est encore responsable.";
+  await getMailTransport().sendMail({
+    from: mailFrom(`${name} — demandes`),
+    to: f.category.replyTo,
+    subject: ticketSubject(f.number, `Nouveau message : ${f.subject}`),
+    text: [`${who} a répondu dans la demande ${ref} (« ${f.category.label} »).`, state, `À traiter ici : ${link}`, "", f.body].join("\n"),
+    html: wrapHtml(`
+      <p>${escapeHtml(who)} a répondu dans la demande <strong>${ref}</strong> (« ${escapeHtml(f.category.label)} »).</p>
+      <p>${escapeHtml(state)}</p>
+      <p style="margin: 20px 0;"><a href="${link}" style="background: #059669; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Voir la demande</a></p>
+      ${quotedHtml(f.body)}`),
+  });
 }

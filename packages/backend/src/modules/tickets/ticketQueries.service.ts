@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { canHandleCategory, displayName } from "./tickets.service";
 import { formatTicketRef } from "./ticketRef";
+import { isTicketIntakeEnabled } from "./imapIntake.service";
 
 /*
  * Lectures de l'espace de traitement des demandes. On ne voit que les demandes des catégories
@@ -27,7 +28,8 @@ export async function handledCategoryIds(db: Db, userId: string): Promise<string
 /** Accès à l'espace + nombre de demandes ouvertes (pour le menu). */
 export async function ticketAccess(db: Db, userId: string) {
   const ids = await handledCategoryIds(db, userId);
-  if (ids !== null && ids.length === 0) return { canHandle: false, open: 0, mine: 0, overdue: 0 };
+  const mailIntake = isTicketIntakeEnabled();
+  if (ids !== null && ids.length === 0) return { canHandle: false, open: 0, mine: 0, overdue: 0, mailIntake };
   const scope: Prisma.TicketWhereInput = ids === null ? {} : { categoryId: { in: ids } };
   const open: Prisma.TicketWhereInput = { ...scope, status: { not: "CLOSED" } };
   const [openCount, mine, overdue] = await Promise.all([
@@ -35,7 +37,7 @@ export async function ticketAccess(db: Db, userId: string) {
     db.ticket.count({ where: { ...open, assigneeId: userId } }),
     db.ticket.count({ where: { ...open, firstResponseAt: null, dueAt: { lt: new Date() } } }),
   ]);
-  return { canHandle: true, open: openCount, mine, overdue };
+  return { canHandle: true, open: openCount, mine, overdue, mailIntake };
 }
 
 export type InboxScope = "open" | "mine" | "unassigned" | "closed";

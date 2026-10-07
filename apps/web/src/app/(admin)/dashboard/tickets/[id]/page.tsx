@@ -165,6 +165,7 @@ function ReplyBox({
   const greeting = requesterName ? `Bonjour ${requesterName},\n\n` : "Bonjour,\n\n";
   const [body, setBody] = useState(greeting);
   const [notice, setNotice] = useState<string | null>(null);
+  const mailIntake = trpc.ticket.access.useQuery().data?.mailIntake === true;
   const reply = trpc.ticket.reply.useMutation({
     onSuccess: async (res) => {
       setBody(greeting);
@@ -193,7 +194,10 @@ function ReplyBox({
         className="min-h-44 w-full resize-y rounded-md border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
       />
       <p className="mt-1 text-xs text-muted-foreground">
-        Envoyé par e-mail depuis l&apos;adresse du site, signé de votre nom ; le demandeur répondra à {replyTo}.
+        Envoyé par e-mail depuis l&apos;adresse du site, signé de votre nom.{" "}
+        {mailIntake
+          ? "S'il répond à cet e-mail, sa réponse s'ajoutera ici."
+          : `S'il répond, sa réponse arrivera à ${replyTo}.`}
       </p>
       {reply.error && <p className="mt-2 text-sm text-red-600">{reply.error.message}</p>}
       {notice && <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{notice}</p>}
