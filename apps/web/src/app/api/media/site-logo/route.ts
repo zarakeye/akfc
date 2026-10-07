@@ -16,13 +16,30 @@ import { SITE_LOGO_KEY } from "@backend/modules/siteSettings/services/siteLogo.s
  */
 const EXPIRY_SECONDS = 30 * 60;
 
-export async function GET(_req: NextRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
       Key: SITE_LOGO_KEY,
     });
+
+    // ?raw=1 : le SVG lui-même, servi par la même origine (aperçu des réglages, qui mesure ses
+    // couleurs dans un canvas). Sandbox + nosniff : ouvert directement, il ne peut rien exécuter.
+    if (req.nextUrl.searchParams.get("raw") === "1") {
+      const object = await s3.send(command);
+      const svg = await object.Body?.transformToString();
+      if (!svg) return new NextResponse("Not found", { status: 404 });
+      return new NextResponse(svg, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Cache-Control": "public, max-age=3600",
+          "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
     const signedUrl = await getSignedUrl(s3, command, {
       expiresIn: EXPIRY_SECONDS,
     });

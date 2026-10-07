@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 
 import { trpc } from "@/core/trpc/trpcClient";
+import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
 
 /**
  * Réglages du site — identité éditable par un admin.
@@ -178,14 +179,8 @@ export default function SiteSettingsPage(): JSX.Element {
         <div className="space-y-2">
           <span className="block text-sm font-medium">Logo du site</span>
           <div className="flex items-start gap-3">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-300 bg-gray-50">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoSrc}
-                alt="Logo du site"
-                className="h-full w-full object-contain"
-              />
-            </div>
+            {/* Fond choisi d'après la couleur du logo (clair → fond sombre, sombre → fond clair) */}
+            <LogoPreview src={logoSrc} />
             <div className="flex flex-col gap-2">
               <button
                 type="button"
