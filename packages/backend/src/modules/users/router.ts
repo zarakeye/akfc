@@ -69,10 +69,16 @@ export const userRouter = router({
     .input(
       z.object({
         email: z.string().email("Invalid email format"),
-        groupId: z.string(),
+        /** Un ou plusieurs groupes (au moins un). */
+        groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const groupIds = [...new Set(input.groupIds)];
+      const found = await ctx.prisma.memberGroup.count({ where: { id: { in: groupIds } } });
+      if (found !== groupIds.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Groupe inconnu : rechargez la page." });
+      }
       const exists = await ctx.prisma.user.findUnique({
         where: { email: input.email },
       });
@@ -95,10 +101,10 @@ export const userRouter = router({
           email: input.email,
           password: hash,
           memberGroupMemberships: {
-            create: {
-              group: { connect: { id: input.groupId } },
-              access: "EDITOR",
-            },
+            create: groupIds.map((id) => ({
+              group: { connect: { id } },
+              access: "EDITOR" as const,
+            })),
           },
         },
         omit: { password: true },

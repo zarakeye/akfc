@@ -5,7 +5,7 @@ import { trpc } from "@trpc/trpcClient";
 
 export interface CreateUserFormInput {
   email: string;
-  groupId: string;
+  groupIds: string[];
 }
 
 export interface CreateUserFormProps {
@@ -14,7 +14,7 @@ export interface CreateUserFormProps {
 }
 
 /**
- * Form de création d'utilisateur. On assigne un GROUPE : l'appartenance au groupe
+ * Form de création d'utilisateur. On assigne UN OU PLUSIEURS GROUPES : l'appartenance au groupe
  * Administrateurs confère l'admin (source de vérité unique). Le mot de passe est
  * généré côté serveur et envoyé par email — l'admin ne le saisit jamais.
  */
@@ -23,7 +23,7 @@ export function CreateUserForm({
   submitLabel = "Créer",
 }: CreateUserFormProps) {
   const [email, setEmail] = useState<string>("");
-  const [groupId, setGroupId] = useState<string>("");
+  const [groupIds, setGroupIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -36,13 +36,13 @@ export function CreateUserForm({
       setSubmitError("L'email est obligatoire.");
       return;
     }
-    if (groupId === "") {
-      setSubmitError("Choisis un groupe.");
+    if (groupIds.length === 0) {
+      setSubmitError("Choisis au moins un groupe.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), groupId });
+      await onSubmit({ email: email.trim(), groupIds });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -62,21 +62,33 @@ export function CreateUserForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Groupe</span>
-        <select
-          value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-          className="rounded border border-input bg-background px-2 py-1"
-        >
-          <option value="">— Choisir —</option>
-          {(groups ?? []).map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="flex flex-col gap-1 text-sm">
+        <legend className="mb-1 font-medium">Groupes</legend>
+        <div className="flex max-h-64 flex-col gap-1 overflow-y-auto rounded border border-input bg-background p-2">
+          {[...(groups ?? [])]
+            .sort((a, b) => Number(b.isAdminGroup) - Number(a.isAdminGroup))
+            .map((g) => (
+              <label key={g.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-muted">
+                <input
+                  type="checkbox"
+                  checked={groupIds.includes(g.id)}
+                  onChange={(e) =>
+                    setGroupIds((prev) =>
+                      e.target.checked ? [...prev, g.id] : prev.filter((id) => id !== g.id),
+                    )
+                  }
+                />
+                <span>{g.name}</span>
+                {g.isAdminGroup && (
+                  <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-900">Admin</span>
+                )}
+              </label>
+            ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {groupIds.length === 0 ? "Au moins un groupe." : `${groupIds.length} groupe(s) sélectionné(s).`}
+        </span>
+      </fieldset>
 
       {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
