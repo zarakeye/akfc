@@ -23,10 +23,8 @@ export default function DesignLabPage(): JSX.Element {
       <header className="shrink-0 space-y-1">
         <h1 className="text-lg font-semibold">Laboratoire de rendu</h1>
         <p className="text-sm text-muted-foreground">
-          Les curseurs modifient les variables CSS réellement utilisées par le
-          rendu des blocs. Rien n&apos;est enregistré&nbsp;: une fois le
-          réglage trouvé, recopiez le bloc CSS affiché dans{" "}
-          <code className="rounded bg-muted px-1">globals.css</code>.
+          Les curseurs modifient l&apos;aperçu en direct&nbsp;; «&nbsp;Appliquer
+          au site&nbsp;» enregistre le réglage pour toutes les pages.
         </p>
       </header>
 

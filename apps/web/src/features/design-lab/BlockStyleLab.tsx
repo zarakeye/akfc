@@ -13,10 +13,10 @@ import { RealBlocksPreview } from "./RealBlocksPreview";
  * conteneur d'aperçu. Ce qu'on voit ici est donc ce que la page publique
  * rendra — aucune simulation, aucune feuille parallèle.
  *
- * Rien n'est persisté, délibérément. Le laboratoire sert à CHERCHER des
- * valeurs ; on les recopie ensuite dans `globals.css`, qui reste la seule
- * source de vérité. Deux sources rendraient insoluble la question
- * « pourquoi la page ne ressemble pas au labo ? ».
+ * Les curseurs ne changent que l'aperçu ; « Appliquer au site » enregistre le
+ * réglage en base (SiteStyle), que le layout racine injecte sur toutes les pages.
+ * `globals.css` ne garde que les valeurs de REPLI (sans réglage enregistré) : le
+ * bloc CSS affiché sert à y figer un réglage, si on le souhaite.
  */
 
 type Knob = {
