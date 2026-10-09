@@ -112,6 +112,7 @@ export const LAB_SAMPLES: Samples = {
     { label: "Média et texte — avatar d'un membre", block: { id: "lab-mt-3", type: "media-text", content: SHORT_DOC("Retour à gauche"), media: { kind: "avatar", userId: "lab", caption: "Portrait" } } },
   ],
   "float-text": [
+    { label: "Texte enrobant — logo du site", block: { id: "lab-ft-logo", type: "float-text", side: "left", content: FLOAT_DOC("gauche (logo)"), media: { kind: "site-logo" } } },
     { label: "Texte enrobant — image à gauche", anchor: "lab-float", block: { id: "lab-ft-l", type: "float-text", side: "left", content: FLOAT_DOC("gauche"), media: { kind: "library", mediaId: "img:image:600:600:2" } } },
     { label: "Texte enrobant — image à droite", block: { id: "lab-ft-r", type: "float-text", side: "right", content: FLOAT_DOC("droite"), media: { kind: "library", mediaId: "img:image:600:800:4" } } },
   ],

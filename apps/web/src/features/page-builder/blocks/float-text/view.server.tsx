@@ -14,6 +14,7 @@ import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-no
 import type { FloatTextBlockV1, ResolvedMedia } from "@contracts/page";
 
 import type { BlockViewProps } from "../../BlockDefinition.types";
+import { SiteLogoImage } from "../../components/SiteLogoImage";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Nœud image server-only — identique au média-texte et au bloc tiptap.    */
@@ -130,7 +131,7 @@ export function FloatTextView({
   if (!hasText || !textHtml) {
     return (
       <div className="akfc-measure-block">
-        <FloatFigure media={resolvedMedia} caption={mediaCaption} />
+        <FloatFigure media={resolvedMedia} caption={mediaCaption} isLogo={block.media?.kind === "site-logo"} />
       </div>
     );
   }
@@ -164,6 +165,8 @@ export function FloatTextView({
               controls
               className="block w-full rounded-md"
             />
+          ) : block.media?.kind === "site-logo" ? (
+            <SiteLogoImage src={resolvedMedia.url} alt={mediaCaption ?? "Logo du site"} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -203,9 +206,12 @@ export function FloatTextView({
 function FloatFigure({
   media,
   caption,
+  isLogo = false,
 }: {
   media: ResolvedMedia;
   caption?: string;
+  /** Logo du site : présenté sur un fond adapté à sa couleur (un logo blanc sur blanc disparaît). */
+  isLogo?: boolean;
 }) {
   return (
     <figure className="m-0">
@@ -216,6 +222,8 @@ function FloatFigure({
           controls
           className="block w-full rounded-md"
         />
+      ) : isLogo ? (
+        <SiteLogoImage src={media.url} alt={caption ?? "Logo du site"} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img

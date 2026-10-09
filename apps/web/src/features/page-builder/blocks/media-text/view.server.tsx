@@ -14,6 +14,7 @@ import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-no
 import type { MediaTextBlockV1, ResolvedMedia } from "@contracts/page";
 
 import type { BlockViewProps } from "../../BlockDefinition.types";
+import { SiteLogoImage } from "../../components/SiteLogoImage";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Nœud image server-only (identique à la View tiptap)                     */
@@ -120,7 +121,7 @@ export function MediaTextView({
 
   const MediaColumn =
     hasMedia && resolvedMedia ? (
-      <MediaFigure media={resolvedMedia} caption={mediaCaption} />
+      <MediaFigure media={resolvedMedia} caption={mediaCaption} isLogo={block.media?.kind === "site-logo"} />
     ) : null;
 
   const TextColumn = textHtml ? (
@@ -203,9 +204,12 @@ export function MediaTextView({
 function MediaFigure({
   media,
   caption,
+  isLogo = false,
 }: {
   media: ResolvedMedia;
   caption?: string;
+  /** Logo du site : présenté sur un fond adapté à sa couleur (un logo blanc sur blanc disparaît). */
+  isLogo?: boolean;
 }) {
   return (
     <figure className="m-0">
@@ -216,6 +220,8 @@ function MediaFigure({
           controls
           className="block w-full rounded-md"
         />
+      ) : isLogo ? (
+        <SiteLogoImage src={media.url} alt={caption ?? "Logo du site"} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
