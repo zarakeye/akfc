@@ -125,6 +125,25 @@ function reloadWithFreshDocument(): void {
   window.location.replace(url.toString());
 }
 
+/**
+ * Valeurs des curseurs reprises d'un réglage enregistré. La base stocke « 1.65 » ou
+ * « 2.5rem » : on retire l'unité, le curseur ne manipule que le nombre.
+ */
+function applyStoredValues(
+  current: Record<string, number>,
+  stored: Record<string, string> | null | undefined,
+): Record<string, number> {
+  if (!stored) return current;
+  const next = { ...current };
+  for (const knob of KNOBS) {
+    const raw = stored[knob.key];
+    if (raw === undefined) continue;
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isNaN(parsed)) next[knob.key] = parsed;
+  }
+  return next;
+}
+
 export function BlockStyleLab(): JSX.Element {
   const [values, setValues] = useState<Record<string, number>>(INITIAL);
   const [side, setSide] = useState<"left" | "right">("left");
@@ -188,22 +207,16 @@ export function BlockStyleLab(): JSX.Element {
     }
   }
 
-  useEffect(() => {
-    const stored = saved.data;
-    if (!stored) return;
-    setValues((current) => {
-      const next = { ...current };
-      for (const knob of KNOBS) {
-        const raw = stored[knob.key];
-        if (raw === undefined) continue;
-        // La base stocke « 1.65 » ou « 2.5rem » : on retire l'unité, le
-        // curseur ne manipule que le nombre.
-        const parsed = Number.parseFloat(raw);
-        if (!Number.isNaN(parsed)) next[knob.key] = parsed;
-      }
-      return next;
-    });
-  }, [saved.data]);
+  // Réglage enregistré → curseurs, par AJUSTEMENT D'ÉTAT PENDANT LE RENDU et non par un
+  // effet (même motif que le layout du tableau de bord) : un effet qui appelle setState
+  // déclenche un rendu en cascade, ce que React signale (react-hooks/set-state-in-effect).
+  // Ici React relance le rendu sans valider le premier. Le repère `seededFrom` garantit
+  // qu'on n'applique chaque réponse du serveur qu'une fois.
+  const [seededFrom, setSeededFrom] = useState<typeof saved.data>(undefined);
+  if (saved.data && saved.data !== seededFrom) {
+    setSeededFrom(saved.data);
+    setValues((current) => applyStoredValues(current, saved.data));
+  }
 
   // Les propriétés personnalisées ne sont pas dans le type CSSProperties de
   // React : le cast est la voie prévue pour les passer en style inline.
