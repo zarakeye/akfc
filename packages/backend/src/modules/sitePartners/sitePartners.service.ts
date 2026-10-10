@@ -60,18 +60,30 @@ export function logoUrlOf(p: { id: string; logoUpdatedAt: Date | null; logoMime:
   return p.logoMime && p.logoUpdatedAt ? `/api/site-partners/${p.id}/logo?v=${p.logoUpdatedAt.getTime()}` : null;
 }
 
-const DEFAULTS: Array<{ name: string; role: SitePartnerRole; description: string; websiteUrl: string | null }> = [
+const MJC_NAME = "MJC de Chambéry";
+const MJC_OLD_DESCRIPTION = "Nos cours et stages ont lieu à la MJC ; inscriptions et paiements se font à son accueil.";
+const MJC_DESCRIPTION = "Nos cours et stages ont lieu à la MJC ; on s'y inscrit en ligne (plateforme d'inscription de la MJC) ou à son accueil.";
+const MJC_WEBSITE = "https://www.mjc-chambery.com";
+const MJC_LINKS: PartnerLink[] = [
+  { label: "S'inscrire en ligne : activités de la MJC", url: "https://mjc-chambery.goasso.org/activites" },
+  { label: "Inscriptions et adhésion : tarifs et calendrier", url: "https://mjc-chambery.goasso.org/actualites/inscriptions-et-adhesion" },
+  { label: "Tutoriel d'inscription en ligne", url: "https://mjc-chambery.goasso.org/pages/tutoriel-d-inscription" },
+];
+
+const DEFAULTS: Array<{ name: string; role: SitePartnerRole; description: string; websiteUrl: string | null; links: PartnerLink[] }> = [
   {
-    name: "MJC de Chambéry",
+    name: MJC_NAME,
     role: "HOST",
-    description: "Nos cours et stages ont lieu à la MJC ; inscriptions et paiements se font à son accueil.",
-    websiteUrl: null,
+    description: MJC_DESCRIPTION,
+    websiteUrl: MJC_WEBSITE,
+    links: MJC_LINKS,
   },
   {
     name: "Fédération Française de Karaté et Disciplines Associées",
     role: "FEDERATION",
     description: "Le club est affilié à la FFK ; les sifus proposent la licence en début de saison.",
     websiteUrl: "https://www.ffkarate.fr/",
+    links: [],
   },
 ];
 
@@ -80,7 +92,27 @@ const DEFAULTS: Array<{ name: string; role: SitePartnerRole; description: string
  * à des partenaires existants. Les logos s'ajoutent ensuite dans Réglages du site.
  */
 export async function ensureDefaultPartners(db: PrismaClient): Promise<number> {
-  if ((await db.sitePartner.count()) > 0) return 0;
+  if ((await db.sitePartner.count()) > 0) return completeMjcPartner(db);
   await db.sitePartner.createMany({ data: DEFAULTS.map((d, position) => ({ ...d, position })) });
   return DEFAULTS.length;
+}
+
+/**
+ * Partenaire MJC créé par une version précédente (sans site ni liens) : complète UNIQUEMENT les
+ * champs restés vides ou d'origine — rien de ce qu'un administrateur a saisi n'est remplacé.
+ * Renvoie 1 si la fiche a été complétée, 0 sinon.
+ */
+async function completeMjcPartner(db: PrismaClient): Promise<number> {
+  const mjc = await db.sitePartner.findFirst({
+    where: { name: MJC_NAME, role: "HOST" },
+    select: { id: true, websiteUrl: true, links: true, description: true },
+  });
+  if (!mjc) return 0;
+  const data: { websiteUrl?: string; links?: PartnerLink[]; description?: string } = {};
+  if (!mjc.websiteUrl) data.websiteUrl = MJC_WEBSITE;
+  if (parseLinks(mjc.links).length === 0) data.links = MJC_LINKS;
+  if (mjc.description === MJC_OLD_DESCRIPTION) data.description = MJC_DESCRIPTION;
+  if (Object.keys(data).length === 0) return 0;
+  await db.sitePartner.update({ where: { id: mjc.id }, data });
+  return 1;
 }

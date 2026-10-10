@@ -97,7 +97,7 @@ export async function register() {
       "@backend/modules/sitePartners/sitePartners.service"
     );
     const created = await ensureDefaultPartners(prisma);
-    if (created) console.log(`[instrumentation] ensureDefaultPartners: ${created} partenaire(s) créé(s) (MJC, FFK)`);
+    if (created) console.log(`[instrumentation] ensureDefaultPartners: ${created} partenaire(s) créé(s) ou complété(s) (MJC, FFK)`);
   } catch (err) {
     console.error(
       "[instrumentation] ensureDefaultPartners failed — app will still start",
@@ -109,7 +109,8 @@ export async function register() {
     const { ensureInscriptionPage } = await import(
       "@backend/modules/sitePages/ensureInscriptionPage.service"
     );
-    if (await ensureInscriptionPage(prisma)) console.log("[instrumentation] page « S'inscrire » créée avec son texte de départ (brouillon)");
+    const inscription = await ensureInscriptionPage(prisma);
+    if (inscription !== "unchanged") console.log(`[instrumentation] page « S'inscrire » : texte de départ ${inscription === "created" ? "créé (brouillon)" : "mis à jour (liens d'inscription en ligne)"}`);
   } catch (err) {
     console.error(
       "[instrumentation] ensureInscriptionPage failed — app will still start",
