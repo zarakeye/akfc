@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { prisma } from "@backend/prisma";
@@ -7,22 +8,22 @@ import {
   UnderConstruction,
 } from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
+import { parseSitePhones } from "@contracts/siteContact/siteContact.schema";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
-import { CLUB_INFO } from "@features/app-shell/clubInfo";
-import { ContactForm } from "@features/contact/ContactForm";
-import type { Metadata } from "next";
+import { ClubContactCard } from "@features/contact/ClubContactCard";
+import { MemberContactSection } from "@features/contact/MemberContactSection";
 
 /**
- * « Nous contacter » (URL /contacts inchangée).
+ * « Nous contacter » (URL /contacts).
  *
- * Cette page N'EXISTAIT PAS, alors que la navbar et l'appel à l'action de
- * l'accueil y renvoyaient tous deux : les deux liens tombaient en 404.
- *
- * Adossée à `SitePage` comme « L'association », elle se rédige au centre de
- * contrôle (`/dashboard/site-pages/contacts`) sans ligne de code. Les
- * coordonnées de `clubInfo` s'affichent en complément dès qu'elles sont
- * renseignées, pour que la page dise déjà quelque chose avant d'être écrite.
+ * Page PUBLIQUE, pour le public et les partenaires :
+ *   - le texte du constructeur (Pages éditoriales → Nous contacter) ;
+ *   - les coordonnées de l'association (Réglages du site → Coordonnées publiques) : e-mail,
+ *     téléphones (appel / WhatsApp), adresse ;
+ *   - un renvoi vers « S'inscrire ».
+ * Partie MEMBRES : le formulaire de demandes (bureau, support du site) n'apparaît qu'aux membres
+ * connectés (et le serveur le refuse aux visiteurs).
  */
 export const metadata: Metadata = { title: "Nous contacter" };
 
@@ -31,73 +32,44 @@ export default async function ContactsPage(): Promise<JSX.Element> {
     return <UnderConstruction />;
   }
 
-  const page = await prisma.sitePage.findUnique({
-    where: { slug: "contacts" },
-  });
+  const [page, settings] = await Promise.all([
+    prisma.sitePage.findUnique({ where: { slug: "contacts" } }),
+    prisma.siteSettings.findUnique({
+      where: { id: "site" },
+      select: { contactEmail: true, contactPhones: true, contactAddress: true },
+    }),
+  ]);
   const content = parsePageContentV1(page?.content);
-
-  const hasInfo =
-    CLUB_INFO.address.length > 0 ||
-    CLUB_INFO.phone !== "" ||
-    CLUB_INFO.email !== "";
+  const contact = {
+    email: settings?.contactEmail ?? null,
+    phones: parseSitePhones(settings?.contactPhones),
+    address: settings?.contactAddress ?? null,
+  };
 
   return (
     <div className="akfc-page py-12">
       <h1 className="mb-8 text-2xl font-bold">{page?.title ?? "Nous contacter"}</h1>
 
       {/* Exactement le contenu du constructeur (texte de départ créé au démarrage, voir
-          ensureContactsPage) ; formulaire et coordonnées suivent, hors constructeur. */}
+          ensureContactsPage) ; coordonnées et formulaire des membres suivent, hors constructeur. */}
       {content.blocks.length > 0 && <PageRenderer content={content} />}
 
-      <Link
-        href="/inscription"
-        className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-600/40 bg-emerald-50 p-5 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30"
-      >
-        <span>
-          <span className="block font-semibold">Vous souhaitez vous inscrire&nbsp;?</span>
-          <span className="block text-sm text-muted-foreground">
-            Les cours ont lieu à la MJC de Chambéry : voici comment s&apos;y inscrire.
+      <div className="mt-8 grid items-start gap-6 md:grid-cols-2">
+        <ClubContactCard contact={contact} />
+
+        <Link
+          href="/inscription"
+          className="flex flex-col gap-2 rounded-lg border border-emerald-600/40 bg-emerald-50 p-6 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30"
+        >
+          <span className="font-semibold">Vous souhaitez vous inscrire&nbsp;?</span>
+          <span className="text-sm text-muted-foreground">
+            Les cours ont lieu à la MJC de Chambéry : on s&apos;y inscrit en ligne ou à son accueil.
           </span>
-        </span>
-        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Comment s&apos;inscrire →</span>
-      </Link>
-
-      <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <section className="rounded-lg border border-border p-6">
-        <ContactForm />
-      </section>
-
-      {hasInfo && (
-        <div className="rounded-lg border border-border p-6">
-          <h2 className="mb-4 text-lg font-semibold">Coordonnées</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {CLUB_INFO.address.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-            {CLUB_INFO.phone !== "" && (
-              <li>
-                <a
-                  href={`tel:${CLUB_INFO.phone.replace(/\s/g, "")}`}
-                  className="text-emerald-600 hover:underline"
-                >
-                  {CLUB_INFO.phone}
-                </a>
-              </li>
-            )}
-            {CLUB_INFO.email !== "" && (
-              <li>
-                <a
-                  href={`mailto:${CLUB_INFO.email}`}
-                  className="text-emerald-600 hover:underline"
-                >
-                  {CLUB_INFO.email}
-                </a>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
+          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Comment s&apos;inscrire →</span>
+        </Link>
       </div>
+
+      <MemberContactSection />
     </div>
   );
 }

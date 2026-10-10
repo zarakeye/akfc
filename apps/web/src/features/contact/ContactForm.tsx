@@ -7,18 +7,14 @@ import { useSessionStore } from "@lib/stores/useSessionStore";
 import {
   TICKET_BODY_MAX,
   TICKET_SUBJECT_MAX,
-  TICKET_NAME_MAX,
 } from "@contracts/tickets/ticket.schema";
 
 /**
- * Formulaire « Écrire au club » : crée une demande (ticket.submit).
- *
- * Connecté : on écrit sous l'identité du compte (le serveur l'impose) ; nom et adresse sont
- * affichés, pas saisis. Visiteur : adresse obligatoire, nom conseillé.
+ * Formulaire « Écrire au club » : crée une demande (ticket.submit). RÉSERVÉ AUX MEMBRES
+ * CONNECTÉS (le serveur refuse les visiteurs ; le public écrit à l'adresse du club) : on écrit
+ * sous l'identité du compte, nom et adresse sont affichés, pas saisis. Rien hors connexion.
  * Le champ « website » est un piège à robots, invisible pour les humains.
  */
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Sent = { ref: string | null; dueAt: Date | null; acknowledged: boolean };
 
@@ -26,7 +22,7 @@ function frenchDate(d: Date): string {
   return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(d);
 }
 
-export function ContactForm(): JSX.Element {
+export function ContactForm(): JSX.Element | null {
   const user = useSessionStore((s) => s.session?.user ?? null);
   const { data: categories } = trpc.ticket.categories.useQuery();
   const submit = trpc.ticket.submit.useMutation();
@@ -34,16 +30,13 @@ export function ContactForm(): JSX.Element {
   const [categoryKey, setCategoryKey] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
   const [sent, setSent] = useState<Sent | null>(null);
 
   // Une seule catégorie : pas de choix à proposer.
   const effectiveKey = categoryKey || (categories?.length === 1 ? categories[0].key : "");
-  const emailOk = user !== null || EMAIL_RE.test(email.trim());
   const canSend =
-    effectiveKey !== "" && subject.trim() !== "" && body.trim() !== "" && emailOk && !submit.isPending;
+    user !== null && effectiveKey !== "" && subject.trim() !== "" && body.trim() !== "" && !submit.isPending;
 
   async function onSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
@@ -53,8 +46,6 @@ export function ContactForm(): JSX.Element {
         categoryKey: effectiveKey,
         subject,
         body,
-        email: user ? undefined : email.trim(),
-        name: user ? undefined : name.trim() || undefined,
         website: website || undefined,
       })
       .catch(() => null);
@@ -91,39 +82,19 @@ export function ContactForm(): JSX.Element {
     );
   }
 
+  if (!user) return null;
+
   const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600";
-  const userName = user ? [user.firstName, user.lastName].filter(Boolean).join(" ").trim() : "";
+  const userName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <h2 className="text-lg font-semibold">Écrire au club</h2>
 
-      {user ? (
-        <p className="text-sm text-muted-foreground">
-          Vous écrivez en tant que <strong className="text-foreground">{userName || user.email}</strong>
-          {userName && <> ({user.email})</>} : la réponse arrivera à cette adresse.
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>Votre nom</span>
-            <input className={field} value={name} maxLength={TICKET_NAME_MAX} autoComplete="name" onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>Votre adresse e-mail <span className="text-red-600">*</span></span>
-            <input
-              className={field}
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={email !== "" && !emailOk}
-            />
-            {email !== "" && !emailOk && <span className="text-xs text-red-600">Adresse e-mail invalide</span>}
-          </label>
-        </div>
-      )}
+      <p className="text-sm text-muted-foreground">
+        Vous écrivez en tant que <strong className="text-foreground">{userName || user.email}</strong>
+        {userName && <> ({user.email})</>} : la réponse arrivera à cette adresse.
+      </p>
 
       {categories && categories.length > 1 && (
         <fieldset className="flex flex-col gap-2 text-sm">

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type JSX } from "react";
 import { trpc } from "@/core/trpc/trpcClient";
 import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
 import { PartnersSettings } from "@features/admin/site-settings/PartnersSettings";
+import { ContactSettings } from "@features/admin/site-settings/ContactSettings";
 
 /**
  * Réglages du site — identité éditable par un admin.
@@ -149,7 +150,7 @@ export default function SiteSettingsPage(): JSX.Element {
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium">
-            E-mail de contact <span className="text-gray-400">(optionnel)</span>
+            E-mail cité dans l&apos;e-mail de bienvenue <span className="text-gray-400">(optionnel)</span>
           </span>
           <input
             type="email"
@@ -245,6 +246,7 @@ export default function SiteSettingsPage(): JSX.Element {
         </div>
       </div>
 
+      <ContactSettings />
       <PartnersSettings />
     </div>
   );
