@@ -14,7 +14,7 @@ import { ContactForm } from "@features/contact/ContactForm";
 import type { Metadata } from "next";
 
 /**
- * « Contacts ».
+ * « Nous contacter » (URL /contacts inchangée).
  *
  * Cette page N'EXISTAIT PAS, alors que la navbar et l'appel à l'action de
  * l'accueil y renvoyaient tous deux : les deux liens tombaient en 404.
@@ -24,7 +24,7 @@ import type { Metadata } from "next";
  * coordonnées de `clubInfo` s'affichent en complément dès qu'elles sont
  * renseignées, pour que la page dise déjà quelque chose avant d'être écrite.
  */
-export const metadata: Metadata = { title: "Contacts" };
+export const metadata: Metadata = { title: "Nous contacter" };
 
 export default async function ContactsPage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("contacts")) {
@@ -43,17 +43,11 @@ export default async function ContactsPage(): Promise<JSX.Element> {
 
   return (
     <div className="akfc-page py-12">
-      <h1 className="mb-8 text-2xl font-bold">{page?.title ?? "Contacts"}</h1>
+      <h1 className="mb-8 text-2xl font-bold">{page?.title ?? "Nous contacter"}</h1>
 
-      {content.blocks.length > 0 ? (
-        <PageRenderer content={content} />
-      ) : (
-        !hasInfo && (
-          <p className="akfc-measure-block text-muted-foreground">
-            Pour toute question, écrivez-nous avec le formulaire ci-dessous.
-          </p>
-        )
-      )}
+      {/* Exactement le contenu du constructeur (texte de départ créé au démarrage, voir
+          ensureContactsPage) ; formulaire et coordonnées suivent, hors constructeur. */}
+      {content.blocks.length > 0 && <PageRenderer content={content} />}
 
       <Link
         href="/inscription"

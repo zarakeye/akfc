@@ -118,6 +118,19 @@ export async function register() {
   }
 
   try {
+    const { ensureContactsPage } = await import(
+      "@backend/modules/sitePages/ensureContactsPage.service"
+    );
+    const r = await ensureContactsPage(prisma);
+    if (r.seeded || r.renamed) console.log(`[instrumentation] page « Nous contacter » :${r.seeded ? " texte de départ créé" : ""}${r.renamed ? " titre renommé" : ""}`);
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureContactsPage failed — app will still start",
+      err
+    );
+  }
+
+  try {
     const { startTicketMailboxPolling } = await import(
       "@backend/modules/tickets/imapIntake.service"
     );

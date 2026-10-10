@@ -11,6 +11,7 @@ const DEFAULT_TITLES: Record<string, string> = {
   association: "L'association",
   histoire: "L'histoire du club",
   inscription: "S'inscrire",
+  contacts: "Nous contacter",
 };
 
 export default async function SitePageEditorRoute({

@@ -22,7 +22,7 @@ export type PageRegistryEntry = {
 export const PAGE_REGISTRY: readonly PageRegistryEntry[] = [
   { key: "home", label: "Accueil", path: "/" },
   { key: "association", label: "L'association", path: "/about" },
-  { key: "contacts", label: "Contacts", path: "/contacts" },
+  { key: "contacts", label: "Nous contacter", path: "/contacts" },
   { key: "inscription", label: "S'inscrire", path: "/inscription" },
 ] as const;
 
