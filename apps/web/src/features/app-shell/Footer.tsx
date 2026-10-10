@@ -71,6 +71,8 @@ export default async function Footer(): Promise<JSX.Element> {
       for (const child of entry.children) navLinks.push(child);
     }
   }
+  // Hors barre de navigation (choix éditorial) mais toujours trouvable depuis le pied de page.
+  navLinks.push({ href: "/inscription", label: "S'inscrire" });
 
   const socials = [
     { href: CLUB_INFO.social.facebook, Icon: Facebook, label: "Facebook" },

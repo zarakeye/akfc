@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import Link from "next/link";
 
 import { prisma } from "@backend/prisma";
 import {
@@ -53,6 +54,19 @@ export default async function ContactsPage(): Promise<JSX.Element> {
           </p>
         )
       )}
+
+      <Link
+        href="/inscription"
+        className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-600/40 bg-emerald-50 p-5 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30"
+      >
+        <span>
+          <span className="block font-semibold">Vous souhaitez vous inscrire&nbsp;?</span>
+          <span className="block text-sm text-muted-foreground">
+            Les cours ont lieu à la MJC de Chambéry : voici comment s&apos;y inscrire.
+          </span>
+        </span>
+        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Comment s&apos;inscrire →</span>
+      </Link>
 
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <section className="rounded-lg border border-border p-6">

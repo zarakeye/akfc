@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 import { trpc } from "@/core/trpc/trpcClient";
@@ -42,7 +42,17 @@ export function PartnersSettings(): JSX.Element {
   const refresh = async (): Promise<void> => {
     await Promise.all([utils.sitePartner.listAdmin.invalidate(), utils.sitePartner.list.invalidate()]);
   };
-  const create = trpc.sitePartner.save.useMutation({ onSuccess: refresh });
+  // Fiche tout juste créée : amenée à l'écran et signalée (elle s'ajoute en bas, masquée).
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const create = trpc.sitePartner.save.useMutation({
+    onSuccess: async (res) => {
+      await refresh();
+      setCreatedId(res.id);
+    },
+  });
+  useEffect(() => {
+    if (createdId) document.getElementById(`partner-${createdId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [createdId, list.data]);
   const reorder = trpc.sitePartner.reorder.useMutation({ onSuccess: refresh });
 
   const partners = (list.data ?? []) as Partner[];
@@ -62,12 +72,26 @@ export function PartnersSettings(): JSX.Element {
         le pied de page et sur la page «&nbsp;S&apos;inscrire&nbsp;», avec leurs liens utiles.
       </p>
 
+      {list.error && (
+        <p className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+          Impossible de charger les partenaires : {list.error.message}
+        </p>
+      )}
       {list.isLoading ? (
         <p className="text-sm text-gray-500">Chargement…</p>
       ) : (
         <ul className="flex flex-col gap-6">
           {partners.map((p, i) => (
-            <li key={p.id}>
+            <li
+              key={p.id}
+              id={`partner-${p.id}`}
+              className={p.id === createdId ? "rounded-lg ring-2 ring-emerald-500 ring-offset-2" : undefined}
+            >
+              {p.id === createdId && (
+                <p className="mb-2 text-sm text-emerald-700">
+                  Partenaire ajouté : complétez sa fiche, enregistrez, puis cochez « Affiché sur le site ».
+                </p>
+              )}
               <PartnerCard
                 partner={p}
                 onChanged={refresh}
@@ -85,8 +109,9 @@ export function PartnersSettings(): JSX.Element {
         disabled={create.isPending}
         className="mt-6 inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-100 disabled:opacity-50"
       >
-        <Plus className="h-4 w-4" /> Ajouter un partenaire
+        <Plus className="h-4 w-4" /> {create.isPending ? "Ajout…" : "Ajouter un partenaire"}
       </button>
+      {create.error && <p className="mt-2 text-sm text-red-600">Ajout impossible : {create.error.message}</p>}
     </section>
   );
 }

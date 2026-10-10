@@ -43,7 +43,6 @@ export const NAV_ENTRIES: NavEntry[] = [
       { href: "/about/instructeurs", label: "Nos instructeurs" },
     ],
   },
-  { kind: "link", href: "/inscription", label: "S'inscrire" },
   { kind: "link", href: "/contacts", label: "Contacts" },
   { kind: "link", href: "/docs", label: "Aide" },
 ];

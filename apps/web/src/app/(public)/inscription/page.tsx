@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { prisma } from "@backend/prisma";
 import { isEditorialPageGated, UnderConstruction } from "@features/editorial/editorialGate";
@@ -35,6 +35,9 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
 
   return (
     <div className="akfc-page py-12">
+      <Link href="/" className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+        <ArrowLeft className="h-4 w-4" /> Accueil
+      </Link>
       <h1 className="mb-8 text-2xl font-bold">{page?.title ?? "S'inscrire"}</h1>
 
       {content.blocks.length > 0 ? (
