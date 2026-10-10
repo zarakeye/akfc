@@ -45,9 +45,11 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
             Les cours et les stages du club sont des activités de {host?.name ?? "la MJC de Chambéry"}, données
             dans ses locaux.
           </Step>
-          <Step n={2} title="L'inscription se fait à l'accueil de la MJC">
-            Inscription et paiement se font sur place, à l&apos;accueil de la MJC (adhésion à la MJC et activité
-            choisie). Les tarifs sont publiés sur son site{host && host.links.length > 0 ? " : voir les liens ci-dessous" : ""}.
+          <Step n={2} title="L'inscription se fait auprès de la MJC">
+            En ligne sur la plateforme de la MJC (création d&apos;un compte, pré-inscription à l&apos;activité, puis
+            paiement en ligne une fois la demande validée par la MJC) ou directement à son accueil. L&apos;adhésion
+            annuelle à la MJC est obligatoire. Horaires, tarifs et calendrier des inscriptions (certaines périodes sont
+            réservées à l&apos;accueil) sont publiés par la MJC{host && host.links.length > 0 ? " : voir les liens ci-dessous" : ""}.
           </Step>
           <Step n={3} title="La licence fédérale, en début de saison">
             Le club est affilié à {federation?.name ?? "la Fédération Française de Karaté"}. En début de saison, les
