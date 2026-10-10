@@ -106,6 +106,18 @@ export async function register() {
   }
 
   try {
+    const { ensureInscriptionPage } = await import(
+      "@backend/modules/sitePages/ensureInscriptionPage.service"
+    );
+    if (await ensureInscriptionPage(prisma)) console.log("[instrumentation] page « S'inscrire » créée avec son texte de départ (brouillon)");
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureInscriptionPage failed — app will still start",
+      err
+    );
+  }
+
+  try {
     const { startTicketMailboxPolling } = await import(
       "@backend/modules/tickets/imapIntake.service"
     );
