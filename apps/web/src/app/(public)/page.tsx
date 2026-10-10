@@ -265,16 +265,24 @@ export default async function HomePage(): Promise<JSX.Element> {
           Envie de nous rejoindre&nbsp;?
         </h2>
         <p className="mb-6 text-gray-600">
-          Premier cours d&apos;essai, horaires, inscriptions&nbsp;: on répond à
-          toutes vos questions.
+          Les cours ont lieu à la MJC de Chambéry, où se font l&apos;inscription
+          et le paiement. Une question&nbsp;? On y répond volontiers.
         </p>
-        <Link
-          href="/contacts"
-          className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
-        >
-          Nous contacter
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            href="/inscription"
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-3 font-medium text-white transition-colors hover:bg-emerald-700"
+          >
+            Comment s&apos;inscrire
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/contacts"
+            className="inline-flex items-center gap-2 rounded-md border border-emerald-600 px-5 py-3 font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+          >
+            Nous contacter
+          </Link>
+        </div>
       </section>
     </div>
   );

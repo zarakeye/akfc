@@ -7,6 +7,9 @@ import { NAV_ENTRIES } from "@features/app-shell/navEntries";
 import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
 import { buildFooterSchedule } from "@features/app-shell/buildFooterSchedule";
 import { prisma } from "@backend/prisma";
+import { getActivePartners } from "@features/partners/getActivePartners";
+import { PartnerLogo } from "@features/partners/PartnerLogo";
+import { PARTNER_ROLE_LABEL } from "@features/partners/partnerUi";
 
 /**
  * Pied de page du site public.
@@ -51,6 +54,7 @@ export default async function Footer(): Promise<JSX.Element> {
     ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
     : "/AKFC_logo.svg";
 
+  const partners = await getActivePartners();
   const year = new Date().getFullYear();
 
   // Navigation aplatie : les entrées d'un menu déroulant deviennent des
@@ -240,6 +244,20 @@ export default async function Footer(): Promise<JSX.Element> {
           </div>
         </div>
       </div>
+
+      {/* ── Partenaires (MJC, fédération…) — Réglages du site ─────────── */}
+      {partners.length > 0 && (
+        <div className="border-t border-white/10">
+          <div className="akfc-page flex flex-col items-center gap-4 py-8 sm:flex-row sm:justify-center sm:gap-10">
+            {partners.map((p) => (
+              <div key={p.id} className="flex flex-col items-center gap-2 text-center">
+                <PartnerLogo name={p.name} logoUrl={p.logoUrl} websiteUrl={p.websiteUrl} />
+                <span className="text-xs text-white/60">{PARTNER_ROLE_LABEL[p.role]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Barre du bas ──────────────────────────────────────────────── */}
       <div className="border-t border-white/10">

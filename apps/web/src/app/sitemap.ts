@@ -29,6 +29,7 @@ const EDITORIAL: readonly Editorial[] = [
   { key: "home", path: "/" },
   { key: "association", path: "/about" },
   { key: "contacts", path: "/contacts" },
+  { key: "inscription", path: "/inscription" },
 ] as const;
 
 const abs = (path: string): string =>

@@ -10,6 +10,7 @@ import { SitePageEditor } from "@features/admin/site-pages/SitePageEditor";
 const DEFAULT_TITLES: Record<string, string> = {
   association: "L'association",
   histoire: "L'histoire du club",
+  inscription: "S'inscrire",
 };
 
 export default async function SitePageEditorRoute({

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type JSX } from "react";
 
 import { trpc } from "@/core/trpc/trpcClient";
 import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
+import { PartnersSettings } from "@features/admin/site-settings/PartnersSettings";
 
 /**
  * Réglages du site — identité éditable par un admin.
@@ -243,6 +244,8 @@ export default function SiteSettingsPage(): JSX.Element {
           )}
         </div>
       </div>
+
+      <PartnersSettings />
     </div>
   );
 }
