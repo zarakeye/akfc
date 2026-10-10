@@ -69,6 +69,37 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       )
     }
 
+    const content = (
+      <TooltipContent>
+        {tooltip}
+        <ShortcutDisplay shortcuts={shortcuts} />
+      </TooltipContent>
+    )
+
+    // Un bouton désactivé ne reçoit aucun événement de souris : son infobulle ne s'ouvrirait
+    // jamais. Or la barre d'outils désactive la plupart des boutons tant que le curseur n'est pas
+    // dans le texte — précisément quand on veut savoir à quoi ils servent. On pose donc le
+    // déclencheur sur une enveloppe, le bouton restant réellement désactivé.
+    if (props.disabled) {
+      return (
+        <Tooltip delay={200}>
+          <TooltipTrigger asChild>
+            <span className="inline-flex" tabIndex={0}>
+              <button
+                className={cn("tiptap-button", className)}
+                ref={ref}
+                aria-label={ariaLabel}
+                {...props}
+              >
+                {children}
+              </button>
+            </span>
+          </TooltipTrigger>
+          {content}
+        </Tooltip>
+      )
+    }
+
     return (
       <Tooltip delay={200}>
         <TooltipTrigger
@@ -79,10 +110,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         >
           {children}
         </TooltipTrigger>
-        <TooltipContent>
-          {tooltip}
-          <ShortcutDisplay shortcuts={shortcuts} />
-        </TooltipContent>
+        {content}
       </Tooltip>
     )
   }
