@@ -122,8 +122,19 @@ export function shouldShowButton(props: {
 /**
  * Gets the formatted mark name
  */
+const MARK_LABELS_FR: Record<Mark, string> = {
+  bold: "Gras",
+  italic: "Italique",
+  strike: "Barré",
+  code: "Code",
+  underline: "Souligné",
+  superscript: "Exposant",
+  subscript: "Indice",
+}
+
+/** Libellé (français) d'une mise en forme : infobulle et aria-label du bouton. */
 export function getFormattedMarkName(type: Mark): string {
-  return type.charAt(0).toUpperCase() + type.slice(1)
+  return MARK_LABELS_FR[type]
 }
 
 /**

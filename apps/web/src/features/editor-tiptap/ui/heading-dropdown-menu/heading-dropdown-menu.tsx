@@ -90,9 +90,9 @@ export const HeadingDropdownMenu = forwardRef<
             tabIndex={-1}
             disabled={!canToggle}
             data-disabled={!canToggle}
-            aria-label="Format text as heading"
+            aria-label="Mettre en forme comme titre"
             aria-pressed={isActive}
-            tooltip="Heading"
+            tooltip="Titre"
             {...buttonProps}
             ref={ref}
           >

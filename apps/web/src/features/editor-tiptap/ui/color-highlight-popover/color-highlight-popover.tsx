@@ -74,8 +74,8 @@ export const ColorHighlightPopoverButton = forwardRef<
     data-appearance="default"
     role="button"
     tabIndex={-1}
-    aria-label="Highlight text"
-    tooltip="Highlight"
+    aria-label="Surligner le texte"
+    tooltip="Surligner"
     ref={ref}
     {...props}
   >
@@ -100,7 +100,7 @@ export function ColorHighlightPopoverContent({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const menuItems = useMemo(
-    () => [...colors, { label: "Remove highlight", value: "none" }],
+    () => [...colors, { label: "Retirer le surlignage", value: "none" }],
     [colors]
   )
 
@@ -135,7 +135,7 @@ export function ColorHighlightPopoverContent({
                 editor={editor}
                 highlightColor={color.value}
                 tooltip={color.label}
-                aria-label={`${color.label} highlight color`}
+                aria-label={`Surligner en ${color.label.toLowerCase()}`}
                 tabIndex={index === selectedIndex ? 0 : -1}
                 data-highlighted={selectedIndex === index}
               />
@@ -145,8 +145,8 @@ export function ColorHighlightPopoverContent({
           <ButtonGroup orientation="horizontal">
             <Button
               onClick={handleRemoveHighlight}
-              aria-label="Remove highlight"
-              tooltip="Remove highlight"
+              aria-label="Retirer le surlignage"
+              tooltip="Retirer le surlignage"
               tabIndex={selectedIndex === colors.length ? 0 : -1}
               type="button"
               role="menuitem"
@@ -165,11 +165,12 @@ export function ColorHighlightPopoverContent({
 export function ColorHighlightPopover({
   editor: providedEditor,
   colors = pickHighlightColorsByValue([
+    "var(--tt-color-highlight-yellow)",
     "var(--tt-color-highlight-green)",
     "var(--tt-color-highlight-blue)",
-    "var(--tt-color-highlight-red)",
+    "var(--tt-color-highlight-pink)",
     "var(--tt-color-highlight-purple)",
-    "var(--tt-color-highlight-yellow)",
+    "var(--tt-color-highlight-orange)",
   ]),
   hideWhenUnavailable = false,
   onApplied,
@@ -201,7 +202,7 @@ export function ColorHighlightPopover({
           <Icon className="tiptap-button-icon" />
         </ColorHighlightPopoverButton>
       </PopoverTrigger>
-      <PopoverContent aria-label="Highlight colors">
+      <PopoverContent aria-label="Couleurs de surlignage">
         <ColorHighlightPopoverContent editor={editor} colors={colors} />
       </PopoverContent>
     </Popover>

@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { SITE_URL } from "@/config/siteUrl";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
+import "@/styles/tiptap-variables.css";
 import { prisma } from "@backend/prisma"
 import { AppProviders } from "@app/providers"
 import { SessionLoader } from "@features/auth/SessionLoader"

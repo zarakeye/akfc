@@ -102,7 +102,7 @@ export function BlockShell({
         onDragEnd={onDragEnd}
         className="flex items-center gap-2 border-b border-border bg-muted/40 px-2 py-1.5"
       >
-        <span className="cursor-grab text-muted-foreground" aria-hidden>
+        <span className="cursor-grab text-muted-foreground" aria-hidden title="Glisser pour déplacer le bloc">
           <GripVertical className="h-4 w-4" />
         </span>
         <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -115,6 +115,7 @@ export function BlockShell({
           onClick={onRemove}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           aria-label="Supprimer le bloc"
+          title="Supprimer le bloc"
         >
           <Trash2 className="h-4 w-4" />
         </button>

@@ -223,6 +223,7 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
                 type="button"
                 tooltip="Retirer cet élément"
                 aria-label="Retirer cet élément"
+                title="Retirer cet élément"
                 onClick={() => handleRemoveAt(index)}
               >
                 <X className="h-4 w-4" />
