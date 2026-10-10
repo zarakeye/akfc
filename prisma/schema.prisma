@@ -2044,3 +2044,53 @@ model TicketEvent {
 
   @@index([ticketId, createdAt])
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// PARTENAIRES (MJC, FÉDÉRATION…)
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Rôle d'un partenaire du club ; décide où et comment il est présenté.
+enum SitePartnerRole {
+  /// Structure qui ACCUEILLE le club : cours et stages dans ses locaux,
+  /// inscriptions et paiements à son accueil (la MJC de Chambéry).
+  HOST
+  /// Fédération à laquelle le club est affilié (licences).
+  FEDERATION
+  /// Tout autre partenaire.
+  OTHER
+}
+
+/// Partenaire du club, présenté sur le site (pied de page, page d'inscription)
+/// avec son logo et un lien vers son site. Géré dans Réglages du site.
+model SitePartner {
+  /// Identifiant (cuid).
+  id            String          @id @default(cuid())
+  /// Nom complet (ex. « MJC de Chambéry ») : texte alternatif du logo et titre.
+  name          String
+  /// Rôle (accueil, fédération, autre).
+  role          SitePartnerRole @default(OTHER)
+  /// Phrase courte qui dit ce que le partenaire apporte au club (facultative).
+  description   String?
+  /// Site du partenaire (facultatif : sans lui, le logo n'est pas un lien).
+  websiteUrl    String?
+  /// Liens utiles supplémentaires, ex. la page d'inscription ou des tarifs :
+  /// tableau JSON de { label, url }, affichés sur la page d'inscription.
+  links         Json            @default("[]")
+  /// Fichier du logo (SVG, PNG, WebP ou JPEG, ≤ 512 Ko), stocké en base :
+  /// quelques logos légers, servis par /api/site-partners/{id}/logo.
+  logoData      Bytes?
+  /// Type MIME de logoData.
+  logoMime      String?
+  /// Date du dernier logo : version de l'URL (?v=…) pour contourner les caches.
+  logoUpdatedAt DateTime?
+  /// Rang d'affichage (croissant).
+  position      Int             @default(0)
+  /// Affiché sur le site. Faux : conservé mais masqué.
+  isActive      Boolean         @default(true)
+  /// Création.
+  createdAt     DateTime        @default(now())
+  /// Dernière modification (tenue à jour par Prisma).
+  updatedAt     DateTime        @updatedAt
+
+  @@index([isActive, position])
+}

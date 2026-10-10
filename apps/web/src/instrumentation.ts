@@ -93,6 +93,19 @@ export async function register() {
   }
 
   try {
+    const { ensureDefaultPartners } = await import(
+      "@backend/modules/sitePartners/sitePartners.service"
+    );
+    const created = await ensureDefaultPartners(prisma);
+    if (created) console.log(`[instrumentation] ensureDefaultPartners: ${created} partenaire(s) créé(s) (MJC, FFK)`);
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureDefaultPartners failed — app will still start",
+      err
+    );
+  }
+
+  try {
     const { startTicketMailboxPolling } = await import(
       "@backend/modules/tickets/imapIntake.service"
     );

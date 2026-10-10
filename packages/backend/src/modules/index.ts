@@ -31,12 +31,14 @@ import { homeHeroRouter } from "@backend/modules/homeHero/router";
 import { siteSettingsRouter } from "@backend/modules/siteSettings/router";
 import { pageVisibilityRouter } from "@backend/modules/pageVisibility/router";
 import { ticketRouter } from "@backend/modules/tickets/router";
+import { sitePartnerRouter } from "@backend/modules/sitePartners/router";
 
 export const appRouter = router({
   homeHero: homeHeroRouter,
   siteSettings: siteSettingsRouter,
   pageVisibility: pageVisibilityRouter,
   ticket: ticketRouter,
+  sitePartner: sitePartnerRouter,
   siteStyle: siteStyleRouter,
   sitePage: sitePageRouter,
   auth: authRouter,
