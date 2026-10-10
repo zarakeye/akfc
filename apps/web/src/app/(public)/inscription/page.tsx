@@ -60,7 +60,7 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
                     ))}
                     {p.websiteUrl && (
                       <li>
-                        <ExternalAnchor href={p.websiteUrl}>Site de {p.name}</ExternalAnchor>
+                        <ExternalAnchor href={p.websiteUrl}>Site</ExternalAnchor>
                       </li>
                     )}
                   </ul>
