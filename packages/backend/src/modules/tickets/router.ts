@@ -55,9 +55,12 @@ export const ticketRouter = router({
       const full = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
       requester = { userId: u.id, email: u.email, name: full || null };
     } else {
-      const email = input.email?.trim() ?? "";
-      if (!email) throw new TRPCError({ code: "BAD_REQUEST", message: "Indiquez votre adresse e-mail pour recevoir la réponse." });
-      requester = { userId: null, email, name: input.name?.trim() || null };
+      // Formulaire réservé aux membres connectés : le public écrit à l'adresse du club
+      // (coordonnées de « Nous contacter »).
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Ce formulaire est réservé aux membres : connectez-vous, ou écrivez-nous à l'adresse indiquée sur la page « Nous contacter ».",
+      });
     }
 
     if (isThrottled([ctx.requestIp ? `ip:${ctx.requestIp}` : null, `mail:${requester.email.toLowerCase()}`])) {

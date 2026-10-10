@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { saveSiteContactSchema } from "@contracts/siteContact/siteContact.schema";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 import {
   putSiteLogo,
@@ -92,6 +93,25 @@ export const siteSettingsRouter = router({
         update: data,
       });
     }),
+
+  /**
+   * Coordonnées publiques du club (admin) : e-mail, téléphones (appel / WhatsApp), adresse.
+   * Affichées à tous sur « Nous contacter ». Champ vide → non affiché.
+   */
+  saveContact: protectedProcedure.input(saveSiteContactSchema).mutation(async ({ ctx, input }) => {
+    await assertAdmin(ctx);
+    const data = {
+      contactEmail: input.contactEmail.trim().toLowerCase() || null,
+      contactPhones: input.contactPhones,
+      contactAddress: input.contactAddress.replace(/\r\n/g, "\n").trim() || null,
+    };
+    await ctx.prisma.siteSettings.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID, ...data },
+      update: data,
+    });
+    return { ok: true };
+  }),
 
   /**
    * Upload du logo du site (admin). SVG ≤ 512 Ko, envoyé en base64 (petit

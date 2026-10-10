@@ -1849,6 +1849,13 @@ model SiteSettings {
   /// Délai de PREMIÈRE réponse promis aux demandeurs, en jours (7 par défaut).
   /// Fixe l'échéance de chaque nouvelle demande (Ticket.dueAt).
   ticketResponseDays Int  @default(7)
+  /// Coordonnées PUBLIQUES (page « Nous contacter », Réglages du site) : e-mail du club.
+  contactEmail       String? @default("contact@akfc.fr")
+  /// Téléphones publics : tableau JSON de { label, number, call, whatsapp }
+  /// (voir @contracts/siteContact/siteContact.schema).
+  contactPhones      Json    @default("[]")
+  /// Adresse affichée, une ligne par élément (texte multi-lignes).
+  contactAddress     String?
 }
 
 /// Nom AFFICHÉ d'un dossier du finder, découplé de son chemin physique.
