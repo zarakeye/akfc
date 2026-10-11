@@ -85,9 +85,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
 
-# ffmpeg : affiches des vidéos stockées sur R2 (service mediaDerivatives).
+# ffmpeg : affiches des vidéos stockées sur R2 ; libheif : photos HEIC d'iPhone (service mediaDerivatives).
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg \
+  && apt-get install -y --no-install-recommends ffmpeg libheif-examples \
+     $(apt-cache show libheif-plugin-libde265 >/dev/null 2>&1 && echo libheif-plugin-libde265) \
+  && (command -v heif-dec || command -v heif-convert) \
   && rm -rf /var/lib/apt/lists/*
 
 USER nextjs

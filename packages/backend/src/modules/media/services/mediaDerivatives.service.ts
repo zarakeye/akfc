@@ -1,5 +1,8 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   DeleteObjectsCommand,
@@ -64,6 +67,67 @@ const VIDEO_EXT = new Set(["mp4", "mov", "m4v", "webm", "mkv", "avi", "ogv", "3g
 export const isTransformableImage = (path: string): boolean => IMAGE_EXT.has(ext(path));
 export const isVideo = (path: string): boolean => VIDEO_EXT.has(ext(path));
 
+const HEIF_EXT = new Set(["heic", "heif"]);
+/** Photo HEIC / HEIF (iPhone) : sharp ne sait pas la lire, libheif la décode d'abord en JPEG. */
+export const isHeif = (path: string): boolean => HEIF_EXT.has(ext(path));
+
+let heifMissing = false;
+
+/** Lance un outil sans sortie : "ok", "missing" (non installé) ou "failed". */
+function runTool(cmd: string, args: string[]): Promise<"ok" | "missing" | "failed"> {
+  return new Promise((resolve) => {
+    let proc: ReturnType<typeof spawn>;
+    try {
+      proc = spawn(cmd, args, { stdio: "ignore" });
+    } catch {
+      resolve("missing");
+      return;
+    }
+    const timer = setTimeout(() => proc.kill("SIGKILL"), FFMPEG_TIMEOUT_MS);
+    proc.on("error", (err: NodeJS.ErrnoException) => {
+      clearTimeout(timer);
+      resolve(err.code === "ENOENT" ? "missing" : "failed");
+    });
+    proc.on("close", (code) => {
+      clearTimeout(timer);
+      resolve(code === 0 ? "ok" : "failed");
+    });
+  });
+}
+
+/**
+ * HEIC / HEIF → JPEG (rotation de la photo appliquée par libheif), ou null si
+ * libheif manque ou si le fichier est illisible. heif-dec (libheif ≥ 1.17),
+ * sinon son ancien nom heif-convert.
+ */
+export async function decodeHeif(input: Buffer): Promise<Buffer | null> {
+  if (heifMissing) return null;
+  const dir = await mkdtemp(join(tmpdir(), "akfc-heif-"));
+  try {
+    const src = join(dir, "in.heic");
+    await writeFile(src, input);
+    let missing = 0;
+    for (const cmd of ["heif-dec", "heif-convert"]) {
+      const r = await runTool(cmd, ["-q", "92", src, join(dir, "out.jpg")]);
+      if (r === "missing") {
+        missing++;
+        continue;
+      }
+      if (r === "failed") return null;
+      // Plusieurs images dans le fichier (rafale) → out-1.jpg, out-2.jpg… : on garde la première.
+      const out = (await readdir(dir)).filter((f) => f.startsWith("out") && f.endsWith(".jpg")).sort()[0];
+      return out ? await readFile(join(dir, out)) : null;
+    }
+    if (missing === 2) {
+      heifMissing = true;
+      console.error("[media/derivatives] libheif (heif-dec) introuvable : photos HEIC servies telles quelles");
+    }
+    return null;
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 export function derivedFolder(fullPath: string): string {
   return `${DERIVED_ROOT}${createHash("sha1").update(fullPath).digest("hex")}/`;
 }
@@ -119,7 +183,9 @@ export async function ensureImageVariant(fullPath: string, variant: MediaVariant
 
   const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
   if (!obj.Body) return null;
-  const input = Buffer.from(await obj.Body.transformToByteArray());
+  const raw = Buffer.from(await obj.Body.transformToByteArray());
+  const input = isHeif(fullPath) ? await decodeHeif(raw) : raw;
+  if (!input) return null;
   const out = await resize(sh, input, variant).webp({ quality: 80 }).toBuffer();
   await put(key, out, "image/webp");
   return key;
@@ -256,7 +322,10 @@ export async function probeMediaDimensions(fullPath: string, mimeType: string): 
       if (!sh) return null;
       const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
       if (!obj.Body) return null;
-      const meta = await sh(Buffer.from(await obj.Body.transformToByteArray()), { failOn: "none" }).metadata();
+      const raw = Buffer.from(await obj.Body.transformToByteArray());
+      const buf = isHeif(fullPath) ? await decodeHeif(raw) : raw;
+      if (!buf) return null;
+      const meta = await sh(buf, { failOn: "none" }).metadata();
       if (!meta.width || !meta.height) return null;
       // Orientation EXIF 5 à 8 : photo tournée d'un quart de tour, largeur et hauteur s'échangent.
       const rotated = (meta.orientation ?? 1) >= 5;
