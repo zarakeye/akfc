@@ -155,6 +155,19 @@ export const userRouter = router({
       });
     }),
 
+  /** Droit à l'image (admins) : autorisation recueillie par le club pour ce membre. */
+  setImageConsent: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1), consent: z.enum(["UNKNOWN", "GRANTED", "REFUSED"]) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { imageConsent: input.consent, imageConsentAt: new Date() },
+        select: { id: true },
+      });
+      return { ok: true };
+    }),
+
   delete: protectedProcedure
     .use(isAdmin)
     .input(z.object({ id: z.string() }))

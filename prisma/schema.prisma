@@ -73,6 +73,10 @@ model User {
   /// Dernière connexion (posée sans toucher updatedAt) : signale les comptes
   /// inactifs à examiner (durées de conservation, registre RGPD).
   lastLoginAt           DateTime?
+  /// Droit à l'image (photos et vidéos des activités) : autorisation recueillie
+  /// par le club, saisie par un administrateur ; date de la dernière saisie.
+  imageConsent          ImageConsent         @default(UNKNOWN)
+  imageConsentAt        DateTime?
   /// Présentation libre du profil, en texte brut. Distincte de `instructorBio`.
   aboutMe               String?
   /// Nom d'usage, affiché quand prénom et nom manquent.
@@ -298,6 +302,16 @@ model AuditLog {
 }
 
 /// Actions consignées dans AuditLog. ⚠ Inutilisé (voir AuditLog).
+/// Droit à l'image d'un membre.
+enum ImageConsent {
+  /// Autorisation pas encore recueillie.
+  UNKNOWN
+  /// Le membre (ou ses parents) autorise la publication.
+  GRANTED
+  /// Le membre (ou ses parents) refuse : ne pas publier d'image où il est reconnaissable.
+  REFUSED
+}
+
 enum AuditAction {
   /// Changement de rôle d'un membre. Notion caduque : User n'a plus de rôle,
   /// l'administration passe par le groupe « Administrateurs ».

@@ -14,6 +14,7 @@ export async function exportMyData(db: PrismaClient, userId: string) {
     select: {
       id: true, email: true, emailVerified: true, firstName: true, lastName: true, pseudo: true, phone: true,
       birthDate: true, memberSince: true, aboutMe: true, avatar: true, image: true, instructorBio: true,
+      imageConsent: true, imageConsentAt: true,
       createdAt: true, updatedAt: true,
       preferences: { select: { displayEmail: true, displayPhone: true, darkMode: true, description: true } },
       memberGroupMemberships: { select: { group: { select: { name: true } } } },
@@ -69,6 +70,7 @@ export async function exportMyData(db: PrismaClient, userId: string) {
       updatedAt: user.updatedAt,
       preferences: user.preferences,
     },
+    imageConsent: { value: user.imageConsent, recordedAt: user.imageConsentAt },
     instructorBio: user.instructorBio,
     groups: user.memberGroupMemberships.map((m) => m.group.name),
     sessions: user.sessions,
