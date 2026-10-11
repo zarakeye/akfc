@@ -70,6 +70,9 @@ model User {
   createdAt             DateTime             @default(now())
   /// Dernière modification de la ligne (tenue à jour par Prisma).
   updatedAt             DateTime             @default(now()) @updatedAt
+  /// Dernière connexion (posée sans toucher updatedAt) : signale les comptes
+  /// inactifs à examiner (durées de conservation, registre RGPD).
+  lastLoginAt           DateTime?
   /// Présentation libre du profil, en texte brut. Distincte de `instructorBio`.
   aboutMe               String?
   /// Nom d'usage, affiché quand prénom et nom manquent.

@@ -147,6 +147,16 @@ export async function register() {
   }
 
   try {
+    const { startRetentionSchedule } = await import(
+      "@backend/modules/privacy/retention.service"
+    );
+    const started = startRetentionSchedule(prisma);
+    console.log(`[instrumentation] purge RGPD (durées de conservation) : ${started ? "chaque jour à 3 h + au démarrage" : "désactivée"}`);
+  } catch (err) {
+    console.error("[instrumentation] startRetentionSchedule failed — app will still start", err);
+  }
+
+  try {
     const { startTicketRecapSchedule } = await import(
       "@backend/modules/tickets/recap.service"
     );
