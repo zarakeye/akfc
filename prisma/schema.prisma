@@ -1042,6 +1042,9 @@ model MediaAsset {
   /// un déplacement, quand publicId, fullPath et status ont changé. null pour
   /// R2 et pour les lignes antérieures à cette colonne.
   cloudinaryAssetId      String?  @unique
+  /// Ancien public_id Cloudinary d'un fichier migré vers R2 (sortie de Cloudinary) :
+  /// trace et retour arrière possible. null pour un fichier né sur R2.
+  legacyCloudinaryPublicId String?
 
   @@index([status])
   @@index([categoryId])

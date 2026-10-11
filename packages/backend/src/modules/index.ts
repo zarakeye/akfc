@@ -32,6 +32,7 @@ import { siteSettingsRouter } from "@backend/modules/siteSettings/router";
 import { pageVisibilityRouter } from "@backend/modules/pageVisibility/router";
 import { ticketRouter } from "@backend/modules/tickets/router";
 import { sitePartnerRouter } from "@backend/modules/sitePartners/router";
+import { mediaMigrationRouter } from "@backend/modules/mediaMigration/router";
 
 export const appRouter = router({
   homeHero: homeHeroRouter,
@@ -39,6 +40,7 @@ export const appRouter = router({
   pageVisibility: pageVisibilityRouter,
   ticket: ticketRouter,
   sitePartner: sitePartnerRouter,
+  mediaMigration: mediaMigrationRouter,
   siteStyle: siteStyleRouter,
   sitePage: sitePageRouter,
   auth: authRouter,

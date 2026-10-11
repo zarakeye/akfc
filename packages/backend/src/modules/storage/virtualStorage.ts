@@ -87,6 +87,19 @@ export class VirtualStorage implements StorageAdapter {
   private readonly cloudinary: AdapterFor<"cloudinary">;
   private readonly r2: AdapterFor<"r2">;
   private readonly deps: StorageAdapterDeps;
+  private cloudinaryActive: Promise<boolean> | null = null;
+
+  /**
+   * Cloudinary héberge-t-il encore des fichiers ? Une fois la migration vers R2 terminée, il n'est
+   * plus listé (ses copies de secours n'apparaissent pas en doublon dans le finder).
+   */
+  private cloudinaryInUse(): Promise<boolean> {
+    this.cloudinaryActive ??= this.deps.prisma.mediaAsset
+      .count({ where: { publicId: { not: null } } })
+      .then((n) => n > 0)
+      .catch(() => true);
+    return this.cloudinaryActive;
+  }
 
   constructor(deps: StorageAdapterDeps) {
     this.deps = deps;
@@ -99,8 +112,9 @@ export class VirtualStorage implements StorageAdapter {
   /* ====================================================================== */
 
   async list(options: ListOptions): Promise<ListResult> {
+    const useCloudinary = await this.cloudinaryInUse();
     const results = await Promise.allSettled([
-      this.cloudinary.list(options),
+      useCloudinary ? this.cloudinary.list(options) : Promise.resolve(null),
       this.r2.list(options),
     ]);
 
@@ -109,7 +123,7 @@ export class VirtualStorage implements StorageAdapter {
 
     if (!cloudinary && !r2) {
       // Les deux providers en panne — on propage la première erreur.
-      throw (results[0] as PromiseRejectedResult).reason;
+      throw ((useCloudinary ? results[0] : results[1]) as PromiseRejectedResult).reason;
     }
 
     return {
@@ -123,8 +137,9 @@ export class VirtualStorage implements StorageAdapter {
   }
 
   async getTree(options: GetTreeOptions): Promise<GetTreeResult> {
+    const useCloudinary = await this.cloudinaryInUse();
     const results = await Promise.allSettled([
-      this.cloudinary.getTree(options),
+      useCloudinary ? this.cloudinary.getTree(options) : Promise.resolve(null),
       this.r2.getTree(options),
     ]);
 
@@ -132,7 +147,7 @@ export class VirtualStorage implements StorageAdapter {
     const r2 = pickFulfilled(results[1], "r2.getTree");
 
     if (!cloudinary && !r2) {
-      throw (results[0] as PromiseRejectedResult).reason;
+      throw ((useCloudinary ? results[0] : results[1]) as PromiseRejectedResult).reason;
     }
 
     // Si l'un des deux a répondu, on l'utilise comme base et on merge l'autre
@@ -144,8 +159,9 @@ export class VirtualStorage implements StorageAdapter {
   }
 
   async getNode(path: StoragePath): Promise<StorageNode | null> {
+    const useCloudinary = await this.cloudinaryInUse();
     const results = await Promise.allSettled([
-      this.cloudinary.getNode
+      useCloudinary && this.cloudinary.getNode
         ? this.cloudinary.getNode(path)
         : Promise.resolve(null),
       this.r2.getNode ? this.r2.getNode(path) : Promise.resolve(null),
