@@ -277,3 +277,36 @@ export async function streamDerived(key: string, cacheControl: string): Promise<
     },
   });
 }
+
+/**
+ * Efface les déclinaisons ORPHELINES : celles dont l'original n'existe plus dans le bucket (fichier
+ * supprimé, déplacé, renommé, corbeille vidée, avatar remplacé). Une déclinaison orpheline n'est
+ * jamais servie (la livraison vérifie l'original), mais une photo supprimée ne doit pas survivre
+ * en vignette : passe quotidienne (purge RGPD).
+ */
+export async function sweepOrphanDerivatives(): Promise<number> {
+  const s3 = getR2Client();
+  const Bucket = getR2Bucket();
+  const liveHashes = new Set<string>();
+  const derivedByHash = new Map<string, string[]>();
+  let token: string | undefined;
+  do {
+    const list = await s3.send(new ListObjectsV2Command({ Bucket, ContinuationToken: token, MaxKeys: 1000 }));
+    for (const o of list.Contents ?? []) {
+      if (!o.Key) continue;
+      if (o.Key.startsWith(DERIVED_ROOT)) {
+        const hash = o.Key.slice(DERIVED_ROOT.length).split("/")[0];
+        derivedByHash.set(hash, [...(derivedByHash.get(hash) ?? []), o.Key]);
+      } else {
+        liveHashes.add(createHash("sha1").update(o.Key).digest("hex"));
+      }
+    }
+    token = list.IsTruncated ? list.NextContinuationToken : undefined;
+  } while (token);
+
+  const orphanKeys = [...derivedByHash.entries()].filter(([hash]) => !liveHashes.has(hash)).flatMap(([, keys]) => keys);
+  for (let i = 0; i < orphanKeys.length; i += 1000) {
+    await s3.send(new DeleteObjectsCommand({ Bucket, Delete: { Objects: orphanKeys.slice(i, i + 1000).map((Key) => ({ Key })) } }));
+  }
+  return orphanKeys.length;
+}

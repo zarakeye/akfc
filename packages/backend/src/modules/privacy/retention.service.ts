@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { parisClock } from "@backend/modules/tickets/recap.service";
+import { sweepOrphanDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /*
  * Durées de conservation (RGPD) APPLIQUÉES, pas seulement annoncées :
@@ -33,7 +34,12 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
   });
   const sessions = await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
   const resetTokens = await db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } });
-  return { tickets: tickets.count, sessions: sessions.count, resetTokens: resetTokens.count };
+  // Vignettes et affiches dont la photo ou la vidéo d'origine a disparu (sans R2 configuré : 0).
+  const derivatives = await sweepOrphanDerivatives().catch((err) => {
+    console.error("[rgpd/purge] déclinaisons :", err instanceof Error ? err.message : err);
+    return 0;
+  });
+  return { tickets: tickets.count, sessions: sessions.count, resetTokens: resetTokens.count, derivatives };
 }
 
 export type InactiveAccount = {
@@ -79,8 +85,8 @@ export function startRetentionSchedule(db: PrismaClient): boolean {
     lastDay = parisClock(now).day;
     purgeExpiredData(db, now)
       .then((r) => {
-        if (r.tickets || r.sessions || r.resetTokens) {
-          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation supprimé(s)`);
+        if (r.tickets || r.sessions || r.resetTokens || r.derivatives) {
+          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.derivatives} vignette(s) orpheline(s) supprimé(s)`);
         }
       })
       .catch((err) => console.error("[rgpd/purge] échec :", err instanceof Error ? err.message : err))

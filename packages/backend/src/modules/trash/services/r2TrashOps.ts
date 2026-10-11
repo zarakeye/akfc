@@ -35,6 +35,14 @@ import {
   getR2Client,
   getR2Bucket,
 } from "@backend/modules/storage/adapters/r2/client";
+import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
+
+/** Efface les vignettes et affiches d'un fichier supprimé (meilleur effort, jamais bloquant). */
+async function dropDerivatives(keys: string[]): Promise<void> {
+  for (const key of keys) {
+    await deleteDerivatives(key).catch(() => 0);
+  }
+}
 
 /** True si l'erreur S3 est un 404 / NoSuchKey / NotFound. */
 function isNotFound(err: unknown): boolean {
@@ -152,6 +160,7 @@ export async function r2DeleteFile(key: string): Promise<void> {
   } catch (err) {
     if (!isNotFound(err)) throw err;
   }
+  await dropDerivatives([key]);
 }
 
 /** Supprime tout ce qui vit sous un préfixe R2 (par lots de 1000). */
@@ -169,5 +178,6 @@ export async function r2DeleteByPrefix(prefix: string): Promise<void> {
         Delete: { Objects: batch.map((o) => ({ Key: o.key })) },
       }),
     );
+    await dropDerivatives(batch.map((o) => o.key));
   }
 }
