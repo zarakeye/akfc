@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@backend/prisma';
 import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/client';
+import { resolveDeliveryKey } from '@backend/modules/media/services/mediaDerivatives.service';
 
 /**
  * Route publique pour les fichiers R2 référencés depuis le page-builder.
@@ -56,7 +57,7 @@ import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/c
 const PRESIGNED_URL_EXPIRY_SECONDS = 30 * 60;
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ): Promise<NextResponse> {
   // ─── Path ─────────────────────────────────────────────────────────────
@@ -93,10 +94,13 @@ export async function GET(
 
   // ─── Sign + redirect ──────────────────────────────────────────────────
   try {
+    // Déclinaison demandée (?variant=…, &as=poster) : fabriquée au besoin, sinon l'original.
+    const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
+    if (!key) return new NextResponse('Not found', { status: 404 });
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
-      Key: r2Key,
+      Key: key,
     });
 
     const signedUrl = await getSignedUrl(s3, command, {

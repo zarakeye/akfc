@@ -49,6 +49,11 @@ const nextConfig: NextConfig = {
       "../../packages/backend/**/*",
       "../../packages/contracts/**/*",
       "../../prisma/**/*",
+      // sharp (déclinaisons d'images R2) : binaires natifs chargés dynamiquement.
+      "../../node_modules/sharp/**/*",
+      "../../node_modules/.pnpm/sharp@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-linux-x64@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**/*",
     ],
   },
 
@@ -81,7 +86,7 @@ const nextConfig: NextConfig = {
   // chunks (Server Components, Route Handlers, Server Actions, etc.).
   // Sans ça, chaque chunk a son propre module Prisma → multiples
   // PrismaClient instanciés → cold start + DEALLOCATE ALL à chaque requête.
-  serverExternalPackages: ["@prisma/client", "cloudinary", "cloudinary-core", "imapflow", "mailparser"],
+  serverExternalPackages: ["@prisma/client", "cloudinary", "cloudinary-core", "imapflow", "mailparser", "sharp"],
   images: {
     remotePatterns: [
       {

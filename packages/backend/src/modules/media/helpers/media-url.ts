@@ -20,5 +20,7 @@ export function buildMediaProxyUrl(
   }
   const r2Prefix =
     audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';
-  return `${r2Prefix}/${encodeSegments(asset.fullPath)}`;
+  // Même forme que Cloudinary (`?variant=large`) : les appelants ajoutent `&as=poster` pour l'affiche
+  // d'une vidéo. Ignoré pour un document (servi tel quel).
+  return `${r2Prefix}/${encodeSegments(asset.fullPath)}?variant=large`;
 }

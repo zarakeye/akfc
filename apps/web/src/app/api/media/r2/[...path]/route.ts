@@ -3,6 +3,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { getR2Client, getR2Bucket } from '@backend/modules/storage/adapters/r2/client';
+import { resolveDeliveryKey } from '@backend/modules/media/services/mediaDerivatives.service';
 import { getSessionFromRequest } from '@backend/modules/auth/getSessionFromRequest';
 
 /**
@@ -77,10 +78,13 @@ export async function GET(
 
   // ─── Sign GET URL ────────────────────────────────────────────────────
   try {
+    // Déclinaison demandée (?variant=…, &as=poster) : fabriquée au besoin, sinon l'original.
+    const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
+    if (!key) return new NextResponse('Not found', { status: 404 });
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
-      Key: r2Key,
+      Key: key,
       // Note : pas de ResponseContentDisposition forcé → le navigateur
       // décide selon le Content-Type (inline pour pdf/image/video, etc.).
       // Si on veut forcer un download : ResponseContentDisposition: `attachment; filename="..."`.
