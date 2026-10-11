@@ -6,6 +6,7 @@ import { trpc } from "@/core/trpc/trpcClient";
 import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
 import { PartnersSettings } from "@features/admin/site-settings/PartnersSettings";
 import { ContactSettings } from "@features/admin/site-settings/ContactSettings";
+import { LegalSettings } from "@features/admin/site-settings/LegalSettings";
 
 /**
  * Réglages du site — identité éditable par un admin.
@@ -247,6 +248,7 @@ export default function SiteSettingsPage(): JSX.Element {
       </div>
 
       <ContactSettings />
+      <LegalSettings />
       <PartnersSettings />
     </div>
   );

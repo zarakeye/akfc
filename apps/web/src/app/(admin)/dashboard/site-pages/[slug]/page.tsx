@@ -12,6 +12,8 @@ const DEFAULT_TITLES: Record<string, string> = {
   histoire: "L'histoire du club",
   inscription: "S'inscrire",
   contacts: "Nous contacter",
+  "mentions-legales": "Mentions légales — compléments",
+  confidentialite: "Politique de confidentialité — compléments",
 };
 
 export default async function SitePageEditorRoute({
