@@ -52,6 +52,12 @@ ARG NEXT_PUBLIC_APP_FULL_NAME
 ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
 ENV NEXT_PUBLIC_APP_FULL_NAME=${NEXT_PUBLIC_APP_FULL_NAME}
 RUN pnpm --filter web build
+# sharp avec ses dépendances (detect-libc, semver, @img/*) à plat : le traçage Next ne les emporte pas.
+# Le build échoue ici si sharp ne se charge pas, plutôt que l'API en production.
+RUN set -e; S=$(ls -d node_modules/.pnpm/sharp@*/node_modules | head -1); \
+  cp -rL "$S/sharp" /opt/sharp; mkdir -p /opt/sharp/node_modules; \
+  for d in "$S"/*; do [ "$(basename "$d")" = sharp ] || cp -rL "$d" /opt/sharp/node_modules/; done; \
+  node -e "require('/opt/sharp'); console.log('sharp ok')"
 
 # ─── Migrateur ────────────────────────────────────────────────────────────
 FROM base AS migrator
@@ -77,6 +83,7 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
 
 # ffmpeg : affiches des vidéos stockées sur R2 (service mediaDerivatives).
 RUN apt-get update \

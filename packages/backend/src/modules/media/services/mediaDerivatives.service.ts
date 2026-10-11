@@ -9,7 +9,20 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import sharp from "sharp";
+import type sharp from "sharp";
+
+type SharpFn = typeof sharp;
+let sharpLoad: Promise<SharpFn | null> | null = null;
+/** sharp chargé à la première image : s'il est absent ou cassé, on sert l'original sans faire tomber l'API. */
+function loadSharp(): Promise<SharpFn | null> {
+  sharpLoad ??= import("sharp")
+    .then((m) => ((m as unknown as { default?: SharpFn }).default ?? (m as unknown as SharpFn)))
+    .catch((err: unknown) => {
+      console.error("[media] sharp indisponible — originaux servis :", err instanceof Error ? err.message : err);
+      return null;
+    });
+  return sharpLoad;
+}
 
 import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
 
@@ -86,10 +99,10 @@ async function put(key: string, body: Buffer, contentType: string): Promise<void
   );
 }
 
-function resize(input: Buffer, variant: Exclude<MediaVariant, "original">): sharp.Sharp {
+function resize(sh: SharpFn, input: Buffer, variant: Exclude<MediaVariant, "original">): sharp.Sharp {
   const s = SIZES[variant];
   // rotate() applique l'orientation EXIF (photos de téléphone) ; les métadonnées (GPS…) ne sont pas recopiées.
-  return sharp(input, { failOn: "none" })
+  return sh(input, { failOn: "none" })
     .rotate()
     .resize(s.height ? { width: s.width, height: s.height, fit: "cover" } : { width: s.width, withoutEnlargement: true });
 }
@@ -97,6 +110,8 @@ function resize(input: Buffer, variant: Exclude<MediaVariant, "original">): shar
 /** Clé R2 de la déclinaison d'une image (fabriquée au besoin), ou null : servir l'original. */
 export async function ensureImageVariant(fullPath: string, variant: MediaVariant): Promise<string | null> {
   if (variant === "original" || !isTransformableImage(fullPath)) return null;
+  const sh = await loadSharp();
+  if (!sh) return null;
   const src = await originalEtag(fullPath);
   if (!src || src.bytes > MAX_SOURCE_BYTES) return null;
   const key = `${derivedFolder(fullPath)}${src.etag}-${variant}.webp`;
@@ -105,7 +120,7 @@ export async function ensureImageVariant(fullPath: string, variant: MediaVariant
   const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
   if (!obj.Body) return null;
   const input = Buffer.from(await obj.Body.transformToByteArray());
-  const out = await resize(input, variant).webp({ quality: 80 }).toBuffer();
+  const out = await resize(sh, input, variant).webp({ quality: 80 }).toBuffer();
   await put(key, out, "image/webp");
   return key;
 }
@@ -158,7 +173,9 @@ export async function ensureVideoPoster(fullPath: string, variant: MediaVariant)
     if (ffmpegMissing) console.error("[media/derivatives] ffmpeg introuvable : affiches de vidéo indisponibles");
     return null;
   }
-  const out = await resize(frame, v).jpeg({ quality: 82 }).toBuffer();
+  const sh = await loadSharp();
+  if (!sh) return null;
+  const out = await resize(sh, frame, v).jpeg({ quality: 82 }).toBuffer();
   await put(key, out, "image/jpeg");
   return key;
 }
@@ -235,9 +252,11 @@ function runJson(cmd: string, args: string[]): Promise<unknown> {
 export async function probeMediaDimensions(fullPath: string, mimeType: string): Promise<MediaDimensions | null> {
   try {
     if (mimeType.startsWith("image/") && isTransformableImage(fullPath)) {
+      const sh = await loadSharp();
+      if (!sh) return null;
       const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
       if (!obj.Body) return null;
-      const meta = await sharp(Buffer.from(await obj.Body.transformToByteArray()), { failOn: "none" }).metadata();
+      const meta = await sh(Buffer.from(await obj.Body.transformToByteArray()), { failOn: "none" }).metadata();
       if (!meta.width || !meta.height) return null;
       // Orientation EXIF 5 à 8 : photo tournée d'un quart de tour, largeur et hauteur s'échangent.
       const rotated = (meta.orientation ?? 1) >= 5;

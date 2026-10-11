@@ -16,7 +16,9 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
   // Dernière connexion, en SQL direct pour ne pas modifier updatedAt (dernière modification du profil).
-  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${user.id}`;
+  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${user.id}`.catch((err: unknown) => {
+    console.error("[session] lastLoginAt non mis à jour :", err instanceof Error ? err.message : err);
+  });
 
   const session = await prisma.session.create({
     data: {
