@@ -8,7 +8,6 @@ import type {
   FinderNodeMetadata,
   MoveOptions,
 } from '@contracts/finder';
-import { pickBackendByExtension } from '@contracts/storage';
 import { trpcClient } from '@/core/trpc/trpcClient';
 import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from '@backend/modules';
@@ -154,22 +153,21 @@ function mapFileToFinderNode(
   // (les segments sont des dossiers virtuels), donc on encode segment par
   // segment.
 
-  const nameForDispatch =
-    format && !name.toLowerCase().endsWith(`.${format.toLowerCase()}`)
-      ? `${name}.${format}`
-      : name;
-  const backend = pickBackendByExtension(nameForDispatch);
-
   // Le LOCALISATEUR : `file.path` tant que la vue pliée n'est pas levée,
   // `AKFC/pending/…` ensuite. C'est lui qui construit l'URL — le proxy
   // `/api/media/by-public-id/…` interroge Cloudinary, qui ne connaît que
   // l'emplacement réel. Lui passer un chemin logique rendrait 404.
   const storagePath = file.storagePath ?? file.path;
 
+  // Sortie de Cloudinary : un fichier stocké AVEC extension vit sur R2 (images, vidéos et documents) ;
+  // un public_id Cloudinary n'en a pas (jusqu'à sa migration). R2 : vignette 600 px pour une image,
+  // l'original pour le reste (paramètre ignoré).
+  const lastSegment = storagePath.split('/').pop() ?? '';
+  const backend = /\.[A-Za-z0-9]{1,8}$/.test(lastSegment) ? 'r2' : 'cloudinary';
   const url =
     backend === 'cloudinary'
       ? getMediaUrl({ publicId: storagePath, format })
-      : `/api/media/r2/${storagePath.split('/').map(encodeURIComponent).join('/')}`;
+      : `/api/media/r2/${storagePath.split('/').map(encodeURIComponent).join('/')}?variant=medium`;
 
   return {
     // `id` = le localisateur, et pas le chemin logique : deux fichiers

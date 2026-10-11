@@ -57,19 +57,8 @@ type UploadItem = {
 
 type Banner = { kind: 'success' | 'error' | 'info'; text: string };
 
-type CloudinaryAsset = {
-  publicId: string;
-  secureUrl: string;
-  resourceType: 'image' | 'video';
-  format?: string;
-  bytes: number;
-  width?: number;
-  height?: number;
-  duration?: number;
-};
-
 type UploadOutcome =
-  | { ok: true; itemId: string; asset: CloudinaryAsset }
+  | { ok: true; itemId: string; path: string }
   | { ok: false; itemId: string; error: string };
 
 /* -------------------------------------------------------------------------- */
@@ -79,8 +68,8 @@ type UploadOutcome =
 export default function PersoPhotoUploader(): JSX.Element {
   const utils = trpc.useUtils();
   const quotaQuery = trpc.storage.getPersoPhotoQuota.useQuery();
-  const createAuthMutation = trpc.storage.createUploadAuthorization.useMutation();
-  const registerAssetMutation = trpc.storage.registerUploadedAsset.useMutation();
+  const createR2Mutation = trpc.storage.createR2Upload.useMutation();
+  const registerR2Mutation = trpc.storage.registerR2Upload.useMutation();
 
   const [items, setItems] = useState<UploadItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -173,97 +162,47 @@ export default function PersoPhotoUploader(): JSX.Element {
     );
 
     try {
-      const assetsPayload = toUpload.map((it) => ({
-        fileName: it.file.name,
-        mimeType: it.file.type,
-        mediaType: 'image' as const,
-      }));
-
-      // Phase 1 — autorisation (overwrite:false → binaire protégé)
-      const signatures = await createAuthMutation.mutateAsync({
-        provider: 'cloudinary',
-        destination: { kind: 'perso' },
-        allowOverwrite: false,
-        assets: assetsPayload,
+      // Envoi sur R2 : un fichier déjà présent est ignoré (jamais d'écrasement silencieux en perso).
+      const destination = { kind: 'perso' as const };
+      const { existing } = await utils.storage.checkR2Conflicts.fetch({
+        destination,
+        fileNames: toUpload.map((it) => it.file.name),
       });
-
-      const sigByItemId = new Map(
-        toUpload.map((it, idx) => [it.id, signatures[idx]]),
-      );
-
-      // Conflits : on IGNORE (jamais d'écrasement silencieux en perso).
-      const skippedIds = new Set<string>();
-      toUpload.forEach((it, idx) => {
-        if (signatures[idx].alreadyExists) skippedIds.add(it.id);
-      });
+      const existingNames = new Set(existing);
+      const skippedIds = new Set(toUpload.filter((it) => existingNames.has(it.file.name)).map((it) => it.id));
       const actuallyUpload = toUpload.filter((it) => !skippedIds.has(it.id));
 
-      // Phase 2 — POST direct vers Cloudinary, en parallèle
-      const outcomes: UploadOutcome[] = await Promise.all(
-        actuallyUpload.map(async (it): Promise<UploadOutcome> => {
-          const sig = sigByItemId.get(it.id)!;
-          try {
-            const formData = new FormData();
-            formData.append('file', it.file);
-            formData.append('api_key', sig.apiKey);
-            formData.append('timestamp', String(sig.timestamp));
-            formData.append('signature', sig.signature);
-            formData.append('folder', sig.folder);
-            formData.append('public_id', sig.publicId);
-            formData.append('type', sig.type);
-            formData.append('overwrite', String(sig.overwrite));
-
-            const url = `https://api.cloudinary.com/v1_1/${sig.cloudName}/${sig.resourceType}/upload`;
-            const res = await fetch(url, { method: 'POST', body: formData });
-            if (!res.ok) {
-              throw new Error(`Cloudinary HTTP ${res.status}`);
-            }
-            const data = await res.json();
-            return {
-              ok: true,
-              itemId: it.id,
-              asset: {
-                publicId: data.public_id,
-                secureUrl: data.secure_url,
-                resourceType: sig.resourceType,
-                format: data.format,
-                bytes: data.bytes,
-                width: data.width,
-                height: data.height,
-                duration: data.duration,
-              },
-            };
-          } catch (err) {
-            return {
-              ok: false,
-              itemId: it.id,
-              error: err instanceof Error ? err.message : 'Envoi échoué',
-            };
-          }
-        }),
-      );
-
-      // Phase 3 — register des succès
+      // Un par un : le quota se vérifie à chaque demande d'envoi.
+      const outcomes: UploadOutcome[] = [];
+      for (const it of actuallyUpload) {
+        try {
+          const auth = await createR2Mutation.mutateAsync({
+            destination,
+            originalFileName: it.file.name,
+            mimeType: it.file.type,
+            maxBytes: it.file.size,
+          });
+          const res = await fetch(auth.uploadUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': it.file.type },
+            body: it.file,
+          });
+          if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
+          await registerR2Mutation.mutateAsync({
+            path: auth.path,
+            expectedBytes: it.file.size,
+            expectedMimeType: it.file.type,
+            destination,
+            originalFileName: it.file.name,
+          });
+          outcomes.push({ ok: true, itemId: it.id, path: auth.path });
+        } catch (err) {
+          outcomes.push({ ok: false, itemId: it.id, error: err instanceof Error ? err.message : 'Envoi échoué' });
+        }
+      }
       const successes = outcomes.filter(
         (o): o is Extract<UploadOutcome, { ok: true }> => o.ok,
       );
-      if (successes.length > 0) {
-        const itemById = new Map(actuallyUpload.map((it) => [it.id, it]));
-        await registerAssetMutation.mutateAsync({
-          provider: 'cloudinary',
-          destination: { kind: 'perso' },
-          assets: successes.map((s) => {
-            const it = itemById.get(s.itemId)!;
-            const sig = sigByItemId.get(s.itemId)!;
-            return {
-              ...s.asset,
-              originalFileName: it.file.name,
-              mimeType: it.file.type,
-              folder: sig.folder,
-            };
-          }),
-        });
-      }
 
       // MAJ des statuts locaux
       const okIds = new Set(successes.map((s) => s.itemId));

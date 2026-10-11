@@ -652,7 +652,8 @@ export default function DragNDropForm(): JSX.Element {
 
   async function uploadR2Single(
     item: EnrichedItem,
-    destination: Destination
+    destination: Destination,
+    allowOverwrite = false,
   ): Promise<R2UploadOutcome> {
     try {
       // Le serveur calcule le chemin (une seule règle, tous providers) et le
@@ -662,6 +663,7 @@ export default function DragNDropForm(): JSX.Element {
         originalFileName: item.file.name,
         mimeType: item.file.type,
         maxBytes: item.file.size,
+        allowOverwrite,
       });
       const path = auth.path;
 
@@ -762,9 +764,29 @@ export default function DragNDropForm(): JSX.Element {
     const r2Items = toUpload.filter((it) => it.backend === 'r2');
 
     try {
+      // R2 : un fichier déjà présent → même question qu'avant (jamais d'écrasement silencieux).
+      const r2Skipped: string[] = [];
+      const r2Overwrite = new Set<string>();
+      if (r2Items.length > 0) {
+        const { existing } = await utils.storage.checkR2Conflicts.fetch({
+          destination,
+          fileNames: r2Items.map((it) => it.file.name),
+        });
+        if (existing.length > 0) {
+          const choice = await askOverwrite(existing);
+          const conflicted = new Set(existing);
+          for (const it of r2Items) {
+            if (!conflicted.has(it.file.name)) continue;
+            if (choice === 'cancel') r2Skipped.push(it.id);
+            else r2Overwrite.add(it.id);
+          }
+        }
+      }
+      const r2ToUpload = r2Items.filter((it) => !r2Skipped.includes(it.id));
+
       const [cloudinaryRes, r2Res] = await Promise.all([
         uploadCloudinaryBatch(cloudinaryItems, destination),
-        Promise.all(r2Items.map((it) => uploadR2Single(it, destination))),
+        Promise.all(r2ToUpload.map((it) => uploadR2Single(it, destination, r2Overwrite.has(it.id)))),
       ]);
 
       const cloudinaryOutcomes = cloudinaryRes.outcomes;
@@ -772,7 +794,7 @@ export default function DragNDropForm(): JSX.Element {
 
       // Items ignorés (conflit Cloudinary, choix « Annuler ») → on les
       // remet en `pending` (jamais uploadés, restent dans la liste).
-      const skippedSet = new Set(cloudinaryRes.skippedItemIds);
+      const skippedSet = new Set([...cloudinaryRes.skippedItemIds, ...r2Skipped]);
 
       const successIds = new Set<string>([
         ...cloudinaryOutcomes.filter((o) => o.ok).map((o) => o.itemId),

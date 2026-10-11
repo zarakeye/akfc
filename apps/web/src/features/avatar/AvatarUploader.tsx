@@ -7,6 +7,7 @@ import { Camera, Check, ImageUp, Loader2, Trash2, Video, X } from "lucide-react"
 import { trpc } from "@trpc/trpcClient";
 import { useAvatarVersionStore } from "@lib/stores/useAvatarVersionStore";
 import { useSessionStore } from "@lib/stores/useSessionStore";
+import { avatarUrlFor } from "@features/social/userDisplay";
 import Cropper from "@features/gallery-crop/components/Cropper";
 import type { PictureItem } from "@features/gallery-crop/types/picture.types";
 import type {
@@ -30,12 +31,6 @@ import { CameraCapture } from "@features/avatar/CameraCapture";
  * Cropper exactement dans cet état. La recette est CONSOMMÉE à ✓ ou ✗.
  */
 
-function avatarUrl(publicId: string | null, version?: number): string | null {
-  if (!publicId) return null;
-  const enc = publicId.split("/").map(encodeURIComponent).join("/");
-  const v = version ? `&v=${version}` : "";
-  return `/api/media/by-public-id/${enc}?variant=large${v}`;
-}
 
 interface AvatarUploaderProps {
   onChanged?: (publicId: string | null) => void;
@@ -46,8 +41,8 @@ export function AvatarUploader({
 }: AvatarUploaderProps = {}): JSX.Element {
   const utils = trpc.useUtils();
   const { data } = trpc.avatar.getMine.useQuery();
-  const getSignature = trpc.avatar.getUploadSignature.useMutation();
-  const register = trpc.avatar.register.useMutation();
+  const createR2 = trpc.avatar.createR2Upload.useMutation();
+  const registerR2 = trpc.avatar.registerR2.useMutation();
   const remove = trpc.avatar.remove.useMutation();
 
   const userId = useSessionStore((s) => s.session?.user?.id ?? null);
@@ -74,9 +69,10 @@ export function AvatarUploader({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // URL publique d'avatar (sert indifféremment un avatar R2 ou un ancien avatar Cloudinary).
   const currentUrl = useMemo(
-    () => avatarUrl(data?.publicId ?? null, version),
-    [data?.publicId, version],
+    () => (data?.publicId && userId ? avatarUrlFor(userId, version) : null),
+    [data?.publicId, userId, version],
   );
 
   useEffect(() => {
@@ -163,24 +159,18 @@ export function AvatarUploader({
     setBusy(true);
     setError(null);
     try {
-      const sig = await getSignature.mutateAsync();
-
-      const formData = new FormData();
-      formData.append("file", pendingFile);
-      formData.append("api_key", sig.apiKey);
-      formData.append("timestamp", String(sig.timestamp));
-      formData.append("signature", sig.signature);
-      formData.append("folder", sig.folder);
-      formData.append("public_id", sig.publicId);
-      formData.append("type", sig.type);
-
-      const url = `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`;
-      const res = await fetch(url, { method: "POST", body: formData });
-      if (!res.ok) throw new Error(`Cloudinary HTTP ${res.status}`);
-
-      const registered = await register.mutateAsync({
-        publicId: sig.fullPublicId,
+      const auth = await createR2.mutateAsync({
+        mimeType: pendingFile.type,
+        bytes: pendingFile.size,
       });
+      const res = await fetch(auth.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": pendingFile.type },
+        body: pendingFile,
+      });
+      if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
+
+      const registered = await registerR2.mutateAsync({ path: auth.path });
       await utils.avatar.getMine.invalidate();
       setSessionAvatar(registered.publicId);
       if (userId) bumpAvatar(userId);

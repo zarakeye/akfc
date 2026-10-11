@@ -23,10 +23,9 @@ import type { CropResult } from "@features/gallery-crop/types/cropper.types";
 type UploadState = "idle" | "uploading" | "done" | "error";
 type DestKind = "discipline" | "seminar" | "event" | "common_repository";
 
-function pickBackend(mimeType: string): "cloudinary" | "r2" {
-  return mimeType.startsWith("image/") || mimeType.startsWith("video/")
-    ? "cloudinary"
-    : "r2";
+function pickBackend(_mimeType: string): "cloudinary" | "r2" {
+  // Sortie de Cloudinary : tous les envois vont sur R2 (images, vidéos et documents).
+  return "r2";
 }
 
 function iconForMime(mime: string): string {

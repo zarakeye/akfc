@@ -3,6 +3,7 @@
 import { JSX } from "react";
 import Image from "next/image";
 import { trpc } from "@trpc/trpcClient";
+import { avatarUrlFor } from "@features/social/userDisplay";
 
 interface UserCardProps {
   userId: string;
@@ -35,12 +36,9 @@ export default function UserCard({
       <div className="flex gap-5">
         <div>
           {user?.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element -- proxy signé (publicId → route interne)
+            // eslint-disable-next-line @next/next/no-img-element -- route d'avatar interne (R2 ou Cloudinary)
             <img
-              src={`/api/media/by-public-id/${user.avatar
-                .split("/")
-                .map(encodeURIComponent)
-                .join("/")}?variant=large`}
+              src={avatarUrlFor(user.id)}
               alt="Avatar"
               className="w-24 h-24 rounded-full object-cover"
             />
