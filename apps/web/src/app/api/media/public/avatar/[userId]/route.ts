@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 
 import { prisma } from "@backend/prisma";
 import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cloudinary.service";
+import { isR2AvatarKey } from "@backend/modules/avatar/avatar.service";
+import { resolveDeliveryKey, streamDerived } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /**
  * Proxy PUBLIC d'avatar.
@@ -46,6 +48,13 @@ export async function GET(
     // une photo de démonstration à la place d'un portrait absent : mieux vaut
     // que le rendu affiche ses initiales.
     if (!user?.avatar) return new Response("Not found", { status: 404 });
+
+    // Avatar sur R2 (clé avec extension) : déclinaison 300 px, servie en flux.
+    if (isR2AvatarKey(user.avatar)) {
+      const key = await resolveDeliveryKey(user.avatar, new URLSearchParams({ variant: "small" }));
+      if (!key) return new Response("Not found", { status: 404 });
+      return await streamDerived(key, "public, max-age=300");
+    }
 
     const asset = await fetchAuthenticatedAsset(user.avatar, "large", version);
     if (!asset || !asset.ok || !asset.body) {

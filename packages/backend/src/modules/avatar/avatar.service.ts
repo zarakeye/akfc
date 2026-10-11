@@ -3,6 +3,10 @@ import type { PrismaClient } from "@prisma/client";
 
 import { readUploadedAssetMetadata } from "@backend/modules/cloudinary/services/readUploadedAssetMetadata.service";
 import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getR2Bucket, getR2Client, getR2PresignClient } from "@backend/modules/storage/adapters/r2/client";
+import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /**
  * avatar.service.ts — pipeline avatar, ISOLÉ du reste.
@@ -146,20 +150,69 @@ export async function deleteAvatar(params: {
   });
   const publicId = user?.avatar ?? null;
 
-  if (publicId) {
-    try {
-      await cloudinary.uploader.destroy(publicId, {
-        resource_type: "image",
-        type: "authenticated",
-        invalidate: true,
-      });
-    } catch {
-      // déjà absent — rien à faire
-    }
-  }
+  if (publicId) await removeAvatarFile(publicId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { avatar: null },
   });
+}
+
+/* ── Avatars sur R2 (sortie de Cloudinary) ─────────────────────────────────
+ * Clé : `${appRoot}/avatars/<userId>/<horodatage>-<aléa>.<ext>` ; User.avatar garde la clé R2
+ * (avec extension) — une valeur SANS extension est un ancien publicId Cloudinary.
+ */
+
+export const AVATAR_MAX_BYTES = 10 * 1024 * 1024;
+const AVATAR_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+
+/** Vrai si la valeur de User.avatar est une clé R2 (porte une extension). */
+export function isR2AvatarKey(value: string): boolean {
+  return /\.(jpe?g|png|webp)$/i.test(value);
+}
+
+export async function createAvatarR2Upload(params: { appRoot: string; userId: string; mimeType: string; bytes: number }) {
+  const ext = AVATAR_EXT[params.mimeType];
+  if (!ext) throw new Error("Format d'avatar non accepté (JPEG, PNG ou WebP).");
+  if (params.bytes <= 0 || params.bytes > AVATAR_MAX_BYTES) throw new Error("Avatar trop volumineux (10 Mo au plus).");
+  const path = `${avatarFolder(params.appRoot, params.userId)}/${Date.now()}-${crypto.randomBytes(3).toString("hex")}.${ext}`;
+  const uploadUrl = await getSignedUrl(
+    getR2PresignClient(),
+    new PutObjectCommand({ Bucket: getR2Bucket(), Key: path, ContentType: params.mimeType }),
+    { expiresIn: 5 * 60 },
+  );
+  return { uploadUrl, path };
+}
+
+/** Supprime un fichier d'avatar, R2 ou Cloudinary (meilleur effort, jamais bloquant). */
+async function removeAvatarFile(value: string): Promise<void> {
+  try {
+    if (isR2AvatarKey(value)) {
+      await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: value }));
+      await deleteDerivatives(value);
+    } else {
+      await cloudinary.uploader.destroy(value, { resource_type: "image", type: "authenticated", invalidate: true });
+    }
+  } catch {
+    // déjà absent — rien à faire
+  }
+}
+
+export async function registerAvatarR2(params: { prisma: PrismaClient; appRoot: string; userId: string; path: string }): Promise<{ publicId: string }> {
+  const { prisma, appRoot, userId, path } = params;
+  if (!path.startsWith(`${avatarFolder(appRoot, userId)}/`) || path.includes("..") || !isR2AvatarKey(path)) {
+    throw new Error("Chemin hors de l'espace avatar de l'utilisateur.");
+  }
+  const head = await getR2Client()
+    .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
+    .catch(() => null);
+  if (!head) throw new Error("Avatar introuvable : l'envoi n'a pas abouti.");
+  if (!(head.ContentType ?? "").startsWith("image/") || (head.ContentLength ?? 0) > AVATAR_MAX_BYTES) {
+    await removeAvatarFile(path);
+    throw new Error("Fichier d'avatar refusé.");
+  }
+  const prev = await prisma.user.findUnique({ where: { id: userId }, select: { avatar: true } });
+  await prisma.user.update({ where: { id: userId }, data: { avatar: path } });
+  if (prev?.avatar && prev.avatar !== path) await removeAvatarFile(prev.avatar);
+  return { publicId: path };
 }

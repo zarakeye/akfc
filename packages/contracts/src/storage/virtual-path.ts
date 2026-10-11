@@ -136,10 +136,11 @@ export function tryToVirtualPath(raw: string): VirtualPath | null {
  * économiquement (R2 a le zero-egress) et techniquement (un fichier
  * inconnu n'a pas de transformation Cloudinary à offrir de toute façon).
  */
-export function pickBackend(mimeType: string | null | undefined): StorageProvider {
-  if (!mimeType) return 'r2';
-  if (mimeType.startsWith('image/')) return 'cloudinary';
-  if (mimeType.startsWith('video/')) return 'cloudinary';
+export function pickBackend(_mimeType: string | null | undefined): StorageProvider {
+  // Sortie de Cloudinary : TOUT nouvel envoi va sur R2 (stockage en UE, contrat en vigueur). Les
+  // déclinaisons d'images et les affiches de vidéo sont fabriquées par le serveur
+  // (mediaDerivatives.service). Les fichiers encore chez Cloudinary se reconnaissent à leur
+  // chemin sans extension (virtualStorage) et à MediaAsset.publicId, jusqu'à leur migration.
   return 'r2';
 }
 
@@ -151,19 +152,7 @@ export function pickBackend(mimeType: string | null | undefined): StorageProvide
  * courants. Les cas exotiques tombent sur R2 par défaut (comportement
  * cohérent avec `pickBackend`).
  */
-export function pickBackendByExtension(filename: string): StorageProvider {
-  const dot = filename.lastIndexOf('.');
-  if (dot === -1 || dot === filename.length - 1) return 'r2';
-  const ext = filename.slice(dot + 1).toLowerCase();
-
-  // Images
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp', 'tiff', 'ico'].includes(ext)) {
-    return 'cloudinary';
-  }
-  // Vidéos
-  if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v', 'wmv', 'flv', 'ogv'].includes(ext)) {
-    return 'cloudinary';
-  }
-  // Tout le reste → R2 (audios, docs, archives, etc.)
+export function pickBackendByExtension(_filename: string): StorageProvider {
+  // Un fichier AVEC extension vit sur R2 (voir pickBackend) ; un public_id Cloudinary n'en a pas.
   return 'r2';
 }

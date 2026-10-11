@@ -5,6 +5,8 @@ import {
   createAvatarUploadSignature,
   registerAvatar,
   deleteAvatar,
+  createAvatarR2Upload,
+  registerAvatarR2,
 } from "@backend/modules/avatar/avatar.service";
 
 /**
@@ -31,6 +33,20 @@ export const avatarRouter = router({
         publicId: input.publicId,
       });
     }),
+
+  /** Envoi direct sur R2 : URL signée (PUT) + chemin à renvoyer à registerR2. */
+  createR2Upload: protectedProcedure
+    .input(z.object({ mimeType: z.string().min(1), bytes: z.number().int().positive() }))
+    .mutation(({ ctx, input }) =>
+      createAvatarR2Upload({ appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id, mimeType: input.mimeType, bytes: input.bytes }),
+    ),
+
+  /** Après l'envoi R2 : pointe User.avatar sur le nouveau fichier, supprime l'ancien. */
+  registerR2: protectedProcedure
+    .input(z.object({ path: z.string().min(1) }))
+    .mutation(({ ctx, input }) =>
+      registerAvatarR2({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id, path: input.path }),
+    ),
 
   /** Avatar courant du user connecté (publicId ou null). */
   getMine: protectedProcedure.query(async ({ ctx }) => {

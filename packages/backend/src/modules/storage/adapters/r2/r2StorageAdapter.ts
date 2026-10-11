@@ -30,6 +30,7 @@ import type { UploadDestination } from "@contracts/cloudinary/upload.types";
 
 import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
 import { parsePathToDestination } from "@backend/modules/media/services/parsePathToDestination";
+import { probeMediaDimensions } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /**
  * r2StorageAdapter — implémentation Cloudflare R2 complète
@@ -404,10 +405,11 @@ export function createR2StorageAdapter(
           // sans catégorie ni discipline (MediaAsset n'a pas de seminarId).
           break;
         case "perso":
-          // R2 perso toujours reporté (photos Cloudinary d'abord).
-          throw new Error(
-            "La destination 'perso' n'est pas supportée pour les uploads R2.",
-          );
+          // Espace personnel : photos seulement (aussi contrôlé à la demande d'envoi).
+          if (!actualMime.startsWith("image/")) {
+            throw new Error("Le dossier perso n'accepte que des images.");
+          }
+          break;
         default:
           // Exhaustivité : un nouveau kind non traité fera échouer le build ici.
           input.destination satisfies never;
@@ -420,9 +422,27 @@ export function createR2StorageAdapter(
       // la contrainte @unique sur fullPath bloque le create. On utilise
       // upsert pour faire évoluer la row existante plutôt que d'échouer.
       // C'est cohérent avec le comportement Cloudinary (re-upload écrase).
+      // Événement : rattachement du fichier et des disciplines, comme pour Cloudinary.
+      const eventId = input.destination.kind === "event" ? input.destination.eventId : null;
+      if (input.destination.kind === "event" && input.destination.disciplineIds.length > 0) {
+        const ids = [...new Set(input.destination.disciplineIds)];
+        const found = await prisma.discipline.count({ where: { id: { in: ids } } });
+        if (found !== ids.length) throw new Error("Discipline(s) introuvable(s) pour cet événement.");
+        await prisma.eventDiscipline.createMany({
+          data: ids.map((disciplineId) => ({ eventId: input.destination.kind === "event" ? input.destination.eventId : 0, disciplineId })),
+          skipDuplicates: true,
+        });
+      }
+      // Dimensions (images, vidéos) : meilleur effort, jamais bloquant.
+      const dims = (await probeMediaDimensions(input.path, actualMime)) ?? {};
+
       const asset = await prisma.mediaAsset.upsert({
         where: { fullPath: input.path },
         create: {
+          eventId,
+          width: dims.width ?? null,
+          height: dims.height ?? null,
+          duration: dims.duration ?? null,
           fullPath: input.path,
           publicId: null,
           secureUrl: null,
@@ -441,6 +461,9 @@ export function createR2StorageAdapter(
         update: {
           mimeType: actualMime,
           bytes: actualBytes,
+          width: dims.width ?? null,
+          height: dims.height ?? null,
+          duration: dims.duration ?? null,
           originalFileName: input.originalFileName,
           // Pas de changement de catégorie/discipline sur re-upload (ce qui
           // serait peu intuitif — l'user qui re-soumet veut juste écraser).

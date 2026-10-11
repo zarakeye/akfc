@@ -197,3 +197,83 @@ export async function resolveDeliveryKey(fullPath: string, params: URLSearchPara
     return fullPath;
   }
 }
+
+/* ── Dimensions à l'enregistrement d'un envoi (meilleur effort, jamais bloquant) ── */
+
+export type MediaDimensions = { width?: number; height?: number; duration?: number };
+
+function runJson(cmd: string, args: string[]): Promise<unknown> {
+  return new Promise((resolve) => {
+    let out = "";
+    let proc: ReturnType<typeof spawn>;
+    try {
+      proc = spawn(cmd, args, { stdio: ["ignore", "pipe", "ignore"] });
+    } catch {
+      resolve(null);
+      return;
+    }
+    const timer = setTimeout(() => proc.kill("SIGKILL"), FFMPEG_TIMEOUT_MS);
+    proc.stdout?.on("data", (c: Buffer) => {
+      if (out.length < 200_000) out += c.toString("utf8");
+    });
+    proc.on("error", () => {
+      clearTimeout(timer);
+      resolve(null);
+    });
+    proc.on("close", () => {
+      clearTimeout(timer);
+      try {
+        resolve(JSON.parse(out));
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
+
+/** Largeur, hauteur (images, vidéos) et durée (vidéos) d'un objet R2, ou null. */
+export async function probeMediaDimensions(fullPath: string, mimeType: string): Promise<MediaDimensions | null> {
+  try {
+    if (mimeType.startsWith("image/") && isTransformableImage(fullPath)) {
+      const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
+      if (!obj.Body) return null;
+      const meta = await sharp(Buffer.from(await obj.Body.transformToByteArray()), { failOn: "none" }).metadata();
+      if (!meta.width || !meta.height) return null;
+      // Orientation EXIF 5 à 8 : photo tournée d'un quart de tour, largeur et hauteur s'échangent.
+      const rotated = (meta.orientation ?? 1) >= 5;
+      return rotated ? { width: meta.height, height: meta.width } : { width: meta.width, height: meta.height };
+    }
+    if (mimeType.startsWith("video/")) {
+      const url = await getSignedUrl(getR2Client(), new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }), { expiresIn: 600 });
+      const json = (await runJson("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height:format=duration", "-of", "json", url])) as {
+        streams?: Array<{ width?: number; height?: number }>;
+        format?: { duration?: string };
+      } | null;
+      if (!json) return null;
+      const s = json.streams?.[0];
+      const duration = json.format?.duration ? Number(json.format.duration) : undefined;
+      return { width: s?.width, height: s?.height, duration: duration && Number.isFinite(duration) ? duration : undefined };
+    }
+  } catch (err) {
+    console.error("[media/derivatives] dimensions illisibles :", fullPath, err instanceof Error ? err.message : err);
+  }
+  return null;
+}
+
+/**
+ * Sert une DÉCLINAISON (vignette, affiche) en flux, avec un cache navigateur : une URL de proxy
+ * stable (chemin + déclinaison) se met ainsi en cache, contrairement à une redirection vers une URL
+ * signée qui change à chaque requête. L'original (vidéos : requêtes partielles) reste en redirection.
+ */
+export async function streamDerived(key: string, cacheControl: string): Promise<Response> {
+  const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: key }));
+  if (!obj.Body) return new Response("Not found", { status: 404 });
+  return new Response(obj.Body.transformToWebStream(), {
+    status: 200,
+    headers: {
+      "Content-Type": obj.ContentType ?? "application/octet-stream",
+      ...(obj.ContentLength != null ? { "Content-Length": String(obj.ContentLength) } : {}),
+      "Cache-Control": cacheControl,
+    },
+  });
+}

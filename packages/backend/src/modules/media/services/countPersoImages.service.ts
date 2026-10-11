@@ -30,7 +30,7 @@ export async function countPersoImages(params: {
     where: {
       appRoot,
       uploaderUserId: userId,
-      resourceType: "image",
+      OR: [{ resourceType: "image" }, { mimeType: { startsWith: "image/" } }],
       status: { in: ["pending", "published"] },
       fullPath: { contains: "/personal-space/" },
     },

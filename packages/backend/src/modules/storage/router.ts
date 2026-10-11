@@ -969,6 +969,24 @@ export const storageRouter = router({
   /*  Upload R2 — Phase 2 (enrichi avec destination + originalFileName)     */
   /* ====================================================================== */
 
+  /**
+   * Noms de fichiers qui existent DÉJÀ dans la destination (pour demander avant d'écraser).
+   */
+  checkR2Conflicts: protectedProcedure
+    .input(z.object({ destination: uploadDestinationSchema, fileNames: z.array(z.string().min(1).max(255)).max(100) }))
+    .query(async ({ ctx, input }) => {
+      await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.user.id, destination: input.destination });
+      const folder = await resolvePendingUploadFolder({
+        prisma: ctx.prisma,
+        destination: input.destination,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+      });
+      const byPath = new Map(input.fileNames.map((n) => [`${folder}/${buildUploadFileName(n)}`, n]));
+      const found = await ctx.prisma.mediaAsset.findMany({ where: { fullPath: { in: [...byPath.keys()] } }, select: { fullPath: true } });
+      return { existing: found.map((f) => byPath.get(f.fullPath)!).filter(Boolean) };
+    }),
+
   createR2Upload: protectedProcedure
     .input(createR2UploadAuthorizationSchema)
     .mutation(async ({ ctx, input }) => {
@@ -987,6 +1005,21 @@ export const storageRouter = router({
       });
       const fileName = buildUploadFileName(input.originalFileName);
       const path = `${folder}/${fileName}`;
+
+      if (input.destination.kind === "perso" && !input.mimeType.startsWith("image/")) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });
+      }
+      // Pas d'écrasement silencieux (même règle que Cloudinary) : confirmation explicite requise.
+      const existing = await ctx.prisma.mediaAsset.findUnique({ where: { fullPath: path }, select: { id: true } });
+      if (existing && !input.allowOverwrite) {
+        throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });
+      }
+      if (input.destination.kind === "perso" && !existing) {
+        const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.user.id });
+        if (total + 1 > PERSO_PHOTO_QUOTA) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}).` });
+        }
+      }
 
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,
@@ -1015,6 +1048,17 @@ export const storageRouter = router({
         userId: ctx.user.id,
         destination: input.destination,
       });
+      // Le chemin enregistré doit être celui que createR2Upload a autorisé pour cette destination.
+      const expectedFolder = await resolvePendingUploadFolder({
+        prisma: ctx.prisma,
+        destination: input.destination,
+        appRoot: ctx.appRoot,
+        userId: ctx.user.id,
+      });
+      const rest = input.path.slice(expectedFolder.length + 1);
+      if (!input.path.startsWith(`${expectedFolder}/`) || rest === "" || rest.includes("/") || rest.includes("..")) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Chemin d'envoi hors de la destination autorisée." });
+      }
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,

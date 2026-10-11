@@ -3,7 +3,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { getR2Client, getR2Bucket } from '@backend/modules/storage/adapters/r2/client';
-import { resolveDeliveryKey } from '@backend/modules/media/services/mediaDerivatives.service';
+import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
 import { getSessionFromRequest } from '@backend/modules/auth/getSessionFromRequest';
 
 /**
@@ -81,6 +81,8 @@ export async function GET(
     // Déclinaison demandée (?variant=…, &as=poster) : fabriquée au besoin, sinon l'original.
     const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
     if (!key) return new NextResponse('Not found', { status: 404 });
+    // Déclinaison : en flux, cachable par le navigateur (session requise : cache privé).
+    if (key !== r2Key) return (await streamDerived(key, 'private, max-age=3600')) as NextResponse;
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),

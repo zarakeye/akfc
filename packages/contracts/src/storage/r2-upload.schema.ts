@@ -39,6 +39,12 @@ const HARD_MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 export const createR2UploadAuthorizationSchema = z.object({
   /**
+   * Remplacer un fichier existant du même nom, après confirmation de l'utilisateur. Absent : le
+   * serveur refuse (CONFLICT) plutôt que d'écraser en silence.
+   */
+  allowOverwrite: z.boolean().optional(),
+
+  /**
    * Destination métier — le serveur en dérive le chemin, exactement comme la
    * branche Cloudinary. Le client ne calcule plus de chemin : c'était la
    * source de la divergence de slug entre les deux providers.

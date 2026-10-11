@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@backend/prisma';
 import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/client';
-import { resolveDeliveryKey } from '@backend/modules/media/services/mediaDerivatives.service';
+import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
 
 /**
  * Route publique pour les fichiers R2 référencés depuis le page-builder.
@@ -97,6 +97,8 @@ export async function GET(
     // Déclinaison demandée (?variant=…, &as=poster) : fabriquée au besoin, sinon l'original.
     const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
     if (!key) return new NextResponse('Not found', { status: 404 });
+    // Déclinaison : en flux, cachable (une heure, puis revalidée en arrière-plan).
+    if (key !== r2Key) return (await streamDerived(key, 'public, max-age=3600, stale-while-revalidate=86400')) as NextResponse;
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),
