@@ -1856,6 +1856,35 @@ model SiteSettings {
   contactPhones      Json    @default("[]")
   /// Adresse affichée, une ligne par élément (texte multi-lignes).
   contactAddress     String?
+  /// ── Informations légales (Réglages du site → Informations légales) ──────────
+  /// Alimentent les pages « Mentions légales » et « Politique de confidentialité »
+  /// (générées) et le registre des traitements. Vide = non renseigné.
+  /// Dénomination exacte, telle que dans les statuts.
+  legalName                String?
+  /// Numéro RNA (W + 9 chiffres).
+  legalRna                 String?
+  /// SIRET, si l'association en a un.
+  legalSiret               String?
+  /// Directeur de la publication (président ou présidente) et sa qualité.
+  publicationDirector      String?
+  publicationDirectorTitle String?
+  /// Hébergeur du site (mentions légales).
+  hostName                 String?
+  hostAddress              String?
+  hostPhone                String?
+  hostUrl                  String?
+  /// Région du stockage Cloudflare R2 : "EU" | "GLOBAL" (voir @contracts/legal).
+  storageRegion            String?
+  /// Mention « Conception et réalisation » (facultative).
+  credits                  String?
+  /// Durées de conservation annoncées (et appliquées par la purge) : compte après la
+  /// fin de la dernière adhésion, demande close après son dernier échange.
+  accountRetentionMonths   Int       @default(12)
+  ticketRetentionMonths    Int       @default(36)
+  /// Conservation des sauvegardes, en jours (null : non renseignée).
+  backupRetentionDays      Int?
+  /// Dernière modification des informations légales (« Dernière mise à jour »).
+  legalUpdatedAt           DateTime?
 }
 
 /// Nom AFFICHÉ d'un dossier du finder, découplé de son chemin physique.

@@ -5,6 +5,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
 import { saveSiteContactSchema } from "@contracts/siteContact/siteContact.schema";
+import { compactId, saveLegalSettingsSchema } from "@contracts/legal/legalSettings.schema";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 import {
   putSiteLogo,
@@ -104,6 +105,38 @@ export const siteSettingsRouter = router({
       contactEmail: input.contactEmail.trim().toLowerCase() || null,
       contactPhones: input.contactPhones,
       contactAddress: input.contactAddress.replace(/\r\n/g, "\n").trim() || null,
+    };
+    await ctx.prisma.siteSettings.upsert({
+      where: { id: SETTINGS_ID },
+      create: { id: SETTINGS_ID, ...data },
+      update: data,
+    });
+    return { ok: true };
+  }),
+
+  /**
+   * Informations légales (admin) : éditeur, directeur de la publication, hébergeur, durées de
+   * conservation. Alimentent les pages légales générées et le registre des traitements.
+   */
+  saveLegal: protectedProcedure.input(saveLegalSettingsSchema).mutation(async ({ ctx, input }) => {
+    await assertAdmin(ctx);
+    const opt = (v: string): string | null => (v.trim() === "" ? null : v.trim());
+    const data = {
+      legalName: opt(input.legalName),
+      legalRna: input.legalRna.trim() ? compactId(input.legalRna) : null,
+      legalSiret: input.legalSiret.trim() ? compactId(input.legalSiret) : null,
+      publicationDirector: opt(input.publicationDirector),
+      publicationDirectorTitle: opt(input.publicationDirectorTitle),
+      hostName: opt(input.hostName),
+      hostAddress: opt(input.hostAddress),
+      hostPhone: opt(input.hostPhone),
+      hostUrl: opt(input.hostUrl),
+      storageRegion: input.storageRegion || null,
+      credits: opt(input.credits),
+      accountRetentionMonths: input.accountRetentionMonths,
+      ticketRetentionMonths: input.ticketRetentionMonths,
+      backupRetentionDays: input.backupRetentionDays,
+      legalUpdatedAt: new Date(),
     };
     await ctx.prisma.siteSettings.upsert({
       where: { id: SETTINGS_ID },
