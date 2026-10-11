@@ -78,6 +78,26 @@ export default function ProfilePage(): JSX.Element {
             <Field label="À propos" value={data.aboutMe} />
           </div>
         </dl>
+
+        {/* Droit d'accès et de portabilité (RGPD) : export JSON de ses propres données. */}
+        <div className="mt-10 rounded-lg border border-border p-4 text-sm">
+          <p className="font-semibold">Vos données</p>
+          <p className="mt-1 text-gray-600">
+            Téléchargez tout ce que le site conserve à votre sujet (compte, groupes, demandes, contributions,
+            documents). Pour faire corriger ou supprimer vos données, écrivez-nous ; voir la{" "}
+            <Link href="/infos/confidentialite" className="text-emerald-700 hover:underline">
+              politique de confidentialité
+            </Link>
+            .
+          </p>
+          <a
+            href="/api/me/export"
+            download
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50"
+          >
+            Télécharger mes données
+          </a>
+        </div>
       </section>
 
       {/* Ne s'affiche que pour un instructeur titulaire (le composant se

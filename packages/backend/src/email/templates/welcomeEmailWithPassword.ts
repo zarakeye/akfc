@@ -25,6 +25,8 @@ export default async function sendPasswordEmail(to: string, subject: string, pas
   const siteUrl = siteBaseUrl();
   const replyTo = mailReplyTo();
   const signinUrl = `${siteUrl}/auth/signin`;
+  // Information à la collecte (RGPD, art. 13) : le compte est créé par un administrateur.
+  const privacyUrl = `${siteUrl}/infos/confidentialite`;
 
   const contactText = replyTo
     ? "Pour nous écrire, réponds simplement à ce message."
@@ -56,6 +58,8 @@ export default async function sendPasswordEmail(to: string, subject: string, pas
       "",
       `Bonne année d'entraînement au sein de l'${longTitle} !`,
       contactText ? `\n${contactText}` : "",
+      "",
+      `Tes données sont utilisées uniquement pour la vie du club ; tu peux les consulter, les télécharger depuis ton profil, ou en demander la suppression : ${privacyUrl}`,
     ].join("\n"),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -69,6 +73,7 @@ export default async function sendPasswordEmail(to: string, subject: string, pas
         </p>
         <p>Bonne année d'entraînement au sein de l'${esc(longTitle)} !</p>
         ${contactHtml ? `<p style="font-size: 13px; color: #555;">${contactHtml}</p>` : ""}
+        <p style="font-size: 12px; color: #777;">Tes données sont utilisées uniquement pour la vie du club ; tu peux les consulter, les télécharger depuis ton profil, ou en demander la suppression. Voir la <a href="${privacyUrl}">politique de confidentialité</a>.</p>
       </div>`,
   });
   void subject;
