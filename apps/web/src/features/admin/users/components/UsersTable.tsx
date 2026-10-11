@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
 import { DemoAccountsToggle, DemoBadge } from "@features/admin/common/DemoAccounts";
+import { IMAGE_CONSENT_LABEL } from "@contracts/legal/imageConsent";
 
-type UserRow = { id: string; email: string; name: string; groups: string; kind: string };
+type UserRow = { id: string; email: string; name: string; groups: string; photos: string; kind: string };
 
 /** Séparateur des noms de groupes dans la cellule (texte : la recherche et le tri l'utilisent). */
 const GROUP_SEP = " · ";
@@ -33,6 +34,7 @@ export default function UsersTable(): JSX.Element {
       email: u.email,
       name: [u.firstName, u.lastName].filter(Boolean).join(" ").trim(),
       groups: u.groups.map((g) => g.name).join(GROUP_SEP),
+      photos: IMAGE_CONSENT_LABEL[u.imageConsent],
       kind: u.isDemo ? "Démo" : "Membre",
     }));
   const adminGroupNames = new Set(all.flatMap((u) => u.groups.filter((g) => g.isAdminGroup).map((g) => g.name)));
@@ -63,6 +65,21 @@ export default function UsersTable(): JSX.Element {
             ))}
           </span>
         );
+      },
+    },
+    {
+      property: "photos",
+      displayName: "Photos",
+      type: "string",
+      render: (value) => {
+        const v = String(value ?? "");
+        const tone =
+          v === IMAGE_CONSENT_LABEL.GRANTED
+            ? "bg-emerald-100 text-emerald-900"
+            : v === IMAGE_CONSENT_LABEL.REFUSED
+              ? "bg-red-100 text-red-800"
+              : "bg-muted text-muted-foreground";
+        return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
     },
     {

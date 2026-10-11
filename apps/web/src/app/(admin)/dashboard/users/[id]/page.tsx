@@ -3,6 +3,7 @@ import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
+import { ImageConsentControl } from "@features/admin/users/components/ImageConsentControl";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -40,6 +41,11 @@ export default async function UserPresentationPage({
           </div>
         )}
       </dl>
+      <ImageConsentControl
+        userId={user.id}
+        initial={user.imageConsent}
+        recordedAt={user.imageConsentAt ? user.imageConsentAt.toISOString() : null}
+      />
     </PresentationShell>
   );
 }
