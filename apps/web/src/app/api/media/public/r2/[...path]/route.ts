@@ -98,7 +98,7 @@ export async function GET(
     const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
     if (!key) return new NextResponse('Not found', { status: 404 });
     // Déclinaison : en flux, cachable (une heure, puis revalidée en arrière-plan).
-    if (key !== r2Key) return (await streamDerived(key, 'public, max-age=3600, stale-while-revalidate=86400')) as NextResponse;
+    if (key !== r2Key) return (await streamDerived(key, 'public, max-age=3600, stale-while-revalidate=86400', req.headers.get('accept'))) as NextResponse;
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),

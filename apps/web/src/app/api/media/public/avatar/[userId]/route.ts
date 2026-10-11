@@ -53,7 +53,7 @@ export async function GET(
     if (isR2AvatarKey(user.avatar)) {
       const key = await resolveDeliveryKey(user.avatar, new URLSearchParams({ variant: "small" }));
       if (!key) return new Response("Not found", { status: 404 });
-      return await streamDerived(key, "public, max-age=300");
+      return await streamDerived(key, "public, max-age=300", req.headers.get("accept"));
     }
 
     const asset = await fetchAuthenticatedAsset(user.avatar, "large", version);

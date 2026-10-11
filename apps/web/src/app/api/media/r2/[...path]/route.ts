@@ -82,7 +82,7 @@ export async function GET(
     const key = await resolveDeliveryKey(r2Key, req.nextUrl.searchParams);
     if (!key) return new NextResponse('Not found', { status: 404 });
     // Déclinaison : en flux, cachable par le navigateur (session requise : cache privé).
-    if (key !== r2Key) return (await streamDerived(key, 'private, max-age=3600')) as NextResponse;
+    if (key !== r2Key) return (await streamDerived(key, 'private, max-age=3600', req.headers.get('accept'))) as NextResponse;
     const s3 = getR2Client();
     const command = new GetObjectCommand({
       Bucket: getR2Bucket(),

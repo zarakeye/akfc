@@ -171,6 +171,18 @@ function resize(sh: SharpFn, input: Buffer, variant: Exclude<MediaVariant, "orig
     .resize(s.height ? { width: s.width, height: s.height, fit: "cover" } : { width: s.width, withoutEnlargement: true });
 }
 
+/**
+ * Vignettes en AVIF seul : à qualité égale, 20 à 45 % plus léger que WebP sur des photos, et lu par
+ * tous les navigateurs actuels. Un seul fichier par taille dans R2. Encodage plus lent, mais une
+ * seule fois. Navigateur sans AVIF : WebP fabriqué à la volée, non stocké (voir streamDerived).
+ */
+const AVIF_OPTIONS = { quality: 55, effort: 4 } as const;
+
+/** Le navigateur accepte-t-il l'AVIF (en-tête Accept des requêtes d'image) ? */
+export function acceptsAvif(accept: string | null | undefined): boolean {
+  return /\bimage\/avif\b/i.test(accept ?? "");
+}
+
 /** Clé R2 de la déclinaison d'une image (fabriquée au besoin), ou null : servir l'original. */
 export async function ensureImageVariant(fullPath: string, variant: MediaVariant): Promise<string | null> {
   if (variant === "original" || !isTransformableImage(fullPath)) return null;
@@ -178,7 +190,7 @@ export async function ensureImageVariant(fullPath: string, variant: MediaVariant
   if (!sh) return null;
   const src = await originalEtag(fullPath);
   if (!src || src.bytes > MAX_SOURCE_BYTES) return null;
-  const key = `${derivedFolder(fullPath)}${src.etag}-${variant}.webp`;
+  const key = `${derivedFolder(fullPath)}${src.etag}-${variant}.avif`;
   if (await exists(key)) return key;
 
   const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));
@@ -186,8 +198,8 @@ export async function ensureImageVariant(fullPath: string, variant: MediaVariant
   const raw = Buffer.from(await obj.Body.transformToByteArray());
   const input = isHeif(fullPath) ? await decodeHeif(raw) : raw;
   if (!input) return null;
-  const out = await resize(sh, input, variant).webp({ quality: 80 }).toBuffer();
-  await put(key, out, "image/webp");
+  const out = await resize(sh, input, variant).avif(AVIF_OPTIONS).toBuffer();
+  await put(key, out, "image/avif");
   return key;
 }
 
@@ -353,17 +365,41 @@ export async function probeMediaDimensions(fullPath: string, mimeType: string): 
  * stable (chemin + déclinaison) se met ainsi en cache, contrairement à une redirection vers une URL
  * signée qui change à chaque requête. L'original (vidéos : requêtes partielles) reste en redirection.
  */
-export async function streamDerived(key: string, cacheControl: string): Promise<Response> {
+export async function streamDerived(key: string, cacheControl: string, accept?: string | null): Promise<Response> {
   const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: key }));
   if (!obj.Body) return new Response("Not found", { status: 404 });
+  const isVignette = key.endsWith(".avif") && key.startsWith(DERIVED_ROOT);
+  if (isVignette && !acceptsAvif(accept)) {
+    const webp = await webpFallback(Buffer.from(await obj.Body.transformToByteArray()));
+    if (webp) {
+      return new Response(new Uint8Array(webp), {
+        status: 200,
+        headers: { "Content-Type": "image/webp", "Content-Length": String(webp.length), "Cache-Control": cacheControl, Vary: "Accept" },
+      });
+    }
+    return new Response("Not acceptable", { status: 406 });
+  }
   return new Response(obj.Body.transformToWebStream(), {
     status: 200,
     headers: {
       "Content-Type": obj.ContentType ?? "application/octet-stream",
       ...(obj.ContentLength != null ? { "Content-Length": String(obj.ContentLength) } : {}),
       "Cache-Control": cacheControl,
+      // Même URL : AVIF, ou WebP pour un navigateur qui ne le lit pas.
+      ...(isVignette ? { Vary: "Accept" } : {}),
     },
   });
+}
+
+/** Vignette AVIF → WebP pour un navigateur sans AVIF (rare) : à la volée, jamais stocké. */
+async function webpFallback(avif: Buffer): Promise<Buffer | null> {
+  const sh = await loadSharp();
+  if (!sh) return null;
+  try {
+    return await sh(avif, { failOn: "none" }).webp({ quality: 85 }).toBuffer();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -392,7 +428,10 @@ export async function sweepOrphanDerivatives(): Promise<number> {
     token = list.IsTruncated ? list.NextContinuationToken : undefined;
   } while (token);
 
-  const orphanKeys = [...derivedByHash.entries()].filter(([hash]) => !liveHashes.has(hash)).flatMap(([, keys]) => keys);
+  // Orphelines, plus les vignettes .webp de l'ancien format (désormais AVIF seul).
+  const orphanKeys = [...derivedByHash.entries()].flatMap(([hash, keys]) =>
+    liveHashes.has(hash) ? keys.filter((k) => k.endsWith(".webp")) : keys,
+  );
   for (let i = 0; i < orphanKeys.length; i += 1000) {
     await s3.send(new DeleteObjectsCommand({ Bucket, Delete: { Objects: orphanKeys.slice(i, i + 1000).map((Key) => ({ Key })) } }));
   }
