@@ -8,6 +8,8 @@ import { processingActivities, processors, SECURITY_MEASURES } from "@contracts/
 import { getLegalInfo } from "@features/legal/getLegalInfo";
 import { frenchDate } from "@features/legal/LegalBits";
 import { PrintButton } from "@features/legal/PrintButton";
+import { listInactiveAccounts } from "@backend/modules/privacy/retention.service";
+import Link from "next/link";
 
 /**
  * Registre des activités de traitement (art. 30 RGPD) — réservé aux administrateurs.
@@ -30,7 +32,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
   if (!session?.user || !(await isAdminByGroup(prisma, session.user.id))) {
     return <p className="p-6 text-sm text-gray-600">Réservé aux administrateurs.</p>;
   }
-  const info = await getLegalInfo();
+  const [info, inactive] = await Promise.all([getLegalInfo(), listInactiveAccounts(prisma)]);
   const activities = processingActivities(info);
   const provs = processors(info);
   const byName = new Map(provs.map((p) => [p.name, p]));
@@ -46,6 +48,30 @@ export default async function RegisterPage(): Promise<JSX.Element> {
         </div>
         <PrintButton />
       </div>
+
+      {/* Hors registre (non imprimé) : comptes à examiner au regard de la durée de conservation. */}
+      <section className="registre-noprint mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+        <h2 className="mb-1 font-semibold">Comptes à examiner ({inactive.accounts.length})</h2>
+        <p className="text-gray-700">
+          Sans connexion depuis plus de {inactive.months} mois (réglage « Comptes des anciens membres »). Si la
+          personne n&apos;est plus adhérente, supprimez son compte depuis Utilisateurs ; sinon, rien à faire. Les
+          demandes closes, sessions et liens périmés sont, eux, purgés automatiquement chaque nuit.
+        </p>
+        {inactive.accounts.length > 0 && (
+          <ul className="mt-3 flex list-none flex-col gap-1 p-0">
+            {inactive.accounts.map((a) => (
+              <li key={a.id}>
+                <Link href={`/dashboard/users/${a.id}`} className="text-emerald-700 hover:underline">
+                  {a.name}
+                </Link>{" "}
+                <span className="text-gray-500">
+                  — {a.email} — {a.lastLoginAt ? `dernière connexion le ${frenchDate(a.lastLoginAt)}` : `jamais connecté (compte créé le ${frenchDate(a.createdAt)})`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="mt-6 rounded-lg border border-gray-200 p-4">
         <h2 className="mb-2 font-semibold">Responsable du traitement</h2>
