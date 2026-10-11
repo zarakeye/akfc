@@ -2,6 +2,7 @@
 
 import { JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone, type Accept } from 'react-dropzone';
+import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
 
 import { trpc } from '@trpc/trpcClient';
 
@@ -35,6 +36,8 @@ const ACCEPTED_IMAGE_TYPES: Accept = {
   'image/webp': ['.webp'],
   'image/avif': ['.avif'],
   'image/gif': ['.gif'],
+  // Photos iPhone (HEIC) : converties en JPEG dans le navigateur avant l'envoi.
+  ...HEIC_ACCEPT,
 };
 
 const MAX_FILE_SIZE_MB = 50;
@@ -91,7 +94,7 @@ export default function PersoPhotoUploader(): JSX.Element {
   const pendingCount = items.filter((it) => it.status === 'pending').length;
 
   /* ---- Ajout de fichiers (borné par le quota restant + limite de lot) ---- */
-  const onDrop = useCallback(
+  const addAccepted = useCallback(
     (accepted: File[]) => {
       setItems((prev) => {
         const pendingNow = prev.filter((it) => it.status === 'pending').length;
@@ -119,6 +122,20 @@ export default function PersoPhotoUploader(): JSX.Element {
       });
     },
     [remaining],
+  );
+
+  // Photos HEIC (iPhone) : converties en JPEG avant d'entrer dans la liste.
+  const onDrop = useCallback(
+    (accepted: File[]) => {
+      const n = countHeic(accepted);
+      if (n === 0) return addAccepted(accepted);
+      setBanner({ kind: 'info', text: heicProgressMessage(n) });
+      void toBrowserImages(accepted).then(({ files, failed }) => {
+        addAccepted(files);
+        if (failed.length > 0) setBanner({ kind: 'error', text: heicFailureMessage(failed) });
+      });
+    },
+    [addAccepted],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

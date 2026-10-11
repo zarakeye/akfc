@@ -11,6 +11,7 @@ import { useSessionStore } from '@lib/stores/useSessionStore';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { APP_ROOT } from '@config/app';
 import { pickBackend, type StorageProvider } from '@contracts/storage';
+import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
 
 import type { PictureItem } from '@features/gallery-crop/types/picture.types';
 import type { CropResult } from '@features/gallery-crop/types/cropper.types';
@@ -58,6 +59,8 @@ const ACCEPTED_MIME_TYPES: Accept = {
   'image/avif': ['.avif'],
   'image/gif': ['.gif'],
   'image/svg+xml': ['.svg'],
+  // Photos iPhone (HEIC) : converties en JPEG dans le navigateur avant l'envoi.
+  ...HEIC_ACCEPT,
   // Vidéos (Cloudinary)
   'video/mp4': ['.mp4'],
   'video/webm': ['.webm'],
@@ -350,7 +353,7 @@ export default function DragNDropForm(): JSX.Element {
   // -------------------------------
   // Dropzone
   // -------------------------------
-  const onDrop = (acceptedFiles: File[]) => {
+  const addFiles = (acceptedFiles: File[]) => {
     setFilesError(null);
 
     const normalizedFiles = acceptedFiles.map(ensureMimeType);
@@ -391,6 +394,19 @@ export default function DragNDropForm(): JSX.Element {
         backend: pickBackend(file.type),
       }));
       return [...prev, ...next];
+    });
+  };
+
+  // Photos HEIC (iPhone) : converties en JPEG avant d'entrer dans la liste (aperçu, recadrage, envoi).
+  const [heicConverting, setHeicConverting] = useState(0);
+  const onDrop = (dropped: File[]) => {
+    const n = countHeic(dropped);
+    if (n === 0) return addFiles(dropped);
+    setHeicConverting(n);
+    void toBrowserImages(dropped).then(({ files, failed }) => {
+      setHeicConverting(0);
+      addFiles(files);
+      if (failed.length > 0) setFilesError(heicFailureMessage(failed));
     });
   };
 
@@ -1109,6 +1125,7 @@ export default function DragNDropForm(): JSX.Element {
         )}
       </div>
 
+      {heicConverting > 0 && <p className="text-sm text-muted-foreground">{heicProgressMessage(heicConverting)}</p>}
       {filesError && <p className="text-sm text-red-600">{filesError}</p>}
 
       {/* Previews + statuts */}

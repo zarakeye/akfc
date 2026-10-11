@@ -1,6 +1,7 @@
 "use client";
 
 import { JSX, useMemo, useState } from "react";
+import { countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from "@features/media/heic/browserImages";
 import { trpc } from "@trpc/trpcClient";
 import Cropper from "@features/gallery-crop/components/Cropper";
 import { PdfThumbnail } from "@features/common-repository/PdfThumbnailClient";
@@ -106,14 +107,29 @@ export function CommonRepositoryUpload(): JSX.Element {
   const onPick = (fileList: FileList | null) => {
     items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
     const picked = Array.from(fileList ?? []);
-    setItems(
-      picked.map((f) => ({
-        id: crypto.randomUUID(),
-        file: f,
-        originalFile: f,
-        previewUrl: URL.createObjectURL(f),
-      })),
-    );
+    // Photos HEIC (iPhone) : converties en JPEG avant l'envoi.
+    const heic = countHeic(picked);
+    if (heic > 0) {
+      setItems([]);
+      setState("idle");
+      setMessage(heicProgressMessage(heic));
+    }
+    void toBrowserImages(picked).then(({ files, failed }) => {
+      if (failed.length > 0) {
+        setState("error");
+        setMessage(heicFailureMessage(failed));
+      } else if (heic > 0) {
+        setMessage(null);
+      }
+      setItems(
+        files.map((f) => ({
+          id: crypto.randomUUID(),
+          file: f,
+          originalFile: f,
+          previewUrl: URL.createObjectURL(f),
+        })),
+      );
+    });
   };
 
   const handleCrop = ({ pictureId, croppedFile }: CropResult) => {

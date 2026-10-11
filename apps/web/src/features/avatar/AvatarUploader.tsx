@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useDropzone } from "react-dropzone";
+import { HEIC_ACCEPT, heicFailureMessage, heicProgressMessage, isHeicFile, toBrowserImages } from "@features/media/heic/browserImages";
 import { Camera, Check, ImageUp, Loader2, Trash2, Video, X } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
@@ -92,7 +93,7 @@ export function AvatarUploader({
     setPendingOriginal(null);
   };
 
-  const beginFreshCrop = (file: File) => {
+  const openCropper = (file: File) => {
     setError(null);
     dropPending();
     setCropSeed(null);
@@ -101,6 +102,19 @@ export function AvatarUploader({
       file,
       originalFile: file,
       previewUrl: URL.createObjectURL(file),
+    });
+  };
+
+  // Photo HEIC (iPhone) : convertie en JPEG avant le recadrage (seul Safari sait l'afficher).
+  const [heicConverting, setHeicConverting] = useState(false);
+  const beginFreshCrop = (file: File) => {
+    if (!isHeicFile(file)) return openCropper(file);
+    setError(null);
+    setHeicConverting(true);
+    void toBrowserImages([file]).then(({ files, failed }) => {
+      setHeicConverting(false);
+      if (files[0]) openCropper(files[0]);
+      else setError(heicFailureMessage(failed));
     });
   };
 
@@ -118,7 +132,7 @@ export function AvatarUploader({
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
+    accept: { "image/*": [], ...HEIC_ACCEPT },
     multiple: false,
     noClick: true,
     onDrop: (files) => {
@@ -286,6 +300,7 @@ export function AvatarUploader({
               </div>
             </div>
           </div>
+          {heicConverting && <p className="text-sm text-muted-foreground">{heicProgressMessage(1)}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       ) : (
@@ -367,6 +382,7 @@ export function AvatarUploader({
             )}
           </div>
 
+          {heicConverting && <p className="text-sm text-muted-foreground">{heicProgressMessage(1)}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </>
       )}
@@ -374,7 +390,7 @@ export function AvatarUploader({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         className="hidden"
         onChange={onPickFile}
       />
