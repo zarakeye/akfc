@@ -135,6 +135,7 @@ export default function ControlPanelSidebar(): JSX.Element {
       title: "Configuration & outils",
       items: [
         { label: "Réglages du site", href: "/dashboard/settings" },
+        { label: "Migration des médias", href: "/dashboard/media-migration" },
         { label: "Registre RGPD", href: "/dashboard/rgpd" },
         { label: "Laboratoire de rendu", href: "/dashboard/design-lab" },
         { label: "Doc admin", href: "/docs/admin" },
