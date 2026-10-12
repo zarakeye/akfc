@@ -22,8 +22,7 @@
  *
  *  Champs :
  *    - `url`       : chemin relatif vers la route de proxy
- *                    (`/api/media/by-public-id/...` pour Cloudinary,
- *                     `/api/media/r2/...` pour R2)
+ *                    (`/api/media/r2/...` ou `/api/media/public/r2/...`)
  *    - `mimeType`  : utile pour discriminer (image/audio/document) et
  *                    pour les attributs HTML (`<audio type="...">`)
  *    - `fileName`  : dernier segment du `fullPath`, sert de label de
@@ -36,7 +35,7 @@
 export interface ResolvedMedia {
   url: string;
   /**
-   * Nature du média, dérivée du resourceType/mimeType côté résolution.
+   * Nature du média, dérivée du mimeType côté résolution.
    * Permet au rendu de choisir l'élément (`<img>` vs poster + `<video>`)
    * sans ré-inspecter le mimeType.
    */

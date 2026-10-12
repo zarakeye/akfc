@@ -72,20 +72,13 @@ export default async function GalleryPresentationPage({
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {gallery.items.map((item) => {
-            // URL de base de l'asset. Pour Cloudinary :
-            // `/api/media/by-public-id/<publicId>?variant=large`.
-            const baseUrl = buildMediaProxyUrl({
-              publicId: item.mediaAsset.publicId,
-              fullPath: item.mediaAsset.fullPath,
-            });
+            // URL de base de l'asset : `/api/media/r2/<chemin>?variant=large`.
+            const baseUrl = buildMediaProxyUrl({ fullPath: item.mediaAsset.fullPath });
 
             // Une vidéo ne peut pas s'afficher dans un <img> : on demande son
             // POSTER (première frame) via `&as=poster`, servi par la route
             // proxy. Image / doc : on garde l'URL de base telle quelle.
-            const kind = deriveMediaKind(
-              item.mediaAsset.resourceType,
-              item.mediaAsset.mimeType,
-            );
+            const kind = deriveMediaKind(item.mediaAsset.mimeType);
             const thumbUrl = kind === "video" ? `${baseUrl}&as=poster` : baseUrl;
 
             return (

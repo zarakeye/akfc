@@ -1,27 +1,10 @@
 /**
  * 📂 Module `media` — accès aux métadonnées MediaAsset depuis le finder
  *
- * Phase 2 + fix : matching par `fullPath`, avec **tolérance d'extension**
- * pour les fichiers Cloudinary.
- *
- * ─── Pourquoi le matching tolérant ────────────────────────────────────
- *
- * Convention Cloudinary : les publicIds sont SANS extension (Cloudinary
- * stocke le format séparément). Le finder frontend reçoit donc
- * `path = "AKFC/pending/cours/foo/trotinette"` pour une image Cloudinary.
- *
- * Convention R2 : les keys S3 contiennent l'extension. Le finder reçoit
- * `path = "AKFC/pending/cours/foo/bernhoft.mp3"` directement.
- *
- * Mais en DB, on a unifié sur `fullPath = publicId + '.' + format` côté
- * Cloudinary pour avoir une clé universelle (Phase 2). Du coup :
- *   - R2 : `path` UI === `fullPath` DB ✓
- *   - Cloudinary : `path` UI === `publicId` MAIS `fullPath` DB === `publicId + '.' + format`
- *
- * Conséquence : matcher par `fullPath = path` strict casse pour Cloudinary.
- * On accepte donc DEUX patterns :
- *   1. `fullPath === path` (cas R2, match direct)
- *   2. `fullPath startsWith path + '.'` (cas Cloudinary, path sans extension)
+ * Matching par `fullPath`, avec **tolérance d'extension** héritée : on
+ * accepte `fullPath === path` et `fullPath startsWith path + '.'` (un chemin
+ * sans extension désigne le fichier du même nom avec extension). Sur R2 les
+ * chemins portent toujours leur extension : le premier cas suffit.
  *
  * Le `+ '.'` dans le startsWith évite de matcher accidentellement
  * `foobar.jpg` quand on cherche `foo` (foobar.jpg ne commence pas par
@@ -246,12 +229,10 @@ export const mediaRouter = router({
         },
         select: {
           id: true,
-          publicId: true,
           fullPath: true,
           displayName: true,
           originalFileName: true,
           mimeType: true,
-          resourceType: true,
           width: true,
           height: true,
           duration: true,
@@ -262,7 +243,7 @@ export const mediaRouter = router({
       for (const id of input.mediaIds) byId[id] = null;
 
       for (const asset of assets) {
-        const kind = deriveMediaKind(asset.resourceType, asset.mimeType);
+        const kind = deriveMediaKind(asset.mimeType);
         const baseUrl = buildMediaProxyUrl(asset);
 
         byId[asset.id] = {
@@ -552,8 +533,8 @@ export const mediaRouter = router({
    * Avant : publier appelait `storage.move` vers `{type:'status-folder'}`.
    * Le binaire traversait le provider, `reconcileMovedAsset` relisait l'asset
    * à son nouveau chemin pour en redériver `status`, et deux mécanismes de
-   * synchro devaient tomber d'accord. Un `catch` silencieux de trop et le
-   * `publicId` décrochait.
+   * synchro devaient tomber d'accord. Un `catch` silencieux de trop et la
+   * ligne décrochait.
    *
    * Après : un UPDATE. Atomique, sans aller-retour provider, sans binaire qui
    * bouge. `MediaAsset.status` cesse d'être un cache dérivé du chemin pour

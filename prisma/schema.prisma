@@ -81,9 +81,9 @@ model User {
   aboutMe               String?
   /// Nom d'usage, affiché quand prénom et nom manquent.
   pseudo                String?
-  /// Portrait : publicId Cloudinary de l'image recadrée. Servi publiquement par
-  /// /api/media/public/avatar/[userId] : l'URL porte l'id du membre, jamais le
-  /// publicId. null → pas de portrait.
+  /// Portrait : clé R2 de l'image recadrée. Servi publiquement par
+  /// /api/media/public/avatar/[userId] : l'URL porte l'id du membre, jamais la
+  /// clé. null → pas de portrait.
   avatar                String?
 
   /// Présentation publique d'instructeur (page /about/instructeurs) : contenu de
@@ -919,17 +919,12 @@ model EventSession {
 // MEDIA
 // ============================================================================
 
-/// Fichier de la médiathèque (finder), quel que soit son stockage.
+/// Fichier de la médiathèque (finder), stocké sur Cloudflare R2 (images,
+/// vidéos, audio, documents, archives). Vignettes et affiches de vidéo sont
+/// fabriquées par le serveur à la demande.
 ///
-/// Stockage, choisi d'après le type à l'upload (pickBackend) :
-/// - images et vidéos → Cloudinary : `publicId` renseigné ;
-/// - tout le reste (audio, documents, archives, types inconnus) → Cloudflare
-///   R2 : `publicId` null.
-/// Pour un fichier existant, c'est `publicId` qui indique son stockage.
-///
-/// `fullPath` est la clé universelle du fichier :
-/// - Cloudinary : `{publicId}.{format}` ;
-/// - R2 : la clé de l'objet, extension comprise.
+/// `fullPath` est la clé universelle du fichier : la clé de l'objet R2,
+/// extension comprise.
 /// Un nouvel upload arrive sur un chemin SANS segment de statut (ex.
 /// AKFC/seminars/{slug}/…) : le statut vit dans `status`. Des fichiers plus
 /// anciens portent encore le statut dans leur chemin (…/pending/…,
@@ -943,14 +938,6 @@ model MediaAsset {
   id                     String   @id @default(cuid())
 
   // ── Identité de stockage ─────────────────────────────────────────────────
-  /// Identifiant Cloudinary (chemin sans extension). null → fichier stocké sur R2.
-  publicId               String?  @unique
-  /// URL de diffusion Cloudinary, enregistrée à l'upload. Jamais utilisée pour
-  /// servir le fichier : tout passe par les routes proxy de l'application.
-  /// null pour R2.
-  secureUrl              String?
-  /// Type de ressource Cloudinary : image, video ou raw. null pour R2.
-  resourceType           String?
   /// Clé universelle et unique du fichier (voir le modèle). Change quand le
   /// fichier est déplacé ou renommé.
   fullPath               String   @unique
@@ -1004,8 +991,8 @@ model MediaAsset {
   // ── Provenance ───────────────────────────────────────────────────────────
   /// Membre qui a téléversé le fichier.
   uploaderUserId         String
-  /// Date réelle d'upload chez le fournisseur (reprise de Cloudinary ou de R2
-  /// pour les fichiers importés après coup). C'est la date exposée par l'API.
+  /// Date réelle d'upload chez le fournisseur (reprise de l'ancien fournisseur
+  /// pour les fichiers migrés). C'est la date exposée par l'API.
   uploadedAt             DateTime @default(now())
 
   /// Création de la ligne.
@@ -1038,12 +1025,8 @@ model MediaAsset {
   /// Effacée avec le fichier.
   memberDocument MemberDocument?
 
-  /// Identifiant Cloudinary immuable (asset_id) : clé de réconciliation après
-  /// un déplacement, quand publicId, fullPath et status ont changé. null pour
-  /// R2 et pour les lignes antérieures à cette colonne.
-  cloudinaryAssetId      String?  @unique
-  /// Ancien public_id Cloudinary d'un fichier migré vers R2 (sortie de Cloudinary) :
-  /// trace et retour arrière possible. null pour un fichier né sur R2.
+  /// Ancien identifiant Cloudinary d'un fichier migré vers R2 (sortie de
+  /// Cloudinary, 2026) : simple trace. null pour un fichier né sur R2.
   legacyCloudinaryPublicId String?
 
   @@index([status])
@@ -1134,7 +1117,7 @@ model TrashEntry {
   /// Taille en octets : celle du fichier, ou le total des fichiers contenus
   /// pour un dossier.
   sizeBytes           BigInt?
-  /// Date de création chez le fournisseur (Cloudinary ou R2) ; pour un
+  /// Date de création chez le fournisseur (R2) ; pour un
   /// dossier, la plus récente des fichiers contenus.
   providerCreatedAt DateTime?
 

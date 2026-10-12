@@ -15,7 +15,7 @@ export type PersoImageCounts = {
  *   - `fullPath` contient `/persos/` : distingue le perso du `general` et des
  *     disciplines. Le segment survit au move pending→published (qui ne change
  *     que le segment de statut, `segment[1]`) ;
- *   - `resourceType = "image"` : le quota ne porte que sur les images ;
+ *   - `mimeType image/*` : le quota ne porte que sur les images ;
  *   - `status ∈ {pending, published}` : la corbeille (`bin`) ne compte pas.
  */
 export async function countPersoImages(params: {
@@ -30,7 +30,7 @@ export async function countPersoImages(params: {
     where: {
       appRoot,
       uploaderUserId: userId,
-      OR: [{ resourceType: "image" }, { mimeType: { startsWith: "image/" } }],
+      mimeType: { startsWith: "image/" },
       status: { in: ["pending", "published"] },
       fullPath: { contains: "/personal-space/" },
     },

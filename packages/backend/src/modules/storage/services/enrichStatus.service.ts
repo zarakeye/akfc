@@ -9,17 +9,11 @@ import type { StorageFileNode, StorageNode } from "@contracts/storage";
  * `meta.status` soit renseigné côté client (pastille de statut, filtres,
  * règle `isPickable`).
  *
- * ─── Le point délicat : deux conventions de clé ────────────────────────────
+ * ─── Clés interrogées ──────────────────────────────────────────────────────
  *
- * Le `path` d'un node est ce que le provider expose :
- *   - Cloudinary image/vidéo : le public_id, SANS extension
- *       node.path = "AKFC/cours/x/photo"
- *   - Cloudinary raw et R2   : le chemin complet, AVEC extension
- *       node.path = "AKFC/general/doc.pdf"
- *
- * En base, `publicId` et `fullPath` portent l'extension dans les deux cas.
- * On interroge donc avec DEUX clés par fichier — le chemin nu et le chemin
- * suffixé de son `format` — et on résout dans le même ordre.
+ * Le `path` d'un node est la clé R2, AVEC extension. Par tolérance héritée,
+ * on interroge aussi le chemin suffixé de son `format` (sans effet quand le
+ * chemin porte déjà son extension), et on résout dans le même ordre.
  */
 
 type LifecycleStatus = "pending" | "published" | "bin";
@@ -51,10 +45,9 @@ async function metaByKey(
   const rows = await prisma.mediaAsset.findMany({
     where: {
       appRoot,
-      OR: [{ publicId: { in: keys } }, { fullPath: { in: keys } }],
+      fullPath: { in: keys },
     },
     select: {
-      publicId: true,
       fullPath: true,
       status: true,
       displayName: true,
@@ -83,7 +76,7 @@ async function metaByKey(
   );
 
   for (const row of rows) {
-    // La cle de stockage (publicId) est desormais slugifiee : c'est ici qu'on
+    // La cle de stockage est slugifiee : c'est ici qu'on
     // rend au finder le nom lisible. displayName cure sinon nom d'origine ;
     // l'extension/format est geree par les helpers d'affichage du front.
     const human = row.displayName?.trim() || row.originalFileName || undefined;
@@ -92,7 +85,6 @@ async function metaByKey(
       ? nameById.get(row.uploaderUserId)
       : undefined;
     const meta: ResolvedMeta = { status, human, uploaderName };
-    if (row.publicId) map.set(row.publicId, meta);
     if (row.fullPath) map.set(row.fullPath, meta);
   }
   return map;

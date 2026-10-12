@@ -1,19 +1,17 @@
 import type { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 
-import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import type { TrashToBinInput, TrashToBinOutput } from "@contracts/trash/trash.mutations";
 import type { TrashEntryDTO } from "@contracts/trash/trash.dto";
 
 import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@backend/modules/trash/utils";
-import { getAssetInfo } from "@backend/modules/cloudinary/services/cloudinary.service";
 import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
-import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
 import {
   r2Exists,
   r2GetInfo,
+  r2ListByPrefix,
   r2MoveFile,
   r2MoveFolder,
 } from "@backend/modules/trash/services/r2TrashOps";
@@ -25,7 +23,7 @@ import {
  *
  * Design validé :
  * - Bin est une liste plate (pas de structure parent conservée).
- * - Le stockage Cloudinary réel est caché : `${appRoot}/bin/.trash/<uuid>/...`.
+ * - Le stockage R2 réel est caché : `${appRoot}/bin/.trash/<uuid>/...`.
  * - On crée une TrashEntry avec :
  *   - previousPath (tooltip + restore cible)
  *   - displayName (nom affiché dans le bin)
@@ -38,11 +36,7 @@ import {
  * - Ce service NE fait que "normal -> bin".
  */
 
-type CloudinaryResourceType = "image" | "video" | "raw";
-
 type ListedAsset = {
-  public_id: string;
-  resource_type: CloudinaryResourceType;
   bytes?: number;
   created_at?: string;
 };
@@ -70,77 +64,15 @@ function assertNotStatusOrRoot(appRoot: string, fullPath: string) {
   }
 }
 
+/** Objets R2 sous un préfixe (taille, date) — pour les agrégats d'un dossier. */
 async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
-  const out: ListedAsset[] = [];
-
-  for (const rt of ["image", "video", "raw"] as const) {
-    let nextCursor: string | undefined;
-
-    do {
-      const res = await cloudinary.api.resources({
-        type: "authenticated",
-        resource_type: rt,
-        prefix,
-        max_results: 500,
-        next_cursor: nextCursor,
-      });
-
-      for (const asset of res.resources ?? []) {
-        out.push({
-          public_id: asset.public_id as string,
-          resource_type: rt,
-          bytes: typeof asset.bytes === "number" ? asset.bytes : undefined,
-          created_at: asset.created_at ? String(asset.created_at) : undefined,
-        });
-      }
-
-      nextCursor = res.next_cursor;
-    } while (nextCursor);
-  }
-
-  return out;
+  const objects = await r2ListByPrefix(prefix);
+  return objects.map((o) => ({ bytes: o.bytes, created_at: o.createdAt?.toISOString() }));
 }
 
-async function renameAsset(from: string, to: string, resourceType: CloudinaryResourceType) {
-  await cloudinary.uploader.rename(from, to, {
-    type: "authenticated",
-    resource_type: resourceType,
-    overwrite: true,
-  });
-  invalidateResourcesCache();
-}
-
-async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
-  for (const rt of ["image", "video", "raw"] as const) {
-    let nextCursor: string | undefined;
-
-    do {
-      const res = await cloudinary.api.resources({
-        type: "authenticated",
-        resource_type: rt,
-        prefix: sourcePrefix,
-        max_results: 500,
-        next_cursor: nextCursor,
-      });
-
-      for (const asset of res.resources ?? []) {
-        const newPublicId = String(asset.public_id).replace(sourcePrefix, targetPrefix);
-        await renameAsset(String(asset.public_id), newPublicId, rt);
-      }
-
-      nextCursor = res.next_cursor;
-    } while (nextCursor);
-  }
-}
-
-/**
- * Backend physique d'un FICHIER : Cloudinary (images/vidéos) ou R2 (PDF/docs).
- * Sonde Cloudinary d'abord (getAssetInfo), repli R2 (r2GetInfo). Throw si ni
- * l'un ni l'autre ne connaît le chemin.
- */
 /**
  * Type MIME d'un fichier connu en base. Seul moyen de reconnaître l'audio :
- * R2 n'expose que taille et date, et Cloudinary range l'audio parmi les vidéos.
+ * R2 n'expose que taille et date.
  */
 async function knownMimeType(
   prisma: PrismaClient,
@@ -148,26 +80,17 @@ async function knownMimeType(
   path: string,
 ): Promise<string | null> {
   const asset = await prisma.mediaAsset.findFirst({
-    where: { appRoot, OR: [{ fullPath: path }, { publicId: path }] },
+    where: { appRoot, fullPath: path },
     select: { mimeType: true },
   });
   return asset?.mimeType ?? null;
 }
 
-async function resolveFileBackend(
-  path: string,
-): Promise<
-  | { backend: "cloudinary"; info: Awaited<ReturnType<typeof getAssetInfo>> }
-  | { backend: "r2"; info: { bytes?: number; createdAt?: Date } }
-> {
-  try {
-    const info = await getAssetInfo(path);
-    return { backend: "cloudinary", info };
-  } catch {
-    const r2 = await r2GetInfo(path);
-    if (r2) return { backend: "r2", info: r2 };
-    throw new Error(`Asset introuvable (ni Cloudinary ni R2) : ${path}`);
-  }
+/** Taille et date d'un fichier R2 ; throw s'il n'existe pas. */
+async function fileInfo(path: string): Promise<{ bytes?: number; createdAt?: Date }> {
+  const info = await r2GetInfo(path);
+  if (!info) throw new Error(`Fichier introuvable : ${path}`);
+  return info;
 }
 
 async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullPath: string }):
@@ -182,15 +105,7 @@ async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullP
   });
   if (folder) return "folder";
 
-  // 2) Si Cloudinary connaît la ressource exacte => file.
-  try {
-    await getAssetInfo(p);
-    return "file";
-  } catch {
-    // continue
-  }
-
-  // 2-bis) Sinon, si R2 connaît l'objet exact => file (PDF/documents).
+  // 2) Si R2 connaît l'objet exact => file.
   if (await r2Exists(p)) return "file";
 
   // 3) Si on a au moins un asset sous prefix => folder.
@@ -321,24 +236,10 @@ export async function trashToBin(params: {
     let mediaKind: MediaKind | undefined;
 
     if (source.kind === "file") {
-      const resolved = await resolveFileBackend(normalized);
-      if (resolved.backend === "cloudinary") {
-        const info = resolved.info;
-        sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
-        providerCreatedAt = info.created_at ? new Date(info.created_at) : undefined;
-        mediaKind = deriveMediaKind(
-          info.resource_type ?? null,
-          await knownMimeType(prisma, appRoot, normalized),
-        );
-      } else {
-        // R2 : PDF/documents. Pas de resource_type Cloudinary.
-        sizeBytes =
-          typeof resolved.info.bytes === "number"
-            ? BigInt(resolved.info.bytes)
-            : undefined;
-        providerCreatedAt = resolved.info.createdAt;
-        mediaKind = deriveMediaKind(null, await knownMimeType(prisma, appRoot, normalized));
-      }
+      const info = await fileInfo(normalized);
+      sizeBytes = typeof info.bytes === "number" ? BigInt(info.bytes) : undefined;
+      providerCreatedAt = info.createdAt;
+      mediaKind = deriveMediaKind(await knownMimeType(prisma, appRoot, normalized));
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix (ex: cours1 vs cours10)
       const assets = await listAssetsByPrefix(`${normalized}/`);
@@ -365,19 +266,11 @@ export async function trashToBin(params: {
       },
     });
 
-    // 3) Déplacement physique vers storageRoot (Cloudinary ou R2)
+    // 3) Déplacement physique vers storageRoot
     if (source.kind === "file") {
-      const resolved = await resolveFileBackend(normalized);
-      if (resolved.backend === "cloudinary") {
-        await renameAsset(normalized, storageRoot, resolved.info.resource_type);
-      } else {
-        await r2MoveFile(normalized, storageRoot);
-      }
+      await r2MoveFile(normalized, storageRoot);
     } else {
       // ✅ trailing slash pour éviter les collisions de prefix
-      await moveFolderRecursively(`${normalized}/`, `${storageRoot}/`);
-      // R2 : déplace aussi les objets R2 imbriqués (toute profondeur)
-      // que Cloudinary ignore — sinon ils resteraient dans le dossier vidé.
       await r2MoveFolder(`${normalized}/`, `${storageRoot}/`);
 
       // 4) Nettoyage registry DB des dossiers :
@@ -389,10 +282,9 @@ export async function trashToBin(params: {
       // nu sur `AKFC/pending/cours` emportait aussi les lignes de
       // `AKFC/pending/cours-avance`, qui n'a rien à voir avec lui.
       //
-      // C'est exactement la collision de préfixe contre laquelle la ligne
-      // ci-dessus se prémunit côté Cloudinary (« trailing slash pour éviter
-      // les collisions ») : la protection n'avait pas été portée côté DB. On
-      // adopte ici la même forme que `pruneEmptyFolders`, qui la fait bien.
+      // C'est la collision de préfixe contre laquelle le déplacement ci-dessus
+      // se prémunit (« trailing slash pour éviter les collisions ») : même
+      // protection côté DB.
       await prisma.folder.deleteMany({
         where: {
           appRoot,

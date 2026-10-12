@@ -46,7 +46,7 @@ export const updateMeFormSchema = z.object({
   // NB : l'avatar n'est PLUS géré par ce formulaire. Il suit un flux
   // AUTONOME (AvatarUploader → avatar.register → User.avatar), indépendant
   // du submit. Le retirer d'ici évite une double écriture et la validation
-  // "URL invalide" (User.avatar stocke un publicId, pas une URL).
+  // "URL invalide" (User.avatar stocke une clé de stockage, pas une URL).
 });
 
 // 🧩 2. Type de données Zod

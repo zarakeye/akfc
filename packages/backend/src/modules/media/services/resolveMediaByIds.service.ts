@@ -15,11 +15,8 @@ import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
  *                consommé par le builder en édition, les NodeViews,
  *                le MediaListEditor, et les previews dans l'admin.
  *
- *   - `public` : les routes publiques. Identiques côté Cloudinary
- *                (via `/api/media/public/by-public-id`, garde published + réf), mais
- *                différentes côté R2 où on passe par
- *                `/api/media/public/r2/<path>` qui vérifie qu'un
- *                `PageMediaReference` existe avant de signer.
+ *   - `public` : les routes publiques `/api/media/public/r2/<path>`, qui
+ *                vérifient qu'un `PageMediaReference` existe avant de servir.
  *
  * Default `'admin'` pour ne pas casser les call sites existants
  * (procédure tRPC `media.resolveByIds`).
@@ -66,19 +63,16 @@ export async function resolveMediaByIds(
     },
     select: {
       id: true,
-      publicId: true,
       fullPath: true,
       mimeType: true,
       width: true,
       height: true,
       duration: true,
-      resourceType: true,
     },
   });
 
   for (const asset of assets) {
-    const isVideo =
-      asset.resourceType === 'video' || asset.mimeType.startsWith('video/');
+    const isVideo = asset.mimeType.startsWith('video/');
     const isAudio = !isVideo && asset.mimeType.startsWith('audio/');
     const isImage = !isVideo && !isAudio && asset.mimeType.startsWith('image/');
 

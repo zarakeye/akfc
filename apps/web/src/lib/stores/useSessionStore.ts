@@ -40,8 +40,8 @@ interface SessionStore {
   loginSuccess: (s: SessionClient) => void;
   logout: () => Promise<void>;
   resetStatus: () => void;
-  /** Met à jour le publicId d'avatar du user courant en session (sync UI). */
-  setAvatar: (publicId: string | null) => void;
+  /** Met à jour l'avatar du user courant en session (sync UI). */
+  setAvatar: (avatar: string | null) => void;
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -59,17 +59,17 @@ export const useSessionStore = create<SessionStore>()(
     },
 
     /**
-     * Met à jour le publicId d'avatar du user en session, sans refetch complet.
+     * Met à jour l'avatar du user en session, sans refetch complet.
      * Appelé après un changement d'avatar pour que le header et toutes les vues
      * lisant la session affichent le nouveau (ou l'absence) immédiatement.
      */
-    setAvatar: (publicId: string | null): void => {
+    setAvatar: (avatar: string | null): void => {
       const current = get().session;
       if (!current || !current.user) return;
       set({
         session: {
           ...current,
-          user: { ...current.user, avatar: publicId },
+          user: { ...current.user, avatar },
         },
       });
     },

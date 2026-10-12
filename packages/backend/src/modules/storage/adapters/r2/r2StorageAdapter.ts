@@ -26,7 +26,7 @@ import type {
   StoragePath,
 } from "@contracts/storage";
 
-import type { UploadDestination } from "@contracts/cloudinary/upload.types";
+import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
 
 import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
 import { parsePathToDestination } from "@backend/modules/media/services/parsePathToDestination";
@@ -37,8 +37,7 @@ import { probeMediaDimensions } from "@backend/modules/media/services/mediaDeriv
  *
  * Phase 2 (tracking R2) : `registerUploadedAsset` crée maintenant une row
  * `MediaAsset` après le HeadObject de validation. Cela permet au finder, à
- * la searchbar et au tri par Date/Expéditeur de voir les fichiers R2 au
- * même titre que les Cloudinary.
+ * la searchbar et au tri par Date/Expéditeur de voir les fichiers.
  *
  * (Le reste de la doc d'architecture est inchangée par rapport à la v1 —
  * voir l'historique git pour les notes sur le modèle R2 sans dossiers,
@@ -240,8 +239,7 @@ export function createR2StorageAdapter(
       const s3 = getR2Client();
       const Bucket = getR2Bucket();
 
-      // Statut dérivé du premier segment du chemin cible (même logique
-      // que l'adapter Cloudinary — le trou était identique ici).
+      // Statut dérivé du premier segment du chemin cible.
       // Statut = segment APRÈS l'appRoot ([1] — les paths incluent l'appRoot).
 
       if (operation.source.type === "file") {
@@ -328,7 +326,6 @@ export function createR2StorageAdapter(
      *   2. Résoudre categoryId/disciplineId depuis input.destination
      *   3. Créer la row MediaAsset avec :
      *      - fullPath = input.path (clé universelle)
-     *      - publicId/secureUrl/resourceType = null (concepts Cloudinary-only)
      *      - originalFileName = input.originalFileName
      *      - mimeType, bytes = depuis HeadObject (source de vérité serveur)
      *      - categoryId/disciplineId/proposedDisciplineName = depuis destination
@@ -393,7 +390,7 @@ export function createR2StorageAdapter(
           break;
         case "event":
           // Contenus d'un événement : ni catégorie ni discipline unique — le
-          // rattachement se fait par `eventId` (côté Cloudinary) et par les
+          // rattachement se fait par `eventId` et par les
           // liens de disciplines de l'événement.
           break;
         case "group":
@@ -421,8 +418,8 @@ export function createR2StorageAdapter(
       // Idempotence : si l'user re-soumet le même fichier (même path),
       // la contrainte @unique sur fullPath bloque le create. On utilise
       // upsert pour faire évoluer la row existante plutôt que d'échouer.
-      // C'est cohérent avec le comportement Cloudinary (re-upload écrase).
-      // Événement : rattachement du fichier et des disciplines, comme pour Cloudinary.
+      // (Le ré-envoi n'arrive qu'après confirmation « Écraser ».)
+      // Événement : rattachement du fichier et des disciplines.
       const eventId = input.destination.kind === "event" ? input.destination.eventId : null;
       if (input.destination.kind === "event" && input.destination.disciplineIds.length > 0) {
         const ids = [...new Set(input.destination.disciplineIds)];
@@ -444,9 +441,6 @@ export function createR2StorageAdapter(
           height: dims.height ?? null,
           duration: dims.duration ?? null,
           fullPath: input.path,
-          publicId: null,
-          secureUrl: null,
-          resourceType: null,
           mimeType: actualMime,
           format: extensionOf(input.path),
           originalFileName: input.originalFileName,

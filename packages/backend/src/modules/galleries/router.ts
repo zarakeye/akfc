@@ -40,11 +40,8 @@ function mapPublicItems(items: GalleryItemWithAsset[]) {
     .filter((it) => it.mediaAsset.status === "published")
     .map((it) => {
       const a = it.mediaAsset;
-      const kind = deriveMediaKind(a.resourceType, a.mimeType);
-      const url = buildMediaProxyUrl(
-        { publicId: a.publicId, fullPath: a.fullPath },
-        "public",
-      );
+      const kind = deriveMediaKind(a.mimeType);
+      const url = buildMediaProxyUrl({ fullPath: a.fullPath }, "public");
 
       return {
         mediaAssetId: it.mediaAssetId,

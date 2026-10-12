@@ -55,7 +55,7 @@ export const siteSettingsRouter = router({
       // Rétro-compat : ancien logo choisi au picker (MediaAsset).
       const asset = await ctx.prisma.mediaAsset.findUnique({
         where: { id: settings.logoAssetId },
-        select: { publicId: true, fullPath: true },
+        select: { fullPath: true },
       });
       if (asset) logoUrl = buildMediaProxyUrl(asset, "public");
     }

@@ -42,8 +42,7 @@ Autour d'elles gravitent :
 * **`Category`** — une grosse maille de classification des disciplines
 * **`StageSession`** et **`EventSession`** — les séances individuelles
   d'un stage ou d'un événement multi-jours
-* **`MediaAsset`** — un fichier tracké en DB, peu importe son backend
-  (Cloudinary, R2)
+* **`MediaAsset`** — un fichier tracké en DB (stocké sur R2)
 * Toute l'infrastructure utilisateur (User, Role, Permission, Session...)
   qui n'est pas traitée ici parce qu'orthogonale au domaine.
 
@@ -302,8 +301,8 @@ Documentés en profondeur ailleurs (sous-chantier 2 pour
 `PageMediaReference`, commentaires JSDoc dans le schema pour
 `MediaAsset`). Résumé pour le contexte domaine :
 
-* **`MediaAsset`** — un fichier tracké en DB, peu importe son backend
-  (Cloudinary pour les images/vidéos, R2 pour les audios/documents).
+* **`MediaAsset`** — un fichier tracké en DB, stocké sur R2 (images,
+  vidéos, audios, documents).
   Identifié par un `id` cuid stable et un `fullPath` unique. A un
   `status` (`pending`, `published`, etc.) qui détermine sa visibilité.
 * **`PageMediaReference`** — la table de jointure polymorphe qui lie un
