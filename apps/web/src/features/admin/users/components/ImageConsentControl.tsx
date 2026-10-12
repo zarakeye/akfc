@@ -39,7 +39,7 @@ export function ImageConsentControl({
       <legend className="px-1 font-medium">Droit à l&apos;image</legend>
       <p className="mb-3 text-muted-foreground">
         Autorisation de publier des photos et vidéos où ce membre est reconnaissable (celle des parents pour un
-        mineur).
+        mineur). Fixée automatiquement par le dépôt d&apos;un formulaire signé, ci-dessous ; à corriger ici au besoin.
         {recordedAt && <> Dernière saisie : {new Date(recordedAt).toLocaleDateString("fr-FR")}.</>}
       </p>
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Droit à l'image">

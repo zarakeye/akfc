@@ -8,6 +8,7 @@ import { trpc } from "@trpc/trpcClient";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { formatUserName, type DisplayUser } from "@features/social/userDisplay";
 import { InstructorBioEditor } from "@features/social/InstructorBioEditor";
+import { MyImageConsent } from "@features/image-consent/MyImageConsent";
 
 /**
  * Page « Mon profil » — accessible à tout membre connecté (le proxy garde
@@ -98,6 +99,9 @@ export default function ProfilePage(): JSX.Element {
             Télécharger mes données
           </a>
         </div>
+
+        {/* Droit à l'image : formulaire vierge, statut, formulaires signés (aperçu au clic). */}
+        <MyImageConsent />
       </section>
 
       {/* Ne s'affiche que pour un instructeur titulaire (le composant se

@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import { AvatarUploader } from "@features/avatar/AvatarUploader";
+import { BlankConsentFormCard } from "@features/image-consent/BlankConsentFormCard";
 import { updateMeFormAction } from "./updateMeForm.action";
 import {
   initialUpdateMeFormState,
@@ -251,6 +252,9 @@ export default function UpdateMeForm(): JSX.Element {
             <AvatarUploader />
           </div>
         </div>
+
+        {/* Première connexion comme édition : l'autorisation de droit à l'image à imprimer. */}
+        <BlankConsentFormCard />
 
         <div className="flex items-center gap-3">
           <SubmitButton disabled={!canSubmit} />

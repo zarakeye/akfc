@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { prisma } from "@backend/prisma";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
 import { ImageConsentControl } from "@features/admin/users/components/ImageConsentControl";
+import { ImageConsentForms } from "@features/admin/users/components/ImageConsentForms";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -41,11 +42,14 @@ export default async function UserPresentationPage({
           </div>
         )}
       </dl>
+      {/* Remonté quand un dépôt change le statut, pour repartir de la valeur enregistrée. */}
       <ImageConsentControl
+        key={`${user.imageConsent}-${user.imageConsentAt?.getTime() ?? 0}`}
         userId={user.id}
         initial={user.imageConsent}
         recordedAt={user.imageConsentAt ? user.imageConsentAt.toISOString() : null}
       />
+      <ImageConsentForms userId={user.id} />
     </PresentationShell>
   );
 }
