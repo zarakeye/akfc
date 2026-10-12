@@ -42,10 +42,9 @@ export function processors(s: Pick<RetentionSettings, "storageRegion">): Process
   return [
     { name: "Hetzner Online GmbH", role: "Hébergement du site et de sa base de données", location: "Allemagne", transfer: null },
     { name: "OVH SAS", role: "Messagerie (e-mails du site, boîtes @akfc.fr)", location: "France", transfer: null },
-    { name: "Cloudinary", role: "Stockage et diffusion des photos et vidéos", location: "Union européenne et États-Unis", transfer: dpf },
     {
       name: "Cloudflare (R2)",
-      role: "Stockage des documents et des sauvegardes chiffrées",
+      role: "Stockage des photos, vidéos et documents, et des sauvegardes chiffrées",
       location: s.storageRegion ? STORAGE_REGION_LABEL[s.storageRegion] : "à préciser",
       transfer: dpf,
     },
@@ -63,7 +62,7 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       data: "Nom, prénom, e-mail, mot de passe (jamais stocké en clair), date d'adhésion, groupes ; si renseignés : date de naissance, téléphone, pseudo, photo, présentation",
       legalBasis: "Exécution de l'adhésion à l'association",
       recipients: "Administrateurs du site",
-      processors: ["Hetzner Online GmbH", "Cloudinary"],
+      processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
       retention: account,
     },
     {
@@ -74,7 +73,7 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       data: "Nom, photo, biographie",
       legalBasis: "Accord de chaque instructeur",
       recipients: "Public (page en accès libre)",
-      processors: ["Hetzner Online GmbH", "Cloudinary"],
+      processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
       retention: "Tant que l'instructeur enseigne au club et ne retire pas son accord",
     },
     {
@@ -115,11 +114,12 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       name: "Photos et vidéos des activités",
       purpose: "Publier les photos et vidéos des cours, stages et événements, en galerie publique ou réservée aux membres.",
       people: "Membres et participants photographiés",
-      data: "Image et voix des personnes reconnaissables",
+      data: "Image et voix des personnes reconnaissables ; formulaire d'autorisation signé (usages choisis)",
       legalBasis: "Autorisation de la personne (de ses parents pour un mineur)",
-      recipients: "Public ou membres, selon la galerie",
-      processors: ["Hetzner Online GmbH", "Cloudinary"],
-      retention: "Tant que l'autorisation n'est pas retirée",
+      recipients: "Public ou membres, selon la galerie et les usages autorisés ; le formulaire : la personne et les administrateurs",
+      processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
+      retention:
+        "Images : tant que l'autorisation n'est pas retirée, et au plus tard un an après le départ sauf accord pour un usage au-delà ; formulaire signé : durée de l'adhésion, puis 5 ans",
     },
     {
       id: "security",

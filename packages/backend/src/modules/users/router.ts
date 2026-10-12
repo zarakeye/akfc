@@ -173,6 +173,8 @@ export const userRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.$transaction(async (tx) => {
+        // Formulaires de droit à l'image signés : gardés 5 ans comme preuve (purge nocturne).
+        await tx.imageConsentForm.updateMany({ where: { userId: input.id }, data: { detachedAt: new Date() } });
         // `pageId` n'a pas de clé étrangère : sans ce nettoyage, les liens de
         // la bio bloqueraient pour toujours la suppression de ses images.
         await syncPageMediaReferences(tx, {
@@ -454,7 +456,7 @@ export const userRouter = router({
    * Liste tous les administrateurs (rôle ADMIN) avec leur avatar courant,
    * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
    * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
-   * affichera un placeholder. `avatar` est un publicId Cloudinary brut ;
+   * affichera un placeholder. `avatar` est la clé de stockage brute ;
    * l'URL d'affichage est construite côté client comme pour l'avatar du
    * header.
    */

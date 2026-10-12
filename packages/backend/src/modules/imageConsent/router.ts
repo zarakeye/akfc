@@ -1,0 +1,79 @@
+import { z } from "zod";
+
+import { router, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
+import { IMAGE_USAGE_VALUES } from "@contracts/legal/imageConsent";
+import {
+  createImageConsentFormUpload,
+  deleteImageConsentForm,
+  imageConsentFormSelect,
+  registerImageConsentForm,
+} from "@backend/modules/imageConsent/imageConsentForm.service";
+
+const adminProcedure = protectedProcedure.use(isAdmin);
+
+/**
+ * Droit à l'image : formulaires signés. Dépôt et suppression réservés aux admins ; le membre
+ * consulte les siens (`mine`). Le fichier est servi par /api/media/image-consent/[id].
+ */
+export const imageConsentRouter = router({
+  /** Envoi direct sur R2 : URL signée (PUT) + chemin à renvoyer à `register`. */
+  createUpload: adminProcedure
+    .input(z.object({ userId: z.string().min(1), mimeType: z.string().min(1), bytes: z.number().int().positive() }))
+    .mutation(({ input }) => createImageConsentFormUpload(input)),
+
+  /** Après l'envoi : enregistre le formulaire et met à jour le statut du membre. */
+  register: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        path: z.string().min(1),
+        fileName: z.string().max(300),
+        usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
+        keepAfterLeave: z.boolean().nullable(),
+        signedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return registerImageConsentForm({
+        prisma: ctx.prisma,
+        userId: input.userId,
+        uploadedById: ctx.sessionClient.user.id,
+        path: input.path,
+        fileName: input.fileName,
+        usages: input.usages,
+        keepAfterLeave: input.keepAfterLeave,
+        signedAt: input.signedAt ? new Date(`${input.signedAt}T12:00:00Z`) : null,
+      });
+    }),
+
+  /** Formulaires d'un membre, du plus récent au plus ancien (fiche admin). */
+  listForUser: adminProcedure.input(z.object({ userId: z.string().min(1) })).query(({ ctx, input }) =>
+    ctx.prisma.imageConsentForm.findMany({
+      where: { userId: input.userId },
+      orderBy: { createdAt: "desc" },
+      select: { ...imageConsentFormSelect, uploadedBy: { select: { firstName: true, lastName: true, email: true } } },
+    }),
+  ),
+
+  remove: adminProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
+    await deleteImageConsentForm(ctx.prisma, input.id);
+    return { ok: true };
+  }),
+
+  /** Statut et formulaires du membre connecté (profil). */
+  mine: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.sessionClient.user.id;
+    const [user, forms] = await Promise.all([
+      ctx.prisma.user.findUnique({ where: { id: userId }, select: { imageConsent: true, imageConsentAt: true } }),
+      ctx.prisma.imageConsentForm.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: imageConsentFormSelect,
+      }),
+    ]);
+    return { consent: user?.imageConsent ?? "UNKNOWN", recordedAt: user?.imageConsentAt ?? null, forms };
+  }),
+});
+
+export default imageConsentRouter;

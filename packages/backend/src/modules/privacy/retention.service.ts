@@ -2,12 +2,14 @@ import type { PrismaClient } from "@prisma/client";
 
 import { parisClock } from "@backend/modules/tickets/recap.service";
 import { sweepOrphanDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
+import { purgeDetachedImageConsentForms } from "@backend/modules/imageConsent/imageConsentForm.service";
 
 /*
  * Durées de conservation (RGPD) APPLIQUÉES, pas seulement annoncées :
  *   - demande close depuis plus de N mois (réglage ticketRetentionMonths) et sans message depuis :
  *     supprimée avec ses messages et son historique ;
- *   - sessions expirées et liens de réinitialisation périmés : supprimés.
+ *   - sessions expirées et liens de réinitialisation périmés : supprimés ;
+ *   - formulaires de droit à l'image d'un compte supprimé depuis plus de 5 ans : supprimés.
  * Les comptes ne sont JAMAIS supprimés automatiquement (le site ne connaît pas la fin d'adhésion) :
  * listInactiveAccounts les signale aux administrateurs (registre RGPD), qui décident.
  */
@@ -39,7 +41,11 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
     console.error("[rgpd/purge] déclinaisons :", err instanceof Error ? err.message : err);
     return 0;
   });
-  return { tickets: tickets.count, sessions: sessions.count, resetTokens: resetTokens.count, derivatives };
+  const imageConsentForms = await purgeDetachedImageConsentForms(db, now).catch((err) => {
+    console.error("[rgpd/purge] formulaires de droit à l'image :", err instanceof Error ? err.message : err);
+    return 0;
+  });
+  return { tickets: tickets.count, sessions: sessions.count, resetTokens: resetTokens.count, derivatives, imageConsentForms };
 }
 
 export type InactiveAccount = {
@@ -85,8 +91,8 @@ export function startRetentionSchedule(db: PrismaClient): boolean {
     lastDay = parisClock(now).day;
     purgeExpiredData(db, now)
       .then((r) => {
-        if (r.tickets || r.sessions || r.resetTokens || r.derivatives) {
-          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.derivatives} vignette(s) orpheline(s) supprimé(s)`);
+        if (r.tickets || r.sessions || r.resetTokens || r.derivatives || r.imageConsentForms) {
+          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image supprimé(s)`);
         }
       })
       .catch((err) => console.error("[rgpd/purge] échec :", err instanceof Error ? err.message : err))

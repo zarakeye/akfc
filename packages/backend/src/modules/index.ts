@@ -3,8 +3,8 @@ import { router } from "@backend/trpc/core";
 import { authRouter } from "@backend/modules/auth/router";
 import { userRouter } from "@backend/modules/users/router";
 import { avatarRouter } from "@backend/modules/avatar/router";
+import { imageConsentRouter } from "@backend/modules/imageConsent/router";
 import { sessionRouter } from "@backend/modules/session/router";
-import { cloudinaryRouter } from "@backend/modules/cloudinary/router";
 import { trashRouter } from "@backend/modules/trash/router";
 import { categoryRouter } from "@backend/modules/categories/router";
 import { courseRouter } from "@backend/modules/courses/router";
@@ -32,7 +32,6 @@ import { siteSettingsRouter } from "@backend/modules/siteSettings/router";
 import { pageVisibilityRouter } from "@backend/modules/pageVisibility/router";
 import { ticketRouter } from "@backend/modules/tickets/router";
 import { sitePartnerRouter } from "@backend/modules/sitePartners/router";
-import { mediaMigrationRouter } from "@backend/modules/mediaMigration/router";
 
 export const appRouter = router({
   homeHero: homeHeroRouter,
@@ -40,14 +39,13 @@ export const appRouter = router({
   pageVisibility: pageVisibilityRouter,
   ticket: ticketRouter,
   sitePartner: sitePartnerRouter,
-  mediaMigration: mediaMigrationRouter,
   siteStyle: siteStyleRouter,
   sitePage: sitePageRouter,
   auth: authRouter,
   user: userRouter,
   avatar: avatarRouter,
+  imageConsent: imageConsentRouter,
   session: sessionRouter,
-  cloudinary: cloudinaryRouter,
   trash: trashRouter,
   category: categoryRouter,
   course: courseRouter,

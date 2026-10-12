@@ -152,6 +152,10 @@ model User {
   memberDocumentRecipients  MemberDocumentRecipient[] @relation("MemberDocumentRecipient")
   /// Accusés de lecture de documents (1–N, DocumentReceipt.user). Effacés avec lui.
   documentReceipts          DocumentReceipt[]         @relation("DocumentReceiptUser")
+  /// Formulaires de droit à l'image signés (1–N, ImageConsentForm.user).
+  imageConsentForms         ImageConsentForm[]        @relation("ImageConsentFormUser")
+  /// Formulaires de droit à l'image déposés par cet admin (1–N, ImageConsentForm.uploadedBy).
+  imageConsentFormsUploaded ImageConsentForm[]        @relation("ImageConsentFormUploader")
   /// Adhésions aux groupes de membres (1–N, MemberGroupMembership.user).
   /// Effacées avec lui.
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
@@ -310,6 +314,20 @@ enum ImageConsent {
   GRANTED
   /// Le membre (ou ses parents) refuse : ne pas publier d'image où il est reconnaissable.
   REFUSED
+}
+
+/// Usages de l'image qu'un formulaire signé autorise (une case « Oui » par usage).
+enum ImageUsage {
+  /// Galeries de l'espace membres.
+  MEMBER_SPACE
+  /// Site public.
+  PUBLIC_SITE
+  /// Réseaux sociaux du club.
+  SOCIAL_NETWORKS
+  /// Affiches, plaquettes, supports de la MJC.
+  PRINT
+  /// Presse locale.
+  PRESS
 }
 
 enum AuditAction {
@@ -2132,4 +2150,47 @@ model SitePartner {
   updatedAt     DateTime        @updatedAt
 
   @@index([isActive, position])
+}
+
+/// Formulaire d'autorisation de droit à l'image SIGNÉ, scanné ou photographié, déposé par un admin
+/// sur la fiche du membre. Preuve du consentement (art. 7.1 RGPD) : on garde l'historique, le plus
+/// récent fait foi et fixe User.imageConsent. Le fichier vit dans R2 sous `_private/image-consent/`,
+/// hors de la bibliothèque ; il n'est servi qu'au membre concerné et aux admins
+/// (/api/media/image-consent/[id]). À la suppression du compte, le formulaire est détaché et gardé
+/// 5 ans (preuve), puis effacé par la purge nocturne.
+model ImageConsentForm {
+  /// Identifiant CUID.
+  id             String       @id @default(cuid())
+  /// Membre concerné. null une fois son compte supprimé (voir detachedAt).
+  userId         String?
+  /// Membre (N–1, User.imageConsentForms). Détaché à la suppression du compte (SET NULL).
+  user           User?        @relation("ImageConsentFormUser", fields: [userId], references: [id], onDelete: SetNull)
+  /// Nom du membre au dépôt : identifie le formulaire une fois le compte supprimé.
+  memberName     String
+  /// Suppression du compte : le formulaire est effacé 5 ans après.
+  detachedAt     DateTime?
+  /// Clé R2 du fichier (PDF ou image).
+  storageKey     String       @unique
+  /// Type du fichier (application/pdf, image/jpeg, image/png, image/webp).
+  mimeType       String
+  /// Nom du fichier envoyé, pour le téléchargement.
+  fileName       String
+  /// Taille en octets.
+  size           Int
+  /// Usages cochés « Oui ». Vide → refus de tout usage.
+  usages         ImageUsage[]
+  /// Choix « après mon départ » (version du formulaire qui le propose) : true → le club peut
+  /// continuer à utiliser les images déjà prises ; false → retrait sous un an ; null → non précisé.
+  keepAfterLeave Boolean?
+  /// Date de signature portée sur le formulaire.
+  signedAt       DateTime?
+  /// Admin qui a déposé le formulaire. null si son compte a été supprimé.
+  uploadedById   String?
+  /// Admin (N–1, User.imageConsentFormsUploaded). Détaché à sa suppression (SET NULL).
+  uploadedBy     User?        @relation("ImageConsentFormUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  /// Dépôt.
+  createdAt      DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([detachedAt])
 }
