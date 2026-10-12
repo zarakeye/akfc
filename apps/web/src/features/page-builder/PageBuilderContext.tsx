@@ -19,7 +19,7 @@ import type { FileAdapter } from "@contracts/finder";
 export interface PageBuilderContextValue {
   /**
    * Adapter passé au MediaPicker quand un Editor de bloc média demande
-   * la sélection. Pour AKFC : l'adapter Cloudinary construit dans la
+   * la sélection. Pour AKFC : l'adapter de stockage construit dans la
    * page admin. Permet au picker de naviguer dans l'arborescence des
    * médias.
    */

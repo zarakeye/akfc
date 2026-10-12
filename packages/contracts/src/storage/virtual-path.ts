@@ -6,34 +6,12 @@
  * tel que vu par la UI) et le **dispatcher** (la fonction qui décide
  * quel provider héberge quel asset).
  *
- * ─── Pourquoi un nouveau type `VirtualPath` distinct de `StoragePath` ? ───
+ * ─── Pourquoi un type `VirtualPath` distinct de `StoragePath` ? ─────────
  *
- * Aujourd'hui le contrat utilise `StoragePath = string` partout. Quand on
- * n'a qu'un seul provider, c'est suffisant : le path Cloudinary publié par
- * l'API tRPC est exactement le path utilisé en interne par l'adapter.
- *
- * Avec deux providers, on a une distinction sémantique importante :
- *
- *   ┌─────────────────────────────────────────────────────────────────┐
- *   │  VirtualPath  — vue UI, neutre, agnostique du provider          │
- *   │  ex: "AKFC/pending/Cours/12/intro.mp3"                          │
- *   └────────────────────────────┬────────────────────────────────────┘
- *                                │
- *               pickBackend(mimeType / extension)
- *                                │
- *                ┌───────────────┴───────────────┐
- *                ▼                               ▼
- *   ┌────────────────────────┐    ┌───────────────────────────────┐
- *   │ StoragePath Cloudinary │    │ StoragePath R2 (key bucket)   │
- *   │ "AKFC/pending/Cours/   │    │ "AKFC/pending/Cours/12/       │
- *   │  12/intro" (sans ext)  │    │  intro.mp3" (avec ext)        │
- *   └────────────────────────┘    └───────────────────────────────┘
- *
- * Le mapping virtual ↔ storage est responsabilité de chaque adapter. Pour
- * Cloudinary, ça peut être l'identité (ou presque — extension retirée
- * pour le publicId). Pour R2, ça peut aussi être l'identité (la clé R2
- * peut accepter la même structure). Mais le contrat ne tranche pas : on
- * laisse les adapters libres.
+ * Le path vu par la UI (virtuel) et le path stocké par l'adapter peuvent
+ * différer : le mapping virtual ↔ storage est la responsabilité de chaque
+ * adapter. Avec R2 seul, c'est l'identité (la clé R2 porte la même
+ * structure, extension comprise).
  *
  * Le bénéfice de cette distinction n'est pas tellement dans le runtime
  * (souvent l'identité) mais dans le **type system** : on encode dans les
@@ -119,40 +97,14 @@ export function tryToVirtualPath(raw: string): VirtualPath | null {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Décide quel provider de stockage héberge un asset selon son MIME type.
- *
- * Règle AKFC (synchronisée avec la documentation côté tutos) :
- *   - `cloudinary` : image/*, video/*
- *     → ces médias bénéficient des transformations à la volée et
- *       d'un CDN media-spécialisé
- *   - `r2`         : tout le reste (audio, doc, archive, etc.)
- *     → servis tels quels, zero egress fee
- *
- * Cette fonction est l'UNIQUE point où se décide le routage. Si la
- * stratégie change, c'est ici qu'on touche, nulle part ailleurs.
- *
- * Si on a un cas où le MIME est inconnu (`application/octet-stream` ou
- * vide), on bascule sur R2 par défaut — c'est le choix le plus sûr
- * économiquement (R2 a le zero-egress) et techniquement (un fichier
- * inconnu n'a pas de transformation Cloudinary à offrir de toute façon).
+ * Provider de stockage d'un asset : R2, le seul. Conservé comme point
+ * unique de décision si un second stockage arrivait un jour.
  */
-export function pickBackend(_mimeType: string | null | undefined): StorageProvider {
-  // Sortie de Cloudinary : TOUT nouvel envoi va sur R2 (stockage en UE, contrat en vigueur). Les
-  // déclinaisons d'images et les affiches de vidéo sont fabriquées par le serveur
-  // (mediaDerivatives.service). Les fichiers encore chez Cloudinary se reconnaissent à leur
-  // chemin sans extension (virtualStorage) et à MediaAsset.publicId, jusqu'à leur migration.
+export function pickBackend(_mimeType?: string | null): StorageProvider {
   return 'r2';
 }
 
-/**
- * Variante par extension de fichier (pour les cas où on n'a pas accès
- * au MIME type — par exemple en parsant un nom de fichier statique).
- *
- * La liste est intentionnellement courte : on couvre les formats
- * courants. Les cas exotiques tombent sur R2 par défaut (comportement
- * cohérent avec `pickBackend`).
- */
-export function pickBackendByExtension(_filename: string): StorageProvider {
-  // Un fichier AVEC extension vit sur R2 (voir pickBackend) ; un public_id Cloudinary n'en a pas.
+/** Variante par nom de fichier (même règle que `pickBackend`). */
+export function pickBackendByExtension(_filename?: string): StorageProvider {
   return 'r2';
 }

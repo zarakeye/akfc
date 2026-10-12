@@ -32,7 +32,7 @@ import { storagePathOf } from '@features/finder-core/utils/storagePath';
  * hook découplé pour 3 raisons :
  *
  *   1. **Découplage backend** : les metadata sont en DB, le `list()` lit
- *      les adapters (Cloudinary/R2). Deux sources, deux requêtes
+ *      l'adapter de stockage. Deux sources, deux requêtes
  *      indépendantes — on garde le coupling lâche.
  *   2. **Lazy loading** : si le réseau est lent ou que la requête échoue,
  *      la grille s'affiche quand même avec les infos de base. L'enrichissement

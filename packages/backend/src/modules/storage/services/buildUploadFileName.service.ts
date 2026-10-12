@@ -8,8 +8,8 @@ import slugify from 'slugify';
  *
  *   1. le `slugify` maison divergeait du paquet npm sur `&` (→ `and`) et `%`
  *      (→ `percent`) : une discipline « Arts & Combat » produisait deux
- *      dossiers, l'un pour ses photos (Cloudinary, chemin serveur), l'autre
- *      pour ses PDF (R2, chemin client). Une seule fonction = zéro écart ;
+ *      dossiers, l'un pour ses photos (chemin serveur), l'autre pour ses
+ *      PDF (chemin client). Une seule fonction = zéro écart ;
  *   2. la règle de nommage devient une décision serveur, pas une supposition
  *      que le client aurait pu contourner.
  *

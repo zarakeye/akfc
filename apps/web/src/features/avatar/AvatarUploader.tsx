@@ -34,7 +34,7 @@ import { CameraCapture } from "@features/avatar/CameraCapture";
 
 
 interface AvatarUploaderProps {
-  onChanged?: (publicId: string | null) => void;
+  onChanged?: (avatar: string | null) => void;
 }
 
 export function AvatarUploader({
@@ -42,8 +42,8 @@ export function AvatarUploader({
 }: AvatarUploaderProps = {}): JSX.Element {
   const utils = trpc.useUtils();
   const { data } = trpc.avatar.getMine.useQuery();
-  const createR2 = trpc.avatar.createR2Upload.useMutation();
-  const registerR2 = trpc.avatar.registerR2.useMutation();
+  const createUpload = trpc.avatar.createUpload.useMutation();
+  const registerUpload = trpc.avatar.register.useMutation();
   const remove = trpc.avatar.remove.useMutation();
 
   const userId = useSessionStore((s) => s.session?.user?.id ?? null);
@@ -70,10 +70,10 @@ export function AvatarUploader({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // URL publique d'avatar (sert indifféremment un avatar R2 ou un ancien avatar Cloudinary).
+  // URL publique d'avatar (route proxy, vignette AVIF).
   const currentUrl = useMemo(
-    () => (data?.publicId && userId ? avatarUrlFor(userId, version) : null),
-    [data?.publicId, userId, version],
+    () => (data?.avatar && userId ? avatarUrlFor(userId, version) : null),
+    [data?.avatar, userId, version],
   );
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export function AvatarUploader({
     setBusy(true);
     setError(null);
     try {
-      const auth = await createR2.mutateAsync({
+      const auth = await createUpload.mutateAsync({
         mimeType: pendingFile.type,
         bytes: pendingFile.size,
       });
@@ -184,11 +184,11 @@ export function AvatarUploader({
       });
       if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
 
-      const registered = await registerR2.mutateAsync({ path: auth.path });
+      const registered = await registerUpload.mutateAsync({ path: auth.path });
       await utils.avatar.getMine.invalidate();
-      setSessionAvatar(registered.publicId);
+      setSessionAvatar(registered.avatar);
       if (userId) bumpAvatar(userId);
-      onChanged?.(registered.publicId);
+      onChanged?.(registered.avatar);
 
       setSettlingUrl(pendingUrl);
       setPendingFile(null);
@@ -369,7 +369,7 @@ export function AvatarUploader({
               <Video className="h-4 w-4" />
               Caméra
             </button>
-            {data?.publicId && (
+            {data?.avatar && (
               <button
                 type="button"
                 disabled={busy}

@@ -13,9 +13,7 @@ import { JSX, useState } from 'react';
  * pas de système de toast : l'affichage est inline, comme ailleurs.
  *
  * On n'édite jamais que la BASE du nom. L'extension affichée est reconstruite
- * par `displayName` et n'appartient pas toujours au chemin réel (un public_id
- * Cloudinary d'image n'en porte pas) : c'est le backend qui réapplique celle
- * de la source.
+ * par `displayName` : c'est le backend qui réapplique celle de la source.
  */
 export function RenameInput({
   initial,

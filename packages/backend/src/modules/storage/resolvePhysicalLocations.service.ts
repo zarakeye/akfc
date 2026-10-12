@@ -119,8 +119,8 @@ export async function resolvePhysicalLocations(
 
   // Un candidat "existe" si un dossier a exactement ce fullPath, ou si un
   // MediaAsset a ce fullPath exact, ou ce chemin SUIVI d'une extension.
-  // INVARIANT projet : le node.path d'une image Cloudinary = public_id SANS
-  // extension, alors que MediaAsset.fullPath la porte (double-clé).
+  // (Tolérance héritée : un chemin sans extension désigne le fichier du même
+  // nom avec extension.)
   function candidateExists(candidate: string): boolean {
     if (folderPaths.has(candidate)) return true;
     return assetPaths.some(

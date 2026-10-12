@@ -151,7 +151,7 @@ export function statusOf(
  * Extensions reconnues comme média visuel (image / vidéo). Alignée sur
  * `pickBackendByExtension` (@contracts/storage) — même taxonomie que le
  * dispatch de provider. Utilisée seulement en dernier recours par
- * `isMediaNode` (les public_id Cloudinary étant extensionless).
+ * `isMediaNode`.
  */
 const IMAGE_VIDEO_EXTS = new Set([
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp', 'tiff', 'ico',
@@ -159,18 +159,16 @@ const IMAGE_VIDEO_EXTS = new Set([
 ]);
 
 /**
- * Vrai si le node est un MÉDIA visuel (image ou vidéo) — la famille qui vit
- * sur Cloudinary et qu'on épingle dans les galeries.
+ * Vrai si le node est un MÉDIA visuel (image ou vidéo) — la famille qu'on
+ * épingle dans les galeries.
  *
  * Détection en cascade, du plus fiable au plus faible :
  *   1. `meta.kind` — info sémantique de l'enrichissement. Union fermée
  *      ('image' | 'video' | 'document') : 'document' couvre aussi l'audio
  *      (kind ne distingue pas l'audio, cf. GridItem). Donc tout kind connu
- *      ≠ image/video ⇒ non-média. Indépendant de l'extension, donc correct
- *      pour les public_id Cloudinary qui sont extensionless.
+ *      ≠ image/video ⇒ non-média. Indépendant de l'extension.
  *   2. `mimeType` — repli si kind absent (node pas encore enrichi).
- *   3. extension du name — dernier recours (utile côté R2 où le name porte
- *      l'extension ; inopérant sur Cloudinary, d'où l'ordre).
+ *   3. extension du name — dernier recours.
  *
  * Pensé pour n'être appelé que sur des fichiers (le caller garde les
  * dossiers à part), mais reste correct sur un dossier (kind/mime/ext absents

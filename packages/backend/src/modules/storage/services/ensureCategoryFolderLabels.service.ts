@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
+import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
 
 // Mêmes options que resolvePendingUploadFolder → le path colle à celui des uploads.
 const SLUG_OPTIONS = { lower: true, strict: true } as const;

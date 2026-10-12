@@ -36,23 +36,22 @@ export type TrashEntryDTO = {
   trashedAt: string; // ISO string
 
   /**
-   * Métadonnées Cloudinary utiles à la comparaison.
+   * Taille, utile à la comparaison.
    * Pour un folder: peut représenter un agrégat (somme des bytes + min(createdAt) ou max(createdAt)).
    */
   sizeBytes?: number;
 
   /**
-   * Cloudinary created_at (ou uploaded_at) pour comparer.
+   * Date de création du fichier (stockage) pour comparer.
    * Pour folder: même remarque (agrégat).
    */
   createdAt?: string; // ISO string
 
   /**
-   * publicId pour les fichiers Cloudinary, utile pour la preview et la comparaison.
-   * Pour les folders, ce champ est absent ou peut contenir un identifiant de dossier virtuel.
-   * L'adapter de stockage est responsable de le remplir pour les fichiers, et peut choisir de le faire aussi pour les folders si cela a du sens dans son contexte.
+   * Clé de stockage (R2) d'un fichier en corbeille — sert à l'aperçu.
+   * Absente pour les dossiers.
    */
-  publicId?: string;
+  storageKey?: string;
 
   /**
    * Catégorisation applicative du média.

@@ -39,11 +39,7 @@ import {
   type StorageFolderNode,
 } from "@contracts/storage";
 
-import {
-  createUploadSignaturesSchema,
-  uploadDestinationSchema,
-  registerUploadedAssetsSchema,
-} from "@contracts/cloudinary/upload.schema";
+import { uploadDestinationSchema } from "@contracts/storage/upload-destination.schema";
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
@@ -59,7 +55,7 @@ import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuo
 import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
 import { listMyCommonRepositoryContainers } from "@backend/modules/media/services/listMyCommonRepositoryContainers.service";
 import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
-import { resolvePendingUploadFolder } from '@backend/modules/cloudinary/services/resolvePendingUploadFolder.service';
+import { resolvePendingUploadFolder } from '@backend/modules/storage/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
@@ -82,23 +78,7 @@ import { assertUploadDestinationAllowed } from '@backend/modules/storage/assertU
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
 /**
- * storageRouter — Phase 2 update
- *
- * Le seul changement par rapport à la version précédente est le schema
- * d'input de `registerR2Upload`, qui doit maintenant transporter la
- * destination métier (categoryId, disciplineId) et l'originalFileName
- * pour créer la row MediaAsset côté adapter R2.
- *
- * Le schema legacy `registerR2UploadedAssetSchema` n'avait que
- * `{ path, expectedBytes, expectedMimeType }` — insuffisant pour le
- * tracking DB. On le redéfinit en inline dans ce router pour ne pas
- * forcer une modif côté contracts (le contract est à jour côté Cloudinary
- * via `registerUploadedAssetsSchema.destination`, on reproduit la même
- * forme ici).
- *
- * ⚠️ NOTE : si un autre endroit du code utilise `registerR2UploadedAssetSchema`
- * importé depuis `@contracts/storage`, il faudra aussi l'aligner. À ce jour,
- * seul ce router le consomme.
+ * storageRouter — finder (lecture, renommage, déplacement) et envois vers R2.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -110,8 +90,7 @@ import { buildUploadFileName } from '@backend/modules/storage/services/buildUplo
  *   - existing-discipline : on a categoryId + disciplineId direct
  *   - new-discipline : on a categoryId + proposedDisciplineName (admin validera plus tard)
  *
- * Forme identique à ce que `DragNDropForm` construit déjà côté frontend
- * pour Cloudinary — on réutilise.
+ * Forme identique à ce que `DragNDropForm` construit côté frontend.
  */
 
 const registerR2UploadInputSchema = z.object({
@@ -430,7 +409,7 @@ export const storageRouter = router({
       });
       // Le statut vit en DB depuis l'aplatissement : on le rapatrie ici.
       await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
-      // Espaces de groupe visibles même vides : Cloudinary/R2 n'ont pas de
+      // Espaces de groupe visibles même vides : R2 n'a pas de
       // vrais dossiers, un espace sans asset s'évaporerait du listing.
       if (input.path === `${ctx.appRoot}/collaborative-group-spaces`) {
         const merged = await mergeGroupSpaceFolders({
@@ -647,10 +626,8 @@ export const storageRouter = router({
    * parent sous un nouveau nom.
    *
    * `newBaseName` est le nom SANS extension : le client n'édite que la base
-   * (l'extension affichée est reconstruite par `displayName` et n'appartient
-   * pas toujours au path réel, cf. les public_id Cloudinary). L'extension de
-   * la source est réappliquée telle quelle, ce qui préserve la convention du
-   * provider.
+   * (l'extension affichée est reconstruite par `displayName`). L'extension de
+   * la source est réappliquée telle quelle.
    */
   rename: protectedProcedure
     .input(
@@ -718,8 +695,7 @@ export const storageRouter = router({
       // stable et opaque. Renommer un fichier ne déplace donc plus rien chez
       // le provider et ne devine plus d'extension (fin du bug historique) :
       // c'est un simple UPDATE de `displayName`. Match logique tolérant à
-      // l'extension, comme `media.updateDescription` (fullPath DB = path UI +
-      // "." + format côté Cloudinary). Deux fichiers peuvent partager un nom
+      // l'extension, comme `media.updateDescription`. Deux fichiers peuvent partager un nom
       // d'affichage : pas de contrôle de collision ici, la clé reste unique.
       if (input.type === "file") {
         const result = await ctx.prisma.mediaAsset.updateMany({
@@ -886,83 +862,11 @@ export const storageRouter = router({
         ctx.appRoot,
       );
 
-      // Exécution séquentielle, comme avant : Cloudinary n'aime pas les
-      // opérations concurrentes sur des préfixes voisins.
+      // Exécution séquentielle : des opérations concurrentes sur des
+      // préfixes voisins pourraient se marcher dessus.
       await executeMoveOperations(adapter, effectiveOperations);
 
       return { operations: effectiveOperations };
-    }),
-
-  /* ====================================================================== */
-  /*  Upload Cloudinary (inchangé)                                          */
-  /* ====================================================================== */
-
-  createUploadAuthorization: protectedProcedure
-    .input(
-      z.object({
-        provider: storageProviderSchema,
-        ...createUploadSignaturesSchema.shape,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      await assertUploadDestinationAllowed({
-        prisma: ctx.prisma,
-        userId: ctx.user.id,
-        destination: input.destination,
-      });
-      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-
-      switch (input.provider) {
-        case "cloudinary": {
-          const adapter = getAdapter("cloudinary", deps);
-          return adapter.createUploadAuthorization({
-            userId: ctx.user.id,
-            destination: input.destination,
-            assets: input.assets,
-            allowOverwrite: input.allowOverwrite,
-          });
-        }
-        case "r2": {
-          throw new Error(
-            "R2 uploads not supported via this procedure. " +
-              "Use storage.createR2Upload / storage.registerR2Upload instead."
-          );
-        }
-      }
-    }),
-
-  registerUploadedAsset: protectedProcedure
-    .input(
-      z.object({
-        provider: storageProviderSchema,
-        ...registerUploadedAssetsSchema.shape,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      await assertUploadDestinationAllowed({
-        prisma: ctx.prisma,
-        userId: ctx.user.id,
-        destination: input.destination,
-      });
-      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-
-      switch (input.provider) {
-        case "cloudinary": {
-          const adapter = getAdapter("cloudinary", deps);
-          return adapter.registerUploadedAsset({
-            destination: input.destination,
-            assets: input.assets,
-            eventDate: input.eventDate,
-            userId: ctx.user.id,
-          });
-        }
-        case "r2": {
-          throw new Error(
-            "R2 register-uploaded-asset not supported via this procedure. " +
-              "Use storage.createR2Upload / storage.registerR2Upload instead."
-          );
-        }
-      }
     }),
 
   /* ====================================================================== */
@@ -995,8 +899,7 @@ export const storageRouter = router({
         userId: ctx.user.id,
         destination: input.destination,
       });
-      // Le chemin se calcule ICI, une seule fois, avec la même règle que
-      // Cloudinary. `buildR2Path` (client) n'existe plus.
+      // Le chemin se calcule ICI, une seule fois (jamais côté client).
       const folder = await resolvePendingUploadFolder({
         prisma: ctx.prisma,
         destination: input.destination,
@@ -1009,7 +912,7 @@ export const storageRouter = router({
       if (input.destination.kind === "perso" && !input.mimeType.startsWith("image/")) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });
       }
-      // Pas d'écrasement silencieux (même règle que Cloudinary) : confirmation explicite requise.
+      // Pas d'écrasement silencieux : confirmation explicite requise.
       const existing = await ctx.prisma.mediaAsset.findUnique({ where: { fullPath: path }, select: { id: true } });
       if (existing && !input.allowOverwrite) {
         throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });

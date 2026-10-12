@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Post } from "@prisma/client";
 
 import { PageBuilder } from "@features/page-builder";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import {

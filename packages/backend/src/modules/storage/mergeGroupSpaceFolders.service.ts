@@ -14,7 +14,7 @@ import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/col
 /**
  * Espaces de groupe ET perso visibles même VIDES.
  *
- * Cloudinary/R2 n'ont pas de vrais dossiers : un espace sans asset s'évapore du
+ * R2 n'a pas de vrais dossiers : un espace sans asset s'évaporerait du
  * listing, alors que le groupe / l'utilisateur existe toujours. On réinjecte
  * les espaces connus. Deux points : `list` (groupes, liste plate) et `getTree`
  * (groupes + persos, arbre lu par le finder).

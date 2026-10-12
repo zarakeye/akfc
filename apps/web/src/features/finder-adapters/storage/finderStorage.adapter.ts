@@ -20,8 +20,8 @@ type RouterInputs = inferRouterInputs<AppRouter>;
 /**
  * Type exact retourné par `storage.getTree`.
  * Chaque node est un `StorageFolderNode` ou `StorageFileNode` du contrat
- * agnostique — sans champs Cloudinary-spécifiques (url, kind dérivé). Ces
- * champs sont recalculés localement par les mappers ci-dessous.
+ * agnostique — sans champs d'affichage (url, kind dérivé). Ces champs sont
+ * recalculés localement par les mappers ci-dessous.
  */
 type StorageGetTreeResult = RouterOutputs['storage']['getTree'];
 type StorageRootFolder = StorageGetTreeResult['root'];
@@ -126,48 +126,12 @@ function mapFileToFinderNode(
   const name = file.name ?? fallbackName;
   const format = file.metadata?.format;
 
-  // ─── Dispatch backend pour la preview ──────────────────────────────────
-  //
-  // Le contrat `StorageNode` ne transporte pas le provider d'origine — c'est
-  // intentionnel (l'UI doit être agnostique au backend). Mais pour calculer
-  // l'URL de preview, on a besoin de savoir si le fichier est sur Cloudinary
-  // (proxy `/api/media/by-public-id/...`) ou sur R2 (proxy `/api/media/r2/...`).
-  //
-  // On déduit le provider via `pickBackendByExtension` — mêmes règles que
-  // le dispatch d'upload :
-  //   - image/* + video/*  → Cloudinary (URL transformée)
-  //   - tout le reste      → R2 (URL via proxy presigned GET)
-  //
-  // ⚠️ Subtilité Cloudinary : les `name` issus de Cloudinary n'ont PAS
-  // d'extension (Cloudinary stocke le format séparément, exposé via
-  // `metadata.format` = "jpg", "mp4", etc.). Sans extension dans le nom,
-  // `pickBackendByExtension` fallback systématiquement sur R2, ce qui
-  // génère une URL proxy R2 fausse pour les fichiers Cloudinary →
-  // plus de thumbnail/preview/vidéo qui marche.
-  //
-  // Solution : on construit un "nom virtuel avec extension" pour le
-  // dispatch quand on dispose d'un `format` explicite. L'`name` réel
-  // affiché à l'UI reste inchangé.
-  //
-  // L'encodage du path pour le proxy R2 doit préserver les '/' structurels
-  // (les segments sont des dossiers virtuels), donc on encode segment par
-  // segment.
-
-  // Le LOCALISATEUR : `file.path` tant que la vue pliée n'est pas levée,
-  // `AKFC/pending/…` ensuite. C'est lui qui construit l'URL — le proxy
-  // `/api/media/by-public-id/…` interroge Cloudinary, qui ne connaît que
-  // l'emplacement réel. Lui passer un chemin logique rendrait 404.
+  // Le LOCALISATEUR : `file.storagePath` (emplacement réel) tant que la vue
+  // pliée n'est pas levée, sinon `file.path`. C'est lui qui construit l'URL :
+  // un chemin logique rendrait 404. Image : vignette 600 px ; autre fichier :
+  // l'original (paramètre ignoré).
   const storagePath = file.storagePath ?? file.path;
-
-  // Sortie de Cloudinary : un fichier stocké AVEC extension vit sur R2 (images, vidéos et documents) ;
-  // un public_id Cloudinary n'en a pas (jusqu'à sa migration). R2 : vignette 600 px pour une image,
-  // l'original pour le reste (paramètre ignoré).
-  const lastSegment = storagePath.split('/').pop() ?? '';
-  const backend = /\.[A-Za-z0-9]{1,8}$/.test(lastSegment) ? 'r2' : 'cloudinary';
-  const url =
-    backend === 'cloudinary'
-      ? getMediaUrl({ publicId: storagePath, format })
-      : `/api/media/r2/${storagePath.split('/').map(encodeURIComponent).join('/')}?variant=medium`;
+  const url = getMediaUrl(storagePath, 'medium');
 
   return {
     // `id` = le localisateur, et pas le chemin logique : deux fichiers
@@ -201,18 +165,13 @@ function mapFileToFinderNode(
  * Stratégie en deux cas :
  *
  *   1. UN SEUL item (cas dominant : DnD d'un fichier ou d'un dossier).
- *      On envoie une source `file` ou `folder` directe. Pour un dossier,
- *      la résolution backend produit une op `folder` que `VirtualStorage`
- *      broadcaste aux deux backends (chacun déplace ce qu'il héberge sous
- *      le préfixe) — donc Cloudinary ET R2 suivent.
+ *      On envoie une source `file` ou `folder` directe.
  *
  *   2. PLUSIEURS items (multi-sélection).
  *      On utilise `selection` avec tous les paths comme `roots`. Le
  *      backend `resolveMoveIntent` expanse chaque root selon son type
- *      (file pris tel quel, folder listé récursivement via la façade
- *      virtuelle qui voit les DEUX backends), produit des ops fichier,
- *      et `VirtualStorage.move` dispatche chacune vers son provider selon
- *      l'extension.
+ *      (file pris tel quel, folder listé récursivement) et produit des
+ *      ops fichier exécutées par `VirtualStorage.move`.
  */
 function moveOptionsToSource(items: MoveOptions['items']): StorageMoveSource {
   // Le backend attend des SOURCES localisables. Pour un fichier, c'est le
@@ -252,44 +211,18 @@ function moveOptionsToTarget(target: MoveOptions['target']): StorageMoveTarget {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Adapter `FileAdapter` pour le finder agnostique — **multi-backend**.
+ * Adapter `FileAdapter` du finder : lecture et déplacement via le router
+ * `storage` (façade `VirtualStorage`, stockage R2).
  *
- * Cet adapter n'est lié à aucun provider en particulier : ses méthodes de
- * lecture passent par la façade `VirtualStorage` côté backend (interrogation
- * parallèle de Cloudinary ET R2, fusion des résultats) — l'UI voit donc les
- * items des deux backends mélangés, transparent. (Anciennement nommé
- * `finderStorageAdapter`, du temps où il ne parlait qu'à Cloudinary.)
- *
- * Côté `moveItems`, on passe aussi par `VirtualStorage` (provider omis) :
- * le router résout la sélection sur les deux backends et dispatche chaque
- * fichier vers Cloudinary ou R2 selon son extension. Un changement de statut
- * ou un DnD qui touche des items des deux backends est donc géré nativement.
- *
- * ─── Détection du backend pour la preview ─────────────────────────────────
- *
- * Le contrat `StorageNode` ne transporte pas le provider d'origine. Pour
- * calculer l'URL de preview, on déduit le backend depuis l'extension
- * du nom de fichier via `pickBackendByExtension` — cohérent avec la règle
- * de dispatch d'upload (image/video → Cloudinary, reste → R2).
- *
- * ─── Méthodes implémentées ─────────────────────────────────────────────────
- *
- *   - `list`        : listing plat des enfants directs (Cloudinary + R2)
- *   - `getTree`     : sous-arbre récursif (TreeView, DnD) (Cloudinary + R2)
+ *   - `list`        : listing plat des enfants directs
+ *   - `getTree`     : sous-arbre récursif (TreeView, DnD)
  *   - `getMetadata` : métadonnées d'un asset (sidebar de preview)
- *   - `moveItems`   : déplacement multi-backend (via VirtualStorage)
+ *   - `moveItems`   : déplacement
  *
- * Méthodes non implémentées :
- *
- *   - `getNode`     : non implémentée à ce chantier — l'usage UI n'en a
- *                     pas encore besoin et ça évite un round-trip de plus.
- *   - `delete`      : reportée au chantier "corbeille agnostique".
+ * Non implémentées : `getNode` (pas d'usage UI), `delete` (corbeille dédiée).
  */
 export const finderStorageAdapter: FileAdapter = {
   async list(options: ListOptions): Promise<ListResult> {
-    // `provider` absent → le router utilise `VirtualStorage` qui interroge
-    // Cloudinary ET R2 puis fusionne les résultats. Le finder voit donc
-    // les items des deux backends mélangés, transparent pour l'UI.
     // ─── Vue LOGIQUE ────────────────────────────────────────────────
     //
     // Le nœud `AKFC/cours/x` fusionne les physiques `AKFC/pending/cours/x`
@@ -344,13 +277,6 @@ export const finderStorageAdapter: FileAdapter = {
     const source = moveOptionsToSource(options.items);
     const target = moveOptionsToTarget(options.target);
 
-    // ⚠️ PAS de `provider` : comme pour les lectures, on laisse le router
-    // tomber sur `VirtualStorage`. `resolveMoveIntent` expanse alors la
-    // sélection sur les DEUX backends, et `VirtualStorage.move` dispatche
-    // chaque fichier vers Cloudinary ou R2 selon son extension
-    // (`pickBackendByExtension`). Forcer `provider: 'cloudinary'` ici était
-    // exactement ce qui laissait les assets R2 en `pending` lors d'un
-    // changement de statut ou d'un DnD.
     // Les sources sont des localisateurs (fichiers) ou des chemins logiques
     // de dossier ; la cible est logique. `toPhysicalMoveIntents` redescend le
     // tout dans l'espace physique, en émettant une intention par strate

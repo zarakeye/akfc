@@ -16,7 +16,7 @@ import { useFinderStore } from '@features/finder-core/state/useFinderStore';
  *      lit `trash.listBin` via React Query → on invalide la query.
  *
  *   2. **TreeView du bin** (`FinderTreeFolder` au path `bin/...`) : lit
- *      les enfants Cloudinary via `adapter.getTree`, mis en cache local
+ *      les enfants via `adapter.getTree`, mis en cache local
  *      au composant. Pour invalider, on incrémente `reloadKey` dans le
  *      finder store (chaque `FinderTreeFolder` observe cette key et reset
  *      son `loadedChildren` au change → re-fetch automatique).

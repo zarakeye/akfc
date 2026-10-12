@@ -1,26 +1,17 @@
 export type MediaUrlAudience = 'admin' | 'public';
 
+/**
+ * URL de diffusion d'un média via les routes proxy R2 (admin : session
+ * requise ; public : garde « publié + référencé »).
+ *
+ * `?variant=large` : vignette 1200 px pour une image ; les appelants ajoutent
+ * `&as=poster` pour l'affiche d'une vidéo. Ignoré pour un document (servi tel quel).
+ */
 export function buildMediaProxyUrl(
-  asset: { publicId: string | null; fullPath: string },
+  asset: { fullPath: string },
   audience: MediaUrlAudience = 'admin',
 ): string {
-  const encodeSegments = (path: string) =>
-    path.split('/').map(encodeURIComponent).join('/');
-  if (asset.publicId !== null) {
-    const cldPrefix =
-      audience === 'public'
-        ? '/api/media/public/by-public-id'
-        : '/api/media/by-public-id';
-    // SVG : on transmet le format pour que le proxy livre le vecteur natif
-    // (sans transformation raster qui échouerait). Cf. buildAuthenticatedUrl.
-    const isSvg = asset.fullPath.toLowerCase().endsWith('.svg');
-    return `${cldPrefix}/${encodeSegments(asset.publicId)}?variant=large${
-      isSvg ? '&format=svg' : ''
-    }`;
-  }
-  const r2Prefix =
-    audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';
-  // Même forme que Cloudinary (`?variant=large`) : les appelants ajoutent `&as=poster` pour l'affiche
-  // d'une vidéo. Ignoré pour un document (servi tel quel).
-  return `${r2Prefix}/${encodeSegments(asset.fullPath)}?variant=large`;
+  const encoded = asset.fullPath.split('/').map(encodeURIComponent).join('/');
+  const prefix = audience === 'public' ? '/api/media/public/r2' : '/api/media/r2';
+  return `${prefix}/${encoded}?variant=large`;
 }

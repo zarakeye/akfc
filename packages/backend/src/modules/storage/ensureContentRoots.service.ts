@@ -1,11 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import type { StorageFolderNode } from "@contracts/storage";
-import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
+import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
 
 /**
  * Racines principales du finder — celles qui REÇOIVENT le contenu — qui doivent
- * apparaître dès le premier rendu, même vides (Cloudinary/R2 n'ont pas de vrais
- * dossiers vides). Chemin physique EN ; l'affichage humain est résolu ensuite
+ * apparaître dès le premier rendu, même vides (R2 n'a pas de vrais dossiers
+ * vides). Chemin physique EN ; l'affichage humain est résolu ensuite
  * par les FolderLabel (applyGroupSpaceNames).
  */
 export async function requiredRootPaths(

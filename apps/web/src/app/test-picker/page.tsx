@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MediaPicker } from '@/features/finder-core/components/MediaPicker';
-import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
+import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
 
 export default function TestPickerPage() {
   const [open, setOpen] = useState(false);

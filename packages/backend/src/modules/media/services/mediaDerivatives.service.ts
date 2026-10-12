@@ -30,8 +30,9 @@ function loadSharp(): Promise<SharpFn | null> {
 import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/client";
 
 /*
- * Déclinaisons des médias stockés sur R2 (remplace les transformations de Cloudinary) :
- *   - images : largeurs thumb (150×150 recadré), small (300), medium (600), large (1 200), en WebP ;
+ * Déclinaisons des médias stockés sur R2 :
+ *   - images : largeurs thumb (150×150 recadré), small (300), medium (600), large (1 200), en AVIF
+ *     (WebP fabriqué à la volée pour un navigateur sans AVIF) ;
  *   - vidéos : image d'affiche (première seconde) extraite par ffmpeg, aux mêmes largeurs, en JPEG.
  * Fabriquées à la PREMIÈRE demande, puis rangées dans R2 sous `_derived/` (hors de la racine de
  * l'application : jamais listées par le finder) et servies comme n'importe quel objet.

@@ -21,7 +21,7 @@ import EmptyBinButton from '@features/trash-view/components/EmptyBinButton';
  *
  * Vue affichée dans le panneau central du Finder quand le `currentPath`
  * pointe exactement sur `${APP_ROOT}/bin`. Reproduit le comportement
- * legacy : au lieu de l'arborescence Cloudinary normale (qui contiendrait
+ * legacy : au lieu de l'arborescence de stockage brute (qui contiendrait
  * `.trash/<uuids>/`), on affiche la **liste plate des trashEntries** avec
  * leur `displayName`, comme dans la vue Corbeille dédiée.
  *
@@ -40,7 +40,7 @@ import EmptyBinButton from '@features/trash-view/components/EmptyBinButton';
  * drill-down interne avec `readTrashFolder`.
  *
  * Ici dans le finder, on déclenche à la place `setPath` du store finder
- * vers le path Cloudinary réel `${APP_ROOT}/bin/.trash/<uuid>/`. Le finder
+ * vers le chemin de stockage réel `${APP_ROOT}/bin/.trash/<uuid>/`. Le finder
  * réagit normalement : la TreeView se met à jour (avec le rename uuid →
  * displayName du TrashMapContext), la grille appelle `adapter.list()`
  * pour récupérer le contenu, et tout fonctionne en mode finder standard.
@@ -81,7 +81,7 @@ export default function FinderBinRootView(): JSX.Element {
 
   function handleEntryDoubleClick(entry: TrashEntryDTO) {
     if (entry.kind === 'folder') {
-      // Navigation finder vers le path Cloudinary réel — le finder prend
+      // Navigation finder vers le chemin de stockage réel — le finder prend
       // le relais comme pour n'importe quel dossier (lazy load, etc.).
       setPath(`${APP_ROOT}/bin/.trash/${entry.id}`);
     }

@@ -31,8 +31,7 @@ import { resolvePhysicalLocations } from "@backend/modules/storage/resolvePhysic
  *     un statut connu et lève une erreur explicite sinon. Un chemin logique
  *     n'en a pas, par construction : elle lèverait à chaque publication.
  *
- *   - `moveService` (Cloudinary) et `r2StorageAdapter` renomment des
- *     binaires. Un chemin logique ne désigne aucun binaire.
+ *   - `r2StorageAdapter` renomme des binaires. Un chemin logique ne désigne aucun binaire.
  *
  * On ne peut donc pas « faire passer » la vue pliée à `planMoveOperations`.
  * Il faut redescendre l'intention dans l'espace physique AVANT de la

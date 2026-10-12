@@ -6,7 +6,7 @@ import type { Discipline, DisciplineType } from "@prisma/client";
 import { PageBuilder } from "@features/page-builder";
 import { trpc, trpcClient } from "@/core/trpc/trpcClient";
 import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { CategorySelect } from "@features/admin/common/components/CategorySelect";

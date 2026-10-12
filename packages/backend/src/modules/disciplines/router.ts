@@ -7,7 +7,7 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
 import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
+import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
@@ -24,7 +24,7 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *
  * Règles métier :
  *   - `categoryId` N'EST PAS modifiable via `update`. Déplacer une discipline
- *     de catégorie briserait la cohérence des chemins Cloudinary existants
+ *     de catégorie briserait la cohérence des chemins de stockage existants
  *     (qui encodent `category.type` slugifié dans leurs segments).
  *   - `delete` est un hard delete : avant de supprimer, on vérifie qu'aucune
  *     dépendance ne subsiste (Course, Stage, Event, MediaAsset). Si oui,

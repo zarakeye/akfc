@@ -1,29 +1,12 @@
 import { z } from "zod";
 
-import { uploadDestinationSchema } from "@contracts/cloudinary/upload.schema";
+import { uploadDestinationSchema } from "@contracts/storage/upload-destination.schema";
 
 /**
- * Schemas Zod pour les procédures tRPC R2 upload.
+ * Schemas Zod des procédures tRPC d'envoi vers R2 (seul stockage du site).
  *
- * ─── Pourquoi des schemas dédiés à R2 (séparés de Cloudinary) ? ──────────
- *
- * Cloudinary et R2 ont des modèles d'upload fondamentalement différents :
- *
- *   - Cloudinary : signature SHA-1 d'une combinaison de params, le client
- *     envoie ensuite le fichier à l'endpoint upload de Cloudinary avec
- *     ces params + le payload.
- *
- *   - R2 (S3) : presigned POST policy avec conditions verrouillées dans
- *     la signature, le client envoie un `multipart/form-data` directement
- *     vers l'URL signée.
- *
- * Les structures d'input et d'output divergent assez pour qu'une procédure
- * unifiée devienne un "soup of fields". On préfère deux paires de procédures
- * dédiées et un dispatch côté UI (qui sait quel backend cibler via
- * `pickBackend(mimeType)`).
- *
- * Voir aussi : `@contracts/cloudinary/upload.schema.ts` pour l'équivalent
- * Cloudinary.
+ * Séquence : le client demande une autorisation (URL présignée), envoie le
+ * fichier directement au bucket, puis fait enregistrer le MediaAsset.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -45,9 +28,8 @@ export const createR2UploadAuthorizationSchema = z.object({
   allowOverwrite: z.boolean().optional(),
 
   /**
-   * Destination métier — le serveur en dérive le chemin, exactement comme la
-   * branche Cloudinary. Le client ne calcule plus de chemin : c'était la
-   * source de la divergence de slug entre les deux providers.
+   * Destination métier — le serveur en dérive le chemin. Le client ne
+   * calcule jamais de chemin (une seule règle de slug, côté serveur).
    */
   destination: uploadDestinationSchema,
 

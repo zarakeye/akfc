@@ -10,15 +10,14 @@ function slug(input: string): string {
 /**
  * Résout le dossier RACINE de l'espace perso d'un admin, SANS sous-dossier de
  * média — partagé entre providers. Chaque zone média s'y accroche :
- *   - photos (Cloudinary)          → `${base}/photos`
- *   - documents / audio (R2, plus tard) → `${base}/documents`, `${base}/audio`
+ *   - photos                       → `${base}/photos`
+ *   - documents / audio (plus tard) → `${base}/documents`, `${base}/audio`
  *
  * Dérivé de `userId` (identité AUTHENTIFIÉE, jamais un id fourni par le
  * client) → un admin n'accède qu'à son propre espace. Le segment `-${userId}`
  * assure l'unicité et reste STABLE même si le nom (donc le slug) change.
  *
- * Cette extraction évite la divergence de slug entre Cloudinary et R2 : les
- * deux passeront par ce même résolveur.
+ * Toutes les zones passent par ce même résolveur : un seul slug.
  */
 export async function resolvePersoBaseFolder(params: {
   prisma: PrismaClient;

@@ -27,7 +27,7 @@ import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.s
  *
  * IMPORTANT (design validé) :
  * - Bin = lecture + restore + delete définitif
- * - Le stockage Cloudinary réel est caché : `${appRoot}/bin/.trash/<uuid>/...`
+ * - Le stockage R2 réel est caché : `${appRoot}/bin/.trash/<uuid>/...`
  * - L'utilisateur ne voit jamais `.trash/<uuid>`
  */
 
@@ -136,7 +136,7 @@ const deleteForeverInputSchema = z.object({
   ids: z.array(z.string().min(1)).min(1),
 });
 
-// `purge` accepte des **paths Cloudinary** (pas des TrashEntry ids) sous
+// `purge` accepte des **chemins de stockage** (pas des TrashEntry ids) sous
 // `${appRoot}/bin/.trash/...`. Voir purge.service.ts pour la motivation
 // (gestion des vestiges absents en DB).
 const purgeInputSchema = z.object({

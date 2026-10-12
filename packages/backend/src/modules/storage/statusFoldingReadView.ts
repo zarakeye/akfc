@@ -66,11 +66,8 @@ import {
  *
  * ─── Coût ─────────────────────────────────────────────────────────────────
  *
- * Chaque lecture interroge jusqu'à trois emplacements. Sur Cloudinary c'est
- * quasi gratuit : `resourcesCache` a un hit hiérarchique, et le premier
- * candidat (le chemin logique lui-même, donc l'ancêtre des deux autres à la
- * racine) est lu SÉQUENTIELLEMENT pour réchauffer le cache avant les deux
- * suivants. Cf. `physicalCandidates` pour le raisonnement complet.
+ * Chaque lecture interroge jusqu'à trois emplacements ; le premier candidat
+ * (le chemin logique lui-même) est lu en premier. Cf. `physicalCandidates`.
  *
  * ─── Durée de vie ─────────────────────────────────────────────────────────
  *
@@ -159,8 +156,8 @@ export class StatusFoldingReadView implements StorageAdapter {
     // la même raison que `VirtualStorage.getNode` : un provider répond
     // volontiers « folder » sur un simple préfixe. Ici le risque est même
     // plus grand — le premier candidat est le chemin à plat, qui n'existe
-    // pas encore avant l'étape 5 mais dont Cloudinary peut rapporter le
-    // préfixe de façon optimiste, masquant le vrai fichier sous sa strate.
+    // pas forcément mais dont un provider peut rapporter le préfixe de façon
+    // optimiste, masquant le vrai fichier sous sa strate.
     const file = answers.find((node) => node.type === 'file');
     const resolved = file ?? answers[0];
     return resolved ? this.foldNode(resolved) : null;

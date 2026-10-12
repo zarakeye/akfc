@@ -143,7 +143,7 @@ export default async function RegisterPage(): Promise<JSX.Element> {
             consigner l&apos;incident (date, nature, conséquences, mesures prises) même sans notification.
           </li>
           <li>
-            <strong>Contrats de sous-traitance</strong> : intégrés aux conditions d&apos;OVH, de Cloudinary et de
+            <strong>Contrats de sous-traitance</strong> : intégrés aux conditions d&apos;OVH et de
             Cloudflare ; chez Hetzner, à accepter depuis l&apos;espace client.
           </li>
         </ul>

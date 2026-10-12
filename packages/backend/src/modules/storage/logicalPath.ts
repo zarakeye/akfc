@@ -193,12 +193,7 @@ export function toPhysicalPath(
  * Les emplacements physiques où chercher le contenu d'un chemin logique.
  *
  * ORDRE SIGNIFICATIF — le chemin logique lui-même vient toujours en premier.
- * À la racine (`AKFC`), il est aussi le préfixe ANCÊTRE des deux autres, et
- * `resourcesCache` a un hit HIÉRARCHIQUE : lire `AKFC` d'abord met en cache
- * tout le sous-arbre, et les deux candidats suivants sont alors servis par
- * un simple filtrage en mémoire. Un aller-retour Cloudinary au lieu de trois.
- * Le finder monte toujours sur la racine en premier, donc ce réchauffage
- * bénéficie ensuite à toute la navigation.
+ * À la racine (`AKFC`), il est aussi le préfixe ANCÊTRE des deux autres.
  *
  * Un chemin de corbeille ou hors-périmètre n'a qu'un seul candidat : lui-même.
  */

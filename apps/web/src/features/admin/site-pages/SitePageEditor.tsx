@@ -9,7 +9,7 @@ import {
   type PageContentV1,
 } from "@contracts/page";
 import { PageBuilder } from "@features/page-builder";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 /**

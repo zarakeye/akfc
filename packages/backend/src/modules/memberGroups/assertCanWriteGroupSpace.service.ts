@@ -9,8 +9,8 @@ import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolve
  * non-membre est refusé (FORBIDDEN).
  *
  * À appeler dans CHAQUE procédure d'upload dès que la destination vise un
- * groupe (`destination.kind === "group"`), quel que soit le fournisseur
- * (Cloudinary / R2) : c'est le point de passage commun, donc pas d'angle mort.
+ * groupe (`destination.kind === "group"`) : c'est le point de passage
+ * commun, donc pas d'angle mort.
  */
 export async function assertCanWriteGroupSpace(params: {
   prisma: PrismaClient;

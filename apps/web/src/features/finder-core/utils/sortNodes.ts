@@ -288,9 +288,8 @@ const KIND_ORDER: Record<string, number> = {
  *
  * Le champ `meta.kind` est posé par l'adapter de stockage au moment du list().
  * Mais sa fiabilité varie selon le backend :
- *   - Cloudinary : pose 'image' ou 'video' selon resource_type. Or les audios
- *     Cloudinary sont stockés en resource_type='video' (convention Cloudinary),
- *     ce qui donne un kind 'video' incorrect pour de l'audio.
+ *   - `kind` range l'audio sous 'video' (lecteur commun), ce qui donne un
+ *     kind incorrect pour de l'audio.
  *   - R2 : ne pose PAS du tout `meta.kind` (juste `mimeType` et `format`).
  *
  * Plutôt que de toucher à 2 adapters pour aligner leur output, on dérive

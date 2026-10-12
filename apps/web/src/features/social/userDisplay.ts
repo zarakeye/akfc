@@ -30,16 +30,7 @@ export function formatUserName(u: DisplayUser): string {
 }
 
 /**
- * URL du proxy pour un publicId Cloudinary (délivrance publique,
- * authenticated signé côté serveur — marche pour les anonymes).
- */
-/**
- * URL PUBLIQUE de l'avatar d'un utilisateur.
- *
- * Remplace l'ancien `publicIdToUrl`, qui pointait sur
- * `/api/media/by-public-id/` — une route qui exige une session, parce
- * qu'elle sert aussi des documents personnels. Tout portrait affiché sur une
- * page publique y était donc invisible aux visiteurs anonymes.
+ * URL PUBLIQUE de l'avatar d'un utilisateur (visible des visiteurs anonymes).
  *
  * Prend un identifiant d'UTILISATEUR et non de média : c'est ce qui garantit
  * que la route publique correspondante ne peut rien servir d'autre qu'un
@@ -55,8 +46,8 @@ export function avatarUrlFor(userId: string, version?: number): string {
 }
 
 /**
- * URL de portrait. `avatar` est un publicId Cloudinary (uploadé via la
- * fiche profil) → passe par le proxy. `image` est déjà une URL absolue
+ * URL de portrait. `avatar` est la clé du fichier envoyé via la fiche
+ * profil → passe par le proxy. `image` est déjà une URL absolue
  * (fournisseur OAuth) → utilisée telle quelle. Sinon null (→ initiales).
  */
 export function portraitUrl(u: DisplayUser, version?: number): string | null {

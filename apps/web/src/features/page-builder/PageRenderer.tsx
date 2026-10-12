@@ -60,14 +60,6 @@ export interface PageRendererProps {
  * On la cast en `ComponentType<BlockViewProps<PageBlockV1>>` — sûr par
  * construction (le discriminant garantit la correspondance), localisé
  * et documenté, comme côté `BlockShell` pour l'édition.
- *
- * ─── Limitation actuelle ───────────────────────────────────────────────
- *
- * Les URLs résolues pointent vers `/api/media/r2/...` pour les assets
- * R2 (audio, documents) — route actuellement gardée par auth admin.
- * Pour le visiteur anonyme d'une page publique, le rendu fonctionnera
- * pour les images Cloudinary (route publique) mais pas pour les R2.
- * Ce sera résolu au sous-chantier 6c avec une route publique séparée.
  */
 export async function PageRenderer({ content }: PageRendererProps) {
   // 1. Extraction de tous les mediaIds référencés sur la page.

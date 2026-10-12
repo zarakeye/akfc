@@ -106,7 +106,7 @@ export function useNodeActions(): {
   // `trash.deleteForever` exige des TrashEntry.id et plante si une id
   // n'existe pas en DB. Or l'UI finder n'a accès qu'aux **paths** des
   // nodes (extraire un uuid via regex ne garantit pas qu'il y ait une
-  // TrashEntry derrière — cas typique : vestiges Cloudinary post-rollback).
+  // TrashEntry derrière — cas typique : vestiges post-rollback).
   //
   // `trash.purge` accepte directement des paths et gère les deux cas
   // (TrashEntry existante → flow standard ; vestige → suppression physique).
@@ -178,7 +178,7 @@ export function useNodeActions(): {
         // d'uuid). Le backend dérive lui-même les wrapper paths et
         // dédoublonne. Couvre :
         //   - Les TrashEntry connues (flow standard, deleteForever logic)
-        //   - Les vestiges Cloudinary sans TrashEntry (suppression physique)
+        //   - Les vestiges sans TrashEntry (suppression physique)
         //
         // Plus aucune erreur "missing TrashEntry ids" même avec un mix de
         // TrashEntry valides et de vestiges dans la sélection.

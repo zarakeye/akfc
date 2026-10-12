@@ -21,7 +21,7 @@ import {
 
 type Props = {
   /**
-   * Adapter actif (Cloudinary par défaut côté library). Nécessaire pour
+   * Adapter actif (stockage, côté library). Nécessaire pour
    * le drop : un drop sur un segment du breadcrumb déclenche un move
    * agnostique via `adapter.moveItems` (sauf si la cible est le bin —
    * cf. dispatch dans `handleDrop`).

@@ -7,20 +7,19 @@ import {
   getR2Bucket,
   getR2Client,
 } from "@backend/modules/storage/adapters/r2/client";
-import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cloudinary.service";
 
 /**
  * Livraison GATÉE MEMBRE d'un document mis à disposition.
  *
- * Analogue membre de la garde publique (`public/by-public-id`, `public/r2`) :
+ * Analogue membre de la garde publique (`public/r2`) :
  *   - session authentifiée requise (401 sinon) ;
  *   - le MemberDocument doit CONCERNER le membre : audience ALL_MEMBERS, ou
  *     SPECIFIC avec ce membre en destinataire. Sinon 404 — on ne révèle pas
  *     l'existence d'un document qui ne le concerne pas.
  *
- * R2 (cas des PDF) : redirection presignée, avec Content-Type / Disposition
- * forcés en `application/pdf` inline pour l'aperçu en iframe, quel que soit le
- * content-type stocké. Cloudinary : stream, si jamais le document y vit.
+ * Le fichier est streamé depuis R2, avec Content-Type / Disposition forcés en
+ * `application/pdf` inline pour l'aperçu en iframe, quel que soit le
+ * content-type stocké.
  */
 
 export async function GET(
@@ -59,7 +58,6 @@ export async function GET(
       title: true,
       mediaAsset: {
         select: {
-          publicId: true,
           fullPath: true,
           mimeType: true,
           displayName: true,
@@ -83,27 +81,6 @@ export async function GET(
   const disposition = download
     ? `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`
     : "inline";
-
-  // ─── Cloudinary (rare pour un document) : stream ──────────────────────
-  if (asset.publicId) {
-    try {
-      const res = await fetchAuthenticatedAsset(asset.publicId, "original");
-      if (!res || !res.ok || !res.body) {
-        return new NextResponse("Not found", { status: 404 });
-      }
-      return new Response(res.body, {
-        status: 200,
-        headers: {
-          "Content-Type": res.headers.get("content-type") ?? contentType,
-          "Content-Disposition": disposition,
-          "Cache-Control": "private, no-store",
-        },
-      });
-    } catch (err) {
-      console.error("[member-document] cloudinary error", id, err);
-      return new NextResponse("Internal server error", { status: 500 });
-    }
-  }
 
   // ─── R2 (PDF) : stream MÊME ORIGINE (gated) ───────────────────────────
   // On streame plutôt que de rediriger vers une URL presignée : pdf.js fetche

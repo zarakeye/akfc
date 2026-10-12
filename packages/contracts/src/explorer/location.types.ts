@@ -2,16 +2,16 @@
  * ExplorerLocation
  *
  * Localisation UI unifiée pour une instance d'explorateur.
- * IMPORTANT: ceci n'est pas forcément un path Cloudinary réel.
+ * IMPORTANT: ceci n'est pas forcément un chemin de stockage réel.
  *
- * - kind:"path"        => navigation normale (Cloudinary prefix réel)
+ * - kind:"path"        => navigation normale (préfixe de stockage réel)
  * - kind:"bin-root"    => liste plate de TrashEntry (AKFC/bin)
  * - kind:"trash-folder"=> navigation VIRTUELLE à l'intérieur d'un TrashEntry folder
  */
 export type ExplorerLocation =
   | {
       kind: "path";
-      /** Chemin réel Cloudinary prefix (ex: "AKFC/pending/cours") */
+      /** Préfixe de stockage réel (ex: "AKFC/cours") */
       path: string;
     }
   | {
@@ -31,7 +31,7 @@ export type ExplorerLocation =
        * - "" => racine du contenu trash
        * - "subA/subB"
        *
-       * NOTE: Ceci n'existe pas comme "dossier" Cloudinary; on l'utilise pour lister sous storageRoot.
+       * NOTE: Ceci n'existe pas comme "dossier" de stockage ; on l'utilise pour lister sous storageRoot.
        */
       relativePath: string;
     };

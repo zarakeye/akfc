@@ -13,7 +13,7 @@
  * React imposerait un portail + un setState par mousemove (saturation
  * de re-renders). Un module impératif avec un singleton DOM est ici
  * plus simple et plus performant — c'est aussi l'approche du legacy
- * de l'ancienne implémentation Cloudinary-specific (depuis supprimée).
+ * de l'ancienne implémentation (depuis supprimée).
  *
  * 🔍 Détection du drop target
  *
@@ -112,7 +112,7 @@ function svgX(): string {
  * Construit la pile de vignettes (max 3) + compteur "+N" si plus.
  *
  * On utilise `createElement` + `textContent` pour les noms d'items
- * (XSS-safe — un asset Cloudinary nommé `<script>...</script>` ne
+ * (XSS-safe — un fichier nommé `<script>...</script>` ne
  * pourra rien injecter). Les SVG inlinés via innerHTML sont statiques
  * et donc sans risque.
  */

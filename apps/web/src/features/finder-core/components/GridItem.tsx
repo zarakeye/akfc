@@ -44,22 +44,6 @@ import { useSessionStore } from '@lib/stores/useSessionStore';
 
 
 
-/**
- * Transforme une URL Cloudinary de vidéo en URL de thumbnail JPG.
- *
- * Pattern Cloudinary :
- *   - URL vidéo :     https://res.cloudinary.com/<cloud>/video/upload/v123/path/foo.mp4
- *   - URL thumbnail : https://res.cloudinary.com/<cloud>/video/upload/so_auto/v123/path/foo.jpg
- *
- * Le transformation `so_auto` (start_offset auto) demande à Cloudinary de
- * sélectionner le frame le plus représentatif de la vidéo (algorithme
- * "auto" qui évite les frames noirs en début/fin). Cloudinary calcule
- * cette thumbnail à la volée et la cache sur son CDN.
- *
- * Retourne `null` si l'URL n'est pas une URL Cloudinary vidéo
- * reconnaissable — dans ce cas, le caller fallback sur l'emoji vidéo.
- */
-
 /* -------------------------------------------------------------------------- */
 /*                                  GRID ITEM                                 */
 /* -------------------------------------------------------------------------- */
@@ -74,7 +58,7 @@ import { useSessionStore } from '@lib/stores/useSessionStore';
  *   grille parcourable d'un coup d'œil.
  *
  * - **Vignette réelle** pour les images (object-cover sur la card entière)
- *   et pour les vidéos Cloudinary (thumbnail générée via transformation).
+ *   et pour les vidéos (affiche fabriquée par le serveur, `&as=poster`).
  *   Au hover sur une vidéo, on monte un <video> par-dessus la thumbnail
  *   qui lit la vidéo muted+loop pour preview.
  *
@@ -188,15 +172,10 @@ export default function GridItem({
 
   // L'extension affichée comme badge et utilisée pour les heuristiques
   // (détection audio…) peut venir de deux endroits :
-  //   - `node.meta.format` : présent quand le backend a stocké le format
-  //     séparément (cas Cloudinary, qui n'inclut pas l'extension dans le
-  //     publicId/name).
-  //   - L'extension du `node.name` : présent pour R2 où le nom contient
-  //     le fichier complet (ex: "foo.md", "bar.mp3").
+  //   - `node.meta.format` : format technique stocké par le backend.
+  //   - L'extension du `node.name` (ex: "foo.md", "bar.mp3").
   //
   // Ordre de préférence : `format` d'abord (plus fiable), `name` ensuite.
-  // Sans cela, les fichiers Cloudinary récents (sans ext dans name)
-  // n'auraient ni badge ni détection audio.
   const extension = !isFolder
     ? (node.meta?.format?.toLowerCase() ?? getFileExtension(node.name))
     : null;
@@ -205,7 +184,7 @@ export default function GridItem({
   // Vignette image : kind explicite + url + pas d'erreur de chargement
   const hasImageThumb = !isFolder && kind === 'image' && url && !imgFailed;
 
-  // Vignette vidéo : kind explicite + url Cloudinary transformable
+  // Vignette vidéo : affiche fabriquée par le serveur
   const videoThumbnailUrl =
     !isFolder && kind === 'video' && url ? videoPosterUrl(url) : null;
   const hasVideoThumb = Boolean(videoThumbnailUrl) && !imgFailed;
@@ -545,7 +524,7 @@ export default function GridItem({
  *
  * - **Dossier** : icône Lucide `Folder`.
  * - **Audio** : icône Lucide `Music` (détectée par extension côté caller).
- * - **Vidéo non-Cloudinary** (sans thumbnail générable) : emoji 🎬
+ * - **Vidéo sans affiche** (échec de chargement) : emoji 🎬
  * - **Autres** : emoji 📄
  *
  * Mix icônes Lucide / emojis : on garde les emojis pour les fallback

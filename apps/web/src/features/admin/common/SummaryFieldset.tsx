@@ -4,7 +4,7 @@ import { useState, type JSX, type ReactNode } from "react";
 
 import { trpc, trpcClient } from "@/core/trpc/trpcClient";
 import { MediaPicker } from "@/features/finder-core/components/MediaPicker";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 import { PageBuilder } from "@features/page-builder";
 import {

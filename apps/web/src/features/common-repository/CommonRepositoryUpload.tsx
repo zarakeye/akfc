@@ -17,17 +17,12 @@ import type { CropResult } from "@features/gallery-crop/types/cropper.types";
  *      admin ; le membre ne fait qu'écrire.
  *
  * Le « Dépôt commun » est le fallback (rien ne correspond) : nom de conteneur
- * libre + reprise d'un dépôt existant. Toute la mécanique d'upload (2 flux
- * cloudinary/r2, vignettes, cropper) est commune à toutes les destinations.
+ * libre + reprise d'un dépôt existant. Toute la mécanique d'upload (envoi
+ * R2, vignettes, cropper) est commune à toutes les destinations.
  */
 
 type UploadState = "idle" | "uploading" | "done" | "error";
 type DestKind = "discipline" | "seminar" | "event" | "common_repository";
-
-function pickBackend(_mimeType: string): "cloudinary" | "r2" {
-  // Sortie de Cloudinary : tous les envois vont sur R2 (images, vidéos et documents).
-  return "r2";
-}
 
 function iconForMime(mime: string): string {
   if (mime === "application/pdf") return "📄";
@@ -45,8 +40,6 @@ export function CommonRepositoryUpload(): JSX.Element {
   const [state, setState] = useState<UploadState>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
-  const createUploadAuth = trpc.storage.createUploadAuthorization.useMutation();
-  const registerUploaded = trpc.storage.registerUploadedAsset.useMutation();
   const createR2Upload = trpc.storage.createR2Upload.useMutation();
   const registerR2Upload = trpc.storage.registerR2Upload.useMutation();
   const { data: myContainers = [], refetch: refetchContainers } =
@@ -147,93 +140,6 @@ export function CommonRepositoryUpload(): JSX.Element {
     setItemToCrop(null);
   };
 
-  const uploadCloudinary = async (batch: PictureItem[]): Promise<number> => {
-    if (batch.length === 0) return 0;
-    const signatures = await createUploadAuth.mutateAsync({
-      provider: "cloudinary",
-      destination,
-      allowOverwrite: false,
-      assets: batch.map((it) => ({
-        fileName: it.file.name,
-        mimeType: it.file.type,
-        mediaType: it.file.type.startsWith("video/")
-          ? ("video" as const)
-          : ("image" as const),
-      })),
-    });
-
-    const assets: {
-      publicId: string;
-      secureUrl: string;
-      resourceType: "image" | "video";
-      format?: string;
-      bytes: number;
-      width?: number;
-      height?: number;
-      duration?: number;
-      originalFileName: string;
-      mimeType: string;
-      folder: string;
-    }[] = [];
-
-    for (let i = 0; i < batch.length; i++) {
-      const file = batch[i].file;
-      const sig = signatures[i];
-      if (sig.uploadUrl) {
-        const put = await fetch(sig.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!put.ok) throw new Error(`MinIO HTTP ${put.status}`);
-        assets.push({
-          publicId: `${sig.folder}/${sig.publicId}`,
-          secureUrl: "",
-          resourceType: sig.resourceType,
-          format: file.type.split("/")[1],
-          bytes: file.size,
-          originalFileName: file.name,
-          mimeType: file.type,
-          folder: sig.folder,
-        });
-      } else {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("api_key", sig.apiKey);
-        fd.append("timestamp", String(sig.timestamp));
-        fd.append("signature", sig.signature);
-        fd.append("folder", sig.folder);
-        fd.append("public_id", sig.publicId);
-        fd.append("type", sig.type);
-        fd.append("overwrite", String(sig.overwrite));
-        const url = `https://api.cloudinary.com/v1_1/${sig.cloudName}/${sig.resourceType}/upload`;
-        const res = await fetch(url, { method: "POST", body: fd });
-        if (!res.ok) throw new Error(`Cloudinary HTTP ${res.status}`);
-        const data = await res.json();
-        assets.push({
-          publicId: data.public_id,
-          secureUrl: data.secure_url,
-          resourceType: sig.resourceType,
-          format: data.format,
-          bytes: data.bytes,
-          width: data.width,
-          height: data.height,
-          duration: data.duration,
-          originalFileName: file.name,
-          mimeType: file.type,
-          folder: sig.folder,
-        });
-      }
-    }
-
-    const registered = await registerUploaded.mutateAsync({
-      provider: "cloudinary",
-      destination,
-      assets,
-    });
-    return registered.assets.length;
-  };
-
   const uploadR2 = async (item: PictureItem): Promise<void> => {
     const file = item.file;
     const auth = await createR2Upload.mutateAsync({
@@ -269,11 +175,7 @@ export function CommonRepositoryUpload(): JSX.Element {
     setState("uploading");
     setMessage(null);
     try {
-      const cloud = items.filter((it) => pickBackend(it.file.type) === "cloudinary");
-      const r2 = items.filter((it) => pickBackend(it.file.type) === "r2");
-
-      const nCloud = await uploadCloudinary(cloud);
-      for (const it of r2) await uploadR2(it);
+      for (const it of items) await uploadR2(it);
 
       // Libellé humain seulement pour le Dépôt commun (les entités ont leur nom).
       if (isCommon) {
@@ -288,7 +190,7 @@ export function CommonRepositoryUpload(): JSX.Element {
         }
       }
       setState("done");
-      setMessage(`${nCloud + r2.length} fichier(s) déposé(s).`);
+      setMessage(`${items.length} fichier(s) déposé(s).`);
       items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
       setItems([]);
       setContainerName("");

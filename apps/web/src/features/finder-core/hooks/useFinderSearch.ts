@@ -65,10 +65,7 @@ export function useFinderSearch(): void {
     }
     debounceRef.current = window.setTimeout(async () => {
       try {
-        // Le prefix de recherche est le currentPath. Pour les fichiers
-        // Cloudinary, on a besoin du publicId stripped of extension côté
-        // backend — mais comme `currentPath` est toujours un dossier (jamais
-        // un fichier), il n'a pas d'extension à stripper. On passe tel quel.
+        // Le prefix de recherche est le currentPath (toujours un dossier).
         const data = await trpcUtils.media.searchRecursive.fetch({
           appRoot: APP_ROOT,
           prefix: currentPath,
@@ -158,7 +155,7 @@ export function useFinderSearch(): void {
 function deriveKind(mimeType: string): 'image' | 'video' | 'document' | undefined {
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
-  if (mimeType.startsWith('audio/')) return 'video'; // convention Cloudinary
+  if (mimeType.startsWith('audio/')) return 'video'; // lecteur audio/vidéo commun
   // PDF, docx, etc. → document
   if (
     mimeType === 'application/pdf' ||

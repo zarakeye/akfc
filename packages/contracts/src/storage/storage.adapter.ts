@@ -14,7 +14,7 @@ import type {
  *
  * ─── La philosophie ────────────────────────────────────────────────────────
  *
- * Ce contrat définit le vocabulaire neutre que tout backend (Cloudinary, R2,
+ * Ce contrat définit le vocabulaire neutre que tout backend (R2,
  * S3, FS local…) doit savoir parler pour s'intégrer au router storage du
  * finder. Aucune mention de provider concret ici, par construction.
  *
@@ -33,8 +33,6 @@ import type {
  * En revanche, "fabriquer une autorisation d'upload" est une mécanique
  * qui diffère trop d'un provider à l'autre pour qu'un type unique puisse
  * la couvrir sans renier toute information utile :
- *   - Cloudinary signe un hash SHA1 sur (folder, public_id, timestamp, type)
- *     et renvoie une signature + apiKey + cloudName.
  *   - R2 délivre une presigned URL avec une expiration et des headers HTTP.
  *   - Un FS local n'a même pas le concept (l'upload est un POST direct).
  *
@@ -107,8 +105,7 @@ export interface StorageAdapter {
    * (optionnel) Soft-delete un file ou un folder.
    *
    * Sémantique exacte (où vont les éléments ? sont-ils vraiment
-   * effaçables ensuite ?) à la charge de l'adapter. Pour Cloudinary,
-   * c'est un déplacement vers `${appRoot}/bin/.trash/<uuid>/`.
+   * effaçables ensuite ?) à la charge de l'adapter.
    */
   delete?(path: StoragePath): Promise<void>;
 }
@@ -129,7 +126,7 @@ export interface StorageAdapter {
  * sont laissés génériques parce qu'ils sont, par nature, provider-spécifiques.
  * Chaque adapter concret les concrétise selon sa propre API :
  *
- *   class CloudinaryAdapter implements
+ *   class R2Adapter implements
  *     StorageAdapter,
  *     UploadCapableAdapter<
  *       CreateUploadSignaturesInput,
@@ -144,8 +141,8 @@ export interface StorageAdapter {
  *
  * Le client qui consomme l'autorisation doit donc savoir quel provider
  * il manipule — ce qui est attendu et même souhaitable, parce que la
- * mécanique d'upload qu'il devra exécuter (POST FormData vers Cloudinary
- * vs PUT vers une presigned URL R2) lui est intrinsèquement liée.
+ * mécanique d'upload qu'il devra exécuter (ex. PUT vers une presigned URL
+ * R2) lui est intrinsèquement liée.
  */
 export interface UploadCapableAdapter<
   TAuthInput = unknown,

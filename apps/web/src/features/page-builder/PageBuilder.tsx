@@ -22,7 +22,7 @@ export interface PageBuilderProps {
   value: PageContentV1;
   /** Émis à chaque mutation (ajout, édition, suppression, réordonnancement). */
   onChange: (next: PageContentV1) => void;
-  /** Adapter du finder pour le MediaPicker (Cloudinary pour AKFC). */
+  /** Adapter du finder pour le MediaPicker. */
   adapter: FileAdapter;
   /** Racine de l'arborescence média (valeur d'`APP_ROOT`). */
   appRoot: string;

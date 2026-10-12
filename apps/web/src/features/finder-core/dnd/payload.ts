@@ -33,7 +33,7 @@ export type DragItem = {
    * `isDropAllowed` / `isDropEffective` : « ce dossier est-il un descendant
    * de cet item » et « le drop change-t-il quelque chose » sont des
    * questions qui se posent dans l'espace où l'admin voit son arbre, pas
-   * dans celui où Cloudinary range ses octets.
+   * dans celui où le stockage range ses octets.
    *
    * Le localisateur ne sert qu'à la traduction en intent de move.
    * Transitoire, comme le reste du pliage.

@@ -1,16 +1,15 @@
 import { NextRequest } from "next/server";
 
 import { prisma } from "@backend/prisma";
-import { fetchAuthenticatedAsset } from "@backend/modules/cloudinary/services/cloudinary.service";
-import { isR2AvatarKey } from "@backend/modules/avatar/avatar.service";
+import { isAvatarKey } from "@backend/modules/avatar/avatar.service";
 import { resolveDeliveryKey, streamDerived } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /**
  * Proxy PUBLIC d'avatar.
  *
- * Pourquoi une route à part plutôt que `/api/media/by-public-id/` : cette
- * dernière exige une session, sans condition, parce qu'elle sert aussi des
- * documents personnels. Tout avatar référencé dans une page publique y était
+ * Pourquoi une route à part plutôt que `/api/media/r2/` : cette dernière
+ * exige une session, sans condition, parce qu'elle sert aussi des documents
+ * personnels. Tout avatar référencé dans une page publique y était
  * donc invisible pour un visiteur anonyme — sur ces cartes comme sur la page
  * des instructeurs.
  *
@@ -19,8 +18,8 @@ import { resolveDeliveryKey, streamDerived } from "@backend/modules/media/servic
  * publics par nature : ils s'affichent à côté d'un nom sur des pages
  * publiques.
  *
- * Elle prend un `userId` et non un publicId : c'est ce qui garantit qu'elle
- * ne peut rien servir d'autre. Un publicId en paramètre rouvrirait le proxy
+ * Elle prend un `userId` et non un chemin : c'est ce qui garantit qu'elle ne
+ * peut rien servir d'autre. Un chemin en paramètre rouvrirait le proxy
  * général sous un autre nom.
  */
 
@@ -31,12 +30,8 @@ export async function GET(
   try {
     const { userId } = await params;
 
-    // `v` = version Cloudinary du binaire, transmise par le store d'avatar.
-    // Sans elle, un avatar remplacé resterait caché derrière le cache alors
-    // que son URL, elle, ne change pas.
-    const vParam = new URL(req.url).searchParams.get("v");
-    const parsed = vParam ? Number(vParam) : undefined;
-    const version = parsed && Number.isFinite(parsed) ? parsed : undefined;
+    // `v` (version, transmise par le store d'avatar) ne sert qu'à changer
+    // l'URL après un remplacement, pour contourner le cache : rien à lire ici.
     if (!userId) return new Response("Missing userId", { status: 400 });
 
     const user = await prisma.user.findUnique({
@@ -49,29 +44,14 @@ export async function GET(
     // que le rendu affiche ses initiales.
     if (!user?.avatar) return new Response("Not found", { status: 404 });
 
-    // Avatar sur R2 (clé avec extension) : déclinaison 300 px, servie en flux.
-    if (isR2AvatarKey(user.avatar)) {
-      const key = await resolveDeliveryKey(user.avatar, new URLSearchParams({ variant: "small" }));
-      if (!key) return new Response("Not found", { status: 404 });
-      return await streamDerived(key, "public, max-age=300", req.headers.get("accept"));
-    }
+    // Valeur héritée inutilisable (ancien identifiant sans fichier) : pas de portrait.
+    if (!isAvatarKey(user.avatar)) return new Response("Not found", { status: 404 });
 
-    const asset = await fetchAuthenticatedAsset(user.avatar, "large", version);
-    if (!asset || !asset.ok || !asset.body) {
-      return new Response("Not found", { status: 404 });
-    }
-
-    return new Response(asset.body, {
-      status: 200,
-      headers: {
-        "Content-Type":
-          asset.headers.get("content-type") ?? "application/octet-stream",
-        // L'URL est stable par utilisateur, donc le cache est court : un
-        // changement d'avatar doit se voir sans purge.
-        "Cache-Control": "public, max-age=300",
-        "X-Asset-Source": "cloudinary",
-      },
-    });
+    // Déclinaison 300 px, servie en flux. URL stable par utilisateur : cache
+    // court, un changement d'avatar doit se voir sans purge.
+    const key = await resolveDeliveryKey(user.avatar, new URLSearchParams({ variant: "small" }));
+    if (!key) return new Response("Not found", { status: 404 });
+    return await streamDerived(key, "public, max-age=300", req.headers.get("accept"));
   } catch (error) {
     console.error("[media] public avatar error", error);
     return new Response("Internal Server Error", { status: 500 });

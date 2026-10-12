@@ -8,7 +8,7 @@ import type {
 } from "@contracts/finder";
 
 import { trpcClient } from "@/core/trpc/trpcClient";
-import { finderStorageAdapter } from "@features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@features/finder-adapters/storage/finderStorage.adapter";
 
 /**
  * Racine VIRTUELLE du finder membre. Ce n'est pas un chemin physique : à cet

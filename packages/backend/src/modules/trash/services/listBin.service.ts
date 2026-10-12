@@ -81,7 +81,7 @@ export async function listBin(params: {
     trashedAt: r.trashedAt.toISOString(),
     sizeBytes: bigIntToSafeNumber(r.sizeBytes),
     createdAt: r.providerCreatedAt ? r.providerCreatedAt.toISOString() : undefined,
-    publicId: r.kind === "file" ? r.storageRoot : undefined,
+    storageKey: r.kind === "file" ? r.storageRoot : undefined,
     // mediaKind: stocké en String? côté DB, narrow vers le type strict du contrat.
     // Les rows antérieures à la migration auront NULL → undefined.
     mediaKind:

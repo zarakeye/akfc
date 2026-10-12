@@ -36,7 +36,7 @@ export default function UserCard({
       <div className="flex gap-5">
         <div>
           {user?.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element -- route d'avatar interne (R2 ou Cloudinary)
+            // eslint-disable-next-line @next/next/no-img-element -- route d'avatar interne
             <img
               src={avatarUrlFor(user.id)}
               alt="Avatar"

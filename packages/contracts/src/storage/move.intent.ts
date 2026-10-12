@@ -16,7 +16,7 @@ import { z } from 'zod';
  *   Couche 1 — OPÉRATION (`StorageMoveOperation`, cf. storage.types.ts)
  *     "rename `appRoot/pending/cours/12/photo.jpg`
  *      vers `appRoot/published/cours/12/photo.jpg`"
- *     Exécuté par l'adapter de stockage approprié (Cloudinary, R2, FS…).
+ *     Exécuté par l'adapter de stockage approprié (R2 aujourd'hui).
  *
  * ─── Pourquoi cette intention vit dans le contrat agnostique ───────────────
  *
@@ -26,8 +26,8 @@ import { z } from 'zod';
  *
  *   - Le cycle de vie `pending → published → bin` est une philosophie
  *     applicative que le projet impose à TOUS ses stockages, présents
- *     et futurs. Ce n'est pas une convention Cloudinary — c'est une
- *     décision d'architecture qui s'applique aussi à R2, S3, FS local.
+ *     et futurs. Ce n'est pas une convention d'un fournisseur — c'est une
+ *     décision d'architecture.
  *
  *   - La multi-sélection avec roots+excluded est une primitive
  *     d'expression d'intention dont l'orchestration métier a besoin,
@@ -36,8 +36,7 @@ import { z } from 'zod';
  *     système — y compris des futurs scripts, jobs, ou APIs.
  *
  * Ces concepts sont donc agnostiques par construction : ils n'ont rien
- * de provider-spécifique. Cloudinary les comprend aujourd'hui, R2 devra
- * les comprendre demain, et c'est précisément ce que ce contrat garantit.
+ * de provider-spécifique, et c'est précisément ce que ce contrat garantit.
  *
  * ─── Note importante sur `status-folder` ──────────────────────────────────
  *
@@ -52,7 +51,7 @@ import { z } from 'zod';
  *     des dossiers concrets en stockage. La virtualité de la cible est
  *     purement intentionnelle (on identifie le dossier par son rôle
  *     applicatif au lieu d'un path complet).
- *   - Avec un provider sans dossiers physiques (Cloudinary), ces mêmes
+ *   - Avec un provider sans dossiers physiques (R2), ces mêmes
  *     dossiers sont aussi virtuels au sens stockage — mais c'est un
  *     détail d'implémentation provider, pas une propriété du contrat.
  *

@@ -28,8 +28,8 @@ export function isPdfFile(extension: string | null): boolean {
 }
 
 /**
- * Extension effective d'un nœud : le `format` Cloudinary (qui n'inclut pas
- * l'extension dans le nom) en priorité, sinon l'extension du nom (cas R2).
+ * Extension effective d'un nœud : le `format` technique en priorité, sinon
+ * l'extension du nom.
  */
 export function effectiveExtension(
   format: string | null | undefined,
@@ -47,10 +47,9 @@ export function isTextFile(extension: string | null): boolean {
 }
 
 /**
- * URL de la « première image » (poster) d'une vidéo. Le front reçoit une URL
- * proxy `/api/media/by-public-id/…?variant=…` ; le proxy sait servir la 1re
- * frame quand on ajoute `as=poster` (cf. route media + fetchVideoPoster).
- * Renvoie null si l'URL n'est pas une URL média proxy exploitable.
+ * URL de la « première image » (poster) d'une vidéo : l'URL proxy du média
+ * (`/api/media/r2/…?variant=…`) + `as=poster` — le serveur fabrique l'affiche.
+ * Renvoie null sans URL.
  */
 export function videoPosterUrl(url: string): string | null {
   if (!url) return null;
@@ -59,9 +58,8 @@ export function videoPosterUrl(url: string): string | null {
 }
 
 /**
- * Nom d'affichage AVEC extension. Les publicId Cloudinary ne portent pas
- * l'extension dans leur nom (contrairement aux clés R2) : on la reconstruit
- * depuis `format` quand elle manque.
+ * Nom d'affichage AVEC extension : on la reconstruit depuis `format` quand
+ * le nom d'affichage ne la porte pas.
  */
 export function displayName(
   name: string,

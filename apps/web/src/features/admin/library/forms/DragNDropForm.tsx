@@ -10,7 +10,6 @@ import { trpc } from '@trpc/trpcClient';
 import { useSessionStore } from '@lib/stores/useSessionStore';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import { APP_ROOT } from '@config/app';
-import { pickBackend, type StorageProvider } from '@contracts/storage';
 import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
 
 import type { PictureItem } from '@features/gallery-crop/types/picture.types';
@@ -19,25 +18,17 @@ import Cropper from '@features/gallery-crop/components/Cropper';
 import { PdfThumbnail } from '@features/common-repository/PdfThumbnailClient';
 
 /**
- * DragNDropForm — multi-backend (Cloudinary + R2)
+ * DragNDropForm — envoi de fichiers vers la bibliothèque AKFC (stockage R2).
  *
- * Formulaire d'upload pour la bibliothèque AKFC. Accepte plusieurs types de
- * fichiers (images, vidéos, audios, docs, archives) et **dispatche
- * automatiquement** sur le bon backend de stockage :
+ * Accepte images, vidéos, audios, documents et archives. Chaque fichier est
+ * envoyé directement au bucket (URL signée), puis enregistré côté serveur ;
+ * les vignettes et affiches sont fabriquées par le serveur à l'affichage.
  *
- *   - image/*, video/*   → Cloudinary (transformations à la volée)
- *   - audio, docs, zip   → R2 (zero egress, stockage froid)
+ * ─── Fichier déjà présent ─────────────────────────────────────────────────
  *
- * Le dispatch repose sur `pickBackend(mimeType)` (`@contracts/storage`) —
- * même règle que côté finder pour la cohérence.
- *
- * ─── Conflits Cloudinary (ré-upload) ──────────────────────────────────────
- *
- * À l'autorisation, le backend signe `overwrite:false` par défaut et renvoie
- * `alreadyExists` par asset. Si des fichiers existent déjà, on demande à
- * l'utilisateur (dialogue) : Annuler (on ignore ces fichiers) ou Écraser
- * (on re-signe ces fichiers avec `overwrite:true`). Le binaire d'origine est
- * donc protégé tant que l'utilisateur n'a pas explicitement confirmé.
+ * Avant l'envoi, on demande au serveur quels noms existent déjà dans la
+ * destination. Si c'est le cas, l'utilisateur choisit (dialogue) : Annuler
+ * (ces fichiers sont ignorés) ou Écraser. Jamais d'écrasement silencieux.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -46,13 +37,14 @@ import { PdfThumbnail } from '@features/common-repository/PdfThumbnailClient';
 
 const MAX_FILES_PER_BATCH = 20;
 
-const MAX_FILE_SIZE_CLOUDINARY_MB = 50;
-const MAX_FILE_SIZE_R2_MB = 500;
-const MAX_FILE_SIZE_CLOUDINARY_BYTES = MAX_FILE_SIZE_CLOUDINARY_MB * 1024 * 1024;
-const MAX_FILE_SIZE_R2_BYTES = MAX_FILE_SIZE_R2_MB * 1024 * 1024;
+// Images : au-delà, le serveur ne fabrique plus de vignettes (original servi).
+const MAX_IMAGE_SIZE_MB = 50;
+const MAX_FILE_SIZE_MB = 500;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const ACCEPTED_MIME_TYPES: Accept = {
-  // Images (Cloudinary)
+  // Images
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
   'image/webp': ['.webp'],
@@ -61,21 +53,21 @@ const ACCEPTED_MIME_TYPES: Accept = {
   'image/svg+xml': ['.svg'],
   // Photos iPhone (HEIC) : converties en JPEG dans le navigateur avant l'envoi.
   ...HEIC_ACCEPT,
-  // Vidéos (Cloudinary)
+  // Vidéos
   'video/mp4': ['.mp4'],
   'video/webm': ['.webm'],
   'video/quicktime': ['.mov'],
-  // Audios (R2)
+  // Audios
   'audio/mpeg': ['.mp3'],
   'audio/mp4': ['.m4a'],
   'audio/ogg': ['.ogg', '.oga'],
   'audio/wav': ['.wav'],
-  // Docs (R2)
+  // Docs
   'application/pdf': ['.pdf'],
   'text/plain': ['.txt'],
   'text/markdown': ['.md', '.markdown'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  // Archives (R2)
+  // Archives
   'application/zip': ['.zip'],
 };
 
@@ -149,7 +141,6 @@ type UploadStatus = 'pending' | 'uploading' | 'done' | 'error';
 type EnrichedItem = PictureItem & {
   status: UploadStatus;
   errorMessage?: string;
-  backend: StorageProvider;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -203,9 +194,7 @@ function ensureMimeType(file: File): File {
 }
 
 function getMaxBytesForFile(file: File): number {
-  return pickBackend(file.type) === 'cloudinary'
-    ? MAX_FILE_SIZE_CLOUDINARY_BYTES
-    : MAX_FILE_SIZE_R2_BYTES;
+  return file.type.startsWith('image/') ? MAX_IMAGE_SIZE_BYTES : MAX_FILE_SIZE_BYTES;
 }
 
 function isImageOrVideo(file: File): boolean {
@@ -305,10 +294,6 @@ export default function DragNDropForm(): JSX.Element {
   // -------------------------------
   // Mutations tRPC
   // -------------------------------
-  const createUploadAuthMutation =
-    trpc.storage.createUploadAuthorization.useMutation();
-  const registerUploadedAssetMutation =
-    trpc.storage.registerUploadedAsset.useMutation();
   const createR2UploadMutation = trpc.storage.createR2Upload.useMutation();
   const registerR2UploadMutation = trpc.storage.registerR2Upload.useMutation();
 
@@ -391,7 +376,6 @@ export default function DragNDropForm(): JSX.Element {
         originalFile: file,
         previewUrl: URL.createObjectURL(file),
         status: 'pending',
-        backend: pickBackend(file.type),
       }));
       return [...prev, ...next];
     });
@@ -482,185 +466,7 @@ export default function DragNDropForm(): JSX.Element {
 
 
   // -------------------------------
-  // Upload — Cloudinary (batch)
-  // -------------------------------
-  type CloudinaryUploadOutcome =
-    | {
-        ok: true;
-        itemId: string;
-        cloudinaryAsset: {
-          publicId: string;
-          secureUrl: string;
-          resourceType: 'image' | 'video';
-          format?: string;
-          bytes: number;
-          width?: number;
-          height?: number;
-          duration?: number;
-        };
-      }
-    | { ok: false; itemId: string; error: string };
-
-  async function uploadCloudinaryBatch(
-    cloudinaryItems: EnrichedItem[],
-    destination: Destination,
-  ): Promise<{
-    outcomes: CloudinaryUploadOutcome[];
-    registeredCount: number;
-    skippedItemIds: string[];
-  }> {
-    if (cloudinaryItems.length === 0) {
-      return { outcomes: [], registeredCount: 0, skippedItemIds: [] };
-    }
-
-    const assetsPayload = cloudinaryItems.map((it) => ({
-      fileName: it.file.name,
-      mimeType: it.file.type,
-      mediaType: it.file.type.startsWith('video/') ? ('video' as const) : ('image' as const),
-    }));
-
-    // Phase 1 — autorisation SANS overwrite (binaire protégé par défaut)
-    const signatures = await createUploadAuthMutation.mutateAsync({
-      provider: 'cloudinary',
-      destination,
-      allowOverwrite: false,
-      assets: assetsPayload,
-    });
-
-    const conflictingIdx = signatures
-      .map((sig, idx) => (sig.alreadyExists ? idx : -1))
-      .filter((idx) => idx !== -1);
-
-    let effectiveSignatures = signatures;
-    const skippedItemIds: string[] = [];
-
-    if (conflictingIdx.length > 0) {
-      const choice = await askOverwrite(
-        conflictingIdx.map((i) => cloudinaryItems[i].file.name),
-      );
-      if (choice === 'cancel') {
-        conflictingIdx.forEach((i) => skippedItemIds.push(cloudinaryItems[i].id));
-      } else {
-        // Écraser : re-signer UNIQUEMENT les conflictuels avec overwrite:true
-        const overwriteSigs = await createUploadAuthMutation.mutateAsync({
-          provider: 'cloudinary',
-          destination,
-          allowOverwrite: true,
-          assets: conflictingIdx.map((i) => assetsPayload[i]),
-        });
-        effectiveSignatures = [...signatures];
-        conflictingIdx.forEach((idx, k) => {
-          effectiveSignatures[idx] = overwriteSigs[k];
-        });
-      }
-    }
-
-    const skippedSet = new Set(skippedItemIds);
-    const sigByItemId = new Map(
-      cloudinaryItems.map((it, idx) => [it.id, effectiveSignatures[idx]]),
-    );
-
-    const toUpload = cloudinaryItems.filter((it) => !skippedSet.has(it.id));
-
-    // Phase 2 — POST en parallèle (on saute les ignorés)
-    const outcomes: CloudinaryUploadOutcome[] = await Promise.all(
-      toUpload.map(async (item): Promise<CloudinaryUploadOutcome> => {
-        const sig = sigByItemId.get(item.id)!;
-        try {
-          // Mode sandbox (MinIO) : la signature porte un `uploadUrl` presigné.
-          // PUT direct du fichier — pas de réponse Cloudinary, on fabrique
-          // l'asset depuis le fichier + la signature.
-          if (sig.uploadUrl) {
-            const putRes = await fetch(sig.uploadUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': item.file.type },
-              body: item.file,
-            });
-            if (!putRes.ok) {
-              const text = await putRes.text();
-              throw new Error(`MinIO HTTP ${putRes.status}: ${text.slice(0, 200)}`);
-            }
-            return {
-              ok: true,
-              itemId: item.id,
-              cloudinaryAsset: {
-                publicId: `${sig.folder}/${sig.publicId}`,
-                secureUrl: '',
-                resourceType: sig.resourceType,
-                format: item.file.type.split('/')[1],
-                bytes: item.file.size,
-              },
-            };
-          }
-          const formData = new FormData();
-          formData.append('file', item.file);
-          formData.append('api_key', sig.apiKey);
-          formData.append('timestamp', String(sig.timestamp));
-          formData.append('signature', sig.signature);
-          formData.append('folder', sig.folder);
-          formData.append('public_id', sig.publicId);
-          formData.append('type', sig.type);
-          formData.append('overwrite', String(sig.overwrite)); // ← signé → doit être envoyé
-          const url = `https://api.cloudinary.com/v1_1/${sig.cloudName}/${sig.resourceType}/upload`;
-          const res = await fetch(url, { method: 'POST', body: formData });
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Cloudinary HTTP ${res.status}: ${text}`);
-          }
-          const data = await res.json();
-          return {
-            ok: true,
-            itemId: item.id,
-            cloudinaryAsset: {
-              publicId: data.public_id,
-              secureUrl: data.secure_url,
-              resourceType: sig.resourceType,
-              format: data.format,
-              bytes: data.bytes,
-              width: data.width,
-              height: data.height,
-              duration: data.duration,
-            },
-          };
-        } catch (err) {
-          return {
-            ok: false,
-            itemId: item.id,
-            error: err instanceof Error ? err.message : 'Upload failed',
-          };
-        }
-      }),
-    );
-
-    // Phase 3 — register (upsert côté serveur)
-    const successes = outcomes.filter(
-      (r): r is CloudinaryUploadOutcome & { ok: true } => r.ok,
-    );
-    let registeredCount = 0;
-    if (successes.length > 0) {
-      const itemById = new Map(cloudinaryItems.map((it) => [it.id, it]));
-      const registered = await registerUploadedAssetMutation.mutateAsync({
-        provider: 'cloudinary',
-        destination,
-        assets: successes.map((s) => {
-          const it = itemById.get(s.itemId)!;
-          const sig = sigByItemId.get(s.itemId)!;
-          return {
-            ...s.cloudinaryAsset,
-            originalFileName: it.file.name,
-            mimeType: it.file.type,
-            folder: sig.folder,
-          };
-        }),
-      });
-      registeredCount = registered.assets.length;
-    }
-
-    return { outcomes, registeredCount, skippedItemIds };
-  }
-
-  // -------------------------------
-  // Upload — R2 (par fichier)
+  // Upload (par fichier)
   // -------------------------------
   type R2UploadOutcome =
     | { ok: true; itemId: string; path: string; bytes: number }
@@ -672,8 +478,8 @@ export default function DragNDropForm(): JSX.Element {
     allowOverwrite = false,
   ): Promise<R2UploadOutcome> {
     try {
-      // Le serveur calcule le chemin (une seule règle, tous providers) et le
-      // renvoie dans `auth.path` — on le réutilise pour l'enregistrement.
+      // Le serveur calcule le chemin et le renvoie dans `auth.path` — on le
+      // réutilise pour l'enregistrement.
       const auth = await createR2UploadMutation.mutateAsync({
         destination,
         originalFileName: item.file.name,
@@ -776,54 +582,41 @@ export default function DragNDropForm(): JSX.Element {
       };
     }
 
-    const cloudinaryItems = toUpload.filter((it) => it.backend === 'cloudinary');
-    const r2Items = toUpload.filter((it) => it.backend === 'r2');
-
     try {
-      // R2 : un fichier déjà présent → même question qu'avant (jamais d'écrasement silencieux).
-      const r2Skipped: string[] = [];
-      const r2Overwrite = new Set<string>();
-      if (r2Items.length > 0) {
-        const { existing } = await utils.storage.checkR2Conflicts.fetch({
-          destination,
-          fileNames: r2Items.map((it) => it.file.name),
-        });
-        if (existing.length > 0) {
-          const choice = await askOverwrite(existing);
-          const conflicted = new Set(existing);
-          for (const it of r2Items) {
-            if (!conflicted.has(it.file.name)) continue;
-            if (choice === 'cancel') r2Skipped.push(it.id);
-            else r2Overwrite.add(it.id);
-          }
+      // Un fichier déjà présent → on demande (jamais d'écrasement silencieux).
+      const skipped: string[] = [];
+      const overwrite = new Set<string>();
+      const { existing } = await utils.storage.checkR2Conflicts.fetch({
+        destination,
+        fileNames: toUpload.map((it) => it.file.name),
+      });
+      if (existing.length > 0) {
+        const choice = await askOverwrite(existing);
+        const conflicted = new Set(existing);
+        for (const it of toUpload) {
+          if (!conflicted.has(it.file.name)) continue;
+          if (choice === 'cancel') skipped.push(it.id);
+          else overwrite.add(it.id);
         }
       }
-      const r2ToUpload = r2Items.filter((it) => !r2Skipped.includes(it.id));
+      const r2ToUpload = toUpload.filter((it) => !skipped.includes(it.id));
 
-      const [cloudinaryRes, r2Res] = await Promise.all([
-        uploadCloudinaryBatch(cloudinaryItems, destination),
-        Promise.all(r2ToUpload.map((it) => uploadR2Single(it, destination, r2Overwrite.has(it.id)))),
-      ]);
+      const r2Outcomes = await Promise.all(
+        r2ToUpload.map((it) => uploadR2Single(it, destination, overwrite.has(it.id))),
+      );
 
-      const cloudinaryOutcomes = cloudinaryRes.outcomes;
-      const r2Outcomes = r2Res;
+      // Items ignorés (choix « Annuler ») → on les remet en `pending`
+      // (jamais envoyés, restent dans la liste).
+      const skippedSet = new Set(skipped);
 
-      // Items ignorés (conflit Cloudinary, choix « Annuler ») → on les
-      // remet en `pending` (jamais uploadés, restent dans la liste).
-      const skippedSet = new Set([...cloudinaryRes.skippedItemIds, ...r2Skipped]);
-
-      const successIds = new Set<string>([
-        ...cloudinaryOutcomes.filter((o) => o.ok).map((o) => o.itemId),
-        ...r2Outcomes.filter((o) => o.ok).map((o) => o.itemId),
-      ]);
-      const failures = new Map<string, string>([
-        ...cloudinaryOutcomes
-          .filter((o): o is CloudinaryUploadOutcome & { ok: false } => !o.ok)
-          .map((o): [string, string] => [o.itemId, o.error]),
-        ...r2Outcomes
+      const successIds = new Set<string>(
+        r2Outcomes.filter((o) => o.ok).map((o) => o.itemId),
+      );
+      const failures = new Map<string, string>(
+        r2Outcomes
           .filter((o): o is R2UploadOutcome & { ok: false } => !o.ok)
           .map((o): [string, string] => [o.itemId, o.error]),
-      ]);
+      );
 
       setItems((prev) =>
         prev.map((it) => {
@@ -1118,8 +911,8 @@ export default function DragNDropForm(): JSX.Element {
               par envoi)
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Images/vidéos jusqu&apos;à {MAX_FILE_SIZE_CLOUDINARY_MB} Mo · audios/docs/zip
-              jusqu&apos;à {MAX_FILE_SIZE_R2_MB} Mo
+              Images jusqu&apos;à {MAX_IMAGE_SIZE_MB} Mo · vidéos, audios, documents
+              jusqu&apos;à {MAX_FILE_SIZE_MB} Mo
             </p>
           </>
         )}

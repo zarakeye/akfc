@@ -3,13 +3,12 @@ import type { PrismaClient } from "@prisma/client";
 /**
  * ensureRootFolders.service.ts
  *
- * Garantit que les 3 dossiers racines immuables (`pending`, `published`, `bin`)
- * existent dans la table `Folder` pour un `appRoot` donné.
+ * Garantit que les dossiers racines immuables (`bin`) existent dans la table
+ * `Folder` pour un `appRoot` donné, et pose les libellés d'affichage des
+ * racines (FolderLabel).
  *
- * Ces dossiers sont persistés en DB pour que le Finder les affiche dès le
- * premier rendu, indépendamment de toute présence d'asset sur Cloudinary.
- * Leur immutabilité (ils ne peuvent être ni renommés ni supprimés) est
- * garantie par la garde `assertRootFolder` côté router Cloudinary.
+ * Persistés en DB pour que le Finder les affiche dès le premier rendu,
+ * indépendamment de toute présence de fichier dans le bucket.
  *
  * Conçu pour être appelé :
  *   - au boot de l'app via `instrumentation.ts` (auto-cicatrisation)
@@ -92,7 +91,7 @@ export async function ensureRootFolders(
  * Retourne true pour `<appRoot>/pending`, `<appRoot>/published`, `<appRoot>/bin`
  * et pour la racine du projet `<appRoot>` elle-même.
  *
- * Utilisé par la garde `assertRootFolder` dans le router Cloudinary.
+ * Vrai si le chemin est une racine immuable (ni renommable ni supprimable).
  */
 export function isRootFolder(appRoot: string, fullPath: string): boolean {
   const normalized = fullPath.replace(/^\/+|\/+$/g, "");

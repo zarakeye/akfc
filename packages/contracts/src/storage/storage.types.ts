@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Types primitifs du contrat StorageAdapter.
  *
  * Ce fichier définit le vocabulaire neutre que tout backend de stockage
- * (Cloudinary, R2, S3, FS local…) doit savoir parler. Aucune mention de
+ * (R2, S3, FS local…) doit savoir parler. Aucune mention de
  * provider concret ici, par construction.
  *
  * Les choix de design notables :
@@ -23,9 +23,8 @@ import { z } from 'zod';
 /**
  * Chemin logique d'un asset ou d'un dossier dans le stockage.
  *
- * Pour Cloudinary, c'est un publicId (avec ou sans extension selon le
- * resource_type). Pour R2, ce sera probablement une key dans un bucket.
- * Pour FS local, un chemin POSIX. Le contrat ne tranche pas.
+ * Pour R2, c'est la key de l'objet dans le bucket (avec extension). Pour un
+ * FS local, ce serait un chemin POSIX. Le contrat ne tranche pas.
  */
 export type StoragePath = string;
 
@@ -42,7 +41,7 @@ export type StorageMetadata = {
   createdAt?: string;
   /** ISO 8601, fuseau UTC */
   updatedAt?: string;
-  /** Format technique (extension Cloudinary, content-type R2…) */
+  /** Format technique (extension du fichier) */
   format?: string;
   /** MIME type complet quand disponible */
   mimeType?: string;
@@ -85,7 +84,7 @@ export interface StorageFolderNode {
  *
  * Le contrat est volontairement minimaliste : `path` (opaque) + `name` +
  * éventuellement `metadata`. Toute information provider-spécifique
- * (URL Cloudinary, key R2, signature) reste à l'extérieur de ce type —
+ * (URL de diffusion, signature) reste à l'extérieur de ce type —
  * les adapters frontend peuvent l'enrichir au moment du mapping vers
  * `FinderNode` si la UI en a besoin.
  */
@@ -186,7 +185,7 @@ export type GetTreeResult = {
  *    StorageMoveOperation  →  opération atomique sur un adapter  (couche 1)
  *
  * À ce niveau, on parle d'un seul item, d'un path source concret, et d'un
- * path target concret. C'est ce que l'adapter Cloudinary (ou R2, FS…) sait
+ * path target concret. C'est ce que l'adapter (R2, FS…) sait
  * effectivement faire dans son API native (un rename, un copy + delete…).
  */
 export type StorageMoveOperation = {
@@ -212,15 +211,11 @@ export type StorageMoveOperation = {
  * Le contrat ne dicte rien sur l'implémentation : il déclare juste quels
  * providers sont actuellement câblés.
  *
- * ─── Stratégie de dispatch (AKFC) ──────────────────────────────────────
+ * ─── AKFC ───────────────────────────────────────────────────────────────
  *
- * Le choix du provider pour un asset donné est fait par `pickBackend()`
- * (cf. `virtual-path.ts`). Règle actuelle :
- *   - cloudinary → image, vidéo  (besoin de transformations à la volée)
- *   - r2         → audio, doc, archive, tout le reste (servi tel quel)
- *
- * Cette règle est centralisée pour qu'on puisse la changer en un seul
- * endroit si les usages évoluent.
+ * Un seul provider : R2 (Cloudflare, bucket en juridiction UE). Images, vidéos, documents : tout y est stocké ; les
+ * déclinaisons (vignettes AVIF, affiches de vidéo) sont fabriquées par le
+ * serveur (mediaDerivatives.service).
  */
-export const storageProviderSchema = z.enum(['cloudinary', 'r2']);
+export const storageProviderSchema = z.enum(['r2']);
 export type StorageProvider = z.infer<typeof storageProviderSchema>;

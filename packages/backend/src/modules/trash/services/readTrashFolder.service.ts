@@ -1,6 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
 import type {
   ReadTrashFolderInput,
   ReadTrashFolderOutput,
@@ -10,10 +9,6 @@ import type {
 } from "@contracts/trash/trash-node.types";
 
 import { normalizePath } from "@backend/modules/trash/utils";
-import {
-  mediaKindFromCloudinaryResourceType,
-  type CloudinaryResourceType,
-} from "@backend/modules/cloudinary/utils/mediaKind.utils";
 import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
 
 /**
@@ -28,54 +23,22 @@ import { r2ListByPrefix } from "@backend/modules/trash/services/r2TrashOps";
  */
 
 type ListedAsset = {
-  publicId: string;
+  /** Clé R2 de l'objet (sous le storageRoot de l'entrée). */
+  key: string;
   bytes?: number;
   createdAt?: string;
-  /**
-   * resource_type Cloudinary à la source : conservé pour qu'on puisse
-   * en dériver un mediaKind agnostique au moment de produire le TrashFileNode.
-   */
-  resourceType: CloudinaryResourceType;
 };
 
-/**
- * Liste tous les assets sous un prefix (authenticated) pour image/video/raw.
- *
- * NOTE perf:
- * - on pagine par 500.
- * - en cas de gros dossiers, cette liste peut être lourde.
- *   On optimise plus tard si nécessaire (cache, listing par "subfolders", etc.).
- */
-async function listAssetsByPrefix(prefix: string): Promise<ListedAsset[]> {
-  const resourceTypes: CloudinaryResourceType[] = ["image", "video", "raw"];
-  const out: ListedAsset[] = [];
+const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif|svg|heic|heif|tiff?|bmp)$/i;
+const VIDEO_EXT = /\.(mp4|mov|m4v|webm|mkv|avi|ogv|3gp)$/i;
+const AUDIO_EXT = /\.(mp3|m4a|aac|wav|ogg|oga|flac|opus)$/i;
 
-  for (const resource_type of resourceTypes) {
-    let nextCursor: string | undefined;
-
-    do {
-      const res = await cloudinary.api.resources({
-        type: "authenticated",
-        resource_type,
-        prefix,
-        max_results: 500,
-        next_cursor: nextCursor,
-      });
-
-      for (const asset of res.resources ?? []) {
-        out.push({
-          publicId: asset.public_id as string,
-          bytes: typeof asset.bytes === "number" ? asset.bytes : undefined,
-          createdAt: asset.created_at ? String(asset.created_at) : undefined,
-          resourceType: resource_type,
-        });
-      }
-
-      nextCursor = res.next_cursor;
-    } while (nextCursor);
-  }
-
-  return out;
+/** Nature d'un fichier de la corbeille, d'après son extension. */
+function mediaKindFromKey(key: string): TrashFileNode["mediaKind"] {
+  if (IMAGE_EXT.test(key)) return "image";
+  if (VIDEO_EXT.test(key)) return "video";
+  if (AUDIO_EXT.test(key)) return "audio";
+  return "document";
 }
 
 /**
@@ -96,11 +59,11 @@ function computeDirectChildren(params: {
   const files = new Map<string, TrashFileNode>();
 
   for (const a of assets) {
-    const publicId = normalizePath(a.publicId);
-    if (publicId === prefix) continue;
-    if (!publicId.startsWith(`${prefix}/`)) continue;
+    const key = normalizePath(a.key);
+    if (key === prefix) continue;
+    if (!key.startsWith(`${prefix}/`)) continue;
 
-    const relative = publicId.slice(prefix.length + 1);
+    const relative = key.slice(prefix.length + 1);
     const parts = relative.split("/").filter(Boolean);
     if (parts.length === 0) continue;
 
@@ -112,10 +75,9 @@ function computeDirectChildren(params: {
           type: "file",
           name,
           fullPath: normalizePath(`${virtualPrefix}/${name}`),
-          publicId: a.publicId,
           sizeBytes: a.bytes,
           createdAt: a.createdAt,
-          mediaKind: mediaKindFromCloudinaryResourceType(a.resourceType),
+          mediaKind: mediaKindFromKey(a.key),
           meta,
         });
       }
@@ -194,19 +156,14 @@ export async function readTrashFolder(params: {
     trashedAt: entry.trashedAt.toISOString(),
   };
 
-  const cloudinaryAssets = await listAssetsByPrefix(storagePrefix);
-  // R2 : les objets R2 imbriqués (documents) sont invisibles de l'API
-  // Cloudinary — on les liste et les fusionne (resourceType "raw").
-  const r2Objects = await r2ListByPrefix(
+  const objects = await r2ListByPrefix(
     storagePrefix.endsWith("/") ? storagePrefix : `${storagePrefix}/`,
   );
-  const r2Assets: ListedAsset[] = r2Objects.map((o) => ({
-    publicId: o.key,
+  const assets: ListedAsset[] = objects.map((o) => ({
+    key: o.key,
     bytes: o.bytes,
     createdAt: o.createdAt ? o.createdAt.toISOString() : undefined,
-    resourceType: "raw" as const,
   }));
-  const assets = [...cloudinaryAssets, ...r2Assets];
   const children = computeDirectChildren({
     assets,
     storagePrefix,

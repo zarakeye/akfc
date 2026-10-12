@@ -5,11 +5,8 @@ import { Folder, FileText } from 'lucide-react';
 import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
 
 // La MÊME fonction que `mapFileToFinderNode` utilise pour la grille du
-// finder. La réécrire ici créerait une troisième façon de fabriquer une URL
-// de média dans ce projet, et la prochaine évolution de signature en
-// corrigerait deux sur trois. La corbeille étant Cloudinary de bout en bout
-// (aucun de ses services ne mentionne R2), le couplage est assumé.
-import { getMediaUrl } from '@features/finder-adapters/cloudinary/utils';
+// finder : une seule façon de fabriquer une URL de média.
+import { getMediaUrl } from '@features/finder-adapters/storage/utils';
 
 type Props = {
   entry: TrashEntryDTO;
@@ -50,19 +47,13 @@ export default function TrashEntryGrid({
 
   // ─── Pourquoi une vignette ici ─────────────────────────────────────────
   //
-  // `listBin` renvoie déjà `publicId` (le `storageRoot` de l'entry) et
-  // `mediaKind` — le contrat les documente explicitement comme servant à la
-  // preview. Cette card ne les avait simplement jamais regardés : la
-  // corbeille n'a jamais eu d'aperçus, et on y reconnaissait ses photos à
-  // leur seul nom de fichier.
-  //
-  // Les vidéos gardent leur icône : Cloudinary sait en tirer une poster
-  // frame, mais ça se décide (quelle frame, quel coût de transformation).
+  // `listBin` renvoie `storageKey` (le `storageRoot` de l'entry) et
+  // `mediaKind`, prévus pour l'aperçu. Les vidéos gardent leur icône.
   const [thumbFailed, setThumbFailed] = useState(false);
 
   const thumbUrl =
-    !isFolder && entry.mediaKind === 'image' && entry.publicId && !thumbFailed
-      ? getMediaUrl({ publicId: entry.publicId })
+    !isFolder && entry.mediaKind === 'image' && entry.storageKey && !thumbFailed
+      ? getMediaUrl(entry.storageKey)
       : null;
 
   return (
@@ -91,15 +82,13 @@ export default function TrashEntryGrid({
       aria-pressed={selected}
     >
       {thumbUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- URL signée
-        // Cloudinary servie par le proxy applicatif : `next/image` exigerait
-        // une config de domaine distante que le reste du finder n'a pas non
-        // plus. On reste aligné sur `GridItem`.
+        // Vignette servie par le proxy applicatif ; on reste aligné sur `GridItem`.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={thumbUrl}
           alt=""
-          // Un asset peut avoir disparu sous nos pieds (purge concurrente,
-          // vestige Cloudinary sans TrashEntry). On retombe alors sur
+          // Un fichier peut avoir disparu sous nos pieds (purge concurrente).
+          // On retombe alors sur
           // l'icône plutôt que sur une image cassée — la card doit rester
           // sélectionnable et restaurable dans tous les cas.
           onError={() => setThumbFailed(true)}

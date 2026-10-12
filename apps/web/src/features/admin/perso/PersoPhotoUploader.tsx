@@ -12,7 +12,6 @@ import { trpc } from '@trpc/trpcClient';
  * Uploader de l'espace photos PERSO d'un admin. Volontairement léger et
  * distinct du `DragNDropForm` de la bibliothèque :
  *   - images UNIQUEMENT (le back refuse le reste sur destination `perso`) ;
- *   - Cloudinary uniquement (pas de R2 ici) ;
  *   - aucune catégorie / discipline : la destination est `{ kind: 'perso' }`,
  *     le dossier cible (`.../persos/<slug>-<uid>/photos`) est résolu côté
  *     serveur à partir de `ctx.user.id` ;

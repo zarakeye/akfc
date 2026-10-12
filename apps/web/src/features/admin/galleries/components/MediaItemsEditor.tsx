@@ -22,7 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { trpc, trpcClient } from '@trpc/trpcClient';
 import { MediaPicker } from '@features/finder-core/components/MediaPicker';
-import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
+import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
 import { APP_ROOT } from '@config/app';
 import type { ResolvedMedia } from '@contracts/page';
 

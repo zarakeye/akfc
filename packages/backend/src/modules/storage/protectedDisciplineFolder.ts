@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
+import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
 
 /**
  * Protège les dossiers adossés aux DISCIPLINES / CATÉGORIES. Contrairement aux

@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
 /**
- * 🧭 parsePathToDestination — parse un path (Cloudinary ou R2) et résout
+ * 🧭 parsePathToDestination — parse un chemin de stockage et résout
  * la destination métier associée (categoryId, disciplineId).
  *
  * ─── Pourquoi ce service ──────────────────────────────────────────────

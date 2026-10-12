@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 /**
- * upload.schema.ts
+ * upload-destination.schema.ts
  *
- * Contrat Zod de la chaîne d'upload signé — partagé backend/frontend.
+ * Destination d'un envoi — partagée backend/frontend.
  *
  * `Destination` est un discriminated union qui encode l'intention métier :
  *   - `existing-discipline` : pointer vers une Discipline déjà inscrite en DB
@@ -65,46 +65,5 @@ export const uploadDestinationSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-export const uploadAssetRequestSchema = z.object({
-  fileName: z.string().trim().min(1).max(255),
-  mimeType: z.string().trim().min(1).max(120),
-  mediaType: z.enum(["image", "video"]),
-});
-
-export const createUploadSignaturesSchema = z.object({
-  destination: uploadDestinationSchema,
-  assets: z.array(uploadAssetRequestSchema).min(1).max(20),
-  /**
-   * Autorise l'écrasement d'un asset existant (même public_id).
-   *
-   * - absent / false (DÉFAUT) : la signature est calculée avec
-   *   `overwrite: false`. Cloudinary REFUSE alors d'écraser un public_id
-   *   déjà présent → le binaire d'origine est protégé même si le client
-   *   tente l'upload par erreur. C'est le filet "dormir tranquille".
-   * - true : signé `overwrite: true`, à n'envoyer qu'APRÈS confirmation
-   *   explicite de l'utilisateur (dialogue « Écraser »).
-   */
-  allowOverwrite: z.boolean().optional(),
-});
-
-export const registeredAssetSchema = z.object({
-  publicId: z.string().trim().min(1).max(500),
-  secureUrl: z.string().url(),
-  resourceType: z.enum(["image", "video"]),
-  originalFileName: z.string().trim().min(1).max(255),
-  displayName: z.string().trim().min(1).max(255).optional(),
-  description: z.string().trim().min(1).max(2000).optional(),
-  mimeType: z.string().trim().min(1).max(120),
-  format: z.string().trim().min(1).max(50).optional(),
-  bytes: z.number().int().positive(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  duration: z.number().positive().optional(),
-  folder: z.string().trim().min(1).max(500),
-});
-
-export const registerUploadedAssetsSchema = z.object({
-  destination: uploadDestinationSchema,
-  eventDate: z.coerce.date().optional(),
-  assets: z.array(registeredAssetSchema).min(1).max(20),
-});
+/** Destination d'un envoi (bibliothèque, espace commun, perso, événement, stage, groupe). */
+export type UploadDestination = z.infer<typeof uploadDestinationSchema>;

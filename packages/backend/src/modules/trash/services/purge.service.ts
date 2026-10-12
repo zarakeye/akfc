@@ -1,13 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@backend/modules/cloudinary/cloudinary.client";
-import {
-  getAssetInfo,
-  deleteByPrefix,
-} from "@backend/modules/cloudinary/services/cloudinary.service";
-import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
-import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
+import { pruneEmptyFolders } from "@backend/modules/storage/services/pruneEmptyFolders.service";
 import {
   r2DeleteFile,
   r2DeleteByPrefix,
@@ -23,17 +17,17 @@ import {
  * `deleteForever` opère par **TrashEntry.id** : il échoue si une id n'existe
  * pas en base. Ce comportement est nécessaire pour la TrashView (qui
  * consomme `listBin` et a donc des ids garantis), mais inadapté pour le
- * finder qui n'a accès qu'aux **paths Cloudinary**.
+ * finder qui n'a accès qu'aux **chemins de stockage**.
  *
  * `purge` résout ce gap : il accepte des paths sous `${appRoot}/bin/.trash/`
  * et gère 2 cas :
  *   1. **TrashEntry trouvée** par `storageRoot` match → flow standard
  *      (idem deleteForever, avec tolérance asset orphelin)
- *   2. **Vestige** (path Cloudinary sans TrashEntry associée) → suppression
+ *   2. **Vestige** (chemin sans TrashEntry associée) → suppression
  *      physique directe par préfixe
  *
  * Les vestiges arrivent en pratique quand un `trashToBin` a réussi côté
- * Cloudinary mais a échoué côté DB (rollback partiel) — ou suite à des
+ * stockage mais a échoué côté DB (rollback partiel) — ou suite à des
  * artefacts de refacto. Avant `purge`, ces vestiges étaient impossibles à
  * supprimer depuis l'UI : `deleteForever` plantait avec "missing TrashEntry
  * ids" et la TreeView les affichait éternellement.
@@ -41,7 +35,7 @@ import {
  * ─── Garde-fous ────────────────────────────────────────────────────────
  *
  * - Chaque path DOIT être sous `${appRoot}/bin/.trash/` — sinon `purge`
- *   pourrait supprimer n'importe quel asset du compte Cloudinary.
+ *   pourrait supprimer n'importe quel fichier du bucket.
  *   `isTrashStoragePath` est notre vérification canonique.
  * - On normalise vers le **wrapper path** (`bin/.trash/<uuid>`) avant
  *   action — pour qu'un path comme `bin/.trash/<uuid>/sub/file.jpg`
@@ -102,10 +96,12 @@ export async function purge(params: {
 
   // ─── Étape 2 : pour chaque wrapper, dispatch entry / vestige ─────────
   for (const wrapperPath of wrapperPaths) {
+    // storageRoot = `<wrapper>/<nom>` (fichier ou dossier) : on cherche
+    // l'entrée DANS le wrapper, pas seulement égale à lui.
     const entry = await prisma.trashEntry.findFirst({
       where: {
         appRoot,
-        storageRoot: wrapperPath,
+        OR: [{ storageRoot: wrapperPath }, { storageRoot: { startsWith: `${wrapperPath}/` } }],
         status: "IN_BIN",
       },
       select: {
@@ -118,30 +114,11 @@ export async function purge(params: {
     if (entry) {
       // ─── Flow standard (DB-backed) ─────────────────────────────────
       if (entry.kind === "file") {
-        // Même tolérance que dans deleteForever.service.ts : si l'asset
-        // a déjà disparu (corruption silencieuse), on continue et on
-        // marque la TrashEntry comme DELETED pour purger l'orpheline.
-        try {
-          const info = await getAssetInfo(entry.storageRoot);
-          await cloudinary.uploader.destroy(entry.storageRoot, {
-            type: "authenticated",
-            resource_type: info.resource_type,
-          });
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          if (!message.startsWith("Asset not found")) throw err;
-          // Cloudinary ne l'a pas : peut-être un fichier R2 (PDF/docs).
-          // r2DeleteFile est idempotent (no-op si absent aussi sur R2).
-          await r2DeleteFile(entry.storageRoot);
-          console.warn(
-            `[purge] Absent de Cloudinary; suppression R2 tentée (idempotent): id=${entry.id} path=${entry.storageRoot}`,
-          );
-        }
+        // Idempotent : si le fichier a déjà disparu, on marque quand même
+        // la TrashEntry comme DELETED pour purger l'orpheline.
+        await r2DeleteFile(entry.storageRoot);
       } else {
-        // kind === "folder" : on supprime tout sous le préfixe.
-        // deleteByPrefix est déjà tolérant (dict vide si rien).
-        await deleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
-        // R2 : supprime aussi les objets R2 imbriqués (toute profondeur).
+        // kind === "folder" : on supprime tout sous le préfixe (toute profondeur).
         await r2DeleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
       }
 
@@ -155,26 +132,19 @@ export async function purge(params: {
     } else {
       // ─── Flow vestige (no-DB) ──────────────────────────────────────
       //
-      // Pas de TrashEntry : c'est un fragment Cloudinary orphelin. On le
-      // supprime physiquement. On utilise `deleteByPrefix` qui couvre les
-      // deux cas (asset unique ou arborescence) et ne lance pas si rien
-      // n'existe.
+      // Pas de TrashEntry : fragment orphelin, supprimé physiquement par
+      // préfixe (fichier unique ou arborescence ; rien à faire s'il est vide).
       console.warn(
         `[purge] Vestige (no TrashEntry, physical purge): ${wrapperPath}`,
       );
-      await deleteByPrefix(`${normalizePath(wrapperPath)}/`);
-      // R2 : idem sur le wrapper de corbeille.
       await r2DeleteByPrefix(`${normalizePath(wrapperPath)}/`);
       vestiges.push(wrapperPath);
     }
 
     // ─── Le wrapper est vide : sa ligne `Folder` n'a plus rien à décrire ──
     //
-    // Même raison que dans `restoreFromBin` : `purge` supprime en direct et
-    // ne passe donc pas par le prune de l'adapter Cloudinary. Sans ça, la
-    // quarantaine purgée laisse une ligne `Folder` orpheline, et le finder —
-    // qui bâtit son arbre sur cette table — garde un chevron sur une
-    // corbeille vide.
+    // Même raison que dans `restoreFromBin` : sans ça, la quarantaine purgée
+    // laisse une ligne `Folder` orpheline.
     await pruneEmptyFolders({
       prisma,
       appRoot,
@@ -183,9 +153,6 @@ export async function purge(params: {
 
     purged.push(wrapperPath);
   }
-
-  // 🔁 Invalidation finale (cf. note dans deleteForever.service.ts).
-  invalidateResourcesCache();
 
   return { purged, vestiges };
 }

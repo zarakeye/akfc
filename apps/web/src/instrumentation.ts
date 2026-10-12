@@ -3,8 +3,8 @@
  *
  * Hook officiel Next.js (App Router) appelé une fois au démarrage de chaque
  * runtime Node. Utilisé ici pour garantir la cohérence de données
- * structurantes : les 3 dossiers racines immuables (`pending`, `published`,
- * `bin`) dans la table `CloudinaryFolder`.
+ * structurantes : dossiers racines et libellés (`Folder`, `FolderLabel`),
+ * espaces de groupe, groupes système, catégories de tickets, pages par défaut.
  *
  * Sécurité : ce hook s'exécute uniquement côté serveur Node, jamais côté
  * Edge ni client. Les imports backend sont donc sûrs.
@@ -15,7 +15,7 @@ export async function register() {
 
   const { prisma } = await import("@backend/prisma");
   const { ensureRootFolders } = await import(
-    "@backend/modules/cloudinary/services/ensureRootFolders.service"
+    "@backend/modules/storage/services/ensureRootFolders.service"
   );
   const { ensureAllGroupSpaces } = await import(
     "@backend/modules/memberGroups/ensureAllGroupSpaces.service"
@@ -27,7 +27,7 @@ export async function register() {
     "@backend/modules/tickets/ensureTicketCategories.service"
   );
   const { ensureCategoryFolderLabels } = await import(
-    "@backend/modules/cloudinary/services/ensureCategoryFolderLabels.service"
+    "@backend/modules/storage/services/ensureCategoryFolderLabels.service"
   );
   const { ensureInstructorBioMediaReferences } = await import(
     "@backend/modules/media/services/ensureInstructorBioMediaReferences.service"

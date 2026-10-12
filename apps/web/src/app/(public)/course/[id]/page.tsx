@@ -49,7 +49,7 @@ function formatInstructorName(
  * `PageRenderer` qui orchestre la résolution batch des mediaIds.
  *
  * Pour le smoke test : c'est ici que tu vois si le rendu final est
- * correct. Les images Cloudinary doivent s'afficher, les audio R2
+ * correct. Les images doivent s'afficher, les audio R2
  * doivent jouer (route publique sous-chantier 6c), les documents R2
  * doivent télécharger, et le texte enrichi avec ses inline images doit
  * être présent.

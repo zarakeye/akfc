@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import clsx from 'clsx';
 
 import type { FinderNode } from '@contracts/finder';
+import { videoPosterUrl } from '@features/finder-core/utils/fileType';
 
 /**
  * PickerCart
@@ -37,7 +38,7 @@ type Props = {
 
 /**
  * Dérive une URL de vignette pour la mini-card du panier. Image → l'URL
- * directe ; vidéo Cloudinary → thumbnail JPG (so_auto). Sinon `null` →
+ * directe ; vidéo → affiche fabriquée par le serveur. Sinon `null` →
  * on affiche une pastille générique.
  */
 function thumbUrlFor(node: FinderNode): string | null {
@@ -45,12 +46,7 @@ function thumbUrlFor(node: FinderNode): string | null {
   const url = node.meta?.url;
   if (!url) return null;
   if (kind === 'image') return url;
-  if (kind === 'video' && url.includes('/video/upload/')) {
-    const withSoAuto = url.includes('/upload/so_auto/')
-      ? url
-      : url.replace('/upload/', '/upload/so_auto/');
-    return withSoAuto.replace(/\.(mp4|webm|mov|avi|mkv|m4v|ogv|flv|wmv)$/i, '.jpg');
-  }
+  if (kind === 'video') return videoPosterUrl(url);
   return null;
 }
 

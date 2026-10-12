@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/cloudinary/services/categoryStorageSegment";
+import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
 
-import type { UploadDestination } from "@contracts/cloudinary/upload.types";
+import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
@@ -10,7 +10,7 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
 /**
  * resolvePendingUploadFolder.service.ts
  *
- * Traduit une intention d'upload (`Destination`) en chemin Cloudinary absolu.
+ * Traduit une intention d'upload (`Destination`) en chemin de stockage absolu.
  *
  * ─── ⚠️ Le nom de cette fonction est historique ──────────────────────────
  *
@@ -47,7 +47,7 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
  * Historiquement le path utilisait `discipline.id`, ce qui divergeait de
  * `buildR2Path` (UI, en slug) et du finder/TreeView (navigation en slug) :
  * les assets sous `cours/3/` devenaient invisibles dans le finder qui
- * cherchait sous `cours/tchoy-lee-fut/`. On aligne donc Cloudinary sur la
+ * cherchait sous `cours/tchoy-lee-fut/`. On aligne donc le stockage sur la
  * convention slug, la seule cohérente avec la navigation UI.
  */
 const SLUG_OPTIONS = { lower: true, strict: true } as const;

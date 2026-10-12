@@ -8,7 +8,7 @@ import {
   SummaryFieldset,
   useSummaryLimits,
 } from "@features/admin/common/SummaryFieldset";
-import { finderStorageAdapter } from "@/features/finder-adapters/cloudinary/finderStorage.adapter";
+import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 
 import { trpc } from "@trpc/trpcClient";

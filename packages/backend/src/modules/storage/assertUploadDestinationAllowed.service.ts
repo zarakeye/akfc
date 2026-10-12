@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
-import type { UploadDestination } from "@contracts/cloudinary/upload.types";
+import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
 import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
 
 /**

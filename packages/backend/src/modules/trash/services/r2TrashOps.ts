@@ -1,24 +1,13 @@
 /**
  * r2TrashOps — primitives R2 (S3) pour la couche corbeille.
  *
- * ─── Pourquoi ce module ───────────────────────────────────────────────────
- *
- * Historiquement, tous les services de la corbeille (trashToBin, restore,
- * purge, deleteForever, readTrashFolder) parlent à Cloudinary EN DIRECT. Les
- * assets stockés sur R2 (typiquement les PDF) étaient donc créables mais PAS
- * jetables : `getAssetInfo`/`rename`/`destroy` Cloudinary ne les connaissent
- * pas et lèvent « Asset not found (any resource_type) ».
- *
- * Ce module fournit les équivalents R2 des opérations physiques dont la
- * corbeille a besoin. Il est volontairement AUTONOME (bâti sur getR2Client /
- * getR2Bucket, déjà exportés) pour ne pas modifier `r2StorageAdapter` dont les
- * helpers de move/delete sont privés.
+ * Opérations physiques de la corbeille (déplacer, lister, supprimer) sur le
+ * bucket R2, seul stockage du site.
  *
  * ─── Rappels R2/S3 ────────────────────────────────────────────────────────
  *
  *   - S3 n'a pas de « rename » : un move = CopyObject + DeleteObject.
- *   - La clé R2 d'un asset = son `fullPath` TEL QUEL, extension comprise
- *     (contrairement à Cloudinary où le public_id n'a pas d'extension).
+ *   - La clé R2 d'un asset = son `fullPath` TEL QUEL, extension comprise.
  *   - HeadObject sert d'oracle d'existence (+ taille / date).
  */
 

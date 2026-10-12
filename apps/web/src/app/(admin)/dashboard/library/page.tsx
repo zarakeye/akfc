@@ -4,7 +4,7 @@ import { JSX, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Finder from '@features/finder-core/components/Finder';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { finderStorageAdapter } from '@/features/finder-adapters/cloudinary/finderStorage.adapter';
+import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
 import { APP_ROOT } from '@config/app';
 
 // Lit ?path= dans l'URL — doit vivre sous un <Suspense> (exigence Next au build).
@@ -22,12 +22,11 @@ function DeepLinkSync(): null {
  * Page bibliothèque.
  *
  * Affiche le finder agnostique (`finder-core`) configuré avec l'adapter
- * multi-backend (Cloudinary + R2 via `VirtualStorage`), rooted sur l'app
- * root du projet. C'est la page admin officielle pour gérer tous les types
- * d'assets : images et vidéos hébergés sur Cloudinary, audios / docs /
- * archives hébergés sur R2.
+ * de stockage (R2 via `VirtualStorage`), rooted sur l'app root du projet.
+ * C'est la page admin officielle pour gérer tous les types d'assets :
+ * images, vidéos, audios, documents et archives.
  *
- * Migration : le legacy `cloudinary-finder/ui/layout/FinderLayout` qui était
+ * Migration : l'ancien `FinderLayout` qui était
  * utilisé ici précédemment a été supprimé en faveur du nouveau `Finder` qui
  * supporte multi-modes d'affichage, drag-and-drop entre dossiers, vue
  * corbeille intégrée, et cache unifié TreeView/GridView.

@@ -7,8 +7,8 @@ import type { ResolvedMedia } from "@contracts/page";
  * blocs media-text qui référencent « l'avatar de tel user » (référence
  * LOGIQUE, résolue dynamiquement → la page suit toujours l'avatar courant).
  *
- * `User.avatar` stocke un publicId Cloudinary (délivrance signée via le
- * proxy). On construit l'URL de la même façon que pour un MediaAsset image.
+ * `User.avatar` stocke la clé de stockage du fichier ; l'URL publique passe
+ * par la route d'avatar (`/api/media/public/avatar/<userId>`).
  * Un user sans avatar → absent de la map (le rendu affichera un placeholder).
  */
 export async function resolveAvatarsByUserIds(

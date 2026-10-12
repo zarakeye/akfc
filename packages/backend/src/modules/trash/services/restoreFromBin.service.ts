@@ -1,7 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { cloudinary } from "@backend//modules/cloudinary/cloudinary.client";
-import { invalidate as invalidateResourcesCache } from "@backend/modules/cloudinary/cache/resourcesCache";
 import type {
   RestoreFromBinInput,
   RestoreFromBinOutput,
@@ -15,11 +13,11 @@ import {
   suffixFileName,
   suffixFilePath,
   suffixFolderPath,
-} from "@backend//modules/trash/utils";
-import { getAssetInfo, fileExists } from "@backend/modules/cloudinary/services/cloudinary.service";
-import { pruneEmptyFolders } from "@backend/modules/cloudinary/services/pruneEmptyFolders.service";
+} from "@backend/modules/trash/utils";
+import { pruneEmptyFolders } from "@backend/modules/storage/services/pruneEmptyFolders.service";
 import {
   r2Exists,
+  r2ListByPrefix,
   r2MoveFile,
   r2MoveFolder,
 } from "@backend/modules/trash/services/r2TrashOps";
@@ -39,23 +37,9 @@ import {
  * - Le backend est la source de vérité : même si l'UI se trompe, on refuse les cas dangereux.
  */
 
-type CloudinaryResourceType = "image" | "video" | "raw";
-
-async function hasAnyResourceWithPrefix(prefix: string): Promise<boolean> {
-  for (const rt of ["image", "video", "raw"] as const) {
-    try {
-      const res = await cloudinary.api.resources({
-        type: "authenticated",
-        resource_type: rt,
-        prefix,
-        max_results: 1,
-      });
-      if ((res.resources ?? []).length > 0) return true;
-    } catch {
-      // ignore (treat as none)
-    }
-  }
-  return false;
+/** Existe-t-il au moins un objet sous ce préfixe ? */
+async function hasAnyObjectWithPrefix(prefix: string): Promise<boolean> {
+  return (await r2ListByPrefix(prefix)).length > 0;
 }
 
 function statusFromPath(path: string): "pending" | "published" | "bin" {
@@ -74,8 +58,8 @@ function folderAncestorsOfFolderPath(folderPath: string): string[] {
   return out;
 }
 
-function folderAncestorsOfPublicId(publicId: string): string[] {
-  const parts = normalizePath(publicId).split("/").filter(Boolean);
+function folderAncestorsOfFilePath(filePath: string): string[] {
+  const parts = normalizePath(filePath).split("/").filter(Boolean);
   if (parts.length < 2) return [];
 
   // remove last segment (file name)
@@ -103,39 +87,6 @@ async function upsertFolders(prisma: PrismaClient, appRoot: string, paths: strin
   );
 }
 
-async function renameAsset(fromPublicId: string, toPublicId: string, resourceType: CloudinaryResourceType) {
-  await cloudinary.uploader.rename(fromPublicId, toPublicId, {
-    type: "authenticated",
-    resource_type: resourceType,
-    overwrite: true,
-  });
-  invalidateResourcesCache();
-}
-
-async function moveFolderRecursively(sourcePrefix: string, targetPrefix: string) {
-  for (const rt of ["image", "video", "raw"] as const) {
-    let nextCursor: string | undefined;
-
-    do {
-      const res = await cloudinary.api.resources({
-        type: "authenticated",
-        resource_type: rt,
-        prefix: sourcePrefix,
-        max_results: 500,
-        next_cursor: nextCursor,
-      });
-
-      for (const asset of res.resources ?? []) {
-        const from = String(asset.public_id);
-        const to = from.replace(sourcePrefix, targetPrefix);
-        await renameAsset(from, to, rt);
-      }
-
-      nextCursor = res.next_cursor;
-    } while (nextCursor);
-  }
-}
-
 async function pathCollides(params: {
   prisma: PrismaClient;
   appRoot: string;
@@ -154,13 +105,13 @@ async function pathCollides(params: {
     if (folder) return true;
   }
 
-  // Collision Cloudinary
+  // Collision de fichier
   if (kind === "file") {
-    return fileExists(t);
+    return r2Exists(t);
   }
 
-  // Folder => collision si au moins un asset existe sous prefix `${t}/`
-  return hasAnyResourceWithPrefix(`${t}/`);
+  // Folder => collision si au moins un objet existe sous prefix `${t}/`
+  return hasAnyObjectWithPrefix(`${t}/`);
 }
 
 function addCounterToFolderPath(path: string, counter: number): string {
@@ -256,24 +207,14 @@ export async function restoreFromBin(params: {
     if (kind === "folder") {
       await upsertFolders(prisma, appRoot, folderAncestorsOfFolderPath(restoredToPath));
     } else {
-      await upsertFolders(prisma, appRoot, folderAncestorsOfPublicId(restoredToPath));
+      await upsertFolders(prisma, appRoot, folderAncestorsOfFilePath(restoredToPath));
     }
 
-    // Move physique (Cloudinary ou R2)
+    // Move physique
     if (kind === "file") {
-      // Détecte le backend : Cloudinary d'abord (fileExists, sans throw),
-      // sinon R2 (PDF/documents).
-      const onCloudinary = await fileExists(entry.storageRoot);
-      if (!onCloudinary && (await r2Exists(entry.storageRoot))) {
-        await r2MoveFile(entry.storageRoot, restoredToPath);
-      } else {
-        const info = await getAssetInfo(entry.storageRoot);
-        await renameAsset(entry.storageRoot, restoredToPath, info.resource_type);
-      }
+      await r2MoveFile(entry.storageRoot, restoredToPath);
     } else {
       // IMPORTANT: trailing slash pour éviter collisions cours1 vs cours10
-      await moveFolderRecursively(`${normalizePath(entry.storageRoot)}/`, `${normalizePath(restoredToPath)}/`);
-      // R2 : restaure aussi les objets R2 imbriqués (toute profondeur).
       await r2MoveFolder(
         `${normalizePath(entry.storageRoot)}/`,
         `${normalizePath(restoredToPath)}/`,
@@ -297,18 +238,14 @@ export async function restoreFromBin(params: {
     // Le finder bâtissant son arbre sur cette table, un chevron persistait
     // sur une corbeille visuellement vide.
     //
-    // On ne passe pas par `adapter.move` (ce service renomme en direct),
-    // donc le prune de l'adapter ne s'est jamais déclenché ici. On l'appelle
-    // nous-mêmes.
-    //
-    // `pruneEmptyFolders` vérifie auprès de Cloudinary qu'aucun asset ne
-    // subsiste avant de supprimer un palier, puis remonte : le wrapper, puis
+    // `pruneEmptyFolders` vérifie qu'aucun objet ne subsiste avant de
+    // supprimer un palier, puis remonte : le wrapper, puis
     // `.trash` s'il ne reste plus rien, et s'arrête sur `${appRoot}/bin` que
     // sa borne `minDepth` protège.
     const wrapperPath =
       kind === "folder"
         ? normalizePath(entry.storageRoot)
-        : // Pour un fichier, `storageRoot` EST le publicId de l'asset : son
+        : // Pour un fichier, `storageRoot` EST la clé de l'objet : son
           // dossier est son parent. Peu importe si on démarre plus profond
           // que le wrapper, le prune remonte.
           normalizePath(entry.storageRoot).split("/").slice(0, -1).join("/");

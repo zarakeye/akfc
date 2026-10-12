@@ -11,15 +11,6 @@ export * from '@contracts/auth/session.types';
 export * from '@contracts/auth/constants';
 
 /* -------------------------------------------------------------------------- */
-/*                                   CLOUDINARY                               */
-/* -------------------------------------------------------------------------- */
-export * from '@contracts/cloudinary/finder.types';
-export * from '@contracts/cloudinary/folder.types';
-export * from '@contracts/cloudinary/move.schema';
-export * from '@contracts/cloudinary/move.types';
-export * from '@contracts/cloudinary/upload.schema';
-
-/* -------------------------------------------------------------------------- */
 /*                                   FORMS                                    */
 /* -------------------------------------------------------------------------- */
 export * from '@contracts/forms/createPermissionForm.schema';
@@ -38,7 +29,7 @@ export * from '@contracts/page';
 
 /* -------------------------------------------------------------------------- */
 /*                                   STORAGE                                  */
-/*  Contrat agnostique des adapters de stockage (Cloudinary, R2, S3, FS…).    */
+/*  Contrat agnostique des adapters de stockage (R2, S3, FS…).               */
 /*  Voir packages/contracts/src/storage/storage.adapter.ts pour les détails.  */
 /* -------------------------------------------------------------------------- */
 export * from '@contracts/storage';

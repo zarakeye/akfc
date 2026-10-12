@@ -27,7 +27,7 @@ import type {
  *   - les exécute séquentiellement via `adapter.move()`
  *
  * Il ne fait pas :
- *   - aucun appel direct à un provider (Cloudinary, R2, etc.). Tout passe
+ *   - aucun appel direct à un provider. Tout passe
  *     par l'interface `StorageAdapter` reçue en paramètre.
  *   - aucune validation Zod (l'input est supposé déjà validé en amont,
  *     typiquement par `storageMoveIntentSchema` au niveau du router).
@@ -111,9 +111,8 @@ export async function planMoveOperations(
  * Phase 2 du pipeline : exécute des opérations atomiques pré-planifiées
  * via l'adapter.
  *
- * Séquentiel et non parallèle : certains backends (Cloudinary
- * notamment) n'aiment pas les opérations concurrentes sur des prefixes
- * voisins.
+ * Séquentiel et non parallèle : des opérations concurrentes sur des
+ * préfixes voisins pourraient se marcher dessus.
  */
 export async function executeMoveOperations(
   adapter: StorageAdapter,
@@ -156,8 +155,7 @@ async function resolveSource(
   const excluded = new Set(source.excluded ?? []);
 
   // Exclusion par préfixe : un asset `cours/12/draft/x.jpg` est exclu si
-  // `cours/12/draft` est dans excluded. C'est la même règle que celle
-  // appliquée par moveService Cloudinary actuellement.
+  // `cours/12/draft` est dans excluded.
   const isExcluded = (path: string): boolean => {
     if (excluded.has(path)) return true;
     for (const ex of excluded) {
