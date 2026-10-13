@@ -6,7 +6,6 @@ import { Eye, Trash2, Upload } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import {
-  IMAGE_CONSENT_BLANK_FORM_URL,
   IMAGE_CONSENT_FORM_MAX_BYTES,
   IMAGE_CONSENT_FORM_MIME_EXT,
   IMAGE_USAGE_LABEL,
@@ -15,6 +14,7 @@ import {
 } from "@contracts/legal/imageConsent";
 import { heicFailureMessage, isHeicFile, toBrowserImages } from "@features/media/heic/browserImages";
 import { ImageConsentFormViewer, type ViewableConsentForm } from "@features/image-consent/ImageConsentFormViewer";
+import { BlankConsentFormPreview } from "@features/image-consent/BlankConsentFormCard";
 import { formatDate, formatKeepAfterLeave, formatUsages } from "@features/image-consent/consentFormat";
 
 type KeepChoice = "unset" | "remove" | "keep";
@@ -41,6 +41,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [open, setOpen] = useState<ViewableConsentForm | null>(null);
+  const [blankOpen, setBlankOpen] = useState(false);
 
   const refresh = async (): Promise<void> => {
     await Promise.all([utils.imageConsent.listForUser.invalidate({ userId }), utils.user.getAll.invalidate()]);
@@ -145,10 +146,10 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
         </ul>
       ) : (
         <p className="mb-4 text-muted-foreground">
-          Aucun formulaire déposé. Formulaire vierge :{" "}
-          <a href={IMAGE_CONSENT_BLANK_FORM_URL} download className="text-emerald-700 hover:underline">
-            télécharger le PDF
-          </a>
+          Aucun formulaire déposé.{" "}
+          <button type="button" onClick={() => setBlankOpen(true)} className="text-emerald-700 hover:underline">
+            Voir le formulaire vierge
+          </button>
           .
         </p>
       )}
@@ -213,6 +214,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
       </div>
 
       <ImageConsentFormViewer form={open} onClose={() => setOpen(null)} />
+      {blankOpen && <BlankConsentFormPreview onClose={() => setBlankOpen(false)} />}
     </fieldset>
   );
 }
