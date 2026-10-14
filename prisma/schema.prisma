@@ -1886,6 +1886,13 @@ model SiteSettings {
   legalRna                 String?
   /// SIRET, si l'association en a un.
   legalSiret               String?
+  /// Coordonnées LÉGALES de l'association (siège, téléphone, e-mail), seules utilisées par les
+  /// documents à valeur légale (mentions légales, politique de confidentialité, registre).
+  /// Distinctes des coordonnées publiques (page « Nous contacter »), qui peuvent différer.
+  /// Siège social, une ligne par élément.
+  legalAddress             String?
+  legalPhone               String?
+  legalEmail               String?
   /// Directeur de la publication (président ou présidente) et sa qualité.
   publicationDirector      String?
   publicationDirectorTitle String?

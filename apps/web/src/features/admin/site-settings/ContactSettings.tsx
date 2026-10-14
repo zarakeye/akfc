@@ -28,7 +28,8 @@ export function ContactSettings(): JSX.Element {
       <p className="mb-6 text-sm text-gray-600">
         Affichées à tous sur la page «&nbsp;Nous contacter&nbsp;» : c&apos;est ainsi que le public et les
         partenaires joignent l&apos;association. Le formulaire de demandes, lui, est réservé aux membres
-        connectés. Un champ laissé vide n&apos;est pas affiché.
+        connectés. Un champ laissé vide n&apos;est pas affiché. Les mentions légales n&apos;utilisent pas ces
+        coordonnées mais celles des «&nbsp;Informations légales&nbsp;», plus bas.
       </p>
       {settings.isPending ? (
         <p className="text-sm text-gray-500">Chargement…</p>

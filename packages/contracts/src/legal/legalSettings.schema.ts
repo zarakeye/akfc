@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 /*
- * Informations légales du club (Réglages du site → Informations légales) : identité de l'éditeur,
- * directeur de la publication, hébergeur, durées de conservation. Elles alimentent les pages
+ * Informations légales du club (Réglages du site → Informations légales) : identité de l'éditeur et
+ * ses coordonnées légales (siège, téléphone, e-mail), directeur de la publication, hébergeur, durées
+ * de conservation. Elles alimentent les pages
  * « Mentions légales » et « Politique de confidentialité » et le registre des traitements,
  * générés à partir de ces réglages. Partagé front / back.
  */
@@ -24,6 +25,12 @@ export const saveLegalSettingsSchema = z.object({
   legalRna: text(20).refine((v) => v === "" || /^W\d{9}$/i.test(v.replace(/\s/g, "")), "Numéro RNA attendu : W suivi de 9 chiffres"),
   /** SIRET (14 chiffres), si l'association en a un. */
   legalSiret: text(20).refine((v) => v === "" || /^\d{14}$/.test(v.replace(/\s/g, "")), "SIRET attendu : 14 chiffres"),
+  /** Siège social (une ligne par élément) : celui des statuts, pas forcément le lieu des cours. */
+  legalAddress: text(300),
+  /** Téléphone de l'association, obligatoire dans les mentions légales (LCEN, art. 6). */
+  legalPhone: text(40).refine((v) => v === "" || /^\+?[\d\s.()-]{6,}$/.test(v), "Numéro de téléphone invalide"),
+  /** E-mail de l'association, cité par les documents légaux (droits RGPD compris). */
+  legalEmail: text(200).refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Adresse e-mail invalide"),
   /** Directeur de la publication (en pratique le président ou la présidente). */
   publicationDirector: text(120),
   /** Sa qualité, ex. « présidente de l'association ». */

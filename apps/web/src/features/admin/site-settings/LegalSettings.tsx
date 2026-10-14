@@ -12,10 +12,11 @@ import {
 } from "@contracts/legal/legalSettings.schema";
 
 /**
- * Réglages du site → « Informations légales » : éditeur, directeur de la publication, hébergeur,
- * région du stockage, crédits, durées de conservation. Les pages « Mentions légales » et
- * « Politique de confidentialité » et le registre des traitements sont GÉNÉRÉS depuis ces champs
- * (et depuis « Coordonnées publiques » pour le siège, le téléphone et l'e-mail).
+ * Réglages du site → « Informations légales » : éditeur et coordonnées légales (siège, téléphone,
+ * e-mail), directeur de la publication, hébergeur, région du stockage, crédits, durées de
+ * conservation. Les pages « Mentions légales » et « Politique de confidentialité » et le registre
+ * des traitements sont GÉNÉRÉS depuis ces seuls champs : les coordonnées publiques (« Nous
+ * contacter ») peuvent différer et n'y figurent jamais.
  */
 
 const inputClass =
@@ -31,6 +32,9 @@ function initialOf(s: Settings): SaveLegalSettingsInput {
     legalName: str(s, "legalName"),
     legalRna: str(s, "legalRna"),
     legalSiret: str(s, "legalSiret"),
+    legalAddress: str(s, "legalAddress"),
+    legalPhone: str(s, "legalPhone"),
+    legalEmail: str(s, "legalEmail"),
     publicationDirector: str(s, "publicationDirector"),
     publicationDirectorTitle: str(s, "publicationDirectorTitle"),
     hostName: str(s, "hostName"),
@@ -59,8 +63,9 @@ export function LegalSettings(): JSX.Element {
         <Link href="/infos/confidentialite" className="text-emerald-700 hover:underline" target="_blank">
           Politique de confidentialité
         </Link>{" "}
-        sont générées à partir de ces champs et des coordonnées publiques (siège, téléphone, e-mail). Un champ
-        vide y apparaît «&nbsp;en cours de renseignement&nbsp;». Pour y ajouter un texte libre : Pages éditoriales,
+        sont générées à partir de ces seuls champs. Les coordonnées publiques («&nbsp;Nous contacter&nbsp;»)
+        n&apos;y figurent pas : le même numéro peut être saisi aux deux endroits. Un champ vide y apparaît
+        «&nbsp;en cours de renseignement&nbsp;». Pour y ajouter un texte libre : Pages éditoriales,
         pages «&nbsp;mentions-legales&nbsp;» et «&nbsp;confidentialite&nbsp;».
       </p>
       {settings.isPending ? (
@@ -83,7 +88,7 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
   const check = saveLegalSettingsSchema.safeParse(v);
   const problem = check.success ? null : (check.error.issues[0]?.message ?? "Saisie invalide");
 
-  const field = (k: "legalName" | "legalRna" | "legalSiret" | "publicationDirector" | "publicationDirectorTitle" | "hostName" | "hostAddress" | "hostPhone" | "hostUrl", label: string, hint?: string, placeholder?: string): JSX.Element => (
+  const field = (k: "legalName" | "legalRna" | "legalSiret" | "legalPhone" | "legalEmail" | "publicationDirector" | "publicationDirectorTitle" | "hostName" | "hostAddress" | "hostPhone" | "hostUrl", label: string, hint?: string, placeholder?: string): JSX.Element => (
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input className={inputClass} value={v[k]} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} />
@@ -109,6 +114,28 @@ function LegalSettingsForm({ initial }: { initial: SaveLegalSettingsInput }): JS
         <div className="grid gap-4 sm:grid-cols-2">
           {field("legalRna", "Numéro RNA", "W suivi de 9 chiffres (récépissé de déclaration).", "W731234567")}
           {field("legalSiret", "SIRET (facultatif)", "Seulement si l'association en a un.")}
+        </div>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Siège social</span>
+          <textarea
+            className={`${inputClass} min-h-16 resize-y`}
+            value={v.legalAddress}
+            maxLength={300}
+            placeholder={"3 rue de la Trésorerie\n73000 Chambéry"}
+            onChange={(e) => set("legalAddress", e.target.value)}
+          />
+          <span className="mt-1 block text-xs text-gray-400">
+            Celui des statuts, pas forcément le lieu des cours. Une ligne par élément.
+          </span>
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {field(
+            "legalPhone",
+            "Téléphone de l'association",
+            "Obligatoire dans les mentions légales. Il peut différer des numéros de « Nous contacter ».",
+            "04 79 00 00 00",
+          )}
+          {field("legalEmail", "E-mail de l'association", "Cité pour les demandes légales et RGPD.", "contact@akfc.fr")}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {field("publicationDirector", "Directeur de la publication", "En pratique le président ou la présidente.", "Prénom Nom")}
