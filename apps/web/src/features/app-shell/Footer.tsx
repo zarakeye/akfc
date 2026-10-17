@@ -54,16 +54,24 @@ export default async function Footer(): Promise<JSX.Element> {
     ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
     : "/AKFC_logo.svg";
 
+  // Disciplines PUBLIÉES (avec une page) : « Nos disciplines » est un menu déroulant dans le header ;
+  // un footer ne se déroule pas → intitulé simple suivi d'un lien par discipline, comme les Horaires.
+  const disciplines = await prisma.discipline
+    .findMany({
+      where: { publicationDate: { not: null, lte: now }, slug: { not: null } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, slug: true },
+    })
+    .catch(() => []);
+
   const partners = await getActivePartners();
   const year = new Date().getFullYear();
 
   // Navigation aplatie : les entrées d'un menu déroulant deviennent des
   // liens ordinaires — un footer ne se déroule pas. Les entrées réservées
-  // aux personnes connectées sont écartées, et « Nos disciplines » est
-  // remplacé par le lien vers la liste des disciplines, sa version statique.
-  const navLinks: { href: string; label: string }[] = [
-    { href: "/disciplines", label: "Nos disciplines" },
-  ];
+  // aux personnes connectées sont écartées. « Nos disciplines » est rendu à
+  // part, en tête : intitulé sans lien + une ligne par discipline.
+  const navLinks: { href: string; label: string }[] = [];
   for (const entry of NAV_ENTRIES) {
     if (entry.kind === "link" && !entry.requiresUser) {
       navLinks.push({ href: entry.href, label: entry.label });
@@ -133,6 +141,23 @@ export default async function Footer(): Promise<JSX.Element> {
               Le site
             </h2>
             <ul className="flex flex-col gap-2">
+              {disciplines.length > 0 && (
+                <li>
+                  <span className="text-sm font-bold text-white">Nos disciplines</span>
+                  <ul className="mt-1 flex flex-col gap-1 pl-3">
+                    {disciplines.map((d) => (
+                      <li key={d.id}>
+                        <Link
+                          href={`/disciplines/${d.slug}`}
+                          className="text-sm text-white/80 transition-colors hover:text-emerald-400"
+                        >
+                          {d.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )}
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
