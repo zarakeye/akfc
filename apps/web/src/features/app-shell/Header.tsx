@@ -94,8 +94,10 @@ export default function Header({
       <Link href="/">
         {/* Trois paliers : le `px-20` d'origine coûtait 160px de chaque
             côté, ce que la barre ne pouvait pas se permettre avant 1536px. */}
-        {/* Logo agrandi (~+25 %) SANS grandir la barre : le rembourrage vertical cède exactement ce
-            que le logo gagne (hauteur de barre inchangée : 92 / 112 / 180 px selon le palier). */}
+        {/* Logo dans un CARRÉ (largeur = hauteur, object-contain : quel que soit le fichier, il y tient
+            entier), agrandi SANS grandir la barre : le rembourrage vertical cède exactement ce que le
+            carré gagne (hauteur de barre inchangée : 92 / 112 / 180 px selon le palier). Le logo carré
+            à pastille intégrée remplit ce carré. */}
         <div className="flex items-center px-4 py-2 xl:px-6 xl:py-4 2xl:px-20 2xl:py-[30px]">
           {logoUrl ? (
             // Logo personnalisé (réglages) — <img> simple : URL de proxy
@@ -104,7 +106,7 @@ export default function Header({
             <img
               src={logoUrl}
               alt={`${brand} logo`}
-              className="h-19 w-auto xl:h-20 2xl:h-30"
+              className="h-19 w-19 object-contain xl:h-20 xl:w-20 2xl:h-30 2xl:w-30"
             />
           ) : (
             <Image
@@ -113,7 +115,7 @@ export default function Header({
               width={100}
               height={100}
               priority
-              className="h-19 w-auto xl:h-20 2xl:h-30"
+              className="h-19 w-19 object-contain xl:h-20 xl:w-20 2xl:h-30 2xl:w-30"
             />
           )}
         </div>

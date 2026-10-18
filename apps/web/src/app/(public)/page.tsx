@@ -182,21 +182,16 @@ export default async function HomePage(): Promise<JSX.Element> {
 
       {/* Intro */}
       <section className="mx-auto max-w-3xl px-4 py-16 text-center">
-        {/* Logo inscrit dans un disque noir — agrandi pour la lisibilité.
-            Le disque (rounded-full + bg-black) fait cadre ; le padding donne
-            l'impression que le logo s'inscrit dedans. */}
-        {/* Pastille de taille INCHANGÉE ; le logo y occupe 85 % de la hauteur (avant : 64 à 75 %).
-            Mesuré sur /AKFC_logo.svg : tout son dessin tient dans un cercle de 0,52 × sa hauteur
-            autour de son centre → débordement seulement au-delà de 96 %. Marge gardée, et
-            `overflow-hidden` garantit en plus qu'un logo personnalisé ne dépasse jamais. */}
-        <div className="mx-auto mb-6 flex h-80 w-80 items-center justify-center overflow-hidden rounded-full bg-black sm:h-56 sm:w-56 lg:h-80 lg:w-80">
+        {/* La pastille noire fait désormais PARTIE du logo (fichier carré, disque noir sous le dessin
+            blanc) : logo et pastille grandissent ensemble, à la taille de ce carré. */}
+        <div className="mx-auto mb-6 h-80 w-80 sm:h-56 sm:w-56 lg:h-80 lg:w-80">
           {siteSettings?.logoKey ? (
             // logo custom (URL dynamique R2)
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={heroLogoSrc}
               alt={`${siteSettings?.shortTitle ?? "AKFC"} logo`}
-              className="h-[85%] w-[85%] object-contain"
+              className="h-full w-full object-contain"
             />
           ) : (
             <Image
@@ -205,7 +200,7 @@ export default async function HomePage(): Promise<JSX.Element> {
               width={250}
               height={250}
               priority
-              className="h-[85%] w-[85%] object-contain"
+              className="h-full w-full object-contain"
             />
           )}
         </div>
