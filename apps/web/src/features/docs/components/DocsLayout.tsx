@@ -2,8 +2,11 @@ import type { ReactNode } from "react"
 import { DocsSidebar } from "@features/docs/components/DocsSidebar"
 import { generateDocsIndex } from "@features/docs/lib/docs.index"
 import { DocsMainScrollControls } from "@features/docs/components/DocsMainScrollControls"
+import type { DocSpaceId } from "@features/docs/lib/docs.spaces"
 
 export function DocsLayout({
+  space = null,
+  showAdminSpace = false,
   title,
   description,
   currentPath,
@@ -12,6 +15,10 @@ export function DocsLayout({
   rightAside,
   children,
 }: {
+  /** Espace affiché (sa navigation seule) ; null = accueil de la documentation. */
+  space?: DocSpaceId | null
+  /** Accueil seulement : faire figurer l'espace Administration dans la navigation (admins). */
+  showAdminSpace?: boolean
   title: string
   description?: string
   currentPath?: string
@@ -20,7 +27,11 @@ export function DocsLayout({
   rightAside?: ReactNode
   children: ReactNode
 }) {
-  const { navigation } = generateDocsIndex()
+  const index = generateDocsIndex(space)
+  const navigation =
+    space || showAdminSpace
+      ? index.navigation
+      : index.navigation.map((s) => ({ ...s, items: s.items.filter((p) => p.slug[0] !== "admin") }))
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-background">

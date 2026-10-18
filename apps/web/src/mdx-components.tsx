@@ -21,6 +21,7 @@ import PrismaCoreErdDiagram from "@features/docs/diagrams/PrismaCoreErdDiagram"
 import PrismaCoreMemoryDiagram from "@features/docs/diagrams/PrismaCoreMemoryDiagram"
 import PropsProbe from "@features/docs/ui/PropsProbe"
 import DocsTable from "@features/docs/ui/DocsTable"
+import { TourLauncher } from "@features/tours/TourStartButton"
 
 function extractHeadingText(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") {
@@ -70,6 +71,7 @@ export const mdxComponents: MDXComponents = {
   AuthFlowDiagram,
   TRPCFlowDiagram,
   Step,
+  TourLauncher,
   SvgDiagram,
   PrismaCoreErdDiagram,
   PrismaCoreMemoryDiagram,

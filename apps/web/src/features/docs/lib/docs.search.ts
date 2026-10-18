@@ -1,5 +1,6 @@
 import { generateDocsIndex } from "./docs.index"
 import { getDocSource } from "./docs.source"
+import type { DocSpaceId } from "./docs.spaces"
 
 export interface SearchDoc {
   id: string
@@ -31,8 +32,9 @@ function stripMdx(source: string): string {
     .trim()
 }
 
-export function getSearchDocuments(): SearchDoc[] {
-  const { pages } = generateDocsIndex()
+/** Documents cherchables d'UN espace (la recherche ne sort jamais de l'espace courant). */
+export function getSearchDocuments(space: DocSpaceId): SearchDoc[] {
+  const { pages } = generateDocsIndex(space)
 
   return pages.map((page) => {
     const { source } = getDocSource(page.slug)

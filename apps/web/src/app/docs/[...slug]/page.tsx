@@ -14,6 +14,8 @@ import { mdxComponents } from "@web/mdx-components"
 import { generateDocsIndex } from "@features/docs/lib/docs.index"
 import DocsSearch from "@features/docs/components/DocsSearch"
 import { getSearchDocuments } from "@features/docs/lib/docs.search"
+import { spaceOf } from "@features/docs/lib/docs.spaces"
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
 
 interface PageProps {
   params: Promise<{
@@ -22,16 +24,33 @@ interface PageProps {
 }
 
 export default async function Page({ params }: PageProps) {
-  const { slug = [] } = await params
+  const { slug: requested = [] } = await params
 
-  if (!slug.length || !docExists(slug)) {
+  // Segments décodés par Next : un « .. » (ou un séparateur encodé) ferait sortir du dossier de
+  // l'espace — et contourner la garde admin par /docs/guide/%2E%2E/admin/… → refusé.
+  if (requested.some((s) => s.startsWith(".") || s.includes("/") || s.includes("\\"))) notFound()
+
+  // Espace : premier segment de l'URL. Hors des trois espaces → 404.
+  const space = spaceOf(requested)
+  if (!space) notFound()
+
+  // Espace réservé : contrôle CÔTÉ SERVEUR (session en base), pas seulement un lien masqué.
+  // Un visiteur non admin reçoit une 404, comme si la page n'existait pas.
+  if (space.adminOnly) {
+    const session = await getSessionFromRequest().catch(() => null)
+    if (!session?.user?.isAdmin) notFound()
+  }
+
+  // `/docs/guide` → `content/docs/guide/index.mdx` (page d'accueil de l'espace).
+  const slug = docExists(requested) ? requested : [...requested, "index"]
+  if (!docExists(slug)) {
     notFound()
   }
 
   const { source, frontmatter } = getDocSource(slug)
   const toc = extractToc(source)
 
-  const { pages } = generateDocsIndex()
+  const { pages } = generateDocsIndex(space.id)
   const { prev, next } =
     frontmatter.section === "Tutorials"
       ? getPrevNextInSection(pages, slug, "Tutorials")
@@ -45,7 +64,7 @@ export default async function Page({ params }: PageProps) {
     },
   })
 
-  const searchDocs = getSearchDocuments()
+  const searchDocs = getSearchDocuments(space.id)
 
   const header = (
     <div>
@@ -71,6 +90,7 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <DocsLayout
+      space={space.id}
       title={frontmatter.title}
       description={frontmatter.description}
       currentPath={`/docs/${slug.join("/")}`}
@@ -78,7 +98,7 @@ export default async function Page({ params }: PageProps) {
       footer={footer}
       rightAside={<DocsRightAsideDrawer items={toc} />}
     >
-      {slug.join("/") === "architecture/project-architecture" ? (
+      {slug.join("/") === "dev/architecture/project-architecture" ? (
         <>
           <ProjectArchitectureTree />
           {compiled.content}
