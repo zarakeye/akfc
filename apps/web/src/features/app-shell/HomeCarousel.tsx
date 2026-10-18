@@ -89,9 +89,13 @@ export default function HomeCarousel(): JSX.Element | null {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
   const playingRef = useRef(playing);
-  playingRef.current = playing;
   const autoModeRef = useRef(autoMode);
-  autoModeRef.current = autoMode;
+  // Recopie des états dans les refs APRÈS le rendu (react-hooks/refs : pas d'écriture de ref pendant le
+  // rendu). Seule la boucle d'animation (requestAnimationFrame) les lit, donc toujours hors rendu.
+  useEffect(() => {
+    playingRef.current = playing;
+    autoModeRef.current = autoMode;
+  }, [playing, autoMode]);
   const activeRef = useRef(0);
   const nlinRef = useRef<number[]>([]);
   const diapoRest = useRef<number | null>(null);
@@ -106,12 +110,12 @@ export default function HomeCarousel(): JSX.Element | null {
 
   const geo = useMemo<{ list: Geo[]; W: number }>(() => {
     let x = 0;
-    const list: Geo[] = items.map((it) => {
+    const list: Geo[] = [];
+    for (const it of items) {
       const w = ratioOf(it) * H;
-      const g: Geo = { it, w, base: x, center: x + w / 2 };
+      list.push({ it, w, base: x, center: x + w / 2 });
       x += w + GAP;
-      return g;
-    });
+    }
     return { list, W: x };
   }, [items, H]);
 
