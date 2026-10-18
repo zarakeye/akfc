@@ -1,6 +1,6 @@
 ---
-title: "Mise en route"
-description: "Installer le projet sur notre machine, de zéro jusqu'à la première connexion au tableau de bord."
+title: "Mise en route : un monde jetable"
+description: "Saison 1, épisode 2. L'application s'effondre à la première page. Pour la relever, nous allons lui construire une base, un stockage et une boîte mail qui n'existent que sur notre machine."
 section: "Démarrer"
 order: 1
 ---
@@ -8,29 +8,33 @@ order: 1
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-## Ce dont une application a besoin pour démarrer
+*Saison 1 — Démarrer · Épisode 2*
 
-Cloner le dépôt et lancer `pnpm dev` ne suffit pas. L'application démarrerait, puis tomberait à la première page : elle cherche une base de données pour lire ses réglages, un stockage pour afficher son logo, et un serveur d'e-mails pour envoyer un lien de réinitialisation de mot de passe.
+> **Précédemment.** Un club, une vitrine, un outil, une seule application. Une base de développement qui était, pendant trop longtemps, celle des vrais membres. Et une règle gravée depuis : le développement ne touche jamais à la production.
 
-En production, ces trois services sont réels : PostgreSQL sur le serveur, Cloudflare R2 pour les fichiers, la messagerie OVH pour les e-mails. Sur notre machine, nous allons les remplacer par trois conteneurs qui parlent exactement les mêmes protocoles. L'application ne fait pas la différence ; seule la configuration change.
+## L'écran blanc
 
-Le fichier `docker-compose.dev.yml`, à la racine du dépôt, décrit ces trois services. Nous allons l'utiliser dans un instant. Commençons par les outils.
+Le dépôt est cloné. `pnpm dev` affiche `Ready`. Nous ouvrons `http://localhost:3000`.
 
-## Les outils
+Erreur. La page d'accueil veut lire le titre du site dans la base : il n'y a pas de base. Le header veut afficher le logo, rangé dans un stockage S3 : il n'y a pas de stockage. Et si nous allions jusqu'à « Mot de passe oublié », l'application chercherait un serveur d'e-mails qui n'existe pas davantage.
+
+En production, ces trois services sont réels : PostgreSQL sur le serveur, Cloudflare R2 pour les fichiers, la messagerie OVH pour les e-mails. Nous n'en voulons aucun ici : l'épisode précédent nous a appris pourquoi.
+
+Nous allons donc construire un monde de remplacement. Trois conteneurs qui parlent **exactement les mêmes protocoles** que les services réels. L'application ne verra pas la différence. Seule la configuration changera.
+
+## Les outils du voyage
 
 <DocsTable columnsJson='["Outil","Version","Pourquoi"]' rowsJson='[["Git","récente","Récupérer le dépôt et y enregistrer notre travail."],["Node.js","22","La version de l’image de production (Dockerfile, NODE_VERSION=22). Une autre version majeure peut marcher, mais nous visons la même que le serveur."],["pnpm","10.24, via corepack","Le gestionnaire de paquets du monorepo. La version exacte est épinglée dans package.json (packageManager) ; corepack l’installe tout seul."],["Docker","Docker Desktop sur Mac ou Windows, Docker Engine sur Linux","Faire tourner la base, le stockage et la boîte mail de développement."]]' />
 
-pnpm n'a pas besoin d'être installé à la main. Node.js embarque corepack, qui lit le champ `packageManager` du `package.json` et fournit la bonne version :
+pnpm ne s'installe pas à la main. Node.js embarque corepack, qui lit le champ `packageManager` du `package.json` et fournit la bonne version :
 
 ```bash
 corepack enable
 ```
 
-<Callout type="tip">
-Pourquoi épingler la version de pnpm ? Parce que deux versions différentes peuvent produire deux `pnpm-lock.yaml` différents pour les mêmes dépendances. Avec corepack, tous les développeurs et le serveur de production utilisent exactement le même pnpm.
-</Callout>
+Pourquoi cette précision d'horloger ? Parce que deux versions de pnpm peuvent écrire deux `pnpm-lock.yaml` différents pour les mêmes dépendances. Le jour où le serveur de production installe autre chose que ce que nous avons testé, le bug ne se reproduit plus chez nous. Avec corepack, tout le monde, serveur compris, utilise le même pnpm.
 
-## Récupérer le code et ses dépendances
+## Le code et ses dépendances
 
 ```bash
 git clone <adresse-du-dépôt> akfc
@@ -38,62 +42,66 @@ cd akfc
 pnpm install
 ```
 
-L'installation prend quelques minutes la première fois. À la fin, pnpm lance de lui-même `prisma generate` (c'est le script `postinstall` du `package.json`) : Prisma lit `prisma/schema.prisma` et fabrique un client TypeScript qui connaît chacun des 47 modèles. Sans cette étape, le moindre `prisma.post.findMany()` serait une erreur de compilation.
+À la fin de l'installation, pnpm lance de lui-même `prisma generate` (le script `postinstall` du `package.json`). Prisma lit `prisma/schema.prisma` et fabrique un client TypeScript qui connaît chacun des 47 modèles. Sans lui, le moindre `prisma.post.findMany()` serait une erreur de compilation.
 
-## Démarrer la base, le stockage et la boîte mail
+## Trois conteneurs
 
 ```bash
 pnpm dev:infra
 ```
 
-Ce script lance `docker compose -f docker-compose.dev.yml up -d`. Docker télécharge les images au premier lancement, puis démarre quatre conteneurs :
+Ce script lance `docker compose -f docker-compose.dev.yml up -d`. Docker télécharge les images au premier lancement, puis démarre :
 
 <DocsTable columnsJson='["Service","Rôle","Adresse sur notre machine"]' rowsJson='[["db","PostgreSQL 17, la base de données","127.0.0.1:5435 (utilisateur akfc, mot de passe akfc-dev, base akfc_db)"],["storage","MinIO, un stockage compatible S3 qui joue le rôle de Cloudflare R2","API : 127.0.0.1:9200 · console : http://localhost:9201 (akfc-dev / akfc-dev-secret)"],["storage-init","Crée le bucket akfc-dev au premier démarrage, puis s’arrête","—"],["mail","Mailpit : capture tous les e-mails envoyés par l’application","SMTP : 127.0.0.1:1026 · boîte web : http://localhost:8026"]]' />
 
-Les ports ne sont pas les ports habituels (5432 pour Postgres, 9000 pour MinIO) : un Postgres déjà installé sur la machine, ou la sandbox recruteurs lancée en parallèle, ne gênera pas. Tout écoute sur `127.0.0.1` seulement, donc rien n'est exposé au réseau.
+Les ports ne sont pas les ports habituels (5432 pour Postgres, 9000 pour MinIO) : un Postgres déjà installé, ou la sandbox lancée en parallèle, ne se battra pas pour la même place. Tout écoute sur `127.0.0.1` seulement : rien n'est exposé au réseau.
 
-Les données survivent à un redémarrage : elles vivent dans des volumes Docker. `pnpm dev:infra:stop` arrête les conteneurs sans rien effacer.
+Les données survivent à un redémarrage, dans des volumes Docker. `pnpm dev:infra:stop` arrête les conteneurs sans rien effacer.
+
+Arrêtons-nous un instant sur le troisième conteneur, parce qu'il est le plus étrange. **Mailpit est une boîte aux lettres qui ne poste jamais rien.** Il accepte chaque e-mail que l'application lui confie, l'affiche dans une page web, et le garde. Un test de réinitialisation de mot de passe ne doit pas écrire à un vrai membre ; avec Mailpit, il ne le peut tout simplement pas.
 
 <Callout type="info">
-Mailpit mérite qu'on s'y arrête. En développement, aucun e-mail ne doit partir sur internet : un test de réinitialisation de mot de passe ne doit pas écrire à un vrai membre. Mailpit accepte tous les messages et les affiche dans sa page web, sans jamais les transmettre.
+Nous ne comptons pas sur la prudence pour ne pas envoyer d'e-mails : nous rendons l'envoi **impossible**. C'est une idée qui reviendra souvent.
 </Callout>
 
-## Configurer : deux fichiers, deux lecteurs
+## Deux fichiers pour un seul réglage
 
-Les adresses et les mots de passe de ces services, l'application les lit dans des variables d'environnement. Le dépôt en fournit une version prête à l'emploi, `.env.dev.example`, alignée sur `docker-compose.dev.yml`. Nous la copions deux fois :
+L'application lit les adresses et mots de passe de ces services dans des variables d'environnement. Le dépôt en fournit une version prête à l'emploi, `.env.dev.example`, alignée sur `docker-compose.dev.yml`. Et nous allons la copier… deux fois :
 
 ```bash
 cp .env.dev.example .env
 cp .env.dev.example apps/web/.env.local
 ```
 
-Pourquoi deux copies ? Parce que deux programmes différents lisent la configuration, chacun à un endroit différent.
+Ce doublon ressemble à une erreur. C'est une énigme, et sa solution dit quelque chose d'important sur le monorepo : **deux programmes différents lisent la configuration, chacun à un endroit différent.**
 
-La CLI Prisma (migrations, seed) se lance à la racine du dépôt. Son fichier de configuration, `prisma.config.ts`, commence par `import 'dotenv/config'` : il charge le fichier `.env` **de la racine**.
+La CLI Prisma (migrations, seed) se lance à la racine du dépôt. Son fichier de configuration, `prisma.config.ts`, commence par `import 'dotenv/config'` : il charge le `.env` **de la racine**.
 
 Next.js, lui, s'exécute dans `apps/web`. Il charge les fichiers `.env*` **de son propre dossier**, et `.env.local` en priorité.
 
+Un seul fichier, et l'un des deux programmes travaillerait à l'aveugle.
+
 <Callout type="warning">
-Aucun de ces deux fichiers n'est versionné : le `.gitignore` les exclut, et seuls les modèles `.env.example` et `.env.dev.example` sont suivis par Git. Un vrai secret (celui de la production, par exemple) n'a rien à faire dans le dépôt, même dans une branche, même pour un instant : l'historique Git le garderait pour toujours.
+Aucun de ces deux fichiers n'est versionné : le `.gitignore` les exclut, et seuls les modèles `.env.example` et `.env.dev.example` sont suivis. Un vrai secret n'a rien à faire dans le dépôt, même dans une branche, même une minute : l'historique Git le garderait pour toujours.
 </Callout>
 
-Le modèle complet, avec un commentaire par variable, est `.env.example`. Celui de développement n'en garde que ce qu'il faut pour démarrer ; la relève automatique des réponses aux tickets (`TICKET_IMAP_*`), par exemple, reste désactivée tant que sa variable n'est pas définie.
+Le modèle complet, avec un commentaire par variable, est `.env.example`. Celui de développement n'en garde que l'indispensable ; la relève automatique des réponses aux tickets (`TICKET_IMAP_*`), par exemple, reste éteinte tant que sa variable n'est pas définie.
 
-## Créer les tables
+## Rejouer l'histoire de la base
 
-La base existe, mais elle est vide. Les **migrations** de `prisma/migrations` décrivent, dans l'ordre, chaque transformation qu'a subie le schéma depuis le début du projet. Les appliquer toutes, c'est reconstruire la base telle qu'elle est en production, sans une seule donnée.
+La base existe, mais elle est vide. Les **migrations** de `prisma/migrations` racontent, dans l'ordre, chaque transformation qu'a subie le schéma depuis le premier jour. Les appliquer toutes, c'est rejouer cette histoire et obtenir la base telle qu'elle est en production, sans une seule donnée.
 
 ```bash
 pnpm db:migrate
 ```
 
-Ce script lance `prisma migrate deploy`, qui applique les migrations pas encore appliquées et n'en crée aucune. C'est la commande de la production, et c'est volontaire : notre base locale se construit exactement comme celle du serveur.
+Ce script lance `prisma migrate deploy`, qui applique les migrations manquantes et n'en crée aucune. C'est la commande de la production, et c'est voulu : notre base se construit exactement comme celle du serveur.
 
-Sa cousine, `prisma migrate dev`, sert à autre chose : elle compare le schéma à la base et **écrit une nouvelle migration**. Nous la retrouverons dans la partie « Données », le jour où nous modifierons le schéma.
+Sa cousine, `prisma migrate dev`, est d'une autre trempe : elle compare le schéma à la base et **écrit une nouvelle migration**. Puissante, et donc dangereuse au mauvais endroit. Nous la croiserons dans la saison « Données », le jour où nous toucherons au schéma.
 
-## Remplir la base de données de démonstration
+## Les premiers habitants
 
-Une base vide ne permet même pas de se connecter : il n'existe aucun compte. Le script de démonstration en crée deux, ainsi que le groupe Administrateurs, la catégorie « Cours » et quatre disciplines.
+Une base vide ne laisse même pas se connecter : il n'existe aucun compte. Le script de démonstration crée deux habitants, ainsi que le groupe Administrateurs, la catégorie « Cours » et quatre disciplines.
 
 ```bash
 pnpm db:seed:dev
@@ -101,31 +109,33 @@ pnpm db:seed:dev
 
 <DocsTable columnsJson='["Compte","Mot de passe","Rôle"]' rowsJson='[["admin@akfc.demo","sandbox-demo","administrateur (membre du groupe Administrateurs)"],["membre@akfc.demo","sandbox-demo","simple membre"]]' />
 
-Ce script est celui de la sandbox recruteurs, `prisma/seed.sandbox.mjs`. Il est **idempotent** : le relancer ne crée pas de doublons, il remet simplement les mots de passe à leur valeur de démonstration. Ses identifiants sont publics par nature, et n'existent que dans notre base locale.
+C'est le script de la sandbox recruteurs, `prisma/seed.sandbox.mjs`. Il est **idempotent** : le relancer ne crée pas de doublons, il remet les mots de passe à leur valeur de démonstration.
 
-## Lancer l'application
+Relisons cette phrase en pensant à l'épisode précédent. *Il remet les mots de passe à leur valeur de démonstration.* Lancé sur notre base locale, c'est un confort. Lancé sur une base partagée avec la production, c'eût été une catastrophe. Voilà, très concrètement, ce que la séparation des bases nous a épargné.
+
+## Allumer
 
 ```bash
 pnpm dev
 ```
 
-L'application répond sur `http://localhost:3000`. Au démarrage, le fichier `apps/web/src/instrumentation.ts` lance une série de vérifications : il crée les dossiers racines de la bibliothèque, s'assure que le groupe Administrateurs existe, prépare l'espace de chaque groupe collaboratif et les catégories de tickets. Sur une base neuve, c'est ce qui rend la bibliothèque utilisable sans aucune manipulation.
+L'application répond sur `http://localhost:3000`. Au démarrage, `apps/web/src/instrumentation.ts` déroule une série de vérifications : il crée les dossiers racines de la bibliothèque, s'assure que le groupe Administrateurs existe, prépare l'espace de chaque groupe collaboratif et les catégories de tickets. Sur une base neuve, c'est ce qui rend la bibliothèque utilisable sans la moindre manipulation.
 
-Vérifions que tout fonctionne, service par service :
+Maintenant, mettons notre monde à l'épreuve, un service à la fois :
 
-1. Connectons-nous avec `admin@akfc.demo`. Le menu du compte, en haut à droite, propose « Dashboard » : la **base** répond et l'authentification aussi.
-2. Ouvrons la bibliothèque du tableau de bord et déposons une image. Elle apparaît dans la console MinIO (`http://localhost:9201`), dans le bucket `akfc-dev` : le **stockage** répond.
-3. Déconnectons-nous, puis demandons « Mot de passe oublié » pour `membre@akfc.demo`. Le message arrive dans Mailpit (`http://localhost:8026`) : les **e-mails** partent, et ne vont nulle part ailleurs.
+1. Connectons-nous avec `admin@akfc.demo`. Le menu du compte, en haut à droite, propose « Dashboard » : la **base** répond, l'authentification aussi.
+2. Ouvrons la bibliothèque du tableau de bord et déposons une image. Elle apparaît dans la console MinIO (`http://localhost:9201`), bucket `akfc-dev` : le **stockage** répond.
+3. Déconnectons-nous, demandons « Mot de passe oublié » pour `membre@akfc.demo`. Le message arrive dans Mailpit (`http://localhost:8026`) : les **e-mails** partent, et ne vont nulle part ailleurs.
 
 <Callout type="info">
 Trois services, trois vérifications. Si l'une échoue, nous savons immédiatement lequel regarder, au lieu de chercher une erreur au milieu d'un écran blanc.
 </Callout>
 
-## Quand ça ne marche pas
+## Quand le monde résiste
 
 <DocsTable columnsJson='["Symptôme","Cause probable","Remède"]' rowsJson='[["« Can’t reach database server at 127.0.0.1:5435 »","Les conteneurs ne tournent pas.","pnpm dev:infra, puis docker ps pour vérifier."],["« port is already allocated » au lancement de l’infrastructure","Un autre programme occupe 5435, 9200, 9201, 1026 ou 8026.","Arrêter ce programme, ou changer le port à gauche du « : » dans docker-compose.dev.yml ET dans les deux fichiers d’environnement."],["Erreur sur une variable R2_ manquante","apps/web/.env.local absent ou incomplet : le client de stockage refuse de démarrer sans ses cinq variables.","Recopier .env.dev.example vers apps/web/.env.local."],["prisma migrate deploy ne trouve pas DATABASE_URL","Le .env de la racine est absent.","cp .env.dev.example .env"],["Une modification n’apparaît pas après pnpm check","pnpm check efface le dossier .next pendant que pnpm dev tourne.","Arrêter pnpm dev (Ctrl+C), le relancer, recharger la page."],["Connexion refusée avec les comptes de démonstration","Le seed n’a pas été lancé sur cette base.","pnpm db:seed:dev"]]' />
 
-Pour repartir d'une page blanche, base et fichiers compris :
+Et pour tout raser et repartir d'une page blanche, base et fichiers compris :
 
 ```bash
 docker compose -f docker-compose.dev.yml down -v
@@ -134,8 +144,22 @@ pnpm db:migrate
 pnpm db:seed:dev
 ```
 
-L'option `-v` supprime les volumes, donc toutes les données de développement. Elle n'a aucun effet en dehors de notre machine.
+L'option `-v` supprime les volumes, donc toutes les données de développement. Elle n'a aucun effet hors de notre machine.
 
 <Callout type="tip">
-Nous avons maintenant un environnement complet, isolé, et jetable. C'est précisément cette dernière qualité qui nous rend libres d'expérimenter : une base que l'on peut reconstruire en quatre commandes est une base que l'on n'a pas peur de casser.
+Nous avons un environnement complet, isolé, et **jetable**. C'est cette dernière qualité qui nous rend libres : une base que l'on reconstruit en quatre commandes est une base que l'on n'a pas peur de casser.
+</Callout>
+
+## Fin de l'épisode
+
+Tout fonctionne. Nous nous connectons, nous déposons des images, nous recevons des e-mails qui n'existent pas. Le projet compile. Les pages s'affichent.
+
+C'est exactement le moment où le danger commence.
+
+Car une application qui compile et qui s'affiche peut parfaitement être cassée. Ce projet l'a été, plus longtemps qu'on ne l'aimerait, sans qu'aucun outil ne proteste : une protection qui ne protégeait rien, du code « qui marche » que React s'apprêtait à briser, et des fichiers que Next sait ignorer sans un mot.
+
+Les erreurs bruyantes, nous savons les corriger. Ce sont les silencieuses qui nous intéressent maintenant.
+
+<Callout type="tip">
+**Dans l'épisode suivant** : la chasse aux erreurs qui ne disent rien. Une commande qui monte la garde avant chaque commit, une règle de lint qui refuse du code parfaitement fonctionnel, et un contrat invisible caché dans un simple attribut HTML.
 </Callout>
