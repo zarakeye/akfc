@@ -141,7 +141,7 @@ export default async function Footer(): Promise<JSX.Element> {
               Le site
             </h2>
             <ul className="flex flex-col gap-2">
-              {disciplines.length > 0 && (
+              {/* {disciplines.length > 0 && (
                 <li>
                   <span className="text-sm font-bold text-white">Nos disciplines</span>
                   <ul className="mt-1 flex flex-col gap-1 pl-3">
@@ -157,7 +157,7 @@ export default async function Footer(): Promise<JSX.Element> {
                     ))}
                   </ul>
                 </li>
-              )}
+              )} */}
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -221,7 +221,7 @@ export default async function Footer(): Promise<JSX.Element> {
           {/* ── Horaires ────────────────────────────────────────────── */}
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/50">
-              Horaires
+              Horaires des cours
             </h2>
             {schedule.length > 0 ? (
               <ul className="flex flex-col gap-3 text-sm text-white/80">
