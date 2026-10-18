@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { trpc, getTrpcClient } from '@trpc/trpcClient';
 import { JSX, useState } from 'react';
+import { TourProvider } from '@features/tours';
 
 /**
  * Provides the QueryClient and TRPC client to the application.
@@ -19,7 +20,7 @@ export function AppProviders({ children }: { children: React.ReactNode }): JSX.E
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <TourProvider>{children}</TourProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </trpc.Provider>
