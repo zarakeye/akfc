@@ -1,10 +1,11 @@
 import type { Tour, TourAudience } from "./tour.types";
+import { adminPostsCreate } from "./definitions/admin.posts.create";
 
 /**
  * Registre de TOUS les tutos. Ajouter un tuto = créer son fichier dans `definitions/` et
  * l'ajouter à cette liste.
  */
-export const TOURS: Tour[] = [];
+export const TOURS: Tour[] = [adminPostsCreate];
 
 export function getTour(id: string): Tour | undefined {
   return TOURS.find((t) => t.id === id);

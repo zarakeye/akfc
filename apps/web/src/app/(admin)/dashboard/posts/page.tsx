@@ -37,6 +37,7 @@ export default function PostsListPage(): JSX.Element {
         <h2 className="text-2xl font-bold">Posts</h2>
         <Link
           href="/dashboard/posts/create"
+          data-tour="posts.list.create"
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />

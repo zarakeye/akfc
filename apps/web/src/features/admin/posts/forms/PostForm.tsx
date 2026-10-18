@@ -119,12 +119,13 @@ export function PostForm({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            data-tour="posts.form.title"
             placeholder="Reprise des cours, Résultats de la compétition…"
             className="rounded border border-input bg-background px-2 py-1"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm" data-tour="posts.form.publicationDate">
           <span className="font-medium">Date de publication</span>
           <input
             type="datetime-local"
@@ -140,7 +141,7 @@ export function PostForm({
       </fieldset>
 
       {/* ── Contenu (PageBuilder) ───────────────────────────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="posts.form.content">
         <legend className="px-2 text-sm font-medium">
           Contenu (PageBuilder)
         </legend>
@@ -167,6 +168,7 @@ export function PostForm({
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
+          data-tour="posts.form.submit"
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isSubmitting ? "Enregistrement…" : submitLabel}
