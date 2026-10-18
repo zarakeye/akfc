@@ -84,21 +84,30 @@ export default function DocsTable({
     }),
   );
 
-  const rows: Record<string, unknown>[] = parsedRows.map((row) => {
-    const obj: Record<string, unknown> = {};
+  const rows: Record<string, unknown>[] = parsedRows.map((row, rowIndex) => {
+    const obj: Record<string, unknown> = { __order: rowIndex };
     row.forEach((cell, index) => {
       obj[`col_${index}`] = cell;
     });
     return obj;
   });
 
+  // Ordre de l'auteur conservé : la table trie par défaut sur sa première colonne. Trier sur
+  // une propriété absente des colonnes ne compare rien (comparateur nul) → ordre d'origine.
+  // Couleurs du thème (et non `text-white`, illisible sur le fond clair de la doc) ; cellules
+  // à la ligne (`whitespace-normal`) pour les phrases longues.
   return (
-    <div className="my-6 w-full">
+    <div className="my-6 w-full text-left">
       {title ? (
-        <p className="mb-3 text-sm font-semibold text-white">{title}</p>
+        <p className="mb-3 text-sm font-semibold text-foreground">{title}</p>
       ) : null}
-      <div className="my-6 rounded-2xl border border-red-500 p-4 text-white">
-        <Table columns={columns} rows={rows} />
+      <div className="my-6 rounded-2xl border border-border p-4 text-foreground">
+        <Table
+          columns={columns}
+          rows={rows}
+          defaultOrder={{ property: "__order", order: "asc" }}
+          styleClassNames={{ cells: "whitespace-normal align-top pr-4" }}
+        />
       </div>
     </div>
   );

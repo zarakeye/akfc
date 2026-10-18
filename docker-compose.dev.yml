@@ -1,0 +1,77 @@
+# ══════════════════════════════════════════════════════════════════════════
+#  AKFC — infrastructure de DÉVELOPPEMENT
+#
+#  Seuls les SERVICES tournent ici ; l'application, elle, tourne sur la machine
+#  (`pnpm dev`) pour profiter du rechargement à chaud.
+#
+#    pnpm dev:infra        démarre base, stockage et boîte mail de test
+#    pnpm dev:infra:stop   les arrête (les données restent)
+#    docker compose -f docker-compose.dev.yml down -v   remise à zéro TOTALE
+#
+#  Ports choisis pour ne heurter ni la sandbox recruteurs (9000/9001/8025),
+#  ni un Postgres déjà installé (5432). Tout écoute sur 127.0.0.1 seulement.
+#    Postgres  127.0.0.1:5435
+#    MinIO     127.0.0.1:9200 (API S3)  ·  http://localhost:9201 (console)
+#    Mailpit   127.0.0.1:1026 (SMTP)    ·  http://localhost:8026 (boîte web)
+#
+#  ⚠ Identifiants de développement, publics par nature : jamais en production.
+# ══════════════════════════════════════════════════════════════════════════
+
+name: akfc-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: akfc
+      POSTGRES_PASSWORD: akfc-dev
+      POSTGRES_DB: akfc_db
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - akfc-dev-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U akfc -d akfc_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Stockage compatible S3 : joue le rôle de Cloudflare R2 en local.
+  storage:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: akfc-dev
+      MINIO_ROOT_PASSWORD: akfc-dev-secret
+    ports:
+      - "127.0.0.1:9200:9000"
+      - "127.0.0.1:9201:9001"
+    volumes:
+      - akfc-dev-storage:/data
+
+  # Crée le bucket au premier démarrage, puis s'arrête.
+  storage-init:
+    image: minio/mc:latest
+    depends_on:
+      - storage
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://storage:9000 akfc-dev akfc-dev-secret; do sleep 1; done;
+      mc mb -p local/akfc-dev || true;
+      echo 'bucket akfc-dev prêt';
+      "
+
+  # Capture TOUS les e-mails envoyés par l'app (aucun ne part sur internet).
+  mail:
+    image: axllent/mailpit:latest
+    ports:
+      - "127.0.0.1:1026:1025"
+      - "127.0.0.1:8026:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
+volumes:
+  akfc-dev-pgdata:
+  akfc-dev-storage:

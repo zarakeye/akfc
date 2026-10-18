@@ -1,0 +1,94 @@
+---
+title: "Avant de commencer"
+description: "Ce que fait le projet, comment il est rangé, et les mots du club qu'il faut connaître avant d'ouvrir le code."
+section: "Démarrer"
+order: 0
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+## Un club, deux publics, une seule application
+
+L'Association Kung Fu Chambéry enseigne plusieurs arts martiaux dans les locaux de la MJC de Chambéry. Comme tous les clubs, elle a deux besoins qui n'ont, en apparence, rien à voir.
+
+Le premier est une vitrine. Un visiteur arrive sur `akfc.fr`, il veut savoir quelles disciplines sont enseignées, à quelle heure, par qui, et quand aura lieu le prochain stage.
+
+Le second est un outil. Les administrateurs du club publient des actualités, rangent des photos, tiennent la liste des membres, leur transmettent des documents, répondent à leurs demandes. Les membres, eux, consultent leurs documents et partagent des fichiers dans les espaces de leurs groupes.
+
+Nous aurions pu construire deux applications. Nous n'en avons construit qu'une : le site public et le tableau de bord partagent la même base, les mêmes médias, la même authentification. Une photo validée dans la bibliothèque peut apparaître dans une galerie publique sans être copiée nulle part. C'est ce choix qui explique une bonne partie de l'architecture que nous allons découvrir.
+
+<Callout type="info">
+Retenons l'idée directrice : **une seule source de vérité**, servie à deux publics. Chaque fois qu'une donnée existe en double quelque part dans le projet, c'est une exception, et elle est justifiée par un commentaire.
+</Callout>
+
+## Comment lire cette documentation
+
+Les parties se suivent dans l'ordre où un développeur découvre le projet. La partie suivante, « Mise en route », installe tout sur notre machine ; la troisième explique comment nous travaillons au quotidien. Ensuite seulement, nous descendons couche par couche : le front, les données, l'API, l'authentification, le stockage, et ainsi de suite jusqu'au déploiement.
+
+Chaque partie part d'un problème réel rencontré pendant la construction du projet. Nous regardons d'abord ce qui coince, puis ce que nous avons essayé, et la solution n'arrive qu'au moment où le besoin est devenu évident. Les encadrés en fin de section résument ce qu'il faut garder en tête.
+
+Le code montré est celui du dépôt, pas une version simplifiée pour l'occasion. Quand un extrait est raccourci, il le dit.
+
+<Callout type="tip">
+Gardons le dépôt ouvert à côté de la documentation. Chaque chemin de fichier cité peut être ouvert directement dans l'éditeur : c'est la meilleure façon de vérifier que nous avons bien compris.
+</Callout>
+
+## La carte du dépôt
+
+Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs paquets qui se connaissent par leur nom. Voici les dossiers qui comptent.
+
+<FileTree>
+  <FileTreeItem name="apps/web — l'application Next.js (pages, composants, client tRPC)">
+    <FileTreeItem name="src/app — les routes : (public) pour le site, (admin)/dashboard pour le tableau de bord, docs pour cette documentation" />
+    <FileTreeItem name="src/features — le code rangé par fonctionnalité (admin, finder, page-builder, tours…)" />
+    <FileTreeItem name="src/proxy.ts — le filtre d'authentification qui garde /dashboard et /profil" />
+    <FileTreeItem name="content/docs — les pages de documentation en MDX (guide, admin, dev)" />
+  </FileTreeItem>
+  <FileTreeItem name="packages/backend — l'API : routeurs tRPC, accès base, e-mails, stockage">
+    <FileTreeItem name="src/modules — un dossier par domaine (posts, disciplines, storage, tickets…)" />
+    <FileTreeItem name="src/trpc — la construction de tRPC : contexte, procédures publiques, protégées, admin" />
+  </FileTreeItem>
+  <FileTreeItem name="packages/contracts — les types et schémas partagés par le front et le back" />
+  <FileTreeItem name="packages/finder-core — le moteur du finder (l'explorateur de fichiers), indépendant du stockage" />
+  <FileTreeItem name="prisma — le schéma de la base (47 modèles) et ses migrations" />
+  <FileTreeItem name="scripts — les vérifications lancées par pnpm check" />
+  <FileTreeItem name="docker-compose.dev.yml — la base, le stockage et la boîte mail de développement" />
+  <FileTreeItem name="Dockerfile — l'image de production" />
+</FileTree>
+
+Le découpage suit une règle simple. `apps/web` affiche et `packages/backend` décide. Le front ne parle jamais à la base de données : il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée et lit ou écrit en base. Les types qui circulent entre les deux vivent dans `packages/contracts`, pour qu'un changement d'un côté casse la compilation de l'autre au lieu de casser l'application en production.
+
+## Le trajet d'une action
+
+Suivons ce qui se passe quand un administrateur crée une actualité. Ce trajet reviendra dans presque toutes les parties.
+
+1. Le formulaire vit dans `apps/web`. À l'envoi, il appelle `trpc.post.create`, un appel de fonction typé, pas une URL écrite à la main.
+2. La requête arrive au routeur `post` de `packages/backend`. Le middleware `isAdmin` vérifie la session ; Zod valide le titre et le contenu.
+3. Prisma écrit l'article dans PostgreSQL, dans une transaction qui enregistre aussi les médias qu'il référence.
+4. Le front invalide son cache : la liste des actualités se recharge d'elle-même.
+
+Les fichiers suivent un chemin différent, que la partie « Stockage et médias » détaillera. Un fichier lourd ne transite pas par notre API : le backend délivre une autorisation signée, et le navigateur envoie le fichier directement au stockage compatible S3 (Cloudflare R2 en production, MinIO sur notre machine).
+
+<Callout type="info">
+Deux circuits, donc : les **données** passent par tRPC et Prisma, les **fichiers** vont directement au stockage avec une autorisation signée par le backend. Ne cherchons pas d'upload de fichier dans les routeurs tRPC : il n'y en a pas.
+</Callout>
+
+## Les mots du club
+
+Le code emploie le vocabulaire du club, et quelques mots y ont un sens précis. Le confondre, c'est se tromper de table.
+
+<DocsTable columnsJson='["Mot dans l’interface","Modèle Prisma","Ce que c’est"]' rowsJson='[["Discipline","Discipline","Un art martial enseigné, au sens conceptuel (ex. Tchoy Lee Fut), indépendant des dates et des lieux."],["Famille","DisciplineFamily","Un regroupement de disciplines proches, utilisé par le menu « Nos disciplines »."],["Catégorie","Category","La plus grosse maille de classement (ex. « Cours ») ; elle range aussi la médiathèque."],["Origine","Origin","L’origine culturelle d’une discipline, d’un stage ou d’un événement (ex. Chine, Philippines)."],["Cours","Course","Un créneau HEBDOMADAIRE : un jour, une heure, un public. Pas une séance datée."],["Stage","Seminar","Un séminaire ponctuel, avec ses séances datées (SeminarSession)."],["Événement","Event","Un rendez-vous plus léger : repas, portes ouvertes, forum ; ses dates vivent dans ses séances (EventSession)."],["Groupe","MemberGroup","Un ensemble de membres ; s’il est collaboratif, il a un espace de fichiers partagé. Les groupes forment une hiérarchie."],["Document","MemberDocument","Un fichier du club publié aux membres, avec un suivi de lecture par membre."],["Média","MediaAsset","Un fichier de la bibliothèque, avec son statut : en attente, publié, à la corbeille."],["Ticket","Ticket","Une demande adressée au club, numérotée (AKFC-0042), avec son fil de messages."],["Page éditoriale","SitePage, PageVisibility","Une page au contenu libre (À propos, Contacts) qu’un admin publie ou laisse « en construction »."]]' />
+
+## Trois environnements, une règle
+
+Le projet tourne à trois endroits.
+
+La **production** vit sur un serveur Hetzner, dans des conteneurs Docker, et sert `akfc.fr`. Ses données sont celles de vrais membres : des noms, des adresses, des photos d'enfants. La **sandbox recruteurs** est une copie autonome, lancée par `docker-compose.sandbox.yml`, avec des comptes et des contenus de démonstration. Le **développement**, enfin, c'est notre machine : l'application tourne avec `pnpm dev`, et la base, le stockage et la boîte mail tournent dans des conteneurs que nous allons démarrer à la partie suivante.
+
+Pendant longtemps, la machine de développement et le serveur ont partagé la même base. C'était pratique : les vraies données étaient là, tout de suite. C'était surtout dangereux : une migration ratée, un script de nettoyage lancé au mauvais endroit, et ce sont les données du club qui partaient. La séparation a été l'une des décisions les plus importantes du projet.
+
+<Callout type="warning">
+La règle ne souffre pas d'exception : **le développement ne touche jamais aux données de production**. Notre base locale part de zéro, se remplit de données de démonstration, et peut être détruite à tout moment sans conséquence. Si une commande nous demande l'adresse du serveur de production, c'est que nous sommes au mauvais endroit.
+</Callout>

@@ -1,0 +1,117 @@
+---
+title: "Façon de travailler"
+description: "Vérifier avant d'enregistrer, enregistrer par petits pas, et ne jamais laisser une erreur silencieuse atteindre la production."
+section: "Démarrer"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+## Les erreurs qui ne disent rien
+
+Une erreur de compilation est une bonne nouvelle. Elle s'affiche, elle désigne une ligne, elle empêche d'aller plus loin. Les erreurs qui coûtent cher sont les autres : celles qui ne disent rien.
+
+Le projet en a connu une, mémorable. Dans Next.js, le fichier qui filtre les requêtes avant qu'elles n'atteignent les pages (`proxy.ts`) déclare les chemins qu'il surveille. Le nôtre surveillait `/(admin)/:path*`. Le code compilait, les tests manuels passaient, et pourtant le tableau de bord n'était pas gardé. `(admin)` est un **groupe de routes** : une façon de ranger les dossiers, qui n'apparaît jamais dans les URL. Le filtre attendait des adresses qui n'existaient pas, et ne s'exécutait donc jamais.
+
+Il en existe une seconde de la même famille. Next ne lit ses fichiers de convention (`proxy.ts`, `instrumentation.ts`…) qu'à un endroit précis : à côté du dossier `app`. Notre application vit dans `apps/web/src/app` ; un `proxy.ts` posé dans `apps/web/` est ignoré, sans le moindre avertissement.
+
+Ce que ces deux histoires nous apprennent, c'est que « ça compile » ne suffit pas. Il nous faut des vérifications qui cherchent précisément ce que les outils ne voient pas.
+
+## pnpm check, la porte d'entrée de chaque commit
+
+Toutes les vérifications du projet tiennent dans une commande, lancée à la racine :
+
+```bash
+pnpm check
+```
+
+Elle enchaîne, dans l'ordre, cinq étapes, et s'arrête à la première qui échoue :
+
+<DocsTable columnsJson='["Étape","Ce qu’elle vérifie","Ce qu’elle nous évite"]' rowsJson='[["scripts/check-next-conventions.mjs","Les fichiers de convention de Next sont au bon endroit (apps/web/src), et middleware et proxy ne coexistent pas.","Un filtre d’authentification ignoré sans un mot."],["scripts/check-tour-targets.mjs","Chaque étape d’un tutoriel interactif vise un élément qui porte bien l’attribut data-tour correspondant.","Un tuto qui s’arrête net chez l’utilisateur parce qu’un composant a été renommé."],["pnpm clean","Efface .next et le cache : la suite repart d’un état propre.","Une vérification qui passe grâce à un vieux fichier compilé."],["typecheck du backend","TypeScript sur packages/backend.","Une procédure qui renvoie autre chose que ce que le front attend."],["typecheck du web","TypeScript sur apps/web.","Un composant qui appelle une procédure avec de mauvais arguments."]]' />
+
+Les deux scripts maison sont courts, et c'est voulu : chacun traque une seule erreur silencieuse, et l'explique en français quand il la trouve.
+
+<Callout type="warning">
+`pnpm clean` supprime le dossier `.next` alors que `pnpm dev` est peut-être en train de s'en servir. Après un `pnpm check`, si une modification n'apparaît pas dans le navigateur, arrêtons `pnpm dev` (Ctrl+C) et relançons-le : ce n'est pas le code qui est en cause.
+</Callout>
+
+## Le lint, ou les règles que TypeScript ignore
+
+TypeScript vérifie les types ; il ne sait rien de React. ESLint, avec les règles `react-hooks`, connaît les règles de React, et elles se sont durcies avec React 19 et son compilateur.
+
+```bash
+pnpm lint
+```
+
+Prenons un cas réel. Le carrousel de la page d'accueil gardait l'état « lecture ou pause » dans une `ref`, pour que sa boucle d'animation puisse le lire à chaque image. Il la mettait à jour ainsi :
+
+```tsx
+const playingRef = useRef(playing);
+playingRef.current = playing; // écrit PENDANT le rendu
+```
+
+Le code marchait. ESLint le refuse pourtant : « Cannot update ref during render ». Un rendu React doit être une fonction pure, sans effet de bord ; React peut le lancer deux fois, l'interrompre, le jeter. Écrire dans une `ref` pendant le rendu, c'est parier que React ne fera rien de tout cela. La correction déplace l'écriture après le rendu :
+
+```tsx
+const playingRef = useRef(playing);
+useEffect(() => {
+  playingRef.current = playing; // écrit APRÈS le rendu
+}, [playing]);
+```
+
+La boucle d'animation ne lit la `ref` que hors rendu : le comportement est identique, et le pari a disparu.
+
+<Callout type="tip">
+Une règle de lint qui se déclenche sur un code « qui marche » n'est pas une fausse alerte. C'est presque toujours un pari sur le comportement de React, gagné aujourd'hui, et qui sera perdu le jour où React changera sa façon de rendre.
+</Callout>
+
+## Enregistrer par petits pas
+
+Un commit est une étape qui tient debout toute seule : `pnpm check` passe avant et après. Nous n'enregistrons jamais un état intermédiaire « pour ne pas le perdre » ; une branche sert à ça.
+
+Quand une fonctionnalité touche le backend et le front, nous la découpons : d'abord le backend (le modèle, la procédure, ses vérifications), puis le front qui l'utilise. Chaque moitié se vérifie séparément, et si la seconde révèle un problème dans la première, nous savons exactement où regarder.
+
+Les messages suivent la forme `type(portée): résumé`, en français, avec un corps qui explique **pourquoi** :
+
+```text
+feat(rgpd): formulaire de droit à l'image — téléchargement, dépôt admin, aperçu membre
+fix(carousel): erreurs react-hooks/refs et react-hooks/immutability
+style(header): logo encore agrandi, barre de même hauteur
+```
+
+<DocsTable columnsJson='["Type","Quand"]' rowsJson='[["feat","Une fonctionnalité nouvelle, visible ou non."],["fix","La correction d’un comportement erroné."],["style","Un changement d’apparence, sans effet sur la logique."],["refactor","Une réorganisation du code, sans changement de comportement."],["docs","La documentation, celle-ci comprise."],["chore","L’outillage : dépendances, scripts, configuration."]]' />
+
+## Les tutoriels interactifs : un contrat dans le code
+
+Le site embarque des tutoriels qui guident un utilisateur pas à pas sur la vraie page, en ne laissant actif que l'élément de l'étape en cours. Chaque étape désigne son élément par un nom :
+
+```tsx
+<input
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  data-tour="posts.form.title"
+/>
+```
+
+Cet attribut est un **contrat**. Le composant promet que l'élément existe sous ce nom ; le tutoriel (dans `apps/web/src/features/tours/definitions/`) compte dessus. Si nous renommons ou supprimons un élément qui porte un `data-tour`, `pnpm check` échoue et nomme le tutoriel concerné. Nous mettons alors à jour l'un ou l'autre, dans le même commit.
+
+<Callout type="info">
+Un `data-tour` ne se supprime pas « parce qu'il ne sert à rien visuellement ». Cherchons d'abord son nom dans `features/tours/definitions/` : s'il y apparaît, un tutoriel en dépend.
+</Callout>
+
+## Écrire la documentation
+
+La documentation vit dans `apps/web/content/docs`, en trois dossiers qui sont aussi les trois espaces du site : `guide` pour les visiteurs et les membres, `admin` pour les administrateurs (réservé côté serveur), `dev` pour nous. Le premier dossier d'une page décide de son espace ; son en-tête (`title`, `description`, `section`, `order`) décide de sa place dans la barre latérale.
+
+Quelques règles maintiennent l'unité du ton dans l'espace développeur. Nous écrivons avec « nous », jamais « on » ni « vous ». Chaque section part d'un problème avant d'en venir à la solution. Les points à retenir vont dans un `Callout` en fin de section. La prose porte le raisonnement ; les listes ne servent qu'aux énumérations courtes.
+
+Une contrainte technique, enfin, a déjà coûté des heures. Le compilateur MDX supprime les expressions JavaScript dans les attributs et les chaînes d'attribut sur plusieurs lignes. Le composant `DocsTable` reçoit donc ses colonnes et ses lignes en JSON, entre apostrophes simples, **sur une seule ligne**, et toute apostrophe du contenu devient une apostrophe typographique (’) :
+
+```mdx
+<DocsTable columnsJson='["Colonne A","Colonne B"]' rowsJson='[["L’exemple","oui"],["Autre","non"]]' />
+```
+
+<Callout type="tip">
+Le fil de cette partie tient en une phrase : **nous rendons visibles les erreurs silencieuses avant qu'elles ne partent en production**. `pnpm check` en est l'outil, le petit commit en est la discipline, et le contrat `data-tour` en est un exemple. Chaque fois que nous découvrirons une nouvelle erreur silencieuse, la bonne réponse sera rarement « faire attention » : ce sera une vérification de plus.
+</Callout>
