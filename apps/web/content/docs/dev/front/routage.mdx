@@ -1,0 +1,332 @@
+---
+title: "Le routage : des dossiers, des groupes et des layouts"
+description: "Comment l'App Router de Next.js range le site public, le tableau de bord et la documentation dans une seule arborescence, et pourquoi chaque layout est construit comme il l'est."
+section: "Fondations front"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
+
+## Trois mondes sous un même toit
+
+Ouvrons trois onglets : la page d'accueil du club, le tableau de bord, et cette documentation. Ils appartiennent à la même application, et pourtant ils ne se comportent pas du tout de la même façon.
+
+Le site public est fait de **pages longues**. L'accueil enchaîne un carrousel, un texte, des sections ; une page de discipline peut faire plusieurs écrans. Le document entier défile, comme sur n'importe quel site. Un visiteur arrive souvent par un moteur de recherche : la page doit être complète dès le premier octet reçu, avec son titre et sa description.
+
+Le tableau de bord est une **application**. Il occupe exactement la hauteur de l'écran : un header fixe, une barre latérale, et une zone de contenu qui défile seule. La bibliothèque de fichiers, elle, ne doit pas défiler du tout : elle gère son propre défilement interne, comme le Finder d'un Mac. Ici, personne n'arrive par Google ; tout se passe après connexion, à coups de clics et de formulaires.
+
+La documentation, enfin, a sa propre barre latérale, sa recherche, sa table des matières, et pas de header du site.
+
+Trois mises en page, trois logiques de défilement, deux publics. La question de ce chapitre est simple : **comment ranger tout cela sans dupliquer le header, sans préfixer toutes les URL publiques, et sans que l'un des mondes contamine les autres ?** La réponse tient en trois mécanismes de l'App Router : les dossiers qui deviennent des routes, les groupes de routes, et les layouts imbriqués.
+
+## Un dossier, une route
+
+Avec l'App Router de Next.js, l'arborescence de `apps/web/src/app` **est** la carte du site. Un dossier crée un segment d'URL ; un fichier au nom réservé dit ce que ce segment fait.
+
+<DocsTable columnsJson='["Fichier","Rôle","Exemple dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","app/(public)/agenda/page.tsx → /agenda"],["layout.tsx","Enveloppe toutes les pages du segment et de ses sous-dossiers ; il n’est pas re-rendu quand on navigue entre elles.","app/(public)/layout.tsx : header, ruban d’actualité, footer"],["route.ts","Un point d’accès HTTP (GET, POST…) au lieu d’une page.","app/api/trpc/[trpc]/route.ts"],["[slug]","Un segment variable, reçu dans params.","app/(public)/disciplines/[slug] → /disciplines/tchoy-lee-fut"],["[...slug]","Un segment qui attrape tout le reste du chemin.","app/docs/[...slug] → /docs/dev/demarrer/mise-en-route"],["sitemap.ts, robots.ts","Des fichiers générés par Next à partir de code.","app/sitemap.ts → /sitemap.xml"]]' />
+
+Le premier niveau de `app/` ressemble donc à ceci :
+
+<FileTree>
+  <FileTreeItem name="app/layout.tsx — le layout RACINE, commun à absolument tout" />
+  <FileTreeItem name="app/(public) — le site du club">
+    <FileTreeItem name="layout.tsx — header, ruban d’actualité, footer" />
+    <FileTreeItem name="page.tsx — l’accueil, /" />
+    <FileTreeItem name="disciplines/[slug], agenda, gallery, profil, mes-espaces…" />
+  </FileTreeItem>
+  <FileTreeItem name="app/(admin)/dashboard — le tableau de bord">
+    <FileTreeItem name="layout.tsx — header, barre latérale, zone qui défile" />
+    <FileTreeItem name="posts, disciplines, library, users, groups…" />
+  </FileTreeItem>
+  <FileTreeItem name="app/docs — cette documentation, avec son propre layout" />
+  <FileTreeItem name="app/auth — mot de passe oublié, réinitialisation" />
+  <FileTreeItem name="app/api — les points d’accès HTTP : tRPC, médias, calendrier…" />
+</FileTree>
+
+<Callout type="info">
+Retenons la convention : **un `page.tsx` rend une adresse visitable, un `layout.tsx` enveloppe tout ce qui est en dessous**. Le reste du chapitre consiste à choisir où placer les layouts.
+</Callout>
+
+## Les groupes de routes : ranger sans changer l'URL
+
+Le site public et le tableau de bord ont besoin de deux layouts différents. Le réflexe serait de créer deux dossiers, `public/` et `admin/`. Mais un dossier crée un segment d'URL : la page des disciplines deviendrait `/public/disciplines/…`, et chaque lien du site porterait ce préfixe inutile.
+
+Un **groupe de routes** résout exactement ce problème. Un dossier dont le nom est entre parenthèses range des pages et peut porter son propre layout, mais **n'apparaît pas dans l'URL**. Ainsi :
+
+- `app/(public)/disciplines/[slug]/page.tsx` répond à `/disciplines/tchoy-lee-fut` ;
+- `app/(public)/page.tsx` répond à `/` ;
+- `app/(admin)/dashboard/posts/page.tsx` répond à `/dashboard/posts`.
+
+Les deux groupes ne partagent que le layout racine. Le site public n'hérite de rien du tableau de bord, et inversement.
+
+Cette invisibilité a un revers, et le projet l'a payé cher. Un groupe de routes n'existant pas dans les URL, tout ce qui travaille **sur les URL** l'ignore. Le filtre `proxy.ts`, qui protège les espaces privés, déclarait d'abord ce motif :
+
+```ts
+// Version d'origine — ne protégeait RIEN
+export const config = {
+  matcher: ["/(admin)/:path*"],
+};
+```
+
+Il attendait des adresses commençant par `/(admin)`, qui n'existent pas. Le filtre ne s'exécutait jamais, et le tableau de bord restait sans garde de route. La version actuelle désigne les vraies URL :
+
+```ts
+// apps/web/src/proxy.ts (extrait)
+export const config = {
+  // ⚠ "(admin)" est un route group : il n'existe PAS dans les URLs.
+  matcher: ["/dashboard/:path*", "/profil/:path*"],
+};
+```
+
+<Callout type="warning">
+Un nom entre parenthèses n'existe que dans l'arborescence des fichiers. Partout où l'on raisonne en URL (le `matcher` du proxy, le `robots.txt`, un lien, une redirection), il faut écrire le chemin **sans** le groupe : `/dashboard`, jamais `/(admin)/dashboard`.
+</Callout>
+
+## Le layout racine : ce que toutes les pages partagent
+
+`app/layout.tsx` enveloppe tout : le site, le tableau de bord, la documentation. Il ne doit donc contenir que ce qui vaut vraiment pour tous. C'est un composant serveur asynchrone, qui fait quatre choses.
+
+**Il calcule les métadonnées à partir de la base.** Le titre du site, sa description et l'image de partage ne sont pas écrits en dur : un administrateur les règle dans les Réglages.
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await prisma.siteSettings
+    .findUnique({ where: { id: "site" }, select: { shortTitle: true, longTitle: true, tagline: true } })
+    .catch(() => null);
+  const shortTitle = settings?.shortTitle?.trim() || "AKFC";
+  // …
+  return {
+    title: { default: shortTitle, template: `%s · ${shortTitle}` },
+    // …
+  };
+}
+```
+
+Le `.catch(() => null)` n'est pas une négligence : si la base ne répond pas, le site doit quand même afficher quelque chose, avec un titre par défaut, plutôt qu'une page d'erreur pour une simple balise `<title>`.
+
+**Il injecte le style réglable du site.** Les Réglages permettent d'ajuster des variables CSS (tailles, espacements). Le layout les lit en base et les sérialise en une feuille `html:root{…}`, que React 19 hisse dans le `<head>`. Le sélecteur `html:root` pèse plus lourd que `:root` : la surcharge l'emporte par sa spécificité, quel que soit l'ordre dans lequel Next assemble les feuilles.
+
+**Il pose le thème clair ou sombre.** Le choix du visiteur vit dans un cookie ; le layout le lit et ajoute la classe `dark` à `<html>` dès le HTML envoyé, si bien que la page arrive directement dans le bon thème.
+
+**Il monte les fournisseurs communs.** `AppProviders` crée le client tRPC et le cache React Query ; il monte aussi le moteur des tutoriels interactifs. `SessionLoader` interroge le serveur pour savoir qui est connecté et range la réponse dans un store.
+
+Ce layout déclare enfin `export const dynamic = 'force-dynamic'`. Puisqu'il lit la base et un cookie à chaque requête, son rendu dépend du visiteur et du moment : il ne peut pas être calculé une fois pour toutes au moment du build.
+
+<Callout type="info">
+Le layout racine est le seul endroit commun à tout le site. Chaque ligne qu'on y ajoute s'exécute pour **chaque page de l'application**. La bonne question avant d'y toucher : est-ce vrai pour le site, le tableau de bord ET la documentation ?
+</Callout>
+
+## Le layout du site public : servir avant de demander
+
+`app/(public)/layout.tsx` enveloppe toutes les pages du club. Lui aussi est un composant serveur, et ce choix est délibéré.
+
+Le ruban d'actualité (les « flash info ») apparaît sur toutes les pages publiques. Nous aurions pu le charger côté client, avec une requête tRPC. Le layout préfère lire la base directement, avant d'envoyer la page :
+
+```tsx
+// apps/web/src/app/(public)/layout.tsx (extrait)
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const now = new Date();
+  const activeNews = await prisma.breakingNews.findMany({
+    where: {
+      publicationDate: { not: null, lte: now },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    orderBy: { publicationDate: "desc" },
+    take: 20,
+  });
+  // … logo et nom du site, lus de la même façon
+  return (
+    <div className="flex min-h-dvh flex-col bg-background">
+      <div className="sticky top-0 z-50 bg-background">
+        <Header initialLogoUrl={initialLogoUrl} initialBrand={initialBrand} />
+        <FirstLoginRedirect />
+      </div>
+      <BreakingNewsShell news={activeNews} />
+      <main className="flex-1">{children}</main>
+      <Footer />
+      <DraftPageBadge />
+    </div>
+  );
+}
+```
+
+Deux gains. Le visiteur reçoit une page complète, sans zone qui apparaît une demi-seconde plus tard en poussant le reste vers le bas. Et le serveur fait une requête par page, au lieu que chaque navigateur en lance une après le chargement.
+
+Le logo suit la même logique. Le layout le lit côté serveur et le passe au `Header` comme **valeur initiale** : le logo est là dès le premier affichage. Le header le relit ensuite côté client, ce qui lui permet de refléter immédiatement un nouveau logo déposé dans les Réglages.
+
+La mise en page, elle, ne fixe aucune hauteur : `min-h-dvh` garantit que le footer reste en bas d'une page courte, et le document défile naturellement. Le header est `sticky`, collé en haut pendant le défilement ; le ruban d'actualité est placé **sous** ce bloc collant, pour défiler avec la page au lieu de manger de la hauteur en permanence.
+
+Deux composants invisibles complètent le tableau. `FirstLoginRedirect` envoie un membre qui se connecte pour la première fois vers son profil, pour qu'il le complète. `DraftPageBadge` signale à un administrateur qu'il regarde une page encore en brouillon, invisible du public.
+
+## Le layout du tableau de bord : une application dans une page
+
+Le layout `app/(admin)/dashboard/layout.tsx` fait le choix inverse : c'est un composant **client** (`'use client'`). Il gère un état, l'ouverture du tiroir de navigation sur téléphone, et réagit au clavier. Un composant serveur ne peut faire ni l'un ni l'autre.
+
+Sa mise en page renverse aussi celle du site public. Le conteneur racine a une hauteur ferme, `h-dvh` : exactement la hauteur de l'écran. Header en haut, puis une rangée « barre latérale | contenu » qui remplit le reste. C'est la zone de contenu, le `<main>`, qui défile :
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
+<main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">
+  {children}
+</main>
+```
+
+Le `min-h-0` est le détail qui fait tout marcher. Par défaut, un élément flex refuse de devenir plus petit que son contenu ; sans `min-h-0`, une liste de 300 membres agrandirait le `<main>` au-delà de l'écran, et c'est la page entière qui défilerait, header compris.
+
+La bibliothèque de fichiers est l'exception assumée : elle a besoin d'occuper exactement la hauteur disponible et de gérer son propre défilement. Plutôt que de compliquer le layout pour elle, c'est elle qui se borne : sa racine est en `h-full overflow-hidden`. Le commentaire du layout résume la règle : **le cas général défile, le cas spécial se borne.**
+
+### Fermer le tiroir quand la page change
+
+Sur téléphone, la barre latérale devient un tiroir. Quand l'administrateur choisit une page, le tiroir doit se refermer. Le réflexe serait un effet :
+
+```tsx
+// Ce que nous n'avons PAS fait
+useEffect(() => {
+  setSidebarOpen(false);
+}, [pathname]);
+```
+
+Cet effet s'exécute **après** l'affichage : React affiche d'abord la nouvelle page avec le tiroir encore ouvert, puis relance un rendu pour le fermer. La documentation de React a un nom pour ce schéma, et le déconseille. Le layout ajuste plutôt l'état **pendant** le rendu :
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
+const [lastPath, setLastPath] = useState(pathname);
+if (pathname !== lastPath) {
+  setLastPath(pathname);
+  setSidebarOpen(false);
+}
+```
+
+Quand React rencontre un `setState` pendant le rendu d'un composant, il abandonne ce rendu et recommence aussitôt avec le nouvel état, **avant** d'afficher quoi que ce soit. Aucune image intermédiaire n'atteint l'écran.
+
+<Callout type="tip">
+Un état qui doit suivre une valeur (ici le chemin) ne justifie pas un effet. Les effets servent à se synchroniser avec un système **extérieur** à React : le clavier, le défilement du `body`, une connexion. Le même layout utilise d'ailleurs un effet pour Échap et pour bloquer le défilement derrière le tiroir : là, c'est bien un système extérieur.
+</Callout>
+
+## Pages serveur, pages client
+
+Les deux mondes ne font pas les mêmes choix de composants, et ce n'est pas un hasard.
+
+<DocsTable columnsJson='["Groupe","Pages","Dont « use client »","Pourquoi"]' rowsJson='[["(public)","19","5","Lecture seule, référencement, premier affichage complet. Les 5 pages client sont réservées aux membres connectés (profil, documents, espaces, galerie selon la session)."],["(admin)/dashboard","58","28","Formulaires, mutations, listes à rafraîchir. Les pages restantes sont de minces pages serveur qui montent un composant client (un tableau, un formulaire)."]]' />
+
+Une page publique typique lit la base elle-même. Celle d'une discipline montre tout le schéma :
+
+```tsx
+// apps/web/src/app/(public)/disciplines/[slug]/page.tsx (extrait)
+export default async function PublicDisciplinePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const discipline = await prisma.discipline.findUnique({
+    where: { slug },
+    include: { family: { select: { name: true } }, origin: { select: { name: true, flag: true } } },
+  });
+
+  if (!discipline) notFound();
+  // Brouillon (ou publication programmée future) : invisible du public.
+  if (!discipline.publicationDate || discipline.publicationDate > new Date()) {
+    notFound();
+  }
+  // … rendu du contenu avec PageRenderer
+}
+```
+
+Trois détails méritent l'attention.
+
+`params` est une **promesse**. Depuis Next 15, les paramètres d'URL arrivent de façon asynchrone, ce qui permet à Next de commencer à rendre la page avant de les avoir résolus. Oublier le `await` ne provoque pas d'erreur de compilation évidente avec un typage approximatif ; c'est pourquoi le projet type toujours `params` comme `Promise<…>`.
+
+Un brouillon répond **404**, exactement comme une page inexistante. Le visiteur ne doit pas pouvoir deviner, à la différence de réponse, qu'une discipline est en préparation.
+
+La même page exporte `generateMetadata`, qui relit la discipline pour produire le titre, la description et l'URL canonique. Pour un brouillon, elle renvoie `robots: { index: false }` : même si l'adresse fuitait, aucun moteur ne l'indexerait.
+
+Côté tableau de bord, la logique est inverse. Une page client appelle tRPC avec React Query :
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/posts/page.tsx (extrait)
+const { data: posts, isLoading, isError } = trpc.post.getAllAdmin.useQuery();
+```
+
+React Query met la réponse en cache. Quand un article est créé ou supprimé, le code invalide ce cache (`utils.post.getAllAdmin.invalidate()`) et la liste se recharge seule. Ce cycle (lire, modifier, invalider) est le quotidien du tableau de bord ; il demande du JavaScript dans le navigateur.
+
+<Callout type="info">
+La frontière ne se décide pas page par page au hasard. **Public et lecture seule : composant serveur, lecture directe en base. Connecté et interactif : composant client, tRPC et React Query.** Le chapitre suivant regardera en détail ce que cette frontière autorise et interdit.
+</Callout>
+
+## Les points d'accès HTTP
+
+Tout ne passe pas par des pages. Le dossier `app/api` contient des `route.ts`, qui répondent à des requêtes HTTP brutes.
+
+Le plus important est aussi le plus court. **Toutes** les procédures tRPC du projet passent par une seule route :
+
+```ts
+// apps/web/src/app/api/trpc/[trpc]/route.ts
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+const handler = async (req: NextRequest): Promise<Response> => {
+  return fetchRequestHandler({
+    endpoint: "/api/trpc",
+    req,
+    router: appRouter,
+    createContext: async () => createTRPCContext({ req }),
+  })
+}
+
+export { handler as GET, handler as POST }
+```
+
+Le segment `[trpc]` reçoit le nom de la procédure appelée (`post.create`, `discipline.getAll`…), et `fetchRequestHandler` aiguille vers le bon routeur de `packages/backend`. Le front ne connaît jamais d'URL : il appelle des fonctions typées. La partie « API » détaillera cette mécanique.
+
+Les autres routes servent des fichiers : `api/media/public` livre les images publiées, `api/media/site-logo` le logo, `api/media/member-document` un document réservé aux membres, après vérification des droits. Elles existent parce qu'un fichier se diffuse en flux binaire, avec ses propres en-têtes de cache, ce que tRPC ne sait pas faire.
+
+Enfin, `sitemap.ts` et `robots.ts` sont du code qui produit des fichiers. Le plan du site ne liste que les contenus **publiés** (une discipline programmée pour la semaine prochaine n'y figure pas encore), et `robots.txt` exclut les espaces privés : `/dashboard`, `/profil`, `/documents`, `/mes-espaces` et `/api/`.
+
+## Trois gardes, une seule autorité
+
+Qui a le droit de voir quoi ? Le projet répond à trois niveaux, et il est essentiel de savoir ce que chacun garantit vraiment.
+
+**Le proxy** (`apps/web/src/proxy.ts`) s'exécute avant `/dashboard` et `/profil`. Il vérifie seulement qu'un jeton de session est présent et correctement signé ; sinon, il renvoie vers l'accueil. Il ne consulte **pas** la base : il ne sait pas si la session a été révoquée, ni si l'utilisateur est administrateur. C'est un filtre rapide, qui évite de servir le squelette du tableau de bord à un visiteur anonyme.
+
+**Les gardes serveur** de certaines pages vont plus loin. La page du registre RGPD relit la session en base et vérifie l'appartenance au groupe Administrateurs avant de rendre quoi que ce soit. Les pages éditoriales demandent à `isEditorialPageGated` si elles doivent s'afficher ou montrer « Page en construction ». L'espace admin de cette documentation applique la même vérification et répond 404 à un non-admin.
+
+**Les procédures tRPC** sont l'autorité finale. Chaque lecture ou écriture d'administration passe par le middleware `isAdmin` :
+
+```ts
+// packages/backend/src/trpc/middleware.ts
+export const isAdmin = t.middleware(({ ctx, next }) => {
+  const user = ctx.sessionClient?.user;
+  if (!user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required." });
+  }
+  if (!user.isAdmin) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access required." });
+  }
+  return next();
+});
+```
+
+Ce découpage a une conséquence qu'il faut connaître. Les pages du tableau de bord sont, pour la plupart, des composants client sans garde serveur : un membre connecté mais non administrateur peut donc ouvrir `/dashboard`. Ce n'est pas un oubli. Certains membres non administrateurs ont un vrai usage du tableau de bord : ceux qui traitent les demandes (les tickets) y ont leur boîte de réception, et la barre latérale ne leur montre que cette section. Pour tout le reste, ils voient une page dont les données leur sont refusées, puisque chaque procédure d'administration exige `isAdmin`.
+
+<Callout type="warning">
+La sécurité du projet repose sur **les données, pas sur les écrans**. Masquer un lien ou une page améliore l'expérience ; seul le refus côté serveur protège. Un nouveau routeur d'administration qui oublierait `isAdmin` serait une faille, même si aucune page ne l'appelait.
+</Callout>
+
+## Ce qui reste fragile
+
+Un projet réel a ses zones grises ; les nommer, c'est éviter qu'elles surprennent.
+
+**Le tableau de bord n'a pas de garde serveur générale.** Comme nous venons de le voir, les données sont protégées, mais l'interface s'ouvre à tout membre connecté. Un layout serveur placé au-dessus du layout client actuel pourrait vérifier, une fois pour toutes, que l'utilisateur est administrateur ou qu'il traite les demandes, et rediriger les autres.
+
+**La session est chargée côté client.** `SessionLoader` interroge le serveur après le premier affichage. Pendant ce court instant, le header affiche l'état « non connecté » avant de basculer. Lire la session dans le layout racine, côté serveur, et la transmettre en valeur initiale supprimerait ce clignement, comme nous l'avons fait pour le logo.
+
+**Des pages d'essai sont routables.** `test-finder`, `test-picker` et `simpleEditor` sont des bancs d'essai du développement. Le `matcher` du proxy ne les couvrant pas, n'importe quel visiteur peut les ouvrir. Elles ne donnent accès à aucune donnée sans les droits correspondants (tRPC veille), mais elles n'ont rien à faire en production.
+
+<Callout type="tip">
+Le fil de ce chapitre : **l'arborescence des fichiers décrit le site, les groupes de routes séparent les mondes sans toucher aux URL, et chaque layout fait le choix (serveur ou client, hauteur libre ou bornée) qui convient à son monde.** Quant à la sécurité, elle ne se joue pas dans le routage : elle se joue dans chaque procédure qui touche aux données.
+</Callout>

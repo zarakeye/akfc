@@ -3,6 +3,7 @@ import type { DocPage } from "@features/docs/lib/docs.types"
 const SECTION_ORDER = [
   "Introduction",
   "Démarrer",
+  "Fondations front",
   "Foundation",
   "Architecture",
   "Domain",
