@@ -12,11 +12,13 @@ interface CalloutProps {
   children: ReactNode
 }
 
+// Tons pastel. Fonds PLEINS (pas de transparence) : en mode sombre, un fond translucide se fond
+// dans la page. Le fond est un ton plus clair que la barre de gauche ; le texte reste foncé.
 const styles: Record<CalloutType, string> = {
-  info: "border-blue-500 bg-blue-50 dark:bg-blue-950/30",
-  tip: "border-green-500 bg-green-50 dark:bg-green-950/30",
-  warning: "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30",
-  danger: "border-red-500 bg-red-50 dark:bg-red-950/30",
+  info: "border-sky-300 bg-sky-50 dark:border-sky-400 dark:bg-sky-200 dark:text-sky-950",
+  tip: "border-emerald-300 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-200 dark:text-emerald-950",
+  warning: "border-amber-300 bg-amber-50 dark:border-amber-400 dark:bg-amber-100 dark:text-amber-950",
+  danger: "border-rose-300 bg-rose-50 dark:border-rose-400 dark:bg-rose-200 dark:text-rose-950",
 }
 
 export function Callout({
@@ -26,7 +28,7 @@ export function Callout({
 }: CalloutProps) {
   return (
     <div
-      className={`my-6 rounded-lg border-l-4 p-4 ${styles[type]}`}
+      className={`my-6 rounded-lg border-l-4 p-4 dark:[&_code]:bg-black/10 ${styles[type]}`}
     >
       {title && (
         <p className="mb-2 font-semibold">

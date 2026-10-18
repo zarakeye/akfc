@@ -1,6 +1,6 @@
 ---
-title: "Façon de travailler : la chasse aux erreurs silencieuses"
-description: "Saison 1, épisode 3. Un fichier que Next ignore sans un mot, une règle de lint qui refuse du code qui marche, un contrat caché dans un attribut. Et la commande qui monte la garde avant chaque commit."
+title: "Façon de travailler"
+description: "Vérifier avant d'enregistrer, enregistrer par petits pas, et rendre visibles les erreurs qui ne produisent aucun message."
 section: "Démarrer"
 order: 2
 ---
@@ -8,64 +8,43 @@ order: 2
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-*Saison 1 — Démarrer · Épisode 3 (final de saison)*
+> **Précédemment.** Nous avons installé le projet avec une base, un stockage et une boîte mail locaux, et vérifié chaque service. L'application compile et tourne.
 
-> **Précédemment.** Nous avons construit un monde jetable : une base, un stockage, une boîte mail qui n'écrit à personne. Tout compile, tout s'affiche. Et nous avons appris que c'est précisément là que le danger commence.
+## Les erreurs silencieuses
 
-## Le fichier fantôme
+Une erreur de compilation s'affiche, désigne une ligne et bloque. Certaines erreurs, elles, ne produisent aucun message : le code est correct, mais placé au mauvais endroit ou fondé sur une hypothèse fragile.
 
-Faisons une expérience. Elle tient en une ligne d'arborescence, et chacun peut la reproduire.
+Un exemple : Next.js ne lit ses fichiers de convention (`proxy.ts`, `instrumentation.ts`…) qu'à côté du dossier `app`. Notre application vit dans `apps/web/src/app` ; un `proxy.ts` posé dans `apps/web/` serait ignoré sans avertissement, et le filtre d'authentification ne s'exécuterait jamais.
 
-Next.js propose un fichier spécial, `proxy.ts`, qui s'exécute avant chaque requête : l'endroit rêvé pour vérifier qu'un visiteur a le droit d'entrer. Écrivons-le. Posons-le dans `apps/web/`, à la racine de l'application, là où il semble naturel qu'il vive. Redémarrons. Pas d'erreur, pas d'avertissement.
+Le projet traite ces erreurs de la même façon : chacune a une vérification automatique, lancée avant chaque commit.
 
-Il ne s'exécute jamais.
+## pnpm check
 
-Next ne cherche ses fichiers de convention (`proxy.ts`, `instrumentation.ts`…) qu'à un endroit précis : **à côté du dossier `app`**. Le nôtre vit dans `apps/web/src/app`. Un `proxy.ts` posé un étage plus haut est un fichier comme un autre : Next l'ignore poliment, et la porte reste sans gardien.
-
-TypeScript n'a rien vu : le code était juste. Next n'a rien dit : il n'avait aucune raison de chercher là. Et en testant connectés, nous ne remarquerions rien non plus.
-
-C'est cela, une **erreur silencieuse** : du code correct, au mauvais endroit ou au mauvais moment, et aucun outil pour le signaler. Une erreur de compilation est une bonne nouvelle : elle s'affiche, désigne une ligne, bloque. Celles qui coûtent cher sont les autres.
-
-« Ça compile » ne suffit pas. Il nous faut des vérifications qui cherchent précisément ce que les outils ne voient pas.
-
-## La sentinelle
-
-Toutes les vérifications du projet tiennent dans une commande, lancée à la racine :
+Toutes les vérifications tiennent dans une commande, lancée à la racine :
 
 ```bash
 pnpm check
 ```
 
-Elle enchaîne cinq étapes, et s'arrête à la première qui échoue :
+Elle enchaîne cinq étapes et s'arrête à la première qui échoue :
 
-<DocsTable columnsJson='["Étape","Ce qu’elle vérifie","Ce qu’elle nous évite"]' rowsJson='[["scripts/check-next-conventions.mjs","Les fichiers de convention de Next sont au bon endroit (apps/web/src), et middleware et proxy ne coexistent pas.","Le fichier fantôme : un filtre d’authentification ignoré sans un mot."],["scripts/check-tour-targets.mjs","Chaque étape d’un tutoriel interactif vise un élément qui porte bien l’attribut data-tour correspondant.","Un tuto qui s’arrête net chez l’utilisateur parce qu’un composant a été renommé."],["pnpm clean","Efface .next et le cache : la suite repart d’un état propre.","Une vérification qui passe grâce à un vieux fichier compilé."],["typecheck du backend","TypeScript sur packages/backend.","Une procédure qui renvoie autre chose que ce que le front attend."],["typecheck du web","TypeScript sur apps/web.","Un composant qui appelle une procédure avec de mauvais arguments."]]' />
+<DocsTable columnsJson='["Étape","Ce qu’elle vérifie","Ce qu’elle garantit"]' rowsJson='[["scripts/check-next-conventions.mjs","Les fichiers de convention de Next sont au bon endroit (apps/web/src), et middleware et proxy ne coexistent pas.","Le filtre d’authentification et l’initialisation au démarrage sont bien exécutés."],["scripts/check-tour-targets.mjs","Chaque étape d’un tutoriel interactif vise un élément qui porte bien l’attribut data-tour correspondant.","Aucun tutoriel ne se bloque chez l’utilisateur après un renommage."],["pnpm clean","Efface .next et le cache.","La suite repart d’un état propre, sans fichier compilé périmé."],["typecheck du backend","TypeScript sur packages/backend.","Chaque procédure renvoie ce que le front attend."],["typecheck du web","TypeScript sur apps/web.","Chaque composant appelle les procédures avec les bons arguments."]]' />
 
-Regardons la première ligne : le fichier fantôme y est devenu un script. Les deux scripts maison sont courts, et c'est voulu : chacun traque **une seule** erreur silencieuse, et l'explique en français quand il la trouve.
-
-C'est la réponse que nous donnerons, encore et encore : quand une erreur silencieuse nous a mordus, nous n'écrivons pas « faire attention » sur un post-it. Nous écrivons une vérification.
+Les deux scripts maison sont courts : chacun traque une seule erreur silencieuse et l'explique en français quand il la trouve. Quand une nouvelle erreur de ce genre apparaît, la réponse est une vérification de plus.
 
 <Callout type="warning">
-`pnpm clean` supprime le dossier `.next` alors que `pnpm dev` s'en sert peut-être. Après un `pnpm check`, si une modification n'apparaît pas dans le navigateur, arrêtons `pnpm dev` (Ctrl+C) et relançons-le : ce n'est pas le code qui est en cause.
+`pnpm clean` supprime le dossier `.next` que `pnpm dev` utilise. Après un `pnpm check`, si une modification n'apparaît pas dans le navigateur, arrêtons `pnpm dev` (Ctrl+C) et relançons-le. Si `pnpm dev` réécrit `.next` pendant la suppression, `pnpm check` peut aussi échouer sur « Directory not empty » : il suffit d'arrêter `pnpm dev` avant de vérifier.
 </Callout>
 
-## Le code qui marchait trop bien
+## Le lint
 
-TypeScript vérifie les types ; il ne sait rien de React. ESLint, avec les règles `react-hooks`, connaît les règles de React, et elles se sont durcies avec React 19 et son compilateur.
+TypeScript vérifie les types ; il ne connaît pas les règles de React. ESLint, avec les règles `react-hooks`, les connaît, et elles se sont durcies avec React 19 et son compilateur.
 
 ```bash
 pnpm lint
 ```
 
-Le carrousel de la page d'accueil gardait l'état « lecture ou pause » dans une `ref`, pour que sa boucle d'animation puisse le lire à chaque image :
-
-```tsx
-const playingRef = useRef(playing);
-playingRef.current = playing; // écrit PENDANT le rendu
-```
-
-Le code marchait. Il marchait depuis des mois. ESLint le refuse pourtant : « Cannot update ref during render ».
-
-Pourquoi ? Parce qu'un rendu React doit être une fonction pure. React se réserve le droit de le lancer deux fois, de l'interrompre au milieu, de le jeter pour en recommencer un autre. Écrire dans une `ref` pendant le rendu, c'est parier que React ne fera jamais rien de tout cela. Le pari était gagné hier. Il le serait peut-être encore demain. La correction le supprime en déplaçant l'écriture après le rendu :
+Un rendu React doit être une fonction pure : React peut le lancer deux fois, l'interrompre ou le jeter. Le carrousel de la page d'accueil, par exemple, garde l'état « lecture ou pause » dans une `ref` que sa boucle d'animation lit à chaque image. La `ref` est mise à jour **après** le rendu, dans un effet :
 
 ```tsx
 const playingRef = useRef(playing);
@@ -74,19 +53,17 @@ useEffect(() => {
 }, [playing]);
 ```
 
-La boucle d'animation ne lit la `ref` que hors rendu : le comportement est identique, et le pari a disparu.
+Écrire `playingRef.current = playing` directement dans le corps du composant fonctionnerait aujourd'hui, mais ESLint le refuse (« Cannot update ref during render ») : ce code dépendrait de la façon dont React ordonne ses rendus. Dans un effet, l'écriture reste correcte quoi que fasse React.
 
 <Callout type="tip">
-Une règle de lint qui se déclenche sur du code « qui marche » n'est pas une fausse alerte. C'est presque toujours un pari sur le comportement de React, gagné aujourd'hui, et perdu le jour où React change sa façon de rendre.
+Une règle de lint qui se déclenche sur du code « qui marche » n'est pas une fausse alerte : elle signale presque toujours une dépendance à un comportement de React qui n'est pas garanti.
 </Callout>
 
-## Petits pas
+## Enregistrer par petits pas
 
-Un commit est une marche qui tient debout toute seule : `pnpm check` passe avant et après. Nous n'enregistrons jamais un état intermédiaire « pour ne pas le perdre » ; une branche sert à ça.
+Un commit est une étape qui tient debout seule : `pnpm check` passe avant et après. Une fonctionnalité qui touche le backend et le front est découpée : d'abord le backend (le modèle, la procédure, ses vérifications), puis le front qui l'utilise. Chaque moitié se vérifie séparément, et un problème se localise immédiatement.
 
-Quand une fonctionnalité touche le backend et le front, nous la coupons en deux : d'abord le backend (le modèle, la procédure, ses vérifications), puis le front qui l'utilise. Si la seconde moitié révèle un problème dans la première, nous savons exactement où regarder.
-
-Les messages suivent la forme `type(portée): résumé`, en français, avec un corps qui dit **pourquoi** :
+Les messages suivent la forme `type(portée): résumé`, en français, avec un corps qui explique **pourquoi** :
 
 ```text
 feat(rgpd): formulaire de droit à l'image — téléchargement, dépôt admin, aperçu membre
@@ -96,9 +73,9 @@ style(header): logo encore agrandi, barre de même hauteur
 
 <DocsTable columnsJson='["Type","Quand"]' rowsJson='[["feat","Une fonctionnalité nouvelle, visible ou non."],["fix","La correction d’un comportement erroné."],["style","Un changement d’apparence, sans effet sur la logique."],["refactor","Une réorganisation du code, sans changement de comportement."],["docs","La documentation, celle-ci comprise."],["chore","L’outillage : dépendances, scripts, configuration."]]' />
 
-Dans six mois, quelqu'un lancera `git blame` sur une ligne étrange. Le « pourquoi » du message sera tout ce qu'il aura.
+Le corps du message est ce que retrouvera, des mois plus tard, la personne qui lance `git blame` sur une ligne inattendue.
 
-## Le contrat invisible
+## Les tutoriels interactifs : un contrat dans le code
 
 Le site embarque des tutoriels qui guident un utilisateur pas à pas sur la vraie page, en ne laissant actif que l'élément de l'étape en cours. Chaque étape désigne son élément par un nom :
 
@@ -110,42 +87,34 @@ Le site embarque des tutoriels qui guident un utilisateur pas à pas sur la vrai
 />
 ```
 
-Cet attribut ne change rien à l'affichage. Un développeur qui fait le ménage pourrait le supprimer sans hésiter. Et pourtant, c'est un **contrat** : le composant promet que l'élément existe sous ce nom, et un tutoriel (dans `apps/web/src/features/tours/definitions/`) compte dessus. Rompez-le, et un administrateur, quelque part, verra son tutoriel se figer au milieu d'une étape, sans comprendre pourquoi.
-
-C'est encore une erreur silencieuse. Elle a donc, elle aussi, sa vérification : si un `data-tour` utilisé disparaît, `pnpm check` échoue et nomme le tutoriel concerné. Nous mettons alors à jour l'un ou l'autre, dans le même commit.
+Cet attribut ne change rien à l'affichage, mais c'est un **contrat** : le composant garantit que l'élément existe sous ce nom, et un tutoriel (dans `apps/web/src/features/tours/definitions/`) s'appuie dessus. `pnpm check` vérifie ce contrat : si un `data-tour` utilisé disparaît, il échoue et nomme le tutoriel concerné. Nous mettons alors à jour l'un ou l'autre, dans le même commit.
 
 <Callout type="info">
-Un `data-tour` ne se supprime pas « parce qu'il ne sert à rien visuellement ». Cherchons d'abord son nom dans `features/tours/definitions/` : s'il y apparaît, un tutoriel en dépend.
+Avant de supprimer un `data-tour`, cherchons son nom dans `features/tours/definitions/` : s'il y apparaît, un tutoriel en dépend.
 </Callout>
 
-## Écrire la suite de la série
+## Écrire la documentation
 
 La documentation vit dans `apps/web/content/docs`, en trois dossiers qui sont aussi les trois espaces du site : `guide` pour les visiteurs et les membres, `admin` pour les administrateurs (réservé côté serveur), `dev` pour nous. Le premier dossier d'une page décide de son espace ; son en-tête (`title`, `description`, `section`, `order`) décide de sa place dans la barre latérale.
 
-Dans l'espace développeur, quelques règles tiennent le ton. Nous écrivons avec « nous ». Chaque épisode part d'un problème réel avant d'en venir à la solution, et se termine en ouvrant sur le suivant. Les points à retenir vont dans un `Callout`. La prose porte le raisonnement ; les listes ne servent qu'aux énumérations courtes.
+Dans l'espace développeur, nous écrivons avec « nous ». Chaque chapitre part d'un besoin, présente le choix retenu et ce qu'il permet, puis le code. Il s'ouvre sur un rappel du précédent et se termine en annonçant le suivant. Les points à retenir vont dans un `Callout` ; les listes ne servent qu'aux énumérations courtes.
 
-Une contrainte technique, enfin, a déjà coûté des heures (et c'est, devinez quoi, une erreur silencieuse). Le compilateur MDX supprime sans prévenir les expressions JavaScript dans les attributs et les chaînes d'attribut sur plusieurs lignes : le tableau s'affiche vide, sans une erreur. Le composant `DocsTable` reçoit donc ses colonnes et ses lignes en JSON, entre apostrophes simples, **sur une seule ligne**, et toute apostrophe du contenu devient une apostrophe typographique (’) :
+Le compilateur MDX supprime sans prévenir les expressions JavaScript dans les attributs et les chaînes d'attribut sur plusieurs lignes. Le composant `DocsTable` reçoit donc ses colonnes et ses lignes en JSON, entre apostrophes simples, **sur une seule ligne**, et toute apostrophe du contenu devient une apostrophe typographique (’) :
 
 ```mdx
 <DocsTable columnsJson='["Colonne A","Colonne B"]' rowsJson='[["L’exemple","oui"],["Autre","non"]]' />
 ```
 
 <Callout type="tip">
-Le fil de la saison tient en une phrase : **nous rendons visibles les erreurs silencieuses avant qu'elles ne partent en production**. `pnpm check` en est l'outil, le petit commit la discipline, le contrat `data-tour` un exemple. La bonne réponse à une nouvelle erreur silencieuse est rarement « faire attention » : c'est une vérification de plus.
+Le fil de cette partie : **rendre visibles les erreurs silencieuses avant qu'elles n'atteignent la production**. `pnpm check` en est l'outil, le petit commit la discipline, le contrat `data-tour` un exemple.
 </Callout>
 
-## Fin de saison
+## À suivre
 
-Nous avons tout ce qu'il faut. Un environnement jetable. Une sentinelle avant chaque commit. Un fichier fantôme démasqué, un pari sur React annulé, un contrat protégé.
+Les fondations du travail sont posées : un environnement jetable, des vérifications automatiques, une discipline de commit. Nous pouvons entrer dans le code.
 
-Nous pourrions nous croire à l'abri.
-
-Mais le fichier fantôme n'était que la moitié de l'histoire. Le vrai `proxy.ts` du projet est au bon étage, à côté du dossier `app`. La sentinelle le confirme à chaque commit. Il s'exécute. Et pourtant, un jour, par acquit de conscience, nous avons ouvert une fenêtre de navigation privée, sans aucune session, et tapé l'adresse du tableau de bord.
-
-Il s'est affiché.
-
-Le gardien était à son poste. Il était bien réveillé. Et il regardait passer tout le monde.
+Première question, et elle est moins simple qu'il n'y paraît : quand un visiteur tape `/dashboard`, quel fichier répond, quels layouts l'enveloppent, et qui vérifie qu'il a le droit d'être là ? Le dossier `app` contient des noms entre parenthèses qui n'apparaissent dans aucune URL, et l'accès au tableau de bord est contrôlé à trois endroits différents.
 
 <Callout type="tip">
-**Saison 2, épisode 1** : la porte qui ne fermait rien. Un nom entre parenthèses, des dossiers qui n'existent pas dans les URL, et le jour où nous avons découvert que le tableau de bord n'avait jamais été gardé.
+**Partie suivante : les fondations du front, en commençant par le routage.** Des dossiers qui deviennent des adresses, des groupes de routes invisibles, trois layouts aux rôles opposés, et la défense en profondeur du tableau de bord.
 </Callout>

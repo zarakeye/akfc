@@ -23,7 +23,7 @@
 .dark .bg-slate-50,
 .dark .bg-slate-100 { background-color: var(--muted); }
 .dark .bg-gray-200,
-.dark .bg-gray-300 { background-color: oklch(0.32 0.03 257); }
+.dark .bg-gray-300 { background-color: oklch(0.4 0.014 258); }
 
 /* Textes sombres → textes du thème */
 .dark .text-gray-900,
@@ -52,7 +52,7 @@
 .dark .hover\:bg-gray-50:hover,
 .dark .hover\:bg-gray-100:hover,
 .dark .hover\:bg-slate-100:hover { background-color: var(--accent); }
-.dark .hover\:bg-gray-300:hover { background-color: oklch(0.36 0.03 257); }
+.dark .hover\:bg-gray-300:hover { background-color: oklch(0.44 0.014 258); }
 .dark .hover\:text-gray-900:hover,
 .dark .hover\:text-gray-800:hover,
 .dark .hover\:text-gray-700:hover { color: var(--foreground); }

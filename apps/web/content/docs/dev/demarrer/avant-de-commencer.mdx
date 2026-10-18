@@ -1,6 +1,6 @@
 ---
-title: "Avant de commencer : deux applications qui n'en font qu'une"
-description: "Saison 1, épisode 1. Un club, une vitrine, un outil, et le jour où nous avons compris que la base de développement était celle des vrais membres."
+title: "Avant de commencer"
+description: "Ce que fait le projet, comment il est rangé, le vocabulaire du club, et la règle qui sépare le développement de la production."
 section: "Démarrer"
 order: 0
 ---
@@ -9,45 +9,35 @@ import { Callout } from "@/features/docs/ui/Callout"
 import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-*Saison 1 — Démarrer · Épisode 1*
+## Une vitrine et un outil dans la même application
 
-## Un mardi soir, à la MJC
+L'Association Kung Fu Chambéry enseigne plusieurs arts martiaux dans les locaux de la MJC de Chambéry. Son application répond à deux besoins.
 
-Il est 19 h 40. Le cours de Tchoy Lee Fut commence dans vingt minutes. Un parent, devant la porte de la salle, cherche sur son téléphone si la séance de ce soir est maintenue. Au même moment, à l'autre bout de la ville, un administrateur du club dépose les photos du dernier stage, et une adhérente ouvre le compte rendu de l'assemblée générale qu'on lui a transmis la veille.
+Le premier est une **vitrine** : un visiteur arrive sur `akfc.fr` et veut savoir quelles disciplines sont enseignées, à quelle heure, par qui, et quand aura lieu le prochain stage.
 
-Trois personnes. Trois besoins. Une seule application, celle dont nous allons ouvrir le code.
+Le second est un **outil** : les administrateurs publient des actualités, rangent des photos, tiennent la liste des membres, leur transmettent des documents et répondent à leurs demandes ; les membres consultent leurs documents et partagent des fichiers dans les espaces de leurs groupes.
 
-Avant d'en lire une ligne, il faut comprendre ce qu'elle s'efforce de concilier, parce que presque chaque décision du projet découle de là.
+Les deux vivent dans **une seule application**, qui partage la base, les médias et l'authentification. Ce choix permet qu'une photo validée dans la bibliothèque apparaisse dans une galerie publique sans être copiée, qu'un compte serve aussi bien sur le site que dans le tableau de bord, et qu'une correction de modèle profite aux deux côtés à la fois.
 
-## Une vitrine et un outil
-
-L'Association Kung Fu Chambéry enseigne plusieurs arts martiaux dans les locaux de la MJC de Chambéry. Comme tous les clubs, elle a deux besoins qui n'ont, en apparence, rien à voir.
-
-Le premier est une **vitrine**. Un visiteur arrive sur `akfc.fr` : il veut savoir quelles disciplines sont enseignées, à quelle heure, par qui, et quand aura lieu le prochain stage.
-
-Le second est un **outil**. Les administrateurs publient des actualités, rangent des photos, tiennent la liste des membres, leur transmettent des documents, répondent à leurs demandes. Les membres consultent leurs documents et partagent des fichiers dans les espaces de leurs groupes.
-
-Nous aurions pu construire deux applications. Nous n'en avons construit qu'une : le site public et le tableau de bord partagent la même base, les mêmes médias, la même authentification. Une photo validée dans la bibliothèque peut apparaître dans une galerie publique sans être copiée nulle part.
-
-Ce choix a un prix, que nous paierons plusieurs fois au fil des saisons : dans une même arborescence vivent des pages que tout internet peut lire et des pages qui contiennent des photos d'enfants. La frontière entre les deux n'est jamais loin. Et elle n'est pas toujours là où on la croit.
+Il a une conséquence que nous retrouverons dans chaque partie : dans une même arborescence cohabitent des pages que tout internet peut lire et des pages qui contiennent des données personnelles. Savoir où passe la frontière entre les deux, et qui la garde, est une compétence centrale sur ce projet.
 
 <Callout type="info">
-L'idée directrice : **une seule source de vérité**, servie à deux publics. Chaque fois qu'une donnée existe en double quelque part dans le projet, c'est une exception, et un commentaire la justifie.
+L'idée directrice : **une seule source de vérité**, servie à deux publics. Chaque fois qu'une donnée existe en double dans le projet, c'est une exception, et un commentaire la justifie.
 </Callout>
 
-## Comment se lit cette série
+## Comment lire cette documentation
 
-Cette documentation se lit comme une série. Les saisons suivent l'ordre dans lequel un développeur découvre le projet : d'abord l'installer et apprendre à travailler avec lui, puis descendre couche par couche (le front, les données, l'API, l'authentification, le stockage) jusqu'au déploiement.
+Les parties suivent l'ordre dans lequel un développeur découvre le projet : l'installer, apprendre à travailler avec, puis descendre couche par couche (le front, les données, l'API, l'authentification, le stockage) jusqu'au déploiement.
 
-Chaque épisode part d'un problème réel, rencontré pendant la construction. Nous regardons ce qui coince, ce que nous avons essayé, et la solution n'arrive qu'au moment où le besoin est devenu évident. Les encadrés résument ce qu'il faut garder en tête ; la fin de chaque épisode ouvre sur le suivant.
+Chaque chapitre part d'un besoin concret, présente le choix retenu et ce qu'il permet, puis montre le code qui l'implémente. Les encadrés résument ce qu'il faut retenir ; la fin de chaque chapitre annonce la question que traite le suivant.
 
-Le code montré est celui du dépôt, pas une version embellie. Quand un extrait est raccourci, il le dit.
+Le code montré est celui du dépôt. Quand un extrait est raccourci, il le dit.
 
 <Callout type="tip">
-Gardons le dépôt ouvert à côté. Chaque chemin cité s'ouvre dans l'éditeur : c'est la meilleure façon de vérifier que nous avons compris, et de surprendre le code là où le récit simplifie.
+Gardons le dépôt ouvert à côté. Chaque chemin cité s'ouvre dans l'éditeur : c'est la meilleure façon de vérifier que nous avons compris.
 </Callout>
 
-## La carte du territoire
+## La carte du dépôt
 
 Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs paquets qui se connaissent par leur nom.
 
@@ -70,61 +60,49 @@ Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs p
   <FileTreeItem name="Dockerfile — l'image de production" />
 </FileTree>
 
-Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base. Il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts` : un changement d'un côté casse la compilation de l'autre, au lieu de casser l'application devant un membre.
+Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base ; il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts`. Ce découpage permet qu'un changement d'un côté casse la compilation de l'autre, et donc qu'une incompatibilité soit détectée sur notre machine plutôt que devant un membre.
 
-Retenons bien ce `proxy.ts`, au passage. Il a l'air anodin, sur cette carte. Il ne l'est pas.
+## Le trajet d'une action
 
-## Le voyage d'un clic
-
-Suivons ce qui se passe quand un administrateur publie une actualité. Ce trajet reviendra dans presque chaque saison.
+Suivons ce qui se passe quand un administrateur publie une actualité. Ce trajet reviendra dans presque chaque partie.
 
 1. Le formulaire vit dans `apps/web`. À l'envoi, il appelle `trpc.post.create` : un appel de fonction typé, pas une URL écrite à la main.
 2. La requête arrive au routeur `post` de `packages/backend`. Le middleware `isAdmin` vérifie la session ; Zod valide le titre et le contenu.
 3. Prisma écrit l'article dans PostgreSQL, dans une transaction qui enregistre aussi les médias qu'il référence.
 4. Le front invalide son cache : la liste des actualités se recharge d'elle-même.
 
-Les fichiers, eux, prennent un autre chemin, que la saison « Stockage et médias » détaillera. Un fichier lourd ne transite pas par notre API : le backend délivre une autorisation signée, et le navigateur envoie le fichier directement au stockage compatible S3 (Cloudflare R2 en production, MinIO sur notre machine).
+Les fichiers prennent un autre chemin, détaillé dans la partie « Stockage et médias ». Un fichier lourd ne transite pas par notre API : le backend délivre une autorisation signée, et le navigateur envoie le fichier directement au stockage compatible S3 (Cloudflare R2 en production, MinIO sur notre machine). Le serveur n'a ainsi jamais à tenir un fichier de plusieurs dizaines de mégaoctets en mémoire.
 
 <Callout type="info">
-Deux circuits : les **données** passent par tRPC et Prisma, les **fichiers** vont directement au stockage avec une autorisation signée. Ne cherchons pas d'upload dans les routeurs tRPC : il n'y en a pas.
+Deux circuits : les **données** passent par tRPC et Prisma, les **fichiers** vont directement au stockage avec une autorisation signée. Il n'y a pas d'upload dans les routeurs tRPC.
 </Callout>
 
-## Le lexique du club
+## Le vocabulaire du club
 
-Le code parle la langue du club, et certains mots y ont un sens précis. Les confondre, c'est se tromper de table.
+Le code emploie le vocabulaire du club, et certains mots y ont un sens précis.
 
 <DocsTable columnsJson='["Mot dans l’interface","Modèle Prisma","Ce que c’est"]' rowsJson='[["Discipline","Discipline","Un art martial enseigné, au sens conceptuel (ex. Tchoy Lee Fut), indépendant des dates et des lieux."],["Famille","DisciplineFamily","Un regroupement de disciplines proches, utilisé par le menu « Nos disciplines »."],["Catégorie","Category","La plus grosse maille de classement (ex. « Cours ») ; elle range aussi la médiathèque."],["Origine","Origin","L’origine culturelle d’une discipline, d’un stage ou d’un événement (ex. Chine, Philippines)."],["Cours","Course","Un créneau HEBDOMADAIRE : un jour, une heure, un public. Pas une séance datée."],["Stage","Seminar","Un séminaire ponctuel, avec ses séances datées (SeminarSession)."],["Événement","Event","Un rendez-vous plus léger : repas, portes ouvertes, forum ; ses dates vivent dans ses séances (EventSession)."],["Groupe","MemberGroup","Un ensemble de membres ; s’il est collaboratif, il a un espace de fichiers partagé. Les groupes forment une hiérarchie."],["Document","MemberDocument","Un fichier du club publié aux membres, avec un suivi de lecture par membre."],["Média","MediaAsset","Un fichier de la bibliothèque, avec son statut : en attente, publié, à la corbeille."],["Ticket","Ticket","Une demande adressée au club, numérotée (AKFC-0042), avec son fil de messages."],["Page éditoriale","SitePage, PageVisibility","Une page au contenu libre (À propos, Contacts) qu’un admin publie ou laisse « en construction »."]]' />
 
-Le piège le plus fréquent : un **cours** n'a pas de date. C'est « le mardi à 20 h ». Celui qui cherche « la séance du 14 mars » dans la table `Course` ne la trouvera jamais.
+Le point le plus souvent mal compris : un **cours** n'a pas de date. C'est « le mardi à 20 h ». Une séance précise n'existe que pour un stage ou un événement.
 
-## La base qui n'aurait jamais dû être là
+## Trois environnements, une règle
 
 Le projet tourne à trois endroits.
 
-La **production** vit sur un serveur Hetzner, dans des conteneurs Docker, et sert `akfc.fr`. La **sandbox recruteurs** est une copie autonome, lancée par `docker-compose.sandbox.yml`, avec des comptes et des contenus de démonstration. Le **développement**, enfin, c'est notre machine.
+La **production** vit sur un serveur Hetzner, dans des conteneurs Docker, et sert `akfc.fr`. Ses données sont celles de vrais membres. La **sandbox recruteurs** est une copie autonome, lancée par `docker-compose.sandbox.yml`, avec des comptes et des contenus de démonstration. Le **développement** se fait sur notre machine, avec sa propre base, son propre stockage et sa propre boîte mail.
 
-Voici maintenant la partie de l'histoire qu'on aimerait ne pas avoir à raconter.
-
-Pendant longtemps, la machine de développement et le serveur ont partagé **la même base de données**. C'était commode : les vraies données étaient là, tout de suite, sans rien préparer. On testait un formulaire sur de vrais membres. On essayait une migration sur de vraies tables. Chaque `pnpm dev` ouvrait une connexion directe vers des noms, des adresses, des photos d'enfants.
-
-Rien n'a cassé. C'est précisément ce qui rend l'histoire inquiétante : il aurait suffi d'une migration ratée, d'un script de nettoyage lancé dans le mauvais terminal, d'un seed qui « remet les mots de passe à leur valeur de démonstration »… sur les comptes des vrais administrateurs.
-
-La séparation a été l'une des décisions les plus importantes du projet. Elle a demandé de construire, pour le développement, un monde entier : une base à soi, un stockage à soi, une boîte mail qui n'écrit à personne.
+Cette séparation est stricte. Elle permet d'essayer une migration, de lancer un script de nettoyage ou de réinitialiser des mots de passe de démonstration sans qu'aucune de ces opérations puisse atteindre un membre réel. Elle permet aussi de détruire et reconstruire l'environnement de développement à volonté.
 
 <Callout type="warning">
-La règle ne souffre pas d'exception : **le développement ne touche jamais aux données de production**. Notre base locale part de zéro, se remplit de données de démonstration, et peut être détruite à tout moment. Si une commande nous demande l'adresse du serveur de production, c'est que nous sommes au mauvais endroit.
+**Le développement ne touche jamais aux données de production.** Notre base locale part de zéro, se remplit de données de démonstration, et peut être détruite à tout moment. Si une commande demande l'adresse du serveur de production, nous sommes au mauvais endroit.
 </Callout>
 
-## Fin de l'épisode
+## À suivre
 
-Nous savons maintenant ce que fait le projet, comment il est rangé, et ce qu'il ne doit jamais toucher.
+Nous savons ce que fait le projet, comment il est rangé et ce qu'il ne doit jamais toucher. Reste à le faire tourner.
 
-Il reste à le faire tourner. Sur notre machine, à vide, sans une seule donnée réelle. Cela paraît simple : cloner, installer, lancer.
-
-Lançons-le, justement. Tapons `pnpm dev`. L'application démarre, affiche fièrement son adresse locale, nous ouvrons la page d'accueil…
-
-Et tout s'effondre à la première requête.
+Un `pnpm install` suivi de `pnpm dev` ne suffit pas : dès la première page, l'application interroge une base de données, demande son logo à un stockage S3, et s'attend à pouvoir envoyer des e-mails. Aucun de ces services n'existe encore sur notre machine.
 
 <Callout type="tip">
-**Dans l'épisode suivant** : une application qui réclame trois services qu'elle n'a pas, deux fichiers de configuration pour un seul réglage, et une boîte aux lettres qui avale tous les e-mails sans jamais en envoyer un seul.
+**Chapitre suivant : la mise en route.** Trois services locaux qui parlent les mêmes protocoles que la production, deux fichiers de configuration pour deux lecteurs différents, et une boîte mail qui reçoit tout sans rien envoyer.
 </Callout>
