@@ -1,38 +1,47 @@
 'use client';
 
 import { useEffect } from "react";
+
+import type { SessionClient } from "@contracts/auth/session.types";
 import { useSessionStore } from "@lib/stores/useSessionStore";
-import { trpc, trpcClient } from "@trpc/trpcClient";
+import { trpcClient } from "@trpc/trpcClient";
+import { InitialSessionProvider } from "@features/auth/InitialSession";
 
 /**
- * Charge la session utilisateur au montage : récupère la session via l'API
- * et la pousse dans `useSessionStore`, puis rend les enfants.
+ * Initialise le store de session.
+ *
+ * Le layout racine lit la session CÔTÉ SERVEUR et la passe ici (`initialSession`, null pour
+ * un visiteur) : le store est alors rempli sans requête, et `InitialSessionProvider` rend
+ * cette valeur disponible dès le premier rendu (voir useCurrentUser). Sans valeur serveur
+ * (`undefined`), on retombe sur l'ancien comportement : demander la session à l'API.
  */
-export function SessionLoader({ children }: { children: React.ReactNode }) {
-  const loginSuccess = useSessionStore((state) => state.loginSuccess);
-  const resetStatus = useSessionStore((state) => state.resetStatus);
-  const setLoading = useSessionStore((state) => state.setLoading);
-  // const { data: categories, isLoading, isError } = trpc.category.getAll.useQuery();
-
+export function SessionLoader({
+  initialSession,
+  children,
+}: {
+  initialSession?: SessionClient | null;
+  children: React.ReactNode;
+}) {
   useEffect(() => {
-    async function hydrateSessionStore() {
-      setLoading(true);
-
-      try {
-        const session = await trpcClient.auth.getSession.query();
-
-        if (session) {
-          loginSuccess(session);
-        } else {
-          resetStatus();
-        }
-      } finally {
-        setLoading(false);
-      }
+    const store = useSessionStore.getState();
+    if (initialSession !== undefined) {
+      store.hydrate(initialSession);
+      return;
     }
+    let cancelled = false;
+    store.setLoading(true);
+    trpcClient.auth.getSession
+      .query()
+      .then((session) => {
+        if (!cancelled) store.hydrate(session ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) store.hydrate(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSession]);
 
-    hydrateSessionStore();
-  }, [loginSuccess, resetStatus, setLoading]);
-
-  return <>{children}</>;
+  return <InitialSessionProvider session={initialSession ?? null}>{children}</InitialSessionProvider>;
 }

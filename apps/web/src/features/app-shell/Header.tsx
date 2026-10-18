@@ -9,7 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useCurrentUser } from "@features/auth/InitialSession";
 import OurActivitiesMenu from "@features/app-shell/OurActivitiesMenu";
 import {
   NAV_ACTIVE,
@@ -44,7 +44,7 @@ export default function Header({
   initialLogoUrl?: string | null;
   initialBrand?: string;
 } = {}) {
-  const user = useSessionStore(state => state.session?.user);
+  const user = useCurrentUser();
   const pathname = usePathname();
 
   // Identité éditable (logo + libellé) — lecture publique, repli embarqué.

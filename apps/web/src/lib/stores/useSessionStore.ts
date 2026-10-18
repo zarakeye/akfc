@@ -40,6 +40,8 @@ interface SessionStore {
   loginSuccess: (s: SessionClient) => void;
   logout: () => Promise<void>;
   resetStatus: () => void;
+  /** Initialise le store avec la session lue par le serveur (sans requête, sans effet « vient de se connecter »). */
+  hydrate: (session: SessionClient | null) => void;
   /** Met à jour l'avatar du user courant en session (sync UI). */
   setAvatar: (avatar: string | null) => void;
 }
@@ -137,6 +139,10 @@ export const useSessionStore = create<SessionStore>()(
       setTimeout(() => {
         set({ status: "guest" });
       }, 3000);
+    },
+
+    hydrate: (session): void => {
+      set({ session, status: session ? "authenticated" : "guest", loading: false });
     },
 
     // 🧹 Reset UX → état stable

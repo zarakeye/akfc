@@ -10,6 +10,7 @@ import { THEME_COOKIE } from "@features/theme/theme";
 import { prisma } from "@backend/prisma"
 import { AppProviders } from "@app/providers"
 import { SessionLoader } from "@features/auth/SessionLoader"
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
 
 export const dynamic = 'force-dynamic';
 
@@ -115,6 +116,10 @@ export default async function RootLayout({
   // exactement quand il le faut.
   const isDark = (await cookies()).get(THEME_COOKIE)?.value === "dark";
 
+  // Session lue ici, côté serveur : le header s'affiche d'emblée connecté ou non (voir
+  // SessionLoader / useCurrentUser). Base indisponible → visiteur anonyme, pas d'erreur.
+  const initialSession = await getSessionFromRequest().catch(() => null);
+
   const styleKey = siteStyle
     ? `akfc-site-style-${siteStyle.updatedAt.getTime()}`
     : "akfc-site-style";
@@ -148,7 +153,7 @@ export default async function RootLayout({
           </style>
         )}
         <AppProviders>
-          <SessionLoader>{children}</SessionLoader>
+          <SessionLoader initialSession={initialSession}>{children}</SessionLoader>
         </AppProviders>
       </body>
     </html>

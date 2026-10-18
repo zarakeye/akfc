@@ -4,6 +4,7 @@ import { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSessionStore } from "@lib/stores/useSessionStore";
+import { useCurrentUser } from "@features/auth/InitialSession";
 import { trpc } from "@trpc/trpcClient";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { DocumentsNavLink } from "@features/member-documents/DocumentsNavLink";
@@ -19,7 +20,7 @@ export default function UserMenu(): JSX.Element | null {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const logout = useSessionStore((s) => s.logout);
-  const user = useSessionStore((s) => s.session?.user);
+  const user = useCurrentUser();
   const ticketAccess = trpc.ticket.access.useQuery(undefined, { enabled: Boolean(user) });
 
   /**

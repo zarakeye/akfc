@@ -7,8 +7,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 /**
  * Préfiltre d'auth léger.
  *
- * Grâce au `matcher` plus bas, ce proxy ne s'exécute QUE sur l'espace protégé
- * (`/(admin)/**`). Tout le reste — pages publiques (home, disciplines, stages,
+ * Grâce au `matcher` plus bas, ce proxy ne s'exécute QUE sur les espaces protégés
+ * (`/dashboard/**`, `/profil/**`) et les bancs d'essai. Tout le reste — pages publiques (home, disciplines, stages,
  * évènements, galerie, à propos, contacts), assets `/public` (logo, icônes,
  * fonts) et `/api` — ne passe jamais par ici, donc plus aucune redirection
  * parasite sur les fichiers statiques.
@@ -17,8 +17,17 @@ const JWT_SECRET = process.env.JWT_SECRET;
  * vérifie PAS la session en base : la validation canonique reste côté backend
  * via getSessionFromRequest / createTRPCContext / protectedProcedure.
  */
+/** Bancs d'essai du développement : jamais servis en production. */
+const DEV_ONLY = ["/test-finder", "/test-picker", "/simpleEditor"];
+
 export async function proxy(req: NextRequest) {
-  const { origin } = req.nextUrl;
+  const { origin, pathname } = req.nextUrl;
+
+  if (DEV_ONLY.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return process.env.NODE_ENV === "production"
+      ? new NextResponse("Not Found", { status: 404 })
+      : NextResponse.next();
+  }
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
   if (!token || !JWT_SECRET) {
@@ -39,5 +48,12 @@ export const config = {
   // ⚠ "(admin)" est un route group : il n'existe PAS dans les URLs.
   // L'ancien matcher "/(admin)/:path*" ne matchait donc JAMAIS — le
   // proxy ne tournait pas et l'espace admin était sans garde de route.
-  matcher: ["/dashboard/:path*", "/profil/:path*"],
+  // Les bancs d'essai (DEV_ONLY) passent aussi par ici : 404 en production.
+  matcher: [
+    "/dashboard/:path*",
+    "/profil/:path*",
+    "/test-finder/:path*",
+    "/test-picker/:path*",
+    "/simpleEditor/:path*",
+  ],
 };
