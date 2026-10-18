@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import { formatHHMM } from "@lib/time/formatHHMM";
+import { DeleteRowButton } from "@features/admin/common/delete";
 
 const AUDIENCE_LABELS: Record<string, string> = {
   KIDS: "Enfants",
@@ -27,6 +28,8 @@ const DAY_LABELS: Record<string, string> = {
 export default function CoursesListPage(): JSX.Element {
   const { data: courses, isLoading, isError } = trpc.course.getAll.useQuery();
   const { data: disciplines } = trpc.discipline.getAll.useQuery();
+  const utils = trpc.useUtils();
+  const remove = trpc.course.delete.useMutation();
 
   const disciplineById = useMemo(() => {
     const map = new Map<number, string>();
@@ -61,10 +64,10 @@ export default function CoursesListPage(): JSX.Element {
       ) : (
         <ul className="flex flex-col gap-2">
           {(courses ?? []).map((course) => (
-            <li key={course.id}>
+            <li key={course.id} className="flex items-center gap-2">
               <Link
                 href={`/dashboard/courses/${course.id}`}
-                className="flex items-center justify-between rounded-md border border-border bg-card p-3 transition-colors hover:bg-muted"
+                className="flex min-w-0 flex-1 items-center justify-between rounded-md border border-border bg-card p-3 transition-colors hover:bg-muted"
               >
                 <span className="font-medium">
                   {disciplineById.get(course.disciplineId) ??
@@ -76,6 +79,14 @@ export default function CoursesListPage(): JSX.Element {
                   {AUDIENCE_LABELS[course.audience] ?? course.audience}
                 </span>
               </Link>
+              <DeleteRowButton
+                entityLabel="le cours"
+                name={`${disciplineById.get(course.disciplineId) ?? `Discipline ${course.disciplineId}`} ${(DAY_LABELS[course.day] ?? course.day).toLowerCase()} ${formatHHMM(course.beginTime)}`}
+                onDelete={async () => {
+                  await remove.mutateAsync({ id: course.id });
+                  await utils.course.getAll.invalidate();
+                }}
+              />
             </li>
           ))}
         </ul>

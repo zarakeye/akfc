@@ -4,12 +4,14 @@ import { type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
+import { deleteColumn } from "@features/admin/common/delete";
 
 type NewsRow = {
   id: number;
   title: string;
   statut: string;
   expiration: string;
+  supprimer: number;
 };
 
 function formatDate(d: Date): string {
@@ -29,6 +31,8 @@ function statut(publicationDate: Date | null, expiresAt: Date | null): string {
 /** Liste des actualités — clic → édition directe (pas de fiche dédiée). */
 export default function BreakingNewsTable(): JSX.Element {
   const router = useRouter();
+  const utils = trpc.useUtils();
+  const remove = trpc.breakingNews.delete.useMutation();
   const { data, isLoading, isError } = trpc.breakingNews.getAllAdmin.useQuery();
 
   if (isLoading) return <div>Chargement…</div>;
@@ -39,12 +43,21 @@ export default function BreakingNewsTable(): JSX.Element {
     title: n.title,
     statut: statut(n.publicationDate, n.expiresAt),
     expiration: n.expiresAt ? formatDate(n.expiresAt) : "—",
+    supprimer: n.id,
   }));
 
   const columns: Column<NewsRow>[] = [
     { property: "title", displayName: "Titre", type: "string" },
     { property: "statut", displayName: "Statut", type: "string" },
     { property: "expiration", displayName: "Expire le", type: "string" },
+    deleteColumn(rows, {
+      entityLabel: "le flash info",
+      nameOf: (r) => r.title,
+      onDelete: async (r) => {
+        await remove.mutateAsync({ id: r.id });
+        await Promise.all([utils.breakingNews.getAllAdmin.invalidate(), utils.breakingNews.getActive.invalidate()]);
+      },
+    }),
   ];
 
   return (

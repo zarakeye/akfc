@@ -4,6 +4,7 @@ import { JSX, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
+import { deleteColumn } from "@features/admin/common/delete";
 
 /**
  * SeminarsTable — `trpc.seminar.getAll`. Rattachement résolu : discipline du club,
@@ -23,10 +24,13 @@ type StageRow = {
   slug: string;
   public: string;
   rattachement: string;
+  supprimer: number;
 };
 
 export default function SeminarsTable(): JSX.Element {
   const router = useRouter();
+  const utils = trpc.useUtils();
+  const remove = trpc.seminar.delete.useMutation();
   const { data: stages, isLoading, isError } = trpc.seminar.getAllAdmin.useQuery();
   const { data: disciplines } = trpc.discipline.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
@@ -56,6 +60,7 @@ export default function SeminarsTable(): JSX.Element {
       s.externalDisciplineLabel ??
       (s.originId != null ? originById.get(s.originId) : undefined) ??
       '—',
+    supprimer: s.id,
   }));
 
   const columns: Column<StageRow>[] = [
@@ -64,6 +69,15 @@ export default function SeminarsTable(): JSX.Element {
     { property: 'slug', displayName: 'Slug', type: 'string' },
     { property: 'public', displayName: 'Public', type: 'string' },
     { property: 'rattachement', displayName: 'Rattachement', type: 'string' },
+    deleteColumn(rows, {
+      entityLabel: 'le stage',
+      nameOf: (r) => r.label,
+      consequence: 'Ses séances sont supprimées avec lui.',
+      onDelete: async (r) => {
+        await remove.mutateAsync({ id: r.id });
+        await Promise.all([utils.seminar.getAllAdmin.invalidate(), utils.seminar.getAll.invalidate()]);
+      },
+    }),
   ];
 
   return (

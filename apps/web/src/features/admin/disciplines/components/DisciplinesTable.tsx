@@ -4,6 +4,7 @@ import { JSX, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
+import { deleteColumn } from "@features/admin/common/delete";
 
 /**
  * DisciplinesTable
@@ -26,10 +27,13 @@ type DisciplineRow = {
   type: string;
   categorie: string;
   famille: string;
+  supprimer: number;
 };
 
 export default function DisciplinesTable(): JSX.Element {
   const router = useRouter();
+  const utils = trpc.useUtils();
+  const remove = trpc.discipline.delete.useMutation();
   const { data: disciplines, isLoading, isError } = trpc.discipline.getAll.useQuery();
   const { data: categories } = trpc.category.getAll.useQuery();
   const { data: families } = trpc.disciplineFamily.getAll.useQuery();
@@ -59,6 +63,7 @@ export default function DisciplinesTable(): JSX.Element {
       d.familyId != null
         ? familyById.get(d.familyId) ?? `#${d.familyId}`
         : '—',
+    supprimer: d.id,
   }));
 
   const columns: Column<DisciplineRow>[] = [
@@ -68,6 +73,19 @@ export default function DisciplinesTable(): JSX.Element {
     { property: 'type', displayName: 'Type', type: 'string' },
     { property: 'categorie', displayName: 'Catégorie', type: 'string' },
     { property: 'famille', displayName: 'Famille', type: 'string' },
+    deleteColumn(rows, {
+      entityLabel: 'la discipline',
+      nameOf: (r) => r.name,
+      consequence: 'Refusée tant que des cours, stages ou événements y sont rattachés.',
+      onDelete: async (r) => {
+        await remove.mutateAsync({ id: r.id });
+        await Promise.all([
+          utils.discipline.getAll.invalidate(),
+          utils.discipline.getAllPublished.invalidate(),
+          utils.discipline.getAllForMenu.invalidate(),
+        ]);
+      },
+    }),
   ];
 
   return (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
+import { DeleteRowButton } from "@features/admin/common/delete";
 
 /**
  * Statut de publication d'un post (même logique que Event).
@@ -28,6 +29,8 @@ export default function PostsListPage(): JSX.Element {
   // Lecture via React Query (brouillons inclus) — même cache que les mutations.
   const { data: posts, isLoading, isError } =
     trpc.post.getAllAdmin.useQuery();
+  const utils = trpc.useUtils();
+  const remove = trpc.post.delete.useMutation();
 
   const [now] = useState(() => Date.now());
 
@@ -63,6 +66,7 @@ export default function PostsListPage(): JSX.Element {
                 <th className="px-4 py-2 font-medium">Titre</th>
                 <th className="px-4 py-2 font-medium">Statut</th>
                 <th className="px-4 py-2 font-medium">Publication</th>
+                <th className="w-24 px-4 py-2 text-center font-medium">Supprimer</th>
               </tr>
             </thead>
             <tbody>
@@ -92,6 +96,17 @@ export default function PostsListPage(): JSX.Element {
                       {p.publicationDate
                         ? new Date(p.publicationDate).toLocaleDateString("fr-FR")
                         : "—"}
+                    </td>
+                    <td className="px-4 py-1 text-center">
+                      <DeleteRowButton
+                        entityLabel="l'article"
+                        name={p.title}
+                        consequence="Ses commentaires, réactions et sondages sont supprimés avec lui."
+                        onDelete={async () => {
+                          await remove.mutateAsync({ id: p.id });
+                          await Promise.all([utils.post.getAllAdmin.invalidate(), utils.post.getAll.invalidate()]);
+                        }}
+                      />
                     </td>
                   </tr>
                 );

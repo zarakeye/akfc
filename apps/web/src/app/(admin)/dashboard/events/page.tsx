@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
+import { DeleteRowButton } from "@features/admin/common/delete";
 
 const AUDIENCE_LABELS: Record<string, string> = {
   KIDS: "Enfants",
@@ -38,6 +39,8 @@ export default function EventsListPage(): JSX.Element {
   // uniquement sur invalidation (plus de store à synchroniser).
   const { data: events, isLoading, isError } =
     trpc.event.getAllAdmin.useQuery();
+  const utils = trpc.useUtils();
+  const remove = trpc.event.delete.useMutation();
 
   const [now] = useState(() => Date.now());
 
@@ -73,6 +76,7 @@ export default function EventsListPage(): JSX.Element {
                 <th className="px-4 py-2 font-medium">Statut</th>
                 <th className="px-4 py-2 font-medium">Audience</th>
                 <th className="px-4 py-2 font-medium">Publication</th>
+                <th className="w-24 px-4 py-2 text-center font-medium">Supprimer</th>
               </tr>
             </thead>
             <tbody>
@@ -105,6 +109,17 @@ export default function EventsListPage(): JSX.Element {
                       {e.publicationDate
                         ? new Date(e.publicationDate).toLocaleDateString("fr-FR")
                         : "—"}
+                    </td>
+                    <td className="px-4 py-1 text-center">
+                      <DeleteRowButton
+                        entityLabel="l'événement"
+                        name={e.label}
+                        consequence="Ses séances sont supprimées avec lui."
+                        onDelete={async () => {
+                          await remove.mutateAsync({ id: e.id });
+                          await Promise.all([utils.event.getAllAdmin.invalidate(), utils.event.getAll.invalidate()]);
+                        }}
+                      />
                     </td>
                   </tr>
                 );

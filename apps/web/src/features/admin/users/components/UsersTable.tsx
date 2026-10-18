@@ -6,8 +6,10 @@ import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
 import { DemoAccountsToggle, DemoBadge } from "@features/admin/common/DemoAccounts";
 import { IMAGE_CONSENT_LABEL } from "@contracts/legal/imageConsent";
+import { useSessionStore } from "@lib/stores/useSessionStore";
+import { deleteColumn } from "@features/admin/common/delete";
 
-type UserRow = { id: string; email: string; name: string; groups: string; photos: string; kind: string };
+type UserRow = { id: string; email: string; name: string; groups: string; photos: string; kind: string; supprimer: string };
 
 /** Séparateur des noms de groupes dans la cellule (texte : la recherche et le tri l'utilisent). */
 const GROUP_SEP = " · ";
@@ -20,6 +22,9 @@ const GROUP_SEP = " · ";
 export default function UsersTable(): JSX.Element {
   const router = useRouter();
   const [showDemo, setShowDemo] = useState(false);
+  const me = useSessionStore((s) => s.session?.user?.id);
+  const utils = trpc.useUtils();
+  const remove = trpc.user.delete.useMutation();
   const { data, isLoading, isError } = trpc.user.getAll.useQuery();
 
   if (isLoading) return <div>Chargement…</div>;
@@ -36,6 +41,7 @@ export default function UsersTable(): JSX.Element {
       groups: u.groups.map((g) => g.name).join(GROUP_SEP),
       photos: IMAGE_CONSENT_LABEL[u.imageConsent],
       kind: u.isDemo ? "Démo" : "Membre",
+      supprimer: u.id,
     }));
   const adminGroupNames = new Set(all.flatMap((u) => u.groups.filter((g) => g.isAdminGroup).map((g) => g.name)));
 
@@ -88,6 +94,16 @@ export default function UsersTable(): JSX.Element {
       type: "string",
       render: (value) => (value === "Démo" ? <DemoBadge /> : <span>{String(value)}</span>),
     },
+    deleteColumn(rows, {
+      entityLabel: "le compte de",
+      nameOf: (r) => r.name || r.email,
+      consequence: "Ses formulaires de droit à l'image signés restent conservés comme preuve.",
+      disabledReason: (r) => (r.id === me ? "Vous ne pouvez pas supprimer votre propre compte." : null),
+      onDelete: async (r) => {
+        await remove.mutateAsync({ id: r.id });
+        await utils.user.getAll.invalidate();
+      },
+    }),
   ];
 
   return (

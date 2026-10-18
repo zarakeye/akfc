@@ -4,6 +4,7 @@ import { JSX } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
+import { deleteColumn } from "@features/admin/common/delete";
 
 /**
  * Liste des galeries via `trpc.gallery.getAll.useQuery()`. Clic sur une ligne
@@ -29,10 +30,13 @@ type GalleryRow = {
   images: number;
   visibilite: string;
   ordre: number;
+  supprimer: number;
 };
 
 export default function GalleriesTable(): JSX.Element {
   const router = useRouter();
+  const utils = trpc.useUtils();
+  const remove = trpc.gallery.delete.useMutation();
   const { data: galleries, isLoading, isError } = trpc.gallery.getAll.useQuery();
 
   if (isLoading) return <div>Chargement…</div>;
@@ -61,6 +65,7 @@ export default function GalleriesTable(): JSX.Element {
       images: g._count.items,
       visibilite: VISIBILITY_LABELS[g.visibility] ?? g.visibility,
       ordre: g.sortOrder,
+      supprimer: g.id,
     };
   });
 
@@ -72,6 +77,17 @@ export default function GalleriesTable(): JSX.Element {
     { property: 'images', displayName: 'Images', type: 'number' },
     { property: 'visibilite', displayName: 'Visibilité', type: 'string' },
     { property: 'ordre', displayName: 'Ordre', type: 'number' },
+    deleteColumn(rows, {
+      entityLabel: 'la galerie',
+      nameOf: (r) => r.titre,
+      consequence: 'Les images restent dans la bibliothèque ; seule la galerie disparaît.',
+      disabledReason: (r) =>
+        r.slug === CAROUSEL_SLUG ? "Galerie du carrousel d'accueil : elle ne peut pas être supprimée." : null,
+      onDelete: async (r) => {
+        await remove.mutateAsync({ id: r.id });
+        await Promise.all([utils.gallery.getAll.invalidate(), utils.gallery.getPublicIndex.invalidate()]);
+      },
+    }),
   ];
 
   return (
