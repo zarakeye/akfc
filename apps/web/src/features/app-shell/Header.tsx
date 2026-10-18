@@ -20,6 +20,7 @@ import {
   type NavEntry,
 } from "@features/app-shell/navEntries";
 import { trpc } from "@trpc/trpcClient";
+import { ThemeToggle } from "@features/theme";
 
 /**
  * En-tête de l'application, en deux rendus alimentés par la MÊME source
@@ -98,7 +99,7 @@ export default function Header({
             entier), agrandi SANS grandir la barre : le rembourrage vertical cède exactement ce que le
             carré gagne (hauteur de barre inchangée : 92 / 112 / 180 px selon le palier ; logo 84 / 104 / 164 px). Le logo carré
             à pastille intégrée remplit ce carré. */}
-        <div className="flex items-center px-4 py-1 xl:px-6 xl:py-1 2xl:px-20 2xl:py-2">
+        <div className="flex items-center px-4 py-4 xl:px-6 xl:py-5 2xl:px-20 2xl:py-5">
           {logoUrl ? (
             // Logo personnalisé (réglages) — <img> simple : URL de proxy
             // dynamique, hors pipeline next/image.
@@ -115,7 +116,7 @@ export default function Header({
               width={100}
               height={100}
               priority
-              className="h-21 w-21 object-contain xl:h-26 xl:w-26 2xl:h-41 2xl:w-41"
+              className="h-20 w-20 object-contain xl:h-25 xl:w-25 2xl:h-40 2xl:w-40"
             />
           )}
         </div>
@@ -177,7 +178,8 @@ export default function Header({
       </nav>
 
       {/* ── Authentification (≥ lg) ───────────────────────────────────── */}
-      <div className="hidden shrink-0 pr-4 xl:block xl:pr-6">
+      <div className="hidden shrink-0 items-center gap-3 pr-4 xl:flex xl:pr-6">
+        <ThemeToggle tone="onDark" />
         <Suspense fallback={<div>Chargement...</div>}>
           {user
             ? (
@@ -202,6 +204,7 @@ export default function Header({
             <CollaborativeBell />
           </Suspense>
         )}
+        <ThemeToggle tone="onDark" />
         <button
           type="button"
           onClick={() => setOpen(true)}

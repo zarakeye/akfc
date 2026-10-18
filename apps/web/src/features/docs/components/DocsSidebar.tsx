@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 
 import type { DocPage } from "@features/docs/lib/docs.types"
+import { ThemeToggle } from "@features/theme"
 
 type NavigationSection = {
   section: string
@@ -36,8 +37,9 @@ export function DocsSidebar({
         </button>
 
         {open ? (
-          <span className="pr-2 text-sm font-semibold text-foreground">
+          <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
             Documentation
+            <ThemeToggle />
           </span>
         ) : null}
       </div>

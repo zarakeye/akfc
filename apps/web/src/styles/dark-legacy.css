@@ -1,0 +1,58 @@
+/*
+ * Mode sombre des couleurs « en dur ».
+ *
+ * Les composants récents utilisent les couleurs du thème (bg-background, text-foreground,
+ * bg-card, border-border…), qui basculent toutes seules sous `.dark`. Des centaines de classes
+ * plus anciennes fixent encore une couleur (bg-white, text-gray-700…). Plutôt que de modifier
+ * chaque composant d'un coup, ces classes sont réorientées ici vers les variables du thème, en
+ * mode sombre seulement.
+ *
+ * Ce fichier est importé HORS de toute couche CSS (@layer) : du CSS sans couche l'emporte sur
+ * les utilitaires Tailwind, rangés dans `@layer utilities`, quelle que soit la spécificité.
+ * À mesure que les composants passent aux couleurs du thème, ces règles deviennent inutiles.
+ */
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Fonds clairs → surfaces du thème */
+.dark .bg-white { background-color: var(--card); }
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-slate-50,
+.dark .bg-slate-100 { background-color: var(--muted); }
+.dark .bg-gray-200,
+.dark .bg-gray-300 { background-color: oklch(0.32 0.03 257); }
+
+/* Textes sombres → textes du thème */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 { color: var(--foreground); }
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-slate-600,
+.dark .text-slate-500 { color: var(--muted-foreground); }
+.dark .text-gray-400,
+.dark .text-slate-400 { color: oklch(0.6 0.02 262); }
+
+/* Bordures et séparateurs */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .divide-gray-100 > :not(:last-child) { border-color: var(--border); }
+
+/* Survols */
+.dark .hover\:bg-white:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover { background-color: var(--accent); }
+.dark .hover\:bg-gray-300:hover { background-color: oklch(0.36 0.03 257); }
+.dark .hover\:text-gray-900:hover,
+.dark .hover\:text-gray-800:hover,
+.dark .hover\:text-gray-700:hover { color: var(--foreground); }

@@ -4,6 +4,9 @@ import { SITE_URL } from "@/config/siteUrl";
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css";
 import "@/styles/tiptap-variables.css";
+import "@/styles/dark-legacy.css";
+import { cookies } from "next/headers";
+import { THEME_COOKIE } from "@features/theme/theme";
 import { prisma } from "@backend/prisma"
 import { AppProviders } from "@app/providers"
 import { SessionLoader } from "@features/auth/SessionLoader"
@@ -110,12 +113,17 @@ export default async function RootLayout({
   //
   // `updatedAt` fait une clé naturelle : la colonne existe déjà et change
   // exactement quand il le faut.
+  const isDark = (await cookies()).get(THEME_COOKIE)?.value === "dark";
+
   const styleKey = siteStyle
     ? `akfc-site-style-${siteStyle.updatedAt.getTime()}`
     : "akfc-site-style";
 
   return (
-    <html lang="fr">
+    // Thème lu dans le cookie du visiteur : la classe `dark` est posée dès le HTML serveur.
+    // suppressHydrationWarning : l'interrupteur change ensuite la classe côté client, sans
+    // nouveau rendu serveur ; React ne doit pas s'en plaindre.
+    <html lang="fr" className={isDark ? "dark" : undefined} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/*
           `href` + `precedence` : React 19 HISSE cette balise dans le
