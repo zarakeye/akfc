@@ -7,6 +7,7 @@ import {
   r2DeleteFile,
   r2DeleteByPrefix,
 } from "@backend/modules/trash/services/r2TrashOps";
+import { deleteAssetRowsOfTrashedItem } from "@backend/modules/trash/services/trashedAssets.service";
 
 /**
  * deleteForever.service.ts
@@ -35,6 +36,7 @@ export async function deleteForever(params: {
       id: true,
       kind: true,
       storageRoot: true,
+      previousPath: true,
     },
   });
 
@@ -59,6 +61,10 @@ export async function deleteForever(params: {
       // Folder : supprime tout sous `${storageRoot}/` (toute profondeur).
       await r2DeleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
     }
+
+    // Les lignes MediaAsset sont restées sur le chemin d'origine (pour la restauration) :
+    // sans fichier désormais, on les efface.
+    await deleteAssetRowsOfTrashedItem(prisma, appRoot, entry);
 
     await prisma.trashEntry.update({
       where: { id: entry.id },

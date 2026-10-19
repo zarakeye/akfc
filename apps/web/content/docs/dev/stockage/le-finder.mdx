@@ -165,14 +165,24 @@ Valider un fichier ou un dossier entier passe par `media.setStatus`, qui modifie
 
 La corbeille n'est pas un statut : c'est un rangement. `trash.trashToBin` déplace l'élément dans une zone cachée, `AKFC/bin/.trash/<identifiant>/`, et crée une ligne `TrashEntry` qui conserve son nom et son **chemin d'origine** :
 
-<DocsTable columnsJson='["Action","Qui","Effet"]' rowsJson='[["Mettre à la corbeille","Administrateur partout ; éditeur dans l’espace de son groupe","Déplacement vers bin/.trash/<id>/, TrashEntry « dans la corbeille »."],["Restaurer","Administrateur","Retour au chemin d’origine conservé dans TrashEntry."],["Supprimer définitivement, vider","Administrateur","Suppression des objets du stockage et de leurs déclinaisons."]]' />
+<DocsTable columnsJson='["Action","Qui","Effet"]' rowsJson='[["Mettre à la corbeille","Administrateur partout ; éditeur dans l’espace de son groupe","Refusé si un fichier est encore utilisé ; sinon déplacement vers bin/.trash/<id>/ et TrashEntry « dans la corbeille »."],["Restaurer","Administrateur","Retour au chemin d’origine conservé dans TrashEntry."],["Supprimer définitivement, vider","Administrateur","Suppression des objets, de leurs déclinaisons et des lignes MediaAsset restées sans fichier."]]' />
 
 L'identifiant unique dans le chemin évite toute collision : deux fichiers `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille. Dans le Finder, la corbeille apparaît comme une feuille de l'arbre, avec sa propre vue en liste plate.
 
-La ligne `MediaAsset` d'un fichier jeté n'est pas modifiée : elle garde son chemin d'origine. Comme la restauration replace le fichier exactement à ce chemin, la ligne retrouve son objet, avec son statut, son nom et sa description intacts.
+La ligne `MediaAsset` d'un fichier jeté n'est pas modifiée : elle garde son chemin d'origine. Comme la restauration replace le fichier exactement à ce chemin, la ligne retrouve son objet, avec son statut, son nom et sa description intacts. Ce choix entraîne deux règles, réunies dans `trashedAssets.service.ts` :
+
+- **on ne jette pas un fichier utilisé.** S'il est posé dans une page, dans une galerie, ou publié dans les documents des membres, la mise à la corbeille est refusée, avec un message qui nomme chaque fichier et ce qui l'utilise. Sans cette garde, le contenu afficherait un média cassé tant que le fichier est dans la corbeille ;
+- **la suppression définitive efface les lignes.** Une fois les objets supprimés, les lignes restées sur le chemin d'origine n'ont plus de fichier : elles sont effacées. Sauf une : si un nouveau fichier a été déposé entre-temps au même chemin, l'enregistrement de cet envoi a repris la ligne (un `upsert` sur `fullPath`), et elle lui appartient désormais. La suppression vérifie donc dans le stockage qu'aucun objet n'existe plus à ce chemin avant d'effacer.
+
+```ts
+// packages/backend/src/modules/trash/services/trashedAssets.service.ts (extrait)
+const prefix = item.kind === "file" ? previous : `${previous}/`;
+const live = new Set((await r2ListByPrefix(prefix)).map((o) => o.key));
+const orphanIds = rows.filter((r) => !live.has(r.fullPath)).map((r) => r.id);
+```
 
 <Callout type="warning">
-Le stockage et la base doivent rester d'accord : un déplacement ou un renommage de dossier met à jour `MediaAsset.fullPath` dans la même procédure. Une opération qui ne toucherait que l'un des deux laisserait des fichiers sans statut, ou des lignes qui pointent vers rien.
+Le stockage et la base doivent rester d'accord : un déplacement ou un renommage de dossier met à jour `MediaAsset.fullPath` dans la même procédure, et une suppression définitive efface les lignes devenues sans fichier. Une opération qui ne toucherait que l'un des deux laisserait des fichiers sans statut, ou des lignes qui pointent vers rien.
 </Callout>
 
 ## Récapitulatif

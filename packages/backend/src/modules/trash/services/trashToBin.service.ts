@@ -8,6 +8,7 @@ import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@back
 import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
 import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
+import { assertTrashDoesntRemoveUsedAssets } from "@backend/modules/trash/services/trashedAssets.service";
 import {
   r2Exists,
   r2GetInfo,
@@ -211,6 +212,10 @@ export async function trashToBin(params: {
       );
     }
   }
+
+  // 🔒 Fichier encore utilisé (page, galerie, documents des membres) : on refuse avant tout
+  // déplacement, sinon le contenu afficherait un média cassé tant qu'il est dans la corbeille.
+  await assertTrashDoesntRemoveUsedAssets(prisma, appRoot, sources);
 
   const results: TrashEntryDTO[] = [];
 

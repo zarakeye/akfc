@@ -6,6 +6,7 @@ import {
   r2DeleteFile,
   r2DeleteByPrefix,
 } from "@backend/modules/trash/services/r2TrashOps";
+import { deleteAssetRowsOfTrashedItem } from "@backend/modules/trash/services/trashedAssets.service";
 
 /**
  * purge.service.ts
@@ -108,6 +109,7 @@ export async function purge(params: {
         id: true,
         kind: true,
         storageRoot: true,
+        previousPath: true,
       },
     });
 
@@ -121,6 +123,8 @@ export async function purge(params: {
         // kind === "folder" : on supprime tout sous le préfixe (toute profondeur).
         await r2DeleteByPrefix(`${normalizePath(entry.storageRoot)}/`);
       }
+      // Lignes MediaAsset restées sur le chemin d'origine : sans fichier désormais.
+      await deleteAssetRowsOfTrashedItem(prisma, appRoot, entry);
 
       await prisma.trashEntry.update({
         where: { id: entry.id },
