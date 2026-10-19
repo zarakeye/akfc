@@ -409,7 +409,7 @@ export const userRouter = router({
    * rattachés (pour ne perdre aucun instructeur existant, même non-admin).
    * `getInstructors` / `listPublicInstructors` restent la vérité publique.
    */
-  getAssignableInstructors: protectedProcedure.query(async ({ ctx }) => {
+  getAssignableInstructors: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {
         OR: [
@@ -431,7 +431,7 @@ export const userRouter = router({
     });
   }),
 
-  getInstructors: protectedProcedure.query(async ({ ctx }) => {
+  getInstructors: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {
         OR: [
@@ -460,6 +460,30 @@ export const userRouter = router({
    * l'URL d'affichage est construite côté client comme pour l'avatar du
    * header.
    */
+  /**
+   * Adresse du club d'un membre (alias @<domaine du club>), saisie par un administrateur.
+   * Le domaine est celui de l'adresse de contact des Réglages du site (contact@akfc.fr par
+   * défaut) : on n'attribue pas d'adresse d'un autre domaine. Chaîne vide → adresse retirée.
+   */
+  setClubEmail: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ id: z.string().min(1), clubEmail: z.string().trim().max(254) }))
+    .mutation(async ({ ctx, input }) => {
+      const value = input.clubEmail.toLowerCase();
+      if (value !== "") {
+        if (!z.string().email().safeParse(value).success) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Adresse e-mail invalide." });
+        }
+        const settings = await ctx.prisma.siteSettings.findUnique({ where: { id: "site" }, select: { contactEmail: true } });
+        const domain = (settings?.contactEmail ?? "contact@akfc.fr").split("@")[1]?.toLowerCase() ?? "akfc.fr";
+        if (!value.endsWith(`@${domain}`)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `L'adresse du club doit se terminer par @${domain}.` });
+        }
+      }
+      await ctx.prisma.user.update({ where: { id: input.id }, data: { clubEmail: value || null } });
+      return { clubEmail: value || null };
+    }),
+
   listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {

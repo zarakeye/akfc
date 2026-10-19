@@ -39,8 +39,13 @@ model User {
   firstName             String?
   /// Nom de famille. Facultatif (même repli que `firstName`).
   lastName              String?
-  /// Adresse e-mail, unique : c'est l'identifiant de connexion.
+  /// Adresse e-mail, unique : c'est l'identifiant de connexion. PERSONNELLE :
+  /// jamais montrée qu'aux administrateurs (et à l'intéressé).
   email                 String               @unique
+  /// Adresse du club attribuée au membre (ex. prenom@akfc.fr, alias de contact@),
+  /// saisie par un administrateur. Celle des instructeurs est montrée aux membres
+  /// connectés, à la place de leur adresse personnelle. null → aucune.
+  clubEmail             String?
   /// ⚠ Inutilisé : jamais lu, seulement écrit à `false` par les services de
   /// restauration de médias. Vestige probable d'une ancienne librairie
   /// d'authentification. Candidat à suppression.

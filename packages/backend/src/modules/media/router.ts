@@ -33,13 +33,13 @@ function composeDisplayName(user: {
   firstName: string | null;
   lastName: string | null;
   pseudo: string | null;
-  email: string;
 }): string {
   if (user.pseudo && user.pseudo.trim()) return user.pseudo.trim();
   if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
   if (user.firstName) return user.firstName;
   if (user.lastName) return user.lastName;
-  return user.email;
+  // Pas d'adresse e-mail en repli : ces listes servent aussi aux membres (espaces de groupe).
+  return "Membre";
 }
 
 function parentOf(path: string, appRoot: string): string {
@@ -101,7 +101,6 @@ export const mediaRouter = router({
               firstName: true,
               lastName: true,
               pseudo: true,
-              email: true,
             },
           },
         },
@@ -340,7 +339,6 @@ export const mediaRouter = router({
               firstName: true,
               lastName: true,
               pseudo: true,
-              email: true,
             },
           },
         },

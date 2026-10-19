@@ -145,6 +145,8 @@ const authorSelect = {
 } as const;
 ```
 
+Entre membres, la règle est la même : l'adresse personnelle d'un membre n'est lisible que par les administrateurs (et par l'intéressé). Un membre qui traite des demandes voit le nom du demandeur, pas son adresse ; les listes de fichiers d'un espace de groupe nomment l'expéditeur sans jamais retomber sur son adresse. La seule adresse montrée aux membres connectés est l'**adresse du club** d'un instructeur (`User.clubEmail`, un alias @akfc.fr de contact@ attribué par un administrateur), affichée sur la page des instructeurs : c'est précisément l'adresse faite pour être donnée.
+
 Cette règle a été appliquée en relisant toutes les données qui traversent vers le public. La relecture a trouvé trois sorties de trop : les commentaires et les réactions, publics, renvoyaient l'adresse e-mail de leurs auteurs ; la page des instructeurs passait l'adresse de chaque instructeur au composant client `UserPortrait`, qui ne s'en servait que comme nom de secours, si bien que toutes les adresses figuraient dans la source de la page ; et une ancienne route `/api/session`, plus utilisée, renvoyait la session avec la ligne `User` complète, empreinte du mot de passe comprise. Les deux premières ne renvoient plus d'adresse, la troisième a été supprimée.
 
 <Callout type="warning">

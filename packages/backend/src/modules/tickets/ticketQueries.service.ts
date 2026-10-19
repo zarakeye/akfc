@@ -2,7 +2,7 @@ import type { Prisma, PrismaClient, TicketStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
 import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
-import { canHandleCategory, displayName } from "./tickets.service";
+import { canHandleCategory } from "./tickets.service";
 import { formatTicketRef } from "./ticketRef";
 import { isTicketIntakeEnabled } from "./imapIntake.service";
 
@@ -14,6 +14,16 @@ import { isTicketIntakeEnabled } from "./imapIntake.service";
 
 type Db = PrismaClient;
 const nameSelect = { id: true, firstName: true, lastName: true, email: true } as const;
+
+/**
+ * Adresses e-mail visibles par celui qui traite la demande : un administrateur les voit toutes ;
+ * un autre membre ne voit JAMAIS l'adresse personnelle d'un membre (demandeur, collègue). Seule
+ * reste visible l'adresse d'un expéditeur extérieur (demande reçue par e-mail), sans laquelle on ne
+ * saurait pas qui a écrit.
+ */
+function nameOf(u: { firstName: string | null; lastName: string | null; email: string }, admin: boolean): string {
+  return [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || (admin ? u.email : "Membre")
+}
 
 /** Catégories traitables par le membre ; `null` = toutes (administrateur). */
 export async function handledCategoryIds(db: Db, userId: string): Promise<string[] | null> {
@@ -52,6 +62,7 @@ export async function listInbox(db: Db, userId: string, scope: InboxScope) {
     if (scope === "mine") where.assigneeId = userId;
     if (scope === "unassigned") where.assigneeId = null;
   }
+  const admin = ids === null;
   const rows = await db.ticket.findMany({
     where,
     orderBy: scope === "closed" ? [{ closedAt: "desc" }] : [{ status: "asc" }, { dueAt: "asc" }],
@@ -71,8 +82,12 @@ export async function listInbox(db: Db, userId: string, scope: InboxScope) {
     subject: r.subject,
     status: r.status as TicketStatus,
     category: r.category,
-    requester: { name: r.requesterName, email: r.requesterEmail, isMember: r.requesterId !== null },
-    assignee: r.assignee ? { id: r.assignee.id, name: displayName(r.assignee) } : null,
+    requester: {
+      name: r.requesterName,
+      email: admin || r.requesterId === null ? r.requesterEmail : null,
+      isMember: r.requesterId !== null,
+    },
+    assignee: r.assignee ? { id: r.assignee.id, name: nameOf(r.assignee, admin) } : null,
     dueAt: r.dueAt,
     answered: r.firstResponseAt !== null,
     overdue: r.status !== "CLOSED" && r.firstResponseAt === null && r.dueAt.getTime() < now,
@@ -100,14 +115,19 @@ export async function getTicketDetail(db: Db, ticketId: string, userId: string) 
   if (!(await canHandleCategory(db, userId, t.categoryId))) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez pas traiter cette demande." });
   }
+  const admin = await isAdminByGroup(db, userId);
   return {
     id: t.id,
     ref: formatTicketRef(t.number),
     subject: t.subject,
     status: t.status,
     category: { key: t.category.key, label: t.category.label, replyTo: t.category.replyTo },
-    requester: { name: t.requesterName, email: t.requesterEmail, isMember: t.requesterId !== null },
-    assignee: t.assignee ? { id: t.assignee.id, name: displayName(t.assignee) } : null,
+    requester: {
+      name: t.requesterName,
+      email: admin || t.requesterId === null ? t.requesterEmail : null,
+      isMember: t.requesterId !== null,
+    },
+    assignee: t.assignee ? { id: t.assignee.id, name: nameOf(t.assignee, admin) } : null,
     dueAt: t.dueAt,
     firstResponseAt: t.firstResponseAt,
     overdue: t.status !== "CLOSED" && t.firstResponseAt === null && t.dueAt.getTime() < Date.now(),
@@ -116,16 +136,17 @@ export async function getTicketDetail(db: Db, ticketId: string, userId: string) 
     messages: t.messages.map((m) => ({
       id: m.id,
       direction: m.direction,
-      authorName: m.author ? displayName(m.author) : (m.authorName ?? m.fromEmail ?? null),
-      fromEmail: m.fromEmail,
+      authorName: m.author ? nameOf(m.author, admin) : (m.authorName ?? m.fromEmail ?? null),
+      // Message d'un membre : son adresse reste réservée aux administrateurs.
+      fromEmail: admin || (!m.authorId && t.requesterId === null) ? m.fromEmail : null,
       body: m.body,
       createdAt: m.createdAt,
     })),
     events: t.events.map((e) => ({
       id: e.id,
       type: e.type,
-      actorName: e.actor ? displayName(e.actor) : null,
-      toUserName: e.toUser ? displayName(e.toUser) : null,
+      actorName: e.actor ? nameOf(e.actor, admin) : null,
+      toUserName: e.toUser ? nameOf(e.toUser, admin) : null,
       note: e.note,
       createdAt: e.createdAt,
     })),
@@ -148,5 +169,6 @@ export async function listHandlers(db: Db, ticketId: string, userId: string) {
     select: nameSelect,
     orderBy: [{ firstName: "asc" }, { lastName: "asc" }, { email: "asc" }],
   });
-  return users.map((u) => ({ id: u.id, name: displayName(u), email: u.email, isSelf: u.id === userId }));
+  const admin = await isAdminByGroup(db, userId);
+  return users.map((u) => ({ id: u.id, name: nameOf(u, admin), email: admin ? u.email : null, isSelf: u.id === userId }));
 }

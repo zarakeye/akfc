@@ -82,7 +82,7 @@ export default function TicketsPage(): JSX.Element {
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{t.subject}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {t.requester.name ?? t.requester.email}
+                    {t.requester.name ?? t.requester.email ?? "Membre"}
                     {!t.requester.isMember && " · visiteur"} · {t.category.label}
                     {t.messageCount > 1 && ` · ${t.messageCount} messages`}
                   </span>

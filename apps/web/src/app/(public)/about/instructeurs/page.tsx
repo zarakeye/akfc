@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@backend/prisma";
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
 import { PageRenderer } from "@features/page-builder";
 import { parsePageContentV1 } from "@contracts/page";
 import { UserPortrait } from "@features/social/UserPortrait";
@@ -20,6 +21,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Nos instructeurs" };
 
 export default async function InstructeursPage(): Promise<JSX.Element> {
+  // L'adresse du club d'un instructeur n'est montrée qu'aux membres connectés : la page est
+  // publique, et une adresse publiée attire les robots collecteurs.
+  const session = await getSessionFromRequest().catch(() => null);
+  const isMember = Boolean(session?.user);
   const instructors = await prisma.user.findMany({
     where: {
       AND: [
@@ -41,6 +46,7 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
       pseudo: true,
       avatar: true,
       instructorBio: true,
+      clubEmail: true,
     },
     orderBy: [
       { instructorOrder: { sort: "asc", nulls: "last" } },
@@ -93,9 +99,19 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
                   <div className="scale-125">
                     <UserPortrait user={displayUser} size="md" />
                   </div>
-                  <h2 className="text-xl font-semibold">
-                    {formatUserName(displayUser)}
-                  </h2>
+                  <div>
+                    <h2 className="text-xl font-semibold">
+                      {formatUserName(displayUser)}
+                    </h2>
+                    {isMember && instructor.clubEmail ? (
+                      <a
+                        href={`mailto:${instructor.clubEmail}`}
+                        className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                      >
+                        {instructor.clubEmail}
+                      </a>
+                    ) : null}
+                  </div>
                 </header>
 
                 <PageRenderer content={parsePageContentV1(instructor.instructorBio)} />
