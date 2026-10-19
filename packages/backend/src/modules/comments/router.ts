@@ -26,12 +26,12 @@ import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core"
  * sous-arborescence (le commentaire + ses réponses, qui cascadent en DB).
  */
 
+// Données PUBLIQUES (getByPost est public) : jamais d'adresse e-mail.
 const authorSelect = {
   id: true,
   firstName: true,
   lastName: true,
   pseudo: true,
-  email: true,
   avatar: true,
   image: true,
 } as const;

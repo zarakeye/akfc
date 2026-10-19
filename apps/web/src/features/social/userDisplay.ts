@@ -15,18 +15,20 @@ export interface DisplayUser {
   firstName: string | null;
   lastName: string | null;
   pseudo: string | null;
-  email: string;
+  /** Absent des données PUBLIQUES (commentaires, réactions, instructeurs) : une adresse e-mail
+   *  ne sort jamais vers un visiteur. Présent seulement là où l'appelant y a droit. */
+  email?: string | null;
   avatar: string | null;
   image: string | null;
 }
 
-/** Nom complet → pseudo → email (cascade habituelle du projet). */
+/** Nom complet → pseudo → email (si connu) → « Membre ». */
 export function formatUserName(u: DisplayUser): string {
   const full = [u.firstName, u.lastName]
     .filter((p): p is string => Boolean(p?.trim()))
     .join(" ")
     .trim();
-  return full || u.pseudo || u.email;
+  return full || u.pseudo || u.email || "Membre";
 }
 
 /**

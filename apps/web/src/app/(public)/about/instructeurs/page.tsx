@@ -39,7 +39,6 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
       firstName: true,
       lastName: true,
       pseudo: true,
-      email: true,
       avatar: true,
       instructorBio: true,
     },
@@ -66,7 +65,6 @@ export default async function InstructeursPage(): Promise<JSX.Element> {
               firstName: instructor.firstName,
               lastName: instructor.lastName,
               pseudo: instructor.pseudo,
-              email: instructor.email,
               avatar: instructor.avatar,
               image: null,
             };

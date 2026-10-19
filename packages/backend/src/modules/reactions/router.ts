@@ -19,12 +19,12 @@ import {
 
 // Exporté : la home (Server Component) réplique la shape de getByTarget
 // pour hydrater le mur sans requête client (cf. PostCard/PostInteractions).
+// Données PUBLIQUES : jamais d'adresse e-mail (lisible par tout visiteur).
 export const userSelect = {
   id: true,
   firstName: true,
   lastName: true,
   pseudo: true,
-  email: true,
   avatar: true,
   image: true,
 } as const;
@@ -34,7 +34,6 @@ type ReactionUser = {
   firstName: string | null;
   lastName: string | null;
   pseudo: string | null;
-  email: string;
   avatar: string | null;
   image: string | null;
 };

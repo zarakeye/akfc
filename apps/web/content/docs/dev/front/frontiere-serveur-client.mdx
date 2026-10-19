@@ -1,0 +1,184 @@
+---
+title: "La frontière serveur / client"
+description: "Ce que « use client » change réellement, ce qui peut passer d'un composant serveur à un composant client et sous quelle forme, comment les deux s'imbriquent, et comment le projet s'assure qu'aucune donnée sensible ne traverse."
+section: "Fondations front"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le proxy ne vérifie pas les rôles parce qu'il n'a pas accès à la base. La vérification des rôles vit au-dessus du tableau de bord parce que celui-ci est un composant client. Le header lit une session fournie par le serveur parce que le store client y est vide. Trois décisions, une même frontière.
+
+## Deux mondes dans le même dépôt
+
+Dans l'App Router, un composant est **serveur par défaut**. Il s'exécute sur le serveur, peut être `async`, lire la base avec Prisma, lire les cookies, utiliser des secrets d'environnement. Son code n'est jamais envoyé au navigateur : seul son **résultat** l'est.
+
+Un composant **client** est envoyé au navigateur, où il s'exécute aussi. Il peut garder un état (`useState`), réagir aux événements, utiliser les API du navigateur. Il ne peut ni lire la base, ni lire un secret.
+
+<DocsTable columnsJson='["","Composant serveur","Composant client"]' rowsJson='[["S’exécute","sur le serveur, à chaque requête (ou au build)","sur le serveur pour le premier HTML, puis dans le navigateur"],["Peut être async, lire Prisma, les cookies, les secrets","oui","non"],["Peut utiliser useState, useEffect, des gestionnaires d’événements","non","oui"],["Son code part dans le JavaScript du navigateur","non","oui"],["Dans le projet","les pages publiques, les layouts racine, public et (admin)","le header, les formulaires, le finder, le tableau de bord : près de 290 fichiers"]]' />
+
+Le choix par défaut sert le site public : une page serveur arrive complète, sans JavaScript à télécharger pour l'afficher, et sans aller-retour pour charger ses données. Le JavaScript n'est envoyé que pour ce qui doit être interactif.
+
+## Ce que déclare « use client »
+
+`'use client'` ne marque pas un composant : il marque une **frontière de module**. Le fichier qui le porte, et tout ce qu'il importe, devient du code client.
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
+'use client';
+
+import { JSX, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { PanelLeft, X } from 'lucide-react';
+
+import Header from '@features/app-shell/Header';
+import ControlPanelSidebar from '@features/app-shell/ControlPanelSidebar';
+```
+
+Une conséquence directe : un module qui mélange une fonction pure et un hook devient client tout entier, et sa fonction pure n'est plus utilisable par un composant serveur. Le projet sépare donc les deux :
+
+```ts
+// apps/web/src/features/social/userDisplay.ts (extrait)
+/**
+ * Helpers PURS d'affichage d'un utilisateur (aucun hook → importable côté
+ * SERVEUR comme client). Séparés de `UserPortrait` (composant client qui lit
+ * le store de version d'avatar) : mélanger un hook client et ces fonctions
+ * dans un même module rendait `formatUserName` « client », donc inappelable
+ * depuis un Server Component (ex. PostCard rendant PageRenderer).
+```
+
+<Callout type="tip">
+On place `'use client'` le plus bas possible dans l'arbre : sur le composant qui a vraiment besoin d'interactivité, pas sur la page qui le contient. Une fonction utilitaire sans hook vit dans un fichier sans directive, utilisable des deux côtés.
+</Callout>
+
+## Ce qui traverse la frontière
+
+Quand un composant serveur rend un composant client, il lui passe des propriétés. Ces propriétés sont **sérialisées** : React les écrit dans la page, sous forme de données que le navigateur relit pour faire vivre le composant client. Elles figurent dans le HTML envoyé, dans des balises `<script>`, lisibles par quiconque affiche la source de la page.
+
+Tout ne peut pas être sérialisé :
+
+<DocsTable columnsJson='["Valeur","Traverse ?","Remarque"]' rowsJson='[["Chaînes, nombres, booléens, null, undefined","oui",""],["Tableaux et objets simples","oui","Récursivement, si leur contenu traverse."],["Date, Map, Set, BigInt","oui","React les reconstruit à l’arrivée."],["Promesse","oui","Le composant client l’attend avec use()."],["Éléments JSX (children)","oui","Déjà rendus par le serveur ; voir plus bas."],["Server action","oui","Elle traverse comme une référence, pas comme du code."],["Fonction ordinaire","non","Erreur : « Functions cannot be passed directly to Client Components »."],["Instance de classe","non","Seuls les objets simples traversent."]]' />
+
+Un gestionnaire d'événement (`onClick`) ne peut donc pas venir d'un composant serveur : il se déclare dans le composant client lui-même.
+
+## Imbriquer : le serveur peut contenir le client, et réciproquement par les children
+
+Un composant serveur peut rendre un composant client : c'est le cas courant. Le layout public, serveur, lit le logo en base et le passe au header, client, comme valeur initiale :
+
+```tsx
+// apps/web/src/app/(public)/layout.tsx (extrait)
+<div className="sticky top-0 z-50 bg-background">
+  <Header initialLogoUrl={initialLogoUrl} initialBrand={initialBrand} />
+  <FirstLoginRedirect />
+</div>
+```
+
+L'inverse est impossible par import : un fichier importé par un composant client devient client à son tour. Un composant client ne peut pas importer une page qui lit la base.
+
+Il peut en revanche **recevoir** du contenu serveur, déjà rendu, par une propriété, le plus souvent `children`. C'est exactement ce que fait le layout du tableau de bord : il est client (tiroir, clavier), mais chaque page qu'il enveloppe reste un composant serveur, rendu sur le serveur puis passé comme `children` :
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/layout.tsx (extrait)
+<main className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-10">
+  {children}
+</main>
+```
+
+Le layout client ne sait rien de ces pages ; il place un contenu qu'il reçoit tout fait. C'est ce qui permet à une page du tableau de bord de lire la base elle-même, bien qu'elle s'affiche à l'intérieur d'un composant client.
+
+<Callout type="info">
+Pour mettre du serveur dans du client, on ne l'importe pas : on le **passe** (children, ou toute propriété qui reçoit du JSX).
+</Callout>
+
+## Le code serveur ne part jamais dans le navigateur
+
+Ce que le navigateur ne doit jamais recevoir est protégé à trois niveaux.
+
+**Le code du backend.** Le front n'importe du backend que des **types** : `import type` est effacé à la compilation.
+
+```ts
+// apps/web/src/core/trpc/trpcClient.ts (extrait)
+import type { AppRouter } from "@backend/modules"
+```
+
+Un import ordinaire de Prisma depuis un composant client ne donnerait de toute façon rien d'utilisable : le paquet ne fournit au navigateur qu'une version qui refuse de s'exécuter, puisqu'une base de données ne se joint pas depuis un navigateur.
+
+**Les secrets.** Dans un composant client, `process.env.JWT_SECRET` vaut `undefined` : Next ne transmet au navigateur que les variables dont le nom commence par `NEXT_PUBLIC_`, et il les **inscrit en clair** dans le JavaScript au moment du build. Le projet n'en a que deux, publiques par nature : le nom court du site (`NEXT_PUBLIC_APP_SHORT_NAME`, racine du stockage) et l'adresse du site (`NEXT_PUBLIC_SITE_URL`). Un secret ne porte jamais ce préfixe.
+
+**Les données.** C'est le seul niveau qui ne soit pas automatique, et le plus important : il fait l'objet de la section suivante.
+
+## Ce qui part dans la page : choisir champ par champ
+
+Tout objet passé à un composant client finit dans la page. Tout ce que renvoie une procédure publique est lisible par n'importe qui. Le compilateur ne voit pas la différence entre un champ affiché et un champ seulement transmis : si un objet contient une adresse e-mail, elle part avec lui, même si aucun composant ne l'affiche.
+
+La règle du projet est donc de **choisir chaque champ** de ce qui sort du serveur, avec un `select` explicite, et de décrire ce qui sort par un type de projection plutôt que par le type complet de la table.
+
+La session en est l'exemple central : elle va dans toutes les pages, et `getSessionFromRequest` n'en garde que les champs utiles, sans jamais recopier la ligne `User`, qui contient l'empreinte du mot de passe :
+
+```ts
+// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
+user: {
+  id: session.user!.id,
+  email: session.user!.email,
+  firstName: session.user!.firstName,
+  lastName: session.user!.lastName,
+  pseudo: session.user!.pseudo,
+  avatar: session.user!.avatar,
+  isFirstLogin: session.user!.isFirstLogin,
+  isAdmin,
+},
+```
+
+Les données publiques sur les membres (auteur d'un commentaire, membre qui a réagi, instructeur présenté sur le site) suivent la même règle, plus stricte encore : **pas d'adresse e-mail**. Le type d'affichage la rend facultative, et les `select` publics ne la demandent pas :
+
+```ts
+// packages/backend/src/modules/comments/router.ts (extrait)
+// Données PUBLIQUES (getByPost est public) : jamais d'adresse e-mail.
+const authorSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  pseudo: true,
+  avatar: true,
+  image: true,
+} as const;
+```
+
+Cette règle a été appliquée en relisant toutes les données qui traversent vers le public. La relecture a trouvé trois sorties de trop : les commentaires et les réactions, publics, renvoyaient l'adresse e-mail de leurs auteurs ; la page des instructeurs passait l'adresse de chaque instructeur au composant client `UserPortrait`, qui ne s'en servait que comme nom de secours, si bien que toutes les adresses figuraient dans la source de la page ; et une ancienne route `/api/session`, plus utilisée, renvoyait la session avec la ligne `User` complète, empreinte du mot de passe comprise. Les deux premières ne renvoient plus d'adresse, la troisième a été supprimée.
+
+<Callout type="warning">
+Avant de passer un objet à un composant client, ou de le renvoyer d'une procédure publique, on se demande : **que lirait un inconnu qui affiche la source de la page ?** Un `select` explicite et un type de projection (`SessionClient`, `DisplayUser`) répondent à cette question une fois pour toutes.
+</Callout>
+
+## L'hydratation : le même rendu des deux côtés
+
+Un composant client est rendu deux fois : sur le serveur, pour le premier HTML, puis dans le navigateur, où React reprend ce HTML et y attache les événements. C'est l'**hydratation**. Pour qu'elle réussisse, les deux rendus doivent produire le même résultat. Sinon React signale une erreur et refait le rendu côté client, avec un clignement visible.
+
+Trois sources de différence reviennent souvent :
+
+<DocsTable columnsJson='["Source","Exemple","Réponse du projet"]' rowsJson='[["Un état connu seulement du navigateur","La session dans un store vide sur le serveur.","La valeur du serveur est passée par un contexte (useCurrentUser, chapitre sur le routage)."],["Une valeur qui change d’un rendu à l’autre","Date.now(), un nombre aléatoire, une date formatée selon le fuseau du navigateur.","Calculer la valeur côté serveur et la passer en propriété, ou l’afficher après le montage."],["Un réglage du navigateur","Le thème clair ou sombre.","Lu dans un cookie par le layout racine : la classe est posée dès le HTML serveur."]]' />
+
+Le thème illustre le dernier cas. Le layout racine lit le cookie et pose la classe `dark` dès le HTML ; l'interrupteur change ensuite cette classe directement dans le navigateur, sans nouveau rendu serveur :
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+// Thème lu dans le cookie du visiteur : la classe `dark` est posée dès le HTML serveur.
+// suppressHydrationWarning : l'interrupteur change ensuite la classe côté client, sans
+// nouveau rendu serveur ; React ne doit pas s'en plaindre.
+<html lang="fr" className={isDark ? "dark" : undefined} suppressHydrationWarning>
+```
+
+`suppressHydrationWarning` ne s'applique qu'à l'élément qui le porte, et seulement à ses attributs : il ne masque rien d'autre.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Que déclare « use client » ?","Une frontière de module : le fichier et ses imports deviennent du code client."],["Que peut-on passer à un composant client ?","Des valeurs sérialisables (y compris Date, Map, JSX, server actions), pas de fonction ordinaire."],["Comment mettre du serveur dans du client ?","En le passant comme children ou comme propriété, jamais par import."],["Qu’est-ce qui protège les secrets ?","Seules les variables NEXT_PUBLIC_ vont au navigateur ; aucun secret ne porte ce préfixe."],["Qu’est-ce qui protège les données ?","Un select explicite et un type de projection pour tout ce qui sort ; pas d’e-mail dans les données publiques."],["Comment éviter les erreurs d’hydratation ?","Le serveur fournit les valeurs que le client ne connaît pas encore (contexte, cookie)."]]' />
+
+## À suivre
+
+Les composants savent désormais où ils s'exécutent et ce qu'ils peuvent se transmettre. Reste ce que voit le visiteur : la mise en forme. Le projet utilise Tailwind CSS 4, un thème clair et sombre, et un style que les administrateurs règlent eux-mêmes, sans toucher au code, depuis un laboratoire de rendu.
+
+<Callout type="tip">
+**Chapitre suivant : les styles.** Tailwind 4 et ses variables, le thème clair et sombre, les anciennes couleurs codées en dur, et le style réglable du site, de la base de données jusqu'à la feuille de style.
+</Callout>
