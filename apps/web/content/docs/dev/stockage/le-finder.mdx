@@ -1,17 +1,19 @@
 ---
-title: "Le Finder Cloudinary — reconstruire une arborescence depuis un sac plat d’identifiants"
-slug: "le-finder-cloudinary"
+title: "Le Finder : un arbre à partir d'identifiants plats"
 description: "Comprendre pourquoi un service sans dossiers physiques exige, pour être navigable, deux sources de vérité — Cloudinary et la DB — et comment un builder côté backend fusionne les deux en un arbre cohérent."
-section: "Tutorials"
-order: 6
+section: "Stockage et médias"
+order: 2
 ---
-
 import { Callout } from "@/features/docs/ui/Callout"
 import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
 import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
 import { CodeExample } from "@/features/docs/ui/CodeExample"
 import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
 import { DocsTable } from "@/features/docs/ui/DocsTable"
+
+<Callout type="warning">
+**Chapitre hérité, en attente de réécriture.** Il décrit le Finder bâti sur Cloudinary ; le moteur vit aujourd'hui dans packages/finder-core, branché sur le stockage S3. Les explications de fond restent valables ; les extraits de code et certains chemins de fichiers peuvent ne plus correspondre au dépôt actuel.
+</Callout>
 
 ## Quand il faut donner à voir ce qui n’a pas de forme
 

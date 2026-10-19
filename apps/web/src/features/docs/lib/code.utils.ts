@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 
-function resolveProjectPath(filepath: string): string {
+function resolveProjectPath(filepath: string): string | null {
   const cwd = process.cwd()
 
   const candidates = [
@@ -12,17 +12,20 @@ function resolveProjectPath(filepath: string): string {
 
   const found = candidates.find((candidate) => fs.existsSync(candidate))
 
-  if (!found) {
-    throw new Error(
-      `Code file not found. Checked:\n${candidates.join("\n")}`
-    )
-  }
-
-  return found
+  return found ?? null
 }
 
+/**
+ * Lit un fichier du dépôt pour l'afficher dans la doc. Un fichier déplacé ou supprimé depuis la
+ * rédaction d'un chapitre ne fait plus planter la page : l'extrait affiche un avertissement à la
+ * place du code.
+ */
 export function readCodeFile(filepath: string): string {
-  return fs.readFileSync(resolveProjectPath(filepath), "utf8")
+  const found = resolveProjectPath(filepath)
+  if (!found) {
+    return `// ⚠ Fichier introuvable : ${filepath}\n// Il a été déplacé ou supprimé depuis la rédaction de ce chapitre.`
+  }
+  return fs.readFileSync(found, "utf8")
 }
 
 export function extractLines(

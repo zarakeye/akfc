@@ -5,8 +5,7 @@ import { Breadcrumbs } from "@features/docs/components/Breadcrumbs"
 import { DocsLayout } from "@features/docs/components/DocsLayout"
 import { DocsPagination } from "@features/docs/components/DocsPagination"
 import { DocsRightAsideDrawer } from "@features/docs/components/DocsRightAsideDrawer"
-import ProjectArchitectureTree from "@features/docs/ui/ProjectArchitectureTree"
-import { getPrevNext, getPrevNextInSection } from "@features/docs/lib/docs.navigation"
+import { getPrevNext } from "@features/docs/lib/docs.navigation"
 import { docExists, getDocSource } from "@features/docs/lib/docs.source"
 import { extractToc } from "@features/docs/lib/docs.toc"
 import type { DocFrontmatter } from "@features/docs/lib/docs.types"
@@ -51,10 +50,7 @@ export default async function Page({ params }: PageProps) {
   const toc = extractToc(source)
 
   const { pages } = generateDocsIndex(space.id)
-  const { prev, next } =
-    frontmatter.section === "Tutorials"
-      ? getPrevNextInSection(pages, slug, "Tutorials")
-      : getPrevNext(pages, slug)
+  const { prev, next } = getPrevNext(pages, slug)
 
   const compiled = await compileMDX<DocFrontmatter>({
     source,
@@ -98,14 +94,7 @@ export default async function Page({ params }: PageProps) {
       footer={footer}
       rightAside={<DocsRightAsideDrawer items={toc} />}
     >
-      {slug.join("/") === "dev/architecture/project-architecture" ? (
-        <>
-          <ProjectArchitectureTree />
-          {compiled.content}
-        </>
-      ) : (
-        compiled.content
-      )}
+      {compiled.content}
     </DocsLayout>
   )
 }

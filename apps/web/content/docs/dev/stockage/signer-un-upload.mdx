@@ -1,17 +1,19 @@
 ---
-title: "Signer et persister un upload : Cloudinary comme tiers de confiance"
-slug: "signer-et-persister-un-upload-cloudinary"
+title: "Signer et persister un upload"
 description: "Comprendre comment un backend délivre une autorisation d’upload bornée à un client sans jamais exposer son secret — et pourquoi, après coup, revérifier reste indispensable."
-section: "Tutorials"
-order: 5
+section: "Stockage et médias"
+order: 1
 ---
-
 import { Callout } from "@/features/docs/ui/Callout"
 import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
 import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
 import { CodeExample } from "@/features/docs/ui/CodeExample"
 import { ArchitectureDiagram } from "@/features/docs/ui/ArchitectureDiagram"
 import { DocsTable } from "@/features/docs/ui/DocsTable"
+
+<Callout type="warning">
+**Chapitre hérité, en attente de réécriture.** Il décrit Cloudinary, remplacé depuis par un stockage compatible S3 (Cloudflare R2 en production, MinIO en développement) ; le principe de l'autorisation signée est le même. Les explications de fond restent valables ; les extraits de code et certains chemins de fichiers peuvent ne plus correspondre au dépôt actuel.
+</Callout>
 
 ## Quand le fichier est plus lourd que l’API
 

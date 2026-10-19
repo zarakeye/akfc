@@ -62,6 +62,10 @@ Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs p
 
 Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base ; il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts`. Ce découpage permet qu'un changement d'un côté casse la compilation de l'autre, et donc qu'une incompatibilité soit détectée sur notre machine plutôt que devant un membre.
 
+## La pile technique
+
+<DocsTable columnsJson='["Couche","Outil","Ce qu’il apporte au projet"]' rowsJson='[["Application","Next.js 16 (App Router), React 19","Pages rendues côté serveur pour le site public, composants interactifs pour le tableau de bord, dans une seule application."],["Langage","TypeScript 5.9","Un seul langage typé du schéma de base jusqu’au composant : une incompatibilité se voit à la compilation."],["API","tRPC 11, Zod 4","Des appels de fonctions typés entre front et back, sans URL ni contrat à maintenir à la main ; validation des entrées."],["Données","Prisma 6, PostgreSQL","Un client généré depuis le schéma, des migrations versionnées, des transactions."],["Fichiers","Stockage compatible S3 (Cloudflare R2, MinIO en local)","Des fichiers envoyés directement par le navigateur, avec une autorisation signée par le backend."],["État client","React Query 5, Zustand 5","Cache des requêtes et invalidation après mutation ; petit état partagé (la session)."],["Interface","Tailwind CSS 4, Tiptap 3","Styles par classes utilitaires et thème clair / sombre ; éditeur de texte riche."],["Outillage","pnpm 10 (monorepo), Docker","Paquets partagés entre applications ; même environnement en local et en production."]]' />
+
 ## Le trajet d'une action
 
 Suivons ce qui se passe quand un administrateur publie une actualité. Ce trajet reviendra dans presque chaque partie.

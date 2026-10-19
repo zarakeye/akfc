@@ -106,6 +106,8 @@ export default function DocsTable({
           columns={columns}
           rows={rows}
           defaultOrder={{ property: "__order", order: "asc" }}
+          // Une table de doc s'affiche en entier : pas de pagination au-delà de 10 lignes.
+          rangeLengthOptions={[Math.max(10, rows.length)]}
           styleClassNames={{ cells: "whitespace-normal align-top pr-4" }}
         />
       </div>

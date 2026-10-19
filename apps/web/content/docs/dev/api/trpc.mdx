@@ -1,9 +1,13 @@
 ---
-title: tRPC / Backend
-description: Comprendre pourquoi tRPC devient une évidence dans une architecture monorepo TypeScript avec Next.js App Router.
-section: Tutorials
-order: 3
+title: "L'API avec tRPC"
+description: "Comprendre pourquoi tRPC devient une évidence dans une architecture monorepo TypeScript avec Next.js App Router."
+section: "API"
+order: 1
 ---
+
+<Callout type="warning">
+**Chapitre hérité, en attente de réécriture.** Il sera repris dans la partie API (contexte, procédures, middlewares, contrats). Les explications de fond restent valables ; les extraits de code et certains chemins de fichiers peuvent ne plus correspondre au dépôt actuel.
+</Callout>
 
 ## Introduction — Quand se brise la continuité
 
@@ -2197,7 +2201,7 @@ D’autres schémas ont une portée plus large.
 
 <CodeExample
   language="ts"
-  filepath="packages/contracts/schemas/forms/updateMeForm.schema.ts"
+  filepath="packages/contracts/src/forms/updateMeForm.schema.ts"
   filename="updateMeForm.schema.ts"
   snippetRange="1-50"
   snippetHighlight="3-45"
@@ -2211,7 +2215,7 @@ D’autres schémas ont une portée plus large.
 
 <CodeWalkthrough
   language="ts"
-  filepath="packages/contracts/schemas/forms/updateMeForm.schema.ts"
+  filepath="packages/contracts/src/forms/updateMeForm.schema.ts"
   filename="updateMeForm.schema.ts"
   snippetRange="1-65"
   title="Un contrat qui traverse la frontière frontend / backend"

@@ -6,13 +6,14 @@ order: -1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
 
-Nous allons construire, ensemble, la compréhension complète d'une application réelle : le site et l'outil de gestion d'un club d'arts martiaux. Pas un exemple d'école, mais un projet en production, avec ses contraintes, ses choix et ses cicatrices.
+Cette documentation explique la conception et le développement complet d'une application réelle : le site et l'outil de gestion d'un club d'arts martiaux, en production. Chaque choix y est présenté avec ce qu'il permet, puis avec le code qui l'implémente.
 
-Le parcours suit l'ordre dans lequel un développeur découvre le projet. Nous commençons par l'installer sur notre machine, puis nous apprenons sa façon de travailler, avant de descendre couche par couche : le front, les données, l'API, l'authentification, le stockage des fichiers, et ainsi de suite jusqu'au déploiement.
+Les parties se lisent dans l'ordre. On commence par installer le projet et apprendre sa façon de travailler, puis on descend couche par couche jusqu'au déploiement.
 
-<Callout type="tip">
-Chaque partie part d'un problème réel rencontré dans le projet. La solution n'arrive que lorsque le besoin est devenu évident.
+<DocsTable columnsJson='["Partie","Contenu","État"]' rowsJson='[["Démarrer","Le projet et sa carte, l’installation locale, pnpm check et la discipline de commit.","rédigée"],["Fondations front","Le routage et les layouts ; la frontière serveur / client ; React 19, TypeScript, Tailwind v4.","en cours"],["Données","Prisma : lire le schéma, migrations, transactions.","chapitre hérité"],["API","tRPC : contexte, procédures, middlewares, contrats partagés, Zod.","chapitre hérité"],["Authentification et droits","Sessions, connexion, réinitialisation ; groupes, droits par espace, visibilité des pages.","chapitre hérité"],["Stockage et médias","Stockage S3 (R2, MinIO), envoi signé, finder, cycle de vie des médias.","chapitres hérités"],["Contenu éditorial","Actualités, éditeur Tiptap, constructeur de pages, réglages du site.","à venir"],["Domaine du club","Disciplines, cours, stages, événements et leurs séances.","chapitre hérité"],["Membres et collaboration","Profil, espaces collaboratifs, documents, tickets, e-mails.","à venir"],["Légal et RGPD","Mentions, politique de confidentialité, droit à l’image.","à venir"],["Interface transverse","Header, formulaires, SEO, accessibilité.","chapitre hérité"],["Qualité","Typecheck, lint, débogage, tests de bout en bout.","à venir"],["Infrastructure et déploiement","Docker, serveur, variables de production, sauvegardes, sandbox.","à venir"],["Étude de cas","Le moteur des tutoriels interactifs.","à venir"]]' />
+
+<Callout type="info">
+Les **chapitres hérités** datent d'une version antérieure du projet. Ils restent utiles pour le raisonnement, mais certains extraits de code ne correspondent plus au dépôt (en particulier tout ce qui concerne Cloudinary, remplacé par un stockage compatible S3). Ils seront réécrits au fil des parties ; chacun porte un avertissement en tête.
 </Callout>
-
-Les tutoriels déjà présents dans cet espace sont en cours de mise à jour : certains décrivent encore Cloudinary, remplacé depuis par un stockage compatible S3 (Cloudflare R2).
