@@ -16,7 +16,7 @@ porte sa propre forme et son propre comportement de rendu.
 * Séparer clairement :
   * les **données** (le composite sérialisable, ce dossier)
   * le **builder** (UI d'édition, `features/page-builder`)
-  * le **renderer** (UI de lecture, `features/page-renderer`)
+  * le **renderer** (UI de lecture, `features/page-builder/PageRenderer.tsx`)
 * Permettre une **évolution maîtrisée** via le versioning
 * Servir de **source de vérité unique** pour la validation tRPC,
   l'extraction de références, et la migration entre versions
@@ -34,7 +34,7 @@ Un `PageContent` est un envelope versionné :
 }
 ```
 
-Chaque `Block` est une union discriminée sur `type`. Quatre types
+Chaque `Block` est une union discriminée sur `type`. Six types
 définis en v1 :
 
 | `type`             | Forme du contenu                              | Renderer attendu            |
@@ -43,6 +43,8 @@ définis en v1 :
 | `image-gallery`    | Liste de `{ mediaId, caption? }`+`layout` | Galerie d'images            |
 | `audio-collection` | Liste de `{ mediaId, title? }`              | Lecteur audio multi-piste   |
 | `document-list`    | Liste de `{ mediaId, label? }`              | Liste de liens télécharg. |
+| `media-text`       | Un média (bibliothèque, avatar ou logo) + texte riche | Deux colonnes, côté alterné |
+| `float-text`       | Un média + texte riche qui l'enrobe           | Image flottante (vignette)  |
 
 ---
 

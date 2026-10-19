@@ -1,0 +1,217 @@
+---
+title: "Le constructeur de pages"
+description: "Un contenu fait de blocs : le contrat versionné qui le décrit, le registre qui associe à chaque bloc son éditeur et son rendu, le rendu serveur qui résout tous les médias en une requête, et la synchronisation qui relie une page aux médias qu'elle affiche."
+section: "Contenu éditorial"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les médias sont envoyés, rangés et validés dans le finder. Un média validé n'est pourtant servi à personne tant qu'il n'est posé nulle part : la route publique exige qu'il soit **placé** dans une page ou une galerie publique.
+
+## Un seul format pour tous les contenus
+
+Le site affiche beaucoup de textes mis en forme : la page « L'association », les mentions légales, les actualités, la description de chaque discipline, de chaque cours, de chaque stage et de chaque événement, la biographie des instructeurs. Tous sont écrits avec le même outil, le **constructeur de pages**, et enregistrés dans le même format : une liste ordonnée de **blocs**.
+
+<DocsTable columnsJson='["Bloc","Ce qu’il affiche"]' rowsJson='[["tiptap","Du texte riche : titres, listes, liens, images de la bibliothèque dans le texte."],["media-text","Un média (image, vidéo, avatar d’un membre ou logo du site) à côté d’un texte, sur deux colonnes."],["float-text","Une petite image que le texte enrobe, comme un portrait dans une biographie."],["image-gallery","Une galerie d’images, avec légendes."],["audio-collection","Une liste de pistes audio."],["document-list","Une liste de documents à télécharger."]]' />
+
+Un format unique permet d'écrire une seule fois l'éditeur, le rendu, la validation et le recensement des médias, et de s'en servir pour une page comme pour une actualité ou une fiche de stage. Ajouter un type de bloc le rend disponible partout à la fois.
+
+## Le contrat : un JSON versionné
+
+Le format est défini avec Zod dans `packages/contracts`, partagé par le front et le backend :
+
+```ts
+// packages/contracts/src/page/blocks.v1.ts (extrait)
+export const pageBlockSchemaV1 = z.discriminatedUnion("type", [
+  tiptapBlockSchema,
+  imageGalleryBlockSchema,
+  audioCollectionBlockSchema,
+  documentListBlockSchema,
+  mediaTextBlockSchema,
+  floatTextBlockSchema,
+]);
+// …
+export const pageContentSchemaV1 = z.object({
+  version: z.literal(1),
+  blocks: z.array(pageBlockSchemaV1),
+});
+```
+
+Trois choix structurent ce contrat.
+
+**Une union discriminée.** Chaque bloc porte un champ `type`, et c'est ce champ qui détermine la forme du reste. Pour TypeScript comme pour Zod, un bloc dont `type` vaut `"image-gallery"` a forcément une liste `items` ; un bloc `"tiptap"`, un `content`. Un `switch` sur `type` est vérifié exhaustivement par le compilateur.
+
+**Une enveloppe versionnée.** Le contenu est `{ version: 1, blocks: [...] }`. Une évolution compatible (un champ facultatif en plus) reste en version 1. Les anciens formats y sont alors absorbés à la lecture par un `z.preprocess` : le bloc média-texte, qui acceptait autrefois une liste de médias, réduit encore une ancienne liste à son premier élément. Une évolution qui change le sens d'un champ ferait une version 2, dans un fichier `blocks.v2.ts`, avec une fonction de migration.
+
+**Des références stables aux médias.** Un bloc ne contient jamais l'URL ni le chemin d'un fichier, seulement son identifiant `mediaId`. Renommer ou déplacer un fichier dans le finder ne casse aucune page : l'URL est calculée au moment du rendu.
+
+Chaque bloc porte aussi un `id`, propre à la page. Il sert de clé React pendant l'édition, et c'est grâce à lui que React suit chaque bloc quand on les réordonne.
+
+Le contenu est enregistré dans une colonne JSON (`SitePage.content`, `Post.content`, `Discipline.description`…). À la lecture, il passe toujours par le même filtre :
+
+```ts
+// packages/contracts/src/page/parseContent.ts (extrait)
+export function parsePageContentV1(raw: unknown): PageContentV1 {
+  const result = pageContentSchemaV1.safeParse(raw);
+  return result.success ? result.data : emptyPageContentV1();
+}
+```
+
+Un contenu absent ou illisible devient une page vide, jamais une erreur 500. Les pages publiques n'ont ainsi pas à prévoir de cas d'erreur pour leur contenu.
+
+## Le registre : un bloc, un éditeur, un rendu
+
+Chaque type de bloc est décrit par une **définition** : son nom dans le menu, son icône, une fabrique de bloc vide, et deux composants.
+
+```tsx
+// apps/web/src/features/page-builder/blocks/media-text/index.tsx (extrait)
+export const mediaTextDefinition: BlockDefinition<MediaTextBlockV1> = {
+  kind: "media-text",
+  label: "Médias + texte",
+  icon: <Columns2 className="h-4 w-4" aria-hidden />,
+  defaultData: (id) => ({
+    id,
+    type: "media-text",
+    // media absent + content absent : le bloc démarre vide des deux côtés.
+  }),
+  Editor: MediaTextEditor,
+  View: MediaTextView,
+};
+```
+
+`Editor` est un composant client, utilisé dans le tableau de bord. `View` est le rendu public, exécuté sur le serveur (le fichier s'appelle `view.server.tsx`). Les deux reçoivent le bloc avec son type exact : l'éditeur du média-texte ne peut recevoir qu'un `MediaTextBlockV1`.
+
+Les définitions sont rassemblées dans un registre, indexé par type :
+
+```ts
+// apps/web/src/features/page-builder/blockRegistry.ts (extrait)
+type BlockRegistry = {
+  [K in PageBlockKindV1]: BlockDefinition<Extract<PageBlockV1, { type: K }>>;
+};
+// …
+const BLOCK_REGISTRY: BlockRegistry = {
+  "image-gallery": imageGalleryDefinition,
+  "audio-collection": audioCollectionDefinition,
+  "document-list": documentListDefinition,
+  tiptap: tiptapDefinition,
+  "media-text": mediaTextDefinition,
+  "float-text": floatTextDefinition,
+};
+```
+
+Le type `BlockRegistry` exige une entrée pour **chaque** valeur de `type` du contrat. Ajouter un bloc au schéma Zod sans lui écrire de définition ne compile pas. Un bloc ne peut donc pas exister dans les données sans avoir d'éditeur ni de rendu.
+
+<Callout type="info">
+Ajouter un type de bloc se fait en trois endroits, tous vérifiés par le compilateur : son schéma dans le contrat, son cas dans l'extraction des médias (voir plus bas), sa définition dans le registre.
+</Callout>
+
+## L'édition : un composant contrôlé
+
+`PageBuilder` affiche les blocs les uns sous les autres, chacun dans un cadre commun (poignée de déplacement, icône, bouton de suppression), et le menu « + » qui ajoute un bloc. Il ne garde pas le contenu dans son propre état : il le reçoit (`value`) et signale chaque modification (`onChange`). Le formulaire qui l'héberge reste le seul détenteur du contenu, et l'enregistre quand l'administrateur le décide.
+
+Chaque modification produit un nouveau contenu à partir du précédent :
+
+```tsx
+// apps/web/src/features/page-builder/PageBuilder.tsx (extrait)
+const handleMove = (from: number, to: number) => {
+  if (from === to) return;
+  const blocks = [...value.blocks];
+  const [moved] = blocks.splice(from, 1);
+  blocks.splice(to, 0, moved);
+  onChange({ ...value, blocks });
+};
+```
+
+Un hôte peut restreindre les blocs proposés avec `allowedBlocks`. La présentation courte d'une discipline, affichée en carte sur l'accueil, n'accepte que du texte (`["tiptap"]`). La biographie d'un instructeur n'accepte que le bloc d'image enrobée (`["float-text"]`). Cette liste ne porte que sur l'ajout : un bloc déjà présent reste affiché et modifiable.
+
+Dans l'éditeur, chaque bloc montre un aperçu de son rendu. L'aperçu ne peut pas réutiliser `View` tel quel : `View` attend des médias déjà résolus par le serveur. Il résout donc ses médias lui-même, par une procédure tRPC, et reprend les mêmes classes CSS (`akfc-prose`, `akfc-block-columns`…). Les variables du chapitre sur les styles s'appliquent ainsi à l'aperçu comme au site.
+
+## Le rendu : tous les médias en une requête
+
+`PageRenderer` est un composant serveur asynchrone. Avant de rendre le moindre bloc, il rassemble les identifiants de tous les médias de la page et les résout en une seule requête :
+
+```tsx
+// apps/web/src/features/page-builder/PageRenderer.tsx (extrait)
+const mediaIds = extractMediaIdsFromContent(content);
+// …
+const resolvedMap = await resolveMediaByIds(prisma, mediaIds, "public");
+
+// Lookup synchrone fermé sur la map — passé à chaque View.
+const resolveMedia = (mediaId: string): ResolvedMedia | null =>
+  resolvedMap[mediaId] ?? null;
+```
+
+Chaque `View` reçoit ensuite une fonction **synchrone** `resolveMedia`. Ce choix évite deux écueils : une requête par image (une galerie de trente photos en ferait trente), et des composants de bloc asynchrones. Une `View` reste un composant ordinaire, qui lit dans une table déjà remplie.
+
+`resolveMediaByIds` ne renvoie que les médias **validés**. Un média supprimé ou repassé en attente donne `null`, et la `View` l'omet simplement : la page s'affiche sans lui plutôt que d'échouer. Les URLs produites pointent vers la route publique décrite dans la partie « Stockage et médias ».
+
+Le texte riche est un document ProseMirror (le format de Tiptap), converti en HTML sur le serveur par `generateHTML`. Une image de la bibliothèque y est un nœud `library-image` qui ne porte que son `mediaId`. Pour le rendu, chaque `View` déclare une variante serveur de ce nœud, dont la méthode `renderHTML` consulte `resolveMedia` :
+
+```tsx
+// apps/web/src/features/page-builder/blocks/tiptap/view.server.tsx (extrait)
+const html = generateHTML(block.content as JSONContent, [
+  StarterKit.configure({ horizontalRule: false }),
+  HorizontalRule,
+  // …
+  ServerLibraryImageNode.configure({ resolveMedia }),
+]);
+```
+
+Le HTML est produit par les extensions de Tiptap, qui échappent le texte et les attributs : aucune chaîne saisie par un utilisateur n'est insérée telle quelle dans la page. La liste des extensions est la même que dans l'éditeur, sans quoi une mise en forme possible en édition disparaîtrait à la publication.
+
+Les blocs média-texte alternent : le premier place son média à gauche, le deuxième à droite, et ainsi de suite. Le côté est **calculé** à partir du rang du bloc parmi les seuls blocs média-texte, sans compteur incrémenté pendant le rendu : le React Compiler du projet interdit de modifier une variable pendant un rendu. L'éditeur fait le même calcul, et l'aperçu alterne donc comme la page publique.
+
+## Le recensement des médias d'une page
+
+Pour la route publique, un média n'est servi que s'il est **placé**. Ce placement est enregistré dans la table `PageMediaReference` : une ligne par média et par contenu qui l'utilise.
+
+Cette table est tenue à jour à chaque enregistrement, par une seule fonction appelée dans la transaction de la procédure qui enregistre le contenu :
+
+```ts
+// packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts (extrait)
+const newRefs = new Set([
+  ...extractMediaIdsFromContent(newContent),
+  ...(extraMediaIds ?? []),
+]);
+
+const toRemove = [...oldRefs].filter((id) => !newRefs.has(id));
+const toAdd = [...newRefs].filter((id) => !oldRefs.has(id));
+```
+
+La fonction compare les médias déjà enregistrés pour ce contenu à ceux qu'il contient désormais, retire les lignes en trop et ajoute les nouvelles. Avant d'ajouter, elle vérifie que chaque nouveau média existe et qu'il est validé. Sinon, elle lève une erreur et toute la transaction est annulée : une page ne peut pas être enregistrée avec un média en attente.
+
+L'extraction est la même fonction que celle du rendu. Elle parcourt les blocs avec un `switch` exhaustif, et descend dans le document ProseMirror des blocs de texte pour y trouver les nœuds `library-image` :
+
+```ts
+// packages/contracts/src/page/extractMediaIds.ts (extrait)
+switch (block.type) {
+  case "image-gallery":
+    return block.items.map((item) => item.mediaId);
+  // …
+  case "tiptap":
+    return walkProseMirrorForMediaIds(block.content);
+  // …
+  default:
+    return assertNever(block);
+}
+```
+
+`assertNever` n'accepte qu'une valeur de type `never`. Si un nouveau type de bloc est ajouté au contrat sans cas ici, le bloc arrive dans `default` avec un type qui n'est pas `never`, et la compilation échoue. Aucun type de bloc ne peut échapper au recensement, ce qui protège deux choses à la fois : la route publique sait quels médias servir, et la relation `onDelete: Restrict` empêche de supprimer un média encore affiché (voir le chapitre sur les données).
+
+<Callout type="tip">
+Une seule fonction, `extractMediaIdsFromContent`, sert au rendu (quels médias résoudre) et à l'enregistrement (quels médias recenser). Ce que la page affiche et ce que la base sait qu'elle affiche ne peuvent pas diverger.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où est défini le format d’un contenu ?","Dans packages/contracts/src/page : une union discriminée de blocs dans une enveloppe { version: 1, blocks }."],["Comment un bloc désigne-t-il un média ?","Par son mediaId, jamais par une URL ou un chemin ; l’URL est calculée au rendu."],["Que se passe-t-il pour un contenu illisible ?","parsePageContentV1 le remplace par une page vide."],["Qu’est-ce qui associe un type de bloc à son éditeur et à son rendu ?","Le registre, dont le type exige une définition pour chaque type du contrat."],["Comment les médias sont-ils résolus au rendu ?","En une requête pour toute la page ; chaque View lit une table synchrone, les médias non validés sont omis."],["Comment la base sait-elle qu’un média est placé ?","syncPageMediaReferences, dans la transaction d’enregistrement, tient PageMediaReference à jour à partir de la même extraction que le rendu."]]' />
+
+## À suivre
+
+Les pages, les actualités et les fiches partagent désormais un format, un éditeur et un rendu. Les contenus les plus importants du site ne sont pourtant pas des pages libres : ce sont les disciplines, les cours, les stages et les événements, avec leurs horaires, leurs séances et leurs instructeurs.
+
+<Callout type="tip">
+**Partie suivante : le domaine du club.** Ce que représentent vraiment une discipline, un cours, un stage et un événement, comment ils se relient, et pourquoi un cours n'a pas de date.
+</Callout>

@@ -20,10 +20,9 @@ import type { BlockViewProps } from "./BlockDefinition.types";
 
 export interface PageRendererProps {
   /**
-   * Contenu validé de la page. L'host est responsable de la validation
-   * Zod en amont (le helper `parsePageContentV1` qui tombe sur
-   * `emptyPageContentV1()` en cas de payload douteux arrivera au
-   * sous-chantier 6c). Ici on suppose que le composite est sain.
+   * Contenu validé de la page. L'hôte le lit avec `parsePageContentV1`, qui
+   * remplace un contenu absent ou illisible par une page vide : ici, le
+   * composite est supposé sain.
    */
   content: PageContentV1;
 }

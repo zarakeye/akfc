@@ -1327,9 +1327,16 @@ input[type="range"]::-moz-range-thumb {
   /* Échelle des titres, fluide. Un h1 à 2em fixes écrase un écran de
      téléphone et se perd sur un très grand écran : les bornes disent le
      minimum lisible et le maximum souhaitable, `vw` fait la transition. */
-  --akfc-h1: clamp(1.6rem, 1.1rem + 2.2vw, 2.75rem);
-  --akfc-h2: clamp(1.35rem, 1rem + 1.5vw, 2rem);
-  --akfc-h3: clamp(1.15rem, 0.95rem + 0.9vw, 1.5rem);
+  /* Les trois premiers niveaux sont réglables par leurs BORNES : le laboratoire
+     règle le minimum (téléphone) et le maximum (grand écran), la pente entre
+     les deux reste celle-ci. Le `clamp()` est écrit sur la règle du titre (plus
+     bas) : composé ici, il se figerait sur `:root`, avant toute surcharge. */
+  --akfc-h1-min: 1.6rem;
+  --akfc-h1-max: 2.75rem;
+  --akfc-h2-min: 1.35rem;
+  --akfc-h2-max: 2rem;
+  --akfc-h3-min: 1.15rem;
+  --akfc-h3-max: 1.5rem;
   --akfc-h4: 1.05em;
   --akfc-h5: 1em;
   --akfc-h6: 0.875em;
@@ -1478,9 +1485,9 @@ input[type="range"]::-moz-range-thumb {
   margin-top: var(--akfc-list-gap);
 }
 
-.akfc-prose h1 { font-size: var(--akfc-h1); }
-.akfc-prose h2 { font-size: var(--akfc-h2); }
-.akfc-prose h3 { font-size: var(--akfc-h3); }
+.akfc-prose h1 { font-size: clamp(var(--akfc-h1-min), 1.1rem + 2.2vw, var(--akfc-h1-max)); }
+.akfc-prose h2 { font-size: clamp(var(--akfc-h2-min), 1rem + 1.5vw, var(--akfc-h2-max)); }
+.akfc-prose h3 { font-size: clamp(var(--akfc-h3-min), 0.95rem + 0.9vw, var(--akfc-h3-max)); }
 .akfc-prose h4 { font-size: var(--akfc-h4); }
 .akfc-prose h5 { font-size: var(--akfc-h5); }
 .akfc-prose h6 { font-size: var(--akfc-h6); }

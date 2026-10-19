@@ -86,9 +86,15 @@ const KNOBS: Knob[] = [
   { key: "--akfc-list-gap", label: "Écart entre puces", min: 0, max: 1.5, step: 0.05, unit: "em", initial: 0.35, anchor: "lab-listes" },
   { key: "--akfc-list-indent", label: "Retrait des puces", min: 0, max: 4, step: 0.1, unit: "em", initial: 1.5, anchor: "lab-listes" },
   { key: "--akfc-block-gap-max", label: "Écart entre blocs (max)", min: 1, max: 8, step: 0.25, unit: "rem", initial: 4, anchor: "lab-blocs" },
-  { key: "--akfc-h1", label: "Taille h1", min: 1, max: 4, step: 0.05, unit: "em", initial: 2, anchor: "lab-titres" },
-  { key: "--akfc-h2", label: "Taille h2", min: 1, max: 3, step: 0.05, unit: "em", initial: 1.5, anchor: "lab-titres" },
-  { key: "--akfc-h3", label: "Taille h3", min: 0.9, max: 2.5, step: 0.05, unit: "em", initial: 1.25, anchor: "lab-titres" },
+  // h1 à h3 sont fluides : on règle leurs bornes (téléphone / grand écran), la taille
+  // varie entre les deux avec la largeur de l'écran. Un minimum au-dessus du maximum
+  // l'emporte (règle de `clamp()`) : la taille devient alors fixe.
+  { key: "--akfc-h1-min", label: "Taille h1 (téléphone)", min: 1, max: 3, step: 0.05, unit: "rem", initial: 1.6, anchor: "lab-titres" },
+  { key: "--akfc-h1-max", label: "Taille h1 (grand écran)", min: 1.25, max: 4.5, step: 0.05, unit: "rem", initial: 2.75, anchor: "lab-titres" },
+  { key: "--akfc-h2-min", label: "Taille h2 (téléphone)", min: 1, max: 2.5, step: 0.05, unit: "rem", initial: 1.35, anchor: "lab-titres" },
+  { key: "--akfc-h2-max", label: "Taille h2 (grand écran)", min: 1.1, max: 3.5, step: 0.05, unit: "rem", initial: 2, anchor: "lab-titres" },
+  { key: "--akfc-h3-min", label: "Taille h3 (téléphone)", min: 0.9, max: 2, step: 0.05, unit: "rem", initial: 1.15, anchor: "lab-titres" },
+  { key: "--akfc-h3-max", label: "Taille h3 (grand écran)", min: 1, max: 2.5, step: 0.05, unit: "rem", initial: 1.5, anchor: "lab-titres" },
   { key: "--akfc-h4", label: "Taille h4", min: 0.8, max: 2, step: 0.05, unit: "em", initial: 1.05, anchor: "lab-titres-bas" },
   { key: "--akfc-h5", label: "Taille h5", min: 0.7, max: 1.6, step: 0.05, unit: "em", initial: 1, anchor: "lab-titres-bas" },
   { key: "--akfc-h6", label: "Taille h6", min: 0.6, max: 1.4, step: 0.05, unit: "em", initial: 0.875, anchor: "lab-titres-bas" },

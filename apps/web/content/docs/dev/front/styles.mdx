@@ -156,9 +156,8 @@ Les pages construites au constructeur (l'accueil, « L'association », les fiche
   --akfc-para-gap: 1em;
   --akfc-heading-gap: 1.8em;
   /* … */
-  --akfc-h1: clamp(1.6rem, 1.1rem + 2.2vw, 2.75rem);
-  --akfc-h2: clamp(1.35rem, 1rem + 1.5vw, 2rem);
-  --akfc-h3: clamp(1.15rem, 0.95rem + 0.9vw, 1.5rem);
+  --akfc-h1-min: 1.6rem;
+  --akfc-h1-max: 2.75rem;
   /* … */
   --akfc-measure: 68ch;
   /* … */
@@ -168,8 +167,17 @@ Les pages construites au constructeur (l'accueil, « L'association », les fiche
 Quelques choix de valeurs :
 
 - la largeur du texte (`--akfc-measure`) est en **`ch`**, la largeur d'un caractère : la ligne garde environ 68 caractères quelle que soit la taille de la police, dans la plage de lecture confortable (45 à 75) ;
-- les titres sont **fluides** : `clamp(minimum, valeur préférée, maximum)` fait grandir le titre avec la fenêtre, entre deux bornes lisibles ;
+- les trois premiers niveaux de titre sont **fluides** : la taille grandit avec la fenêtre, entre un minimum et un maximum lisibles ;
 - les blocs à deux colonnes interrogent **leur propre largeur** avec des container queries (`@container`), et non celle de la fenêtre. Un même bloc s'affiche en effet sur toute la largeur du site public et, dans le tableau de bord, à côté d'une barre latérale.
+
+Pour les titres, seules les bornes sont des variables. Le `clamp(minimum, valeur préférée, maximum)` est écrit sur la règle du titre :
+
+```css
+// apps/web/src/app/globals.css (extrait)
+.akfc-prose h1 { font-size: clamp(var(--akfc-h1-min), 1.1rem + 2.2vw, var(--akfc-h1-max)); }
+```
+
+Le laboratoire règle ainsi la taille sur téléphone et sur grand écran, sans perdre la progression entre les deux.
 
 Une variable calculée à partir d'une autre est déclarée **sur la classe qui l'utilise**, et non sur `:root` :
 
