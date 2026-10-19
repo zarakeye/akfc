@@ -20,6 +20,12 @@ function resolveProjectPath(filepath: string): string | null {
  * rédaction d'un chapitre ne fait plus planter la page : l'extrait affiche un avertissement à la
  * place du code.
  */
+/** Contenu d'un fichier du dépôt, ou null s'il n'existe pas (sans avertissement). */
+export function tryReadCodeFile(filepath: string): string | null {
+  const found = resolveProjectPath(filepath)
+  return found ? fs.readFileSync(found, "utf8") : null
+}
+
 export function readCodeFile(filepath: string): string {
   const found = resolveProjectPath(filepath)
   if (!found) {

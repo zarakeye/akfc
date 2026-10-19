@@ -3,29 +3,20 @@ import { isValidElement, type ReactNode } from "react"
 import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeBlockFrame } from "./CodeBlockFrame"
 import { CodeHeader } from "./CodeHeader"
+import { CodeFenceClient, type FenceSibling } from "./CodeFenceClient"
+import { normalizeLanguage, splitSourceLine, type FenceIndex } from "@features/docs/lib/fenceIndex"
 
 /**
- * Rendu des blocs de code « ``` » des pages MDX : coloration syntaxique (shiki, même rendu que
- * CodeExample) et chemin du fichier d'origine AU-DESSUS du bloc.
+ * Rendu des blocs « ``` » des pages MDX.
  *
  * Les extraits de la doc commencent par une ligne de commentaire qui cite leur fichier :
  *   // apps/web/src/proxy.ts (extrait)
- *   -- prisma/migrations/…/migration.sql (extrait)
- * Cette ligne est retirée du code et affichée dans l'en-tête (chemin + précision entre
- * parenthèses). Un bloc sans ce commentaire s'affiche sans en-tête.
+ * Cette ligne devient l'en-tête du bloc. Quand l'extrait a pu être situé dans son fichier
+ * (`buildFenceIndex`, calculé par la page avant la compilation MDX), le bloc affiche les numéros
+ * de ligne RÉELS et propose de déplier le fichier complet, avec navigation entre les extraits du
+ * même fichier cités dans la page. Sinon (fichier absent, extrait trop réécrit), il s'affiche
+ * simplement coloré, avec son chemin.
  */
-
-/** Langages annoncés dans la doc → identifiant shiki. */
-const LANGUAGE_ALIASES: Record<string, string> = {
-  text: "text",
-  txt: "text",
-  plaintext: "text",
-  sh: "bash",
-  shell: "bash",
-  js: "javascript",
-}
-
-const PATH_LINE = /^\s*(?:\/\/|#|--)\s*(\S+\.[A-Za-z0-9]+)(?:\s+\((.+)\))?\s*$/
 
 function textOf(node: ReactNode): string {
   if (typeof node === "string") return node
@@ -38,33 +29,88 @@ function textOf(node: ReactNode): string {
 function languageOf(node: ReactNode): string {
   if (!isValidElement<{ className?: string }>(node)) return "text"
   const match = /language-([\w-]+)/.exec(node.props.className ?? "")
-  const raw = match?.[1]?.toLowerCase() ?? "text"
-  return LANGUAGE_ALIASES[raw] ?? raw
+  return normalizeLanguage(match?.[1])
 }
 
-/** Sépare la ligne « // chemin (précision) » du reste du code. */
-export function splitSourceLine(code: string): { path: string | null; note: string | null; body: string } {
-  const lines = code.replace(/\n$/, "").split("\n")
-  const match = PATH_LINE.exec(lines[0] ?? "")
-  if (!match || !match[1].includes("/") && !match[1].includes(".")) {
-    return { path: null, note: null, body: lines.join("\n") }
+async function highlight(code: string, language: string, opts: { numbers: boolean; scope?: number[] }): Promise<string> {
+  try {
+    return await renderCodeBlockHtml({ code, language, showLineNumbers: opts.numbers, scopeLines: opts.scope ?? [] })
+  } catch {
+    // Langage inconnu de shiki : texte brut plutôt qu'une page en erreur.
+    return renderCodeBlockHtml({ code, language: "text", showLineNumbers: opts.numbers, scopeLines: opts.scope ?? [] })
   }
-  return { path: match[1], note: match[2] ?? null, body: lines.slice(1).join("\n") }
 }
 
-export async function MdxCodeFence({ children }: { children?: ReactNode }) {
+/** Première ligne de code qui dit quelque chose (ni vide, ni accolade, ni commentaire). */
+function firstMeaningfulLine(code: string): string {
+  const line = code
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l.length > 3 && !/^(\/\/|\/\*|\*|#|--)/.test(l) && !/^[{}()[\];,]+$/.test(l))
+  return line ?? ""
+}
+
+/** Remplace la numérotation séquentielle de l'extrait par les numéros de ligne du fichier. */
+function applyLineMap(html: string, lineMap: (number | null)[]): string {
+  return html.replace(/data-line="(\d+)"/g, (_m, n: string) => {
+    const real = lineMap[Number(n) - 1]
+    return `data-line="${real ?? ""}"`
+  })
+}
+
+/** Fichier complet surligné une seule fois par page et par fichier. */
+const fullHtmlCache = new WeakMap<FenceIndex, Map<string, Promise<string>>>()
+
+function fullHtmlFor(index: FenceIndex, path: string, language: string): Promise<string> {
+  let perIndex = fullHtmlCache.get(index)
+  if (!perIndex) {
+    perIndex = new Map()
+    fullHtmlCache.set(index, perIndex)
+  }
+  let html = perIndex.get(path)
+  if (!html) {
+    const scope = [...new Set((index.byPath.get(path) ?? []).flatMap((e) => e.location.lines))]
+    html = highlight(index.files.get(path) ?? "", language, { numbers: true, scope })
+    perIndex.set(path, html)
+  }
+  return html
+}
+
+export async function MdxCodeFence({ children, index }: { children?: ReactNode; index?: FenceIndex }) {
   const child = Array.isArray(children) ? children[0] : children
   const language = languageOf(child)
   const { path, note, body } = splitSourceLine(textOf(child))
+  const entry = path && index ? index.byBody.get(body) : undefined
 
-  let html: string
-  try {
-    html = await renderCodeBlockHtml({ code: body, language, showLineNumbers: false })
-  } catch {
-    // Langage inconnu de shiki : texte brut plutôt qu'une page en erreur.
-    html = await renderCodeBlockHtml({ code: body, language: "text", showLineNumbers: false })
+  if (entry && index && path) {
+    const siblingsEntries = index.byPath.get(path) ?? [entry]
+    const siblings: FenceSibling[] = siblingsEntries.map((e) => ({
+      label: e.heading,
+      hint: firstMeaningfulLine(e.body),
+      lines: e.location.lines,
+      first: e.location.first ?? 1,
+      last: e.location.last ?? 1,
+    }))
+    const [snippetRaw, fullHtml] = await Promise.all([
+      highlight(body, language, { numbers: true }),
+      fullHtmlFor(index, path, language),
+    ])
+    return (
+      <CodeFenceClient
+        path={path}
+        note={note}
+        language={language}
+        snippet={body}
+        fullCode={index.files.get(path) ?? ""}
+        snippetHtml={applyLineMap(snippetRaw, entry.location.lineMap)}
+        fullHtml={fullHtml}
+        siblings={siblings}
+        selfIndex={Math.max(0, siblingsEntries.indexOf(entry))}
+      />
+    )
   }
 
+  const html = await highlight(body, language, { numbers: false })
   return (
     <div className="my-6 overflow-hidden rounded-xl border border-white/10 bg-[#12141a] shadow-sm [&_.line]:pl-4">
       {path ? (

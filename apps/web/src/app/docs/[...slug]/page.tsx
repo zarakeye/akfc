@@ -10,6 +10,8 @@ import { docExists, getDocSource } from "@features/docs/lib/docs.source"
 import { extractToc } from "@features/docs/lib/docs.toc"
 import type { DocFrontmatter } from "@features/docs/lib/docs.types"
 import { mdxComponents } from "@web/mdx-components"
+import { buildFenceIndex } from "@features/docs/lib/fenceIndex"
+import { MdxCodeFence } from "@features/docs/ui/MdxCodeFence"
 import { generateDocsIndex } from "@features/docs/lib/docs.index"
 import DocsSearch from "@features/docs/components/DocsSearch"
 import { getSearchDocuments } from "@features/docs/lib/docs.search"
@@ -52,9 +54,16 @@ export default async function Page({ params }: PageProps) {
   const { pages } = generateDocsIndex(space.id)
   const { prev, next } = getPrevNext(pages, slug)
 
+  // Blocs de code : situés dans leurs fichiers avant la compilation (numéros de ligne réels,
+  // fichier dépliable, navigation entre les extraits d'un même fichier).
+  const fenceIndex = buildFenceIndex(source)
+
   const compiled = await compileMDX<DocFrontmatter>({
     source,
-    components: mdxComponents,
+    components: {
+      ...mdxComponents,
+      pre: (props) => <MdxCodeFence index={fenceIndex}>{props.children}</MdxCodeFence>,
+    },
     options: {
       parseFrontmatter: false,
     },
