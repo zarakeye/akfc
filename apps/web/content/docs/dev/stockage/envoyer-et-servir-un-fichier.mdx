@@ -1,0 +1,322 @@
+---
+title: "Envoyer et servir un fichier"
+description: "Comment un fichier part du navigateur vers le stockage sans transiter par notre serveur, comment il est vérifié puis enregistré, et comment il est servi ensuite, en privé comme en public."
+section: "Stockage et médias"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les données passent par tRPC et Prisma, et chaque procédure connaît l'utilisateur grâce à sa session. Les fichiers suivent un autre circuit, annoncé dès le premier chapitre : ils vont directement au stockage, avec une autorisation signée par le backend. Voici ce circuit en détail.
+
+## Un stockage compatible S3
+
+Les fichiers du club (photos, vidéos, PDF, audios) vivent dans un **stockage objet compatible S3** : Cloudflare R2 en production, MinIO sur notre machine. Un stockage objet n'a pas de dossiers : il range des objets sous des **clés**, des chaînes comme `AKFC/courses/tchoy-lee-fut/salut-final.jpg`. Les « dossiers » ne sont que des préfixes communs à plusieurs clés.
+
+Le protocole S3 est un standard de fait. Le projet parle à R2 et à MinIO avec le même SDK, `@aws-sdk/client-s3`, et seule la configuration change :
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/client.ts (extrait)
+cached = new S3Client({
+  region: "auto",
+  endpoint: readEnv("R2_ENDPOINT"),
+  // MinIO exige le path-style ; R2 (prod) ne définit pas la var → false.
+  forcePathStyle: process.env.R2_FORCE_PATH_STYLE === "true",
+  credentials: {
+    accessKeyId: readEnv("R2_ACCESS_KEY_ID"),
+    secretAccessKey: readEnv("R2_SECRET_ACCESS_KEY"),
+  },
+});
+```
+
+`region: "auto"` est la valeur attendue par R2, qui n'a pas de régions au sens d'AWS. `forcePathStyle` place le nom du bucket dans le chemin de l'URL plutôt que dans le nom de domaine, ce qu'exige MinIO. Le client est un **singleton** : il garde ses connexions HTTP ouvertes d'une requête à l'autre au lieu de refaire la poignée de main TLS à chaque appel.
+
+Un second client, `getR2PresignClient()`, sert uniquement à fabriquer des URL destinées au navigateur. Il peut viser une adresse publique différente (`R2_PUBLIC_ENDPOINT`) : dans la sandbox, le serveur joint MinIO par son nom de service Docker, que le navigateur ne connaît pas. Il désactive aussi le calcul automatique de somme de contrôle, que MinIO refuserait sur une URL signée.
+
+## Pourquoi le fichier ne passe pas par notre serveur
+
+Un fichier peut peser jusqu'à 500 Mio. S'il transitait par notre API, le serveur devrait le recevoir en entier, le garder en mémoire ou sur disque, puis le renvoyer au stockage : deux fois la bande passante, une charge qui grandit avec chaque envoi simultané, et un délai d'attente HTTP à surveiller.
+
+Le projet utilise donc des **URL présignées**. Le serveur, qui détient les clés d'accès au stockage, fabrique une URL qui autorise **une seule opération** : déposer un objet sous une clé précise, avec un type précis, pendant cinq minutes. Le navigateur envoie le fichier directement à cette URL. Les clés d'accès ne quittent jamais le serveur, et les octets ne le traversent jamais.
+
+Ce choix a une contrepartie : le serveur n'a pas vu le fichier. Il doit donc vérifier après coup ce qui a réellement été déposé avant de l'enregistrer. D'où un envoi en trois temps.
+
+## L'envoi en trois temps
+
+<DocsTable columnsJson='["Étape","Qui","Ce qui se passe"]' rowsJson='[["1. Demander une autorisation","navigateur → tRPC storage.createR2Upload","Le serveur vérifie le droit de dépôt, calcule la clé, refuse un écrasement non confirmé, contrôle le quota, puis signe une URL d’envoi valable 5 minutes."],["2. Envoyer","navigateur → stockage (PUT)","Le fichier part directement au stockage, avec le Content-Type signé dans l’URL."],["3. Faire enregistrer","navigateur → tRPC storage.registerR2Upload","Le serveur relit l’objet chez le stockage, compare taille et type à ce qui était annoncé, puis crée la ligne MediaAsset, en attente de validation."]]' />
+
+Côté navigateur, le formulaire de dépôt de la bibliothèque enchaîne les trois étapes pour chaque fichier :
+
+```tsx
+// apps/web/src/features/admin/library/forms/DragNDropForm.tsx (extrait)
+const auth = await createR2UploadMutation.mutateAsync({
+  destination,
+  originalFileName: item.file.name,
+  mimeType: item.file.type,
+  maxBytes: item.file.size,
+  allowOverwrite,
+});
+const path = auth.path;
+
+const res = await fetch(auth.uploadUrl, {
+  method: 'PUT',
+  headers: { 'Content-Type': item.file.type },
+  body: item.file,
+});
+if (!res.ok) {
+  const text = await res.text();
+  throw new Error(`R2 HTTP ${res.status}: ${text.slice(0, 200)}`);
+}
+
+const result = await registerR2UploadMutation.mutateAsync({
+  path,
+  expectedBytes: item.file.size,
+  expectedMimeType: item.file.type,
+  destination,
+  originalFileName: item.file.name,
+});
+```
+
+Plusieurs fichiers partent en parallèle (`Promise.all`), et chaque envoi renvoie son propre résultat, succès ou erreur : un fichier refusé n'empêche pas les autres d'aboutir, et le formulaire affiche l'erreur sur la vignette concernée.
+
+## Étape 1 : une destination, pas un chemin
+
+Le navigateur ne fournit jamais de clé de stockage. Il décrit une **intention**, une `destination`, et c'est le serveur qui en déduit le chemin. Le contrat partagé est une union discriminée :
+
+```ts
+// packages/contracts/src/storage/upload-destination.schema.ts (extrait)
+export const uploadDestinationSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("existing-discipline"), categoryId: z.number().int().positive(), disciplineId: z.number().int().positive() }),
+  z.object({ kind: z.literal("new-discipline"), categoryId: z.number().int().positive(), proposedDisciplineName: z.string().trim().min(1).max(120) }),
+  z.object({ kind: z.literal("common_repository"), containerName: z.string().trim().min(1).max(120).optional() }),
+  z.object({ kind: z.literal("perso") }),
+  z.object({ kind: z.literal("event"), eventId: z.number().int().positive(), disciplineIds: z.array(z.number().int().positive()).default([]) }),
+  z.object({ kind: z.literal("seminar"), seminarId: z.number().int().positive() }),
+  z.object({ kind: z.literal("group"), groupId: z.string() }),
+]);
+```
+
+Ce découpage permet trois choses.
+
+**Une seule règle de nommage.** `resolvePendingUploadFolder` traduit chaque destination en dossier : `AKFC/courses/<discipline>`, `AKFC/events/<événement>`, `AKFC/personal-space/<nom>-<userId>/photos`, `AKFC/collaborative-group-spaces/<groupe>-<groupId>`… Le nom du fichier passe par `buildUploadFileName`, qui le transforme en slug sûr et garde l'extension en minuscules :
+
+```ts
+// packages/backend/src/modules/storage/services/buildUploadFileName.service.ts (extrait)
+const safeBase =
+  slugify(baseName.replace(/_+/g, ' '), { lower: true, strict: true }) ||
+  'fichier';
+
+return `${safeBase}${ext}`;
+```
+
+`Salut final (2025).JPG` devient `salut-final-2025.jpg`. La clé ne contient ni espace, ni parenthèse, ni second point : elle se lit dans une URL sans encodage hasardeux. Le nom d'origine n'est pas perdu : il est conservé dans `MediaAsset.originalFileName`, et c'est lui (ou un `displayName` choisi plus tard) que l'interface affiche.
+
+**Une identité qui ne se falsifie pas.** La destination `perso` ne transporte aucun identifiant : le dossier est dérivé de `ctx.user.id`, c'est-à-dire de la session. Un utilisateur ne peut écrire que dans son propre espace personnel, quoi qu'il envoie.
+
+**Un ajout de destination vérifié par le compilateur.** Les services qui traitent une destination se terminent par un `switch` exhaustif (`input.destination satisfies never`). Ajouter un `kind` au contrat fait échouer la compilation partout où il n'est pas encore traité.
+
+<Callout type="info">
+Le client décrit **ce qu'il veut faire** ; le serveur décide **où cela va**. Une clé de stockage n'est jamais calculée dans le navigateur.
+</Callout>
+
+### Les vérifications avant de signer
+
+`createR2Upload` enchaîne ses contrôles avant de fabriquer l'URL :
+
+```ts
+// packages/backend/src/modules/storage/router.ts (extrait)
+await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.user.id, destination: input.destination });
+const folder = await resolvePendingUploadFolder({ prisma: ctx.prisma, destination: input.destination, appRoot: ctx.appRoot, userId: ctx.user.id });
+const fileName = buildUploadFileName(input.originalFileName);
+const path = `${folder}/${fileName}`;
+
+if (input.destination.kind === "perso" && !input.mimeType.startsWith("image/")) {
+  throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });
+}
+const existing = await ctx.prisma.mediaAsset.findUnique({ where: { fullPath: path }, select: { id: true } });
+if (existing && !input.allowOverwrite) {
+  throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });
+}
+if (input.destination.kind === "perso" && !existing) {
+  const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.user.id });
+  if (total + 1 > PERSO_PHOTO_QUOTA) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}).` });
+  }
+}
+```
+
+- **Le droit de dépôt** (`assertUploadDestinationAllowed`) : l'espace d'un groupe collaboratif exige le droit d'écriture sur ce groupe ; les autres destinations sont ouvertes à tout utilisateur connecté, car un dépôt naît **en attente** et ne devient visible ailleurs qu'après validation par un administrateur.
+- **Pas d'écrasement silencieux** : si la clé existe déjà, le serveur répond `CONFLICT`, sauf si l'utilisateur a confirmé le remplacement (`allowOverwrite`). Pour poser la question une seule fois pour tout un lot, le formulaire appelle d'abord `storage.checkR2Conflicts`, qui renvoie la liste des noms déjà présents.
+- **L'espace personnel** n'accepte que des images, dans la limite d'un quota.
+
+Puis l'adaptateur R2 revérifie la clé (pas de `..`, pas de `//`, préfixe `AKFC/` obligatoire, taille annoncée sous 500 Mio) et signe :
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
+const command = new PutObjectCommand({
+  Bucket,
+  Key: input.path,
+  ContentType: input.mimeType,
+});
+
+const uploadUrl = await getSignedUrl(s3, command, {
+  expiresIn: expiresInSeconds, // 5 minutes
+});
+```
+
+La signature couvre la méthode (`PUT`), la clé, le `Content-Type` et l'expiration. Un envoi vers une autre clé, avec un autre type ou après cinq minutes est refusé par le stockage lui-même. La procédure renvoie l'URL **et** la clé calculée, que le navigateur retransmettra telle quelle à l'étape 3.
+
+## Étape 3 : relire avant d'enregistrer
+
+Une URL présignée ne fixe pas la taille du fichier. Et entre l'étape 1 et l'étape 3, le navigateur aurait pu envoyer autre chose que ce qu'il avait annoncé, ou renvoyer à l'enregistrement une clé différente. `registerR2Upload` ne fait donc confiance à rien de ce qu'il reçoit.
+
+D'abord, il recalcule le dossier autorisé pour cette destination et vérifie que la clé reçue en fait partie, sans sous-dossier ni remontée :
+
+```ts
+// packages/backend/src/modules/storage/router.ts (extrait)
+const rest = input.path.slice(expectedFolder.length + 1);
+if (!input.path.startsWith(`${expectedFolder}/`) || rest === "" || rest.includes("/") || rest.includes("..")) {
+  throw new TRPCError({ code: "FORBIDDEN", message: "Chemin d'envoi hors de la destination autorisée." });
+}
+```
+
+Ensuite, l'adaptateur interroge le stockage (`HeadObject`) : l'objet existe-t-il, quelle est sa taille réelle, quel est son type réel ? Ce sont ces valeurs, et non celles du navigateur, qui seront enregistrées. Si elles ne correspondent pas à l'annonce, ou si la taille dépasse la limite, l'envoi est refusé **et l'objet est supprimé du stockage**, pour ne laisser aucun fichier orphelin :
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
+const reject = async (message: string): Promise<never> => {
+  const known = await prisma.mediaAsset.findUnique({ where: { fullPath: input.path }, select: { id: true } });
+  if (!known) await s3.send(new DeleteObjectCommand({ Bucket, Key: input.path })).catch(() => undefined);
+  throw new Error(message);
+};
+
+if (actualBytes > HARD_MAX_UPLOAD_BYTES) {
+  await reject(`Fichier trop volumineux (${actualBytes} octets, maximum ${HARD_MAX_UPLOAD_BYTES}).`);
+}
+if (actualBytes !== input.expectedBytes) {
+  await reject(`Taille incohérente sur ${input.path} : attendu ${input.expectedBytes}, reçu ${actualBytes}.`);
+}
+```
+
+Un objet qui remplaçait un fichier déjà connu n'est pas supprimé : la ligne existante pointe toujours vers lui.
+
+Enfin, l'adaptateur mesure les dimensions (largeur, hauteur, durée) quand il le peut, sans jamais bloquer l'envoi si la mesure échoue, puis crée la ligne `MediaAsset` par un `upsert` sur `fullPath` : un remplacement confirmé met à jour la ligne existante au lieu d'en créer une seconde.
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
+const asset = await prisma.mediaAsset.upsert({
+  where: { fullPath: input.path },
+  create: {
+    fullPath: input.path,
+    mimeType: actualMime,
+    bytes: actualBytes,
+    originalFileName: input.originalFileName,
+    appRoot,
+    status: "pending",
+    categoryId,
+    disciplineId,
+    proposedDisciplineName,
+    uploaderUserId: input.userId,
+    // … eventId, format, dimensions
+  },
+  update: { /* type, taille, dimensions, nom d'origine, auteur */ },
+});
+```
+
+`uploaderUserId` vient de la session, jamais de l'entrée : le contrat d'enregistrement ne contient même pas de champ pour un identifiant d'utilisateur.
+
+<Callout type="warning">
+Tout ce que le navigateur envoie est une **annonce**. Ce qui est enregistré en base provient du serveur (la clé recalculée, l'identité de session) ou du stockage (la taille et le type réels).
+</Callout>
+
+## Le cycle de vie d'un média
+
+`MediaAsset.status` porte l'état d'un fichier :
+
+<DocsTable columnsJson='["Statut","Affiché","Signification"]' rowsJson='[["pending","En attente","Valeur de tout nouvel envoi. Le fichier n’est pas sélectionnable dans les contenus."],["published","Validé","Un administrateur l’a validé : il peut être posé dans une page ou une galerie."]]' />
+
+Valider un fichier, ou le remettre en attente, revient à modifier cette colonne (`media.setStatus`) : **le binaire ne bouge pas** dans le stockage. La clé reste stable, aucune copie n'est faite, et aucune référence ne casse. La mise à la corbeille est un mécanisme à part, détaillé au chapitre suivant.
+
+## Servir un fichier privé
+
+Le bucket est entièrement privé : aucun objet n'a d'URL publique permanente. Pour afficher un fichier, l'interface pointe vers une route de l'application, `/api/media/r2/<clé>`, qui décide puis délègue :
+
+```ts
+// apps/web/src/app/api/media/r2/[...path]/route.ts (extrait)
+const session = await getSessionFromRequest(req);
+if (!session) {
+  return new NextResponse('Unauthorized', { status: 401 });
+}
+
+const r2Key = path.join('/');
+if (!r2Key.startsWith('AKFC/')) {
+  return new NextResponse('Forbidden: path out of app root', { status: 403 });
+}
+if (r2Key.includes('..')) {
+  return new NextResponse('Forbidden: invalid path', { status: 403 });
+}
+const userId = session.user?.id;
+if (!userId || !(await canReadStorageKey({ prisma, userId, key: r2Key }))) {
+  return new NextResponse('Not found', { status: 404 });
+}
+```
+
+`canReadStorageKey` applique la règle de lecture : un administrateur lit tout ; un membre lit l'espace des groupes collaboratifs auxquels il appartient et son propre espace personnel. Le chemin est analysé **par position** (le segment qui suit `AKFC/` désigne l'espace, le suivant son propriétaire) : un dossier nommé `personal-space` ailleurs dans l'arborescence n'ouvre rien.
+
+Un refus répond **404**, pas 403 : un visiteur ne peut pas distinguer un fichier inexistant d'un fichier qui ne lui est pas destiné.
+
+La route ne renvoie pas les octets elle-même. Elle signe une URL de lecture valable 30 minutes et **redirige** le navigateur vers le stockage (302). Les octets vont directement de Cloudflare au navigateur, sans charger notre serveur. La redirection porte `Cache-Control: no-store`, puisque chaque signature est différente ; c'est la réponse du stockage qui peut être mise en cache.
+
+## Servir un fichier public
+
+Les pages publiques du site affichent des images à des visiteurs anonymes. Elles passent par une autre route, `/api/media/public/r2/<clé>`, sans session, mais avec une garde stricte :
+
+```ts
+// apps/web/src/app/api/media/public/r2/[...path]/route.ts (extrait)
+const servable = await prisma.mediaAsset.findFirst({
+  where: {
+    fullPath: r2Key,
+    status: 'published',
+    OR: [
+      { pageReferences: { some: {} } },
+      { galleryItems: { some: { gallery: { visibility: 'PUBLIC' } } } },
+    ],
+  },
+  select: { id: true },
+});
+
+if (!servable) {
+  return new NextResponse('Not found', { status: 404 });
+}
+```
+
+Un fichier n'est servi publiquement qu'après **deux gestes délibérés** d'un administrateur : il l'a validé, **et** il l'a placé dans une page ou dans une galerie publique. Le statut seul ne suffit pas : une photo personnelle validée d'emblée n'est pas exposée tant qu'elle n'est posée nulle part, et une galerie réservée aux membres n'ouvre rien au public.
+
+## Les déclinaisons
+
+Une photo d'appareil pèse plusieurs mégaoctets ; une vignette de finder n'en a besoin que de quelques kilo-octets. Les deux routes acceptent un paramètre `?variant=thumb|small|medium|large` :
+
+<DocsTable columnsJson='["Déclinaison","Taille","Usage"]' rowsJson='[["thumb","150 × 150, recadrée","vignettes du finder et des listes"],["small","300 px de large","cartes, petites colonnes"],["medium","600 px","contenu courant"],["large","1 200 px","grandes images, plein écran"]]' />
+
+Les déclinaisons sont fabriquées **à la première demande** (avec `sharp`, en AVIF), puis rangées dans le stockage sous `_derived/`, hors de la racine de l'application : le finder ne les voit jamais. Leur clé contient l'ETag de l'original, si bien qu'un fichier remplacé ou recadré produit de nouvelles déclinaisons sans intervention. Les photos HEIC des iPhone sont d'abord décodées. Pour une vidéo, `?as=poster` renvoie une image d'affiche extraite par `ffmpeg`.
+
+Contrairement aux originaux, une déclinaison n'est pas servie par redirection mais **en flux** par la route, avec un en-tête de cache (une heure). L'adresse `…?variant=thumb` étant stable, le navigateur la garde en cache ; une redirection vers une URL signée, qui change à chaque requête, ne le permettrait pas. Un navigateur qui n'accepte pas l'AVIF reçoit à la volée une version WebP (`Vary: Accept`).
+
+Si la fabrication échoue (outil absent, fichier trop gros), la route sert l'original : une déclinaison est une optimisation, jamais une condition d'affichage.
+
+<Callout type="tip">
+Pour afficher un média dans l'interface, on demande toujours la plus petite déclinaison suffisante (`thumb` dans une grille, `medium` dans un contenu). Le premier affichage la fabrique ; les suivants la servent directement.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qui calcule la clé d’un fichier ?","Le serveur, à partir d’une destination (resolvePendingUploadFolder, buildUploadFileName)."],["Par où passent les octets à l’envoi ?","Directement du navigateur au stockage, par une URL présignée de 5 minutes."],["Que vérifie l’enregistrement ?","La clé (dans le dossier autorisé), la taille et le type réels relus chez le stockage ; un objet refusé est supprimé."],["Dans quel état naît un fichier ?","En attente (pending), jusqu’à validation par un administrateur."],["Qui peut lire un fichier privé ?","Un administrateur ; un membre pour l’espace de ses groupes et son espace personnel (canReadStorageKey)."],["Quand un fichier est-il public ?","Quand il est validé ET placé dans une page ou une galerie publique."]]' />
+
+## À suivre
+
+Les fichiers sont désormais rangés sous des clés plates, `AKFC/courses/tchoy-lee-fut/salut-final.jpg`, dans un stockage qui ne connaît pas les dossiers. Pourtant, les administrateurs naviguent dans une arborescence, renomment des dossiers, déplacent des fichiers, filtrent par statut, voient « Espace personnel » au lieu de `personal-space`, et ne voient que les espaces auxquels ils ont droit.
+
+<Callout type="tip">
+**Chapitre suivant : le Finder.** Comment une liste de clés devient un arbre navigable, comment la base et le stockage se répartissent les rôles, et comment un déplacement de dossier reste cohérent des deux côtés.
+</Callout>
