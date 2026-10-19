@@ -5,6 +5,7 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide
 
 import { NAV_ENTRIES } from "@features/app-shell/navEntries";
 import { CLUB_INFO, FOOTER_LEGAL_LINKS } from "@features/app-shell/clubInfo";
+import { parseSitePhones, telHref } from "@contracts/siteContact/siteContact.schema";
 import { buildFooterSchedule } from "@features/app-shell/buildFooterSchedule";
 import { prisma } from "@backend/prisma";
 import { getActivePartners } from "@features/partners/getActivePartners";
@@ -21,9 +22,11 @@ import { PARTNER_ROLE_LABEL } from "@features/partners/partnerUi";
  * le panneau burger : ajouter une page au site la fera apparaître aux trois
  * endroits sans y penser.
  *
- * Les blocs de coordonnées ne s'affichent que si `CLUB_INFO` les renseigne —
- * un footer à moitié vide vaut mieux qu'un footer à fausses valeurs, qu'on
- * oublie de corriger parce qu'il a l'air fini.
+ * L'accroche, les coordonnées et les numéros RNA / SIRET viennent des Réglages du
+ * site (SiteSettings), la même source que la page « Nous contacter » et les
+ * mentions légales. Chaque bloc ne s'affiche que s'il est renseigné — un footer
+ * à moitié vide vaut mieux qu'un footer à fausses valeurs, qu'on oublie de
+ * corriger parce qu'il a l'air fini.
  *
  * Responsive : une colonne sur téléphone, deux sur tablette, quatre à partir
  * de `lg`. Les seuils suivent le moment où une colonne devient illisible,
@@ -48,8 +51,33 @@ export default async function Footer(): Promise<JSX.Element> {
       .catch(() => []),
   );
   const settings = await prisma.siteSettings
-    .findUnique({ where: { id: "site" }, select: { logoKey: true, updatedAt: true, shortTitle: true } })
+    .findUnique({
+      where: { id: "site" },
+      select: {
+        logoKey: true,
+        updatedAt: true,
+        shortTitle: true,
+        tagline: true,
+        contactEmail: true,
+        contactPhones: true,
+        contactAddress: true,
+        legalRna: true,
+        legalSiret: true,
+      },
+    })
     .catch(() => null);
+  const tagline = settings?.tagline?.trim() ?? "";
+  const address = (settings?.contactAddress ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  // Seuls les numéros joignables en appel : le pied de page propose un lien `tel:`.
+  const phones = parseSitePhones(settings?.contactPhones).filter((p) => p.call);
+  const email = settings?.contactEmail?.trim() ?? "";
+  const legalMentions = [
+    settings?.legalRna ? `RNA ${settings.legalRna}` : null,
+    settings?.legalSiret ? `SIRET ${settings.legalSiret}` : null,
+  ].filter((m): m is string => m !== null);
   const logoSrc = settings?.logoKey
     ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
     : "/AKFC_logo.svg";
@@ -88,10 +116,7 @@ export default async function Footer(): Promise<JSX.Element> {
     { href: CLUB_INFO.social.youtube, Icon: Youtube, label: "YouTube" },
   ].filter((s) => s.href !== "");
 
-  const hasContact =
-    CLUB_INFO.address.length > 0 ||
-    CLUB_INFO.phone !== "" ||
-    CLUB_INFO.email !== "";
+  const hasContact = address.length > 0 || phones.length > 0 || email !== "";
 
   return (
     <footer className="mt-16 bg-black text-white">
@@ -114,9 +139,7 @@ export default async function Footer(): Promise<JSX.Element> {
                 />
               )}
             </Link>
-            {CLUB_INFO.tagline !== "" && (
-              <p className="text-sm text-white/70">{CLUB_INFO.tagline}</p>
-            )}
+            {tagline !== "" && <p className="text-sm text-white/70">{tagline}</p>}
             {socials.length > 0 && (
               <div className="flex gap-3">
                 {socials.map(({ href, Icon, label }) => (
@@ -178,11 +201,11 @@ export default async function Footer(): Promise<JSX.Element> {
                 Nous trouver
               </h2>
               <ul className="flex flex-col gap-3 text-sm text-white/80">
-                {CLUB_INFO.address.length > 0 && (
+                {address.length > 0 && (
                   <li className="flex gap-2">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     <span>
-                      {CLUB_INFO.address.map((line) => (
+                      {address.map((line) => (
                         <span key={line} className="block">
                           {line}
                         </span>
@@ -190,27 +213,25 @@ export default async function Footer(): Promise<JSX.Element> {
                     </span>
                   </li>
                 )}
-                {CLUB_INFO.phone !== "" && (
-                  <li className="flex gap-2">
+                {phones.map((phone) => (
+                  <li key={phone.number} className="flex gap-2">
                     <Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    {/* `tel:` sans espaces : un numéro formaté pour l'œil
-                        n'est pas composable par un téléphone. */}
-                    <a
-                      href={`tel:${CLUB_INFO.phone.replace(/\s/g, "")}`}
-                      className="transition-colors hover:text-emerald-400"
-                    >
-                      {CLUB_INFO.phone}
+                    {/* `telHref` compose le numéro au format international : un
+                        numéro formaté pour l'œil n'est pas composable tel quel. */}
+                    <a href={telHref(phone.number)} className="transition-colors hover:text-emerald-400">
+                      {phone.label ? `${phone.label} : ` : ""}
+                      {phone.number}
                     </a>
                   </li>
-                )}
-                {CLUB_INFO.email !== "" && (
+                ))}
+                {email !== "" && (
                   <li className="flex gap-2">
                     <Mail className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     <a
-                      href={`mailto:${CLUB_INFO.email}`}
+                      href={`mailto:${email}`}
                       className="break-all transition-colors hover:text-emerald-400"
                     >
-                      {CLUB_INFO.email}
+                      {email}
                     </a>
                   </li>
                 )}
@@ -291,10 +312,8 @@ export default async function Footer(): Promise<JSX.Element> {
         <div className="akfc-page flex flex-col items-center justify-between gap-3 py-6 text-xs text-white/60 sm:flex-row">
           <p>© {year} {settings?.shortTitle ?? "AKFC"}. Tous droits réservés.</p>
 
-          {CLUB_INFO.legalMentions.length > 0 && (
-            <p className="text-center">
-              {CLUB_INFO.legalMentions.join(" · ")}
-            </p>
+          {legalMentions.length > 0 && (
+            <p className="text-center">{legalMentions.join(" · ")}</p>
           )}
 
           <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1">

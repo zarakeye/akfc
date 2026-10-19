@@ -1,5 +1,8 @@
 /**
- * Coordonnées du club, affichées dans le pied de page.
+ * Compléments du pied de page qui n'ont pas (encore) leur place dans les
+ * Réglages du site : réseaux sociaux et horaires de repli. L'accroche, les
+ * coordonnées et les numéros RNA / SIRET se règlent dans les Réglages
+ * (SiteSettings) et ne sont plus ici.
  *
  * TOUT EST VIDE À DESSEIN. Chaque bloc du footer ne s'affiche que si sa
  * valeur est renseignée, donc remplir se fait au fil de l'eau sans rien
@@ -11,13 +14,7 @@
  * adresse plausible mais fausse ne l'est pas, et personne ne le voit.
  */
 export interface ClubInfo {
-  /** Une phrase de présentation, sous le logo. */
-  tagline: string;
-  /** Adresse postale, une ligne par élément. */
-  address: string[];
-  phone: string;
-  email: string;
-  /** Créneaux d'ouverture ou d'entraînement, une ligne par élément. */
+  /** Créneaux de repli (si aucun cours publié), une ligne par élément. */
   hours: string[];
   /** Réseaux sociaux. Seuls ceux dont l'URL est renseignée s'affichent. */
   social: {
@@ -25,22 +22,15 @@ export interface ClubInfo {
     instagram: string;
     youtube: string;
   };
-  /** Numéro RNA ou SIRET, mentions administratives. */
-  legalMentions: string[];
 }
 
 export const CLUB_INFO: ClubInfo = {
-  tagline: "",
-  address: [],
-  phone: "",
-  email: "",
   hours: [],
   social: {
     facebook: "",
     instagram: "",
     youtube: "",
   },
-  legalMentions: [],
 };
 
 /**

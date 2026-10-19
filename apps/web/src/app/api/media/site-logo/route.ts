@@ -1,5 +1,4 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -10,49 +9,43 @@ import { SITE_LOGO_KEY } from "@backend/modules/siteSettings/services/siteLogo.s
 
 /**
  * Route publique du logo du site. Le logo vit dans une clé R2 réservée
- * (system/logo.svg), hors arborescence finder et sans MediaAsset. On presign
- * un GET (comme la route publique R2) et on redirige en 302 (zero-egress).
- * L'invalidation de cache se fait par le `?v=` ajouté par siteSettings.get.
+ * (system/logo.svg), hors arborescence finder et sans MediaAsset.
+ *
+ * Servi par la MÊME ORIGINE, et non par une redirection vers une URL R2 signée :
+ * une redirection mise en cache par le navigateur survivait à sa signature (30 min),
+ * et le logo pouvait disparaître du header. Le fichier est petit (512 Ko au plus) et
+ * l'URL porte `?v=updatedAt`, qui change à chaque nouveau logo : la réponse est donc
+ * mise en cache sans limite (`immutable`), et le serveur n'est sollicité qu'une fois
+ * par navigateur et par version.
+ *
+ * Un SVG peut contenir du script. Dans une balise <img>, le navigateur ne l'exécute
+ * jamais ; ouvert directement, la politique `sandbox` et `nosniff` l'en empêchent.
+ * `?raw=1` (aperçu des réglages, qui mesure ses couleurs dans un canvas) reçoit la
+ * même réponse.
  */
-const EXPIRY_SECONDS = 30 * 60;
-
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const s3 = getR2Client();
-    const command = new GetObjectCommand({
-      Bucket: getR2Bucket(),
-      Key: SITE_LOGO_KEY,
-    });
+    const object = await getR2Client().send(
+      new GetObjectCommand({ Bucket: getR2Bucket(), Key: SITE_LOGO_KEY }),
+    );
+    const svg = await object.Body?.transformToString();
+    if (!svg) return new NextResponse("Not found", { status: 404 });
 
-    // ?raw=1 : le SVG lui-même, servi par la même origine (aperçu des réglages, qui mesure ses
-    // couleurs dans un canvas). Sandbox + nosniff : ouvert directement, il ne peut rien exécuter.
-    if (req.nextUrl.searchParams.get("raw") === "1") {
-      const object = await s3.send(command);
-      const svg = await object.Body?.transformToString();
-      if (!svg) return new NextResponse("Not found", { status: 404 });
-      return new NextResponse(svg, {
-        status: 200,
-        headers: {
-          "Content-Type": "image/svg+xml",
-          "Cache-Control": "public, max-age=3600",
-          "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
-    }
-    const signedUrl = await getSignedUrl(s3, command, {
-      expiresIn: EXPIRY_SECONDS,
-    });
-    return NextResponse.redirect(signedUrl, {
-      status: 302,
+    // Sans `?v=`, l'URL ne change pas avec le logo : cache court.
+    const versioned = req.nextUrl.searchParams.has("v");
+    return new NextResponse(svg, {
+      status: 200,
       headers: {
-        // Le SVG change rarement et l'URL porte ?v=updatedAt (busting au
-        // changement) → cache long : instantané après la 1re visite.
-        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": versioned
+          ? "public, max-age=31536000, immutable"
+          : "public, max-age=300",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (err) {
-    console.error("[api/media/site-logo] presign failed", err);
+    console.error("[api/media/site-logo] lecture impossible", err);
     return new NextResponse("Not found", { status: 404 });
   }
 }

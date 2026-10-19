@@ -30,8 +30,7 @@ async function assertAdmin(ctx: {
 /**
  * Réglages d'identité du site (singleton). Lecture PUBLIQUE (le header, l'onglet
  * et les e-mails les consomment, y compris pour les visiteurs anonymes) ;
- * écriture protégée — même statut que homeHero.save / sitePage.save (pas de
- * permission nommée).
+ * écriture réservée aux administrateurs (`assertAdmin`).
  *
  * `shortTitle` est un LIBELLÉ, sans rapport avec `APP_SHORT_NAME` (racine de
  * stockage, qui reste dans le .env). `logoAssetId` référence un MediaAsset ;
@@ -72,7 +71,8 @@ export const siteSettingsRouter = router({
         supportEmail: z
           .union([z.literal(""), z.string().trim().email().max(160)])
           .nullish(),
-        defaultLocale: z.string().trim().min(2).max(10),
+        /** Facultatif : la page Réglages ne l'expose plus (aucun code ne le lit). */
+        defaultLocale: z.string().trim().min(2).max(10).optional(),
         logoAssetId: z.string().trim().max(500).nullish(),
       }),
     )
@@ -85,7 +85,7 @@ export const siteSettingsRouter = router({
         longTitle: input.longTitle,
         tagline: clean(input.tagline),
         supportEmail: clean(input.supportEmail),
-        defaultLocale: input.defaultLocale,
+        ...(input.defaultLocale ? { defaultLocale: input.defaultLocale } : {}),
         logoAssetId: clean(input.logoAssetId),
       };
       return ctx.prisma.siteSettings.upsert({

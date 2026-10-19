@@ -38,7 +38,6 @@ export default function SiteSettingsPage(): JSX.Element {
   const [longTitle, setLongTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
-  const [defaultLocale, setDefaultLocale] = useState("fr");
   const [logoError, setLogoError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -49,7 +48,6 @@ export default function SiteSettingsPage(): JSX.Element {
     setLongTitle(s?.longTitle ?? "Association de Kung Fu de Chambéry");
     setTagline(s?.tagline ?? "");
     setSupportEmail(s?.supportEmail ?? "");
-    setDefaultLocale(s?.defaultLocale ?? "fr");
     setInitialized(true);
   }, [initialized, settings.isSuccess, settings.data]);
 
@@ -93,7 +91,6 @@ export default function SiteSettingsPage(): JSX.Element {
       longTitle: longTitle.trim(),
       tagline: tagline.trim() === "" ? null : tagline.trim(),
       supportEmail: supportEmail.trim() === "" ? "" : supportEmail.trim(),
-      defaultLocale: defaultLocale.trim() || "fr",
     });
   };
 
@@ -147,6 +144,10 @@ export default function SiteSettingsPage(): JSX.Element {
             onChange={(e) => setTagline(e.target.value)}
             placeholder="Une phrase de présentation courte"
           />
+          <span className="mt-1 block text-xs text-gray-400">
+            Affichée dans le pied de page, et utilisée comme description du site
+            par les moteurs de recherche et les aperçus de liens.
+          </span>
         </label>
 
         <label className="block">
@@ -160,22 +161,6 @@ export default function SiteSettingsPage(): JSX.Element {
             onChange={(e) => setSupportEmail(e.target.value)}
             placeholder="contact@akfc.fr"
           />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Langue par défaut</span>
-          <select
-            className={inputClass}
-            value={defaultLocale}
-            onChange={(e) => setDefaultLocale(e.target.value)}
-          >
-            <option value="fr">Français</option>
-            <option value="en">English</option>
-          </select>
-          <span className="mt-1 block text-xs text-gray-400">
-            Pilote la langue déclarée de la page et des e-mails. Ne traduit pas
-            l&apos;interface (pas de couche i18n à ce stade).
-          </span>
         </label>
 
         {/* Logo — upload SVG direct (R2, hors finder) */}

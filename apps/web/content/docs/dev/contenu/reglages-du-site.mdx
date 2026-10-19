@@ -1,0 +1,163 @@
+---
+title: "Les réglages du site"
+description: "L'identité du site, ses coordonnées et ses informations légales, réglées par les administrateurs dans une ligne unique de la base : ce qui y va et ce qui reste dans l'environnement, la valeur de repli de chaque lecture, et le logo, servi hors du finder."
+section: "Contenu éditorial"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les pages, les actualités et les fiches partagent un même format de blocs, un éditeur et un rendu serveur. Chaque enregistrement tient à jour la liste des médias qu'un contenu affiche.
+
+Certaines informations ne sont le contenu d'aucune page, mais apparaissent sur toutes : le nom du club dans l'onglet du navigateur, le logo du header, l'accroche et les coordonnées du pied de page, les mentions légales. Elles sont réunies dans les **Réglages du site** (`/dashboard/settings`), que les administrateurs modifient sans toucher au code ni redéployer.
+
+## Une seule ligne en base
+
+Les réglages tiennent dans une table qui n'a qu'une ligne, d'identifiant fixe `"site"` :
+
+```prisma
+// prisma/schema.prisma (extrait)
+model SiteSettings {
+  /// Identifiant fixe : « site ».
+  id            String   @id @default("site")
+  /// Libellé court : en-tête, onglet, pied de page (copyright), texte
+  /// alternatif du logo.
+  shortTitle    String   @default("AKFC")
+  // …
+  /// Coordonnées PUBLIQUES (page « Nous contacter », Réglages du site) : e-mail du club.
+  contactEmail       String? @default("contact@akfc.fr")
+  // …
+}
+```
+
+Une ligne avec des colonnes typées, plutôt qu'une table clé / valeur : chaque réglage a son type (texte, entier, JSON), sa valeur par défaut, et le client Prisma les connaît tous. Une faute de frappe dans un nom de réglage est une erreur de compilation, pas une valeur silencieusement absente.
+
+Chaque écriture est un `upsert` sur cet identifiant. La ligne est donc créée au premier enregistrement, et aucune étape d'installation n'a besoin de la préparer :
+
+```ts
+// packages/backend/src/modules/siteSettings/router.ts (extrait)
+await ctx.prisma.siteSettings.upsert({
+  where: { id: SETTINGS_ID },
+  create: { id: SETTINGS_ID, ...data },
+  update: data,
+});
+```
+
+La lecture (`siteSettings.get`) est **publique** : le header, l'onglet et les e-mails en ont besoin, y compris pour un visiteur anonyme. Toutes les écritures commencent par `assertAdmin`, qui vérifie l'appartenance au groupe Administrateurs.
+
+## Ce qui va en base, ce qui reste dans l'environnement
+
+Toute valeur de configuration ne peut pas devenir un réglage. La frontière suit une question simple : la changer depuis le tableau de bord peut-elle casser l'application ?
+
+<DocsTable columnsJson='["Dans les Réglages (base)","Dans l’environnement (.env)"]' rowsJson='[["Titre court et titre long, accroche","APP_SHORT_NAME : la racine du stockage, sous laquelle vivent tous les fichiers"],["Logo","DATABASE_URL, identifiants SMTP, clés R2"],["Coordonnées publiques (e-mail, téléphones, adresse)","L’adresse publique du site, liée au DNS et aux liens des e-mails"],["Informations légales, durées de conservation","Les variables NEXT_PUBLIC_*, figées au build"]]' />
+
+`APP_SHORT_NAME` montre pourquoi la distinction compte. Cette variable vaut `AKFC`, comme le titre court, mais elle sert de préfixe à la clé de chaque fichier stocké (`AKFC/courses/…`). La changer rendrait tous les fichiers introuvables. Le titre court, lui, n'est qu'un libellé : `shortTitle` vit en base, et les deux valeurs peuvent diverger sans conséquence.
+
+## Toujours une valeur
+
+Une base neuve n'a pas encore de ligne `site`, et le site doit s'afficher quand même. Chaque lecteur prévoit donc une valeur de repli, et une base injoignable ne fait pas tomber la page :
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+const settings = await prisma.siteSettings
+  .findUnique({ where: { id: "site" }, select: { shortTitle: true, longTitle: true, tagline: true } })
+  .catch(() => null);
+const shortTitle = settings?.shortTitle?.trim() || "AKFC";
+```
+
+`|| "AKFC"` couvre trois cas d'un coup : pas de ligne, colonne vide, et erreur de base (le `catch` rend `null`). Le pied de page, rendu sur toutes les pages, suit la même règle : un réglage absent fait disparaître son bloc, jamais la page.
+
+## Qui lit quoi
+
+<DocsTable columnsJson='["Réglage","Où il apparaît"]' rowsJson='[["shortTitle","Titre de l’onglet (« Page · AKFC »), header, pied de page, expéditeur et objet des e-mails"],["longTitle","Titre des aperçus de liens (Open Graph), e-mail de bienvenue"],["tagline","Pied de page ; description du site pour les moteurs de recherche et les aperçus"],["contactEmail, contactPhones, contactAddress","Page « Nous contacter » et pied de page"],["legalName, legalRna, legalSiret, hébergeur…","Pages « Mentions légales » et « Politique de confidentialité » ; RNA et SIRET dans le pied de page"],["supportEmail","E-mail de bienvenue, quand aucune adresse de réponse n’est configurée"]]' />
+
+Le titre de l'onglet passe par le gabarit de métadonnées de Next : `` title: { default: shortTitle, template: `%s · ${shortTitle}` } ``. Une page qui déclare `title: "L'association"` s'affiche « L'association · AKFC » sans connaître le nom du club.
+
+Le pied de page lit ses coordonnées dans la même ligne que la page « Nous contacter » :
+
+```tsx
+// apps/web/src/features/app-shell/Footer.tsx (extrait)
+const tagline = settings?.tagline?.trim() ?? "";
+const address = (settings?.contactAddress ?? "")
+  .split("\n")
+  .map((line) => line.trim())
+  .filter(Boolean);
+// Seuls les numéros joignables en appel : le pied de page propose un lien `tel:`.
+const phones = parseSitePhones(settings?.contactPhones).filter((p) => p.call);
+```
+
+Une coordonnée modifiée dans les Réglages change donc partout à la fois. Seuls les réseaux sociaux et les horaires de repli restent dans un fichier (`clubInfo.ts`), faute de réglage correspondant.
+
+## Coordonnées publiques et coordonnées légales
+
+Les réglages distinguent deux jeux de coordonnées. Les **coordonnées publiques** (`contactEmail`, `contactPhones`, `contactAddress`) disent comment joindre le club : l'adresse des cours, le téléphone d'un instructeur, un numéro WhatsApp. Les **coordonnées légales** (`legalAddress`, `legalPhone`, `legalEmail`) sont celles de l'association en tant qu'éditeur du site : son siège social, tel qu'il figure dans ses statuts. Les deux peuvent différer, et seules les secondes ont leur place dans les mentions légales.
+
+Les téléphones sont une liste, stockée en JSON et décrite par un schéma Zod partagé entre le formulaire et le backend :
+
+```ts
+// packages/contracts/src/siteContact/siteContact.schema.ts (extrait)
+export const sitePhoneSchema = z
+  .object({
+    /** Libellé facultatif : « Bureau », « Sifu … », « Président »… */
+    label: z.string().trim().max(60).default(""),
+    number: z.string().trim().regex(PHONE_RE, "Numéro de téléphone invalide"),
+    /** Joignable en appel. */
+    call: z.boolean(),
+    /** Joignable sur WhatsApp. */
+    whatsapp: z.boolean(),
+  })
+  .refine((p) => p.call || p.whatsapp, "Cochez au moins « Appel » ou « WhatsApp »");
+```
+
+À l'écriture, le schéma refuse une liste invalide. À la lecture, `parseSitePhones` valide chaque numéro séparément et écarte ceux qui ne passent pas : une entrée abîmée ne fait pas disparaître les autres. Les liens d'appel et WhatsApp sont construits au format international (`tel:+33…`, `wa.me/33…`) par `telHref` et `whatsappHref`, quel que soit le format saisi.
+
+## Le logo, hors du finder
+
+Le logo n'est pas un média de la bibliothèque. Il n'a pas de ligne `MediaAsset` et n'apparaît pas dans le finder. Il occupe une clé réservée du stockage, en dehors de la racine de l'application :
+
+```ts
+// packages/backend/src/modules/siteSettings/services/siteLogo.service.ts (extrait)
+export const SITE_LOGO_KEY = "system/logo.svg";
+```
+
+Ce choix le met à l'abri de tout ce qui gère les médias : il ne peut être ni déplacé, ni mis à la corbeille, ni dépublié par erreur, et la route publique des médias n'a pas à savoir qu'il existe. Le formulaire l'envoie en base64 dans la procédure `uploadLogo` (un SVG de 512 Ko au plus), qui l'écrit sous cette clé et pose `logoKey`. « Rétablir le logo embarqué » efface `logoKey`, et tous les lecteurs retombent sur le fichier embarqué `/AKFC_logo.svg`.
+
+Le logo est servi par la route `/api/media/site-logo`, sous la même origine que le site :
+
+```ts
+// apps/web/src/app/api/media/site-logo/route.ts (extrait)
+// Sans `?v=`, l'URL ne change pas avec le logo : cache court.
+const versioned = req.nextUrl.searchParams.has("v");
+return new NextResponse(svg, {
+  status: 200,
+  headers: {
+    "Content-Type": "image/svg+xml",
+    "Cache-Control": versioned
+      ? "public, max-age=31536000, immutable"
+      : "public, max-age=300",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+  },
+});
+```
+
+Les lecteurs ajoutent `?v=` suivi de la date de dernière modification des réglages. L'URL change avec chaque nouveau logo, et la réponse peut donc être mise en cache sans limite : chaque navigateur ne la demande qu'une fois par version.
+
+Un SVG est un document qui peut contenir du script. Affiché par une balise `<img>`, il n'en exécute jamais. Ouvert directement à son adresse, il est servi avec une politique de sécurité `sandbox` et `nosniff`, qui empêchent toute exécution et toute réinterprétation du type.
+
+<Callout type="info">
+Le header est un composant client, mais il reçoit l'URL du logo et le titre court du layout serveur, en valeurs initiales. Le logo est donc présent dès le premier affichage, sans requête supplémentaire ni changement d'image une fois la page chargée.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où vivent les réglages ?","Dans SiteSettings, une ligne unique d’identifiant « site », créée par le premier upsert."],["Qui peut les modifier ?","Les administrateurs (assertAdmin) ; la lecture est publique."],["Qu’est-ce qui reste dans le .env ?","Ce qui peut casser l’application : racine du stockage, base, SMTP, clés, URL du site, variables de build."],["Que se passe-t-il sans réglage ?","Chaque lecteur a une valeur de repli ; une erreur de base ne fait tomber aucune page."],["D’où viennent les coordonnées du pied de page ?","Des mêmes colonnes que la page « Nous contacter »."],["Comment le logo est-il servi ?","Sous une clé réservée hors finder, par une route de même origine, mise en cache par version et protégée contre l’exécution de script."]]' />
+
+## À suivre
+
+Le site a son identité, ses pages et ses actualités. Les contenus les plus importants, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements, avec leurs horaires, leurs séances et leurs instructeurs.
+
+<Callout type="tip">
+**Partie suivante : le domaine du club.** Ce que représentent vraiment une discipline, un cours, un stage et un événement, comment ils se relient, et pourquoi un cours n'a pas de date.
+</Callout>

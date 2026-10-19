@@ -1853,12 +1853,12 @@ model SiteSettings {
   shortTitle    String   @default("AKFC")
   /// Libellé long, lu par le layout racine.
   longTitle     String   @default("Association de Kung Fu de Chambéry")
-  /// Accroche facultative : pied de page ; lue aussi par le layout racine.
+  /// Accroche facultative : pied de page, et description du site (layout racine).
   tagline       String?
   /// E-mail de contact facultatif, cité dans l'e-mail de bienvenue.
   supportEmail  String?
   /// ⚠ Sans effet : aucun code ne le lit (la langue de <html> est fixée à
-  /// « fr »), malgré l'aide de la page Réglages.
+  /// « fr ») et la page Réglages ne l'expose plus. Candidat à suppression.
   defaultLocale String   @default("fr")
   /// ⚠ Vestige de l'ancien logo, choisi au picker (MediaAsset). Plus renseigné :
   /// la page Réglages ne l'envoie plus, et chaque enregistrement le remet à
