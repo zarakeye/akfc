@@ -12,6 +12,7 @@ import { CodeExample } from "@features/docs/ui/CodeExample"
 import { CodeWalkthrough } from "@features/docs/ui/CodeWalkthrough"
 import { slugifyHeading } from "@features/docs/lib/slugifyHeading"
 import { ProjectArchitectureTree } from "@features/docs/ui/ProjectArchitectureTree"
+import { MdxCodeFence } from "@features/docs/ui/MdxCodeFence"
 import { ProjectArchitectureLayers } from "@features/docs/ui/ProjectArchitectureLayers"
 import { AuthFlowDiagram } from "@features/docs/diagrams/AuthFlowDiagram"
 import { TRPCFlowDiagram } from "@features/docs/diagrams/TRPCFlowDiagram"
@@ -132,12 +133,8 @@ export const mdxComponents: MDXComponents = {
       {...props}
     />
   ),
-  pre: (props) => (
-    <pre
-      className="my-6 overflow-x-auto rounded-xl bg-black p-4 text-sm text-white"
-      {...props}
-    />
-  ),
+  // Blocs « ``` » : coloration syntaxique et chemin du fichier en en-tête (MdxCodeFence).
+  pre: (props) => <MdxCodeFence>{props.children}</MdxCodeFence>,
   a: (props) => <a className="underline underline-offset-4" {...props} />,
 }
 

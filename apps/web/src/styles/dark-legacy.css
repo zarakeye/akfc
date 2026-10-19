@@ -56,3 +56,40 @@
 .dark .hover\:text-gray-900:hover,
 .dark .hover\:text-gray-800:hover,
 .dark .hover\:text-gray-700:hover { color: var(--foreground); }
+
+/* Textes mis en forme (@tailwindcss/typography, classe `prose`) : corps d'actualité, blocs de
+   texte du constructeur de pages, documents. Le plugin fixe ses couleurs pour un fond clair
+   (corps gris foncé) : en mode sombre, on bascule sur ses couleurs « invert », corps en blanc. */
+.dark .prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--tw-prose-invert-headings);
+  --tw-prose-lead: var(--tw-prose-invert-lead);
+  --tw-prose-links: var(--tw-prose-invert-links);
+  --tw-prose-bold: var(--tw-prose-invert-bold);
+  --tw-prose-counters: var(--tw-prose-invert-counters);
+  --tw-prose-bullets: var(--tw-prose-invert-bullets);
+  --tw-prose-hr: var(--tw-prose-invert-hr);
+  --tw-prose-quotes: var(--tw-prose-invert-quotes);
+  --tw-prose-quote-borders: var(--tw-prose-invert-quote-borders);
+  --tw-prose-captions: var(--tw-prose-invert-captions);
+  --tw-prose-kbd: var(--tw-prose-invert-kbd);
+  --tw-prose-kbd-shadows: var(--tw-prose-invert-kbd-shadows);
+  --tw-prose-code: var(--tw-prose-invert-code);
+  --tw-prose-pre-code: var(--tw-prose-invert-pre-code);
+  --tw-prose-pre-bg: var(--tw-prose-invert-pre-bg);
+  --tw-prose-th-borders: var(--tw-prose-invert-th-borders);
+  --tw-prose-td-borders: var(--tw-prose-invert-td-borders);
+}
+
+/* Autres gris foncés posés en dur, illisibles sur fond sombre */
+.dark .text-black,
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-neutral-700,
+.dark .text-zinc-900,
+.dark .text-zinc-800,
+.dark .text-zinc-700 { color: var(--foreground); }
+.dark .text-neutral-600,
+.dark .text-neutral-500,
+.dark .text-zinc-600,
+.dark .text-zinc-500 { color: var(--muted-foreground); }

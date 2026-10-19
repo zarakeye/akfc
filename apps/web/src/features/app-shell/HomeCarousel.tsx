@@ -459,7 +459,7 @@ export default function HomeCarousel(): JSX.Element | null {
             type="button"
             onClick={() => step(-1)}
             aria-label="Précédent"
-            className="absolute left-4 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65"
+            className="absolute left-4 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65 dark:bg-white/80 dark:text-black dark:hover:bg-white"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -467,7 +467,7 @@ export default function HomeCarousel(): JSX.Element | null {
             type="button"
             onClick={() => step(1)}
             aria-label="Suivant"
-            className="absolute right-4 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65"
+            className="absolute right-4 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65 dark:bg-white/80 dark:text-black dark:hover:bg-white"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -484,7 +484,7 @@ export default function HomeCarousel(): JSX.Element | null {
                 className={`h-2.5 w-2.5 rounded-full transition-colors ${
                   i === activeIndex
                     ? "bg-emerald-500"
-                    : "bg-gray-800 hover:bg-gray-600"
+                    : "bg-gray-800 hover:bg-gray-600 dark:bg-gray-300 dark:hover:bg-gray-100"
                 }`}
               />
             ))}
@@ -492,7 +492,7 @@ export default function HomeCarousel(): JSX.Element | null {
 
           {/* Toggle mode + play/pause */}
           <div className="mt-3 flex items-center justify-center gap-3">
-            <div className="inline-flex overflow-hidden rounded-full border border-black/10">
+            <div className="inline-flex overflow-hidden rounded-full border border-black/10 dark:border-white/20">
               <button
                 type="button"
                 onClick={() => changeMode("continu")}
@@ -501,7 +501,7 @@ export default function HomeCarousel(): JSX.Element | null {
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
                   autoMode === "continu"
                     ? "bg-emerald-600 text-white"
-                    : "bg-white/70 text-gray-700 hover:bg-white"
+                    : "bg-white/70 text-gray-700 hover:bg-white dark:bg-white/10"
                 }`}
               >
                 <InfinityIcon className="h-4 w-4" /> Continu
@@ -514,7 +514,7 @@ export default function HomeCarousel(): JSX.Element | null {
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
                   autoMode === "diapo"
                     ? "bg-emerald-600 text-white"
-                    : "bg-white/70 text-gray-700 hover:bg-white"
+                    : "bg-white/70 text-gray-700 hover:bg-white dark:bg-white/10"
                 }`}
               >
                 <GalleryHorizontalEnd className="h-4 w-4" /> Diapo
@@ -525,7 +525,7 @@ export default function HomeCarousel(): JSX.Element | null {
               type="button"
               onClick={() => setPlaying((p) => !p)}
               aria-label={playing ? "Mettre en pause" : "Reprendre le défilement"}
-              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-gray-700 backdrop-blur transition-colors hover:bg-white"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-gray-700 backdrop-blur transition-colors hover:bg-white dark:border-white/20 dark:bg-white/10"
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {playing ? "Pause" : "Lecture"}
