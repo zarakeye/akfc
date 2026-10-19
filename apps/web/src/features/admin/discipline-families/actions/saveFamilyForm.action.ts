@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from "@backend/prisma";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { Prisma } from "@prisma/client";
 import { saveFamilyFormSchema } from "@contracts/forms/saveFamilyForm.schema";
 
@@ -26,6 +27,9 @@ export const saveFamilyFormAction = async (
   prevState: SaveFamilyFormState,
   formData: FormData,
 ): Promise<SaveFamilyFormState> => {
+  // Point d'accès public : les droits se vérifient ici, avant toute lecture du formulaire.
+  if (!(await callerIsAdmin())) return { success: false, error: ADMIN_ONLY_MESSAGE };
+
   const parsed = saveFamilyFormSchema.safeParse({
     id: formData.get("id") ?? undefined,
     name: formData.get("name")?.toString() ?? "",

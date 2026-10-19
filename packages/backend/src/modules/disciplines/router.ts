@@ -150,6 +150,18 @@ const updateInput = z.object({
 /*                                  ROUTER                                    */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Disciplines visibles par l'appelant : toutes pour un administrateur, sinon les seules PUBLIÉES
+ * (date de publication renseignée et passée). Une discipline sans date est un brouillon, une date
+ * future une publication programmée : ni l'un ni l'autre ne doit sortir de l'API pour le public.
+ * Toutes les lectures du routeur passent par ce filtre — y compris celles qui servent surtout le
+ * tableau de bord, puisqu'une procédure publique peut être appelée par n'importe qui.
+ */
+function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null } | null }): Prisma.DisciplineWhereInput {
+  if (ctx.sessionClient?.user?.isAdmin) return {};
+  return { publicationDate: { not: null, lte: new Date() } };
+}
+
 export const disciplineRouter = router({
   /**
    * Liste toutes les disciplines d'une catégorie donnée.
@@ -160,17 +172,19 @@ export const disciplineRouter = router({
     .input(z.object({ categoryId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.discipline.findMany({
-        where: { categoryId: input.categoryId },
+        where: { categoryId: input.categoryId, ...visibleTo(ctx) },
         orderBy: { name: "asc" },
       });
     }),
 
   /**
-   * Liste toutes les disciplines toutes catégories confondues.
-   * Utile pour les vues d'administration synthétiques.
+   * Liste des disciplines toutes catégories confondues : TOUTES pour un
+   * administrateur (vues d'administration, brouillons compris), les seules
+   * PUBLIÉES pour les autres (sélecteurs des formulaires membres).
    */
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.discipline.findMany({
+      where: visibleTo(ctx),
       orderBy: [{ categoryId: "asc" }, { name: "asc" }],
     });
   }),
@@ -193,9 +207,8 @@ export const disciplineRouter = router({
    * non-admin ne peut pas récupérer les brouillons via cette query.
    */
   getAllForMenu: publicProcedure.query(async ({ ctx }) => {
-    const isAdmin = ctx.sessionClient?.user?.isAdmin ?? false;
     return ctx.prisma.discipline.findMany({
-      where: isAdmin ? {} : { publicationDate: { not: null, lte: new Date() } },
+      where: visibleTo(ctx),
       orderBy: [{ categoryId: "asc" }, { name: "asc" }],
     });
   }),
@@ -203,8 +216,9 @@ export const disciplineRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const discipline = await ctx.prisma.discipline.findUnique({
-        where: { id: input.id },
+      // Brouillon : introuvable pour qui n'est pas administrateur (404, comme la page publique).
+      const discipline = await ctx.prisma.discipline.findFirst({
+        where: { id: input.id, ...visibleTo(ctx) },
       });
 
       if (!discipline) {
@@ -223,8 +237,8 @@ export const disciplineRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: slugSchema }))
     .query(async ({ ctx, input }) => {
-      const discipline = await ctx.prisma.discipline.findUnique({
-        where: { slug: input.slug },
+      const discipline = await ctx.prisma.discipline.findFirst({
+        where: { slug: input.slug, ...visibleTo(ctx) },
       });
 
       if (!discipline) {

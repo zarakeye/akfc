@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from "@backend/prisma";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { updateGalleryFormSchema } from "@contracts/forms/updateGalleryForm.schema";
 
 export type UpdateGalleryFormState = {
@@ -22,6 +23,9 @@ export const updateGalleryFormAction = async (
   prevState: UpdateGalleryFormState,
   formData: FormData
 ): Promise<UpdateGalleryFormState> => {
+  // Point d'accès public : les droits se vérifient ici, avant toute lecture du formulaire.
+  if (!(await callerIsAdmin())) return { success: false, error: ADMIN_ONLY_MESSAGE };
+
   const str = (k: string) => {
     const v = formData.get(k);
     return v == null ? "" : String(v);

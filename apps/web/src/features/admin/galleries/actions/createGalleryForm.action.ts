@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from "@backend/prisma";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { createGalleryFormSchema } from "@contracts/forms/createGalleryForm.schema";
 
 export type CreateGalleryFormState = {
@@ -29,6 +30,9 @@ export const createGalleryFormAction = async (
   prevState: CreateGalleryFormState,
   formData: FormData,
 ): Promise<CreateGalleryFormState> => {
+  // Point d'accès public : les droits se vérifient ici, avant toute lecture du formulaire.
+  if (!(await callerIsAdmin())) return { success: false, error: ADMIN_ONLY_MESSAGE };
+
   // Métadonnées
   const str = (k: string) => {
     const v = formData.get(k);

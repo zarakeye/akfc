@@ -72,27 +72,40 @@ Chaque requête construit un **contexte** (`createTRPCContext`) que toutes les p
 
 Le chapitre sur l'authentification détaille d'où vient la session et ce que signifie « administrateur ». Ici, retenons que la garde est **déclarée sur la procédure** : une procédure d'administration ne peut pas oublier de vérifier les droits, puisque la vérification fait partie de sa définition.
 
-Un même routeur mélange souvent les niveaux. Celui des disciplines expose ses lectures publiquement (le site public en a besoin) et réserve ses écritures aux administrateurs. Les lectures publiques filtrent les brouillons :
+Un même routeur mélange souvent les niveaux. Celui des disciplines expose ses lectures publiquement (le site public en a besoin) et réserve ses écritures aux administrateurs.
+
+### Le piège des lectures publiques : l'histoire des brouillons
+
+Une discipline n'est publique qu'à partir de sa date de publication : sans date, c'est un brouillon ; avec une date future, une publication programmée. Les administrateurs préparent ainsi une nouvelle discipline à leur rythme, et la page publique `/disciplines/[slug]` répond 404 tant qu'elle n'est pas publiée.
+
+Pendant longtemps, pourtant, les brouillons n'étaient pas secrets. Les lectures `discipline.getAll` et `discipline.getById` étaient des `publicProcedure` sans filtre : le tableau de bord en avait besoin pour lister et éditer toutes les disciplines, et seuls les écrans d'administration les appelaient. La page publique, elle, filtrait correctement. Tout semblait juste.
+
+Mais une procédure publique n'est pas publique « pour les écrans qui l'utilisent » : elle l'est pour quiconque connaît son nom. N'importe quel visiteur pouvait ouvrir `/api/trpc/discipline.getAll` dans son navigateur et lire la liste complète, brouillons compris, avec leur nom, leur description et leur date de publication prévue. Aucune page n'affichait ces informations ; l'API les donnait.
+
+La règle de visibilité vit désormais **dans les procédures**, en un seul endroit :
 
 ```ts
 // packages/backend/src/modules/disciplines/router.ts (extrait)
-getAllPublished: publicProcedure.query(async ({ ctx }) => {
-  return ctx.prisma.discipline.findMany({
-    where: { publicationDate: { not: null, lte: new Date() } },
-    orderBy: [{ categoryId: "asc" }, { name: "asc" }],
-  });
-}),
+function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null } | null }): Prisma.DisciplineWhereInput {
+  if (ctx.sessionClient?.user?.isAdmin) return {};
+  return { publicationDate: { not: null, lte: new Date() } };
+}
 
-getAllForMenu: publicProcedure.query(async ({ ctx }) => {
-  const isAdmin = ctx.sessionClient?.user?.isAdmin ?? false;
+getAll: publicProcedure.query(async ({ ctx }) => {
   return ctx.prisma.discipline.findMany({
-    where: isAdmin ? {} : { publicationDate: { not: null, lte: new Date() } },
-    // …
+    where: visibleTo(ctx),
+    orderBy: [{ categoryId: "asc" }, { name: "asc" }],
   });
 }),
 ```
 
-Une discipline n'est publique qu'à partir de sa date de publication : sans date, elle reste un brouillon ; avec une date future, sa publication est programmée. Le menu montre tout aux administrateurs, qui peuvent ainsi vérifier un brouillon dans son contexte.
+Toutes les lectures du routeur (`getAll`, `getAllByCategory`, `getAllForMenu`, `getById`, `getBySlug`) appliquent ce filtre. Un administrateur voit tout ; un membre ou un visiteur ne voit que ce qui est publié, et un brouillon demandé par son identifiant répond « introuvable », exactement comme la page publique.
+
+Les stages et les événements résolvent le même problème autrement : une lecture publique filtrée (`seminar.getAll`) et une lecture séparée réservée aux administrateurs (`seminar.getAllAdmin`). Pour les disciplines, le filtre selon l'appelant a été préféré parce que la même liste sert aussi aux formulaires des membres (le dépôt de fichiers propose les disciplines) : ils reçoivent désormais les seules disciplines publiées, sans qu'aucun écran ait eu à changer.
+
+<Callout type="warning">
+Une `publicProcedure` est une URL publique. La question à se poser n'est pas « quelle page l'utilise ? » mais « que verrait un inconnu qui l'appelle directement ? ». Ce qui ne doit pas sortir est filtré **dans la procédure** ; masquer une information dans l'interface ne la protège pas.
+</Callout>
 
 ## Anatomie d'une procédure
 

@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from "@backend/prisma";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
 
 export type SaveCategoryFormState = {
@@ -19,6 +20,9 @@ export const saveCategoryFormAction = async (
   prevState: SaveCategoryFormState,
   formData: FormData,
 ): Promise<SaveCategoryFormState> => {
+  // Point d'accès public : les droits se vérifient ici, avant toute lecture du formulaire.
+  if (!(await callerIsAdmin())) return { success: false, error: ADMIN_ONLY_MESSAGE };
+
   // `id` absent en création → formData.get renvoie null → undefined → optional.
   const parsed = saveCategoryFormSchema.safeParse({
     id: formData.get("id") ?? undefined,

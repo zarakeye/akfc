@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { JSX, useActionState, useState, useEffect, useRef } from "react";
+import { JSX, startTransition, useActionState, useState, useEffect, useRef } from "react";
 import {
   updateGalleryFormAction,
   type UpdateGalleryFormState,
@@ -205,9 +205,15 @@ export function UpdateGalleryForm({
     <Form {...form}>
       <form
         action={formAction}
-        onSubmit={async (e) => {
-          const valid = await form.trigger();
-          if (!valid) e.preventDefault();
+        onSubmit={(e) => {
+          // La validation du client est asynchrone : on suspend TOUJOURS l'envoi (un
+          // preventDefault après un await arriverait trop tard, l'action serait déjà partie),
+          // puis on le relance si le formulaire est valide.
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          void form.trigger().then((valid) => {
+            if (valid) startTransition(() => formAction(formData));
+          });
         }}
         className="space-y-4 w-80"
       >

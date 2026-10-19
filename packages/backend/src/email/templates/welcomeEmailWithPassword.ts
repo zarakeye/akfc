@@ -1,4 +1,3 @@
-'use server';
 
 import { prisma } from "@backend/prisma";
 import { getMailTransport, mailFrom, mailReplyTo, siteBaseUrl } from "@backend/email/mailer";

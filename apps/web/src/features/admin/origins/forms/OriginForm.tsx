@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { JSX, useActionState, useEffect, useState } from "react";
+import { JSX, startTransition, useActionState, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Origin } from "@prisma/client";
 
@@ -93,8 +93,15 @@ export function OriginForm({ initial }: { initial?: Origin }): JSX.Element {
     <Form {...form}>
       <form
         action={formAction}
-        onSubmit={async (e) => {
-          if (!(await form.trigger())) e.preventDefault();
+        onSubmit={(e) => {
+          // La validation du client est asynchrone : on suspend TOUJOURS l'envoi (un
+          // preventDefault après un await arriverait trop tard, l'action serait déjà partie),
+          // puis on le relance si le formulaire est valide.
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          void form.trigger().then((valid) => {
+            if (valid) startTransition(() => formAction(formData));
+          });
         }}
         className="max-w-xl space-y-4"
       >
