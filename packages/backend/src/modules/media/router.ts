@@ -14,6 +14,7 @@
  * pas par le fullPath DB. C'est ce que le frontend attend depuis Phase 1.
  */
 
+import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 import { z } from 'zod';
 import { router, protectedProcedure } from '@backend/trpc';
 import type { ResolvedMedia } from '@contracts/page';
@@ -492,6 +493,10 @@ export const mediaRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // Même droit que la mise à la corbeille : un administrateur partout, un membre
+      // seulement dans l'espace d'un groupe dont il est éditeur.
+      await assertCanTrashPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
+
       const result = await ctx.prisma.mediaAsset.updateMany({
         where: {
           appRoot: input.appRoot,
@@ -588,6 +593,14 @@ export const mediaRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // Valider ou remettre en attente : un administrateur partout, un membre seulement
+      // dans l'espace d'un groupe dont il est éditeur (même règle que la corbeille).
+      await assertCanTrashPaths({
+        prisma: ctx.prisma,
+        userId: ctx.sessionClient.user.id,
+        paths: input.sources.map((s) => s.path),
+      });
+
       // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page affiche.
       // Le move avait sa garde (`assertOperationsDontUnpublish...`) ; ce
       // chemin-ci doit avoir la sienne, sinon publier par la nouvelle voie

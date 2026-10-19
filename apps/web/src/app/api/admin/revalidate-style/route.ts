@@ -25,6 +25,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!session) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+  if (!session.user?.isAdmin) {
+    return NextResponse.json({ error: "Réservé aux administrateurs" }, { status: 403 });
+  }
 
   revalidatePath("/", "layout");
   return NextResponse.json({ revalidated: true });

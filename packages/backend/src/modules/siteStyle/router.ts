@@ -1,13 +1,17 @@
 import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
+
+/** Le style vaut pour le site entier : seul un administrateur l'enregistre. */
+const adminProcedure = protectedProcedure.use(isAdmin);
 
 /**
  * Réglage typographique du rendu des blocs.
  *
  * Une seule ligne, `id = 1`. La lecture est PUBLIQUE parce que le layout
  * racine l'injecte pour tout visiteur : le réglage gouverne l'apparence du
- * site, pas des données privées. L'écriture reste protégée.
+ * site, pas des données privées. L'écriture est réservée aux administrateurs.
  */
 
 /**
@@ -39,7 +43,7 @@ export const siteStyleRouter = router({
    * le laboratoire envoie toujours le jeu complet, et une fusion laisserait
    * traîner des variables retirées d'une version à l'autre.
    */
-  save: protectedProcedure
+  save: adminProcedure
     .input(z.object({ variables: z.record(variableName, variableValue) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.siteStyle.upsert({
@@ -74,7 +78,7 @@ export const siteStyleRouter = router({
     };
   }),
 
-  saveLimits: protectedProcedure
+  saveLimits: adminProcedure
     .input(
       z.object({
         // Bornes larges mais réelles : elles empêchent surtout la saisie

@@ -173,10 +173,6 @@ html {
   padding: 0.5rem;
 }
 
-/* Damier blanc/gris derrière l'image */
-.cropper-container,
-
-
 /* Grille de cadrage plus grise */
 .reactEasyCrop_CropAreaGrid {
   border-color: rgba(128, 128, 128, 0.8) !important;
@@ -1380,6 +1376,13 @@ input[type="range"]::-moz-range-thumb {
      le total dépasse la largeur disponible. */
   --akfc-col-1: 1fr;
   --akfc-col-2: 1fr;
+
+  /* Ratio média / texte du média-texte (5/12 – 7/12), réglé au laboratoire. Le
+     bloc compose `--akfc-col-1` et `--akfc-col-2` à partir de ces deux-là :
+     sans valeur ici, une base sans réglage enregistré n'aurait pas de colonnes
+     au-delà de 62rem. */
+  --akfc-media-col: 5fr;
+  --akfc-text-col: 7fr;
 
   /* Blocs de collection : galerie, audio, documents. */
   --akfc-item-gap: 0.75rem;

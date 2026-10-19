@@ -6,9 +6,10 @@ import { Moon, Sun } from "lucide-react";
 import { applyTheme, readTheme, subscribeTheme, type Theme } from "./theme";
 
 /**
- * Interrupteur clair / sombre. Il lit l'état directement sur <html> (store externe) : le
- * serveur ne connaît pas le choix du visiteur et rend « clair », le navigateur corrige
- * aussitôt, sans écart d'hydratation ni effet qui recopierait l'état.
+ * Interrupteur clair / sombre. Il lit l'état directement sur <html> (store externe), là où
+ * le layout a posé la classe `dark` d'après le cookie. Pendant l'hydratation, React utilise
+ * l'instantané serveur (« clair ») puis relit <html> : l'icône se corrige au premier rendu
+ * client, sans erreur d'hydratation ni effet qui recopierait l'état.
  *
  * `tone` : « onDark » pour un fond toujours noir (header), « auto » ailleurs.
  */

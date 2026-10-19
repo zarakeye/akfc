@@ -1,13 +1,14 @@
 import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 
 const HOME_ID = "home";
 
 /**
  * Hero de la page d'accueil (titre + corps). Lecture publique (la page / le
- * consomme) ; écriture protégée — même statut que sitePage.save / siteStyle.save
- * (pas de permission nommée).
+ * consomme) ; écriture réservée aux administrateurs, comme sitePage.save et
+ * siteStyle.save.
  */
 export const homeHeroRouter = router({
   get: publicProcedure.query(({ ctx }) =>
@@ -15,6 +16,7 @@ export const homeHeroRouter = router({
   ),
 
   save: protectedProcedure
+    .use(isAdmin)
     .input(
       z.object({
         title: z.string().trim().min(1).max(120),

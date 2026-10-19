@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
@@ -37,11 +38,11 @@ export const sitePageRouter = router({
   /**
    * Crée ou remplace une page.
    *
-   * `protectedProcedure` sans permission nommée : il n'existe pas de
-   * « manage_site_pages », et une permission absente de la base refuserait
-   * tout le monde. `siteStyle.save` a le même statut — précédent suivi ici.
+   * Réservé aux administrateurs (`isAdmin`) : une page de contenu est
+   * publique, la modifier revient à parler au nom du club.
    */
   save: protectedProcedure
+    .use(isAdmin)
     .input(
       z.object({
         slug: sitePageSlug,

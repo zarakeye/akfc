@@ -216,6 +216,10 @@ export function BlockStyleLab(): JSX.Element {
   if (saved.data && saved.data !== seededFrom) {
     setSeededFrom(saved.data);
     setValues((current) => applyStoredValues(current, saved.data));
+    // Le ratio enregistré reprend sa position sur le curseur (sinon « Appliquer » le
+    // ramènerait au préréglage par défaut sans qu'on y ait touché).
+    const storedRatio = RATIOS.findIndex((r) => r.media === saved.data?.["--akfc-media-col"]);
+    if (storedRatio !== -1) setRatioIndex(storedRatio);
   }
 
   // Les propriétés personnalisées ne sont pas dans le type CSSProperties de
