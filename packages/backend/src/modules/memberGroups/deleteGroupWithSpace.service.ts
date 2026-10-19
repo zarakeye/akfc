@@ -49,7 +49,7 @@ export async function deleteGroupWithSpace(params: {
     select: { fullPath: true },
   });
   const spacePaths = new Set<string>(
-    registered.map((r) => r.fullPath).filter((fp) => fp.includes("/groups/")),
+    registered.map((r) => r.fullPath).filter((fp) => fp.includes("/collaborative-group-spaces/")),
   );
   if (spacePaths.size === 0 && group.isCollaborative) {
     try {

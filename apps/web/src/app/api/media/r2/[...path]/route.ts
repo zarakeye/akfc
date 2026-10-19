@@ -5,6 +5,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getR2Client, getR2Bucket } from '@backend/modules/storage/adapters/r2/client';
 import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
 import { getSessionFromRequest } from '@backend/modules/auth/getSessionFromRequest';
+import { canReadStorageKey } from '@backend/modules/media/services/canReadStorageKey.service';
+import { prisma } from '@backend/prisma';
 
 /**
  * Proxy de preview pour les fichiers hébergés sur R2.
@@ -35,7 +37,10 @@ import { getSessionFromRequest } from '@backend/modules/auth/getSessionFromReque
  *
  * ─── Sécurité ─────────────────────────────────────────────────────────────
  *
- *   - Session admin requise (sinon 401)
+ *   - Session requise (sinon 401)
+ *   - Droit de lecture vérifié par `canReadStorageKey` : un admin lit tout, un membre lit
+ *     l'espace de ses groupes collaboratifs et son espace personnel. Sinon 404 : l'existence
+ *     d'un fichier n'est pas révélée.
  *   - Path validé : doit commencer par l'appRoot pour empêcher l'accès
  *     à des paths hors application
  *   - Pas de fallback "public" : tout le R2 d'AKFC est privé par défaut
@@ -74,6 +79,10 @@ export async function GET(
   }
   if (r2Key.includes('..')) {
     return new NextResponse('Forbidden: invalid path', { status: 403 });
+  }
+  const userId = session.user?.id;
+  if (!userId || !(await canReadStorageKey({ prisma, userId, key: r2Key }))) {
+    return new NextResponse('Not found', { status: 404 });
   }
 
   // ─── Sign GET URL ────────────────────────────────────────────────────

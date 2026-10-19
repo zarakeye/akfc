@@ -40,16 +40,17 @@ export const createR2UploadAuthorizationSchema = z.object({
   originalFileName: z.string().min(1).max(255),
 
   /**
-   * MIME type du fichier qui sera uploadé. Sera **verrouillé dans la
-   * signature** du presigned POST — toute tentative d'upload avec un
-   * Content-Type différent sera rejetée par R2.
+   * MIME type du fichier qui sera envoyé. Il est signé dans l'URL d'envoi
+   * (PUT présigné) : un envoi avec un autre Content-Type est refusé par le
+   * stockage.
    */
   mimeType: z.string().min(1),
 
   /**
-   * Borne supérieure de taille en octets. Bornée par
-   * `HARD_MAX_UPLOAD_BYTES` (500 MiB). R2 rejettera tout upload dont
-   * `Content-Length` dépasse cette valeur.
+   * Taille annoncée, bornée par `HARD_MAX_UPLOAD_BYTES` (500 MiB). L'URL
+   * présignée ne fixe pas la taille : c'est l'enregistrement
+   * (`registerR2Upload`) qui vérifie la taille réelle et supprime un objet
+   * refusé.
    */
   maxBytes: z
     .number()

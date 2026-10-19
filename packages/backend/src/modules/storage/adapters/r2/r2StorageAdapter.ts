@@ -354,14 +354,28 @@ export function createR2StorageAdapter(
       const actualBytes = head.ContentLength ?? 0;
       const actualMime = head.ContentType ?? "";
 
+      // Un objet refusé ici n'est référencé par aucune ligne MediaAsset : on le retire du
+      // bucket pour ne pas laisser de fichier orphelin. S'il remplaçait un fichier déjà connu
+      // (écrasement confirmé), on le laisse : la ligne existante pointe toujours vers lui.
+      const reject = async (message: string): Promise<never> => {
+        const known = await prisma.mediaAsset.findUnique({ where: { fullPath: input.path }, select: { id: true } });
+        if (!known) await s3.send(new DeleteObjectCommand({ Bucket, Key: input.path })).catch(() => undefined);
+        throw new Error(message);
+      };
+
+      // L'URL signée fixe la clé, le type et l'expiration, pas la taille : la limite dure est
+      // donc vérifiée ici, sur la taille réelle lue chez le stockage.
+      if (actualBytes > HARD_MAX_UPLOAD_BYTES) {
+        await reject(`Fichier trop volumineux (${actualBytes} octets, maximum ${HARD_MAX_UPLOAD_BYTES}).`);
+      }
       if (actualBytes !== input.expectedBytes) {
-        throw new Error(
+        await reject(
           `Taille incohérente sur ${input.path} : ` +
             `attendu ${input.expectedBytes}, reçu ${actualBytes}.`
         );
       }
       if (actualMime !== input.expectedMimeType) {
-        throw new Error(
+        await reject(
           `MIME type incohérent sur ${input.path} : ` +
             `attendu "${input.expectedMimeType}", reçu "${actualMime}".`
         );
@@ -404,7 +418,7 @@ export function createR2StorageAdapter(
         case "perso":
           // Espace personnel : photos seulement (aussi contrôlé à la demande d'envoi).
           if (!actualMime.startsWith("image/")) {
-            throw new Error("Le dossier perso n'accepte que des images.");
+            await reject("Le dossier perso n'accepte que des images.");
           }
           break;
         default:

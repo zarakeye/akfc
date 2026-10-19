@@ -5,13 +5,13 @@ import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolve
 
 /**
  * Extrait le groupId d'un chemin (logique ou physique) situé dans l'espace d'un
- * groupe collaboratif : `.../groups/${slug}-${groupId}/...`. Le groupId (cuid)
+ * groupe collaboratif : `.../collaborative-group-spaces/${slug}-${groupId}/...`. Le groupId (cuid)
  * ne contient pas de tiret, il suit donc le DERNIER tiret du segment.
  * Renvoie null si le chemin n'est pas dans un espace de groupe.
  */
 export function groupIdFromLogicalPath(path: string): string | null {
   const parts = path.split("/").filter(Boolean);
-  const i = parts.indexOf("groups");
+  const i = parts.indexOf("collaborative-group-spaces");
   if (i === -1 || i + 1 >= parts.length) return null;
   const segment = parts[i + 1];
   const dash = segment.lastIndexOf("-");
