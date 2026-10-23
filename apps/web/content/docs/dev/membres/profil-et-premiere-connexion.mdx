@@ -1,0 +1,164 @@
+---
+title: "Le profil et la première connexion"
+description: "Un compte créé par le club avec un mot de passe provisoire, une première connexion qui guide le membre jusqu'à son propre mot de passe, un profil que seul son titulaire modifie, et un avatar envoyé et vérifié à part."
+section: "Membres et collaboration"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les disciplines, les cours, les stages et les événements sont les contenus du club, chacun avec sa façon de porter le temps. Les membres, eux, ont leur propre espace sur le site.
+
+Cette partie suit un membre à travers les fonctions qui lui sont réservées. Ce chapitre commence par son arrivée : la création de son compte, sa première connexion, son profil et son avatar.
+
+## Un compte créé par le club
+
+Le site n'a pas d'inscription libre. Un membre s'inscrit au club auprès de la MJC, et c'est un administrateur qui lui ouvre un compte, avec au moins un groupe :
+
+```ts
+// packages/backend/src/modules/users/router.ts (extrait)
+const password = generateStrongPassword();
+const hash = await bcrypt.hash(password, 12);
+
+const user = await ctx.prisma.user.create({
+  data: {
+    email: input.email,
+    password: hash,
+    memberGroupMemberships: {
+      create: groupIds.map((id) => ({
+        group: { connect: { id } },
+        access: "EDITOR" as const,
+      })),
+    },
+  },
+  omit: { password: true },
+});
+```
+
+Le mot de passe est **généré par le serveur** (12 caractères, chiffres et symboles compris) et envoyé au membre par e-mail. L'administrateur ne le voit jamais et ne peut pas le choisir à la place du membre. Seule son empreinte bcrypt est enregistrée, et `omit` la retire de la ligne renvoyée au navigateur de l'administrateur.
+
+Le compte et ses groupes sont créés par une seule écriture imbriquée : un compte sans groupe ne peut pas exister, même un instant. L'e-mail part **après** la création. Si l'envoi échoue, l'erreur est journalisée mais le compte reste : le membre peut alors obtenir un mot de passe par « Mot de passe oublié ». Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail, puisque leur adresse ne mène nulle part.
+
+## La première connexion
+
+Un compte naît avec `isFirstLogin` à vrai. Ce drapeau a un sens précis : **le mot de passe provisoire est encore actif**. Tant qu'il l'est, le membre est ramené sur la page de son profil, où il trouve deux choses à faire : compléter ses informations, et remplacer le mot de passe reçu par e-mail.
+
+La redirection est faite par un petit composant client, placé dans le layout du site public :
+
+```tsx
+// apps/web/src/features/auth/FirstLoginRedirect.tsx (extrait)
+useEffect(() => {
+  if (!user?.isFirstLogin) return;
+  if (pathname === "/profil/edit") return;
+  router.replace("/profil/edit");
+}, [user?.isFirstLogin, pathname, router]);
+```
+
+Il lit la session dans le store client, et ne redirige jamais depuis la page de destination elle-même : aucune boucle n'est possible. `replace` plutôt que `push` : le bouton « précédent » ne ramène pas sur la page dont le membre vient d'être redirigé.
+
+Le drapeau ne retombe qu'à un seul moment : quand le membre choisit son mot de passe.
+
+```ts
+// packages/backend/src/modules/auth/router.ts (extrait)
+await tx.user.update({
+  where: { id: userId },
+  // Le mot de passe provisoire de la création est remplacé : la première
+  // connexion est terminée (FirstLoginRedirect cesse de rediriger).
+  data: { password: hashed, isFirstLogin: false },
+});
+```
+
+Un mot de passe provisoire reste lisible dans une boîte mail aussi longtemps que le message y est conservé. Le lier à la fin de la première connexion garantit qu'il cesse de servir dès que le membre a commencé à utiliser le site. La réinitialisation par e-mail lève aussi le drapeau, puisque le membre y choisit également son propre mot de passe.
+
+### Relire la session après une écriture
+
+Le store client contient la session lue au chargement de la page. Une mutation tRPC ou une server action modifie la base, mais pas ce store : après le changement de mot de passe, il porterait encore `isFirstLogin` à vrai, et le membre resterait bloqué sur sa page de profil. Le formulaire relit donc la session une fois l'écriture faite :
+
+```tsx
+// apps/web/src/features/auth/ChangePasswordForm.tsx (extrait)
+reset();
+setOkMsg("Mot de passe modifié. Les autres appareils ont été déconnectés.");
+// Première connexion : le serveur vient de lever `isFirstLogin`. La session du
+// store le porte encore ; la relire libère la navigation (FirstLoginRedirect).
+await useSessionStore.getState().fetchSession();
+```
+
+Le formulaire du profil fait de même : le header affiche ainsi tout de suite le nouveau nom. Tant que la première connexion n'est pas terminée, il reste sur la page après l'enregistrement, puisqu'il reste un mot de passe à choisir.
+
+<Callout type="info">
+Toute donnée de la session affichée par le client (nom, avatar, état de la première connexion) doit être rafraîchie dans le store après l'écriture qui la change. Le serveur a la bonne valeur ; c'est la copie du navigateur qui retarde.
+</Callout>
+
+## Le profil, scellé sur son titulaire
+
+Le formulaire du profil (prénom, nom, pseudo, présentation, téléphone, date de naissance) est envoyé par une **server action**. Elle ne reçoit aucun identifiant d'utilisateur : elle prend celui de la session.
+
+```ts
+// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
+const sessionClient = await getSessionFromRequest();
+const userId = sessionClient?.user?.id;
+
+if (!userId) {
+  return {
+    status: "error",
+    error: "Vous devez être connecté pour mettre à jour votre profil.",
+  };
+}
+```
+
+Une server action est un point d'accès public, que n'importe qui peut appeler avec les données de son choix. Si le formulaire envoyait l'identifiant du compte à modifier, il suffirait d'en changer la valeur pour modifier le profil d'un autre membre. En le lisant dans la session, l'action ne peut modifier qu'un seul profil : celui de la personne connectée.
+
+Les données sont validées par un schéma Zod partagé (`updateMeFormSchema`, dans `packages/contracts`), utilisé à la fois par le formulaire pour afficher les erreurs pendant la saisie, et par l'action, qui ne fait jamais confiance au navigateur. Le chapitre sur les formulaires détaille ce montage.
+
+## L'avatar, un envoi à part
+
+L'avatar ne passe pas par le formulaire du profil. Il suit le circuit des fichiers vu dans la partie « Stockage et médias » : le navigateur demande une autorisation d'envoi, envoie l'image directement au stockage, puis fait enregistrer le résultat.
+
+```ts
+// packages/backend/src/modules/avatar/avatar.service.ts (extrait)
+if (!path.startsWith(`${avatarFolder(appRoot, userId)}/`) || path.includes("..") || !isAvatarKey(path)) {
+  throw new Error("Chemin hors de l'espace avatar de l'utilisateur.");
+}
+const head = await getR2Client()
+  .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
+  .catch(() => null);
+if (!head) throw new Error("Avatar introuvable : l'envoi n'a pas abouti.");
+if (!(head.ContentType ?? "").startsWith("image/") || (head.ContentLength ?? 0) > AVATAR_MAX_BYTES) {
+  await removeAvatarFile(path);
+  throw new Error("Fichier d'avatar refusé.");
+}
+```
+
+L'enregistrement ne croit pas le navigateur sur parole. Le chemin reçu doit se trouver dans le dossier d'avatars **de l'utilisateur connecté**, dérivé de son identifiant par le serveur. Le fichier doit exister réellement, être une image, et ne pas dépasser 10 Mo, ce que le serveur vérifie en interrogeant le stockage lui-même (`HeadObject`). Un fichier refusé est supprimé. Une fois le nouvel avatar enregistré, l'ancien fichier est effacé.
+
+Un avatar est **public** : il s'affiche à côté d'un nom, y compris sur des pages que tout le monde peut lire (la page des instructeurs, par exemple). Il est servi par une route dédiée, `/api/media/public/avatar/[userId]`, qui prend un identifiant d'utilisateur et non un chemin de fichier. Elle ne peut donc servir rien d'autre qu'un avatar, alors qu'une route acceptant un chemin pourrait être détournée vers n'importe quel fichier.
+
+## Le nom affiché
+
+Partout où un membre apparaît (commentaires, réactions, demandes, fichiers des espaces de groupe), son nom passe par une même fonction :
+
+```ts
+// apps/web/src/features/social/userDisplay.ts (extrait)
+export function formatUserName(u: DisplayUser): string {
+  const full = [u.firstName, u.lastName]
+    .filter((p): p is string => Boolean(p?.trim()))
+    .join(" ")
+    .trim();
+  return full || u.pseudo || u.email || "Membre";
+}
+```
+
+Le prénom et le nom, sinon le pseudo, sinon « Membre ». L'adresse e-mail n'est un recours que lorsque l'appelant l'a fournie, c'est-à-dire là où il a le droit de la voir : un administrateur, ou le membre lui-même sur sa propre page. Les données envoyées aux autres membres et aux visiteurs n'en contiennent jamais (voir le chapitre sur la frontière serveur / client).
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qui crée les comptes ?","Un administrateur, avec au moins un groupe ; le mot de passe provisoire est généré par le serveur et envoyé par e-mail."],["Que signifie isFirstLogin ?","Le mot de passe provisoire est encore actif ; le membre est ramené sur /profil/edit jusqu’à ce qu’il choisisse le sien."],["Pourquoi relire la session après une écriture ?","Le store client garde la session du chargement ; sans relecture, le membre resterait bloqué et le header afficherait l’ancien nom."],["Comment le profil est-il protégé ?","La server action prend l’identifiant dans la session, jamais dans le formulaire."],["Comment l’avatar est-il vérifié ?","Chemin dans le dossier du membre, fichier présent, type image, 10 Mo au plus : vérifié par le serveur auprès du stockage."],["Quel nom s’affiche ?","Prénom et nom, sinon pseudo, sinon « Membre » ; l’e-mail seulement pour qui a le droit de le voir."]]' />
+
+## À suivre
+
+Le membre a son compte, son mot de passe et son profil. Le club peut maintenant lui transmettre des documents : un compte rendu d'assemblée générale pour tous, une attestation pour lui seul, un document pour un groupe.
+
+<Callout type="tip">
+**Chapitre suivant : les documents des membres.** Publier un fichier aux membres sans le copier, choisir qui le reçoit, suivre ce que chacun a lu, et le servir à ses seuls destinataires.
+</Callout>

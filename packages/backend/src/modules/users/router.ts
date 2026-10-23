@@ -10,7 +10,6 @@ import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
-import { updateMeFormSchema } from "@contracts/forms/updateMeForm.schema";
 import { parsePageContentV1 } from "@contracts/page";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
@@ -103,8 +102,8 @@ export const userRouter = router({
       }
 
       // Mot de passe généré côté serveur (jamais saisi par l'admin) puis
-      // envoyé à l'utilisateur par email. isFirstLogin=true (défaut Prisma)
-      // le forcera à le changer à la première connexion.
+      // envoyé à l'utilisateur par email. isFirstLogin=true (défaut Prisma) :
+      // le site le ramène sur /profil/edit tant qu'il ne l'a pas remplacé.
       const password = generateStrongPassword();
       const hash = await bcrypt.hash(password, 12);
 
@@ -139,20 +138,6 @@ export const userRouter = router({
         success: true,
         user,
       };
-    }),
-
-  updateProfile: protectedProcedure
-    .input(updateMeFormSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.sessionClient.user.id;
-
-      return ctx.prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...input,
-          isFirstLogin: false,
-        },
-      });
     }),
 
   /** Droit à l'image (admins) : autorisation recueillie par le club pour ce membre. */

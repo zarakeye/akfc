@@ -103,7 +103,9 @@ export const authRouter = router({
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
-          data: { password: hashed },
+          // Le mot de passe provisoire de la création est remplacé : la première
+          // connexion est terminée (FirstLoginRedirect cesse de rediriger).
+          data: { password: hashed, isFirstLogin: false },
         });
         await tx.session.deleteMany({
           where: {

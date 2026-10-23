@@ -166,7 +166,11 @@ Le changement de mot de passe vérifie l'ancien, refuse un nouveau mot de passe 
 ```ts
 // packages/backend/src/modules/auth/router.ts (extrait)
 await prisma.$transaction(async (tx) => {
-  await tx.user.update({ where: { id: userId }, data: { password: hashed } });
+  await tx.user.update({
+    where: { id: userId },
+    // …
+    data: { password: hashed, isFirstLogin: false },
+  });
   await tx.session.deleteMany({
     where: {
       userId,
@@ -202,7 +206,7 @@ La réinitialisation enregistre le nouveau mot de passe, marque le jeton comme u
 
 ## La création d'un compte
 
-Il n'y a pas d'inscription libre : un administrateur crée le compte (`user.create`), avec au moins un groupe. Le mot de passe est **généré par le serveur** et envoyé par e-mail ; l'administrateur ne le voit jamais. Le compte naît avec `isFirstLogin` à vrai : à sa première connexion, le composant `FirstLoginRedirect` envoie le membre vers `/profil/edit` pour compléter son profil, jusqu'à ce qu'il l'enregistre. Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail.
+Il n'y a pas d'inscription libre : un administrateur crée le compte (`user.create`), avec au moins un groupe. Le mot de passe est **généré par le serveur** et envoyé par e-mail ; l'administrateur ne le voit jamais. Le compte naît avec `isFirstLogin` à vrai : à sa première connexion, le composant `FirstLoginRedirect` envoie le membre vers `/profil/edit` pour compléter son profil et remplacer le mot de passe provisoire, jusqu'à ce qu'il ait choisi le sien (voir le chapitre « Le profil et la première connexion »). Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail.
 
 ## Les droits : des groupes
 

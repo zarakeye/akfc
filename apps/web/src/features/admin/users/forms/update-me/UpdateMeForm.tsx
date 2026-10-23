@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 import { AvatarUploader } from "@features/avatar/AvatarUploader";
 import { BlankConsentFormCard } from "@features/image-consent/BlankConsentFormCard";
 import { updateMeFormAction } from "./updateMeForm.action";
@@ -116,12 +117,23 @@ export default function UpdateMeForm(): JSX.Element {
   useEffect(() => {
     if (state.status !== "success") return;
     profileQuery.refetch();
-    // Redirige vers la page d'où l'on vient (profil ou dashboard).
-    router.push(back.href);
+    // La session du store date du chargement de la page : elle porte encore
+    // `isFirstLogin` et l'ancien nom. Une server action ne la rafraîchit pas.
+    // On la relit AVANT de partir, sinon FirstLoginRedirect ramènerait aussitôt
+    // ici, et le header garderait l'ancien nom.
+    // Redirige ensuite vers la page d'où l'on vient (profil ou dashboard).
+    // En première connexion, on reste : il reste à choisir un mot de passe, plus bas.
+    void useSessionStore
+      .getState()
+      .fetchSession()
+      .then(() => {
+        if (!useSessionStore.getState().session?.user?.isFirstLogin) router.push(back.href);
+      });
   }, [state.status, profileQuery, router, back.href]);
 
   const loading = profileQuery.isLoading;
   const loadError = profileQuery.error;
+  const isFirstLogin = useSessionStore((s) => s.session?.user?.isFirstLogin ?? false);
 
   const canSubmit = useMemo(() => {
     return !loading && !loadError && isDirty;
@@ -143,6 +155,20 @@ export default function UpdateMeForm(): JSX.Element {
           Mets à jour tes informations. Le rôle est géré par l’admin.
         </p>
       </header>
+
+      {isFirstLogin && (
+        <div className="rounded border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-100">
+          <p className="font-medium">Bienvenue ! Deux étapes avant de commencer :</p>
+          <ol className="mt-1 list-decimal pl-5">
+            <li>complète ton profil ci-dessous ;</li>
+            <li>
+              remplace le mot de passe provisoire reçu par e-mail, dans la section
+              « Sécurité » plus bas.
+            </li>
+          </ol>
+          <p className="mt-1">Le site te ramène ici tant que le mot de passe provisoire est actif.</p>
+        </div>
+      )}
 
       {loading && <div>Chargement…</div>}
 
