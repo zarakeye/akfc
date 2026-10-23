@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
 import { DemoAccountsToggle, DemoBadge } from "@features/admin/common/DemoAccounts";
-import { IMAGE_CONSENT_LABEL } from "@contracts/legal/imageConsent";
+import { IMAGE_CONSENT_LABEL, IMAGE_CONSENT_PROOF_LABEL } from "@contracts/legal/imageConsent";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { deleteColumn } from "@features/admin/common/delete";
 
-type UserRow = { id: string; email: string; name: string; groups: string; photos: string; kind: string; supprimer: string };
+type UserRow = { id: string; email: string; name: string; groups: string; photos: string; proof: string; kind: string; supprimer: string };
 
 /** Séparateur des noms de groupes dans la cellule (texte : la recherche et le tri l'utilisent). */
 const GROUP_SEP = " · ";
@@ -40,6 +40,7 @@ export default function UsersTable(): JSX.Element {
       name: [u.firstName, u.lastName].filter(Boolean).join(" ").trim(),
       groups: u.groups.map((g) => g.name).join(GROUP_SEP),
       photos: IMAGE_CONSENT_LABEL[u.imageConsent],
+      proof: IMAGE_CONSENT_PROOF_LABEL[u.consentProof],
       kind: u.isDemo ? "Démo" : "Membre",
       supprimer: u.id,
     }));
@@ -85,6 +86,22 @@ export default function UsersTable(): JSX.Element {
             : v === IMAGE_CONSENT_LABEL.REFUSED
               ? "bg-red-100 text-red-800"
               : "bg-muted text-muted-foreground";
+        return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
+      },
+    },
+    {
+      // Preuve de l'autorisation : un statut « Accordée » sans formulaire n'a pas de valeur de preuve.
+      property: "proof",
+      displayName: "Formulaire",
+      type: "string",
+      render: (value) => {
+        const v = String(value ?? "");
+        const tone =
+          v === IMAGE_CONSENT_PROOF_LABEL.NONE
+            ? "bg-muted text-muted-foreground"
+            : v === IMAGE_CONSENT_PROOF_LABEL.PENDING_GUARDIAN
+              ? "bg-amber-100 text-amber-900"
+              : "bg-emerald-100 text-emerald-900";
         return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
     },

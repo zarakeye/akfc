@@ -8,6 +8,21 @@ export const IMAGE_CONSENT_LABEL: Record<ImageConsentValue, string> = {
   REFUSED: "Refusée",
 };
 
+/**
+ * Preuve de l'autorisation, pour la liste des membres : voie de la version la plus récente, ou
+ * demande en attente du parent (lien envoyé, pas encore confirmé), ou rien.
+ */
+export const IMAGE_CONSENT_PROOF_VALUES = ["PAPER", "ONLINE_MEMBER", "ONLINE_GUARDIAN", "PENDING_GUARDIAN", "NONE"] as const;
+export type ImageConsentProofValue = (typeof IMAGE_CONSENT_PROOF_VALUES)[number];
+
+export const IMAGE_CONSENT_PROOF_LABEL: Record<ImageConsentProofValue, string> = {
+  PAPER: "Papier signé",
+  ONLINE_MEMBER: "En ligne",
+  ONLINE_GUARDIAN: "En ligne (parent)",
+  PENDING_GUARDIAN: "Attente du parent",
+  NONE: "Aucun",
+};
+
 /** Usages de l'image proposés sur le formulaire (une ligne Oui / Non chacun), dans l'ordre du PDF. */
 export const IMAGE_USAGE_VALUES = ["MEMBER_SPACE", "PUBLIC_SITE", "SOCIAL_NETWORKS", "PRINT", "PRESS"] as const;
 export type ImageUsageValue = (typeof IMAGE_USAGE_VALUES)[number];
