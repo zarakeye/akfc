@@ -7,16 +7,17 @@ import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCa
 /**
  * Autorise (ou refuse) une destination d'upload selon l'utilisateur.
  *
- *   - group                     : droit d'écriture sur l'espace (assertCanWriteGroupSpace)
- *   - common_repository, perso  : tout utilisateur CONNECTÉ (perso = son propre
- *                                 espace, dérivé de son userId côté serveur)
- *   - existing/new-discipline,
- *     event                     : réservé aux ADMIN (contenus curatés)
+ *   - group : droit d'ÉCRITURE sur l'espace du groupe (assertCanWriteGroupSpace :
+ *             EDITOR, héritage de la hiérarchie compris ; un administrateur passe) ;
+ *   - toutes les autres destinations (discipline existante ou proposée, stage,
+ *     événement, dépôt commun, perso) : tout utilisateur CONNECTÉ. Le fichier y naît
+ *     EN ATTENTE : il n'apparaît nulle part tant qu'un administrateur ne l'a pas
+ *     validé, et la LECTURE de ces dossiers reste réservée aux administrateurs
+ *     (assertCanReadPath). L'espace perso est toujours celui de l'appelant : son
+ *     chemin est dérivé de son identifiant côté serveur.
  *
- * Défense en profondeur : l'UI membre ne proposera que `common_repository`, mais
- * ce garde empêche aussi un appel d'API forgé de viser une destination curatée.
- * Le `switch` est exhaustif sur l'union — un nouveau `kind` casserait le
- * typecheck (signal voulu).
+ * Le dossier de dépôt lui-même n'est jamais fourni par le client : le serveur le
+ * calcule depuis la destination (resolvePendingUploadFolder).
  */
 export async function assertUploadDestinationAllowed(params: {
   prisma: PrismaClient;
