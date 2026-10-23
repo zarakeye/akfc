@@ -66,10 +66,8 @@ model User {
   /// publiés depuis le 1er janvier de l'année d'adhésion. null → pas de borne.
   /// ⚠ Aucun écran ni code ne l'écrit : il ne se renseigne qu'en base.
   memberSince           DateTime?
-  /// Vrai tant que le membre utilise le mot de passe PROVISOIRE envoyé à la
-  /// création du compte : FirstLoginRedirect le ramène sur /profil/edit. Repasse
-  /// à false quand il choisit son mot de passe (auth.changePassword) ou le
-  /// réinitialise par e-mail.
+  /// Vrai tant que le membre n'a pas enregistré son profil : FirstLoginRedirect
+  /// le ramène sur /profil/edit. Repasse à false à l'enregistrement du profil.
   isFirstLogin          Boolean              @default(true)
   /// Création du compte.
   createdAt             DateTime             @default(now())

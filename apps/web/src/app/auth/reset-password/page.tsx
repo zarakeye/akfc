@@ -6,12 +6,13 @@ import { trpc } from "@trpc/trpcClient";
 import { PasswordField } from "@features/auth/PasswordField";
 
 /**
- * /auth/reset-password?token=...
+ * /auth/reset-password?token=...[&bienvenue=1]
  *
- * - Le token vient du lien email
- * - L’utilisateur saisit un nouveau password (min 12)
+ * - Le token vient du lien de l'e-mail : « Mot de passe oublié », ou e-mail de bienvenue
+ *   (`bienvenue=1`), où le nouveau membre choisit son PREMIER mot de passe
+ * - L’utilisateur saisit un mot de passe (min 12)
  * - Appelle trpc.auth.resetPassword
- * - En cas de succès: message + redirection possible vers /auth/login
+ * - En cas de succès : message + bouton vers l'accueil, où se trouve le formulaire de connexion
  *
  * Le formulaire utilise `useSearchParams()`, qui force un client-side
  * bailout lors du prerender SSG. Next 15+ exige un `<Suspense>` autour
@@ -29,6 +30,8 @@ function ResetPasswordForm(): JSX.Element {
     const t = searchParams?.get("token");
     return t ? t.trim() : "";
   }, [searchParams]);
+
+  const isWelcome = searchParams?.get("bienvenue") === "1";
 
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -66,9 +69,13 @@ function ResetPasswordForm(): JSX.Element {
   return (
     <main className="mx-auto max-w-md p-6 space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Réinitialiser le mot de passe</h1>
+        <h1 className="text-2xl font-semibold">
+          {isWelcome ? "Bienvenue ! Choisis ton mot de passe" : "Réinitialiser le mot de passe"}
+        </h1>
         <p className="text-sm text-slate-600">
-          Choisis un nouveau mot de passe. Il doit faire au moins 12 caractères.
+          {isWelcome
+            ? "Il te servira à te connecter au site, avec ton adresse e-mail. Il doit faire au moins 12 caractères."
+            : "Choisis un nouveau mot de passe. Il doit faire au moins 12 caractères."}
         </p>
       </header>
 
@@ -112,7 +119,7 @@ function ResetPasswordForm(): JSX.Element {
           className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
           disabled={!canSubmit || done}
         >
-          {resetPassword.isPending ? "Validation..." : "Réinitialiser"}
+          {resetPassword.isPending ? "Validation..." : isWelcome ? "Enregistrer mon mot de passe" : "Réinitialiser"}
         </button>
 
         {resetPassword.error && (
@@ -126,15 +133,16 @@ function ResetPasswordForm(): JSX.Element {
         <div className="rounded border p-4 text-sm">
           <p className="font-medium">Mot de passe mis à jour ✅</p>
           <p className="text-slate-600 mt-1">
-            Tu peux maintenant te reconnecter.
+            Tu peux maintenant te connecter avec ton adresse e-mail et ce mot de passe.
           </p>
 
+          {/* Le formulaire de connexion est dans le header du site. */}
           <button
             type="button"
             className="mt-3 rounded border px-3 py-2 text-sm"
-            onClick={() => router.push("/auth/login")}
+            onClick={() => router.push("/")}
           >
-            Aller à la connexion
+            Aller sur le site pour me connecter
           </button>
         </div>
       )}

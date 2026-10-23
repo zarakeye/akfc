@@ -5,7 +5,7 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
-import sendPasswordEmail from "@backend/email/templates/welcomeEmailWithPassword";
+import { sendWelcomeEmail, sendWelcomeNotice } from "@backend/email/templates/welcomeEmailWithPassword";
 import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { TRPCError } from "@trpc/server";
 
@@ -101,9 +101,9 @@ export const userRouter = router({
         });
       }
 
-      // Mot de passe généré côté serveur (jamais saisi par l'admin) puis
-      // envoyé à l'utilisateur par email. isFirstLogin=true (défaut Prisma) :
-      // le site le ramène sur /profil/edit tant qu'il ne l'a pas remplacé.
+      // Mot de passe généré côté serveur (jamais saisi par l'admin), robuste par
+      // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
+      // isFirstLogin=true (défaut Prisma) : le site lui propose de compléter son profil.
       const password = generateStrongPassword();
       const hash = await bcrypt.hash(password, 12);
 
@@ -121,17 +121,36 @@ export const userRouter = router({
         omit: { password: true },
       });
 
-      // Email de bienvenue avec le mot de passe temporaire. Un échec d'envoi
-      // ne doit pas annuler la création — on le logue sans jeter.
+      // E-mail de bienvenue au membre, puis avis SANS mot de passe à la boîte du club.
+      // Un échec d'envoi n'annule pas la création : il est journalisé et signalé au club.
       // Compte de démonstration : son adresse ne peut rien recevoir, pas d'e-mail.
-      if (!isDemoEmail(input.email)) try {
-        await sendPasswordEmail(
-          input.email,
-          `Bienvenue`,
-          password,
+      if (!isDemoEmail(input.email)) {
+        let sendError: string | null = null;
+        try {
+          await sendWelcomeEmail({ to: input.email, password });
+        } catch (err) {
+          sendError = err instanceof Error ? err.message : String(err);
+          console.error("[user.create] e-mail de bienvenue non envoyé :", sendError);
+        }
+        const [groups, admin] = await Promise.all([
+          ctx.prisma.memberGroup.findMany({ where: { id: { in: groupIds } }, select: { name: true } }),
+          ctx.prisma.user.findUnique({
+            where: { id: ctx.sessionClient.user.id },
+            select: { firstName: true, lastName: true, email: true },
+          }),
+        ]);
+        const adminName = admin
+          ? [admin.firstName, admin.lastName].filter(Boolean).join(" ").trim() || admin.email
+          : null;
+        await sendWelcomeNotice({
+          kind: sendError ? "send-failed" : "sent",
+          memberEmail: input.email,
+          groupNames: groups.map((g) => g.name),
+          createdBy: adminName,
+          detail: sendError,
+        }).catch((err) =>
+          console.error("[user.create] avis au club non envoyé :", err instanceof Error ? err.message : err),
         );
-      } catch (err) {
-        console.error("[user.create] envoi email de bienvenue échoué :", err);
       }
 
       return {

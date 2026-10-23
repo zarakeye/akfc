@@ -72,6 +72,7 @@ export async function updateMeFormAction(
     aboutMe: data.aboutMe ?? null,
     phone: data.phone ?? null,
     birthDate: data.birthDate ? new Date(data.birthDate) : null,
+    isFirstLogin: false,
   } satisfies Prisma.UserUpdateInput;
 
   try {

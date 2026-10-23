@@ -168,8 +168,7 @@ Le changement de mot de passe vérifie l'ancien, refuse un nouveau mot de passe 
 await prisma.$transaction(async (tx) => {
   await tx.user.update({
     where: { id: userId },
-    // …
-    data: { password: hashed, isFirstLogin: false },
+    data: { password: hashed },
   });
   await tx.session.deleteMany({
     where: {
@@ -202,11 +201,11 @@ Chaque règle a sa raison :
 
 <DocsTable columnsJson='["Règle","Ce qu’elle protège"]' rowsJson='[["Seule l’empreinte SHA-256 du jeton est stockée","Une fuite de la base ne donne aucun lien de réinitialisation utilisable."],["Jeton valable 30 minutes, utilisable une fois (usedAt)","Un e-mail ancien ou déjà utilisé n’ouvre plus rien."],["Une demande toutes les 2 minutes au plus par compte","Personne ne peut bombarder une boîte d’e-mails."],["Même réponse que l’adresse existe ou non, et même en cas d’échec d’envoi","Le formulaire ne révèle pas qui a un compte."],["Le jeton n’apparaît jamais dans les journaux","Un accès aux journaux ne suffit pas à prendre un compte."],["La réinitialisation supprime toutes les sessions","Un éventuel intrus est déconnecté partout."]]' />
 
-La réinitialisation enregistre le nouveau mot de passe, marque le jeton comme utilisé et supprime les sessions dans une même transaction. Elle lève aussi `isFirstLogin`.
+La réinitialisation enregistre le nouveau mot de passe, marque le jeton comme utilisé et supprime les sessions dans une même transaction.
 
 ## La création d'un compte
 
-Il n'y a pas d'inscription libre : un administrateur crée le compte (`user.create`), avec au moins un groupe. Le mot de passe est **généré par le serveur** et envoyé par e-mail ; l'administrateur ne le voit jamais. Le compte naît avec `isFirstLogin` à vrai : à sa première connexion, le composant `FirstLoginRedirect` envoie le membre vers `/profil/edit` pour compléter son profil et remplacer le mot de passe provisoire, jusqu'à ce qu'il ait choisi le sien (voir le chapitre « Le profil et la première connexion »). Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail.
+Il n'y a pas d'inscription libre : un administrateur crée le compte (`user.create`), avec au moins un groupe. Le mot de passe est **généré par le serveur** et envoyé par e-mail au seul membre ; l'administrateur ne le voit jamais. Le compte naît avec `isFirstLogin` à vrai : à sa première connexion, le composant `FirstLoginRedirect` envoie le membre vers `/profil/edit` pour compléter son profil (voir le chapitre « Le profil et la première connexion »). Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail.
 
 ## Les droits : des groupes
 

@@ -103,9 +103,7 @@ export const authRouter = router({
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
-          // Le mot de passe provisoire de la création est remplacé : la première
-          // connexion est terminée (FirstLoginRedirect cesse de rediriger).
-          data: { password: hashed, isFirstLogin: false },
+          data: { password: hashed },
         });
         await tx.session.deleteMany({
           where: {
@@ -202,15 +200,15 @@ export const authRouter = router({
       });
 
       if (!entry) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired token" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien n'est pas valide. Demandez-en un nouveau avec « Mot de passe oublié »." });
       }
 
       if (entry.usedAt) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Token already used" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a déjà servi. Connectez-vous, ou demandez-en un nouveau avec « Mot de passe oublié »." });
       }
 
       if (entry.expiresAt.getTime() < Date.now()) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Token expired" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a expiré. Demandez-en un nouveau avec « Mot de passe oublié »." });
       }
 
       const hashedPassword = await bcrypt.hash(input.newPassword, 12);
@@ -218,10 +216,9 @@ export const authRouter = router({
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: entry.userId },
-          data: {
-            password: hashedPassword,
-            isFirstLogin: false,
-          },
+          // `isFirstLogin` n'est pas touché : un nouveau membre qui vient de choisir son
+          // mot de passe par le lien de bienvenue complète ensuite son profil.
+          data: { password: hashedPassword },
         });
 
         await tx.passwordResetToken.update({

@@ -1,6 +1,6 @@
 ---
 title: "Le profil et la première connexion"
-description: "Un compte créé par le club avec un mot de passe provisoire, une première connexion qui guide le membre jusqu'à son propre mot de passe, un profil que seul son titulaire modifie, et un avatar envoyé et vérifié à part."
+description: "Un compte créé par le club avec un mot de passe robuste qui ne parvient qu'au membre, une première connexion qui le guide vers son profil, un profil que seul son titulaire modifie, et un avatar envoyé et vérifié à part."
 section: "Membres et collaboration"
 order: 1
 ---
@@ -36,15 +36,44 @@ const user = await ctx.prisma.user.create({
 });
 ```
 
-Le mot de passe est **généré par le serveur** (12 caractères, chiffres et symboles compris) et envoyé au membre par e-mail. L'administrateur ne le voit jamais et ne peut pas le choisir à la place du membre. Seule son empreinte bcrypt est enregistrée, et `omit` la retire de la ligne renvoyée au navigateur de l'administrateur.
+Le mot de passe est **généré par le serveur** : 12 caractères mêlant majuscules, minuscules, chiffres et symboles, sans caractères faciles à confondre. Chaque membre reçoit ainsi un mot de passe robuste, qu'il soit ou non familier des règles qui le rendent difficile à deviner. Il peut le garder, ou le changer depuis son profil. L'administrateur ne le voit jamais, et seule son empreinte bcrypt est enregistrée ; `omit` la retire de la ligne renvoyée au navigateur de l'administrateur.
 
-Le compte et ses groupes sont créés par une seule écriture imbriquée : un compte sans groupe ne peut pas exister, même un instant. L'e-mail part **après** la création. Si l'envoi échoue, l'erreur est journalisée mais le compte reste : le membre peut alors obtenir un mot de passe par « Mot de passe oublié ». Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail, puisque leur adresse ne mène nulle part.
+Le compte et ses groupes sont créés par une seule écriture imbriquée : un compte sans groupe ne peut pas exister, même un instant. L'e-mail de bienvenue part **après** la création ; un échec d'envoi n'annule pas le compte. Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail, puisque leur adresse ne mène nulle part.
+
+## Un mot de passe qui ne va qu'au membre
+
+L'e-mail de bienvenue contient le mot de passe. Il doit donc aboutir dans la boîte du membre, et nulle part ailleurs. Or un e-mail circule : on y répond en citant son contenu, et un e-mail qui ne peut pas être remis revient à l'expéditeur sous forme d'avis de non-remise (un « rebond »), qui recopie souvent le message d'origine. Le site envoie depuis `noreply@`, et la boîte du club, `contact@`, garde la mémoire des échanges : il faut que cette mémoire ne contienne jamais de mot de passe.
+
+Deux réglages de l'envoi y veillent :
+
+```ts
+// packages/backend/src/email/templates/welcomeEmailWithPassword.ts (extrait)
+const message: SMTPTransport.Options = {
+  from: mailFrom(shortTitle),
+  to,
+  // Pas de replyTo : une réponse citerait le mot de passe.
+  // Rebond : en-têtes seulement (jamais le corps, donc jamais le mot de passe).
+  // (Transmis seulement si le serveur SMTP annonce l'extension DSN.)
+  dsn: { ret: "HDRS", notify: ["FAILURE", "DELAY"], orcpt: to },
+  subject: `Bienvenue à l'${shortTitle} : ${WELCOME_SUBJECT_MARK}`,
+  // …
+};
+```
+
+- **Pas d'adresse de réponse.** Les autres e-mails du site indiquent `contact@` comme adresse de réponse. Celui-ci non : une réponse revient à `noreply@`. Le texte du message le dit, et donne l'adresse du club pour écrire.
+- **Un rebond sans le message.** L'option `dsn` demande au serveur d'envoi, en cas d'échec, un avis qui ne contient que les en-têtes du message (`RET=HDRS`, extension DSN du protocole SMTP), donc pas le mot de passe.
+
+Le reste est confié aux filtres de la boîte `noreply@`, dans la messagerie du club. Les avis de non-remise sont transférés à `contact@`, pour que les administrateurs vérifient l'adresse du membre. Un dernier filtre supprime toute réponse dont l'objet contient « ton compte est créé » : c'est la constante `WELCOME_SUBJECT_MARK`, qui ne doit pas changer sans que ce filtre change aussi.
+
+La boîte du club garde malgré tout la trace de chaque création. Le site lui envoie un **avis sans mot de passe** : compte créé pour telle adresse, par tel administrateur, dans tels groupes, ou bien e-mail impossible à envoyer, avec l'erreur.
+
+<Callout type="info">
+Le partage des rôles est net : le site décide de ce que contient chaque message, la messagerie décide où va le courrier reçu par `noreply@`. Aucun des deux ne refait le travail de l'autre.
+</Callout>
 
 ## La première connexion
 
-Un compte naît avec `isFirstLogin` à vrai. Ce drapeau a un sens précis : **le mot de passe provisoire est encore actif**. Tant qu'il l'est, le membre est ramené sur la page de son profil, où il trouve deux choses à faire : compléter ses informations, et remplacer le mot de passe reçu par e-mail.
-
-La redirection est faite par un petit composant client, placé dans le layout du site public :
+Un compte naît avec `isFirstLogin` à vrai : le membre n'a pas encore complété son profil. Tant que c'est le cas, il est ramené sur la page d'édition de son profil. La redirection est faite par un petit composant client, placé dans le layout du site public :
 
 ```tsx
 // apps/web/src/features/auth/FirstLoginRedirect.tsx (extrait)
@@ -55,36 +84,21 @@ useEffect(() => {
 }, [user?.isFirstLogin, pathname, router]);
 ```
 
-Il lit la session dans le store client, et ne redirige jamais depuis la page de destination elle-même : aucune boucle n'est possible. `replace` plutôt que `push` : le bouton « précédent » ne ramène pas sur la page dont le membre vient d'être redirigé.
-
-Le drapeau ne retombe qu'à un seul moment : quand le membre choisit son mot de passe.
-
-```ts
-// packages/backend/src/modules/auth/router.ts (extrait)
-await tx.user.update({
-  where: { id: userId },
-  // Le mot de passe provisoire de la création est remplacé : la première
-  // connexion est terminée (FirstLoginRedirect cesse de rediriger).
-  data: { password: hashed, isFirstLogin: false },
-});
-```
-
-Un mot de passe provisoire reste lisible dans une boîte mail aussi longtemps que le message y est conservé. Le lier à la fin de la première connexion garantit qu'il cesse de servir dès que le membre a commencé à utiliser le site. La réinitialisation par e-mail lève aussi le drapeau, puisque le membre y choisit également son propre mot de passe.
+Il lit la session dans le store client, et ne redirige jamais depuis la page de destination elle-même : aucune boucle n'est possible. `replace` plutôt que `push` : le bouton « précédent » ne ramène pas sur la page dont le membre vient d'être redirigé. Le drapeau retombe quand le membre enregistre son profil.
 
 ### Relire la session après une écriture
 
-Le store client contient la session lue au chargement de la page. Une mutation tRPC ou une server action modifie la base, mais pas ce store : après le changement de mot de passe, il porterait encore `isFirstLogin` à vrai, et le membre resterait bloqué sur sa page de profil. Le formulaire relit donc la session une fois l'écriture faite :
+Le store client contient la session lue au chargement de la page. Une server action modifie la base, mais pas ce store : après l'enregistrement du profil, il porterait encore `isFirstLogin` à vrai, et le membre serait aussitôt ramené sur le formulaire. Le formulaire relit donc la session avant de quitter la page :
 
 ```tsx
-// apps/web/src/features/auth/ChangePasswordForm.tsx (extrait)
-reset();
-setOkMsg("Mot de passe modifié. Les autres appareils ont été déconnectés.");
-// Première connexion : le serveur vient de lever `isFirstLogin`. La session du
-// store le porte encore ; la relire libère la navigation (FirstLoginRedirect).
-await useSessionStore.getState().fetchSession();
+// apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx (extrait)
+void useSessionStore
+  .getState()
+  .fetchSession()
+  .then(() => router.push(back.href));
 ```
 
-Le formulaire du profil fait de même : le header affiche ainsi tout de suite le nouveau nom. Tant que la première connexion n'est pas terminée, il reste sur la page après l'enregistrement, puisqu'il reste un mot de passe à choisir.
+La même relecture met à jour le nom affiché dans le header.
 
 <Callout type="info">
 Toute donnée de la session affichée par le client (nom, avatar, état de la première connexion) doit être rafraîchie dans le store après l'écriture qui la change. Le serveur a la bonne valeur ; c'est la copie du navigateur qui retarde.
@@ -153,7 +167,7 @@ Le prénom et le nom, sinon le pseudo, sinon « Membre ». L'adresse e-mail n'es
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qui crée les comptes ?","Un administrateur, avec au moins un groupe ; le mot de passe provisoire est généré par le serveur et envoyé par e-mail."],["Que signifie isFirstLogin ?","Le mot de passe provisoire est encore actif ; le membre est ramené sur /profil/edit jusqu’à ce qu’il choisisse le sien."],["Pourquoi relire la session après une écriture ?","Le store client garde la session du chargement ; sans relecture, le membre resterait bloqué et le header afficherait l’ancien nom."],["Comment le profil est-il protégé ?","La server action prend l’identifiant dans la session, jamais dans le formulaire."],["Comment l’avatar est-il vérifié ?","Chemin dans le dossier du membre, fichier présent, type image, 10 Mo au plus : vérifié par le serveur auprès du stockage."],["Quel nom s’affiche ?","Prénom et nom, sinon pseudo, sinon « Membre » ; l’e-mail seulement pour qui a le droit de le voir."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qui crée les comptes ?","Un administrateur, avec au moins un groupe ; le mot de passe, robuste, est généré par le serveur."],["Comment le mot de passe reste-t-il au membre ?","Pas d’adresse de réponse, rebond limité aux en-têtes ; les filtres de noreply@ suppriment les réponses et transfèrent les rebonds ; la boîte du club reçoit un avis sans mot de passe."],["Que signifie isFirstLogin ?","Le profil n’a pas encore été enregistré ; le membre est ramené sur /profil/edit jusque-là."],["Pourquoi relire la session après une écriture ?","Le store client garde la session du chargement ; sans relecture, le membre serait ramené sur le formulaire et le header afficherait l’ancien nom."],["Comment le profil est-il protégé ?","La server action prend l’identifiant dans la session, jamais dans le formulaire."],["Comment l’avatar est-il vérifié ?","Chemin dans le dossier du membre, fichier présent, type image, 10 Mo au plus : vérifié par le serveur auprès du stockage."],["Quel nom s’affiche ?","Prénom et nom, sinon pseudo, sinon « Membre » ; l’e-mail seulement pour qui a le droit de le voir."]]' />
 
 ## À suivre
 

@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { trpc } from "@trpc/trpcClient";
-import { useSessionStore } from "@lib/stores/useSessionStore";
 import { changePasswordSchema } from "@contracts/auth/auth.schema";
 import { PasswordField } from "@features/auth/PasswordField";
 
@@ -51,9 +50,6 @@ export default function ChangePasswordForm(): JSX.Element {
       });
       reset();
       setOkMsg("Mot de passe modifié. Les autres appareils ont été déconnectés.");
-      // Première connexion : le serveur vient de lever `isFirstLogin`. La session du
-      // store le porte encore ; la relire libère la navigation (FirstLoginRedirect).
-      await useSessionStore.getState().fetchSession();
     } catch (e) {
       setErrMsg(
         e instanceof Error ? e.message : "Impossible de changer le mot de passe.",

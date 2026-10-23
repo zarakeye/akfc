@@ -122,13 +122,10 @@ export default function UpdateMeForm(): JSX.Element {
     // On la relit AVANT de partir, sinon FirstLoginRedirect ramènerait aussitôt
     // ici, et le header garderait l'ancien nom.
     // Redirige ensuite vers la page d'où l'on vient (profil ou dashboard).
-    // En première connexion, on reste : il reste à choisir un mot de passe, plus bas.
     void useSessionStore
       .getState()
       .fetchSession()
-      .then(() => {
-        if (!useSessionStore.getState().session?.user?.isFirstLogin) router.push(back.href);
-      });
+      .then(() => router.push(back.href));
   }, [state.status, profileQuery, router, back.href]);
 
   const loading = profileQuery.isLoading;
@@ -158,15 +155,11 @@ export default function UpdateMeForm(): JSX.Element {
 
       {isFirstLogin && (
         <div className="rounded border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-100">
-          <p className="font-medium">Bienvenue ! Deux étapes avant de commencer :</p>
-          <ol className="mt-1 list-decimal pl-5">
-            <li>complète ton profil ci-dessous ;</li>
-            <li>
-              remplace le mot de passe provisoire reçu par e-mail, dans la section
-              « Sécurité » plus bas.
-            </li>
-          </ol>
-          <p className="mt-1">Le site te ramène ici tant que le mot de passe provisoire est actif.</p>
+          <p className="font-medium">Bienvenue !</p>
+          <p className="mt-1">
+            Complète ton profil ci-dessous et enregistre-le : le site te ramène ici tant
+            que ce n&apos;est pas fait.
+          </p>
         </div>
       )}
 
