@@ -92,11 +92,8 @@ export const userRouter = router({
         email: z.string().email("Invalid email format"),
         /** Un ou plusieurs groupes (au moins un). */
         groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
-        /**
-         * Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires).
-         * Facultatif le temps que le formulaire de création les demande (incrément suivant).
-         */
-        legal: legalInfoInput.optional(),
+        /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
+        legal: legalInfoInput,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -122,7 +119,10 @@ export const userRouter = router({
       const password = generateStrongPassword();
       const hash = await bcrypt.hash(password, 12);
 
-      const legal = input.legal ? legalInfoData(input.legal, input.email, { requireComplete: true }) : {};
+      if (input.legal.legalAge === "UNKNOWN") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Indiquez si le membre est majeur ou mineur." });
+      }
+      const legal = legalInfoData(input.legal, input.email, { requireComplete: true });
 
       const user = await ctx.prisma.user.create({
         data: {

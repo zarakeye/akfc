@@ -8,6 +8,7 @@ import { IMAGE_CONSENT_LABEL } from "@contracts/legal/imageConsent";
 import { BlankConsentFormCard } from "@features/image-consent/BlankConsentFormCard";
 import { ImageConsentFormViewer, type ViewableConsentForm } from "@features/image-consent/ImageConsentFormViewer";
 import { formatDate, formatKeepAfterLeave, formatUsages } from "@features/image-consent/consentFormat";
+import { OnlineConsentForm } from "@features/image-consent/OnlineConsentForm";
 
 /**
  * Profil : droit à l'image du membre connecté — statut, formulaires signés déposés par le club
@@ -21,6 +22,12 @@ export function MyImageConsent(): JSX.Element {
   return (
     <div className="mt-6 space-y-3">
       <BlankConsentFormCard />
+      {data && (
+        <OnlineConsentForm
+          key={latest?.id ?? "none"}
+          latest={latest ? { usages: latest.usages, keepAfterLeave: latest.keepAfterLeave } : null}
+        />
+      )}
       {data && (
         <div className="rounded-lg border border-border p-4 text-sm">
           <p>
@@ -44,7 +51,7 @@ export function MyImageConsent(): JSX.Element {
                     className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline"
                   >
                     <Eye className="h-4 w-4" />
-                    {i === 0 ? "Voir le formulaire signé" : "Formulaire précédent"}
+                    {i === 0 ? "Voir l'autorisation en vigueur" : "Version précédente"}
                     {f.signedAt ? ` du ${formatDate(f.signedAt)}` : `, déposé le ${formatDate(f.createdAt)}`}
                   </button>
                 </li>

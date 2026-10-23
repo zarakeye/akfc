@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 import { Table, type Column } from "react-ts-tab-lib";
 import { trpc } from "@trpc/trpcClient";
 import { DemoAccountsToggle, DemoBadge } from "@features/admin/common/DemoAccounts";
-import { IMAGE_CONSENT_LABEL, IMAGE_CONSENT_PROOF_LABEL } from "@contracts/legal/imageConsent";
+import {
+  IMAGE_CONSENT_LABEL,
+  IMAGE_CONSENT_PROOF_LABEL,
+  LEGAL_AGE_LABEL,
+  effectiveLegalAge,
+} from "@contracts/legal/imageConsent";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { deleteColumn } from "@features/admin/common/delete";
 
-type UserRow = { id: string; email: string; name: string; groups: string; photos: string; proof: string; kind: string; supprimer: string };
+type UserRow = { id: string; email: string; name: string; groups: string; majority: string; photos: string; proof: string; kind: string; supprimer: string };
 
 /** Séparateur des noms de groupes dans la cellule (texte : la recherche et le tri l'utilisent). */
 const GROUP_SEP = " · ";
@@ -39,6 +44,8 @@ export default function UsersTable(): JSX.Element {
       email: u.email,
       name: [u.firstName, u.lastName].filter(Boolean).join(" ").trim(),
       groups: u.groups.map((g) => g.name).join(GROUP_SEP),
+      // Majorité effective : un mineur dont la date vérifiée atteint 18 ans apparaît majeur.
+      majority: LEGAL_AGE_LABEL[effectiveLegalAge(u)],
       photos: IMAGE_CONSENT_LABEL[u.imageConsent],
       proof: IMAGE_CONSENT_PROOF_LABEL[u.consentProof],
       kind: u.isDemo ? "Démo" : "Membre",
@@ -72,6 +79,22 @@ export default function UsersTable(): JSX.Element {
             ))}
           </span>
         );
+      },
+    },
+    {
+      // Tri des comptes existants : la recherche « Non renseignée » ou « Mineur » filtre la liste.
+      property: "majority",
+      displayName: "Majorité",
+      type: "string",
+      render: (value) => {
+        const v = String(value ?? "");
+        const tone =
+          v === LEGAL_AGE_LABEL.UNKNOWN
+            ? "bg-amber-100 text-amber-900"
+            : v === LEGAL_AGE_LABEL.MINOR
+              ? "bg-sky-100 text-sky-900"
+              : "bg-muted text-foreground";
+        return <span className={`rounded-full px-2 py-0.5 text-xs ${tone}`}>{v}</span>;
       },
     },
     {

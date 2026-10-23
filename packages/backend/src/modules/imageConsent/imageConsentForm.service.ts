@@ -165,4 +165,7 @@ export const imageConsentFormSelect = {
   keepAfterLeave: true,
   signedAt: true,
   createdAt: true,
+  source: true,
+  signerName: true,
+  signerQuality: true,
 } as const;

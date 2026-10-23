@@ -23,6 +23,13 @@ export const IMAGE_CONSENT_PROOF_LABEL: Record<ImageConsentProofValue, string> =
   NONE: "Aucun",
 };
 
+/** Voie d'une version de l'autorisation (fiche admin, profil). */
+export const IMAGE_CONSENT_SOURCE_LABEL: Record<"PAPER" | "ONLINE_MEMBER" | "ONLINE_GUARDIAN", string> = {
+  PAPER: "formulaire papier",
+  ONLINE_MEMBER: "en ligne par le membre",
+  ONLINE_GUARDIAN: "en ligne par le parent référent",
+};
+
 /** Usages de l'image proposés sur le formulaire (une ligne Oui / Non chacun), dans l'ordre du PDF. */
 export const IMAGE_USAGE_VALUES = ["MEMBER_SPACE", "PUBLIC_SITE", "SOCIAL_NETWORKS", "PRINT", "PRESS"] as const;
 export type ImageUsageValue = (typeof IMAGE_USAGE_VALUES)[number];

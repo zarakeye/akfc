@@ -5,6 +5,7 @@ import { prisma } from "@backend/prisma";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
 import { ImageConsentControl } from "@features/admin/users/components/ImageConsentControl";
 import { ImageConsentForms } from "@features/admin/users/components/ImageConsentForms";
+import { LegalInfoControl } from "@features/admin/users/legal/LegalInfoControl";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
 export default async function UserPresentationPage({
@@ -42,6 +43,16 @@ export default async function UserPresentationPage({
           </div>
         )}
       </dl>
+      <LegalInfoControl
+        userId={user.id}
+        member={{ firstName: user.firstName, lastName: user.lastName }}
+        initial={{
+          legalAge: user.legalAge,
+          birthDate: user.birthDate ? user.birthDate.toISOString().slice(0, 10) : "",
+          guardianName: user.guardianName ?? "",
+          guardianEmail: user.guardianEmail ?? "",
+        }}
+      />
       {/* Remonté quand un dépôt change le statut, pour repartir de la valeur enregistrée. */}
       <ImageConsentControl
         key={`${user.imageConsent}-${user.imageConsentAt?.getTime() ?? 0}`}

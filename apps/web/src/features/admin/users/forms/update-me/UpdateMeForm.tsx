@@ -47,6 +47,8 @@ export default function UpdateMeForm(): JSX.Element {
   const back = resolveBackHref(searchParams.get("from"));
 
   const profileQuery = trpc.user.getCurrentUserProfile.useQuery();
+  // Date de naissance vérifiée par un instructeur : non modifiable ici.
+  const birthDateLocked = trpc.imageConsent.onlineState.useQuery().data?.birthDateLocked === true;
 
   const [state, formAction] = useActionState<UpdateMeFormState, FormData>(
     updateMeFormAction,
@@ -241,9 +243,15 @@ export default function UpdateMeForm(): JSX.Element {
             <span className="text-sm">Date de naissance</span>
             <input
               type="date"
-              className="border rounded px-3 py-2"
+              className="border rounded px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500"
+              disabled={birthDateLocked}
               {...register("birthDate")}
             />
+            {birthDateLocked && (
+              <span className="text-xs text-gray-500">
+                Renseignée par le club : pour la corriger, adressez-vous à un instructeur.
+              </span>
+            )}
             {errors.birthDate?.message && (
               <span className="text-xs text-red-600">
                 {errors.birthDate.message}

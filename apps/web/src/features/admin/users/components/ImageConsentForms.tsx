@@ -8,6 +8,7 @@ import { trpc } from "@trpc/trpcClient";
 import {
   IMAGE_CONSENT_FORM_MAX_BYTES,
   IMAGE_CONSENT_FORM_MIME_EXT,
+  IMAGE_CONSENT_SOURCE_LABEL,
   IMAGE_USAGE_LABEL,
   IMAGE_USAGE_VALUES,
   type ImageUsageValue,
@@ -116,9 +117,18 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
             <li key={f.id} className="flex flex-wrap items-start gap-2 py-2">
               <div className="min-w-0 flex-1">
                 <p className={i === 0 ? "font-medium" : "text-muted-foreground"}>
-                  {i === 0 ? "En vigueur" : "Ancien"} — signé le {formatDate(f.signedAt)}, déposé le{" "}
-                  {formatDate(f.createdAt)}
-                  {f.uploadedBy && ` par ${[f.uploadedBy.firstName, f.uploadedBy.lastName].filter(Boolean).join(" ") || f.uploadedBy.email}`}
+                  {i === 0 ? "En vigueur" : "Ancien"} — {IMAGE_CONSENT_SOURCE_LABEL[f.source]}
+                  {f.source === "PAPER" ? (
+                    <>
+                      , signé le {formatDate(f.signedAt)}, déposé le {formatDate(f.createdAt)}
+                      {f.uploadedBy && ` par ${[f.uploadedBy.firstName, f.uploadedBy.lastName].filter(Boolean).join(" ") || f.uploadedBy.email}`}
+                    </>
+                  ) : (
+                    <>
+                      {f.signerName && ` (${f.signerName}${f.signerQuality ? `, ${f.signerQuality}` : ""})`}, confirmé le{" "}
+                      {formatDate(f.createdAt)}
+                    </>
+                  )}
                 </p>
                 <p className="text-muted-foreground">
                   Usages : {formatUsages(f.usages)}

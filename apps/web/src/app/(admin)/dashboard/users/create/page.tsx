@@ -9,6 +9,7 @@ import {
   CreateUserForm,
   type CreateUserFormInput,
 } from "@features/admin/users/forms/CreateUserForm";
+import { toLegalInput } from "@features/admin/users/legal/LegalInfoFields";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
 
 /** Création — `/(admin)/dashboard/users/create`. id User = string (cuid). */
@@ -21,6 +22,7 @@ export default function CreateUserPage(): JSX.Element {
     const res = await createMutation.mutateAsync({
       email: input.email,
       groupIds: input.groupIds,
+      legal: toLegalInput({ ...input.legal, legalAge: input.legal.legalAge ?? "UNKNOWN" }),
     });
     await utils.user.getAll.invalidate();
     setCreatedId(res.user.id);

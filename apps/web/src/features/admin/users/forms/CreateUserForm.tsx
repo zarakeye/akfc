@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import { trpc } from "@trpc/trpcClient";
+import {
+  EMPTY_LEGAL_INFO,
+  LegalInfoFields,
+  legalInfoError,
+  type LegalInfoValue,
+} from "@features/admin/users/legal/LegalInfoFields";
 
 export interface CreateUserFormInput {
   email: string;
   groupIds: string[];
+  /** Majorité (obligatoire) ; mineur : date de naissance et parent référent. */
+  legal: LegalInfoValue;
 }
 
 export interface CreateUserFormProps {
@@ -24,6 +32,7 @@ export function CreateUserForm({
 }: CreateUserFormProps) {
   const [email, setEmail] = useState<string>("");
   const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [legal, setLegal] = useState<LegalInfoValue>(EMPTY_LEGAL_INFO);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -40,9 +49,14 @@ export function CreateUserForm({
       setSubmitError("Choisis au moins un groupe.");
       return;
     }
+    const legalError = legalInfoError(legal);
+    if (legalError) {
+      setSubmitError(legalError);
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await onSubmit({ email: email.trim(), groupIds });
+      await onSubmit({ email: email.trim(), groupIds, legal });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -88,6 +102,11 @@ export function CreateUserForm({
         <span className="text-xs text-muted-foreground">
           {groupIds.length === 0 ? "Au moins un groupe." : `${groupIds.length} groupe(s) sélectionné(s).`}
         </span>
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-1 text-sm">
+        <legend className="mb-1 font-medium">Majorité</legend>
+        <LegalInfoFields value={legal} onChange={setLegal} />
       </fieldset>
 
       {submitError && <p className="text-sm text-red-600">{submitError}</p>}
