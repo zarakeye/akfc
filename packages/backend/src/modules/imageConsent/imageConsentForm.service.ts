@@ -10,6 +10,7 @@ import {
   consentFromUsages,
   type ImageUsageValue,
 } from "@contracts/legal/imageConsent";
+import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
 
 /**
  * Formulaires de droit à l'image SIGNÉS — déposés par un admin sur la fiche d'un membre.
@@ -91,6 +92,11 @@ export async function registerImageConsentForm(params: {
   }
   const memberName =
     [member.firstName, member.lastName].filter(Boolean).join(" ").trim() || member.pseudo || member.email;
+  const previous = await prisma.imageConsentForm.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: { usages: true },
+  });
   const [form] = await prisma.$transaction([
     prisma.imageConsentForm.create({
       data: {
@@ -113,6 +119,13 @@ export async function registerImageConsentForm(params: {
       select: { id: true },
     }),
   ]);
+  await sendImageConsentNotice({
+    userId,
+    memberName,
+    via: "par formulaire papier déposé par un administrateur",
+    usages,
+    previousUsages: previous ? previous.usages : null,
+  }).catch((err) => console.error("[droit à l'image] avis au club non envoyé :", err instanceof Error ? err.message : err));
   return { id: form.id };
 }
 

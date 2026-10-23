@@ -13,11 +13,15 @@ export async function exportMyData(db: PrismaClient, userId: string) {
     where: { id: userId },
     select: {
       id: true, email: true, emailVerified: true, firstName: true, lastName: true, pseudo: true, phone: true,
-      birthDate: true, memberSince: true, aboutMe: true, avatar: true, image: true, instructorBio: true,
+      birthDate: true, birthDateVerified: true, legalAge: true, guardianName: true, guardianEmail: true,
+      memberSince: true, aboutMe: true, avatar: true, image: true, instructorBio: true,
       imageConsent: true, imageConsentAt: true,
       imageConsentForms: {
         orderBy: { createdAt: "desc" },
-        select: { fileName: true, usages: true, keepAfterLeave: true, signedAt: true, createdAt: true },
+        select: {
+          fileName: true, usages: true, keepAfterLeave: true, signedAt: true, createdAt: true,
+          source: true, textVersion: true, signerName: true, signerQuality: true, signerEmail: true,
+        },
       },
       createdAt: true, updatedAt: true,
       preferences: { select: { displayEmail: true, displayPhone: true, darkMode: true, description: true } },
@@ -66,6 +70,10 @@ export async function exportMyData(db: PrismaClient, userId: string) {
       pseudo: user.pseudo,
       phone: user.phone,
       birthDate: user.birthDate,
+      birthDateVerifiedByClub: user.birthDateVerified,
+      legalAge: user.legalAge,
+      // Mineur : parent référent (sert uniquement à l'autorisation du droit à l'image).
+      guardian: user.guardianEmail || user.guardianName ? { name: user.guardianName, email: user.guardianEmail } : null,
       memberSince: user.memberSince,
       aboutMe: user.aboutMe,
       avatar: user.avatar,

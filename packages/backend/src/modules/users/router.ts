@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 
 import type { UserProfile } from "@contracts/users/user-profile.types";
 import type { ImageConsentProofValue } from "@contracts/legal/imageConsent";
+import { legalInfoInput, legalInfoData } from "@backend/modules/users/legalInfo";
 import { parsePageContentV1 } from "@contracts/page";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
@@ -91,6 +92,11 @@ export const userRouter = router({
         email: z.string().email("Invalid email format"),
         /** Un ou plusieurs groupes (au moins un). */
         groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
+        /**
+         * Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires).
+         * Facultatif le temps que le formulaire de création les demande (incrément suivant).
+         */
+        legal: legalInfoInput.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -116,10 +122,13 @@ export const userRouter = router({
       const password = generateStrongPassword();
       const hash = await bcrypt.hash(password, 12);
 
+      const legal = input.legal ? legalInfoData(input.legal, input.email, { requireComplete: true }) : {};
+
       const user = await ctx.prisma.user.create({
         data: {
           email: input.email,
           password: hash,
+          ...legal,
           memberGroupMemberships: {
             create: groupIds.map((id) => ({
               group: { connect: { id } },
@@ -166,6 +175,25 @@ export const userRouter = router({
         success: true,
         user,
       };
+    }),
+
+  /**
+   * Majorité, date de naissance et parent référent (admins). Un mineur peut être enregistré avant
+   * que tout soit connu (tri des comptes existants) : l'envoi au parent reste bloqué tant qu'il
+   * manque quelque chose. Majeur : les coordonnées du parent sont effacées.
+   */
+  setLegalInfo: protectedProcedure
+    .use(isAdmin)
+    .input(z.object({ userId: z.string().min(1), legal: legalInfoInput }))
+    .mutation(async ({ ctx, input }) => {
+      const u = await ctx.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } });
+      if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Compte introuvable." });
+      await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: legalInfoData(input.legal, u.email, { requireComplete: false }),
+        select: { id: true },
+      });
+      return { ok: true };
     }),
 
   /** Droit à l'image (admins) : autorisation recueillie par le club pour ce membre. */

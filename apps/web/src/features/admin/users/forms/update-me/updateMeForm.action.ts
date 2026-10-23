@@ -65,13 +65,18 @@ export async function updateMeFormAction(
 
   const data = parsed.data;
 
+  // Date de naissance saisie ou vérifiée par un instructeur (mineurs, dossier MJC) : le membre ne
+  // peut plus la modifier ; elle justifie l'accord parental du droit à l'image.
+  const current = await prisma.user.findUnique({ where: { id: userId }, select: { birthDateVerified: true } });
+  const birthDateLocked = current?.birthDateVerified === true;
+
   const updateData = {
     firstName: data.firstName,
     lastName: data.lastName,
     pseudo: data.pseudo ?? null,
     aboutMe: data.aboutMe ?? null,
     phone: data.phone ?? null,
-    birthDate: data.birthDate ? new Date(data.birthDate) : null,
+    ...(birthDateLocked ? {} : { birthDate: data.birthDate ? new Date(data.birthDate) : null }),
     isFirstLogin: false,
   } satisfies Prisma.UserUpdateInput;
 

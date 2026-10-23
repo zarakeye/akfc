@@ -9,6 +9,7 @@ import {
   imageConsentFormSelect,
   registerImageConsentForm,
 } from "@backend/modules/imageConsent/imageConsentForm.service";
+import { confirmMemberConsent, onlineConsentState } from "@backend/modules/imageConsent/imageConsentOnline.service";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -60,6 +61,28 @@ export const imageConsentRouter = router({
     await deleteImageConsentForm(ctx.prisma, input.id);
     return { ok: true };
   }),
+
+  /** Profil : majorité, possibilité de confirmer en ligne, ce qui manque (mineur). */
+  onlineState: protectedProcedure.query(({ ctx }) => onlineConsentState(ctx.prisma, ctx.sessionClient.user.id)),
+
+  /** Membre majeur : confirme en ligne ses choix, avec son mot de passe. */
+  confirmMine: protectedProcedure
+    .input(
+      z.object({
+        usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
+        keepAfterLeave: z.boolean().nullable(),
+        password: z.string().min(1, "Saisissez votre mot de passe."),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      confirmMemberConsent({
+        prisma: ctx.prisma,
+        userId: ctx.sessionClient.user.id,
+        password: input.password,
+        usages: input.usages,
+        keepAfterLeave: input.keepAfterLeave,
+      }),
+    ),
 
   /** Statut et formulaires du membre connecté (profil). */
   mine: protectedProcedure.query(async ({ ctx }) => {

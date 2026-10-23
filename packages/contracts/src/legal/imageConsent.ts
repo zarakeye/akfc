@@ -47,6 +47,65 @@ export const IMAGE_CONSENT_FORM_MIME_EXT: Record<string, string> = {
 };
 export const IMAGE_CONSENT_FORM_MAX_BYTES = 15 * 1024 * 1024;
 
+/**
+ * Version du texte d'autorisation (formulaire PDF et formulaire en ligne). Enregistrée avec chaque
+ * autorisation donnée en ligne : à changer à chaque modification du texte du formulaire.
+ */
+export const IMAGE_CONSENT_TEXT_VERSION = "2026-10";
+
+/** Majorité d'un membre (renseignée par un administrateur). */
+export const LEGAL_AGE_VALUES = ["UNKNOWN", "ADULT", "MINOR"] as const;
+export type LegalAgeValue = (typeof LEGAL_AGE_VALUES)[number];
+
+export const LEGAL_AGE_LABEL: Record<LegalAgeValue, string> = {
+  UNKNOWN: "Non renseignée",
+  ADULT: "Majeur",
+  MINOR: "Mineur",
+};
+
+/** Âge en années révolues à une date donnée (dates comparées en UTC, jour près). */
+export function ageOn(birthDate: Date, on: Date): number {
+  const b = new Date(birthDate);
+  let age = on.getUTCFullYear() - b.getUTCFullYear();
+  const beforeBirthday =
+    on.getUTCMonth() < b.getUTCMonth() || (on.getUTCMonth() === b.getUTCMonth() && on.getUTCDate() < b.getUTCDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+/**
+ * Majorité effective : un mineur dont la date de naissance VÉRIFIÉE atteint 18 ans est majeur, même
+ * si sa fiche n'a pas encore été mise à jour. Sinon, la valeur saisie par l'administrateur.
+ */
+export function effectiveLegalAge(
+  m: { legalAge: LegalAgeValue; birthDate: Date | null; birthDateVerified: boolean },
+  now: Date = new Date(),
+): LegalAgeValue {
+  if (m.legalAge === "MINOR" && m.birthDate && m.birthDateVerified && ageOn(m.birthDate, now) >= 18) return "ADULT";
+  return m.legalAge;
+}
+
+/**
+ * Mineur : ce qui manque pour envoyer la demande au parent ou télécharger le formulaire pré-rempli
+ * (libellés à afficher). Vide = complet. Tout doit être renseigné, la date de naissance vérifiée.
+ */
+export function missingForMinor(m: {
+  firstName: string | null;
+  lastName: string | null;
+  birthDate: Date | null;
+  birthDateVerified: boolean;
+  guardianName: string | null;
+  guardianEmail: string | null;
+}): string[] {
+  const missing: string[] = [];
+  if (!m.lastName?.trim()) missing.push("nom du membre");
+  if (!m.firstName?.trim()) missing.push("prénom du membre");
+  if (!m.birthDate || !m.birthDateVerified) missing.push("date de naissance (saisie par un instructeur)");
+  if (!m.guardianName?.trim()) missing.push("nom du parent référent");
+  if (!m.guardianEmail?.trim()) missing.push("adresse e-mail du parent référent");
+  return missing;
+}
+
 /** Statut déduit d'un formulaire : accordée dès qu'un usage est autorisé. */
 export function consentFromUsages(usages: readonly ImageUsageValue[]): Exclude<ImageConsentValue, "UNKNOWN"> {
   return usages.length > 0 ? "GRANTED" : "REFUSED";
