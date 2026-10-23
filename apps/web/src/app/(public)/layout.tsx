@@ -6,6 +6,7 @@ import { prisma } from "@backend/prisma";
 import { BreakingNewsShell } from "@features/breaking-news/BreakingNewsShell";
 import { FirstLoginRedirect } from "@features/auth/FirstLoginRedirect";
 import { DraftPageBadge } from "@features/app-shell/DraftPageBadge";
+import { SkipLink } from "@features/app-shell/SkipLink";
 
 /**
  * Layout du SITE PUBLIC.
@@ -50,12 +51,16 @@ export default async function PublicLayout({
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
+      <SkipLink targetId="contenu" />
       <div className="sticky top-0 z-50 bg-background">
         <Header initialLogoUrl={initialLogoUrl} initialBrand={initialBrand} />
         <FirstLoginRedirect />
       </div>
       <BreakingNewsShell news={activeNews} />
-      <main className="flex-1">{children}</main>
+      {/* tabIndex -1 : la cible du lien d'évitement reçoit le curseur, et le Tab suivant part du contenu. */}
+      <main id="contenu" tabIndex={-1} className="flex-1 focus:outline-none">
+        {children}
+      </main>
       <Footer />
       <DraftPageBadge />
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { JSX, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,6 +30,18 @@ type Carousel = {
 } | null;
 
 /* ►►► Réglages ◄◄◄ */
+/**
+ * Réglage système « réduire les animations » (prefers-reduced-motion), lu comme une source externe :
+ * `false` au rendu serveur, la vraie valeur dès l'hydratation, et suivi s'il change.
+ */
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+function subscribeReducedMotion(onChange: () => void): () => void {
+  const mql = window.matchMedia(REDUCED_MOTION);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+const readReducedMotion = (): boolean => window.matchMedia(REDUCED_MOTION).matches;
+
 const H_MAX = 320;
 const H_MIN = 170;
 const NET = 0.84; // fraction "nette" (hors fondus) de la largeur
@@ -83,7 +95,12 @@ export default function HomeCarousel(): JSX.Element | null {
   );
 
   const [cw, setCw] = useState(1000);
-  const [playing, setPlaying] = useState(true);
+  // Défilement automatique : en marche par défaut, ARRÊTÉ pour qui a demandé à son système de
+  // réduire les animations (le bouton Lecture reste disponible). Le choix du visiteur, une fois fait,
+  // l'emporte sur le réglage.
+  const reduceMotion = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
+  const [playChoice, setPlayChoice] = useState<boolean | null>(null);
+  const playing = playChoice ?? !reduceMotion;
   const [autoMode, setAutoMode] = useState<AutoMode>("continu");
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
@@ -287,7 +304,7 @@ export default function HomeCarousel(): JSX.Element | null {
   }, [geo.W, layout, nextDelta]);
 
   const goManual = useCallback(() => {
-    setPlaying(false);
+    setPlayChoice(false);
     diapoRest.current = null;
   }, []);
 
@@ -523,7 +540,7 @@ export default function HomeCarousel(): JSX.Element | null {
 
             <button
               type="button"
-              onClick={() => setPlaying((p) => !p)}
+              onClick={() => setPlayChoice(!playing)}
               aria-label={playing ? "Mettre en pause" : "Reprendre le défilement"}
               className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-sm text-gray-700 backdrop-blur transition-colors hover:bg-white dark:border-white/20 dark:bg-white/10"
             >

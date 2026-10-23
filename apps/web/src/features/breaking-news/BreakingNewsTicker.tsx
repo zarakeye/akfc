@@ -7,7 +7,8 @@ import type { BreakingNews } from "@prisma/client";
  * Ruban défilant des actualités actives — sous le header public.
  *
  * Défilement continu (keyframes CSS, contenu dupliqué pour une boucle
- * sans couture), pause au survol, et respect de
+ * sans couture), pause au survol et quand un titre a le curseur clavier
+ * (on ne lit pas un bouton qui file), et respect de
  * `prefers-reduced-motion` (liste statique scrollable à la place).
  *
  * Avec `onSelect`, chaque titre devient un bouton qui ouvre la sidebar
@@ -67,7 +68,8 @@ export function BreakingNewsTicker({
         .akfc-ticker-track {
           animation: akfc-ticker-scroll ${duration}s linear infinite;
         }
-        .akfc-ticker:hover .akfc-ticker-track {
+        .akfc-ticker:hover .akfc-ticker-track,
+        .akfc-ticker:focus-within .akfc-ticker-track {
           animation-play-state: paused;
         }
         @media (prefers-reduced-motion: reduce) {
