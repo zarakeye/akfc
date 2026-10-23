@@ -1,0 +1,168 @@
+---
+title: "Les demandes"
+description: "Un message, un numéro, un responsable, un délai : les demandes des membres au club, qui peut les traiter, le passage de relais, les réponses envoyées depuis le site, la relève des réponses par e-mail et le récapitulatif quotidien."
+section: "Membres et collaboration"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les groupes collaboratifs ont chacun leur espace de fichiers, avec des droits de lecture ou d'écriture qui descendent dans la hiérarchie des groupes. Chaque garde lit le groupe dans le chemin visé.
+
+Un membre a parfois besoin de s'adresser au club : poser une question, signaler un problème sur le site, demander une attestation. Le club a fixé quatre exigences : **un message, un numéro, un responsable, un délai**. Chaque demande est numérotée, quelqu'un en est responsable, et le club s'engage sur un délai de première réponse. Sans que l'adresse personnelle de personne ne circule, ni celle du membre, ni celle de qui lui répond.
+
+## Le modèle
+
+Une demande (`Ticket`) appartient à une **catégorie** (`TicketCategory`). La catégorie désigne le **groupe** dont les membres traitent ses demandes, et l'**adresse du club** à laquelle elle se rattache. Deux catégories sont créées au démarrage si elles n'existent pas : « Gestion du club », traitée par le groupe Administrateurs (`admin@akfc.fr`), et « Support du site », traitée par le groupe Support (`support@akfc.fr`).
+
+Chaque demande porte un numéro tiré d'une séquence de la base (`number Int @unique @default(autoincrement())`), jamais modifié, et affiché sous une forme lisible :
+
+```ts
+// packages/backend/src/modules/tickets/ticketRef.ts (extrait)
+export function formatTicketRef(number: number): string {
+  return `${TICKET_REF_PREFIX}-${String(number).padStart(4, "0")}`;
+}
+```
+
+La demande n° 42 devient **AKFC-0042**. Cette référence figure dans l'objet de chaque e-mail (`[AKFC-0042] …`) : c'est elle qui permet de rattacher une réponse à sa demande.
+
+Une demande contient ses **messages** (`TicketMessage`), entrants (`IN`, du demandeur) ou sortants (`OUT`, du club), et son **historique** (`TicketEvent`) : création, prise en charge, transfert, messages, clôture, réouverture. Chaque écriture se fait dans une transaction avec son évènement : l'historique ne peut pas manquer une étape.
+
+<DocsTable columnsJson='["Statut","Signification","La balle est chez…"]' rowsJson='[["WAITING","Personne ne s’en occupe encore.","le club"],["IN_PROGRESS","Un responsable s’en occupe.","le club"],["ANSWERED","Le club a répondu.","le demandeur"],["CLOSED","Terminée. Un nouveau message du demandeur la rouvre.","personne"]]' />
+
+## Le délai : fixé une fois pour toutes
+
+L'échéance (`dueAt`) est celle de la **première réponse**. Elle est calculée à la création, à partir du délai réglé par les administrateurs (sept jours par défaut), et elle n'est **jamais repoussée** : ni par une prise en charge, ni par un transfert.
+
+```ts
+// packages/backend/src/modules/tickets/tickets.service.ts (extrait)
+await db.$transaction([
+  db.ticket.update({
+    where: { id: t.id },
+    // L'échéance (dueAt) n'est PAS modifiée : le délai promis ne repart pas à zéro.
+    data: { assigneeId: toUserId, status: t.status === "WAITING" ? "IN_PROGRESS" : t.status },
+  }),
+  db.ticketEvent.create({
+    data: { ticketId: t.id, type: "TRANSFERRED", actorId, toUserId, note: cleanNote },
+  }),
+]);
+```
+
+Le délai est une promesse faite au demandeur, pas un compteur interne : se passer la demande ne doit pas lui faire attendre davantage.
+
+## Déposer une demande
+
+Le formulaire est réservé aux **membres connectés**. Un visiteur trouve sur la page « Nous contacter » l'adresse du club. La procédure `ticket.submit` prend l'identité du demandeur dans la session, avec deux protections contre les abus :
+
+```ts
+// packages/backend/src/modules/tickets/router.ts (extrait)
+// Robot qui remplit tout : réponse d'apparence normale, rien n'est créé.
+if (input.website && input.website.trim() !== "") {
+  return { ref: null, dueAt: null, acknowledged: true };
+}
+```
+
+- Un **champ piège** (`website`), invisible pour un humain : un robot qui remplit tous les champs le remplit aussi. Il reçoit une réponse normale, et rien n'est créé, ce qui ne lui apprend pas qu'il a été repéré.
+- Une **limite de fréquence** : cinq demandes par heure au plus, par adresse IP et par adresse e-mail.
+
+La demande est créée avec son premier message et son évènement de création, dans une même transaction. Deux e-mails partent ensuite : un **accusé de réception** au demandeur, avec la référence et l'échéance, et un **avis** à l'adresse de la catégorie. Un échec d'envoi est journalisé sans annuler la demande, qui existe et apparaîtra dans le récapitulatif.
+
+## Qui traite une demande
+
+Peut traiter une demande un administrateur, ou un **membre direct** du groupe de sa catégorie :
+
+```ts
+// packages/backend/src/modules/tickets/tickets.service.ts (extrait)
+export async function canHandleCategory(db: Db, userId: string, categoryId: string): Promise<boolean> {
+  if (await isAdminByGroup(db, userId)) return true;
+  const membership = await db.memberGroupMembership.findFirst({
+    where: { userId, group: { ticketCategories: { some: { id: categoryId } } } },
+    select: { id: true },
+  });
+  return membership !== null;
+}
+```
+
+Contrairement aux espaces collaboratifs, l'appartenance n'est pas héritée de la hiérarchie : être membre d'un groupe parent ne donne pas à traiter les demandes de ses sous-groupes. Traiter une demande, c'est répondre au nom du club ; ce rôle se confie nommément.
+
+Toutes les opérations passent par cette vérification : prendre en charge, transférer, répondre, clore, rouvrir. Un **transfert** exige une note pour la personne qui reprend, et cette personne doit elle-même pouvoir traiter la catégorie. Un membre qui traite les demandes voit le nom du demandeur, mais pas son adresse : seuls les administrateurs la voient (voir « La frontière serveur / client »).
+
+## Répondre : l'e-mail d'abord
+
+La réponse est écrite dans le tableau de bord et part par e-mail au demandeur, depuis l'adresse d'envoi du site, signée du nom de la personne qui répond. L'ordre des opérations est délibéré :
+
+```ts
+// packages/backend/src/modules/tickets/router.ts (extrait)
+let messageId: string | null;
+try {
+  messageId = await sendTicketReply({
+    number: t.number,
+    subject: t.subject,
+    body: text,
+    authorName: displayName(author),
+    category: t.category,
+    to: { email: t.requesterEmail, name: t.requesterName },
+    quoted: t.messages[0] ?? null,
+  });
+} catch (err) {
+  // …
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: "L'e-mail n'a pas pu partir : votre réponse n'a pas été enregistrée. Réessayez dans un instant.",
+  });
+}
+const res = await replyToTicket(ctx.prisma, t.id, userId, text, messageId);
+```
+
+L'e-mail part **avant** l'enregistrement. S'il échoue, rien n'est enregistré, et celui qui répond le sait aussitôt. L'ordre inverse produirait une demande marquée « répondue » alors que le demandeur n'a rien reçu. Le `Message-ID` de l'e-mail envoyé est gardé avec le message : la réponse du demandeur le citera.
+
+## Les réponses par e-mail
+
+Le demandeur répond simplement à l'e-mail reçu. Quand la relève est configurée (`TICKET_IMAP_HOST`), l'adresse de réponse des e-mails de demande est celle de la boîte d'envoi du site, `noreply@`, que le site relit toutes les deux minutes par IMAP ; sans relève, c'est l'adresse de la catégorie. Chaque message relevé est rattaché à sa demande en deux temps :
+
+```ts
+// packages/backend/src/modules/tickets/inboundEmail.ts (extrait)
+const refs = [...new Set(mail.references.map(normId).filter(Boolean))];
+if (refs.length > 0) {
+  const hit = await db.ticketMessage.findFirst({
+    where: { OR: refs.flatMap((r) => [{ emailMessageId: r }, { emailMessageId: `<${r}>` }]) },
+    select: { ticket: { select: { id: true, number: true, requesterEmail: true, requesterId: true } } },
+  });
+  ticket = hit?.ticket ?? null;
+}
+// 2) référence dans l'objet.
+const number = ticket?.number ?? parseTicketRef(mail.subject);
+if (number === null) return { kind: "not-ticket" };
+if (mail.autoReply) return { kind: "review", reason: "auto-reply", number };
+```
+
+D'abord par les en-têtes de réponse (`In-Reply-To`, `References`), qui citent le `Message-ID` d'un message du club. À défaut, par la référence `[AKFC-0042]` de l'objet. Puis trois contrôles avant d'ajouter le message :
+
+- **l'expéditeur doit être le demandeur** : un message d'une autre adresse qui cite la référence n'est pas ajouté à la demande ;
+- **les réponses automatiques et les avis de non-remise** ne sont jamais ajoutés ;
+- **un même `Message-ID` n'est importé qu'une fois** : la colonne est unique, et une relève rejouée ne crée pas de doublon.
+
+Ce qui ne passe pas ces contrôles est rangé dans un dossier « à vérifier » de la boîte, pour un humain. Le texte cité de l'e-mail précédent (« Le … a écrit : », lignes en `>`) est retiré, pour ne garder que la réponse. Un message du demandeur sur une demande close la rouvre.
+
+<Callout type="info">
+Le club répond depuis le site, le demandeur répond depuis sa messagerie : aucun des deux ne voit l'adresse personnelle de l'autre. Les e-mails partent de `noreply@`, et les réponses y reviennent.
+</Callout>
+
+## Le récapitulatif quotidien
+
+Chaque matin à 8 heures (heure de Paris, réglable par `TICKET_RECAP_HOUR`), chaque adresse de catégorie reçoit un récapitulatif. En tête, les demandes **en retard** et celles dont l'échéance tombe dans les 48 heures. Puis les autres demandes qui attendent le club. Les demandes « répondues », où la balle est chez le demandeur, ne sont que comptées. Quand le club n'a rien à faire, aucun e-mail ne part.
+
+Le récapitulatif va aux adresses du club (`admin@`, `support@`), jamais aux boîtes personnelles : il sert aussi de relance, sans multiplier les e-mails dans les boîtes de chacun.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment une demande est-elle identifiée ?","Par un numéro de séquence, affiché AKFC-0042 et repris dans l’objet de chaque e-mail."],["Qui la traite ?","Un administrateur, ou un membre direct du groupe de sa catégorie (sans héritage)."],["Le délai peut-il être repoussé ?","Non : l’échéance de première réponse est fixée à la création, transfert compris."],["Pourquoi l’e-mail part-il avant l’enregistrement ?","Pour qu’une réponse enregistrée soit toujours une réponse reçue."],["Comment une réponse par e-mail retrouve-t-elle sa demande ?","Par les en-têtes de réponse, sinon par la référence de l’objet ; l’expéditeur doit être le demandeur."],["Qui est relancé ?","Les adresses de catégorie, chaque matin, s’il reste quelque chose à faire."]]' />
+
+## À suivre
+
+Les membres reçoivent les documents du club, partagent leurs fichiers et s'adressent au club par des demandes suivies. Tout cela repose sur des données personnelles : comptes, adresses, photos, échanges. Le site doit dire ce qu'il en fait, combien de temps il les garde, et permettre à chacun d'exercer ses droits.
+
+<Callout type="tip">
+**Partie suivante : légal et RGPD.** Les mentions légales et la politique de confidentialité générées depuis les réglages, les durées de conservation appliquées par une purge, l'export des données d'un membre, et le droit à l'image.
+</Callout>
