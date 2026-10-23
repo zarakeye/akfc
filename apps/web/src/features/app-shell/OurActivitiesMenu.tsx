@@ -9,6 +9,7 @@ import {
   NAV_SUB_ACTIVE_PANEL,
 } from "@features/app-shell/navEntries";
 import { trpc } from "@trpc/trpcClient";
+import { useDisclosure } from "@features/app-shell/useDisclosure";
 
 /**
  * Menu public « Nos disciplines ».
@@ -19,8 +20,8 @@ import { trpc } from "@trpc/trpcClient";
  * disciplines par nom, les sans-famille sous « Autres »), liens vers
  * `/disciplines/[slug]`.
  *
- * Calqué sur le menu « Documentation » du Header : hover piloté par l'état
- * React (`onMouseEnter`/`onMouseLeave`), texte blanc + halo emerald au survol,
+ * Calqué sur les menus de la barre du Header : survol et clavier (useDisclosure :
+ * le titre est un bouton), texte blanc + halo emerald au survol,
  * chevron `chevron-white.svg` qui pivote, panneau `bg-gray-300` à liens
  * `text-gray-800 hover:bg-gray-100`.
  */
@@ -28,13 +29,15 @@ export default function OurActivitiesMenu({
   variant = "bar",
 }: {
   /**
-   * `bar` : déroulé au SURVOL, pour la barre horizontale du desktop.
+   * `bar` : déroulé au SURVOL ou au clavier, pour la barre horizontale du desktop.
    * `panel` : déroulé à l'APPUI, pour le panneau du menu burger — un écran
    * tactile n'a pas de survol, et ce menu y était donc inatteignable.
    */
   variant?: "bar" | "panel";
 } = {}): JSX.Element {
+  // Panneau : déroulé à l'appui. Barre : survol et clavier.
   const [hover, setHover] = useState<boolean>(false);
+  const bar = useDisclosure();
   // Page active : le libellé s'active sur toute page discipline, l'item sur SA discipline.
   const pathname = usePathname();
   const onDisciplines = pathname.startsWith("/disciplines/");
@@ -124,21 +127,26 @@ export default function OurActivitiesMenu({
 
   return (
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      {...bar.rootProps}
       className="relative flex text-white items-center transition duration-700 hover:[text-shadow:0_0_15px_#34d399,0_0_30px_#10b981,0_0_60px_#059669]"
     >
-      <span className={`text-lg font-bold ${onDisciplines ? NAV_ACTIVE : ""}`}>Nos disciplines</span>
-      <Image
-        src="/chevron-white.svg"
-        alt=""
-        aria-hidden="true"
-        width={30}
-        height={30}
-        className={`transition-transform duration-300 ${hover ? "rotate-180" : ""}`}
-      />
+      <button
+        {...bar.buttonProps}
+        className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+      >
+        <span className={`text-lg font-bold ${onDisciplines ? NAV_ACTIVE : ""}`}>Nos disciplines</span>
+        <Image
+          src="/chevron-white.svg"
+          alt=""
+          aria-hidden="true"
+          width={30}
+          height={30}
+          className={`transition-transform duration-300 ${bar.open ? "rotate-180" : ""}`}
+        />
+      </button>
       <div
-        className={`${hover ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
+        {...bar.menuProps}
+        className={`${bar.open ? "block" : "hidden"} absolute z-20 top-full left-1/2 transform -translate-x-1/2 min-w-[18rem] bg-gray-300 border-4 rounded shadow-md opacity-90 hover:opacity-100 transition-opacity duration-300`}
       >
         {/* Accès direct à l'agenda.
             « Tous les stages » et « Tous les évènements » ont fusionné ici :

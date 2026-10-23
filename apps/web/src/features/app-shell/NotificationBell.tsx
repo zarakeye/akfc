@@ -198,7 +198,7 @@ export function NotificationBell(): JSX.Element | null {
           /* `pt-1` plutôt qu'une marge : sans zone continue, le survol se
              romprait entre la cloche et le panneau. Et pas de
              `pointer-events-none` — les liens doivent être cliquables. */
-          className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block"
+          className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-focus-within:block"
         >
           <div className="w-max max-w-80 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
             {pending > 0 && (

@@ -21,6 +21,7 @@ import {
 } from "@features/app-shell/navEntries";
 import { trpc } from "@trpc/trpcClient";
 import { ThemeToggle } from "@features/theme";
+import { useDisclosure } from "@features/app-shell/useDisclosure";
 
 /**
  * En-tête de l'application, en deux rendus alimentés par la MÊME source
@@ -30,7 +31,8 @@ import { ThemeToggle } from "@features/theme";
  *   - en dessous, un bouton burger ouvrant un panneau plein écran.
  *
  * Le burger ne règle pas qu'un problème de place. Les menus déroulants de la
- * barre s'ouvrent au SURVOL, geste qui n'existe pas sur un écran tactile :
+ * barre s'ouvrent au SURVOL (et au clavier : voir BarMenu), geste qui n'existe
+ * pas sur un écran tactile :
  * « Nos disciplines », « Qui sommes-nous ? » et « Documentation » y étaient
  * inaccessibles. Le panneau les ouvre à l'APPUI.
  *
@@ -54,10 +56,9 @@ export default function Header({
   const logoUrl = siteSettings.data?.logoUrl ?? initialLogoUrl;
   const brand = siteSettings.data?.shortTitle ?? initialBrand;
 
-  // Menu déroulant ouvert dans la BARRE (survol) et dans le PANNEAU (appui).
-  // Deux états distincts : les deux rendus coexistent dans l'arbre, et un
-  // état commun ferait s'ouvrir l'un en manipulant l'autre.
-  const [barMenu, setBarMenu] = useState<string | null>(null);
+  // Menu déroulant ouvert dans le PANNEAU (appui). Ceux de la BARRE ont chacun
+  // leur état (BarMenu) : les deux rendus coexistent dans l'arbre, et un état
+  // commun ferait s'ouvrir l'un en manipulant l'autre.
   const [panelMenu, setPanelMenu] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -142,38 +143,7 @@ export default function Header({
             );
           }
 
-          return (
-            <div
-              key={entry.label}
-              onMouseEnter={() => setBarMenu(entry.label)}
-              onMouseLeave={() => setBarMenu(null)}
-              className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW}`}
-            >
-              <span className={`whitespace-nowrap text-lg font-bold ${isActive(entry) ? NAV_ACTIVE : ""}`}>{entry.label}</span>
-              <Image
-                src="/chevron-white.svg"
-                alt=""
-                aria-hidden="true"
-                width={22}
-                height={22}
-                className={`shrink-0 transition-transform duration-300 ${barMenu === entry.label ? "rotate-180" : ""}`}
-              />
-              <div
-                className={`${barMenu === entry.label ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-gray-300 opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
-              >
-                {entry.children.map((child) => (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    aria-current={pathname === child.href ? "page" : undefined}
-                    className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
-                  >
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
+          return <BarMenu key={entry.label} entry={entry} active={isActive(entry)} pathname={pathname} />;
         })}
       </nav>
 
@@ -326,5 +296,52 @@ export default function Header({
         </div>
       )}
     </header>
+  );
+}
+
+/**
+ * Menu déroulant de la BARRE (≥ xl) : au survol pour la souris, et au clavier — le titre est un
+ * bouton (Tab, Entrée ou Espace, Échap ; voir useDisclosure). Les liens d'un menu fermé sont
+ * masqués (`hidden`), donc hors de l'ordre de tabulation.
+ */
+function BarMenu({
+  entry,
+  active,
+  pathname,
+}: {
+  entry: Extract<NavEntry, { kind: "menu" }>;
+  active: boolean;
+  pathname: string;
+}) {
+  const { open, rootProps, buttonProps, menuProps } = useDisclosure();
+  return (
+    <div {...rootProps} className={`relative flex items-center whitespace-nowrap 2xl:text-[20px] ${NAV_GLOW}`}>
+      <button {...buttonProps} className="flex items-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
+        <span className={`whitespace-nowrap text-lg font-bold ${active ? NAV_ACTIVE : ""}`}>{entry.label}</span>
+        <Image
+          src="/chevron-white.svg"
+          alt=""
+          aria-hidden="true"
+          width={22}
+          height={22}
+          className={`shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        {...menuProps}
+        className={`${open ? "block" : "hidden"} absolute left-1/2 top-full z-20 w-44 -translate-x-1/2 transform rounded border-4 bg-gray-300 opacity-90 shadow-md transition-opacity duration-300 hover:opacity-100`}
+      >
+        {entry.children.map((child) => (
+          <Link
+            key={child.href}
+            href={child.href}
+            aria-current={pathname === child.href ? "page" : undefined}
+            className={`block px-4 py-2 ${pathname === child.href ? NAV_SUB_ACTIVE_BAR : "text-gray-800 hover:bg-gray-100"}`}
+          >
+            {child.label}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -73,7 +73,7 @@ export function CollaborativeBell(): JSX.Element | null {
       </Link>
 
       {/* Menu déroulant au survol */}
-      <div className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block">
+      <div className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-focus-within:block">
         <div className="w-80 max-w-[90vw] overflow-hidden rounded-md border border-gray-200 bg-white py-1 shadow-lg">
           {total === 0 ? (
             <div className="px-3 py-2 text-sm text-gray-500">

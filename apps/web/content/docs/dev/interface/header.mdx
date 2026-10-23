@@ -41,7 +41,7 @@ Une entrée est un **lien**, un **menu** à sous-liens, ou l'entrée spéciale *
 
 Cette liste alimente **deux rendus**. À partir de 1 280 pixels de large (`xl`), une barre horizontale ; en dessous, un bouton « burger » qui ouvre un panneau plein écran. Les deux parcourent `NAV_ENTRIES` : un lien ajouté à la liste apparaît des deux côtés, sans risque de l'oublier dans l'un.
 
-<DocsTable columnsJson='["","Barre (≥ xl)","Panneau (< xl)"]' rowsJson='[["Sous-menus","Ouverts au survol de la souris.","Ouverts à l’appui, par un bouton."],["Connexion et menu du membre","À droite de la barre.","En pied de panneau."],["Cloches","À droite de la barre.","Toujours visibles dans la barre réduite, hors du panneau."],["Fermeture","—","Bouton, touche Échap, appui sur le fond ou sur un lien."]]' />
+<DocsTable columnsJson='["","Barre (≥ xl)","Panneau (< xl)"]' rowsJson='[["Sous-menus","Ouverts au survol, ou au clavier par leur titre (voir « L’accessibilité »).","Ouverts à l’appui, par un bouton."],["Connexion et menu du membre","À droite de la barre.","En pied de panneau."],["Cloches","À droite de la barre.","Toujours visibles dans la barre réduite, hors du panneau."],["Fermeture","—","Bouton, touche Échap, appui sur le fond ou sur un lien."]]' />
 
 Le panneau n'existe pas seulement par manque de place. Le survol n'existe pas sur un écran tactile : dans la barre, les sous-menus y étaient inaccessibles. Le panneau les ouvre à l'appui. Les cloches, elles, restent hors du panneau : leur intérêt est d'être vues sans qu'on les cherche.
 
@@ -110,7 +110,7 @@ Le menu du membre réunit ce qui le concerne, selon son rôle :
   <Link
     href="/dashboard/tickets"
     className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-    onClick={() => setOpen(false)}
+    onClick={menu.close}
   >
     Demandes reçues
 ```

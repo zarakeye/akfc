@@ -1,0 +1,113 @@
+---
+title: "L'accessibilité"
+description: "Un site utilisable au clavier et avec un lecteur d'écran : la langue de la page, des menus qui s'ouvrent autrement qu'au survol, des noms pour ce qui n'a pas de texte, des animations qui s'effacent sur demande, et la liste de ce qui reste à faire."
+section: "Interface transverse"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le header réunit la navigation, la connexion et les signaux de la personne connectée, en deux rendus : une barre et un panneau mobile.
+
+Tout le monde ne navigue pas à la souris. Une personne malvoyante utilise un lecteur d'écran, qui lit la page à voix haute et se pilote au clavier. D'autres n'utilisent que le clavier, par choix ou parce qu'un handicap moteur rend la souris difficile. D'autres encore demandent à leur système de réduire les animations, qui leur donnent des vertiges. Une page accessible fonctionne pour chacun. Les règles de référence sont les **WCAG** (internationales) et leur déclinaison française, le **RGAA**. Ce chapitre décrit ce que le site applique, une correction récente du header, et ce qui reste à faire.
+
+## Quatre questions pour chaque élément
+
+Rendre un site accessible revient à se poser quatre questions, élément par élément :
+
+<DocsTable columnsJson='["Question","Exemple dans le projet"]' rowsJson='[["Peut-on l’atteindre et l’utiliser au clavier ?","Les menus du header, le panneau mobile (Échap pour fermer)."],["A-t-il un nom, pour qui ne le voit pas ?","Le bouton burger « Ouvrir le menu », les flèches du carrousel « Précédent » et « Suivant »."],["Annonce-t-il son état ?","aria-expanded sur les boutons qui déroulent un menu, aria-current sur le lien de la page en cours."],["Bouge-t-il sans qu’on l’ait demandé ?","Les cloches et le ruban d’actualités, arrêtés si le système demande moins d’animations."]]' />
+
+La première information donnée à un lecteur d'écran est la langue de la page : elle choisit la voix et la prononciation. Le layout racine la déclare une fois pour tout le site (`<html lang="fr">`).
+
+## Au clavier : des menus qui ne s'ouvrent pas qu'au survol
+
+Au clavier, la touche Tab passe d'un élément **interactif** à l'autre : liens, boutons, champs. Un simple texte n'en fait pas partie, même s'il réagit au survol. Jusqu'à récemment, les titres « Nos disciplines » et « Qui sommes-nous ? » de la barre étaient des textes ouverts au survol, comme le menu du membre (avatar et prénom). Au clavier, la touche Tab les sautait : une personne sans souris ne pouvait atteindre ni les pages de ces menus, ni son profil, ni même la déconnexion.
+
+La correction suit le modèle de **menu de navigation à volets** (« disclosure ») des pratiques WAI-ARIA : le titre devient un vrai bouton, qui ouvre et ferme son menu. La logique est écrite une fois, dans un hook partagé par les trois menus :
+
+```ts
+// apps/web/src/features/app-shell/useDisclosure.ts (extrait)
+onKeyDown: (e: KeyboardEvent): void => {
+  if (e.key === "Escape" && open) {
+    e.stopPropagation();
+    setOpen(false);
+    buttonRef.current?.focus();
+  }
+},
+onBlur: (e: FocusEvent): void => {
+  // Le curseur clavier sort du menu (vers un élément extérieur, ou nulle part).
+  if (!rootRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
+},
+```
+
+<DocsTable columnsJson='["Geste","Effet"]' rowsJson='[["Tab jusqu’au titre, puis Entrée ou Espace","Ouvre ou ferme le menu ; le bouton annonce son état (aria-expanded)."],["Tab dans le menu ouvert","Parcourt ses liens ; les liens d’un menu fermé sont masqués, donc sautés."],["Échap","Ferme le menu et remet le curseur sur son titre, pour ne pas perdre sa place."],["Tab après le dernier lien","Ferme le menu en sortant."],["Survol, clic ailleurs","Comme avant pour la souris : ouvre au survol, ferme en sortant ou en cliquant ailleurs."]]' />
+
+Un détail évite un conflit entre souris et clavier. À la souris, le survol a déjà ouvert le menu : un clic sur le titre qui l'inverserait le refermerait sous le pointeur. Le bouton ne bascule donc que pour un « clic » produit par le clavier, que le navigateur signale par `detail === 0` :
+
+```ts
+// apps/web/src/features/app-shell/useDisclosure.ts (extrait)
+onClick: (e: MouseEvent): void => {
+  if (e.detail === 0) setOpen((o) => !o);
+  else setOpen(true);
+},
+```
+
+Le curseur clavier doit aussi rester **visible**. Les nouveaux boutons portent un contour émeraude quand ils le reçoivent au clavier (`focus-visible:outline-emerald-400`), et pas au clic de souris, où il serait inutile.
+
+### Les infobulles qui contiennent des liens
+
+Les cloches et l'entrée « Mes documents » montrent au survol une infobulle détaillée, avec des liens. Une classe Tailwind de plus les affiche aussi quand l'élément reçoit le curseur clavier :
+
+```tsx
+// apps/web/src/features/app-shell/NotificationBell.tsx (extrait)
+className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-focus-within:block"
+```
+
+`group-focus-within` s'applique quand un élément du groupe, la cloche puis chacun des liens, a le curseur : l'infobulle reste ouverte pendant qu'on parcourt ses liens.
+
+## Un nom pour ce qui n'a pas de texte
+
+Un bouton fait d'une seule icône n'a rien à lire pour un lecteur d'écran, qui annoncerait seulement « bouton ». Il reçoit un nom par `aria-label` : « Ouvrir le menu » pour le burger, « Mettre en pause » ou « Reprendre le défilement » pour le carrousel. Les cloches vont plus loin : leur nom est le message de leur infobulle (« Vous avez 3 contenus en attente et 2 dans la corbeille »).
+
+À l'inverse, une image purement décorative, comme le chevron d'un menu, est **cachée** aux lecteurs d'écran (`alt=""` et `aria-hidden="true"`) : l'annoncer n'apporterait que du bruit. Une image qui porte une information, comme le logo, a un texte de remplacement (`alt`).
+
+## Des animations qui s'effacent sur demande
+
+Les systèmes d'exploitation proposent un réglage « réduire les animations ». Le navigateur le transmet par la requête média `prefers-reduced-motion`. Le ruban d'actualités sous le header défile en continu ; avec ce réglage, il devient une liste fixe qu'on fait défiler soi-même :
+
+```tsx
+// apps/web/src/features/breaking-news/BreakingNewsTicker.tsx (extrait)
+@media (prefers-reduced-motion: reduce) {
+  .akfc-ticker-track { animation: none; }
+  .akfc-ticker { overflow-x: auto; }
+}
+```
+
+Les cloches qui s'agitent et les transitions de la visionneuse de la galerie suivent la même règle. Le carrousel de l'accueil, lui, défile automatiquement, mais propose un bouton de pause : tout contenu qui bouge plus de cinq secondes doit pouvoir être arrêté.
+
+## Ce qui reste à faire
+
+Le site n'a pas encore fait l'objet d'un audit complet. Plusieurs points sont connus :
+
+- **Un lien d'évitement.** Au clavier, il faut traverser tout le header avant d'atteindre le contenu de chaque page. Un lien « Aller au contenu », invisible jusqu'à ce qu'il reçoive le curseur, placé en tête de page, permet de sauter directement au contenu principal.
+- **Le carrousel et le réglage des animations.** Il a une pause, mais ne tient pas compte de `prefers-reduced-motion` : il devrait démarrer arrêté pour qui l'a demandé.
+- **Le ruban au clavier.** Il s'arrête au survol, pas quand un de ses titres reçoit le curseur clavier ; il faudrait l'arrêter aussi dans ce cas (`:focus-within`).
+- **Les contrastes.** Les couleurs n'ont pas été mesurées, notamment en thème sombre. Le texte courant doit atteindre un rapport de contraste de 4,5 pour 1 avec son fond.
+- **Des tests automatiques.** Un outil comme axe peut vérifier à chaque modification une partie de ces règles (noms manquants, contrastes, rôles). Il ne remplace pas un essai au clavier et avec un lecteur d'écran, mais il évite les régressions.
+
+<Callout type="info">
+L'accessibilité ne s'ajoute pas à la fin : un élément interactif qui est un vrai `<button>` ou un vrai `<a>` est accessible presque gratuitement. Les difficultés viennent des `<div>` qui imitent un bouton, et des interactions réservées au survol.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment ouvrir un menu du header sans souris ?","Son titre est un bouton : Tab, puis Entrée ou Espace ; Échap le ferme (useDisclosure)."],["Comment un lecteur d’écran nomme-t-il un bouton-icône ?","Par son aria-label ; une image décorative est cachée (alt vide, aria-hidden)."],["Comment un lecteur d’écran sait-il qu’un menu est ouvert ?","Par aria-expanded sur le bouton ; la page en cours est signalée par aria-current."],["Que deviennent les animations pour qui les a désactivées ?","prefers-reduced-motion les arrête : ruban en liste fixe, cloches immobiles."],["Qu’est-ce qui reste à faire ?","Lien d’évitement, carrousel et ruban à adapter, contrastes à mesurer, tests automatiques."]]' />
+
+## À suivre
+
+La partie « Interface transverse » est complète. Le projet doit maintenant prouver qu'il fonctionne, et continuer à fonctionner après chaque modification : vérifier les types, relire le code, déboguer, tester.
+
+<Callout type="tip">
+**Partie suivante : qualité.** Le typecheck et le lint, le débogage, et les tests de bout en bout.
+</Callout>
