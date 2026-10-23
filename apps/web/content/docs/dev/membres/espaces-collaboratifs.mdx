@@ -1,0 +1,134 @@
+---
+title: "Les espaces collaboratifs"
+description: "Un espace de fichiers par groupe, des droits de lecture ou d'écriture propres à chaque espace, une hiérarchie de groupes qui transmet ses droits vers le bas, des gardes qui déduisent tout du chemin, et un finder réservé aux membres."
+section: "Membres et collaboration"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le club diffuse des documents à tous ses membres, à des groupes ou à des personnes. Une seule condition décide de ce qu'un membre peut voir et ouvrir, et elle est posée à chaque lecture.
+
+Les documents des membres descendent du club vers ses membres. Certains groupes ont aussi besoin de travailler ensemble : le bureau prépare l'assemblée générale, les instructeurs partagent leurs programmes. Il leur faut un espace où déposer leurs propres fichiers, les ranger et les consulter, sans voir ceux des autres groupes.
+
+## Deux sortes de groupes
+
+Un groupe (`MemberGroup`) sert d'abord de **liste de diffusion** : on lui adresse des documents, et ses membres les reçoivent. Un groupe marqué `isCollaborative` reçoit en plus un **espace de fichiers**, un dossier du stockage qui lui est propre :
+
+```ts
+// packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts (extrait)
+const groupSlug = slug(group.name) || `group-${groupId}`;
+
+return `${appRoot}/collaborative-group-spaces/${groupSlug}-${groupId}`;
+```
+
+Le chemin se termine par l'identifiant du groupe. Le nom lisible au début sert à s'y retrouver dans le stockage, mais c'est l'identifiant qui compte : toutes les vérifications de droits le lisent, et le finder affiche le nom du groupe à la place du segment technique.
+
+## Lecteur ou éditeur
+
+L'appartenance à un groupe porte un niveau d'accès à son espace :
+
+<DocsTable columnsJson='["Accès","Ce qu’il permet dans l’espace du groupe"]' rowsJson='[["VIEWER","Consulter les dossiers et ouvrir les fichiers."],["EDITOR","Consulter, déposer des fichiers, et mettre à la corbeille."]]' />
+
+Ce niveau ne concerne que l'espace : il ne donne aucun droit ailleurs sur le site, et ne fait pas d'un membre un administrateur.
+
+## Une hiérarchie qui transmet ses droits vers le bas
+
+Les groupes forment un **arbre** : chacun a au plus un parent (`parentGroupId`). Le groupe « Administrateurs » en est la racine, et un groupe créé sans parent lui est rattaché.
+
+Les droits **descendent** dans cet arbre. Un membre d'un groupe a accès aux espaces de tous les groupes placés sous lui, au même niveau. Un membre du bureau, éditeur de son groupe, est aussi éditeur de l'espace d'un sous-groupe « Commission des stages ». L'inverse n'est pas vrai : un membre de la commission ne voit pas l'espace du bureau.
+
+Pour un espace donné, l'accès effectif se calcule en remontant de ce groupe vers la racine, et en gardant le niveau le plus élevé rencontré :
+
+```ts
+// packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts (extrait)
+while (cursor && !seen.has(cursor)) {
+  seen.add(cursor);
+
+  const membership = await prisma.memberGroupMembership.findUnique({
+    where: { groupId_userId: { groupId: cursor, userId } },
+    select: { access: true },
+  });
+  if (membership?.access === "EDITOR") return "EDITOR";
+  if (membership?.access === "VIEWER") best = "VIEWER";
+
+  const group: { parentGroupId: string | null } | null =
+    await prisma.memberGroup.findUnique({
+      where: { id: cursor },
+      select: { parentGroupId: true },
+    });
+  cursor = group?.parentGroupId ?? null;
+}
+```
+
+Dès qu'un niveau EDITOR est trouvé, la recherche s'arrête : rien ne peut faire mieux. L'ensemble `seen` protège contre une boucle dans la hiérarchie : le formulaire interdit de choisir comme parent un groupe descendant, mais la vérification des droits ne dépend pas de cette précaution.
+
+Comme « Administrateurs » est l'ancêtre de tous les groupes, ses membres sont éditeurs de tous les espaces. Les gardes vérifient d'ailleurs d'abord l'appartenance à ce groupe (`isAdminByGroup`), ce qui évite de remonter l'arbre pour un administrateur.
+
+## Les gardes : tout se déduit du chemin
+
+Quatre opérations touchent un espace : lire, déposer, mettre à la corbeille, et rendre un fichier déposé visible aux membres du groupe. Chacune a sa garde, et toutes suivent la même règle : le groupe concerné se lit **dans le chemin** du fichier ou du dossier visé, jamais dans une information séparée que le navigateur pourrait choisir librement.
+
+```ts
+// packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts (extrait)
+export function groupIdFromLogicalPath(path: string): string | null {
+  const parts = path.split("/").filter(Boolean);
+  const i = parts.indexOf("collaborative-group-spaces");
+  if (i === -1 || i + 1 >= parts.length) return null;
+  const segment = parts[i + 1];
+  const dash = segment.lastIndexOf("-");
+  if (dash === -1) return null;
+  const groupId = segment.slice(dash + 1);
+  return groupId.length > 0 ? groupId : null;
+}
+```
+
+<DocsTable columnsJson='["Opération","Garde","Exige"]' rowsJson='[["Parcourir un dossier","assertCanReadPath","un accès au groupe du chemin (VIEWER ou EDITOR)"],["Ouvrir un fichier","canReadStorageKey","un accès au groupe de la clé de stockage"],["Déposer","assertCanWriteGroupSpace (destination « group »)","EDITOR sur le groupe ; le serveur calcule lui-même le dossier de dépôt"],["Mettre à la corbeille","assertCanTrashPaths","EDITOR sur le groupe de chaque chemin ; hors d’un espace de groupe, réservé aux administrateurs"],["Rendre visible au groupe","depositToGroupSpace","EDITOR sur le groupe, et un fichier situé dans l’espace de ce même groupe"]]' />
+
+La dernière ligne montre pourquoi la règle compte. Après un dépôt, le fichier est publié comme document des membres ciblé sur le groupe : il bénéficie ainsi du suivi de lecture et des badges du chapitre précédent. La procédure reçoit le chemin du fichier et l'identifiant du groupe. Vérifier seulement que l'appelant est éditeur du groupe ne suffirait pas : un éditeur pourrait publier à son groupe un fichier pris ailleurs (le document personnel d'un autre membre, par exemple) et le lire par ce biais. La procédure exige donc que le chemin désigne l'espace de ce même groupe :
+
+```ts
+// packages/backend/src/modules/memberDocuments/router.ts (extrait)
+if (input.path.includes("..") || groupIdFromLogicalPath(input.path) !== input.groupId) {
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: "Ce fichier n'est pas dans l'espace de ce groupe.",
+  });
+}
+```
+
+<Callout type="info">
+Une garde ne fait pas confiance à deux informations séparées qui devraient concorder : elle déduit l'une de l'autre, ou elle vérifie qu'elles concordent. Le droit porte sur le groupe ; le groupe se lit dans le chemin.
+</Callout>
+
+## Le finder des membres
+
+Un membre retrouve ses espaces sur la page « Mes espaces », que la cloche collaborative du header ouvre quand un nouveau fichier y a été déposé. La page réutilise le **même composant `Finder`** que le tableau de bord, avec deux différences.
+
+```tsx
+// apps/web/src/app/(public)/mes-espaces/page.tsx (extrait)
+<Finder
+  adapter={memberFinderAdapter}
+  rootPath={MEMBER_FINDER_ROOT}
+  readOnly
+/>
+```
+
+**`readOnly`** retire du finder les actions de gestion (sélection multiple, changement de statut, suppression). Les gardes refuseraient de toute façon ces opérations à un membre : l'interface ne les propose simplement pas. Le dépôt passe par une barre au-dessus du finder, affichée seulement dans un espace où le membre est éditeur.
+
+**`memberFinderAdapter`** fournit au finder une racine **virtuelle**, « Mes espaces ». Un membre peut appartenir à plusieurs groupes sans lien entre eux, comme le bureau et la commission des stages : ses espaces n'ont pas de dossier commun dans le stockage. La racine virtuelle les réunit. Ses enfants sont les espaces de plus haut niveau auxquels le membre a accès, et chaque espace montre son contenu suivi de ses sous-groupes.
+
+La liste de ces espaces vient de `storage.myCollaborativeSpaces`. Pour un membre, elle part de ses appartenances et **descend** l'arbre des groupes, en propageant le niveau d'accès, puis ne garde que les groupes collaboratifs. C'est le même héritage que celui des gardes, calculé dans l'autre sens : les gardes remontent depuis un espace, la liste descend depuis le membre.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un espace collaboratif ?","Le dossier collaborative-group-spaces/<nom>-<id> d’un groupe marqué isCollaborative."],["Quels droits y a-t-il ?","VIEWER (consulter) ou EDITOR (déposer, mettre à la corbeille), propres à chaque appartenance."],["Comment la hiérarchie agit-elle ?","Les droits descendent : un membre d’un groupe a accès aux espaces des groupes placés sous lui ; Administrateurs est la racine."],["Comment une garde trouve-t-elle le groupe ?","Dans le chemin visé, par l’identifiant qui termine le dossier de l’espace."],["Que vérifie la publication d’un dépôt ?","L’accès EDITOR, et que le fichier est bien dans l’espace du groupe visé."],["Comment un membre parcourt-il ses espaces ?","Avec le finder du tableau de bord, en lecture seule, sur une racine virtuelle qui réunit ses espaces."]]' />
+
+## À suivre
+
+Les membres reçoivent les documents du club et partagent leurs fichiers entre eux. Il leur reste à pouvoir s'adresser au club : poser une question, signaler un problème, demander une attestation, et obtenir une réponse suivie, sans que leur adresse personnelle ne circule.
+
+<Callout type="tip">
+**Chapitre suivant : les demandes.** Un numéro, un responsable, un délai : le système de tickets, les réponses envoyées depuis le site, et la relève des réponses par e-mail.
+</Callout>
