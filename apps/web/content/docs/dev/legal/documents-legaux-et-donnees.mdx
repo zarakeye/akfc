@@ -1,0 +1,109 @@
+---
+title: "Les documents légaux et les données personnelles"
+description: "Des mentions légales et une politique de confidentialité générées depuis les réglages, un registre des traitements décrit une seule fois, des durées de conservation appliquées par une purge quotidienne, et l'export de ses données par chaque membre."
+section: "Légal et RGPD"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les membres reçoivent les documents du club, partagent leurs fichiers et s'adressent au club par des demandes suivies. Tout cela repose sur des données personnelles.
+
+Un site qui collecte des données personnelles doit dire qui l'édite, ce qu'il fait de ces données, combien de temps il les garde, et permettre à chacun d'exercer ses droits. L'association n'a pas toutes les informations légales sous la main d'un coup : le siège, le numéro RNA ou l'hébergeur se renseignent au fil de l'eau. Les documents légaux du site sont donc **générés** à partir des Réglages, et se mettent à jour d'eux-mêmes.
+
+## Des pages générées depuis les réglages
+
+Les pages « Mentions légales » et « Politique de confidentialité » ne sont pas rédigées à la main. Ce sont des composants serveur qui lisent la rubrique « Informations légales » des Réglages du site :
+
+```tsx
+// apps/web/src/app/(public)/infos/mentions-legales/page.tsx (extrait)
+<p>
+  Le site akfc.fr est édité par <strong><Val v={info.name} /></strong>, association régie par la loi du
+  1er juillet 1901
+  {info.rna ? <>, enregistrée au Répertoire national des associations sous le numéro {info.rna}</> : null}
+  {info.siret ? <>, SIRET {info.siret}</> : null}.
+</p>
+```
+
+Une information corrigée dans les Réglages l'est aussitôt sur la page. Une information pas encore renseignée n'est jamais inventée : le composant `Val` affiche alors « en cours de renseignement ». Une page à moitié remplie le dit, plutôt que de paraître complète avec de fausses valeurs.
+
+Les documents à valeur légale utilisent les **coordonnées légales** de l'association (siège, téléphone et e-mail de l'éditeur), et jamais les coordonnées publiques de la page « Nous contacter » : les deux peuvent différer (voir « Les réglages du site »). Chaque page accepte enfin un complément libre, rédigé dans le constructeur de pages et affiché à la suite.
+
+## Le registre des traitements, décrit une seule fois
+
+Le RGPD demande deux documents qui disent la même chose à deux publics. La **politique de confidentialité** explique aux personnes ce qu'on fait de leurs données. Le **registre des activités de traitement** (article 30) est le document interne de l'association. Les deux sont produits à partir d'une description unique des traitements du site :
+
+```ts
+// packages/contracts/src/legal/processingRegister.ts (extrait)
+export type ProcessingActivity = {
+  id: string;
+  /** Intitulé court (registre). */
+  name: string;
+  /** Finalité, formulée pour la personne concernée (« Vous donner accès… »). */
+  purpose: string;
+  /** Personnes concernées. */
+  people: string;
+  /** Données traitées. */
+  data: string;
+  /** Base légale (art. 6 RGPD), en clair. */
+  legalBasis: string;
+  /** Qui y accède au sein du club. */
+  recipients: string;
+  /** Prestataires impliqués (noms de PROCESSORS). */
+  processors: string[];
+  retention: string;
+};
+```
+
+Chaque traitement (gestion des membres, présentation des instructeurs, demandes, documents, photos et vidéos…) y est décrit une fois, avec sa finalité, sa base légale, ses destinataires, ses prestataires et sa durée de conservation. La page publique et le registre (`/dashboard/rgpd`, imprimable) en sont deux présentations. Une fonctionnalité qui collecte une donnée nouvelle s'ajoute dans ce fichier, et les deux documents suivent : ils ne peuvent pas se contredire.
+
+Les durées sont des paramètres, réglés dans les Réglages (`accountRetentionMonths`, `ticketRetentionMonths`…) et insérés dans le texte, comme la région du stockage des fichiers.
+
+## Des durées de conservation appliquées
+
+Une durée de conservation annoncée doit être tenue. Une purge tourne chaque nuit à 3 heures (heure de Paris), avec une passe au démarrage du serveur :
+
+```ts
+// packages/backend/src/modules/privacy/retention.service.ts (extrait)
+const { ticketMonths } = await retentionSettings(db);
+const cutoff = monthsAgo(now, ticketMonths);
+const tickets = await db.ticket.deleteMany({
+  where: { status: "CLOSED", closedAt: { lt: cutoff }, messages: { none: { createdAt: { gte: cutoff } } } },
+});
+const sessions = await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
+const resetTokens = await db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } });
+```
+
+<DocsTable columnsJson='["Données","Ce que fait la purge"]' rowsJson='[["Demandes closes","Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."],["Sessions expirées, liens de réinitialisation périmés","Supprimés."],["Vignettes et affiches dont l’original a disparu","Supprimées du stockage."],["Formulaires de droit à l’image d’un compte supprimé","Supprimés cinq ans après la suppression du compte (preuve de l’autorisation)."],["Comptes","Jamais supprimés automatiquement : listés aux administrateurs."]]' />
+
+Les comptes font exception. Le site ne sait pas quand une adhésion prend fin : l'inscription se fait auprès de la MJC. Supprimer automatiquement un compte resté sans connexion risquerait d'effacer celui d'un membre toujours inscrit. Le registre liste donc les **comptes inactifs** (sans connexion depuis la durée réglée), et ce sont les administrateurs qui décident.
+
+## Le droit d'accès : télécharger ses données
+
+Depuis son profil, un membre télécharge toutes ses données personnelles en un fichier JSON lisible (droit d'accès et de portabilité, articles 15 et 20). La route `/api/me/export` exige une session et ne lit que les données de la personne connectée :
+
+```ts
+// apps/web/src/app/api/me/export/route.ts (extrait)
+const session = await getSessionFromRequest(req);
+if (!session?.user) return new NextResponse("Connexion requise.", { status: 401 });
+const data = await exportMyData(prisma, session.user.id);
+```
+
+L'export contient le compte, le profil, les groupes, les demandes et leurs échanges, les documents reçus et leur état de lecture, les publications, les commentaires et les réactions, les fichiers déposés et les autorisations de droit à l'image. Il ne contient **jamais** le mot de passe, même sous forme d'empreinte. Il ne contient pas non plus les données d'autres personnes : des réponses qu'un membre a rédigées pour d'autres demandeurs, seul le nombre figure. Les fichiers sont listés par leur nom, sans être joints.
+
+<Callout type="info">
+Chaque obligation a son mécanisme, et chaque mécanisme lit la même source : les Réglages pour les informations de l'éditeur et les durées, `processingRegister.ts` pour la description des traitements. Aucun document légal ne recopie une information qui vit ailleurs.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["D’où viennent les mentions légales et la politique de confidentialité ?","Des Réglages du site, lus à chaque affichage ; une information absente est annoncée « en cours de renseignement »."],["Comment la politique et le registre restent-ils cohérents ?","Ils sont deux présentations d’une même description des traitements (processingRegister.ts)."],["Les durées de conservation sont-elles tenues ?","Oui : purge chaque nuit des demandes closes anciennes, sessions et liens périmés, vignettes orphelines, anciens formulaires."],["Et les comptes ?","Jamais supprimés automatiquement : listés aux administrateurs, qui décident."],["Comment un membre accède-t-il à ses données ?","Par un export JSON depuis son profil, sans mot de passe ni données d’autres personnes."]]' />
+
+## À suivre
+
+Une donnée personnelle demande un traitement particulier : l'image des personnes. Une photo de cours peut montrer des membres reconnaissables, et chacun choisit ce qu'il accepte : la galerie des membres, le site public, les réseaux sociaux.
+
+<Callout type="tip">
+**Chapitre suivant : le droit à l'image.** Un formulaire d'autorisation signé, conservé hors de la bibliothèque et servi à ses seuls ayants droit, les usages choisis par chaque membre, et le statut qui en découle.
+</Callout>
