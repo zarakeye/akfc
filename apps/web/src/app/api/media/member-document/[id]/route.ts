@@ -3,6 +3,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+import { memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
 import {
   getR2Bucket,
   getR2Client,
@@ -13,13 +14,12 @@ import {
  *
  * Analogue membre de la garde publique (`public/r2`) :
  *   - session authentifiée requise (401 sinon) ;
- *   - le MemberDocument doit CONCERNER le membre : audience ALL_MEMBERS, ou
- *     SPECIFIC avec ce membre en destinataire. Sinon 404 — on ne révèle pas
+ *   - le MemberDocument doit CONCERNER le membre (`memberDocumentVisibleTo`, la même
+ *     condition que la liste et les compteurs). Sinon 404 — on ne révèle pas
  *     l'existence d'un document qui ne le concerne pas.
  *
- * Le fichier est streamé depuis R2, avec Content-Type / Disposition forcés en
- * `application/pdf` inline pour l'aperçu en iframe, quel que soit le
- * content-type stocké.
+ * Le fichier est streamé depuis R2 avec son type enregistré (`mimeType`, PDF par
+ * défaut) : affiché dans le navigateur, ou en pièce jointe avec `?download=1`.
  */
 
 export async function GET(
@@ -37,23 +37,7 @@ export async function GET(
 
   // ─── Garde : le document concerne ce membre ───────────────────────────
   const doc = await prisma.memberDocument.findFirst({
-    where: {
-      id,
-      OR: [
-        { audience: "ALL_MEMBERS" },
-        {
-          audience: "SPECIFIC",
-          OR: [
-            { recipients: { some: { userId } } },
-            {
-              groups: {
-                some: { group: { memberships: { some: { userId } } } },
-              },
-            },
-          ],
-        },
-      ],
-    },
+    where: { id, ...memberDocumentVisibleTo(userId) },
     select: {
       title: true,
       mediaAsset: {

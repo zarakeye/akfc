@@ -50,16 +50,13 @@ Un document a deux modes de diffusion :
 Les destinataires ne sont jamais recopiés dans une liste au moment de la publication. La question « ce document concerne-t-il ce membre ? » est posée à chaque lecture, par une seule condition Prisma :
 
 ```ts
-// packages/backend/src/modules/memberDocuments/router.ts (extrait)
-function visibleToUser(userId: string) {
+// packages/backend/src/modules/memberDocuments/visibleTo.ts (extrait)
+export function memberDocumentVisibleTo(userId: string) {
   return {
     OR: [
       { audience: "ALL_MEMBERS" as const },
       {
         audience: "SPECIFIC" as const,
-        // Ciblé : destinataire ad hoc OU membre d'un groupe visé (appartenance
-        // résolue dynamiquement → un membre ajouté au groupe hérite des docs
-        // déjà posés).
         OR: [
           { recipients: { some: { userId } } },
           {
@@ -74,7 +71,7 @@ function visibleToUser(userId: string) {
 
 Un groupe est ainsi une liste de diffusion **vivante** : un membre ajouté au groupe « Bureau » reçoit les documents déjà adressés au bureau, et un membre qui en sort ne les voit plus. Aucune tâche de synchronisation n'est nécessaire, puisqu'il n'y a rien à synchroniser.
 
-Toutes les procédures du membre (lister, marquer lu, marquer non lu) passent par cette condition. Un membre qui demande à marquer comme lu un document qui ne le concerne pas reçoit « Document introuvable », exactement comme si le document n'existait pas.
+Toutes les procédures du membre (lister, compter, marquer lu, marquer non lu) passent par cette condition, et la route qui livre le fichier l'importe aussi : ce que le membre voit dans sa liste et ce qu'il peut ouvrir ne peuvent pas diverger. Un membre qui demande à marquer comme lu un document qui ne le concerne pas reçoit « Document introuvable », exactement comme si le document n'existait pas.
 
 ## Publier depuis le finder
 

@@ -6,6 +6,8 @@ import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
+import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
 
 /**
  * Documents membres : fichiers du finder mis à disposition des membres, avec
@@ -19,26 +21,8 @@ import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCa
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
-/** Condition Prisma « ce document concerne l'utilisateur ». */
-function visibleToUser(userId: string) {
-  return {
-    OR: [
-      { audience: "ALL_MEMBERS" as const },
-      {
-        audience: "SPECIFIC" as const,
-        // Ciblé : destinataire ad hoc OU membre d'un groupe visé (appartenance
-        // résolue dynamiquement → un membre ajouté au groupe hérite des docs
-        // déjà posés).
-        OR: [
-          { recipients: { some: { userId } } },
-          {
-            groups: { some: { group: { memberships: { some: { userId } } } } },
-          },
-        ],
-      },
-    ],
-  };
-}
+/** Condition « ce document concerne l'utilisateur » (partagée avec la route de livraison). */
+const visibleToUser = memberDocumentVisibleTo;
 
 export const memberDocumentRouter = router({
   // ─── Membre ────────────────────────────────────────────────────────────
@@ -377,6 +361,15 @@ export const memberDocumentRouter = router({
         userId: ctx.sessionClient.user.id,
         groupId: input.groupId,
       });
+      // Le fichier doit se trouver DANS l'espace de ce groupe : être éditeur d'un groupe ne
+      // permet pas d'y diffuser un fichier pris ailleurs (document personnel d'un autre
+      // membre, espace d'un autre groupe…), que ses membres pourraient alors ouvrir.
+      if (input.path.includes("..") || groupIdFromLogicalPath(input.path) !== input.groupId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Ce fichier n'est pas dans l'espace de ce groupe.",
+        });
+      }
 
       const asset = await ctx.prisma.mediaAsset.findFirst({
         where: {
