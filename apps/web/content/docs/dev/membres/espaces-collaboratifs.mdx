@@ -18,12 +18,24 @@ Un groupe (`MemberGroup`) sert d'abord de **liste de diffusion** : on lui adress
 
 ```ts
 // packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts (extrait)
+const container = `${appRoot}/collaborative-group-spaces/`;
+const existing = await prisma.folder.findMany({
+  where: { appRoot, fullPath: { startsWith: container, endsWith: `-${groupId}` } },
+  orderBy: { createdAt: "asc" },
+  select: { fullPath: true },
+});
+// Un espace est un enfant DIRECT du conteneur (pas un sous-dossier homonyme).
+const space = existing.find((f) => !f.fullPath.slice(container.length).includes("/"));
+if (space) return space.fullPath;
+
 const groupSlug = slug(group.name) || `group-${groupId}`;
 
-return `${appRoot}/collaborative-group-spaces/${groupSlug}-${groupId}`;
+return `${container}${groupSlug}-${groupId}`;
 ```
 
-Le chemin se termine par l'identifiant du groupe. Le nom lisible au début sert à s'y retrouver dans le stockage, mais c'est l'identifiant qui compte : toutes les vérifications de droits le lisent, et le finder affiche le nom du groupe à la place du segment technique.
+Le chemin se termine par l'identifiant du groupe. C'est lui qui compte : toutes les vérifications de droits le lisent, et le finder affiche le nom du groupe à la place du segment technique.
+
+Un espace a **un seul dossier pour toute sa vie**. Le nom lisible au début du chemin est celui du groupe à la création de l'espace, et il ne change plus : si le dossier existe déjà, la fonction le renvoie tel quel. Renommer le groupe renomme l'espace pour tout le monde, par le nom affiché, sans déplacer un seul fichier. Le finder refuse par ailleurs de renommer directement le dossier d'un espace : son nom ne change que par celui du groupe.
 
 ## Lecteur ou éditeur
 
