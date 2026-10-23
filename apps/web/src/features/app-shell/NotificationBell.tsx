@@ -16,17 +16,17 @@ import { useSessionStore } from "@lib/stores/useSessionStore";
  * secousse, ni tooltip). La cloche n'existe que quand elle a quelque
  * chose à dire.
  *
- * Badge = assets « pending » + entrées de corbeille. Tooltip au survol
+ * Badge = assets « pending » + entrées de corbeille + brouillons (pages
+ * éditoriales non publiées, contenus non publiés). Tooltip au survol
  * avec la formulation adaptée (les deux / attente seule / corbeille
  * seule, singulier/pluriel géré). La cloche entière est un LIEN vers la
  * bibliothèque ; si la variante dropdown (liens pending/corbeille
  * séparés) est retenue plus tard, seule la partie basse du composant
  * change — les données et le message sont déjà isolés.
  *
- * Gating : visible uniquement pour les utilisateurs ayant AU MOINS UNE
- * permission (tout gestionnaire de contenu) — pas de permission
- * bibliothèque dédiée à ce jour, et un membre simple n'a rien à faire
- * de ces compteurs.
+ * Gating : visible uniquement pour les ADMINISTRATEURS (appartenance au
+ * groupe Administrateurs) — un membre simple n'a rien à faire de ces
+ * compteurs ; il a sa propre cloche, celle des espaces collaboratifs.
  *
  * Secousse : uniquement quand il y a du contenu à traiter — un wiggle
  * bref toutes les ~6 s (les 15 premiers % de l'animation), désactivé

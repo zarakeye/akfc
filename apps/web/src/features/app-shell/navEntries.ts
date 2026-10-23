@@ -2,7 +2,7 @@
  * Structure de la navigation publique.
  *
  * Consommée par les DEUX rendus du Header : la barre horizontale (à partir
- * de `lg`) et le panneau du menu burger (en dessous). Écrire la liste des
+ * de `xl`) et le panneau du menu burger (en dessous). Écrire la liste des
  * liens deux fois garantirait qu'on en ajoute un d'un seul côté.
  *
  * `activities` est une entrée à part parce que « Nos disciplines » n'est pas

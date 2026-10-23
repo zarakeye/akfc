@@ -26,7 +26,7 @@ import { ThemeToggle } from "@features/theme";
  * En-tête de l'application, en deux rendus alimentés par la MÊME source
  * (`NAV_ENTRIES`) :
  *
- *   - à partir de `lg`, la barre horizontale habituelle ;
+ *   - à partir de `xl` (1 280 px), la barre horizontale habituelle ;
  *   - en dessous, un bouton burger ouvrant un panneau plein écran.
  *
  * Le burger ne règle pas qu'un problème de place. Les menus déroulants de la
@@ -90,7 +90,7 @@ export default function Header({
 
   return (
     <header className="flex items-center justify-between bg-black shadow-md">
-      {/* Logo — rembourrage et taille réduits sous `lg`, où l'ancien
+      {/* Logo — rembourrage et taille réduits sous `xl`, où l'ancien
           `px-20 py-10` mangeait presque toute la largeur d'un téléphone. */}
       <Link href="/">
         {/* Trois paliers : le `px-20` d'origine coûtait 160px de chaque
@@ -122,7 +122,7 @@ export default function Header({
         </div>
       </Link>
 
-      {/* ── Barre horizontale (≥ lg) ──────────────────────────────────── */}
+      {/* ── Barre horizontale (≥ xl) ──────────────────────────────────── */}
       {/* `flex-1 min-w-0` et non `w-[60%]` : une largeur en pourcentage ne
           négocie rien avec ses voisins et poussait le logo hors de sa place.
           `flex-1` prend ce qui reste, `min-w-0` autorise le rétrécissement
@@ -177,7 +177,7 @@ export default function Header({
         })}
       </nav>
 
-      {/* ── Authentification (≥ lg) ───────────────────────────────────── */}
+      {/* ── Authentification (≥ xl) ───────────────────────────────────── */}
       <div className="hidden shrink-0 items-center gap-3 pr-4 xl:flex xl:pr-6">
         <ThemeToggle tone="onDark" />
         <Suspense fallback={<div>Chargement...</div>}>
@@ -194,7 +194,7 @@ export default function Header({
         </Suspense>
       </div>
 
-      {/* ── Cloche + burger (< lg) ────────────────────────────────────── */}
+      {/* ── Cloche + burger (< xl) ────────────────────────────────────── */}
       <div className="flex shrink-0 items-center gap-3 px-4 xl:hidden">
         {/* La cloche RESTE visible : son intérêt est d'être vue sans qu'on la
             cherche. L'enfermer dans le panneau la viderait de son sens. */}
@@ -216,7 +216,7 @@ export default function Header({
         </button>
       </div>
 
-      {/* ── Panneau (< lg) ────────────────────────────────────────────── */}
+      {/* ── Panneau (< xl) ────────────────────────────────────────────── */}
       {open && (
         <div className="fixed inset-0 z-50 xl:hidden">
           {/* Fond : ferme à l'appui, et masque la page pour que l'œil ne

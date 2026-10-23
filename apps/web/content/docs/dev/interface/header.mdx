@@ -1,0 +1,134 @@
+---
+title: "Le header"
+description: "Une seule liste de liens pour deux rendus (barre et panneau mobile), une session connue dès le HTML, et des signaux qui ne parlent que quand ils ont quelque chose à dire : cloches, badges, menu du membre."
+section: "Interface transverse"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le référencement présente le site aux moteurs : métadonnées, plan du site, consignes d'indexation.
+
+Le header est la seule partie de l'interface présente sur toutes les pages publiques, et la seule qui change selon la personne qui regarde. Un visiteur y trouve la navigation et le formulaire de connexion. Un membre y trouve en plus son menu, ses documents à lire et la cloche de ses espaces. Un administrateur, la cloche de la bibliothèque et le tableau de bord. Trois questions organisent le composant `Header` : d'où vient la liste des liens, comment l'afficher sur un écran étroit, et comment savoir dès le premier affichage qui est connecté.
+
+## Une liste de liens, deux rendus
+
+La navigation est décrite une seule fois, sous forme de données :
+
+```ts
+// apps/web/src/features/app-shell/navEntries.ts (extrait)
+export const NAV_ENTRIES: NavEntry[] = [
+  { kind: "link", href: "/", label: "Accueil" },
+  { kind: "activities" },
+  { kind: "link", href: "/gallery", label: "Galeries" },
+  { kind: "link", href: "/agenda", label: "Agenda" },
+  {
+    kind: "menu",
+    label: "Qui sommes-nous ?",
+    activePrefix: "/about",
+    children: [
+      { href: "/about", label: "L'association" },
+      { href: "/about/instructeurs", label: "Nos instructeurs" },
+    ],
+  },
+  { kind: "link", href: "/contacts", label: "Nous contacter" },
+  { kind: "link", href: "/docs", label: "Aide" },
+];
+```
+
+Une entrée est un **lien**, un **menu** à sous-liens, ou l'entrée spéciale **`activities`**. Cette dernière n'est pas une liste figée : « Nos disciplines » se construit à partir des familles et des disciplines enregistrées en base. C'est donc un composant (`OurActivitiesMenu`), pas des données. Le type `NavEntry` est une union discriminée par `kind` : le header traite chaque sorte d'entrée dans sa branche, et TypeScript signale une sorte oubliée.
+
+Cette liste alimente **deux rendus**. À partir de 1 280 pixels de large (`xl`), une barre horizontale ; en dessous, un bouton « burger » qui ouvre un panneau plein écran. Les deux parcourent `NAV_ENTRIES` : un lien ajouté à la liste apparaît des deux côtés, sans risque de l'oublier dans l'un.
+
+<DocsTable columnsJson='["","Barre (≥ xl)","Panneau (< xl)"]' rowsJson='[["Sous-menus","Ouverts au survol de la souris.","Ouverts à l’appui, par un bouton."],["Connexion et menu du membre","À droite de la barre.","En pied de panneau."],["Cloches","À droite de la barre.","Toujours visibles dans la barre réduite, hors du panneau."],["Fermeture","—","Bouton, touche Échap, appui sur le fond ou sur un lien."]]' />
+
+Le panneau n'existe pas seulement par manque de place. Le survol n'existe pas sur un écran tactile : dans la barre, les sous-menus y étaient inaccessibles. Le panneau les ouvre à l'appui. Les cloches, elles, restent hors du panneau : leur intérêt est d'être vues sans qu'on les cherche.
+
+### Fermer le panneau quand on a choisi
+
+Le panneau doit se fermer quand le visiteur touche un lien. Plutôt qu'un gestionnaire sur chaque lien (dont ceux de « Nos disciplines », qui vivent dans un autre composant), un seul gestionnaire écoute le panneau entier :
+
+```tsx
+// apps/web/src/features/app-shell/Header.tsx (extrait)
+<div
+  className="relative flex h-full flex-col overflow-y-auto bg-black px-6 pb-10"
+  onClick={(e) => {
+    if ((e.target as HTMLElement).closest("a")) setOpen(false);
+  }}
+>
+```
+
+C'est la **délégation d'évènements** : un clic remonte du lien jusqu'au panneau, qui regarde s'il est parti d'un lien. Les boutons qui déroulent un sous-menu ne sont pas des liens : ils ne ferment pas le panneau, ce qui est voulu. Un menu ajouté plus tard en profite sans rien recevoir.
+
+Le commentaire du code explique aussi ce qui a été écarté : un effet qui fermerait le panneau quand l'URL change. Un effet sert à synchroniser React avec un système extérieur ; la vraie question n'était pas « l'URL a changé », mais « le visiteur a touché un lien ». Cet évènement existait déjà.
+
+Tant que le panneau est ouvert, le défilement de la page est bloqué (`document.body.style.overflow = "hidden"`), puis rétabli à la fermeture : sinon la page glisse sous le doigt pendant qu'on parcourt le menu.
+
+## Qui est connecté, dès le premier affichage
+
+Le header est un composant client : il réagit à la connexion et à la déconnexion. La session vit dans un store Zustand (voir « Authentification et droits »). Mais ce store est un module partagé : sur le serveur, il est commun à toutes les requêtes, et ne peut donc pas contenir la session d'un visiteur. Il est vide pendant le rendu serveur. Sans précaution, le HTML arrivait avec un header « non connecté », puis basculait une fois la session chargée.
+
+Le layout racine lit donc la session côté serveur et la transmet par un contexte React, propre à chaque requête. Le header la lit par `useCurrentUser` :
+
+```ts
+// apps/web/src/features/auth/InitialSession.tsx (extrait)
+export function useCurrentUser(): NonNullable<SessionClient["user"]> | null {
+  const initial = useContext(InitialSessionContext);
+  const status = useSessionStore((s) => s.status);
+  const user = useSessionStore((s) => s.session?.user ?? null);
+  return status === "idle" ? (initial?.user ?? null) : user;
+}
+```
+
+Tant que le store n'est pas initialisé (`idle`), la réponse est celle du serveur ; ensuite, celle du store, qui suit les connexions et déconnexions. Le logo suit la même logique : le layout public lit le logo et le nom du site dans les Réglages, et les passe au header en valeurs initiales. La requête du navigateur ne fait ensuite que les rafraîchir.
+
+## Des signaux qui ne parlent que pour dire quelque chose
+
+À droite de la barre, plusieurs signaux indiquent ce qui attend la personne connectée. Ils partagent une règle : **pas de badge à zéro**. Un compteur toujours affiché devient du décor, et on cesse de le regarder.
+
+<DocsTable columnsJson='["Signal","Pour qui","Ce qu’il compte"]' rowsJson='[["Cloche de la bibliothèque","Administrateurs","Fichiers en attente de validation, corbeille, pages et contenus non publiés. Sans rien à traiter, elle devient une icône de disque dur : le raccourci vers la bibliothèque reste, muet."],["Cloche des espaces","Membres non administrateurs ayant un espace collaboratif","Nouveaux fichiers non lus dans leurs espaces, listés au survol."],["« Mes documents »","Tout membre connecté","Documents non lus, au total et par provenance (voir « Les documents des membres »)."],["« Demandes reçues »","Qui peut traiter des demandes","Demandes ouvertes (voir « Les demandes »)."]]' />
+
+Une cloche qui a quelque chose à signaler s'agite brièvement toutes les six secondes. L'animation est désactivée pour les personnes qui ont demandé à leur système de réduire les animations :
+
+```tsx
+// apps/web/src/features/app-shell/NotificationBell.tsx (extrait)
+@media (prefers-reduced-motion: reduce) {
+  .akfc-bell-shaking { animation: none; }
+}
+```
+
+Les compteurs viennent de requêtes tRPC (`useQuery`), donc du cache de React Query. Une action qui change un compteur (un dépôt, une validation, une lecture) invalide la requête correspondante, et la cloche se met à jour sans rien savoir de l'action. Une version antérieure faisait un seul appel au montage, rangé dans un `useState` : hors du cache, aucune invalidation ne pouvait l'atteindre, et il fallait recharger la page pour voir un compteur juste.
+
+## Le menu du membre
+
+Le menu du membre réunit ce qui le concerne, selon son rôle :
+
+```tsx
+// apps/web/src/features/app-shell/UserMenu.tsx (extrait)
+{ticketAccess.data?.canHandle && (
+  <Link
+    href="/dashboard/tickets"
+    className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+    onClick={() => setOpen(false)}
+  >
+    Demandes reçues
+```
+
+Tout membre y trouve son profil, ses documents et la déconnexion. Un membre non administrateur peut déposer des fichiers ; un administrateur accède au tableau de bord ; « Demandes reçues » n'apparaît qu'à qui peut en traiter. Comme pour les pages, ce menu n'est qu'une commodité : chaque destination vérifie elle-même les droits sur le serveur.
+
+<Callout type="info">
+Le header ne décide d'aucun droit. Il montre ou cache des entrées selon la session, pour que chacun voie ce qui le concerne ; les pages et les procédures qu'elles appellent refusent elles-mêmes ce qui n'est pas permis.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où ajouter un lien de navigation ?","Dans NAV_ENTRIES : la barre et le panneau mobile le reprennent tous les deux."],["Pourquoi un panneau sous 1 280 px ?","Par manque de place, et parce que le survol n’existe pas au doigt : le panneau ouvre les sous-menus à l’appui."],["Comment le header sait-il qui est connecté dès le HTML ?","Par la session lue sur le serveur et passée dans un contexte, utilisée tant que le store n’est pas initialisé."],["Quand un badge s’affiche-t-il ?","Seulement quand il y a quelque chose à compter ; jamais de badge à zéro."],["Comment un compteur se met-il à jour ?","Par l’invalidation de sa requête dans le cache de React Query, après l’action qui le change."]]' />
+
+## À suivre
+
+Le header s'ouvre au survol et se parcourt à la souris ou au doigt. Il reste une façon de naviguer à vérifier : au clavier, et avec un lecteur d'écran.
+
+<Callout type="tip">
+**Chapitre suivant : l'accessibilité.** Le clavier, les noms donnés aux boutons et aux images, les contrastes, les animations, et ce que le site doit encore corriger.
+</Callout>
