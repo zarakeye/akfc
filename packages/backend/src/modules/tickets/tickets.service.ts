@@ -39,8 +39,30 @@ export function cleanText(value: string, max: number, field: string): string {
   if (v.length > max) bad(`${field} dépasse ${max} caractères.`);
   return v;
 }
-export function displayName(u: { firstName: string | null; lastName: string | null; email: string }): string {
-  return [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email;
+/**
+ * Signature d'une réponse du club : identité, puis qualité. Jamais l'e-mail ni le nom civil.
+ * - Identité : le pseudo, s'il est renseigné.
+ * - Qualité : le groupe en vertu duquel la personne a lu la demande et y répond, c'est-à-dire
+ *   le groupe de la catégorie si elle en est membre directe, sinon le groupe des administrateurs.
+ * « Tom — Support », ou « Support » sans pseudo. Stockée telle quelle dans le message (authorName).
+ */
+export async function replySignature(db: Db, userId: string, categoryId: string): Promise<string> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { pseudo: true } });
+  if (!user) forbidden();
+  const viaCategory = await db.memberGroupMembership.findFirst({
+    where: { userId, group: { ticketCategories: { some: { id: categoryId } } } },
+    select: { group: { select: { name: true } } },
+  });
+  const viaAdmin = viaCategory
+    ? null
+    : await db.memberGroupMembership.findFirst({
+        where: { userId, group: { isAdminGroup: true } },
+        select: { group: { select: { name: true } } },
+      });
+  const quality = (viaCategory ?? viaAdmin)?.group.name;
+  if (!quality) forbidden();
+  const pseudo = user.pseudo?.trim();
+  return pseudo ? `${pseudo} — ${quality}` : quality;
 }
 
 /** Vrai si le membre peut traiter les demandes de la catégorie (admin, ou membre direct du groupe). */
@@ -175,11 +197,7 @@ export async function replyToTicket(
   const t = await loadForHandler(db, ticketId, authorId);
   if (t.status === "CLOSED") bad("Cette demande est close : rouvrez-la avant de répondre.");
   const text = cleanText(body, MAX_BODY, "La réponse");
-  const author = await db.user.findUnique({
-    where: { id: authorId },
-    select: { firstName: true, lastName: true, email: true },
-  });
-  if (!author) forbidden();
+  const authorName = await replySignature(db, authorId, t.categoryId);
   const now = new Date();
 
   const message = await db.$transaction(async (tx) => {
@@ -187,7 +205,7 @@ export async function replyToTicket(
       await tx.ticketEvent.create({ data: { ticketId: t.id, type: "TAKEN", actorId: authorId, createdAt: now } });
     }
     const m = await tx.ticketMessage.create({
-      data: { ticketId: t.id, direction: "OUT", authorId, authorName: displayName(author), body: text, emailMessageId: emailMessageId ?? null, createdAt: now },
+      data: { ticketId: t.id, direction: "OUT", authorId, authorName, body: text, emailMessageId: emailMessageId ?? null, createdAt: now },
       select: { id: true, createdAt: true },
     });
     await tx.ticket.update({

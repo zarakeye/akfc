@@ -90,7 +90,7 @@ Toutes les opérations passent par cette vérification : prendre en charge, tran
 
 ## Répondre : l'e-mail d'abord
 
-La réponse est écrite dans le tableau de bord et part par e-mail au demandeur, depuis l'adresse d'envoi du site, signée du nom de la personne qui répond. L'ordre des opérations est délibéré :
+La réponse est écrite dans le tableau de bord et part par e-mail au demandeur, depuis l'adresse d'envoi du site. L'ordre des opérations est délibéré :
 
 ```ts
 // packages/backend/src/modules/tickets/router.ts (extrait)
@@ -100,7 +100,7 @@ try {
     number: t.number,
     subject: t.subject,
     body: text,
-    authorName: displayName(author),
+    authorName,
     category: t.category,
     to: { email: t.requesterEmail, name: t.requesterName },
     quoted: t.messages[0] ?? null,
@@ -116,6 +116,30 @@ const res = await replyToTicket(ctx.prisma, t.id, userId, text, messageId);
 ```
 
 L'e-mail part **avant** l'enregistrement. S'il échoue, rien n'est enregistré, et celui qui répond le sait aussitôt. L'ordre inverse produirait une demande marquée « répondue » alors que le demandeur n'a rien reçu. Le `Message-ID` de l'e-mail envoyé est gardé avec le message : la réponse du demandeur le citera.
+
+### La signature : une identité et une qualité
+
+Qui répond le fait au nom du club, pas à titre personnel. La signature dit donc deux choses : **qui** répond, par son pseudo s'il en a un, et **à quel titre**, par le groupe en vertu duquel il a eu connaissance de la demande. Elle ne contient jamais l'adresse e-mail, ni le nom civil :
+
+```ts
+// packages/backend/src/modules/tickets/tickets.service.ts (extrait)
+const viaCategory = await db.memberGroupMembership.findFirst({
+  where: { userId, group: { ticketCategories: { some: { id: categoryId } } } },
+  select: { group: { select: { name: true } } },
+});
+const viaAdmin = viaCategory
+  ? null
+  : await db.memberGroupMembership.findFirst({
+      where: { userId, group: { isAdminGroup: true } },
+      select: { group: { select: { name: true } } },
+    });
+const quality = (viaCategory ?? viaAdmin)?.group.name;
+if (!quality) forbidden();
+const pseudo = user.pseudo?.trim();
+return pseudo ? `${pseudo} — ${quality}` : quality;
+```
+
+La qualité suit la même règle que `canHandleCategory` : le groupe de la catégorie si la personne en est membre directe, sinon le groupe des administrateurs. Un membre du groupe Support signe « Tom — Support », ou « Support » s'il n'a pas de pseudo ; un administrateur qui répond hors de ses groupes signe au nom des Administrateurs. La même signature figure dans l'e-mail et dans le message enregistré (`authorName`), donc aussi dans l'export des données du demandeur.
 
 ## Les réponses par e-mail
 
@@ -157,7 +181,7 @@ Le récapitulatif va aux adresses du club (`admin@`, `support@`), jamais aux bo�
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment une demande est-elle identifiée ?","Par un numéro de séquence, affiché AKFC-0042 et repris dans l’objet de chaque e-mail."],["Qui la traite ?","Un administrateur, ou un membre direct du groupe de sa catégorie (sans héritage)."],["Le délai peut-il être repoussé ?","Non : l’échéance de première réponse est fixée à la création, transfert compris."],["Pourquoi l’e-mail part-il avant l’enregistrement ?","Pour qu’une réponse enregistrée soit toujours une réponse reçue."],["Comment une réponse par e-mail retrouve-t-elle sa demande ?","Par les en-têtes de réponse, sinon par la référence de l’objet ; l’expéditeur doit être le demandeur."],["Qui est relancé ?","Les adresses de catégorie, chaque matin, s’il reste quelque chose à faire."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment une demande est-elle identifiée ?","Par un numéro de séquence, affiché AKFC-0042 et repris dans l’objet de chaque e-mail."],["Qui la traite ?","Un administrateur, ou un membre direct du groupe de sa catégorie (sans héritage)."],["Le délai peut-il être repoussé ?","Non : l’échéance de première réponse est fixée à la création, transfert compris."],["Pourquoi l’e-mail part-il avant l’enregistrement ?","Pour qu’une réponse enregistrée soit toujours une réponse reçue."],["Comment une réponse est-elle signée ?","Pseudo s’il est renseigné, et toujours le groupe au titre duquel on répond ; jamais l’e-mail ni le nom civil."],["Comment une réponse par e-mail retrouve-t-elle sa demande ?","Par les en-têtes de réponse, sinon par la référence de l’objet ; l’expéditeur doit être le demandeur."],["Qui est relancé ?","Les adresses de catégorie, chaque matin, s’il reste quelque chose à faire."]]' />
 
 ## À suivre
 

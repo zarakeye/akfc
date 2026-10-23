@@ -61,7 +61,7 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       people: "Membres de l'association",
       data: "Nom, prénom, e-mail, mot de passe (jamais stocké en clair), date d'adhésion, groupes ; si renseignés : date de naissance, téléphone, pseudo, photo, présentation",
       legalBasis: "Exécution de l'adhésion à l'association",
-      recipients: "Administrateurs du site",
+      recipients: "Administrateurs du site ; membres du bureau, en relais en cas d'indisponibilité (boîte e-mail du club)",
       processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
       retention: account,
     },

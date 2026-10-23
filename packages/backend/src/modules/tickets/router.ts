@@ -9,9 +9,9 @@ import {
   cleanText,
   closeTicket,
   createTicket,
-  displayName,
   MAX_BODY,
   reopenTicket,
+  replySignature,
   replyToTicket,
   takeTicket,
   transferTicket,
@@ -158,10 +158,7 @@ export const ticketRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Cette demande est close : rouvrez-la avant de répondre." });
       }
       const text = cleanText(input.body, MAX_BODY, "La réponse");
-      const author = await ctx.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: { firstName: true, lastName: true, email: true },
-      });
+      const authorName = await replySignature(ctx.prisma, userId, t.categoryId);
 
       let messageId: string | null;
       try {
@@ -169,7 +166,7 @@ export const ticketRouter = router({
           number: t.number,
           subject: t.subject,
           body: text,
-          authorName: displayName(author),
+          authorName,
           category: t.category,
           to: { email: t.requesterEmail, name: t.requesterName },
           quoted: t.messages[0] ?? null,
