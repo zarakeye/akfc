@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { prisma } from "@backend/prisma";
 import {
+  editorialRobots,
   isEditorialPageGated,
   UnderConstruction,
 } from "@features/editorial/editorialGate";
@@ -25,7 +26,9 @@ import { MemberContactSection } from "@features/contact/MemberContactSection";
  * Partie MEMBRES : le formulaire de demandes (bureau, support du site) n'apparaît qu'aux membres
  * connectés (et le serveur le refuse aux visiteurs).
  */
-export const metadata: Metadata = { title: "Nous contacter" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: "Nous contacter", ...(await editorialRobots("contacts")) };
+}
 
 export default async function ContactsPage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("contacts")) {

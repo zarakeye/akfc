@@ -8,7 +8,7 @@ import { SITE_URL } from "@/config/siteUrl";
  * sitemap.xml généré par Next.
  *
  * Rassemble les routes publiques du site vitrine :
- *  - 3 pages ÉDITORIALES (accueil, association, contacts) — listées seulement
+ *  - 4 pages ÉDITORIALES (accueil, association, contacts, inscription) — listées seulement
  *    si PUBLIÉES (PageVisibility) : une page en brouillon rend « en
  *    construction » côté public, l'annoncer aux moteurs serait contre-productif.
  *  - 3 pages TOUJOURS PUBLIQUES (instructeurs, galerie, agenda).

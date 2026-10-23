@@ -8,6 +8,7 @@ import { LocalBusinessJsonLd } from "@features/seo/LocalBusinessJsonLd";
 
 import { prisma } from "@backend/prisma";
 import {
+  editorialRobots,
   isEditorialPageGated,
   UnderConstruction,
 } from "@features/editorial/editorialGate";
@@ -43,7 +44,7 @@ import type { Metadata } from "next";
  * RSC public) : les îlots le corrigent à l'hydratation pour les membres.
  */
 
-export const metadata: Metadata = {
+const HOME_METADATA: Metadata = {
   title: {
     absolute:
       "AKFC — Association Kung-Fu Chambéry : taï-chi, kali & arts martiaux",
@@ -57,6 +58,10 @@ export const metadata: Metadata = {
       "Cours de kung-fu, taï-chi, kali et arts martiaux chinois à la MJC de Chambéry (Savoie).",
   },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...HOME_METADATA, ...(await editorialRobots("home")) };
+}
 
 export default async function HomePage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("home")) {

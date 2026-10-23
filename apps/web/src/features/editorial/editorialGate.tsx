@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import type { Metadata } from "next";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
@@ -18,6 +19,18 @@ export async function isEditorialPageGated(key: string): Promise<boolean> {
   const session = await getSessionFromRequest();
   const isAdmin = (session?.user?.isAdmin ?? false);
   return !isAdmin;
+}
+
+/**
+ * Métadonnées d'une page éditoriale NON publiée : jamais indexée. Le placeholder « en construction »
+ * est servi à la même adresse que la vraie page ; sans cette consigne, un moteur qui suit un lien du
+ * menu l'indexerait (« Page en construction » dans les résultats). La règle vaut pour tous, admins
+ * compris : un robot n'est jamais connecté.
+ * @returns `{ robots: noindex }` à fusionner dans les métadonnées de la page, ou `{}` si publiée
+ */
+export async function editorialRobots(key: string): Promise<Pick<Metadata, "robots">> {
+  const vis = await prisma.pageVisibility.findUnique({ where: { key }, select: { published: true } });
+  return vis?.published === true ? {} : { robots: { index: false, follow: false } };
 }
 
 /**

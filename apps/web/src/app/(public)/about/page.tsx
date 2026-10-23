@@ -2,6 +2,7 @@ import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
 import {
+  editorialRobots,
   isEditorialPageGated,
   UnderConstruction,
 } from "@features/editorial/editorialGate";
@@ -24,7 +25,9 @@ export const dynamic = 'force-dynamic';
  * navigation qui tombe sur une erreur est bien pire qu'une page qui s'annonce
  * vide.
  */
-export const metadata: Metadata = { title: "L'association" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: "L'association", ...(await editorialRobots("association")) };
+}
 
 export default async function AboutPage(): Promise<JSX.Element> {
   if (await isEditorialPageGated("association")) {

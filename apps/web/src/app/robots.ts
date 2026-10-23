@@ -7,7 +7,9 @@ import { SITE_URL } from "@/config/siteUrl";
  *
  * Autorise l'indexation du site vitrine, exclut les espaces PRIVÉS ou
  * fonctionnels (tableau de bord, profil, documents membres, espaces
- * collaboratifs, placeholder « en construction », API), et déclare le sitemap.
+ * collaboratifs, API), et déclare le sitemap. Une page éditoriale non publiée
+ * (placeholder « en construction », servi à la même adresse) n'est pas exclue
+ * ici : elle porte elle-même un `noindex` (editorialRobots).
  */
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -13,7 +13,7 @@ import {
 import type { Metadata } from "next";
 
 /**
- * Page publique d'un Event par slug — `/evenements/[slug]`.
+ * Page publique d'un Event par slug — `/events/[slug]`.
  *
  * Un seul composite (`content`), rendu via `PageRenderer`. Header de
  * métadonnées (rattachement, audience, organisateur) + sessions datées.

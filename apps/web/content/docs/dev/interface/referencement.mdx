@@ -1,0 +1,148 @@
+---
+title: "Le référencement"
+description: "Une adresse du site unique pour toutes les métadonnées, des titres et descriptions tirés des Réglages, des contenus en brouillon jamais indexés, un plan du site généré depuis la base, et un robots.txt qui écarte les espaces privés."
+section: "Interface transverse"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les formulaires écrivent dans la base, avec une validation partagée et un serveur qui a le dernier mot.
+
+Les pages publiques ont deux lecteurs de plus que les visiteurs : les moteurs de recherche, qui décident de ce qu'ils indexent et de la façon de le présenter, et les réseaux sociaux ou les messageries, qui affichent un aperçu quand on partage un lien. Les deux lisent les **métadonnées** de la page (titre, description, image), et les moteurs consultent en plus deux fichiers à la racine du site : `robots.txt` et `sitemap.xml`. Next.js produit tout cela à partir de code, dans le même projet que les pages.
+
+## Une seule adresse du site
+
+Les métadonnées, le plan du site et le `robots.txt` ont besoin d'URL absolues (`https://akfc.fr/gallery`, jamais `/gallery`). Elles partent toutes d'une seule constante :
+
+```ts
+// apps/web/src/config/siteUrl.ts (extrait)
+export const SITE_URL: string = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://akfc.fr"
+).replace(/\/+$/, "");
+```
+
+Une préproduction ou un autre domaine se règle par la variable d'environnement, sans toucher au code. Le slash final est retiré pour que `${SITE_URL}/gallery` ne produise jamais deux slashs.
+
+## Les métadonnées par défaut, depuis les Réglages
+
+Le layout racine déclare les métadonnées dont héritent toutes les pages. Elles sont lues dans les Réglages du site, comme le reste de l'identité du club :
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+return {
+  metadataBase: new URL(SITE_URL),
+  title: { default: shortTitle, template: `%s · ${shortTitle}` },
+  description,
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: shortTitle,
+    locale: "fr_FR",
+    url: SITE_URL,
+    title: longTitle,
+    description,
+    images: [
+      { url: "/og-default.png", width: 1200, height: 630, alt: longTitle },
+    ],
+  },
+```
+
+Trois mécanismes de Next.js y travaillent :
+
+- **`metadataBase`** rend absolues les URL relatives des métadonnées : une page écrit `alternates: { canonical: "/events/stage-ete" }`, et l'en-tête produit contient l'adresse complète.
+- **`title.template`** compose le titre de chaque page : une page qui déclare `title: "Galeries"` s'affiche « Galeries · AKFC » dans l'onglet et dans les résultats. L'accueil y échappe avec `title: { absolute: … }`, pour un titre complet qui décrit le club.
+- **`openGraph`** et **`twitter`** décrivent l'aperçu d'un lien partagé. Sans image propre, une page hérite de `og-default.png` (1 200 × 630 pixels, le format attendu par les réseaux).
+
+## Les métadonnées d'une page
+
+Une page fixe simple exporte un objet `metadata` (`{ title: "Nos instructeurs" }`). Une page dont le contenu vient de la base exporte une fonction `generateMetadata`, qui lit ce qu'il faut pour se décrire. Pour un évènement, un stage ou une discipline, elle commence par la même question que la page : le contenu est-il **publié** ?
+
+```ts
+// apps/web/src/app/(public)/events/[slug]/page.tsx (extrait)
+const published =
+  !!entity &&
+  !!entity.publicationDate &&
+  entity.publicationDate <= new Date();
+
+if (!published || !entity) {
+  return { robots: { index: false, follow: false } };
+}
+```
+
+Un brouillon (sans date de publication) ou un contenu programmé (date future) ne doit pas apparaître dans les moteurs, même si quelqu'un en a trouvé l'adresse. La page elle-même répond « introuvable » ; la consigne `noindex` est une seconde garantie, posée par les métadonnées. Un contenu publié reçoit son titre, une description, une adresse **canonique** (l'adresse de référence, si la page est accessible par plusieurs chemins) et un aperçu de type `article`.
+
+### Les pages « en construction »
+
+Les pages éditoriales (accueil, association, contacts) peuvent être dépubliées depuis le tableau de bord (voir « Authentification et droits », visibilité des pages). Le visiteur voit alors un message « Page en construction », **à la même adresse** que la vraie page. Pour un moteur, c'est une page comme une autre : sans consigne, il pourrait l'indexer, et « Page en construction » s'afficherait dans les résultats sous le nom du club. Chacune de ces pages ajoute donc la consigne tant qu'elle n'est pas publiée :
+
+```ts
+// apps/web/src/features/editorial/editorialGate.tsx (extrait)
+export async function editorialRobots(key: string): Promise<Pick<Metadata, "robots">> {
+  const vis = await prisma.pageVisibility.findUnique({ where: { key }, select: { published: true } });
+  return vis?.published === true ? {} : { robots: { index: false, follow: false } };
+}
+```
+
+```ts
+// apps/web/src/app/(public)/contacts/page.tsx (extrait)
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: "Nous contacter", ...(await editorialRobots("contacts")) };
+}
+```
+
+La règle ne dépend pas de la session : un administrateur voit la vraie page, mais un robot n'est jamais connecté. Une fois la page publiée, `editorialRobots` ne renvoie rien, et la page hérite de l'indexation par défaut du layout.
+
+## Le plan du site, généré depuis la base
+
+`sitemap.xml` liste les pages que le site **souhaite** voir indexées, avec leur date de dernière modification. Le fichier `app/sitemap.ts` le construit à chaque demande (`force-dynamic`), à partir de la base :
+
+<DocsTable columnsJson='["Pages","Dans le plan du site"]' rowsJson='[["Accueil, association, contacts, inscription","Seulement si elles sont publiées ; date = dernière publication."],["Instructeurs, galeries, agenda","Toujours : ces pages sont toujours publiques."],["Stages, disciplines, évènements","Seulement les contenus publiés (adresse et date de publication passée) ; date = publication."],["Profil, documents, espaces, tableau de bord","Jamais : réservés aux membres."]]' />
+
+Les contenus y sont filtrés par la même règle de publication que les pages elles-mêmes :
+
+```ts
+// apps/web/src/app/sitemap.ts (extrait)
+const publishedWhere = {
+  slug: { not: null },
+  publicationDate: { not: null, lte: new Date() },
+} as const;
+```
+
+Le plan du site et les consignes `noindex` disent donc la même chose de deux façons : ce qui est listé est publié, ce qui n'est pas publié demande à ne pas être indexé.
+
+## Le robots.txt : ce que les robots n'explorent pas
+
+`app/robots.ts` produit le `robots.txt`. Il autorise tout le site, sauf les espaces privés ou techniques, et indique l'adresse du plan du site :
+
+```ts
+// apps/web/src/app/robots.ts (extrait)
+disallow: [
+  "/dashboard",
+  "/profil",
+  "/documents",
+  "/mes-espaces",
+  "/api/",
+],
+```
+
+<Callout type="warning">
+`robots.txt` est une consigne d'**exploration**, pas une protection. Un robot poli ne visite pas ces adresses ; un robot malveillant les visite quand même. Ces pages sont protégées par la session (voir « Authentification et droits ») ; le `robots.txt` évite seulement que des robots honnêtes perdent leur temps sur des pages de connexion. À l'inverse, il ne suffit pas pour empêcher une indexation : une adresse interdite d'exploration mais citée ailleurs peut apparaître dans les résultats, sans contenu. C'est pourquoi les pages publiques non publiées portent un `noindex`, et ne sont pas ajoutées au `robots.txt` : pour lire la consigne `noindex`, le robot doit pouvoir explorer la page.
+</Callout>
+
+## Ce qui ne doit pas être lu par les robots
+
+Certaines données publiques attirent les robots collecteurs, qui parcourent le web à la recherche d'adresses e-mail à démarcher. La page des instructeurs est publique, mais l'adresse du club de chaque instructeur n'y est affichée qu'aux membres connectés : la page lit la session pour le savoir. Les adresses personnelles, elles, ne sont jamais affichées (voir « La frontière serveur / client »).
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["D’où vient l’adresse absolue du site ?","De SITE_URL (NEXT_PUBLIC_SITE_URL, sinon https://akfc.fr), utilisée par les métadonnées, le plan du site et le robots.txt."],["D’où viennent le titre et la description par défaut ?","Des Réglages du site, lus par le layout racine ; chaque page compose son titre avec le modèle « %s · AKFC »."],["Un brouillon peut-il être indexé ?","Non : generateMetadata renvoie noindex pour un contenu non publié ou programmé, et une page éditoriale dépubliée."],["Que contient le plan du site ?","Les pages publiées et toujours publiques, et les contenus publiés, générés depuis la base à chaque demande."],["Le robots.txt protège-t-il les espaces privés ?","Non : c’est la session qui les protège ; le robots.txt évite seulement leur exploration."]]' />
+
+## À suivre
+
+Le référencement présente le site aux moteurs ; le header le présente aux visiteurs. C'est la seule partie de l'interface présente sur toutes les pages, et la seule qui change selon la personne connectée.
+
+<Callout type="tip">
+**Chapitre suivant : le header.** Une barre commune à toutes les pages, ses menus qui dépendent de la session, et les badges qui signalent ce qui est nouveau.
+</Callout>
