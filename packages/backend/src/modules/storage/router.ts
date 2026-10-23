@@ -40,6 +40,7 @@ import {
 } from "@contracts/storage";
 
 import { uploadDestinationSchema } from "@contracts/storage/upload-destination.schema";
+import { uploadTypeError } from "@contracts/storage/allowedUploadTypes";
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
@@ -908,6 +909,14 @@ export const storageRouter = router({
       });
       const fileName = buildUploadFileName(input.originalFileName);
       const path = `${folder}/${fileName}`;
+
+      // Formats autorisés seulement (extension ET type déclaré) : jamais de HTML, SVG ou
+      // script, qu'un navigateur pourrait exécuter s'il était affiché. Le type est signé dans
+      // l'URL d'envoi, puis revérifié par registerR2Upload sur l'objet réellement stocké.
+      const typeError = uploadTypeError(input.originalFileName, input.mimeType);
+      if (typeError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: typeError });
+      }
 
       if (input.destination.kind === "perso" && !input.mimeType.startsWith("image/")) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });

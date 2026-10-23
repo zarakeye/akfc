@@ -131,6 +131,11 @@ const folder = await resolvePendingUploadFolder({ prisma: ctx.prisma, destinatio
 const fileName = buildUploadFileName(input.originalFileName);
 const path = `${folder}/${fileName}`;
 
+const typeError = uploadTypeError(input.originalFileName, input.mimeType);
+if (typeError) {
+  throw new TRPCError({ code: "BAD_REQUEST", message: typeError });
+}
+
 if (input.destination.kind === "perso" && !input.mimeType.startsWith("image/")) {
   throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });
 }
@@ -146,6 +151,7 @@ if (input.destination.kind === "perso" && !existing) {
 }
 ```
 
+- **Le format** (`uploadTypeError`, dans `packages/contracts/src/storage/allowedUploadTypes.ts`) : une liste de formats **autorisés** (images, vidéos, audio, documents bureautiques, PDF, texte, archives zip et rar), et non d'interdits, pour que tout format imprévu soit refusé. Aucun format qu'un navigateur pourrait exécuter ou afficher comme une page (HTML, SVG, XML, scripts et code source) n'y figure. L'extension du nom **et** le type déclaré par le navigateur doivent concorder : un « planning.pdf » annoncé comme `text/html` est refusé. Comme ce type est ensuite signé dans l'URL d'envoi et relu à l'étape 3, le fichier stocké a forcément un type autorisé.
 - **Le droit de dépôt** (`assertUploadDestinationAllowed`) : l'espace d'un groupe collaboratif exige le droit d'écriture sur ce groupe ; les autres destinations sont ouvertes à tout utilisateur connecté, car un dépôt naît **en attente** et ne devient visible ailleurs qu'après validation par un administrateur.
 - **Pas d'écrasement silencieux** : si la clé existe déjà, le serveur répond `CONFLICT`, sauf si l'utilisateur a confirmé le remplacement (`allowOverwrite`). Pour poser la question une seule fois pour tout un lot, le formulaire appelle d'abord `storage.checkR2Conflicts`, qui renvoie la liste des noms déjà présents.
 - **L'espace personnel** n'accepte que des images, dans la limite d'un quota.

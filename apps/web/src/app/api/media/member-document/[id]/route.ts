@@ -20,7 +20,15 @@ import {
  *
  * Le fichier est streamé depuis R2 avec son type enregistré (`mimeType`, PDF par
  * défaut) : affiché dans le navigateur, ou en pièce jointe avec `?download=1`.
+ *
+ * Seuls les types sans danger (INLINE_SAFE) s'affichent ; tout autre type est servi en
+ * pièce jointe, avec `nosniff` (le navigateur ne devine pas un autre type) et une politique
+ * `sandbox` (rien ne s'exécute). Les envois sont déjà limités aux formats autorisés
+ * (allowedUploadTypes) : ces en-têtes couvrent les fichiers plus anciens et tout oubli.
  */
+
+/** Types affichables sans risque dans le navigateur (jamais HTML, SVG, XML ni script). */
+const INLINE_SAFE = /^(application\/pdf|image\/(jpeg|png|webp|avif|gif)|text\/(plain|markdown|csv)|audio\/[\w.+-]+|video\/[\w.+-]+)$/i;
 
 export async function GET(
   req: NextRequest,
@@ -58,7 +66,9 @@ export async function GET(
   const contentType = asset.mimeType ?? "application/pdf";
 
   // ?download=1 → pièce jointe (nom humain) ; sinon aperçu inline.
-  const download = req.nextUrl.searchParams.get("download") === "1";
+  const download =
+    req.nextUrl.searchParams.get("download") === "1" ||
+    !INLINE_SAFE.test(contentType.split(";")[0].trim());
   const baseName = doc.title ?? asset.displayName ?? asset.originalFileName;
   const ext = asset.format ?? "pdf";
   const fileName = /\.[^.]+$/.test(baseName) ? baseName : `${baseName}.${ext}`;
@@ -88,6 +98,12 @@ export async function GET(
           ? { "Content-Length": String(obj.ContentLength) }
           : {}),
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        // Pas de `sandbox` sur un PDF : le lecteur PDF intégré des navigateurs refuse de
+        // s'afficher dans un document « sandboxé ». Les autres types en reçoivent un.
+        ...(contentType === "application/pdf"
+          ? {}
+          : { "Content-Security-Policy": "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox" }),
       },
     });
   } catch (err) {

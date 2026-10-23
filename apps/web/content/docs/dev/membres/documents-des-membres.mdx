@@ -147,6 +147,8 @@ Un document qui existe mais ne concerne pas le membre répond 404, et non 403 : 
 
 Le fichier est ensuite lu dans le stockage et transmis par la route elle-même, sous la même origine que le site, avec `Cache-Control: private, no-store`. Deux raisons à ce choix plutôt qu'une redirection vers une URL signée. L'aperçu des PDF (pdf.js) télécharge le fichier en JavaScript, ce qu'une redirection vers un autre domaine bloquerait (CORS). Et chaque accès repasse par la vérification : il n'existe aucun lien qu'un membre pourrait transmettre à quelqu'un d'autre. Le paramètre `?download=1` sert le même fichier en pièce jointe, sous son nom lisible.
 
+Seuls les types sans danger sont affichés dans le navigateur : PDF, images (hors SVG), texte, audio et vidéo. Tout autre type est servi en pièce jointe, qui s'enregistre au lieu de s'ouvrir. Deux en-têtes complètent la protection : `X-Content-Type-Options: nosniff` interdit au navigateur de deviner un autre type que celui annoncé, et une politique de sécurité `sandbox` empêche toute exécution de script. Les envois sont déjà limités aux formats autorisés (voir « Envoyer et servir un fichier ») ; ces en-têtes couvrent aussi les fichiers déposés avant cette limite.
+
 <Callout type="info">
 Une seule règle de visibilité, posée à chaque lecture : la liste, le badge, le marquage et la livraison du fichier répondent tous à la même question, avec la même condition.
 </Callout>
