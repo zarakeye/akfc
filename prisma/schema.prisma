@@ -54,8 +54,24 @@ model User {
   /// Exception : l'utilisateur technique « Legacy Import » (services de
   /// restauration) porte une valeur non bcrypt et ne se connecte pas.
   password              String
-  /// Date de naissance, saisie par le membre dans son profil. Facultative.
+  /// Date de naissance. Facultative pour un majeur ; obligatoire pour un mineur (preuve de
+  /// la nécessité de l'accord parental, passage à la majorité). Saisie par le membre dans son
+  /// profil, sauf une fois vérifiée par un administrateur (voir `birthDateVerified`).
   birthDate             DateTime?
+  /// Date de naissance saisie ou vérifiée par un administrateur (dossier MJC) : le membre ne
+  /// peut plus la modifier.
+  birthDateVerified     Boolean              @default(false)
+  /// Majorité, renseignée par un administrateur à la création du compte (UNKNOWN pour les
+  /// comptes antérieurs, jusqu'au tri).
+  legalAge              LegalAge             @default(UNKNOWN)
+  /// Mineur : nom du parent référent (représentant légal), saisi par un administrateur.
+  /// Effacé avec l'adresse quand le membre devenu majeur a confirmé ses choix, ou 6 mois
+  /// après ses 18 ans.
+  guardianName          String?
+  /// Mineur : adresse e-mail du parent référent, saisie par un administrateur, de préférence
+  /// recueillie auprès du parent lui-même. Sert UNIQUEMENT au droit à l'image (lien
+  /// d'autorisation, récapitulatif). Jamais modifiable par le membre.
+  guardianEmail         String?
   /// Numéro de téléphone, saisi par le membre dans son profil. Facultatif.
   phone                 String?
   /// ⚠ Jamais écrit par le code : seulement lu en repli quand `avatar` est vide
@@ -159,6 +175,8 @@ model User {
   imageConsentForms         ImageConsentForm[]        @relation("ImageConsentFormUser")
   /// Formulaires de droit à l'image déposés par cet admin (1–N, ImageConsentForm.uploadedBy).
   imageConsentFormsUploaded ImageConsentForm[]        @relation("ImageConsentFormUploader")
+  /// Demande d'autorisation en attente (1–0..1, ImageConsentRequest.user). Effacée avec lui.
+  imageConsentRequest       ImageConsentRequest?
   /// Adhésions aux groupes de membres (1–N, MemberGroupMembership.user).
   /// Effacées avec lui.
   memberGroupMemberships    MemberGroupMembership[]   @relation("MemberGroupMembership")
@@ -320,6 +338,26 @@ enum ImageConsent {
 }
 
 /// Usages de l'image qu'un formulaire signé autorise (une case « Oui » par usage).
+/// Majorité d'un membre.
+enum LegalAge {
+  /// Pas encore renseignée (comptes créés avant la règle).
+  UNKNOWN
+  /// Majeur : il confirme lui-même son autorisation.
+  ADULT
+  /// Mineur : date de naissance et parent référent obligatoires ; l'autorisation vient du parent.
+  MINOR
+}
+
+/// Voie par laquelle une autorisation de droit à l'image a été donnée.
+enum ImageConsentSource {
+  /// Formulaire papier signé, déposé par un administrateur.
+  PAPER
+  /// Confirmée en ligne par le membre majeur, connecté (mot de passe redemandé).
+  ONLINE_MEMBER
+  /// Confirmée en ligne par le parent référent, via le lien envoyé à son adresse.
+  ONLINE_GUARDIAN
+}
+
 enum ImageUsage {
   /// Galeries de l'espace membres.
   MEMBER_SPACE
@@ -2162,45 +2200,88 @@ model SitePartner {
   @@index([isActive, position])
 }
 
-/// Formulaire d'autorisation de droit à l'image SIGNÉ, scanné ou photographié, déposé par un admin
-/// sur la fiche du membre. Preuve du consentement (art. 7.1 RGPD) : on garde l'historique, le plus
-/// récent fait foi et fixe User.imageConsent. Le fichier vit dans R2 sous `_private/image-consent/`,
+/// Autorisation de droit à l'image : une VERSION par ligne, quelle que soit sa voie (`source`) —
+/// formulaire papier signé déposé par un admin, confirmation en ligne du membre majeur, ou du parent
+/// référent d'un mineur (le fichier est alors le récapitulatif PDF généré). Preuve du consentement
+/// (art. 7.1 RGPD) : on garde l'historique, la plus récente fait foi et fixe User.imageConsent. Le fichier vit dans R2 sous `_private/image-consent/`,
 /// hors de la bibliothèque ; il n'est servi qu'au membre concerné et aux admins
 /// (/api/media/image-consent/[id]). À la suppression du compte, le formulaire est détaché et gardé
 /// 5 ans (preuve), puis effacé par la purge nocturne.
 model ImageConsentForm {
   /// Identifiant CUID.
-  id             String       @id @default(cuid())
+  id              String             @id @default(cuid())
   /// Membre concerné. null une fois son compte supprimé (voir detachedAt).
-  userId         String?
+  userId          String?
   /// Membre (N–1, User.imageConsentForms). Détaché à la suppression du compte (SET NULL).
-  user           User?        @relation("ImageConsentFormUser", fields: [userId], references: [id], onDelete: SetNull)
+  user            User?              @relation("ImageConsentFormUser", fields: [userId], references: [id], onDelete: SetNull)
   /// Nom du membre au dépôt : identifie le formulaire une fois le compte supprimé.
-  memberName     String
+  memberName      String
   /// Suppression du compte : le formulaire est effacé 5 ans après.
-  detachedAt     DateTime?
+  detachedAt      DateTime?
   /// Clé R2 du fichier (PDF ou image).
-  storageKey     String       @unique
+  storageKey      String             @unique
   /// Type du fichier (application/pdf, image/jpeg, image/png, image/webp).
-  mimeType       String
+  mimeType        String
   /// Nom du fichier envoyé, pour le téléchargement.
-  fileName       String
+  fileName        String
   /// Taille en octets.
-  size           Int
+  size            Int
   /// Usages cochés « Oui ». Vide → refus de tout usage.
-  usages         ImageUsage[]
+  usages          ImageUsage[]
   /// Choix « après mon départ » (version du formulaire qui le propose) : true → le club peut
   /// continuer à utiliser les images déjà prises ; false → retrait sous un an ; null → non précisé.
-  keepAfterLeave Boolean?
+  keepAfterLeave  Boolean?
   /// Date de signature portée sur le formulaire.
-  signedAt       DateTime?
-  /// Admin qui a déposé le formulaire. null si son compte a été supprimé.
-  uploadedById   String?
+  signedAt        DateTime?
+  /// Voie de l'autorisation (papier, en ligne par le membre, en ligne par le parent).
+  source          ImageConsentSource @default(PAPER)
+  /// Version du texte d'autorisation accepté (en ligne). null : formulaire papier antérieur.
+  textVersion     String?
+  /// Qui a signé : le membre, ou son représentant légal (nom saisi par le parent en ligne).
+  signerName      String?
+  /// Qualité du signataire mineur (« mère », « père », « tuteur »…). null : le membre lui-même.
+  signerQuality   String?
+  /// Adresse vérifiée par le lien (ONLINE_GUARDIAN) : celle à laquelle le lien a été envoyé.
+  signerEmail     String?
+  /// Date de naissance du membre au moment de l'autorisation (justifie l'accord parental).
+  memberBirthDate DateTime?
+  /// Admin qui a déposé le formulaire papier. null en ligne, ou si son compte a été supprimé.
+  uploadedById    String?
   /// Admin (N–1, User.imageConsentFormsUploaded). Détaché à sa suppression (SET NULL).
-  uploadedBy     User?        @relation("ImageConsentFormUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedBy      User?              @relation("ImageConsentFormUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
   /// Dépôt.
-  createdAt      DateTime     @default(now())
+  createdAt       DateTime           @default(now())
 
   @@index([userId, createdAt])
   @@index([detachedAt])
+}
+
+/// Demande d'autorisation de droit à l'image EN ATTENTE pour un membre mineur : ses souhaits (sans
+/// effet) et le lien envoyé à son parent référent. Une seule par membre. Seule la confirmation du
+/// parent, sur la page du lien (bouton, jamais la simple ouverture), crée une version valide
+/// (ImageConsentForm, source ONLINE_GUARDIAN) ; la demande est alors supprimée.
+model ImageConsentRequest {
+  /// Identifiant CUID.
+  id             String   @id @default(cuid())
+  /// Membre mineur concerné (unique : une demande en attente au plus).
+  userId         String   @unique
+  /// Membre (1–1, User.imageConsentRequest). Supprimée avec son compte (CASCADE).
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Souhaits du membre, pré-cochés pour le parent. Sans effet tant que le parent n'a pas confirmé.
+  usages         ImageUsage[]
+  /// Souhait « après mon départ » (voir ImageConsentForm.keepAfterLeave).
+  keepAfterLeave Boolean?
+  /// Empreinte SHA-256 du jeton du lien (le jeton lui-même n'est jamais stocké). null : pas encore
+  /// envoyé, ou lien expiré remis à zéro.
+  tokenHash      String?  @unique
+  /// Adresse à laquelle le lien a été envoyé (celle du parent référent à l'envoi).
+  sentTo         String?
+  /// Envoi du dernier lien.
+  sentAt         DateTime?
+  /// Fin de validité du lien (7 jours après l'envoi). Usage unique.
+  expiresAt      DateTime?
+  /// Création.
+  createdAt      DateTime @default(now())
+  /// Dernière modification (souhaits, renvoi).
+  updatedAt      DateTime @updatedAt
 }
