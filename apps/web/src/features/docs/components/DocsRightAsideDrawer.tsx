@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { List } from "lucide-react"
 import { DocsRightAside } from "./DocsRightAside"
 import type { TocItem } from "@features/docs/lib/docs.types"
 
@@ -36,11 +37,13 @@ export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
 
   return (
     <>
+      {/* Écran étroit : une pastille ronde, dans la marge droite gardée libre par DocsLayout. */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed right-6 bottom-6 z-40 rounded-full border bg-background px-4 py-2 text-sm shadow-lg hover:bg-muted"
+        className="fixed right-6 bottom-6 z-40 inline-flex items-center justify-center rounded-full border bg-background px-4 py-2 text-sm shadow-lg hover:bg-muted max-lg:right-1.5 max-lg:bottom-3 max-lg:h-10 max-lg:w-10 max-lg:p-0"
       >
-        On this page
+        <List className="hidden h-4 w-4 max-lg:block" aria-hidden="true" />
+        <span className="max-lg:sr-only">On this page</span>
       </button>
 
       <div

@@ -110,10 +110,11 @@ export function EntityExplorer({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-6 z-40 inline-flex items-center gap-1.5 rounded-full border bg-background px-4 py-2 text-sm shadow-lg hover:bg-muted"
+        // Écran étroit : une pastille ronde, dans la marge droite gardée libre par DocsLayout.
+        className="fixed bottom-20 right-6 z-40 inline-flex items-center gap-1.5 rounded-full border bg-background px-4 py-2 text-sm shadow-lg hover:bg-muted max-lg:bottom-16 max-lg:right-1.5 max-lg:h-10 max-lg:w-10 max-lg:justify-center max-lg:p-0"
       >
         <Atom className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-        Entités
+        <span className="max-lg:sr-only">Entités</span>
       </button>
       {isOpen && (
         <EntityPanel

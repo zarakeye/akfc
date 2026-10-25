@@ -41,8 +41,10 @@ export function DocsLayout({
       <DocsSidebar currentPath={currentPath} navigation={navigation} />
 
       <main className="min-w-0 flex-1 overflow-hidden">
-        <div className="flex h-full min-h-0 overflow-hidden px-8 py-6 max-md:px-3 short:py-2">
-          {/* Écran bas (`short:`, téléphone en paysage) et téléphone en portrait (`phone-portrait:`) :
+        <div className="flex h-full min-h-0 overflow-hidden px-8 py-6 max-md:pl-3 max-lg:pr-12 short:py-2">
+          {/* Écran étroit (`max-lg:`) : marge droite libre pour les pastilles « Entités » et « On
+              this page », qui ne couvrent ainsi jamais le texte.
+              Écran bas (`short:`, téléphone en paysage) et téléphone en portrait (`phone-portrait:`) :
               le titre et les liens « Précédent / Suivant » défilent avec le texte ; c'est la
               section entière qui défile (voir lib/docsScroller.ts). */}
           <section data-docs-scroller className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden short:overflow-y-auto phone-portrait:overflow-y-auto">
@@ -65,7 +67,7 @@ export function DocsLayout({
             <div className="relative min-h-0 flex-1 short:flex-none phone-portrait:flex-none">
               <div
                 id="docs-content-scroll"
-                className="docs-main-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden py-6 pr-10 max-md:pr-1 short:h-auto short:overflow-visible short:overflow-x-visible phone-portrait:h-auto phone-portrait:overflow-visible phone-portrait:overflow-x-visible"
+                className="docs-main-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden py-6 pr-10 max-lg:pr-1 short:h-auto short:overflow-visible short:overflow-x-visible phone-portrait:h-auto phone-portrait:overflow-visible phone-portrait:overflow-x-visible"
               >
                 <div className="mx-auto max-w-4xl text-justify">{children}</div>
               </div>
