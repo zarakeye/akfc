@@ -742,6 +742,7 @@ const CALL_KIND_LABEL: Record<StoryStep["callKind"], string> = {
   action: "Server action",
   function: "Fonction du serveur",
   page: "Page (composant serveur)",
+  layout: "Gabarit (layout, composant serveur)",
   route: "Route d'API",
 };
 

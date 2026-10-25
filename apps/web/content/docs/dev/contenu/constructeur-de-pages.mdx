@@ -3,12 +3,43 @@ title: "Le constructeur de pages"
 description: "Un contenu fait de blocs : le contrat versionné qui le décrit, le registre qui associe à chaque bloc son éditeur et son rendu, le rendu serveur qui résout tous les médias en une requête, et la synchronisation qui relie une page aux médias qu'elle affiche."
 section: "Contenu éditorial"
 order: 1
+entities:
+  SitePage: [slug, content]
+  Post: [content]
+  Discipline: [description, summary]
+  PageMediaReference: [mediaAssetId, pageType, pageId]
+  MediaAsset: [status, fullPath]
+stories:
+  - title: Un administrateur modifie une page du site
+    actor: Administrateur
+    steps:
+      - label: Dans l'éditeur, l'aperçu de chaque bloc résout ses médias
+        call: media.resolveByIds
+        section: "L'édition : un composant contrôlé"
+      - label: Il enregistre ; le contenu et le recensement de ses médias sont écrits dans la même transaction
+        call: sitePage.save
+        section: Le recensement des médias d'une page
+  - title: Un visiteur lit la page
+    actor: Visiteur
+    steps:
+      - label: La page est rendue sur le serveur, ses médias résolus en une requête
+        call: page /about
+        section: "Le rendu : tous les médias en une requête"
+      - label: Le navigateur charge une image ; la route ne la sert que si elle est placée
+        call: GET /api/media/public/r2/[...path]
+        section: Le recensement des médias d'une page
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Les médias sont envoyés, rangés et validés dans le finder. Un média validé n'est pourtant servi à personne tant qu'il n'est posé nulle part : la route publique exige qu'il soit **placé** dans une page ou une galerie publique.
+
+## Les parcours du chapitre
+
+Deux cas d'utilisation traversent ce chapitre : l'administrateur qui modifie une page, et le visiteur qui la lit. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Un seul format pour tous les contenus
 

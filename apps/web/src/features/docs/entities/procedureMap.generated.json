@@ -107,6 +107,27 @@
    "line": 65,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/siteSettings/router.ts:18"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -179,6 +200,27 @@
    "line": 102,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/siteSettings/router.ts:18"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -244,6 +286,27 @@
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 121,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/siteSettings/router.ts:18"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -341,6 +404,27 @@
    "line": 157,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/siteSettings/router.ts:18"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -402,6 +486,27 @@
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 190,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/siteSettings/router.ts:18"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -487,6 +592,27 @@
    "line": 34,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/pageVisibility/router.ts:9"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -529,6 +655,27 @@
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 41,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/pageVisibility/router.ts:9"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -591,6 +738,27 @@
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 52,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/pageVisibility/router.ts:9"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -675,6 +843,27 @@
        [
         "ctx.prisma.event.count",
         "packages/backend/src/modules/pageVisibility/router.ts:76"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/pageVisibility/router.ts:9"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
        ]
       ]
      ]
@@ -903,6 +1092,45 @@
    "line": 112,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -923,6 +1151,20 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "ticketAccess",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:39"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -995,6 +1237,45 @@
    "line": 114,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "listInbox",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:55"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "listInbox",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:55"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -1015,6 +1296,20 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "listInbox",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:55"
+       ],
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -1094,6 +1389,45 @@
    "line": 118,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -1162,6 +1496,20 @@
        [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ]
      ]
@@ -1227,6 +1575,55 @@
    "line": 122,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "db.user.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -1262,6 +1659,16 @@
         "db.memberGroupMembership.findFirst",
         "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
+      ],
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "db.user.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:163"
+       ]
       ]
      ]
     },
@@ -1296,6 +1703,20 @@
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:158"
        ]
+      ],
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
       ]
      ]
     },
@@ -1325,6 +1746,53 @@
    "file": "packages/backend/src/modules/tickets/router.ts",
    "line": 126,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "takeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:151"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "takeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:151"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -1414,6 +1882,31 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "takeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:151"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -1443,6 +1936,53 @@
    "file": "packages/backend/src/modules/tickets/router.ts",
    "line": 130,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -1532,6 +2072,31 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "transferTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:165"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -1570,12 +2135,26 @@
      "trails": [
       [
        [
-        "replySignature",
-        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
        ],
        [
         "db.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ],
       [
@@ -1585,7 +2164,7 @@
        ],
        [
         "db.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/tickets/tickets.service.ts:58"
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
        ]
       ]
      ]
@@ -1710,6 +2289,26 @@
         "ctx.prisma.ticket.findUnique",
         "packages/backend/src/modules/tickets/router.ts:144"
        ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
       ]
      ]
     },
@@ -1812,6 +2411,53 @@
    "line": 185,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "closeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:304"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "closeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:304"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -1900,6 +2546,31 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "closeTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:304"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -1930,6 +2601,53 @@
    "file": "packages/backend/src/modules/tickets/router.ts",
    "line": 189,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "reopenTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:290"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "reopenTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:290"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -2019,6 +2737,31 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "reopenTicket",
+        "packages/backend/src/modules/tickets/tickets.service.ts:290"
+       ],
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -2072,6 +2815,27 @@
    "line": 46,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -2114,6 +2878,27 @@
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 60,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -2205,6 +2990,27 @@
    "line": 95,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -2251,6 +3057,27 @@
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 109,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -2299,6 +3126,27 @@
    "line": 118,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -2341,6 +3189,27 @@
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 125,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertAdmin",
+        "packages/backend/src/modules/sitePartners/router.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -3798,6 +4667,45 @@
    "line": 414,
    "effects": [
     {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:415"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:415"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:415"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -3820,6 +4728,71 @@
    "line": 453,
    "effects": [
     {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:454"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:454"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:454"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:454"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:454"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -3841,6 +4814,45 @@
    "file": "packages/backend/src/modules/users/router.ts",
    "line": 475,
    "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:476"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:476"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:476"
+       ]
+      ]
+     ]
+    },
     {
      "model": "User",
      "op": "read",
@@ -3900,6 +4912,32 @@
    "file": "packages/backend/src/modules/users/router.ts",
    "line": 528,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:529"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:529"
+       ]
+      ]
+     ]
+    },
     {
      "model": "User",
      "op": "read",
@@ -4728,6 +5766,20 @@
         "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanTrashPaths",
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -5160,6 +6212,27 @@
      ]
     },
     {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TrashEntry",
      "op": "read",
      "fields": [],
@@ -5406,6 +6479,27 @@
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
         "prisma/schema.prisma:1710"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
        ]
       ]
      ]
@@ -7855,6 +8949,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findMany",
+        "packages/backend/src/modules/events/router.ts:249"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -9208,6 +10315,16 @@
         "ctx.prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/router.ts:120"
        ]
+      ],
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
       ]
      ]
     },
@@ -9521,6 +10638,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "ctx.prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/router.ts:295"
        ]
@@ -9587,6 +10714,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "ctx.prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/router.ts:331"
        ]
@@ -9599,16 +10736,6 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
-       ]
-      ],
-      [
-       [
-        "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
-       ],
-       [
-        "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
        ]
       ]
      ]
@@ -9748,6 +10875,20 @@
         "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPath",
+        "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -9772,28 +10913,6 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:32"
-       ]
-      ],
-      [
-       [
-        "mergeGroupSpaceFolders",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:87"
-       ],
-       [
-        "missingGroupSpaceFolders",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
-       ],
-       [
-        "collaborativeGroupIds",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
-       ],
-       [
-        "collaborativeEntriesForMember",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
-       ],
-       [
-        "prisma.memberGroup.findMany",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
        ]
       ]
      ]
@@ -9988,6 +11107,20 @@
         "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPath",
+        "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -10012,28 +11145,6 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:32"
-       ]
-      ],
-      [
-       [
-        "mergeGroupSpaceFoldersIntoTree",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:105"
-       ],
-       [
-        "missingGroupSpaceFolders",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
-       ],
-       [
-        "collaborativeGroupIds",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
-       ],
-       [
-        "collaborativeEntriesForMember",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
-       ],
-       [
-        "prisma.memberGroup.findMany",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
        ]
       ]
      ]
@@ -10252,6 +11363,20 @@
         "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPath",
+        "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -10311,6 +11436,20 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "assertCanReadPath",
+        "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts:14"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "assertCanReadPath",
@@ -10664,6 +11803,24 @@
         "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertUploadDestinationAllowed",
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+       ],
+       [
+        "assertCanWriteGroupSpace",
+        "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -10892,6 +12049,24 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "assertUploadDestinationAllowed",
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+       ],
+       [
+        "assertCanWriteGroupSpace",
+        "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "assertUploadDestinationAllowed",
@@ -11241,6 +12416,24 @@
         "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertUploadDestinationAllowed",
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+       ],
+       [
+        "assertCanWriteGroupSpace",
+        "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -11509,6 +12702,20 @@
         "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanTrashPaths",
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -11606,6 +12813,20 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "assertCanTrashPaths",
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "assertCanTrashPaths",
@@ -13017,6 +14238,19 @@
    "line": 81,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:94"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "read",
      "fields": [],
@@ -13052,7 +14286,33 @@
    "line": 109,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:115"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:115"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
      "op": "read",
      "fields": [],
      "trails": [
@@ -13107,6 +14367,19 @@
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
    "line": 128,
    "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:134"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MediaAsset",
      "op": "read",
@@ -13221,6 +14494,44 @@
      ]
     },
     {
+     "model": "MemberDocumentGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:193"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:213"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:184"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:193"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroup",
      "op": "read",
      "fields": [],
@@ -13229,6 +14540,12 @@
        [
         "ctx.prisma.memberGroupMembership.findMany",
         "packages/backend/src/modules/memberDocuments/router.ts:175"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:193"
        ]
       ]
      ]
@@ -13242,6 +14559,12 @@
        [
         "ctx.prisma.memberGroupMembership.findMany",
         "packages/backend/src/modules/memberDocuments/router.ts:175"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.memberDocument.count",
+        "packages/backend/src/modules/memberDocuments/router.ts:193"
        ]
       ]
      ]
@@ -13526,6 +14849,20 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "assertCanWriteGroupSpace",
+        "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "assertCanWriteGroupSpace",
@@ -14600,6 +15937,19 @@
    "line": 72,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -15104,6 +16454,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -15602,6 +16962,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -15653,6 +17023,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -15702,6 +17082,16 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "resolveGroupAccessForUser",
@@ -16218,6 +17608,19 @@
    "line": 8,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -16449,6 +17852,12 @@
         "db.user.findUnique",
         "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
        ]
+      ],
+      [
+       [
+        "db.ticketMessage.count",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+       ]
       ]
      ]
     },
@@ -16646,6 +18055,19 @@
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
         "prisma/schema.prisma:2103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ]
       ]
      ]
@@ -16848,6 +18270,23 @@
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
         "prisma/schema.prisma:2103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "purgeExpiredData",
+        "packages/backend/src/modules/privacy/retention.service.ts:31"
+       ],
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ]
       ]
      ]
@@ -17120,6 +18559,20 @@
         "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWriteGroupSpace",
+        "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts:15"
+       ],
+       [
         "resolveGroupAccessForUser",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
@@ -17296,6 +18749,24 @@
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
        ],
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "missingGroupSpaceFolders",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
+       ],
+       [
+        "collaborativeGroupIds",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:25"
+       ],
+       [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:32"
        ]
@@ -17316,20 +18787,6 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
-       ]
-      ],
-      [
-       [
-        "missingGroupSpaceFolders",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
-       ],
-       [
-        "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
-       ],
-       [
-        "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
        ]
       ]
      ]
@@ -17412,6 +18869,16 @@
      "trails": [
       [
        [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
         "missingGroupSpaceFolders",
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
        ],
@@ -17440,20 +18907,6 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
-       ]
-      ],
-      [
-       [
-        "missingGroupSpaceFolders",
-        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:50"
-       ],
-       [
-        "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
-       ],
-       [
-        "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
        ]
       ]
      ]
@@ -19074,6 +20527,29 @@
    "line": 29,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19086,6 +20562,12 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -19111,6 +20593,37 @@
    "line": 39,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19127,6 +20640,16 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -19181,6 +20704,37 @@
    "line": 55,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19197,6 +20751,16 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -19258,6 +20822,37 @@
    "line": 101,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19310,6 +20905,16 @@
        [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ]
      ]
@@ -19361,6 +20966,43 @@
    "line": 157,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "db.user.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19388,6 +21030,12 @@
         "db.memberGroupMembership.findFirst",
         "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
+      ],
+      [
+       [
+        "db.user.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:163"
+       ]
       ]
      ]
     },
@@ -19413,6 +21061,16 @@
        [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:158"
+       ]
+      ],
+      [
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ]
      ]
@@ -19476,6 +21134,19 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -19496,6 +21167,29 @@
    "line": 69,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19510,6 +21204,19 @@
         "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
        ]
       ],
+      [
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
       [
        [
         "db.memberGroupMembership.findFirst",
@@ -19620,6 +21327,45 @@
    "line": 151,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -19692,6 +21438,27 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -19715,6 +21482,45 @@
    "file": "packages/backend/src/modules/tickets/tickets.service.ts",
    "line": 165,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -19788,6 +21594,27 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -19820,12 +21647,34 @@
      "trails": [
       [
        [
-        "replySignature",
-        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
        ],
        [
         "db.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ],
       [
@@ -19835,7 +21684,7 @@
        ],
        [
         "db.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/tickets/tickets.service.ts:58"
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
        ]
       ]
      ]
@@ -19919,6 +21768,37 @@
        [
         "tx.ticket.update",
         "packages/backend/src/modules/tickets/tickets.service.ts:211"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
        ]
       ]
      ]
@@ -20088,6 +21968,45 @@
    "line": 290,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -20160,6 +22079,27 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -20184,6 +22124,45 @@
    "file": "packages/backend/src/modules/tickets/tickets.service.ts",
    "line": 304,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -20252,6 +22231,27 @@
        [
         "db.ticket.update",
         "packages/backend/src/modules/tickets/tickets.service.ts:309"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadForHandler",
+        "packages/backend/src/modules/tickets/tickets.service.ts:78"
+       ],
+       [
+        "canHandleCategory",
+        "packages/backend/src/modules/tickets/tickets.service.ts:69"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:71"
        ]
       ]
      ]
@@ -20433,6 +22433,23 @@
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
         "prisma/schema.prisma:1710"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
        ]
       ]
      ]
@@ -20662,6 +22679,23 @@
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
         "prisma/schema.prisma:1710"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
        ]
       ]
      ]
@@ -21243,6 +23277,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -21251,6 +23298,23 @@
    "file": "packages/backend/src/trpc/core.ts",
    "line": 42,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -21326,6 +23390,27 @@
    "file": "packages/backend/src/trpc/trpcCaller.ts",
    "line": 17,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createTRPCContext",
+        "packages/backend/src/trpc/core.ts:42"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -21418,6 +23503,23 @@
    "file": "apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts",
    "line": 15,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -21616,6 +23718,44 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -21624,6 +23764,20 @@
        [
         "prisma.course.findUnique",
         "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -21731,6 +23885,27 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Origin",
      "op": "read",
      "fields": [],
@@ -21744,6 +23919,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -21752,6 +23944,20 @@
        [
         "prisma.discipline.findUnique",
         "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -21817,6 +24023,27 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Origin",
      "op": "read",
      "fields": [],
@@ -21830,6 +24057,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -21838,6 +24082,20 @@
        [
         "prisma.event.findUnique",
         "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22018,6 +24276,27 @@
    "line": 30,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Post",
      "op": "read",
      "fields": [],
@@ -22026,6 +24305,44 @@
        [
         "prisma.post.findUnique",
         "apps/web/src/app/(admin)/dashboard/posts/[id]/page.tsx:39"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22038,6 +24355,33 @@
    "file": "apps/web/src/app/(admin)/dashboard/rgpd/page.tsx",
    "line": 30,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -22179,6 +24523,27 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Origin",
      "op": "read",
      "fields": [],
@@ -22218,6 +24583,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -22226,6 +24608,20 @@
        [
         "prisma.seminar.findUnique",
         "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22254,11 +24650,52 @@
    ],
    "emails": []
   },
-  "page /about/instructeurs": {
-   "kind": "page",
-   "file": "apps/web/src/app/(public)/about/instructeurs/page.tsx",
-   "line": 23,
+  "layout /(admin)": {
+   "kind": "layout",
+   "file": "apps/web/src/app/(admin)/layout.tsx",
+   "line": 21,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -22272,6 +24709,30 @@
        [
         "prisma.memberGroupMembership.findFirst",
         "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
       ]
      ]
@@ -22311,6 +24772,193 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "handledCategoryIds",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:29"
+       ],
+       [
+        "db.ticketCategory.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /about/instructeurs": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/about/instructeurs/page.tsx",
+   "line": 23,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findMany",
+        "apps/web/src/app/(public)/about/instructeurs/page.tsx:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findMany",
+        "apps/web/src/app/(public)/about/instructeurs/page.tsx:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findMany",
+        "apps/web/src/app/(public)/about/instructeurs/page.tsx:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -22330,6 +24978,20 @@
         "prisma.user.findMany",
         "apps/web/src/app/(public)/about/instructeurs/page.tsx:28"
        ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
+       ]
       ]
      ]
     }
@@ -22341,6 +25003,48 @@
    "file": "apps/web/src/app/(public)/about/page.tsx",
    "line": 32,
    "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -22435,6 +25139,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -22451,6 +25172,20 @@
        [
         "prisma.session.findUnique",
         "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22533,6 +25268,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "SiteStyle",
      "op": "read",
      "fields": [],
@@ -22541,6 +25293,27 @@
        [
         "prisma.siteStyle.findUnique",
         "apps/web/src/app/(public)/agenda/page.tsx:121"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22553,6 +25326,48 @@
    "file": "apps/web/src/app/(public)/contacts/page.tsx",
    "line": 33,
    "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -22656,6 +25471,16 @@
         "prisma.siteSettings.findUnique",
         "apps/web/src/app/(public)/contacts/page.tsx:40"
        ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
       ]
      ]
     },
@@ -22676,6 +25501,20 @@
        [
         "prisma.session.findUnique",
         "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22715,6 +25554,44 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -22723,6 +25600,20 @@
        [
         "prisma.course.findUnique",
         "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22762,6 +25653,27 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Origin",
      "op": "read",
      "fields": [],
@@ -22770,6 +25682,44 @@
        [
         "prisma.discipline.findUnique",
         "apps/web/src/app/(public)/disciplines/[slug]/page.tsx:55"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22835,6 +25785,27 @@
      ]
     },
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Origin",
      "op": "read",
      "fields": [],
@@ -22843,6 +25814,23 @@
        [
         "prisma.event.findUnique",
         "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
        ]
       ]
      ]
@@ -22857,6 +25845,20 @@
         "prisma.event.findUnique",
         "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
        ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
+       ]
       ]
      ]
     }
@@ -22869,6 +25871,27 @@
    "line": 42,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "SitePage",
      "op": "read",
      "fields": [],
@@ -22877,6 +25900,44 @@
        [
         "prisma.sitePage.findUnique",
         "apps/web/src/app/(public)/infos/[slug]/page.tsx:48"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22890,6 +25951,27 @@
    "line": 25,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "SitePage",
      "op": "read",
      "fields": [],
@@ -22919,6 +26001,37 @@
        [
         "prisma.siteSettings.findUnique",
         "apps/web/src/features/legal/getLegalInfo.ts:27"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -22932,6 +26045,27 @@
    "line": 22,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "SitePage",
      "op": "read",
      "fields": [],
@@ -22962,6 +26096,37 @@
         "prisma.siteSettings.findUnique",
         "apps/web/src/features/legal/getLegalInfo.ts:27"
        ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
+       ]
       ]
      ]
     }
@@ -22973,6 +26138,48 @@
    "file": "apps/web/src/app/(public)/inscription/page.tsx",
    "line": 23,
    "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -23084,6 +26291,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -23100,6 +26324,129 @@
        [
         "prisma.session.findUnique",
         "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "layout /(public)": {
+   "kind": "layout",
+   "file": "apps/web/src/app/(public)/layout.tsx",
+   "line": 26,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.breakingNews.findMany",
+        "apps/web/src/app/(public)/layout.tsx:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<Footer>",
+        "apps/web/src/features/app-shell/Footer.tsx:35"
+       ],
+       [
+        "prisma.course .findMany",
+        "apps/web/src/features/app-shell/Footer.tsx:40"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<Footer>",
+        "apps/web/src/features/app-shell/Footer.tsx:35"
+       ],
+       [
+        "prisma.course .findMany",
+        "apps/web/src/features/app-shell/Footer.tsx:40"
+       ]
+      ],
+      [
+       [
+        "<Footer>",
+        "apps/web/src/features/app-shell/Footer.tsx:35"
+       ],
+       [
+        "prisma.discipline .findMany",
+        "apps/web/src/features/app-shell/Footer.tsx:87"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<Footer>",
+        "apps/web/src/features/app-shell/Footer.tsx:35"
+       ],
+       [
+        "getActivePartners",
+        "apps/web/src/features/partners/getActivePartners.ts:16"
+       ],
+       [
+        "prisma.sitePartner .findMany",
+        "apps/web/src/features/partners/getActivePartners.ts:17"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/app/(public)/layout.tsx:43"
+       ]
+      ],
+      [
+       [
+        "<Footer>",
+        "apps/web/src/features/app-shell/Footer.tsx:35"
+       ],
+       [
+        "prisma.siteSettings .findUnique",
+        "apps/web/src/features/app-shell/Footer.tsx:53"
        ]
       ]
      ]
@@ -23164,6 +26511,27 @@
        [
         "db.mediaAsset.findMany",
         "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
        ]
       ]
      ]
@@ -23294,6 +26662,16 @@
      "trails": [
       [
        [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ],
+      [
+       [
         "prisma.siteSettings.findUnique",
         "apps/web/src/app/(public)/page.tsx:174"
        ]
@@ -23334,14 +26712,22 @@
       ],
       [
        [
-        "prisma.post.findMany",
-        "apps/web/src/app/(public)/page.tsx:125"
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ],
       [
        [
-        "prisma.reaction.findMany",
-        "apps/web/src/app/(public)/page.tsx:143"
+        "prisma.post.findMany",
+        "apps/web/src/app/(public)/page.tsx:125"
        ]
       ]
      ]
@@ -23363,6 +26749,27 @@
        [
         "prisma.seminar.findUnique",
         "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
        ]
       ]
      ]
@@ -23407,6 +26814,23 @@
      ]
     },
     {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:95"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -23415,6 +26839,20 @@
        [
         "prisma.seminar.findUnique",
         "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ],
+      [
+       [
+        "<PageRenderer>",
+        "apps/web/src/features/page-builder/PageRenderer.tsx:63"
+       ],
+       [
+        "resolveAvatarsByUserIds",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:14"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts:23"
        ]
       ]
      ]
@@ -23427,6 +26865,23 @@
    "file": "apps/web/src/app/api/admin/revalidate-style/route.ts",
    "line": 21,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -23680,6 +27135,16 @@
      "trails": [
       [
        [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
         "exportMyData",
         "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
        ],
@@ -23843,6 +27308,16 @@
         "db.user.findUnique",
         "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
        ]
+      ],
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.ticketMessage.count",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+       ]
       ]
      ]
     },
@@ -23939,6 +27414,23 @@
      ]
     },
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -24014,6 +27506,23 @@
    "file": "apps/web/src/app/api/media/image-consent/prefilled/route.ts",
    "line": 14,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -24123,6 +27632,23 @@
      ]
     },
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -24220,7 +27746,46 @@
    "line": 59,
    "effects": [
     {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findFirst",
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findFirst",
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findFirst",
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
      "op": "read",
      "fields": [],
      "trails": [
@@ -24245,6 +27810,30 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
       [
        [
         "canReadStorageKey",
@@ -24387,6 +27976,23 @@
    "line": 31,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -24463,6 +28069,23 @@
    "line": 14,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -24509,6 +28132,112 @@
        [
         "prisma.session.findUnique",
         "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "layout /": {
+   "kind": "layout",
+   "file": "apps/web/src/app/layout.tsx",
+   "line": 91,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteStyle",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteStyle .findUnique",
+        "apps/web/src/app/layout.tsx:98"
        ]
       ]
      ]

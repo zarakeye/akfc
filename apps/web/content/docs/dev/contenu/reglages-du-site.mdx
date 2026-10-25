@@ -3,6 +3,36 @@ title: "Les réglages du site"
 description: "L'identité du site, ses coordonnées et ses informations légales, réglées par les administrateurs dans une ligne unique de la base : ce qui y va et ce qui reste dans l'environnement, la valeur de repli de chaque lecture, et le logo, servi hors du finder."
 section: "Contenu éditorial"
 order: 2
+entities:
+  SiteSettings: [id, shortTitle, longTitle, tagline, logoKey, contactEmail, contactPhones, contactAddress, legalName, legalAddress, legalPhone, legalEmail]
+stories:
+  - title: L'administrateur règle l'identité du site
+    actor: Administrateur
+    steps:
+      - label: Il enregistre les titres et l'accroche ; un upsert crée la ligne au premier enregistrement
+        call: siteSettings.save
+        section: Une seule ligne en base
+      - label: Il envoie le logo, rangé hors du finder
+        call: siteSettings.uploadLogo
+        section: Le logo, hors du finder
+  - title: L'administrateur renseigne les coordonnées
+    actor: Administrateur
+    steps:
+      - label: Les coordonnées publiques, pour la page « Nous contacter » et le pied de page
+        call: siteSettings.saveContact
+        section: Coordonnées publiques et coordonnées légales
+      - label: Les coordonnées légales, pour les documents à valeur légale
+        call: siteSettings.saveLegal
+        section: Coordonnées publiques et coordonnées légales
+  - title: Un visiteur ouvre le site
+    actor: Visiteur
+    steps:
+      - label: Le gabarit du site public lit les réglages pour le pied de page, avec une valeur de repli
+        call: layout /(public)
+        section: Qui lit quoi
+      - label: La page « Nous contacter » lit la même ligne
+        call: page /contacts
+        section: Qui lit quoi
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +41,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Les pages, les actualités et les fiches partagent un même format de blocs, un éditeur et un rendu serveur. Chaque enregistrement tient à jour la liste des médias qu'un contenu affiche.
 
 Certaines informations ne sont le contenu d'aucune page, mais apparaissent sur toutes : le nom du club dans l'onglet du navigateur, le logo du header, l'accroche et les coordonnées du pied de page, les mentions légales. Elles sont réunies dans les **Réglages du site** (`/dashboard/settings`), que les administrateurs modifient sans toucher au code ni redéployer.
+
+## Les parcours du chapitre
+
+Trois cas d'utilisation traversent ce chapitre : régler l'identité du site, renseigner ses coordonnées, et ce qu'en lit un visiteur. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Une seule ligne en base
 

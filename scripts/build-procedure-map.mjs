@@ -81,7 +81,7 @@ const serverActions = new Set(
 // Pages (composants serveur) et routes d'API du front qui lisent ou écrivent la base elles-mêmes :
 // `/agenda`, `GET /api/me/export`… Elles peuvent aussi servir d'étape à un parcours.
 const APP = join(WEB, "app");
-const appEntries = walk(APP).filter((f) => /\/(page\.tsx|route\.ts)$/.test(f));
+const appEntries = walk(APP).filter((f) => /\/(page\.tsx|layout\.tsx|route\.ts)$/.test(f));
 
 const backendConfig = join(ROOT, "packages/backend/tsconfig.json");
 const parsedConfig = ts.parseJsonConfigFileContent(
@@ -188,7 +188,11 @@ function implementationsOf(signature, name, receiver) {
  * le vérificateur de types (imports, réexportations, méthodes d'objets et de classes, interfaces).
  */
 function resolveCall(call) {
-  const e = call.expression;
+  return resolveCallee(call.expression);
+}
+
+/** Même résolution pour ce qui est appelé : `f`, `objet.méthode`, ou la balise d'un composant `<Footer />`. */
+function resolveCallee(e) {
   const at = ts.isPropertyAccessExpression(e) ? e.name : ts.isIdentifier(e) ? e : null;
   if (!at) return [];
   let sym = checker.getSymbolAtLocation(at);
@@ -363,6 +367,36 @@ function nestedReads(model, call, acc, trail) {
   };
   visitShape(model, argProperty(call, "select"));
   visitShape(model, argProperty(call, "include"));
+  // Filtre sur une relation (`where: { pageReferences: { some: {} } }`) : l'entité liée est lue
+  // pour décider. AND / OR / NOT et some / every / none / is / isNot sont parcourus.
+  const visitWhere = (m, where, depth = 0) => {
+    if (!where || !ts.isObjectLiteralExpression(where) || depth > 4) return;
+    const rels = relationsOf.get(m) ?? new Map();
+    for (const p of where.properties) {
+      if (!ts.isPropertyAssignment(p) || !ts.isIdentifier(p.name)) continue;
+      const key = p.name.text;
+      if (key === "AND" || key === "OR" || key === "NOT") {
+        const parts = ts.isArrayLiteralExpression(p.initializer) ? p.initializer.elements : [p.initializer];
+        for (const part of parts) visitWhere(m, part, depth + 1);
+        continue;
+      }
+      const target = rels.get(key);
+      if (!target) continue;
+      acc.effects.push({ model: target, op: "read", fields: [], trail });
+      if (ts.isObjectLiteralExpression(p.initializer)) {
+        let inner = false;
+        for (const q of ["some", "every", "none", "is", "isNot"]) {
+          const sub = prop(p.initializer, q);
+          if (sub) {
+            inner = true;
+            visitWhere(target, sub, depth + 1);
+          }
+        }
+        if (!inner) visitWhere(target, p.initializer, depth + 1);
+      }
+    }
+  };
+  visitWhere(model, argProperty(call, "where"));
 }
 
 /*
@@ -459,6 +493,20 @@ function collect(node, acc, seen, depth, trail) {
           if (seen.has(key)) continue;
           seen.add(key);
           collect(target.node, acc, seen, depth + 1, [...trail, hop(e.getText(), target.node)]);
+        }
+      }
+    }
+    // `<Footer />` dans un composant serveur : le composant s'exécute sur le serveur au rendu de
+    // la page, et peut lire la base lui-même. On le suit comme un appel.
+    if ((ts.isJsxSelfClosingElement(n) || ts.isJsxOpeningElement(n)) && depth < 8) {
+      const tag = n.tagName;
+      const name = ts.isIdentifier(tag) ? tag.text : ts.isPropertyAccessExpression(tag) ? tag.name.text : "";
+      if (/^[A-Z]/.test(name)) {
+        for (const target of resolveCallee(tag)) {
+          const key = `${target.file}#${target.node.pos}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          collect(target.node, acc, seen, depth + 1, [...trail, hop(`<${tag.getText()}>`, target.node)]);
         }
       }
     }
@@ -632,16 +680,19 @@ for (const [file, sf] of files) {
 
 // Pages et routes : nommées par leur adresse (`page /agenda`, `GET /api/me/export`), groupes de
 // routes `(public)` retirés comme le fait Next.
-const routeOf = (file) =>
+// Un layout garde ses groupes (`layout /(public)`) : sans eux, celui de la racine et celui du
+// site public auraient la même adresse.
+const routeOf = (file, keepGroups = false) =>
   "/" +
   relative(APP, dirname(file))
     .split("/")
-    .filter((seg) => seg && !/^\(.*\)$/.test(seg))
+    .filter((seg) => seg && (keepGroups || !/^\(.*\)$/.test(seg)))
     .join("/");
 for (const file of appEntries) {
   const sf = files.get(file);
   if (!sf) continue;
-  const isPage = file.endsWith("page.tsx");
+  const isPage = file.endsWith("page.tsx") || file.endsWith("layout.tsx");
+  const pageKind = file.endsWith("layout.tsx") ? "layout" : "page";
   for (const st of sf.statements) {
     const mods = st.modifiers ?? [];
     if (!mods.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
@@ -660,12 +711,12 @@ for (const file of appEntries) {
     if (!fn) continue;
     const isDefault = mods.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword);
     let key = null;
-    if (isPage && isDefault) key = `page ${routeOf(file)}`;
+    if (isPage && isDefault) key = `${pageKind} ${routeOf(file, pageKind === "layout")}`;
     if (!isPage && /^(GET|POST|PUT|PATCH|DELETE)$/.test(name)) key = `${name} ${routeOf(file)}`;
     if (!key) continue;
     const s = effectsOf(fn);
     if (s.effects.length || s.emails.length) {
-      functions[key] = { kind: isPage ? "page" : "route", file: rel(file), line: lineOf(st), ...s };
+      functions[key] = { kind: isPage ? pageKind : "route", file: rel(file), line: lineOf(st), ...s };
     }
   }
 }

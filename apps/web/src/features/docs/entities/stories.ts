@@ -42,7 +42,7 @@ export type StoryStep = {
   /** Procédure (`ticket.submit`) ou fonction du serveur (`processInboundEmail`). */
   call: string;
   /** Procédure tRPC, ou fonction appelée par le serveur (tâche, relève…). */
-  callKind: "procedure" | "function" | "action" | "page" | "route";
+  callKind: "procedure" | "function" | "action" | "page" | "layout" | "route";
   /** public | membre | admin (procédures). */
   access: string | null;
   file: string;
@@ -65,7 +65,7 @@ export function lookupCall(call: string): { callKind: StoryStep["callKind"]; ent
   if (PROCEDURES[call]) return { callKind: "procedure", entry: PROCEDURES[call] };
   if (FUNCTIONS[call]) {
     const kind = FUNCTIONS[call].kind;
-    const callKind = kind === "server action" ? "action" : kind === "page" ? "page" : kind === "route" ? "route" : "function";
+    const callKind = kind === "server action" ? "action" : kind === "page" ? "page" : kind === "layout" ? "layout" : kind === "route" ? "route" : "function";
     return { callKind, entry: FUNCTIONS[call] };
   }
   return null;
