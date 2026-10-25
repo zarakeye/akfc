@@ -1,18 +1,27 @@
 #!/usr/bin/env node
-// Garde de la carte des entités de la documentation (lancée par `pnpm check`).
-// Chaque chapitre peut déclarer, dans son en-tête, les entités du schéma Prisma qu'il mobilise :
+// Garde de la carte des entités et des parcours de la documentation (lancée par `pnpm check`).
+// Chaque chapitre peut déclarer, dans son en-tête :
 //
 //   entities:
-//     Ticket: [number, dueAt]
-//     TicketCategory: [groupId]
+//     Ticket: [number, dueAt]          ← entités du schéma Prisma et propriétés citées
+//   stories:
+//     - title: Un membre dépose une demande
+//       actor: Membre connecté
+//       steps:
+//         - label: …
+//           call: ticket.submit         ← procédure tRPC, ou fonction exportée du backend
+//           section: Déposer une demande ← titre d'une section du chapitre
 //
-// Une entité renommée ou une propriété supprimée par une migration rendrait la carte du chapitre
-// fausse SANS erreur visible : cette garde le signale.
+// Une entité renommée, une propriété supprimée, une procédure disparue ou une section retitrée
+// rendraient la carte fausse SANS erreur visible : cette garde le signale.
+import { createRequire } from "node:module";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const SCHEMA = "prisma/schema.prisma";
 const DOCS = "apps/web/content/docs";
+const PROCEDURE_MAP = "apps/web/src/features/docs/entities/procedureMap.generated.json";
+const matter = createRequire(join(process.cwd(), "apps/web/package.json"))("gray-matter");
 
 // Entités et propriétés du schéma : `model X {`, puis une propriété par ligne jusqu'à `}`.
 const fieldsOf = new Map();
@@ -34,6 +43,15 @@ for (const raw of readFileSync(SCHEMA, "utf8").split(/\r?\n/)) {
   current.add(line.split(/\s+/)[0]);
 }
 
+const map = JSON.parse(readFileSync(PROCEDURE_MAP, "utf8"));
+const callExists = (call) => call in map.procedures || call in map.functions;
+
+// Même règle que les ancres des titres (features/docs/lib/slugifyHeading.ts).
+const slug = (text) =>
+  text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\//g, "-").replace(/[^\w\s-]/g, "").trim()
+    .replace(/\s+/g, "-").replace(/-+/g, "-");
+
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {
     const p = join(dir, name);
@@ -43,28 +61,42 @@ function walk(dir) {
 
 const errors = [];
 let chapters = 0;
+let storyCount = 0;
 for (const file of walk(DOCS)) {
-  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(file, "utf8"));
-  if (!fm) continue;
-  const lines = fm[1].split(/\r?\n/);
-  const start = lines.findIndex((l) => /^entities:\s*$/.test(l));
-  if (start === -1) continue;
-  chapters++;
-  for (const l of lines.slice(start + 1)) {
-    if (!/^\s+/.test(l)) break; // fin du bloc indenté
-    const m = /^\s+(\w+):\s*\[([^\]]*)\]\s*$/.exec(l);
-    const where = relative(process.cwd(), file);
-    if (!m) {
-      errors.push(`${where} : ligne « ${l.trim()} » — forme attendue : « Entité: [propriété, propriété] »`);
-      continue;
+  const where = relative(process.cwd(), file);
+  const { data, content } = matter(readFileSync(file, "utf8"));
+  if (data.entities) {
+    chapters++;
+    for (const [name, fields] of Object.entries(data.entities)) {
+      const known = fieldsOf.get(name);
+      if (!known) {
+        errors.push(`${where} : l'entité ${name} n'existe pas dans ${SCHEMA}`);
+        continue;
+      }
+      if (!Array.isArray(fields)) {
+        errors.push(`${where} : ${name} — forme attendue : « ${name}: [propriété, propriété] »`);
+        continue;
+      }
+      for (const f of fields) if (!known.has(f)) errors.push(`${where} : ${name}.${f} n'existe pas dans ${SCHEMA}`);
     }
-    const fields = fieldsOf.get(m[1]);
-    if (!fields) {
-      errors.push(`${where} : l'entité ${m[1]} n'existe pas dans ${SCHEMA}`);
-      continue;
-    }
-    for (const f of m[2].split(",").map((s) => s.trim()).filter(Boolean)) {
-      if (!fields.has(f)) errors.push(`${where} : ${m[1]}.${f} n'existe pas dans ${SCHEMA}`);
+  }
+  if (data.stories) {
+    if (!data.entities) errors.push(`${where} : des parcours (stories) sans entités (entities) : la carte n'est pas affichée`);
+    const headings = new Set([...content.matchAll(/^#{2,4}\s+(.+)$/gm)].map((m) => slug(m[1])));
+    for (const s of data.stories) {
+      storyCount++;
+      if (!s?.title || !Array.isArray(s.steps) || s.steps.length === 0) {
+        errors.push(`${where} : un parcours doit avoir un titre (title) et au moins une étape (steps)`);
+        continue;
+      }
+      for (const st of s.steps) {
+        if (!st?.call || !callExists(st.call)) {
+          errors.push(`${where} : « ${s.title} » — ${st?.call ?? "(call manquant)"} n'est ni une procédure tRPC ni une fonction exportée du backend`);
+        }
+        if (st?.section && !headings.has(slug(st.section))) {
+          errors.push(`${where} : « ${s.title} » — la section « ${st.section} » n'existe pas dans le chapitre`);
+        }
+      }
     }
   }
 }
@@ -73,4 +105,4 @@ if (errors.length) {
   for (const e of errors) console.error(`✗ entités de la doc : ${e}`);
   process.exit(1);
 }
-console.log(`✓ entités de la doc : ${chapters} chapitre(s), toutes les entités et propriétés existent`);
+console.log(`✓ entités de la doc : ${chapters} chapitre(s), ${storyCount} parcours, tout existe`);

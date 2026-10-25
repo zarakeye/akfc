@@ -20,6 +20,7 @@ import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromReque
 import { getEntityMap } from "@features/docs/entities/prismaSchema"
 import { buildChapterGraph } from "@features/docs/entities/chapterGraph"
 import { EntityCode, EntityExplorer } from "@features/docs/entities/EntityExplorer"
+import { readChapterStories } from "@features/docs/entities/stories"
 
 interface PageProps {
   params: Promise<{
@@ -63,7 +64,12 @@ export default async function Page({ params }: PageProps) {
 
   // Carte des entités : seulement pour un chapitre qui déclare ses entités dans son en-tête.
   // Le code en ligne du texte (`Ticket`, `dueAt`) devient alors un lien vers la carte.
-  const entityGraph = frontmatter.entities ? buildChapterGraph(getEntityMap(), frontmatter.entities) : null
+  // Les parcours (stories) se rejouent sur la même carte ; les entités qu'ils touchent s'y ajoutent.
+  const stories = frontmatter.entities ? readChapterStories(frontmatter.stories) : []
+  const storyModels = [...new Set(stories.flatMap((s) => s.steps.flatMap((st) => st.effects.map((e) => e.model))))]
+  const entityGraph = frontmatter.entities
+    ? buildChapterGraph(getEntityMap(), frontmatter.entities, storyModels)
+    : null
 
   const compiled = await compileMDX<DocFrontmatter>({
     source,
@@ -111,7 +117,13 @@ export default async function Page({ params }: PageProps) {
       footer={footer}
       rightAside={<DocsRightAsideDrawer items={toc} />}
     >
-      {entityGraph ? <EntityExplorer graph={entityGraph}>{compiled.content}</EntityExplorer> : compiled.content}
+      {entityGraph ? (
+        <EntityExplorer graph={entityGraph} stories={stories}>
+          {compiled.content}
+        </EntityExplorer>
+      ) : (
+        compiled.content
+      )}
     </DocsLayout>
   )
 }

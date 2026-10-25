@@ -12,10 +12,11 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Atom, X } from "lucide-react";
+import { Atom, BookOpen, ChevronLeft, ChevronRight, Mail, X } from "lucide-react";
 
 import type { ChapterGraph, GraphModel } from "@features/docs/entities/chapterGraph";
 import type { EntityField, EntityLink } from "@features/docs/entities/prismaSchema";
+import type { EffectOp, Story, StoryStep } from "@features/docs/entities/stories";
 import { layoutGraph, type Point } from "@features/docs/entities/layoutGraph";
 
 /*
@@ -39,11 +40,31 @@ type ExplorerApi = {
 
 const ExplorerContext = createContext<ExplorerApi | null>(null);
 
-export function EntityExplorer({ graph, children }: { graph: ChapterGraph; children: ReactNode }): JSX.Element {
+export function EntityExplorer({
+  graph,
+  stories = [],
+  children,
+}: {
+  graph: ChapterGraph;
+  stories?: Story[];
+  children: ReactNode;
+}): JSX.Element {
   const [isOpen, setOpen] = useState(false);
   const [selection, setSelection] = useState<Selection>(null);
+  // Parcours rejoué : gardé quand on ferme le panneau pour lire la section, repris à la réouverture.
+  const [play, setPlay] = useState<{ storyId: string; step: number } | null>(null);
   // Stable : le panneau s'abonne à Échap une fois, et ne reprend pas le curseur à chaque sélection.
   const close = useCallback(() => setOpen(false), []);
+
+  /** Ferme le panneau et amène la section de l'étape dans la vue, brièvement soulignée. */
+  const readSection = useCallback((sectionId: string) => {
+    setOpen(false);
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("bg-emerald-500/15");
+    window.setTimeout(() => el.classList.remove("bg-emerald-500/15"), 1800);
+  }, []);
 
   const api = useMemo<ExplorerApi>(() => {
     const focusModels = graph.models.filter((m) => m.role === "focus");
@@ -82,6 +103,10 @@ export function EntityExplorer({ graph, children }: { graph: ChapterGraph; child
       {isOpen && (
         <EntityPanel
           graph={graph}
+          stories={stories}
+          play={play}
+          onPlay={setPlay}
+          onReadSection={readSection}
           selection={selection}
           onSelect={setSelection}
           onClose={close}
@@ -117,19 +142,64 @@ export function EntityCode(props: { className?: string; children?: ReactNode }):
 
 /* ─── Panneau ─────────────────────────────────────────────────────────── */
 
-const RADIUS: Record<GraphModel["role"], number> = { focus: 30, bridge: 20, neighbor: 18 };
+const RADIUS: Record<GraphModel["role"], number> = { focus: 30, bridge: 20, neighbor: 18, story: 18 };
+
+/** Effet le plus fort d'une étape sur une entité (une suppression l'emporte sur une lecture). */
+const OP_RANK: Record<EffectOp, number> = { delete: 4, create: 3, update: 2, read: 1 };
+function opsOf(step: StoryStep | null): Map<string, EffectOp> {
+  const map = new Map<string, EffectOp>();
+  for (const e of step?.effects ?? []) {
+    const prev = map.get(e.model);
+    if (!prev || OP_RANK[e.op] > OP_RANK[prev]) map.set(e.model, e.op);
+  }
+  return map;
+}
+
+/**
+ * Entité principale d'une étape : le fil passe par elle. Ce que l'étape CRÉE la caractérise le
+ * mieux (le message d'une réponse, l'évènement d'un transfert), puis ce qu'elle modifie, supprime,
+ * et enfin ce qu'elle lit.
+ */
+function mainModelOf(step: StoryStep): string | null {
+  // À effet égal, l'entité dont l'étape écrit le plus de propriétés.
+  for (const op of ["create", "update", "delete", "read"] as EffectOp[]) {
+    const candidates = step.effects.filter((x) => x.op === op);
+    if (candidates.length) return candidates.reduce((a, b) => (b.fields.length > a.fields.length ? b : a)).model;
+  }
+  return null;
+}
+
+const OP_TONE: Record<EffectOp, string> = {
+  create: "fill-emerald-500/70 stroke-emerald-700",
+  update: "fill-amber-400/60 stroke-amber-600",
+  read: "fill-sky-400/15 stroke-sky-500",
+  delete: "fill-red-500/50 stroke-red-600",
+};
+const OP_LABEL: Record<EffectOp, string> = { create: "créée", update: "modifiée", read: "lue", delete: "supprimée" };
 
 function EntityPanel({
   graph,
+  stories,
+  play,
+  onPlay,
+  onReadSection,
   selection,
   onSelect,
   onClose,
 }: {
   graph: ChapterGraph;
+  stories: Story[];
+  play: { storyId: string; step: number } | null;
+  onPlay: (p: { storyId: string; step: number } | null) => void;
+  onReadSection: (sectionId: string) => void;
   selection: Selection;
   onSelect: (s: Selection) => void;
   onClose: () => void;
 }): JSX.Element {
+  const story = play ? stories.find((s) => s.id === play.storyId) ?? null : null;
+  const step = story && play ? story.steps[Math.min(play.step, story.steps.length - 1)] : null;
+  const stepOps = opsOf(step);
+  const storyModels = new Set(story?.steps.flatMap((s) => s.effects.map((e) => e.model)) ?? []);
   const [showNeighbors, setShowNeighbors] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -145,10 +215,14 @@ function EntityPanel({
 
   const neighborCount = graph.models.filter((m) => m.role === "neighbor").length;
   const selectedModel = selection?.kind === "model" ? selection.name : null;
-  // Une voisine choisie depuis une fiche reste affichée, même voisines masquées.
-  const models = graph.models.filter(
-    (m) => m.role !== "neighbor" || showNeighbors || m.name === selectedModel,
-  );
+  // Une voisine choisie depuis une fiche reste affichée, même voisines masquées. Pendant un parcours,
+  // toutes les entités qu'il touche (à n'importe quelle étape) restent en place : la carte ne bouge
+  // pas d'une étape à l'autre.
+  const models = graph.models.filter((m) => {
+    if (storyModels.has(m.name)) return true;
+    if (m.role === "story") return false;
+    return m.role !== "neighbor" || showNeighbors || m.name === selectedModel;
+  });
   const names = new Set(models.map((m) => m.name));
   const links = graph.links.filter((l) => names.has(l.from) && names.has(l.to));
 
@@ -198,9 +272,28 @@ function EntityPanel({
         {/* La molécule reste en place ; seule la fiche défile (une propriété désignée depuis le
             texte est amenée dans la vue sans faire sortir la carte). */}
         <div className="shrink-0">
+          {stories.length > 0 && (
+            <StoryBar
+              stories={stories}
+              story={story}
+              stepIndex={play?.step ?? 0}
+              onPlay={(p) => {
+                onPlay(p);
+                onSelect(null);
+              }}
+            />
+          )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pt-3 text-xs text-muted-foreground">
-            <Legend className="fill-emerald-500/20 stroke-emerald-600" label="Entité du chapitre" />
-            <Legend className="fill-muted stroke-gray-400" label="Entité qui les relie" />
+            {story ? (
+              (Object.keys(OP_LABEL) as EffectOp[]).map((op) => (
+                <Legend key={op} className={OP_TONE[op]} label={`${OP_LABEL[op]} par l'étape`} />
+              ))
+            ) : (
+              <>
+                <Legend className="fill-emerald-500/20 stroke-emerald-600" label="Entité du chapitre" />
+                <Legend className="fill-muted stroke-gray-400" label="Entité qui les relie" />
+              </>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <svg width="26" height="8" aria-hidden="true"><line x1="0" y1="4" x2="26" y2="4" className="stroke-gray-500" strokeWidth="1.5" strokeDasharray="4 3" /></svg>
               lien facultatif
@@ -224,16 +317,29 @@ function EntityPanel({
                 rTo={radiusOf(models.find((m) => m.name === l.to))}
                 offset={parallelOffset(l, links)}
                 selected={selectedLink?.id === l.id}
-                dimmed={Boolean(selectedModel) && l.from !== selectedModel && l.to !== selectedModel}
+                dimmed={
+                  story
+                    ? !(stepOps.has(l.from) && stepOps.has(l.to))
+                    : Boolean(selectedModel) && l.from !== selectedModel && l.to !== selectedModel
+                }
                 onSelect={() => onSelect({ kind: "link", id: l.id })}
               />
             ))}
+            {story && (
+              <StoryThread
+                story={story}
+                current={play?.step ?? 0}
+                pos={layout.pos}
+                radius={(name) => radiusOf(models.find((m) => m.name === name))}
+              />
+            )}
             {models.map((m) => (
               <AtomView
                 key={m.name}
                 model={m}
                 at={layout.pos.get(m.name)}
                 selected={m.name === selectedModel}
+                op={story ? stepOps.get(m.name) ?? null : undefined}
                 onSelect={() => onSelect({ kind: "model", name: m.name })}
               />
             ))}
@@ -246,17 +352,226 @@ function EntityPanel({
                 model={model}
                 graph={graph}
                 highlightField={selection?.kind === "model" ? selection.field : undefined}
+                stepEffect={step ? step.effects.filter((e) => e.model === model.name) : undefined}
                 onSelect={onSelect}
               />
             ) : selectedLink ? (
               <LinkCard link={selectedLink} graph={graph} onSelect={onSelect} />
+            ) : step ? (
+              <StepCard step={step} known={new Set(models.map((m) => m.name))} onSelect={onSelect} onReadSection={onReadSection} />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Choisissez un atome pour voir ses propriétés, ou une liaison pour voir la relation.
+                Choisissez un atome pour voir ses propriétés, ou une liaison pour voir la relation
+                {stories.length > 0 ? ", ou rejouez un parcours." : "."}
               </p>
             )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─── Parcours ────────────────────────────────────────────────────────── */
+
+/** Choix du parcours et pas-à-pas (Précédent / Suivant). */
+function StoryBar({
+  stories,
+  story,
+  stepIndex,
+  onPlay,
+}: {
+  stories: Story[];
+  story: Story | null;
+  stepIndex: number;
+  onPlay: (p: { storyId: string; step: number } | null) => void;
+}): JSX.Element {
+  const last = story ? story.steps.length - 1 : 0;
+  const i = Math.min(stepIndex, last);
+  return (
+    <div className="space-y-2 border-b px-4 py-3 text-sm">
+      <label className="flex items-center gap-2">
+        <span className="font-medium">Parcours</span>
+        <select
+          value={story?.id ?? ""}
+          onChange={(e) => onPlay(e.target.value ? { storyId: e.target.value, step: 0 } : null)}
+          className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1"
+        >
+          <option value="">Aucun : toute la carte</option>
+          {stories.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      {story && (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={i === 0}
+            onClick={() => onPlay({ storyId: story.id, step: i - 1 })}
+            aria-label="Étape précédente"
+            className="rounded border p-1 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <p className="min-w-0 flex-1" aria-live="polite">
+            <span className="font-semibold">
+              Étape {i + 1}/{story.steps.length}
+            </span>{" "}
+            — {story.steps[i].label}
+            {story.actor && <span className="text-muted-foreground"> · {story.actor}</span>}
+          </p>
+          <button
+            type="button"
+            disabled={i === last}
+            onClick={() => onPlay({ storyId: story.id, step: i + 1 })}
+            aria-label="Étape suivante"
+            className="rounded border p-1 disabled:opacity-40"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Le fil du parcours, comme une ligne de métro posée sur la molécule : il relie l'entité principale
+ * de chaque étape, dans l'ordre, avec le numéro de l'étape. Les étapes passées sont pleines, les
+ * suivantes en pointillés.
+ */
+function StoryThread({
+  story,
+  current,
+  pos,
+  radius,
+}: {
+  story: Story;
+  current: number;
+  pos: Map<string, Point>;
+  radius: (model: string) => number;
+}): JSX.Element {
+  const stops = story.steps
+    .map((s, i) => ({ i, model: mainModelOf(s) }))
+    .filter((s): s is { i: number; model: string } => s.model !== null && pos.has(s.model));
+  // Plusieurs étapes sur le même atome : leurs numéros sont décalés en arc.
+  const count = new Map<string, number>();
+  return (
+    <g aria-hidden="true" className="pointer-events-none">
+      {stops.slice(1).map((s, k) => {
+        const a = pos.get(stops[k].model)!;
+        const b = pos.get(s.model)!;
+        if (stops[k].model === s.model) return null;
+        return (
+          <line
+            key={`seg-${s.i}`}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            className={s.i <= current ? "stroke-emerald-500" : "stroke-emerald-500/50"}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={s.i <= current ? undefined : "2 8"}
+          />
+        );
+      })}
+      {stops.map((s) => {
+        const p = pos.get(s.model)!;
+        const n = count.get(s.model) ?? 0;
+        count.set(s.model, n + 1);
+        // Numéros posés en arc au-dessus de l'atome (le nom est en dessous), à partir du haut à droite.
+        const angle = (BADGE_ANGLES[n % BADGE_ANGLES.length] * Math.PI) / 180;
+        const dist = radius(s.model) + 15;
+        const x = p.x + Math.cos(angle) * dist;
+        const y = p.y + Math.sin(angle) * dist;
+        const active = s.i === current;
+        return (
+          <g key={`stop-${s.i}`}>
+            <circle cx={x} cy={y} r={active ? 12 : 9} className={active ? "fill-emerald-600" : "fill-emerald-500/70"} />
+            <text x={x} y={y + 4} textAnchor="middle" className="fill-white text-[11px] font-bold">
+              {s.i + 1}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** Positions des numéros d'étape autour d'un atome, en degrés (0 = droite, -90 = haut). */
+const BADGE_ANGLES = [-45, -10, -80, 25, -115, -150];
+
+/** Fiche de l'étape : qui, par quelle procédure, ce qu'elle fait aux entités, les e-mails. */
+function StepCard({
+  step,
+  known,
+  onSelect,
+  onReadSection,
+}: {
+  step: StoryStep;
+  known: Set<string>;
+  onSelect: (s: Selection) => void;
+  onReadSection: (sectionId: string) => void;
+}): JSX.Element {
+  const order: EffectOp[] = ["create", "update", "delete", "read"];
+  const effects = [...step.effects].sort((a, b) => order.indexOf(a.op) - order.indexOf(b.op));
+  return (
+    <div className="space-y-3 text-sm">
+      <div>
+        <h3 className="text-base font-semibold">{step.label}</h3>
+        <p className="mt-1 text-muted-foreground">
+          {step.callKind === "procedure" ? "Procédure tRPC" : "Fonction du serveur"} <code>{step.call}</code>
+          {step.access && <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">{step.access}</span>}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {step.file}:{step.line}
+        </p>
+      </div>
+      <ul className="space-y-1.5">
+        {effects.map((e) => (
+          <li key={`${e.model}-${e.op}`} className="flex flex-wrap items-baseline gap-x-2">
+            <svg width="12" height="12" aria-hidden="true">
+              <circle cx="6" cy="6" r="5" className={OP_TONE[e.op]} strokeWidth="1.5" />
+            </svg>
+            {known.has(e.model) ? (
+              <button
+                type="button"
+                onClick={() => onSelect({ kind: "model", name: e.model })}
+                className="font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-300"
+              >
+                {e.model}
+              </button>
+            ) : (
+              <span className="font-semibold">{e.model}</span>
+            )}
+            <span className="text-muted-foreground">{OP_LABEL[e.op]}</span>
+            {e.fields.length > 0 && <span className="text-xs text-muted-foreground">({e.fields.join(", ")})</span>}
+          </li>
+        ))}
+      </ul>
+      {step.emails.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1.5 text-muted-foreground">
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          E-mails : {step.emails.map((m) => <code key={m}>{m}</code>)}
+        </p>
+      )}
+      {step.sectionId && (
+        <button
+          type="button"
+          onClick={() => onReadSection(step.sectionId!)}
+          className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline dark:text-emerald-300"
+        >
+          <BookOpen className="h-4 w-4" aria-hidden="true" />
+          Lire cette étape dans le chapitre
+        </button>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Effets relevés dans le code par scripts/build-procedure-map.mjs (appels Prisma de la procédure et des
+        fonctions qu&apos;elle appelle).
+      </p>
     </div>
   );
 }
@@ -303,30 +618,37 @@ function AtomView({
   model,
   at,
   selected,
+  op,
   onSelect,
 }: {
   model: GraphModel;
   at: Point | undefined;
   selected: boolean;
+  /** Parcours en cours : effet de l'étape sur cette entité (null : pas touchée). Absent : pas de parcours. */
+  op?: EffectOp | null;
   onSelect: () => void;
 }): JSX.Element | null {
   if (!at) return null;
   const r = radiusOf(model);
   const tone =
-    model.role === "focus"
-      ? "fill-emerald-500/20 stroke-emerald-600"
-      : "fill-muted stroke-gray-400";
+    op
+      ? OP_TONE[op]
+      : op === null
+        ? "fill-muted stroke-gray-300 dark:stroke-gray-600"
+        : model.role === "focus"
+          ? "fill-emerald-500/20 stroke-emerald-600"
+          : "fill-muted stroke-gray-400";
   // Fond opaque sous la teinte : les liaisons s'arrêtent au bord de l'atome et ne le traversent pas.
   const base = { fill: "var(--background)" };
   return (
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${model.name}${model.isJoin ? ", entité de liaison" : ""}`}
+      aria-label={`${model.name}${model.isJoin ? ", entité de liaison" : ""}${op ? `, ${OP_LABEL[op]} par l'étape` : ""}`}
       aria-pressed={selected}
       onClick={onSelect}
       onKeyDown={(e) => activate(e, onSelect)}
-      className="cursor-pointer outline-none [&:focus-visible>.ring]:stroke-emerald-400"
+      className={`cursor-pointer outline-none [&:focus-visible>.ring]:stroke-emerald-400 ${op === null ? "opacity-40" : ""}`}
     >
       <circle className="ring fill-none stroke-transparent" cx={at.x} cy={at.y} r={r + 6} strokeWidth="3" />
       {model.isJoin ? (
@@ -475,15 +797,19 @@ function ModelCard({
   model,
   graph,
   highlightField,
+  stepEffect,
   onSelect,
 }: {
   model: GraphModel;
   graph: ChapterGraph;
   highlightField?: string;
+  /** Parcours en cours : ce que l'étape fait à cette entité (propriétés écrites marquées). */
+  stepEffect?: { op: EffectOp; fields: string[] }[];
   onSelect: (s: Selection) => void;
 }): JSX.Element {
   const listRef = useRef<HTMLUListElement>(null);
   const known = new Set(graph.models.map((m) => m.name));
+  const written = new Set(stepEffect?.flatMap((e) => e.fields) ?? []);
 
   // Propriété désignée depuis le texte : amenée dans la vue.
   useEffect(() => {
@@ -503,6 +829,12 @@ function ModelCard({
           En vert : les propriétés dont parle ce chapitre.
         </p>
       )}
+      {stepEffect && stepEffect.length > 0 && (
+        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+          Étape en cours : {stepEffect.map((e) => OP_LABEL[e.op]).join(", ")}
+          {written.size > 0 && " ; propriétés écrites marquées « écrite »"}.
+        </p>
+      )}
       <ul ref={listRef} className="mt-3 divide-y text-sm">
         {model.fields.map((f) => {
           const inChapter = model.focusFields.includes(f.name);
@@ -516,6 +848,9 @@ function ModelCard({
             >
               <div className="flex flex-wrap items-baseline gap-x-2">
                 <code className="font-semibold">{f.name}</code>
+                {written.has(f.name) && (
+                  <span className="rounded-full bg-amber-400/30 px-1.5 text-[11px] text-amber-900 dark:text-amber-200">écrite</span>
+                )}
                 {f.kind === "relation" && known.has(f.type) ? (
                   <button
                     type="button"

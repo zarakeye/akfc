@@ -115,6 +115,7 @@ export function getDocSource(slug: string[]): {
       order:
         typeof frontmatter.order === "number" ? frontmatter.order : undefined,
       entities: readChapterEntities(frontmatter.entities),
+      stories: frontmatter.stories,
     },
   }
 }

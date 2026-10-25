@@ -1,0 +1,7620 @@
+{
+ "procedures": {
+  "homeHero.get": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/homeHero/router.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "HomeHero",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "homeHero.save": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/homeHero/router.ts",
+   "line": 18,
+   "effects": [
+    {
+     "model": "HomeHero",
+     "op": "create",
+     "fields": [
+      "body",
+      "id",
+      "title"
+     ]
+    },
+    {
+     "model": "HomeHero",
+     "op": "update",
+     "fields": [
+      "body",
+      "id",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.get": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 40,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.save": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 65,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "create",
+     "fields": [
+      "id"
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "update",
+     "fields": [
+      "id"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.saveContact": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 102,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "create",
+     "fields": [
+      "id"
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "update",
+     "fields": [
+      "id"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.saveLegal": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 121,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "create",
+     "fields": [
+      "id"
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "update",
+     "fields": [
+      "id"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.uploadLogo": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 157,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "create",
+     "fields": [
+      "id",
+      "logoKey"
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "update",
+     "fields": [
+      "id",
+      "logoKey"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteSettings.clearLogo": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/siteSettings/router.ts",
+   "line": 190,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "create",
+     "fields": [
+      "id",
+      "logoKey"
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "update",
+     "fields": [
+      "id",
+      "logoKey"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "pageVisibility.publishedKeys": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/pageVisibility/router.ts",
+   "line": 26,
+   "effects": [
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "pageVisibility.all": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/pageVisibility/router.ts",
+   "line": 34,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "pageVisibility.setPublished": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/pageVisibility/router.ts",
+   "line": 41,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageVisibility",
+     "op": "create",
+     "fields": [
+      "key",
+      "published"
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "update",
+     "fields": [
+      "key",
+      "published"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "pageVisibility.setAll": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/pageVisibility/router.ts",
+   "line": 52,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageVisibility",
+     "op": "create",
+     "fields": [
+      "key",
+      "published"
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "update",
+     "fields": [
+      "key",
+      "published"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "pageVisibility.entityDraftCounts": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/pageVisibility/router.ts",
+   "line": 72,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.categories": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 28,
+   "effects": [
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.submit": {
+   "kind": "mutation",
+   "access": "public",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 41,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "create",
+     "fields": [
+      "categoryId",
+      "createdAt",
+      "dueAt",
+      "events",
+      "messages",
+      "requesterEmail",
+      "requesterId",
+      "requesterName",
+      "subject"
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendTicketAcknowledgement",
+    "sendTicketNotification"
+   ]
+  },
+  "ticket.access": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 112,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.inbox": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 114,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.get": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 118,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.handlers": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 122,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticket.take": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 126,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ticket.transfer": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 130,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "note",
+      "ticketId",
+      "toUserId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ticket.reply": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 140,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "firstResponseAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendTicketReply"
+   ]
+  },
+  "ticket.close": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 185,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ticket.reopen": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/tickets/router.ts",
+   "line": 189,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.list": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 33,
+   "effects": [
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.listAdmin": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 46,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.save": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 60,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "create",
+     "fields": [
+      "position"
+     ]
+    },
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.setLogo": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "update",
+     "fields": [
+      "logoData",
+      "logoMime",
+      "logoUpdatedAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.clearLogo": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 109,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "update",
+     "fields": [
+      "logoData",
+      "logoMime",
+      "logoUpdatedAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.delete": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 118,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sitePartner.reorder": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/sitePartners/router.ts",
+   "line": 125,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "update",
+     "fields": [
+      "position"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteStyle.get": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/siteStyle/router.ts",
+   "line": 36,
+   "effects": [
+    {
+     "model": "SiteStyle",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "siteStyle.save": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/siteStyle/router.ts",
+   "line": 46,
+   "effects": [
+    {
+     "model": "SiteStyle",
+     "op": "create",
+     "fields": [
+      "id",
+      "variables"
+     ]
+    },
+    {
+     "model": "SiteStyle",
+     "op": "update",
+     "fields": [
+      "id",
+      "variables"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "siteStyle.getLimits": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/siteStyle/router.ts",
+   "line": 68,
+   "effects": [
+    {
+     "model": "SiteStyle",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "siteStyle.saveLimits": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/siteStyle/router.ts",
+   "line": 81,
+   "effects": [
+    {
+     "model": "SiteStyle",
+     "op": "create",
+     "fields": [
+      "id",
+      "variables"
+     ]
+    },
+    {
+     "model": "SiteStyle",
+     "op": "update",
+     "fields": [
+      "id",
+      "variables"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "sitePage.get": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/sitePages/router.ts",
+   "line": 32,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sitePage.save": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/sitePages/router.ts",
+   "line": 44,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePage",
+     "op": "create",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "update",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "auth.login": {
+   "kind": "mutation",
+   "access": "public",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 25,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "auth.logout": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 56,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "auth.changePassword": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 70,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "auth.getSession": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 119,
+   "effects": [],
+   "emails": []
+  },
+  "auth.requestPasswordReset": {
+   "kind": "mutation",
+   "access": "public",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 123,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "requestIp",
+      "tokenHash",
+      "userAgent",
+      "userId"
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendPasswordResetEmail"
+   ]
+  },
+  "auth.resetPassword": {
+   "kind": "mutation",
+   "access": "public",
+   "file": "packages/backend/src/modules/auth/router.ts",
+   "line": 181,
+   "effects": [
+    {
+     "model": "PasswordResetToken",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "update",
+     "fields": [
+      "usedAt"
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "password"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.getAll": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 19,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getById": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 50,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getByEmail": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 69,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 88,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "create",
+     "fields": [
+      "email",
+      "memberGroupMemberships",
+      "password"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendWelcomeEmail",
+    "sendWelcomeNotice"
+   ]
+  },
+  "user.setLegalInfo": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 185,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.setImageConsent": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 200,
+   "effects": [
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 212,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "update",
+     "fields": [
+      "detachedAt"
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getCurrentUserProfile": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 232,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getProfileById": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 268,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getMyInstructorState": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 339,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.saveMyInstructorBio": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 373,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "instructorBio"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.listPublicInstructors": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 414,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getAssignableInstructors": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 453,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.getInstructors": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 475,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "user.setClubEmail": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 509,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "clubEmail"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.listAvatarCandidates": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 528,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "avatar.createUpload": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/avatar/router.ts",
+   "line": 17,
+   "effects": [],
+   "emails": []
+  },
+  "avatar.register": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/avatar/router.ts",
+   "line": 24,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "avatar"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "avatar.getMine": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/avatar/router.ts",
+   "line": 31,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "avatar.remove": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/avatar/router.ts",
+   "line": 40,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "avatar"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "imageConsent.createUpload": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 22,
+   "effects": [],
+   "emails": []
+  },
+  "imageConsent.register": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 27,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberName",
+      "mimeType",
+      "signedAt",
+      "size",
+      "storageKey",
+      "uploadedById",
+      "usages",
+      "userId"
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ]
+    }
+   ],
+   "emails": [
+    "sendImageConsentNotice"
+   ]
+  },
+  "imageConsent.listForUser": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 52,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "imageConsent.remove": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 60,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "imageConsent.onlineState": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 66,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "imageConsent.confirmMine": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 69,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ]
+    }
+   ],
+   "emails": [
+    "sendImageConsentNotice"
+   ]
+  },
+  "imageConsent.mine": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 88,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "session.getAll": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/session/router.ts",
+   "line": 8,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "session.updateExpiration": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/session/router.ts",
+   "line": 16,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "update",
+     "fields": [
+      "expiresAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "trash.listBin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 148,
+   "effects": [
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "trash.readTrashFolder": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 154,
+   "effects": [
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "trash.trashToBin": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 160,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "displayName",
+      "id",
+      "kind",
+      "mediaKind",
+      "previousPath",
+      "providerCreatedAt",
+      "sizeBytes",
+      "status",
+      "storageRoot",
+      "trashedAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "trash.restoreFromBin": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 184,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "restoredAt",
+      "restoredToPath",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "trash.deleteForever": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 190,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "deletedAt",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "trash.purge": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/trash/router.ts",
+   "line": 196,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "deletedAt",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "category.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 7,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "category.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 13,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "category.getByType": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 30,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "category.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 47,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "create",
+     "fields": [
+      "type"
+     ]
+    },
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "category.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 69,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Category",
+     "op": "update",
+     "fields": [
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "category.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/categories/router.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 142,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.getAllByDiscipline": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 156,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 165,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 182,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "create",
+     "fields": [
+      "audience",
+      "beginTime",
+      "content",
+      "day",
+      "disciplineId",
+      "endTime",
+      "instructorId",
+      "requisites"
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 266,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "update",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "course.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/courses/router.ts",
+   "line": 343,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getAllByCategory": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 171,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 185,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getAllPublished": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 197,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getAllForMenu": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 209,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 216,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 237,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 254,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "create",
+     "fields": [
+      "categoryId",
+      "classification",
+      "description",
+      "familyId",
+      "instructorId",
+      "name",
+      "originId",
+      "publicationDate",
+      "school",
+      "slug",
+      "summary",
+      "summaryMediaId",
+      "type"
+     ]
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 374,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "update",
+     "fields": []
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "discipline.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplines/router.ts",
+   "line": 521,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "disciplineId"
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "origin.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 112,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "origin.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 118,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "origin.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 139,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "origin.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 156,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "create",
+     "fields": [
+      "country",
+      "description",
+      "flag",
+      "historicalPeriod",
+      "name",
+      "region",
+      "slug",
+      "sortOrder"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "origin.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 187,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "origin.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/origins/router.ts",
+   "line": 217,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 285,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.listForUpload": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 297,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.getAllAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 311,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.getAllByDiscipline": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 325,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.getByIdAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 341,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 364,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 384,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "create",
+     "fields": [
+      "animators",
+      "audience",
+      "description",
+      "disciplineId",
+      "externalDisciplineLabel",
+      "label",
+      "originId",
+      "preRegistered",
+      "primaryAnimatorId",
+      "program",
+      "publicationDate",
+      "slug",
+      "summary",
+      "summaryMediaId"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 480,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "update",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminar.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminars/router.ts",
+   "line": 688,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminarSession.getAllBySeminar": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/seminarSessions/router.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminarSession.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/seminarSessions/router.ts",
+   "line": 104,
+   "effects": [
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminarSession.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminarSessions/router.ts",
+   "line": 121,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SeminarSession",
+     "op": "create",
+     "fields": [
+      "beginTime",
+      "date",
+      "endTime",
+      "location",
+      "notes",
+      "seminarId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "seminarSession.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminarSessions/router.ts",
+   "line": 163,
+   "effects": [
+    {
+     "model": "SeminarSession",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "seminarSession.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/seminarSessions/router.ts",
+   "line": 194,
+   "effects": [
+    {
+     "model": "SeminarSession",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 197,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getAllAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 210,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.listForUpload": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 234,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getAllByDiscipline": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 244,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getAllByOrigin": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 258,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getByIdAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 274,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 300,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 326,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "create",
+     "fields": [
+      "audience",
+      "content",
+      "disciplineLinks",
+      "externalDisciplineLabels",
+      "label",
+      "organizerId",
+      "originId",
+      "publicationDate",
+      "slug",
+      "summary",
+      "summaryMediaId"
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 404,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "update",
+     "fields": []
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "event.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/events/router.ts",
+   "line": 557,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "eventSession.getAllByEvent": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/eventSessions/router.ts",
+   "line": 96,
+   "effects": [
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "eventSession.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/eventSessions/router.ts",
+   "line": 105,
+   "effects": [
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "eventSession.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/eventSessions/router.ts",
+   "line": 122,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "EventSession",
+     "op": "create",
+     "fields": [
+      "beginTime",
+      "date",
+      "endTime",
+      "eventId",
+      "location",
+      "notes"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "eventSession.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/eventSessions/router.ts",
+   "line": 164,
+   "effects": [
+    {
+     "model": "EventSession",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "eventSession.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/eventSessions/router.ts",
+   "line": 195,
+   "effects": [
+    {
+     "model": "EventSession",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 56,
+   "effects": [
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.getAllAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 64,
+   "effects": [
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 79,
+   "effects": [
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.getByIdAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 98,
+   "effects": [
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 111,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Post",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "content",
+      "publicationDate",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "post.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 135,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Post",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "post.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/posts/router.ts",
+   "line": 175,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Post",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Reaction",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.spaceDisplayNames": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 117,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.getAttentionCounts": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 155,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.getPendingBreakdown": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 187,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.getPersoPhotoQuota": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 234,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.listCommonRepositoryFolders": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 254,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.listMyCommonRepositoryContainers": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 259,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.setCommonRepositoryLabel": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 270,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.groupSpaceHierarchy": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 292,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.myCollaborativeSpaces": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 321,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.list": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 382,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.getTree": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 448,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.folderLabels": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 531,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.contentRootPaths": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 539,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.setFolderLabel": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 543,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "storage.getNode": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 565,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.getMetadata": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 595,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.rename": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 633,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "displayName"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "storage.move": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 773,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.checkR2Conflicts": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 880,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.createR2Upload": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 895,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "storage.registerR2Upload": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 955,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.getByPaths": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 76,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.resolveByPaths": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 160,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.resolveByIds": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 214,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.searchRecursive": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 271,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.updateDescription": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 487,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "description"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "media.setStatus": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/media/router.ts",
+   "line": 578,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "comment.getByPost": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/comments/router.ts",
+   "line": 41,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "comment.create": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/comments/router.ts",
+   "line": 52,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "content",
+      "parentId",
+      "postId"
+     ]
+    },
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "comment.update": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/comments/router.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Comment",
+     "op": "update",
+     "fields": [
+      "content"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "comment.delete": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/comments/router.ts",
+   "line": 126,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Reaction",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "reaction.getByTarget": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/reactions/router.ts",
+   "line": 79,
+   "effects": [
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "reaction.getByTargets": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/reactions/router.ts",
+   "line": 100,
+   "effects": [
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "reaction.toggle": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/reactions/router.ts",
+   "line": 137,
+   "effects": [
+    {
+     "model": "Reaction",
+     "op": "create",
+     "fields": [
+      "emoji",
+      "targetId",
+      "targetType",
+      "userId"
+     ]
+    },
+    {
+     "model": "Reaction",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "poll.getByPost": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/polls/router.ts",
+   "line": 23,
+   "effects": [
+    {
+     "model": "Poll",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PollVote",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "poll.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/polls/router.ts",
+   "line": 67,
+   "effects": [
+    {
+     "model": "Poll",
+     "op": "create",
+     "fields": [
+      "closesAt",
+      "multiple",
+      "options",
+      "postId",
+      "question"
+     ]
+    },
+    {
+     "model": "PollOption",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "poll.vote": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/polls/router.ts",
+   "line": 117,
+   "effects": [
+    {
+     "model": "Poll",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PollVote",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PollVote",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "poll.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/polls/router.ts",
+   "line": 174,
+   "effects": [
+    {
+     "model": "Poll",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.getAll": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 82,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.getById": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 88,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 103,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 118,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "create",
+     "fields": [
+      "name",
+      "slug",
+      "sortOrder"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 144,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "update",
+     "fields": [
+      "name",
+      "slug",
+      "sortOrder"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "disciplineFamily.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/disciplineFamilies/router.ts",
+   "line": 177,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.getAll": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 97,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.getById": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 113,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.getBySlug": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 132,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.getCarousel": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 165,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.getPublicIndex": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 188,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 223,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "create",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 243,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 264,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "gallery.setItems": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/galleries/router.ts",
+   "line": 280,
+   "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "GalleryItem",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.getActive": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 83,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.getAllAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 96,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.getByIdAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 107,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 123,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "create",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 138,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "update",
+     "fields": [
+      "body",
+      "expiresAt",
+      "href",
+      "publicationDate",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "breakingNews.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/breakingNews/router.ts",
+   "line": 162,
+   "effects": [
+    {
+     "model": "BreakingNews",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.listForMe": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 31,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.unreadCountForMe": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 81,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.collaborativeUnreadCountForMe": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 109,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.collaborativeUnreadForMe": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 128,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.unreadBreakdownForMe": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 163,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.markRead": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 235,
+   "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.markUnread": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 255,
+   "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "create",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "update",
+     "fields": [
+      "memberDocumentId",
+      "readAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.publish": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 277,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberDocument",
+     "op": "create",
+     "fields": [
+      "audience",
+      "groups",
+      "mediaAssetId",
+      "publishedById",
+      "recipients",
+      "title"
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "create",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.depositToGroupSpace": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 350,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberDocument",
+     "op": "create",
+     "fields": [
+      "audience",
+      "groups",
+      "mediaAssetId",
+      "publishedById",
+      "title"
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "create",
+     "fields": [
+      "groupId"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.unpublish": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 409,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.listAdmin": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 417,
+   "effects": [
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.listMembers": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 432,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberDocument.publicationForPath": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberDocuments/router.ts",
+   "line": 447,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.list": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 28,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.create": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 53,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "create",
+     "fields": [
+      "description",
+      "isCollaborative",
+      "name",
+      "parentGroupId"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.update": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "update",
+     "fields": [
+      "description",
+      "isCollaborative",
+      "name"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.delete": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 124,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "update",
+     "fields": [
+      "parentGroupId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.setParentGroup": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 140,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "update",
+     "fields": [
+      "parentGroupId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.members": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 197,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.addMember": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 221,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "create",
+     "fields": [
+      "access",
+      "groupId",
+      "userId"
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "update",
+     "fields": [
+      "access",
+      "groupId",
+      "userId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.removeMember": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 245,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "memberGroup.setMemberAccess": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/memberGroups/router.ts",
+   "line": 255,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "update",
+     "fields": [
+      "access"
+     ]
+    }
+   ],
+   "emails": []
+  }
+ },
+ "functions": {
+  "sendPasswordResetEmail": {
+   "file": "packages/backend/src/email/services/sendPasswordResetEmail.ts",
+   "line": 12,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendTicketAcknowledgement": {
+   "file": "packages/backend/src/email/services/sendTicketEmails.ts",
+   "line": 63,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendTicketNotification": {
+   "file": "packages/backend/src/email/services/sendTicketEmails.ts",
+   "line": 107,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendTicketReply": {
+   "file": "packages/backend/src/email/services/sendTicketEmails.ts",
+   "line": 171,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendTicketFollowUpNotification": {
+   "file": "packages/backend/src/email/services/sendTicketEmails.ts",
+   "line": 225,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendWelcomeEmail": {
+   "file": "packages/backend/src/email/templates/welcomeEmailWithPassword.ts",
+   "line": 43,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendWelcomeNotice": {
+   "file": "packages/backend/src/email/templates/welcomeEmailWithPassword.ts",
+   "line": 113,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "createSessionJWT": {
+   "file": "packages/backend/src/lib/session/session.server.ts",
+   "line": 15,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "userId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "deleteSessionFromCookie": {
+   "file": "packages/backend/src/lib/session/session.server.ts",
+   "line": 52,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "getSessionFromRequest": {
+   "file": "packages/backend/src/modules/auth/getSessionFromRequest.ts",
+   "line": 72,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "loginService": {
+   "file": "packages/backend/src/modules/auth/services/auth.service.ts",
+   "line": 9,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "userId"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "deleteAvatar": {
+   "file": "packages/backend/src/modules/avatar/avatar.service.ts",
+   "line": 30,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "avatar"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "registerAvatar": {
+   "file": "packages/backend/src/modules/avatar/avatar.service.ts",
+   "line": 81,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "avatar"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "registerImageConsentForm": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
+   "line": 58,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberName",
+      "mimeType",
+      "signedAt",
+      "size",
+      "storageKey",
+      "uploadedById",
+      "usages",
+      "userId"
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ]
+    }
+   ],
+   "emails": [
+    "sendImageConsentNotice"
+   ]
+  },
+  "deleteImageConsentForm": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
+   "line": 133,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "purgeDetachedImageConsentForms": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
+   "line": 144,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "onlineConsentState": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts",
+   "line": 79,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "confirmMemberConsent": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts",
+   "line": 106,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ]
+    }
+   ],
+   "emails": [
+    "sendImageConsentNotice"
+   ]
+  },
+  "assertOperationsDontUnpublishReferencedAssets": {
+   "file": "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts",
+   "line": 47,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "assertStatusChangeDoesntUnpublishReferencedAssets": {
+   "file": "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts",
+   "line": 49,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "canReadStorageKey": {
+   "file": "packages/backend/src/modules/media/services/canReadStorageKey.service.ts",
+   "line": 21,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "commonRepositoryContainerPath": {
+   "file": "packages/backend/src/modules/media/services/commonRepositoryContainerPath.service.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "countPersoImages": {
+   "file": "packages/backend/src/modules/media/services/countPersoImages.service.ts",
+   "line": 21,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureInstructorBioMediaReferences": {
+   "file": "packages/backend/src/modules/media/services/ensureInstructorBioMediaReferences.service.ts",
+   "line": 21,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "listCommonRepositoryFolders": {
+   "file": "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts",
+   "line": 13,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "listMyCommonRepositoryContainers": {
+   "file": "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts",
+   "line": 16,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "parsePathToDestination": {
+   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
+   "line": 59,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "buildCategoryCache": {
+   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
+   "line": 142,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "buildDisciplineCache": {
+   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
+   "line": 154,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolveAvatarsByUserIds": {
+   "file": "packages/backend/src/modules/media/services/resolveAvatarsByUserIds.service.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolveGroupBaseFolder": {
+   "file": "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts",
+   "line": 26,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolveMediaByIds": {
+   "file": "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts",
+   "line": 50,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolvePersoBaseFolder": {
+   "file": "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "syncPageMediaReferences": {
+   "file": "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts",
+   "line": 47,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "assertCanReadPath": {
+   "file": "packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "assertCanTrashPaths": {
+   "file": "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts",
+   "line": 29,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "assertCanWriteGroupSpace": {
+   "file": "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts",
+   "line": 15,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "collaborativeEntriesForMember": {
+   "file": "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts",
+   "line": 12,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "deleteGroupWithSpace": {
+   "file": "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts",
+   "line": 19,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "update",
+     "fields": [
+      "parentGroupId"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ensureAdminGroup": {
+   "file": "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts",
+   "line": 15,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "create",
+     "fields": [
+      "isAdminGroup",
+      "isCollaborative",
+      "name"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureAllGroupSpaces": {
+   "file": "packages/backend/src/modules/memberGroups/ensureAllGroupSpaces.service.ts",
+   "line": 10,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureGroupSpaceFolder": {
+   "file": "packages/backend/src/modules/memberGroups/ensureGroupSpaceFolder.service.ts",
+   "line": 18,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "isAdminByGroup": {
+   "file": "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts",
+   "line": 8,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolveGroupAccessForUser": {
+   "file": "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts",
+   "line": 15,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "exportMyData": {
+   "file": "packages/backend/src/modules/privacy/exportMyData.service.ts",
+   "line": 11,
+   "effects": [
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "retentionSettings": {
+   "file": "packages/backend/src/modules/privacy/retention.service.ts",
+   "line": 23,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "purgeExpiredData": {
+   "file": "packages/backend/src/modules/privacy/retention.service.ts",
+   "line": 31,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "listInactiveAccounts": {
+   "file": "packages/backend/src/modules/privacy/retention.service.ts",
+   "line": 61,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "startRetentionSchedule": {
+   "file": "packages/backend/src/modules/privacy/retention.service.ts",
+   "line": 85,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureContactsPage": {
+   "file": "packages/backend/src/modules/sitePages/ensureContactsPage.service.ts",
+   "line": 44,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "create",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePage",
+     "op": "update",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ensureInscriptionPage": {
+   "file": "packages/backend/src/modules/sitePages/ensureInscriptionPage.service.ts",
+   "line": 113,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "create",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePage",
+     "op": "update",
+     "fields": [
+      "content",
+      "slug",
+      "title"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ensureDefaultPartners": {
+   "file": "packages/backend/src/modules/sitePartners/sitePartners.service.ts",
+   "line": 94,
+   "effects": [
+    {
+     "model": "SitePartner",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "SitePartner",
+     "op": "update",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "createR2StorageAdapter": {
+   "file": "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts",
+   "line": 107,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "create",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "bytes",
+      "categoryId",
+      "disciplineId",
+      "duration",
+      "eventId",
+      "format",
+      "fullPath",
+      "height",
+      "mimeType",
+      "originalFileName",
+      "proposedDisciplineName",
+      "status",
+      "uploaderUserId",
+      "width"
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "bytes",
+      "categoryId",
+      "disciplineId",
+      "duration",
+      "eventId",
+      "format",
+      "fullPath",
+      "height",
+      "mimeType",
+      "originalFileName",
+      "proposedDisciplineName",
+      "status",
+      "uploaderUserId",
+      "width"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "applyGroupSpaceNamesToFolders": {
+   "file": "packages/backend/src/modules/storage/applyGroupSpaceNames.service.ts",
+   "line": 58,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "applyGroupSpaceNamesToTree": {
+   "file": "packages/backend/src/modules/storage/applyGroupSpaceNames.service.ts",
+   "line": 76,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "assertUploadDestinationAllowed": {
+   "file": "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "requiredRootPaths": {
+   "file": "packages/backend/src/modules/storage/ensureContentRoots.service.ts",
+   "line": 11,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureContentRootsInTree": {
+   "file": "packages/backend/src/modules/storage/ensureContentRoots.service.ts",
+   "line": 37,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "missingContentRootFolders": {
+   "file": "packages/backend/src/modules/storage/ensureContentRoots.service.ts",
+   "line": 54,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "isSpaceEmpty": {
+   "file": "packages/backend/src/modules/storage/isSpaceEmpty.service.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "mergeGroupSpaceFolders": {
+   "file": "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts",
+   "line": 87,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "mergeGroupSpaceFoldersIntoTree": {
+   "file": "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts",
+   "line": 105,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "isProtectedDisciplineFolderPath": {
+   "file": "packages/backend/src/modules/storage/protectedDisciplineFolder.ts",
+   "line": 25,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolvePhysicalLocations": {
+   "file": "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts",
+   "line": 78,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "enrichFilesWithStatus": {
+   "file": "packages/backend/src/modules/storage/services/enrichStatus.service.ts",
+   "line": 94,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "enrichTreeWithStatus": {
+   "file": "packages/backend/src/modules/storage/services/enrichStatus.service.ts",
+   "line": 124,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureCategoryFolderLabels": {
+   "file": "packages/backend/src/modules/storage/services/ensureCategoryFolderLabels.service.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ensureRootFolders": {
+   "file": "packages/backend/src/modules/storage/services/ensureRootFolders.service.ts",
+   "line": 23,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "pruneEmptyFolders": {
+   "file": "packages/backend/src/modules/storage/services/pruneEmptyFolders.service.ts",
+   "line": 36,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "resolvePendingUploadFolder": {
+   "file": "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts",
+   "line": 59,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "toPhysicalMoveIntents": {
+   "file": "packages/backend/src/modules/storage/toPhysicalMoveIntents.service.ts",
+   "line": 100,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ensureTicketCategories": {
+   "file": "packages/backend/src/modules/tickets/ensureTicketCategories.service.ts",
+   "line": 19,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "create",
+     "fields": [
+      "isCollaborative",
+      "name",
+      "parentGroupId"
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "create",
+     "fields": [
+      "groupId"
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "pollTicketMailbox": {
+   "file": "packages/backend/src/modules/tickets/imapIntake.service.ts",
+   "line": 80,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendTicketFollowUpNotification"
+   ]
+  },
+  "startTicketMailboxPolling": {
+   "file": "packages/backend/src/modules/tickets/imapIntake.service.ts",
+   "line": 185,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": [
+    "sendTicketFollowUpNotification"
+   ]
+  },
+  "processInboundEmail": {
+   "file": "packages/backend/src/modules/tickets/inboundEmail.ts",
+   "line": 68,
+   "effects": [
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "buildTicketRecaps": {
+   "file": "packages/backend/src/modules/tickets/recap.service.ts",
+   "line": 45,
+   "effects": [
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "sendTicketRecaps": {
+   "file": "packages/backend/src/modules/tickets/recap.service.ts",
+   "line": 142,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "startTicketRecapSchedule": {
+   "file": "packages/backend/src/modules/tickets/recap.service.ts",
+   "line": 182,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "handledCategoryIds": {
+   "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
+   "line": 29,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "ticketAccess": {
+   "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
+   "line": 39,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "listInbox": {
+   "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
+   "line": 55,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "getTicketDetail": {
+   "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
+   "line": 101,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "listHandlers": {
+   "file": "packages/backend/src/modules/tickets/ticketQueries.service.ts",
+   "line": 157,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "replySignature": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 49,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "canHandleCategory": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 69,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "createTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 100,
+   "effects": [
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "create",
+     "fields": [
+      "categoryId",
+      "createdAt",
+      "dueAt",
+      "events",
+      "messages",
+      "requesterEmail",
+      "requesterId",
+      "requesterName",
+      "subject"
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "takeTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 151,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "transferTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 165,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "note",
+      "ticketId",
+      "toUserId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "replyToTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 189,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "firstResponseAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "addIncomingMessage": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 239,
+   "effects": [
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "create",
+     "fields": [
+      "authorId",
+      "authorName",
+      "body",
+      "createdAt",
+      "direction",
+      "emailMessageId",
+      "fromEmail",
+      "ticketId"
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "reopenTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 290,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "closeTicket": {
+   "file": "packages/backend/src/modules/tickets/tickets.service.ts",
+   "line": 304,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "closedAt",
+      "status"
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "create",
+     "fields": [
+      "actorId",
+      "createdAt",
+      "ticketId",
+      "type"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "deleteForever": {
+   "file": "packages/backend/src/modules/trash/services/deleteForever.service.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "deletedAt",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "listBin": {
+   "file": "packages/backend/src/modules/trash/services/listBin.service.ts",
+   "line": 24,
+   "effects": [
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "purge": {
+   "file": "packages/backend/src/modules/trash/services/purge.service.ts",
+   "line": 60,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "deletedAt",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "readTrashFolder": {
+   "file": "packages/backend/src/modules/trash/services/readTrashFolder.service.ts",
+   "line": 111,
+   "effects": [
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "restoreFromBin": {
+   "file": "packages/backend/src/modules/trash/services/restoreFromBin.service.ts",
+   "line": 159,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "appRoot",
+      "fullPath",
+      "status"
+     ]
+    },
+    {
+     "model": "TrashEntry",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "update",
+     "fields": [
+      "restoredAt",
+      "restoredToPath",
+      "status"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "trashToBin": {
+   "file": "packages/backend/src/modules/trash/services/trashToBin.service.ts",
+   "line": 178,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "TrashEntry",
+     "op": "create",
+     "fields": [
+      "appRoot",
+      "displayName",
+      "id",
+      "kind",
+      "mediaKind",
+      "previousPath",
+      "providerCreatedAt",
+      "sizeBytes",
+      "status",
+      "storageRoot",
+      "trashedAt"
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "assertTrashDoesntRemoveUsedAssets": {
+   "file": "packages/backend/src/modules/trash/services/trashedAssets.service.ts",
+   "line": 39,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "deleteAssetRowsOfTrashedItem": {
+   "file": "packages/backend/src/modules/trash/services/trashedAssets.service.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "createTRPCContext": {
+   "file": "packages/backend/src/trpc/core.ts",
+   "line": 42,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  },
+  "createTRPCCaller": {
+   "file": "packages/backend/src/trpc/trpcCaller.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": []
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": []
+    }
+   ],
+   "emails": []
+  }
+ }
+}

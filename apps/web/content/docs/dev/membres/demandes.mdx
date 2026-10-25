@@ -11,6 +11,43 @@ entities:
   MemberGroup: [name]
   MemberGroupMembership: [groupId, userId]
   User: [pseudo]
+stories:
+  - title: Un membre dépose une demande
+    actor: Membre connecté
+    steps:
+      - label: Le membre envoie le formulaire ; accusé de réception et avis à la catégorie
+        call: ticket.submit
+        section: Déposer une demande
+  - title: Le club traite une demande
+    actor: Membre d'un groupe qui traite la catégorie
+    steps:
+      - label: La demande apparaît dans la boîte des demandes
+        call: ticket.inbox
+        section: Qui traite une demande
+      - label: Un membre la prend en charge
+        call: ticket.take
+        section: "Le délai : fixé une fois pour toutes"
+      - label: Il passe le relais, avec une note
+        call: ticket.transfer
+        section: "Le délai : fixé une fois pour toutes"
+      - label: La personne qui reprend répond depuis le site
+        call: ticket.reply
+        section: "Répondre : l'e-mail d'abord"
+      - label: La demande est close
+        call: ticket.close
+        section: Le modèle
+  - title: Le demandeur répond par e-mail
+    actor: Serveur (relève de la boîte toutes les deux minutes)
+    steps:
+      - label: La réponse est relevée, rattachée à sa demande, la demande rouverte si besoin
+        call: pollTicketMailbox
+        section: Les réponses par e-mail
+  - title: Le récapitulatif du matin
+    actor: Serveur (chaque jour à 8 heures)
+    steps:
+      - label: Les demandes en attente sont rassemblées et envoyées aux adresses des catégories
+        call: sendTicketRecaps
+        section: Le récapitulatif quotidien
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"

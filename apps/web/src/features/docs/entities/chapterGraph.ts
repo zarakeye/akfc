@@ -10,7 +10,7 @@ export type ChapterEntities = Record<string, string[]>;
  *   liaison, comme l'adhésion d'un membre à un groupe) — elle explique comment elles tiennent ensemble ;
  * - `neighbor` : reliée à une seule entité du chapitre ; affichée seulement à la demande.
  */
-export type EntityRole = "focus" | "bridge" | "neighbor";
+export type EntityRole = "focus" | "bridge" | "neighbor" | "story";
 
 export type GraphModel = EntityModel & { role: EntityRole; focusFields: string[] };
 
@@ -31,8 +31,12 @@ export function readChapterEntities(raw: unknown): ChapterEntities | null {
   return Object.keys(out).length ? out : null;
 }
 
-/** Sous-carte d'un chapitre : ses entités, celles qui les relient, et leurs voisines. */
-export function buildChapterGraph(map: EntityMap, declared: ChapterEntities): ChapterGraph {
+/**
+ * Sous-carte d'un chapitre : ses entités, celles qui les relient, et leurs voisines. `extra` :
+ * entités touchées par les parcours du chapitre et absentes du reste (rôle `story`, affichées
+ * seulement pendant un parcours).
+ */
+export function buildChapterGraph(map: EntityMap, declared: ChapterEntities, extra: string[] = []): ChapterGraph {
   const byName = new Map(map.models.map((m) => [m.name, m]));
   const focus = new Set(Object.keys(declared).filter((n) => byName.has(n)));
 
@@ -54,8 +58,8 @@ export function buildChapterGraph(map: EntityMap, declared: ChapterEntities): Ch
   const role = (name: string): EntityRole | null => {
     if (focus.has(name)) return "focus";
     const t = touches.get(name);
-    if (!t) return null;
-    return t.size >= 2 ? "bridge" : "neighbor";
+    if (t) return t.size >= 2 ? "bridge" : "neighbor";
+    return extra.includes(name) ? "story" : null;
   };
 
   const models: GraphModel[] = map.models
