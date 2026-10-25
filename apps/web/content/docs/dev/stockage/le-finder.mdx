@@ -3,12 +3,49 @@ title: "Le Finder : une arborescence sur un stockage sans dossiers"
 description: "Comment une liste de clés devient un explorateur de fichiers : un composant unique branché sur des adaptateurs, un backend qui complète le stockage avec la base, et des opérations qui gardent les deux cohérents."
 section: "Stockage et médias"
 order: 2
+entities:
+  MediaAsset: [fullPath, displayName, status]
+  Folder: [appRoot, fullPath, status]
+  FolderLabel: [path, displayName]
+  TrashEntry: [previousPath, storageRoot, kind, trashedAt, restoredAt, deletedAt]
+  PageMediaReference: [mediaAssetId]
+stories:
+  - title: Parcourir la bibliothèque
+    actor: Administrateur
+    steps:
+      - label: L'arborescence d'un dossier, enrichie par la base (statuts, noms affichés)
+        call: storage.getTree
+        section: Ce que le backend ajoute au stockage
+      - label: Les libellés des dossiers, séparés de leur clé
+        call: storage.folderLabels
+        section: Ce que le backend ajoute au stockage
+  - title: Ranger un fichier
+    actor: Administrateur
+    steps:
+      - label: Il renomme le fichier ; sa clé ne change pas
+        call: storage.rename
+        section: Renommer
+      - label: Il le déplace dans un autre dossier
+        call: storage.move
+        section: Déplacer
+      - label: Il le valide
+        call: media.setStatus
+        section: Valider
+      - label: Il met un dossier à la corbeille, sauf s'il contient un média encore utilisé
+        call: trash.trashToBin
+        section: Mettre à la corbeille
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Un fichier est envoyé directement au stockage grâce à une URL présignée, puis enregistré dans `MediaAsset` sous une clé calculée par le serveur, comme `AKFC/courses/tchoy-lee-fut/salut-final.jpg`. Il naît en attente, et il est servi par des routes qui vérifient les droits. Reste à le retrouver, le ranger et le valider.
+
+## Les parcours du chapitre
+
+Deux cas d'utilisation traversent ce chapitre : parcourir la bibliothèque, et y ranger un fichier. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Ce que l'explorateur doit montrer
 

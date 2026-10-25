@@ -3,12 +3,47 @@ title: "Envoyer et servir un fichier"
 description: "Comment un fichier part du navigateur vers le stockage sans transiter par notre serveur, comment il est vérifié puis enregistré, et comment il est servi ensuite, en privé comme en public."
 section: "Stockage et médias"
 order: 1
+entities:
+  MediaAsset: [fullPath, appRoot, status, mimeType, bytes, originalFileName, uploaderUserId, categoryId, disciplineId, eventId]
+  Folder: [appRoot, fullPath, status]
+  PageMediaReference: [mediaAssetId]
+stories:
+  - title: Envoyer une photo dans la bibliothèque
+    actor: Administrateur, ou éditeur d'un espace de groupe
+    steps:
+      - label: Le navigateur décrit la destination ; le serveur vérifie et signe une URL d'envoi
+        call: storage.createR2Upload
+        section: "Étape 1 : une destination, pas un chemin"
+      - label: Avant d'envoyer, il vérifie qu'aucun fichier du même nom n'existe à cet endroit
+        call: storage.checkR2Conflicts
+        section: Les vérifications avant de signer
+      - label: Le fichier parti directement au stockage, le serveur le relit et l'enregistre, en attente
+        call: storage.registerR2Upload
+        section: "Étape 3 : relire avant d'enregistrer"
+      - label: Un administrateur le valide ; seule la colonne change, le fichier ne bouge pas
+        call: media.setStatus
+        section: Le cycle de vie d'un média
+  - title: Afficher un fichier
+    actor: Membre connecté, ou visiteur
+    steps:
+      - label: Dans le site, un fichier privé passe par une route qui vérifie la session et les droits
+        call: GET /api/media/r2/[...path]
+        section: Servir un fichier privé
+      - label: Sur une page publique, un média n'est servi que s'il est validé et placé
+        call: GET /api/media/public/r2/[...path]
+        section: Servir un fichier public
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Les données passent par tRPC et Prisma, et chaque procédure connaît l'utilisateur grâce à sa session. Les fichiers suivent un autre circuit, annoncé dès le premier chapitre : ils vont directement au stockage, avec une autorisation signée par le backend. Voici ce circuit en détail.
+
+## Les parcours du chapitre
+
+Deux cas d'utilisation traversent ce chapitre : envoyer un fichier, et l'afficher. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Un stockage compatible S3
 

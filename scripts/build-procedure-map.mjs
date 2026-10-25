@@ -527,10 +527,11 @@ function summarize(acc) {
   const merged = new Map();
   for (const e of acc.effects) {
     const k = `${e.model}:${e.op}`;
-    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set(), raw: false, direct: false, trails: new Map() });
+    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set(), raw: false, prismaClient: false, direct: false, trails: new Map() });
     const m = merged.get(k);
     for (const f of e.fields) m.fields.add(f);
     if (e.raw) m.raw = true;
+    else if (!e.cascade) m.prismaClient = true;
     if (!e.cascade) m.direct = true;
     const t = JSON.stringify(e.trail);
     if (m.trails.size < MAX_TRAILS && !m.trails.has(t)) m.trails.set(t, e.trail);
@@ -541,7 +542,8 @@ function summarize(acc) {
         model: e.model,
         op: e.op,
         fields: [...e.fields].sort(),
-        ...(e.raw ? { raw: true } : {}),
+        // Seulement par une requête SQL écrite à la main (sinon, la piste montre les deux).
+        ...(e.raw && !e.prismaClient ? { raw: true } : {}),
         // Seulement par la base (onDelete), jamais par un appel du code.
         ...(e.direct ? {} : { cascade: true }),
         trails: [...e.trails.values()],

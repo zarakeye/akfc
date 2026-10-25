@@ -11534,7 +11534,6 @@
       "displayName",
       "fullPath"
      ],
-     "raw": true,
      "trails": [
       [
        [
@@ -11631,7 +11630,6 @@
      "fields": [
       "fullPath"
      ],
-     "raw": true,
      "trails": [
       [
        [
@@ -13082,7 +13080,6 @@
      "model": "Comment",
      "op": "read",
      "fields": [],
-     "raw": true,
      "trails": [
       [
        [
@@ -19019,7 +19016,6 @@
      "fields": [
       "fullPath"
      ],
-     "raw": true,
      "trails": [
       [
        [
@@ -19078,7 +19074,6 @@
      "fields": [
       "fullPath"
      ],
-     "raw": true,
      "trails": [
       [
        [
