@@ -212,6 +212,7 @@ export function StoryTabs(): JSX.Element | null {
                           {e.model} {OP_LABEL[e.op]}
                           {e.fields.length > 0 && <span className="opacity-75"> : {e.fields.join(", ")}</span>}
                           {e.raw && <span className="opacity-75"> · SQL direct</span>}
+                          {e.cascade && <span className="opacity-75"> · en cascade</span>}
                         </li>
                       ))}
                     </ul>
@@ -715,6 +716,7 @@ function TrailLine({ label, location, effects = [] }: { label: string; location:
         <span key={`${e.model}-${e.op}`} className={`ml-1.5 inline-block rounded-full px-1.5 ${OP_CHIP[e.op]}`}>
           {e.model} {OP_LABEL[e.op]}
           {e.raw ? " · SQL direct" : ""}
+          {e.cascade ? " · en cascade" : ""}
         </span>
       ))}
     </div>
@@ -782,6 +784,7 @@ function StepCard({
             <span className="text-muted-foreground">{OP_LABEL[e.op]}</span>
             {e.fields.length > 0 && <span className="text-xs text-muted-foreground">({e.fields.join(", ")})</span>}
             {e.raw && <span className="rounded bg-muted px-1.5 text-xs">SQL direct</span>}
+            {e.cascade && <span className="rounded bg-muted px-1.5 text-xs">en cascade (schéma)</span>}
           </li>
         ))}
       </ul>
@@ -804,7 +807,8 @@ function StepCard({
       )}
       <p className="text-xs text-muted-foreground">
         Effets relevés dans le code par scripts/build-procedure-map.mjs : appels Prisma et requêtes SQL de la
-        procédure et de tout ce qu&apos;elle appelle, méthodes d&apos;objets comprises.
+        procédure et de tout ce qu&apos;elle appelle, méthodes d&apos;objets comprises ; suppressions en
+        cascade lues dans le schéma.
       </p>
     </div>
   );

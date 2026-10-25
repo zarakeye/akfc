@@ -3,6 +3,32 @@ title: "Les documents légaux et les données personnelles"
 description: "Des mentions légales et une politique de confidentialité générées depuis les réglages, un registre des traitements décrit une seule fois, des durées de conservation appliquées par une purge quotidienne, et l'export de ses données par chaque membre."
 section: "Légal et RGPD"
 order: 1
+entities:
+  SiteSettings: [legalName, legalRna, legalSiret, legalAddress, publicationDirector, hostName, storageRegion, accountRetentionMonths, ticketRetentionMonths, legalUpdatedAt]
+  Ticket: [status, closedAt]
+  TicketMessage: [createdAt]
+  Session: [expiresAt]
+  PasswordResetToken: [expiresAt]
+  User: [lastLoginAt, createdAt]
+stories:
+  - title: Le club renseigne ses informations légales
+    actor: Administrateur
+    steps:
+      - label: Il enregistre la rubrique « Informations légales » des Réglages ; les pages légales la lisent aussitôt
+        call: siteSettings.saveLegal
+        section: Des pages générées depuis les réglages
+  - title: La purge de la nuit
+    actor: Serveur (chaque nuit à 3 heures, et au démarrage)
+    steps:
+      - label: Les demandes closes depuis la durée réglée, les sessions et liens expirés, les formulaires détachés depuis cinq ans sont supprimés
+        call: purgeExpiredData
+        section: Des durées de conservation appliquées
+  - title: Un membre télécharge ses données
+    actor: Membre connecté
+    steps:
+      - label: Depuis son profil, il obtient un fichier JSON de toutes ses données
+        call: exportMyData
+        section: "Le droit d'accès : télécharger ses données"
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +37,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Les membres reçoivent les documents du club, partagent leurs fichiers et s'adressent au club par des demandes suivies. Tout cela repose sur des données personnelles.
 
 Un site qui collecte des données personnelles doit dire qui l'édite, ce qu'il fait de ces données, combien de temps il les garde, et permettre à chacun d'exercer ses droits. L'association n'a pas toutes les informations légales sous la main d'un coup : le siège, le numéro RNA ou l'hébergeur se renseignent au fil de l'eau. Les documents légaux du site sont donc **générés** à partir des Réglages, et se mettent à jour d'eux-mêmes.
+
+## Les parcours du chapitre
+
+Trois cas d'utilisation traversent ce chapitre : le club qui renseigne ses informations, la purge qui tient les durées annoncées, et le membre qui exerce son droit d'accès. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Des pages générées depuis les réglages
 

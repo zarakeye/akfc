@@ -209,8 +209,21 @@ function resolveCall(call) {
 // ─── Effets ────────────────────────────────────────────────────────────
 
 /** Clés d'un objet littéral `{ a: …, b }` (champs écrits par data:, lus par select:). */
-function keysOf(obj, scope = null) {
+function keysOf(obj, scope = null, depth = 0) {
   obj = resolveObject(obj, scope);
+  // `data: legalInfoData(…)` : les clés des objets que renvoie la fonction du projet appelée.
+  if (obj && ts.isCallExpression(obj) && depth < 3) {
+    const keys = [];
+    for (const target of resolveCall(obj)) {
+      const visit = (n) => {
+        if (ts.isReturnStatement(n) && n.expression) keys.push(...keysOf(n.expression, target.node, depth + 1));
+        else if (!ts.isFunctionLike(n) || n === target.node) ts.forEachChild(n, visit);
+      };
+      if (ts.isArrowFunction(target.node) && !ts.isBlock(target.node.body)) keys.push(...keysOf(target.node.body, target.node, depth + 1));
+      else visit(target.node);
+    }
+    return [...new Set(keys)];
+  }
   if (!obj || !ts.isObjectLiteralExpression(obj)) return [];
   const keys = [];
   for (const p of obj.properties) {
@@ -220,7 +233,7 @@ function keysOf(obj, scope = null) {
       let x = p.expression;
       while (ts.isParenthesizedExpression(x)) x = x.expression;
       const parts = ts.isConditionalExpression(x) ? [x.whenTrue, x.whenFalse] : [x];
-      for (const part of parts) keys.push(...keysOf(part, scope));
+      for (const part of parts) keys.push(...keysOf(part, scope, depth));
     }
   }
   return [...new Set(keys)];
@@ -276,6 +289,7 @@ function nestedWrites(model, data, acc, trail) {
     }
     if (prop(p.initializer, "delete") || prop(p.initializer, "deleteMany")) {
       acc.effects.push({ model: target, op: "delete", fields: [], trail });
+      cascadeDeletes(target, acc, trail);
     }
   }
 }
@@ -319,6 +333,67 @@ const rel = (f) => relative(ROOT, f);
 /** Une étape de la piste : ce qui est appelé, et où le lire (`fichier:ligne`). */
 const hop = (label, node) => [label.replace(/\s+/g, " ").slice(0, 80), `${rel(node.getSourceFile().fileName)}:${lineOf(node)}`];
 
+/** Lectures imbriquées : `select` / `include` d'une relation lisent aussi l'entité liée. */
+function nestedReads(model, call, acc, trail) {
+  const visitShape = (m, shape) => {
+    if (!shape || !ts.isObjectLiteralExpression(shape)) return;
+    const rels = relationsOf.get(m) ?? new Map();
+    for (const p of shape.properties) {
+      if (!ts.isPropertyAssignment(p) || !ts.isIdentifier(p.name)) continue;
+      const target = rels.get(p.name.text);
+      if (!target) continue;
+      acc.effects.push({ model: target, op: "read", fields: [], trail });
+      if (ts.isObjectLiteralExpression(p.initializer)) {
+        visitShape(target, prop(p.initializer, "select"));
+        visitShape(target, prop(p.initializer, "include"));
+      }
+    }
+  };
+  visitShape(model, argProperty(call, "select"));
+  visitShape(model, argProperty(call, "include"));
+}
+
+/*
+ * Suppressions en cascade, lues dans le schéma : supprimer un Ticket supprime ses TicketMessage
+ * (`onDelete: Cascade`) ; supprimer un User vide le champ des lignes en `onDelete: SetNull`.
+ * C'est la base qui le fait, sans une ligne de code : la piste mène donc au schéma.
+ */
+const cascadesOf = new Map(); // modèle parent → [{ child, action, fields, line }]
+{
+  let current = null;
+  readFileSync(SCHEMA, "utf8").split(/\r?\n/).forEach((raw, i) => {
+    const open = /^model\s+(\w+)\s*\{/.exec(raw.trim());
+    if (open) current = open[1];
+    const m = /^\s*\w+\s+(\w+)\??\s+@relation\(([^)]*)\)/.exec(raw);
+    if (!m || !current) return;
+    const action = /onDelete:\s*(Cascade|SetNull)/.exec(m[2]);
+    if (!action) return;
+    const fields = /fields:\s*\[([^\]]*)\]/.exec(m[2]);
+    if (!cascadesOf.has(m[1])) cascadesOf.set(m[1], []);
+    cascadesOf.get(m[1]).push({
+      child: current,
+      action: action[1],
+      fields: fields ? fields[1].split(",").map((f) => f.trim()).filter(Boolean) : [],
+      line: i + 1,
+    });
+  });
+}
+
+function cascadeDeletes(model, acc, trail, seen = new Set([model])) {
+  for (const c of cascadesOf.get(model) ?? []) {
+    const where = [...trail, [`onDelete: ${c.action} (${c.child} → ${model})`, `prisma/schema.prisma:${c.line}`]];
+    if (c.action === "SetNull") {
+      acc.effects.push({ model: c.child, op: "update", fields: c.fields, cascade: true, trail: where });
+      continue;
+    }
+    acc.effects.push({ model: c.child, op: "delete", fields: [], cascade: true, trail: where });
+    if (!seen.has(c.child)) {
+      seen.add(c.child);
+      cascadeDeletes(c.child, acc, where, seen);
+    }
+  }
+}
+
 /**
  * Effets d'un nœud (corps d'une procédure ou d'une fonction), appels suivis. Chaque effet garde sa
  * PISTE : les appels traversés depuis la procédure jusqu'à l'appel Prisma, avec l'endroit où lire
@@ -334,7 +409,10 @@ function collect(node, acc, seen, depth, trail) {
     if (rawTag && ts.isPropertyAccessExpression(rawTag) && /^\$(query|execute)Raw(Unsafe)?$/.test(rawTag.name.text)) {
       const sql = ts.isTaggedTemplateExpression(n) ? n.template.getText() : n.arguments[0]?.getText() ?? "";
       const where = [...trail, hop(`${rawTag.getText()} (SQL)`, n)];
-      for (const e of sqlEffects(sql)) acc.effects.push({ ...e, raw: true, trail: where });
+      for (const e of sqlEffects(sql)) {
+        acc.effects.push({ ...e, raw: true, trail: where });
+        if (e.op === "delete") cascadeDeletes(e.model, acc, where);
+      }
     }
     if (ts.isCallExpression(n)) {
       const e = n.expression;
@@ -354,6 +432,8 @@ function collect(node, acc, seen, depth, trail) {
           const where = [...trail, hop(e.getText(), n)];
           const kinds = op === "upsert" ? ["create", "update"] : [op];
           for (const k of kinds) acc.effects.push({ model, op: k, fields, trail: where });
+          if (op === "delete") cascadeDeletes(model, acc, where);
+          nestedReads(model, n, acc, where);
           // Écritures imbriquées : `data: { messages: { create: { … } } }` crée un TicketMessage.
           const data = argProperty(n, "data");
           if (data) nestedWrites(model, data, acc, where);
@@ -387,16 +467,25 @@ function summarize(acc) {
   const merged = new Map();
   for (const e of acc.effects) {
     const k = `${e.model}:${e.op}`;
-    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set(), raw: false, trails: new Map() });
+    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set(), raw: false, direct: false, trails: new Map() });
     const m = merged.get(k);
     for (const f of e.fields) m.fields.add(f);
     if (e.raw) m.raw = true;
+    if (!e.cascade) m.direct = true;
     const t = JSON.stringify(e.trail);
     if (m.trails.size < MAX_TRAILS && !m.trails.has(t)) m.trails.set(t, e.trail);
   }
   return {
     effects: [...merged.values()]
-      .map((e) => ({ model: e.model, op: e.op, fields: [...e.fields].sort(), ...(e.raw ? { raw: true } : {}), trails: [...e.trails.values()] }))
+      .map((e) => ({
+        model: e.model,
+        op: e.op,
+        fields: [...e.fields].sort(),
+        ...(e.raw ? { raw: true } : {}),
+        // Seulement par la base (onDelete), jamais par un appel du code.
+        ...(e.direct ? {} : { cascade: true }),
+        trails: [...e.trails.values()],
+      }))
       .sort((a, b) => a.model.localeCompare(b.model) || a.op.localeCompare(b.op)),
     emails: [...acc.emails].sort(),
   };
@@ -432,10 +521,14 @@ ts.forEachChild(files.get(indexFile), function find(n) {
 function procedureShape(file, node) {
   let kind = "autre";
   const uses = [];
+  let resolver = null;
   let cur = node;
   while (ts.isCallExpression(cur) && ts.isPropertyAccessExpression(cur.expression)) {
     const method = cur.expression.name.text;
-    if (method === "query" || method === "mutation" || method === "subscription") kind = kind === "autre" ? method : kind;
+    if (method === "query" || method === "mutation" || method === "subscription") {
+      kind = kind === "autre" ? method : kind;
+      resolver = cur.arguments[0] ?? null;
+    }
     if (method === "use") uses.push(...cur.arguments.map((a) => a.getText()));
     cur = cur.expression.expression;
   }
@@ -443,8 +536,27 @@ function procedureShape(file, node) {
   const local = declarationsAny(file).get(base);
   if (local) base = local;
   const chain = `${base} ${uses.join(" ")}`;
-  const access = /isAdmin\b|adminProcedure/.test(chain) ? "admin" : /protectedProcedure/.test(chain) ? "membre" : "public";
+  const access =
+    /isAdmin\b|adminProcedure/.test(chain) || guardsAdmin(resolver)
+      ? "admin"
+      : /protectedProcedure/.test(chain)
+        ? "membre"
+        : "public";
   return { kind, access };
+}
+
+/**
+ * Garde d'administrateur posée en tête du corps (`await assertAdmin(ctx)`), et non dans une
+ * condition : elle s'applique à tout appel de la procédure.
+ */
+function guardsAdmin(resolver) {
+  if (!resolver || !(ts.isArrowFunction(resolver) || ts.isFunctionExpression(resolver)) || !ts.isBlock(resolver.body)) return false;
+  return resolver.body.statements.some((st) => {
+    if (!ts.isExpressionStatement(st)) return false;
+    let e = st.expression;
+    if (ts.isAwaitExpression(e)) e = e.expression;
+    return ts.isCallExpression(e) && ts.isIdentifier(e.expression) && /^assert(Is)?Admin$/.test(e.expression.text);
+  });
 }
 
 /** Constantes du fichier (texte de leur valeur) : bases de procédure définies localement. */

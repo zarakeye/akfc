@@ -3,6 +3,34 @@ title: "Le droit à l'image"
 description: "Un formulaire d'autorisation signé, déposé par un administrateur, conservé hors de la bibliothèque et servi aux seuls ayants droit ; des usages choisis un par un ; un statut qui en découle ; une preuve gardée cinq ans après le départ."
 section: "Légal et RGPD"
 order: 2
+entities:
+  ImageConsentForm: [userId, memberName, usages, keepAfterLeave, signedAt, storageKey, detachedAt, uploadedById]
+  User: [imageConsent, imageConsentAt]
+stories:
+  - title: Le club enregistre une autorisation signée
+    actor: Administrateur
+    steps:
+      - label: Depuis la fiche du membre, il demande une autorisation d'envoi pour le formulaire scanné
+        call: imageConsent.createUpload
+        section: Un formulaire signé, déposé par un administrateur
+      - label: Le formulaire est enregistré avec ses usages ; le statut du membre en découle, dans la même transaction
+        call: imageConsent.register
+        section: Un statut qui découle du formulaire
+  - title: Le membre consulte son autorisation
+    actor: Membre connecté
+    steps:
+      - label: Son profil affiche son statut et ses formulaires, sans leur clé de stockage
+        call: imageConsent.mine
+        section: Servi aux seuls ayants droit
+  - title: Le membre quitte le club
+    actor: Administrateur, puis le serveur
+    steps:
+      - label: Le compte est supprimé ; ses formulaires sont détachés et datés, pas effacés
+        call: user.delete
+        section: "Après le départ : une preuve gardée cinq ans"
+      - label: Cinq ans après le détachement, la purge de la nuit supprime la fiche et le fichier
+        call: purgeExpiredData
+        section: "Après le départ : une preuve gardée cinq ans"
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +39,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Les documents légaux sont générés depuis les Réglages, les traitements sont décrits une seule fois, les durées de conservation sont tenues par une purge, et chaque membre peut télécharger ses données.
 
 Le club prend des photos et des vidéos pendant les cours et les stages. Un membre reconnaissable sur une image a son mot à dire sur sa diffusion, et pas d'un bloc : il peut accepter la galerie des membres et refuser les réseaux sociaux. Son accord doit être **écrit**, signé (par un parent pour un mineur), et le club doit pouvoir le **prouver** (article 7.1 du RGPD). Le site ne remplace donc pas la signature : il conserve le formulaire signé, en tire un statut, et le rend consultable au membre.
+
+## Les parcours du chapitre
+
+Trois cas d'utilisation traversent ce chapitre : le dépôt d'un formulaire signé, la consultation par le membre, et ce que devient la preuve après son départ. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Des usages choisis un par un
 

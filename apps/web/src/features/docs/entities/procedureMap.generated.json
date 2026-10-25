@@ -102,7 +102,7 @@
   },
   "siteSettings.save": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 65,
    "effects": [
@@ -174,7 +174,7 @@
   },
   "siteSettings.saveContact": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 102,
    "effects": [
@@ -240,7 +240,7 @@
   },
   "siteSettings.saveLegal": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 121,
    "effects": [
@@ -336,7 +336,7 @@
   },
   "siteSettings.uploadLogo": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 157,
    "effects": [
@@ -398,7 +398,7 @@
   },
   "siteSettings.clearLogo": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
    "line": 190,
    "effects": [
@@ -482,7 +482,7 @@
   },
   "pageVisibility.all": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 34,
    "effects": [
@@ -525,7 +525,7 @@
   },
   "pageVisibility.setPublished": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 41,
    "effects": [
@@ -587,7 +587,7 @@
   },
   "pageVisibility.setAll": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 52,
    "effects": [
@@ -649,7 +649,7 @@
   },
   "pageVisibility.entityDraftCounts": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
    "line": 72,
    "effects": [
@@ -1054,6 +1054,33 @@
         "db.ticketCategory.findMany",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
+      ],
+      [
+       [
+        "listInbox",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:55"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "listInbox",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:55"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:66"
+       ]
       ]
      ]
     }
@@ -1121,6 +1148,74 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getTicketDetail",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:101"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -1172,6 +1267,23 @@
     },
     {
      "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "listHandlers",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:157"
+       ],
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:158"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
      "op": "read",
      "fields": [],
      "trails": [
@@ -1452,6 +1564,33 @@
    "line": 140,
    "effects": [
     {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:58"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroupMembership",
      "op": "read",
      "fields": [],
@@ -1562,6 +1701,19 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.ticket.findUnique",
+        "packages/backend/src/modules/tickets/router.ts:144"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketEvent",
      "op": "create",
      "fields": [
@@ -1614,6 +1766,19 @@
        [
         "tx.ticketMessage.create",
         "packages/backend/src/modules/tickets/tickets.service.ts:207"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.ticket.findUnique",
+        "packages/backend/src/modules/tickets/router.ts:144"
        ]
       ]
      ]
@@ -1902,7 +2067,7 @@
   },
   "sitePartner.listAdmin": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 46,
    "effects": [
@@ -1945,7 +2110,7 @@
   },
   "sitePartner.save": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 60,
    "effects": [
@@ -2035,7 +2200,7 @@
   },
   "sitePartner.setLogo": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 95,
    "effects": [
@@ -2082,7 +2247,7 @@
   },
   "sitePartner.clearLogo": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 109,
    "effects": [
@@ -2129,7 +2294,7 @@
   },
   "sitePartner.delete": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 118,
    "effects": [
@@ -2172,7 +2337,7 @@
   },
   "sitePartner.reorder": {
    "kind": "mutation",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
    "line": 125,
    "effects": [
@@ -2787,6 +2952,58 @@
    "line": 19,
    "effects": [
     {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:23"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:23"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:23"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:23"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -2983,7 +3200,13 @@
     {
      "model": "User",
      "op": "update",
-     "fields": [],
+     "fields": [
+      "birthDate",
+      "birthDateVerified",
+      "guardianEmail",
+      "guardianName",
+      "legalAge"
+     ],
      "trails": [
       [
        [
@@ -3028,16 +3251,105 @@
    "line": 212,
    "effects": [
     {
+     "model": "AuditLog",
+     "op": "update",
+     "fields": [
+      "actorUserId",
+      "targetUserId"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (AuditLog → User)",
+        "prisma/schema.prisma:320"
+       ]
+      ],
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (AuditLog → User)",
+        "prisma/schema.prisma:322"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → User)",
+        "prisma/schema.prisma:1734"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "ImageConsentForm",
      "op": "update",
      "fields": [
-      "detachedAt"
+      "detachedAt",
+      "uploadedById",
+      "userId"
      ],
      "trails": [
       [
        [
         "tx.imageConsentForm.updateMany",
         "packages/backend/src/modules/users/router.ts:218"
+       ]
+      ],
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (ImageConsentForm → User)",
+        "prisma/schema.prisma:2216"
+       ]
+      ],
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (ImageConsentForm → User)",
+        "prisma/schema.prisma:2251"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (ImageConsentRequest → User)",
+        "prisma/schema.prisma:2269"
        ]
       ]
      ]
@@ -3055,6 +3367,62 @@
        [
         "tx.mediaAsset.findMany",
         "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "update",
+     "fields": [
+      "publishedById"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (MemberDocument → User)",
+        "prisma/schema.prisma:1689"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → User)",
+        "prisma/schema.prisma:1714"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (MemberGroupMembership → User)",
+        "prisma/schema.prisma:1825"
        ]
       ]
      ]
@@ -3116,6 +3484,124 @@
        [
         "tx.pageMediaReference.findMany",
         "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:69"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PasswordResetToken",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (PasswordResetToken → User)",
+        "prisma/schema.prisma:262"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: Cascade (Session → User)",
+        "prisma/schema.prisma:238"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "update",
+     "fields": [
+      "assigneeId",
+      "requesterId"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (Ticket → User)",
+        "prisma/schema.prisma:2065"
+       ]
+      ],
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (Ticket → User)",
+        "prisma/schema.prisma:2074"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "update",
+     "fields": [
+      "actorId",
+      "toUserId"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (TicketEvent → User)",
+        "prisma/schema.prisma:2140"
+       ]
+      ],
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (TicketEvent → User)",
+        "prisma/schema.prisma:2144"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "update",
+     "fields": [
+      "authorId"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:226"
+       ],
+       [
+        "onDelete: SetNull (TicketMessage → User)",
+        "prisma/schema.prisma:2110"
        ]
       ]
      ]
@@ -3669,6 +4155,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/imageConsent/router.ts:53"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -4107,6 +4606,48 @@
      ]
     },
     {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+       ],
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+       ],
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "read",
      "fields": [],
@@ -4151,6 +4692,27 @@
        [
         "prisma.mediaAsset.findFirst",
         "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+       ],
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
        ]
       ]
      ]
@@ -4207,6 +4769,27 @@
        [
         "prisma.memberGroupMembership.findUnique",
         "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+       ],
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
        ]
       ]
      ]
@@ -4393,6 +4976,62 @@
    "line": 190,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → MediaAsset)",
+        "prisma/schema.prisma:1546"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "delete",
      "fields": [],
@@ -4430,6 +5069,92 @@
        [
         "prisma.mediaAsset.findMany",
         "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -4481,6 +5206,36 @@
    "line": 196,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Folder",
      "op": "delete",
      "fields": [],
@@ -4497,6 +5252,32 @@
        [
         "prisma.folder.deleteMany",
         "packages/backend/src/modules/storage/services/pruneEmptyFolders.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → MediaAsset)",
+        "prisma/schema.prisma:1546"
        ]
       ]
      ]
@@ -4539,6 +5320,92 @@
        [
         "prisma.mediaAsset.findMany",
         "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -4843,6 +5710,19 @@
    "file": "packages/backend/src/modules/courses/router.ts",
    "line": 182,
    "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.discipline.findUnique",
+        "packages/backend/src/modules/courses/router.ts:192"
+       ]
+      ]
+     ]
+    },
     {
      "model": "Course",
      "op": "create",
@@ -5716,6 +6596,24 @@
     },
     {
      "model": "EventDiscipline",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.discipline.delete",
+        "packages/backend/src/modules/disciplines/router.ts:602"
+       ],
+       [
+        "onDelete: Cascade (EventDiscipline → Discipline)",
+        "prisma/schema.prisma:1603"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
      "op": "read",
      "fields": [],
      "trails": [
@@ -6152,6 +7050,32 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.seminar.findUnique",
+        "packages/backend/src/modules/seminars/router.ts:345"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.seminar.findUnique",
+        "packages/backend/src/modules/seminars/router.ts:345"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -6164,6 +7088,32 @@
    "effects": [
     {
      "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.seminar.findFirst",
+        "packages/backend/src/modules/seminars/router.ts:367"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.seminar.findFirst",
+        "packages/backend/src/modules/seminars/router.ts:367"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -6337,6 +7287,12 @@
        [
         "prisma.user.findMany",
         "packages/backend/src/modules/seminars/router.ts:216"
+       ]
+      ],
+      [
+       [
+        "tx.seminar.create",
+        "packages/backend/src/modules/seminars/router.ts:404"
        ]
       ]
      ]
@@ -6516,12 +7472,24 @@
      "trails": [
       [
        [
+        "ctx.prisma.seminar.findUnique",
+        "packages/backend/src/modules/seminars/router.ts:502"
+       ]
+      ],
+      [
+       [
         "assertUsersExist",
         "packages/backend/src/modules/seminars/router.ts:210"
        ],
        [
         "prisma.user.findMany",
         "packages/backend/src/modules/seminars/router.ts:216"
+       ]
+      ],
+      [
+       [
+        "tx.seminar.update",
+        "packages/backend/src/modules/seminars/router.ts:619"
        ]
       ]
      ]
@@ -6622,6 +7590,24 @@
        [
         "tx.seminar.delete",
         "packages/backend/src/modules/seminars/router.ts:716"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.seminar.delete",
+        "packages/backend/src/modules/seminars/router.ts:716"
+       ],
+       [
+        "onDelete: Cascade (SeminarSession → Seminar)",
+        "prisma/schema.prisma:841"
        ]
       ]
      ]
@@ -6788,7 +7774,33 @@
    "line": 210,
    "effects": [
     {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findMany",
+        "packages/backend/src/modules/events/router.ts:213"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findMany",
+        "packages/backend/src/modules/events/router.ts:213"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
      "op": "read",
      "fields": [],
      "trails": [
@@ -6876,7 +7888,46 @@
    "line": 274,
    "effects": [
     {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findUnique",
+        "packages/backend/src/modules/events/router.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findUnique",
+        "packages/backend/src/modules/events/router.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findUnique",
+        "packages/backend/src/modules/events/router.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
      "op": "read",
      "fields": [],
      "trails": [
@@ -6898,7 +7949,46 @@
    "line": 300,
    "effects": [
     {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findFirst",
+        "packages/backend/src/modules/events/router.ts:303"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findFirst",
+        "packages/backend/src/modules/events/router.ts:303"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findFirst",
+        "packages/backend/src/modules/events/router.ts:303"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
      "op": "read",
      "fields": [],
      "trails": [
@@ -7182,6 +8272,19 @@
      ]
     },
     {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.event.findUnique",
+        "packages/backend/src/modules/events/router.ts:412"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "read",
      "fields": [],
@@ -7311,6 +8414,42 @@
        [
         "tx.event.delete",
         "packages/backend/src/modules/events/router.ts:578"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.event.delete",
+        "packages/backend/src/modules/events/router.ts:578"
+       ],
+       [
+        "onDelete: Cascade (EventDiscipline → Event)",
+        "prisma/schema.prisma:1601"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.event.delete",
+        "packages/backend/src/modules/events/router.ts:578"
+       ],
+       [
+        "onDelete: Cascade (EventSession → Event)",
+        "prisma/schema.prisma:969"
        ]
       ]
      ]
@@ -7831,6 +8970,38 @@
    "effects": [
     {
      "model": "Comment",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.post.delete",
+        "packages/backend/src/modules/posts/router.ts:204"
+       ],
+       [
+        "onDelete: Cascade (Comment → Post)",
+        "prisma/schema.prisma:1282"
+       ]
+      ],
+      [
+       [
+        "tx.post.delete",
+        "packages/backend/src/modules/posts/router.ts:204"
+       ],
+       [
+        "onDelete: Cascade (Comment → Post)",
+        "prisma/schema.prisma:1282"
+       ],
+       [
+        "onDelete: Cascade (Comment → Comment)",
+        "prisma/schema.prisma:1284"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Comment",
      "op": "read",
      "fields": [],
      "trails": [
@@ -7916,6 +9087,72 @@
        [
         "tx.pageMediaReference.findMany",
         "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:69"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Poll",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.post.delete",
+        "packages/backend/src/modules/posts/router.ts:204"
+       ],
+       [
+        "onDelete: Cascade (Poll → Post)",
+        "prisma/schema.prisma:1346"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollOption",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.post.delete",
+        "packages/backend/src/modules/posts/router.ts:204"
+       ],
+       [
+        "onDelete: Cascade (Poll → Post)",
+        "prisma/schema.prisma:1346"
+       ],
+       [
+        "onDelete: Cascade (PollOption → Poll)",
+        "prisma/schema.prisma:1363"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollVote",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.post.delete",
+        "packages/backend/src/modules/posts/router.ts:204"
+       ],
+       [
+        "onDelete: Cascade (Poll → Post)",
+        "prisma/schema.prisma:1346"
+       ],
+       [
+        "onDelete: Cascade (PollOption → Poll)",
+        "prisma/schema.prisma:1363"
+       ],
+       [
+        "onDelete: Cascade (PollVote → PollOption)",
+        "prisma/schema.prisma:1386"
        ]
       ]
      ]
@@ -10144,6 +11381,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/media/router.ts:93"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -10200,6 +11450,19 @@
    "effects": [
     {
      "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/media/router.ts:328"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -10432,6 +11695,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.comment.findMany",
+        "packages/backend/src/modules/comments/router.ts:44"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -10485,6 +11761,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.comment.create",
+        "packages/backend/src/modules/comments/router.ts:83"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -10522,6 +11811,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.comment.update",
+        "packages/backend/src/modules/comments/router.ts:114"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -10541,6 +11843,16 @@
        [
         "ctx.prisma.comment.delete",
         "packages/backend/src/modules/comments/router.ts:157"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.comment.delete",
+        "packages/backend/src/modules/comments/router.ts:157"
+       ],
+       [
+        "onDelete: Cascade (Comment → Comment)",
+        "prisma/schema.prisma:1284"
        ]
       ]
      ]
@@ -10599,6 +11911,19 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.reaction.findMany",
+        "packages/backend/src/modules/reactions/router.ts:87"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -10611,6 +11936,19 @@
    "effects": [
     {
      "model": "Reaction",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.reaction.findMany",
+        "packages/backend/src/modules/reactions/router.ts:112"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -10698,6 +12036,19 @@
      ]
     },
     {
+     "model": "PollOption",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.poll.findUnique",
+        "packages/backend/src/modules/polls/router.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "PollVote",
      "op": "read",
      "fields": [],
@@ -10739,8 +12090,34 @@
      ]
     },
     {
+     "model": "Poll",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.post.findUnique",
+        "packages/backend/src/modules/polls/router.ts:82"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "PollOption",
      "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.poll.create",
+        "packages/backend/src/modules/polls/router.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollOption",
+     "op": "read",
      "fields": [],
      "trails": [
       [
@@ -10775,6 +12152,19 @@
    "effects": [
     {
      "model": "Poll",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.poll.findUnique",
+        "packages/backend/src/modules/polls/router.ts:127"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollOption",
      "op": "read",
      "fields": [],
      "trails": [
@@ -10830,6 +12220,46 @@
        [
         "ctx.prisma.poll.delete",
         "packages/backend/src/modules/polls/router.ts:178"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollOption",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.poll.delete",
+        "packages/backend/src/modules/polls/router.ts:178"
+       ],
+       [
+        "onDelete: Cascade (PollOption → Poll)",
+        "prisma/schema.prisma:1363"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollVote",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.poll.delete",
+        "packages/backend/src/modules/polls/router.ts:178"
+       ],
+       [
+        "onDelete: Cascade (PollOption → Poll)",
+        "prisma/schema.prisma:1363"
+       ],
+       [
+        "onDelete: Cascade (PollVote → PollOption)",
+        "prisma/schema.prisma:1386"
        ]
       ]
      ]
@@ -10997,7 +12427,72 @@
    "line": 97,
    "effects": [
     {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:100"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
      "op": "read",
      "fields": [],
      "trails": [
@@ -11085,7 +12580,46 @@
    "line": 188,
    "effects": [
     {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:189"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:189"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:189"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
      "op": "read",
      "fields": [],
      "trails": [
@@ -11159,6 +12693,24 @@
        [
         "ctx.prisma.gallery.delete",
         "packages/backend/src/modules/galleries/router.ts:269"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.delete",
+        "packages/backend/src/modules/galleries/router.ts:269"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → Gallery)",
+        "prisma/schema.prisma:1541"
        ]
       ]
      ]
@@ -11365,7 +12917,72 @@
    "line": 31,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:41"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:41"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:41"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:41"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:41"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
      "op": "read",
      "fields": [],
      "trails": [
@@ -11491,7 +13108,33 @@
    "line": 128,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:134"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:134"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
      "op": "read",
      "fields": [],
      "trails": [
@@ -11516,6 +13159,12 @@
        [
         "prisma.memberGroup.findMany",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:134"
        ]
       ]
      ]
@@ -11567,6 +13216,19 @@
        [
         "ctx.prisma.memberDocument.count",
         "packages/backend/src/modules/memberDocuments/router.ts:193"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberGroupMembership.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:175"
        ]
       ]
      ]
@@ -11925,6 +13587,24 @@
    "line": 409,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.delete",
+        "packages/backend/src/modules/memberDocuments/router.ts:412"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -11933,6 +13613,42 @@
        [
         "ctx.prisma.memberDocument.delete",
         "packages/backend/src/modules/memberDocuments/router.ts:412"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.delete",
+        "packages/backend/src/modules/memberDocuments/router.ts:412"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.delete",
+        "packages/backend/src/modules/memberDocuments/router.ts:412"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -11946,6 +13662,19 @@
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
    "line": 417,
    "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberDocument.findMany",
+        "packages/backend/src/modules/memberDocuments/router.ts:418"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberDocument",
      "op": "read",
@@ -12337,6 +14066,28 @@
      ]
     },
     {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteGroupWithSpace",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:19"
+       ],
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
+        "prisma/schema.prisma:1848"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroup",
      "op": "delete",
      "fields": [],
@@ -12400,6 +14151,42 @@
         "prisma.memberGroup.updateMany",
         "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:73"
        ]
+      ],
+      [
+       [
+        "deleteGroupWithSpace",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:19"
+       ],
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: SetNull (MemberGroup → MemberGroup)",
+        "prisma/schema.prisma:1797"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteGroupWithSpace",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:19"
+       ],
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
+        "prisma/schema.prisma:1821"
+       ]
       ]
      ]
     }
@@ -12457,6 +14244,19 @@
    "effects": [
     {
      "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberGroupMembership.findMany",
+        "packages/backend/src/modules/memberGroups/router.ts:200"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -12827,6 +14627,19 @@
     },
     {
      "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -14015,6 +15828,24 @@
      ]
     },
     {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
+        "prisma/schema.prisma:1848"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroup",
      "op": "delete",
      "fields": [],
@@ -14061,6 +15892,34 @@
        [
         "prisma.memberGroup.updateMany",
         "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:73"
+       ]
+      ],
+      [
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: SetNull (MemberGroup → MemberGroup)",
+        "prisma/schema.prisma:1797"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.memberGroup.delete",
+        "packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts:86"
+       ],
+       [
+        "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
+        "prisma/schema.prisma:1821"
        ]
       ]
      ]
@@ -14412,10 +16271,211 @@
    "line": 11,
    "effects": [
     {
+     "model": "Comment",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollVote",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Preferences",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "TicketMessage",
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ],
       [
        [
         "db.ticketMessage.count",
@@ -14550,6 +16610,42 @@
        [
         "db.ticket.deleteMany",
         "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ],
+       [
+        "onDelete: Cascade (TicketEvent → Ticket)",
+        "prisma/schema.prisma:2133"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ],
+       [
+        "onDelete: Cascade (TicketMessage → Ticket)",
+        "prisma/schema.prisma:2103"
        ]
       ]
      ]
@@ -14708,6 +16804,50 @@
        [
         "db.ticket.deleteMany",
         "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purgeExpiredData",
+        "packages/backend/src/modules/privacy/retention.service.ts:31"
+       ],
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ],
+       [
+        "onDelete: Cascade (TicketEvent → Ticket)",
+        "prisma/schema.prisma:2133"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purgeExpiredData",
+        "packages/backend/src/modules/privacy/retention.service.ts:31"
+       ],
+       [
+        "db.ticket.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ],
+       [
+        "onDelete: Cascade (TicketMessage → Ticket)",
+        "prisma/schema.prisma:2103"
        ]
       ]
      ]
@@ -16082,6 +18222,16 @@
         "packages/backend/src/modules/tickets/inboundEmail.ts:68"
        ],
        [
+        "db.ticketMessage.findFirst",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:78"
+       ]
+      ],
+      [
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/inboundEmail.ts:89"
        ]
@@ -16098,16 +18248,6 @@
        [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/tickets.service.ts:245"
-       ]
-      ],
-      [
-       [
-        "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
-       ],
-       [
-        "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
        ]
       ]
      ]
@@ -16132,6 +18272,23 @@
        [
         "tx.ticket.update",
         "packages/backend/src/modules/tickets/tickets.service.ts:267"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
        ]
       ]
      ]
@@ -16243,6 +18400,23 @@
        [
         "db.ticketMessage.findUnique",
         "packages/backend/src/modules/tickets/tickets.service.ts:242"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
        ]
       ]
      ]
@@ -16300,6 +18474,20 @@
         "packages/backend/src/modules/tickets/inboundEmail.ts:68"
        ],
        [
+        "db.ticketMessage.findFirst",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:78"
+       ]
+      ],
+      [
+       [
+        "pollTicketMailbox",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:80"
+       ],
+       [
+        "processInboundEmail",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:68"
+       ],
+       [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/inboundEmail.ts:89"
        ]
@@ -16320,20 +18508,6 @@
        [
         "db.ticket.findUnique",
         "packages/backend/src/modules/tickets/tickets.service.ts:245"
-       ]
-      ],
-      [
-       [
-        "pollTicketMailbox",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:80"
-       ],
-       [
-        "notifyClub",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
-       ],
-       [
-        "db.ticket.findUniqueOrThrow",
-        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
        ]
       ]
      ]
@@ -16362,6 +18536,27 @@
        [
         "tx.ticket.update",
         "packages/backend/src/modules/tickets/tickets.service.ts:267"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pollTicketMailbox",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:80"
+       ],
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
        ]
       ]
      ]
@@ -16500,6 +18695,27 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pollTicketMailbox",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:80"
+       ],
+       [
+        "notifyClub",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:156"
+       ],
+       [
+        "db.ticket.findUniqueOrThrow",
+        "packages/backend/src/modules/tickets/imapIntake.service.ts:161"
+       ]
+      ]
+     ]
     }
    ],
    "emails": [
@@ -16515,6 +18731,12 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "db.ticketMessage.findFirst",
+        "packages/backend/src/modules/tickets/inboundEmail.ts:78"
+       ]
+      ],
       [
        [
         "db.ticket.findUnique",
@@ -16659,6 +18881,32 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -16682,6 +18930,40 @@
     },
     {
      "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -16723,6 +19005,48 @@
     },
     {
      "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:142"
+       ],
+       [
+        "buildTicketRecaps",
+        "packages/backend/src/modules/tickets/recap.service.ts:45"
+       ],
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/recap.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -16904,6 +19228,25 @@
         "db.ticketCategory.findMany",
         "packages/backend/src/modules/tickets/ticketQueries.service.ts:31"
        ]
+      ],
+      [
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findMany",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:66"
+       ]
       ]
      ]
     }
@@ -16947,6 +19290,58 @@
     },
     {
      "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketEvent",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -17010,6 +19405,19 @@
      ]
     },
     {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.ticket.findUnique",
+        "packages/backend/src/modules/tickets/ticketQueries.service.ts:158"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "User",
      "op": "read",
      "fields": [],
@@ -17029,6 +19437,25 @@
    "file": "packages/backend/src/modules/tickets/tickets.service.ts",
    "line": 49,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:58"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -17386,6 +19813,33 @@
    "file": "packages/backend/src/modules/tickets/tickets.service.ts",
    "line": 189,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "replySignature",
+        "packages/backend/src/modules/tickets/tickets.service.ts:49"
+       ],
+       [
+        "db.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/tickets/tickets.service.ts:58"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "read",
@@ -17828,6 +20282,54 @@
    "line": 22,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → MediaAsset)",
+        "prisma/schema.prisma:1546"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "delete",
      "fields": [],
@@ -17857,6 +20359,80 @@
        [
         "prisma.mediaAsset.findMany",
         "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -17918,6 +20494,32 @@
    "line": 60,
    "effects": [
     {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Folder",
      "op": "delete",
      "fields": [],
@@ -17930,6 +20532,28 @@
        [
         "prisma.folder.deleteMany",
         "packages/backend/src/modules/storage/services/pruneEmptyFolders.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → MediaAsset)",
+        "prisma/schema.prisma:1546"
        ]
       ]
      ]
@@ -17964,6 +20588,80 @@
        [
         "prisma.mediaAsset.findMany",
         "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -18220,6 +20918,40 @@
      ]
     },
     {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "read",
      "fields": [],
@@ -18242,6 +20974,40 @@
        [
         "prisma.mediaAsset.findFirst",
         "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertTrashDoesntRemoveUsedAssets",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
        ]
       ]
      ]
@@ -18279,7 +21045,59 @@
    "line": 39,
    "effects": [
     {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
      "op": "read",
      "fields": [],
      "trails": [
@@ -18298,6 +21116,46 @@
    "file": "packages/backend/src/modules/trash/services/trashedAssets.service.ts",
    "line": 95,
    "effects": [
+    {
+     "model": "DocumentReceipt",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (DocumentReceipt → MemberDocument)",
+        "prisma/schema.prisma:1730"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (GalleryItem → MediaAsset)",
+        "prisma/schema.prisma:1546"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MediaAsset",
      "op": "delete",
@@ -18320,6 +21178,68 @@
        [
         "prisma.mediaAsset.findMany",
         "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentGroup",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
+        "prisma/schema.prisma:1844"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+       ],
+       [
+        "onDelete: Cascade (MemberDocument → MediaAsset)",
+        "prisma/schema.prisma:1674"
+       ],
+       [
+        "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
+        "prisma/schema.prisma:1710"
        ]
       ]
      ]
@@ -18367,6 +21287,23 @@
     },
     {
      "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
      "op": "read",
      "fields": [],
      "trails": [
@@ -18451,6 +21388,27 @@
        ]
       ]
      ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "createTRPCContext",
+        "packages/backend/src/trpc/core.ts:42"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
     }
    ],
    "emails": []
@@ -18516,6 +21474,16 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
       [
        [
         "prisma.user.findUnique",

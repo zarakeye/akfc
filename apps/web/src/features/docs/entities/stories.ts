@@ -18,6 +18,8 @@ export type StepEffect = {
   fields: string[];
   /** Écrit par une requête SQL écrite à la main (`$executeRaw`), pas par le client Prisma. */
   raw?: boolean;
+  /** Fait par la base seule (`onDelete: Cascade` / `SetNull` du schéma), sans appel du code. */
+  cascade?: boolean;
   /** Pistes : les appels traversés depuis l'étape jusqu'à l'appel qui touche la base (trois au plus). */
   trails: TrailHop[][];
 };
