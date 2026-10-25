@@ -167,8 +167,13 @@ export function parsePrismaSchema(source: string): EntityMap {
   return { models, enums, links };
 }
 
+/**
+ * Commentaire `///` : les lignes sont GARDÉES (pas fusionnées) pour que l'affichage respecte la mise
+ * en forme du schéma — paragraphes séparés par une ligne vide, listes en « - », suite d'un élément
+ * de liste indentée. Voir DocText (EntityExplorer).
+ */
 function joinDoc(buffer: string[]): string {
-  return buffer.join(" ").replace(/\s+/g, " ").trim();
+  return buffer.map((l) => l.replace(/\s+$/, "")).join("\n").trim();
 }
 
 /** « @id @default(cuid()) @relation(fields: [a], …) » → ["@id", "@default(cuid())", "@relation(…)"]. */

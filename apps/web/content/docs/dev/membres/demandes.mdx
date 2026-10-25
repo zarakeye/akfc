@@ -57,6 +57,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 Un membre a parfois besoin de s'adresser au club : poser une question, signaler un problème sur le site, demander une attestation. Le club a fixé quatre exigences : **un message, un numéro, un responsable, un délai**. Chaque demande est numérotée, quelqu'un en est responsable, et le club s'engage sur un délai de première réponse. Sans que l'adresse personnelle de personne ne circule, ni celle du membre, ni celle de qui lui répond.
 
+## Les parcours du chapitre
+
+Quatre cas d'utilisation traversent ce chapitre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
+
 ## Le modèle
 
 Une demande (`Ticket`) appartient à une **catégorie** (`TicketCategory`). La catégorie désigne le **groupe** dont les membres traitent ses demandes, et l'**adresse du club** à laquelle elle se rattache. Deux catégories sont créées au démarrage si elles n'existent pas : « Gestion du club », traitée par le groupe Administrateurs (`admin@akfc.fr`), et « Support du site », traitée par le groupe Support (`support@akfc.fr`).

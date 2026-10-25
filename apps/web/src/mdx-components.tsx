@@ -23,6 +23,7 @@ import PrismaCoreMemoryDiagram from "@features/docs/diagrams/PrismaCoreMemoryDia
 import PropsProbe from "@features/docs/ui/PropsProbe"
 import DocsTable from "@features/docs/ui/DocsTable"
 import { TourLauncher } from "@features/tours/TourStartButton"
+import { StoryTabs } from "@features/docs/entities/EntityExplorer"
 
 function extractHeadingText(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") {
@@ -78,6 +79,8 @@ export const mdxComponents: MDXComponents = {
   PrismaCoreMemoryDiagram,
   PropsProbe,
   DocsTable,
+  // Onglets des parcours d'un chapitre (rien hors d'un chapitre qui déclare ses entités).
+  Parcours: StoryTabs,
 
   h1: ({ children, ...props }) => (
     <h1

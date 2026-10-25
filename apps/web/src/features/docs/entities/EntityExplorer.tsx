@@ -36,7 +36,20 @@ type ExplorerApi = {
   open: (model?: string, field?: string) => void;
   /** Résout un texte de code en ligne (« Ticket », « dueAt », « Ticket.dueAt ») en entité / propriété. */
   resolve: (text: string) => { model: string; field?: string } | null;
+  /** Parcours du chapitre (onglets du corps du texte). */
+  stories: Story[];
+  /** Ouvre la carte sur un parcours, à une étape. */
+  openStory: (storyId: string, step: number) => void;
 };
+
+/** Amène une section du chapitre dans la vue, brièvement soulignée. */
+function scrollToSection(sectionId: string): void {
+  const el = document.getElementById(sectionId);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.classList.add("bg-emerald-500/15");
+  window.setTimeout(() => el.classList.remove("bg-emerald-500/15"), 1800);
+}
 
 const ExplorerContext = createContext<ExplorerApi | null>(null);
 
@@ -59,11 +72,7 @@ export function EntityExplorer({
   /** Ferme le panneau et amène la section de l'étape dans la vue, brièvement soulignée. */
   const readSection = useCallback((sectionId: string) => {
     setOpen(false);
-    const el = document.getElementById(sectionId);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    el.classList.add("bg-emerald-500/15");
-    window.setTimeout(() => el.classList.remove("bg-emerald-500/15"), 1800);
+    scrollToSection(sectionId);
   }, []);
 
   const api = useMemo<ExplorerApi>(() => {
@@ -86,8 +95,14 @@ export function EntityExplorer({
         const owners = focusModels.filter((m) => m.focusFields.includes(t));
         return owners.length === 1 ? { model: owners[0].name, field: t } : null;
       },
+      stories,
+      openStory: (storyId, step) => {
+        setPlay({ storyId, step });
+        setSelection(null);
+        setOpen(true);
+      },
     };
-  }, [graph]);
+  }, [graph, stories]);
 
   return (
     <ExplorerContext.Provider value={api}>
@@ -113,6 +128,123 @@ export function EntityExplorer({
         />
       )}
     </ExplorerContext.Provider>
+  );
+}
+
+const OP_CHIP: Record<EffectOp, string> = {
+  create: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
+  update: "bg-amber-400/25 text-amber-900 dark:text-amber-200",
+  read: "bg-sky-400/15 text-sky-800 dark:text-sky-200",
+  delete: "bg-red-500/15 text-red-800 dark:text-red-200",
+};
+
+/**
+ * Onglets des parcours, dans le corps du chapitre (`<Parcours />` en MDX) : un onglet par cas
+ * d'utilisation, et pour chacun ses étapes, ce qu'elles écrivent, avec un lien vers la section qui
+ * les explique et vers la carte, rejouée à cette étape. Sans parcours (ou hors d'un chapitre qui
+ * déclare ses entités), rien n'est affiché.
+ */
+export function StoryTabs(): JSX.Element | null {
+  const api = useContext(ExplorerContext);
+  const [active, setActive] = useState(0);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  if (!api || api.stories.length === 0) return null;
+  const stories = api.stories;
+  const story = stories[Math.min(active, stories.length - 1)];
+
+  // Flèches gauche / droite entre les onglets (modèle WAI-ARIA des onglets).
+  const onKey = (e: KeyboardEvent<HTMLButtonElement>): void => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const next = (active + (e.key === "ArrowRight" ? 1 : stories.length - 1)) % stories.length;
+    setActive(next);
+    tabsRef.current?.querySelectorAll<HTMLButtonElement>("[role=tab]")[next]?.focus();
+  };
+
+  return (
+    <div className="not-prose my-6 rounded-lg border">
+      <div ref={tabsRef} role="tablist" aria-label="Parcours du chapitre" className="flex flex-wrap gap-1 border-b p-2">
+        {stories.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            id={`${s.id}-tab`}
+            aria-selected={i === active}
+            aria-controls={`${s.id}-panel`}
+            tabIndex={i === active ? 0 : -1}
+            onClick={() => setActive(i)}
+            onKeyDown={onKey}
+            className={`rounded-md px-3 py-1.5 text-left text-sm ${
+              i === active ? "bg-emerald-600 font-semibold text-white" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {s.title}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${story.id}-panel`} aria-labelledby={`${story.id}-tab`} className="p-4 text-left">
+        {story.actor && (
+          <p className="mb-3 text-sm text-muted-foreground">
+            Acteur : <span className="font-medium text-foreground">{story.actor}</span>
+          </p>
+        )}
+        <ol className="space-y-4">
+          {story.steps.map((st, i) => {
+            const writes = st.effects.filter((e) => e.op !== "read");
+            const reads = st.effects.filter((e) => e.op === "read");
+            return (
+              <li key={i} className="flex gap-3">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+                  <p className="font-semibold">{st.label}</p>
+                  <p className="text-muted-foreground">
+                    <code className="rounded bg-black/5 px-1 dark:bg-white/10">{st.call}</code>
+                    {st.access && <span className="ml-1.5 rounded-full bg-muted px-2 py-0.5 text-xs">{st.access}</span>}
+                  </p>
+                  {writes.length > 0 && (
+                    <ul className="flex flex-wrap gap-1.5">
+                      {writes.map((e) => (
+                        <li key={`${e.model}-${e.op}`} className={`rounded-full px-2 py-0.5 text-xs ${OP_CHIP[e.op]}`}>
+                          {e.model} {OP_LABEL[e.op]}
+                          {e.fields.length > 0 && <span className="opacity-75"> : {e.fields.join(", ")}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {reads.length > 0 && (
+                    <p className="text-xs text-muted-foreground">Lit : {reads.map((e) => e.model).join(", ")}</p>
+                  )}
+                  {st.emails.length > 0 && (
+                    <p className="text-xs text-muted-foreground">E-mails : {st.emails.join(", ")}</p>
+                  )}
+                  <p className="flex flex-wrap gap-x-4 gap-y-1">
+                    {st.sectionId && (
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection(st.sectionId!)}
+                        className="inline-flex items-center gap-1 text-emerald-700 hover:underline dark:text-emerald-300"
+                      >
+                        <BookOpen className="h-4 w-4" aria-hidden="true" /> Lire l&apos;explication
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => api.openStory(story.id, i)}
+                      className="inline-flex items-center gap-1 text-emerald-700 hover:underline dark:text-emerald-300"
+                    >
+                      <Atom className="h-4 w-4" aria-hidden="true" /> Voir sur la carte
+                    </button>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
   );
 }
 
@@ -576,6 +708,64 @@ function StepCard({
   );
 }
 
+/**
+ * Commentaire `///` du schéma, mis en forme : paragraphes (séparés par une ligne vide), listes
+ * (lignes en « - », leur suite indentée), et le reste des lignes d'un paragraphe réunies. Un long
+ * commentaire (celui de User, par exemple) se lit ainsi par blocs au lieu d'un seul pavé.
+ */
+function DocText({ text, className }: { text: string; className?: string }): JSX.Element {
+  type Block = { kind: "p"; text: string } | { kind: "ul"; items: string[] };
+  const blocks: Block[] = [];
+  for (const para of text.split(/\n\s*\n/)) {
+    let current: Block | null = null;
+    for (const raw of para.split("\n")) {
+      const line = raw.trimEnd();
+      const bullet = /^\s*[-•]\s+(.*)$/.exec(line);
+      if (bullet) {
+        if (current?.kind !== "ul") {
+          current = { kind: "ul", items: [] };
+          blocks.push(current);
+        }
+        current.items.push(bullet[1]);
+      } else if (current?.kind === "ul" && /^\s{2,}\S/.test(line)) {
+        // Suite indentée de l'élément de liste précédent.
+        current.items[current.items.length - 1] += ` ${line.trim()}`;
+      } else if (current?.kind === "p") {
+        current.text += ` ${line.trim()}`;
+      } else {
+        current = { kind: "p", text: line.trim() };
+        blocks.push(current);
+      }
+    }
+  }
+  // `code` du commentaire rendu comme du code.
+  const inline = (s: string) =>
+    s.split(/(`[^`]+`)/).map((part, k) =>
+      part.startsWith("`") && part.endsWith("`") ? (
+        <code key={k} className="rounded bg-black/5 px-1 dark:bg-white/10">
+          {part.slice(1, -1)}
+        </code>
+      ) : (
+        part
+      ),
+    );
+  return (
+    <div className={`space-y-1.5 ${className ?? ""}`}>
+      {blocks.map((b, i) =>
+        b.kind === "p" ? (
+          <p key={i}>{inline(b.text)}</p>
+        ) : (
+          <ul key={i} className="list-disc space-y-1 pl-5">
+            {b.items.map((it, j) => (
+              <li key={j}>{inline(it)}</li>
+            ))}
+          </ul>
+        ),
+      )}
+    </div>
+  );
+}
+
 /** Rayon de l'atome d'une entité (0 si absente). */
 function radiusOf(model: GraphModel | undefined): number {
   if (!model) return 0;
@@ -823,7 +1013,7 @@ function ModelCard({
         {model.name}
         {model.isJoin && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-normal">entité de liaison</span>}
       </h3>
-      {model.doc && <p className="mt-1 text-sm text-muted-foreground">{model.doc}</p>}
+      {model.doc && <DocText text={model.doc} className="mt-1 text-sm text-muted-foreground" />}
       {model.focusFields.length > 0 && (
         <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
           En vert : les propriétés dont parle ce chapitre.
@@ -866,7 +1056,7 @@ function ModelCard({
                   <span className="text-[11px] text-muted-foreground">{f.attributes.join(" ")}</span>
                 )}
               </div>
-              {f.doc && <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{f.doc}</p>}
+              {f.doc && <DocText text={f.doc} className="mt-0.5 text-xs leading-5 text-muted-foreground" />}
               {enumDef && (
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Valeurs : {enumDef.values.map((v) => v.name).join(", ")}
@@ -925,7 +1115,7 @@ function LinkCard({
         {go(link.from)}.{link.fromField} → {go(link.to)}
         {link.toField ? <span className="font-normal text-muted-foreground"> (inverse : {link.to}.{link.toField})</span> : null}
       </h3>
-      {field?.doc && <p className="text-muted-foreground">{field.doc}</p>}
+      {field?.doc && <DocText text={field.doc} className="text-muted-foreground" />}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <dt className="text-muted-foreground">Cardinalité</dt>
         <dd>{card}</dd>
