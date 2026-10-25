@@ -40,7 +40,7 @@ export default function CreateDisciplinePage(): JSX.Element {
           message="Discipline créée."
         />
       ) : (
-        <DisciplineForm onSubmit={handleSubmit} submitLabel="Créer" />
+        <DisciplineForm onSubmit={handleSubmit} />
       )}
     </div>
   );

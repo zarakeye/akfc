@@ -114,8 +114,6 @@ export interface DisciplineFormProps {
   initial?: Discipline;
   /** Appelée à la soumission. */
   onSubmit: (input: DisciplineFormInput) => Promise<void>;
-  /** Libellé du bouton de soumission. Default "Enregistrer". */
-  submitLabel?: string;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -156,7 +154,6 @@ const DISCIPLINE_TYPES: { value: DisciplineType; label: string }[] = [
 export function DisciplineForm({
   initial,
   onSubmit,
-  submitLabel = "Enregistrer",
 }: DisciplineFormProps) {
   const [name, setName] = useState<string>(initial?.name ?? "");
   const [slug, setSlug] = useState<string>(initial?.slug ?? "");

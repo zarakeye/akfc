@@ -67,7 +67,6 @@ import {
   FINDER_DRAG_MIME,
   serializePayload,
   setDraggingPaths,
-  clearDraggingPaths,
   dragItemFromNode,
   type DragItem,
 } from "@features/finder-core/dnd/payload";

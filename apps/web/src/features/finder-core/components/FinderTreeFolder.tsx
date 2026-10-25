@@ -157,8 +157,6 @@ export default function FinderTreeFolder({
   const [loadedChildren, setLoadedChildren] = useState<FinderNode[] | null>(
     null,
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   const reloadKey = useFinderStore((s) => s.reloadKey);
   const isFirstReloadKeyRef = useRef(true);
@@ -439,7 +437,7 @@ export default function FinderTreeFolder({
             className="flex h-4 w-4 items-center justify-center text-muted-foreground hover:text-foreground"
             aria-label={isOpen ? "Replier" : "Déplier"}
           >
-            {isLoading || isMaterializing ? (
+            {isMaterializing ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : isOpen ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -514,11 +512,6 @@ export default function FinderTreeFolder({
         )}
       </div>
 
-      {loadError && isOpen && (
-        <div className="ml-3 pl-3 border-l border-border">
-          <div className="px-2 py-1 text-xs text-destructive">{loadError}</div>
-        </div>
-      )}
 
       {isOpen && isMaterializing && (
         <div className="ml-3 pl-3 border-l border-border">

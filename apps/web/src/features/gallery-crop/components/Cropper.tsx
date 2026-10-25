@@ -5,7 +5,6 @@ import { Circle, Square, Sun, Moon, Undo2, RotateCcw } from "lucide-react";
 import type {
   CropperProps,
   CropGrid,
-  Shape,
 } from "@/features/gallery-crop/types/cropper.types";
 import CropGridOverlay from "@/features/gallery-crop/components/cropGridOverlay";
 import CropMaskOverlay from "@/features/gallery-crop/components/cropMaskOverlay";
@@ -66,7 +65,7 @@ function SliderField({
     setText(decimals ? ctrl.value.toFixed(decimals) : String(Math.round(ctrl.value)));
   }, [ctrl.value, decimals]);
   const commitText = (raw: string) => {
-    let n = Number(raw);
+    const n = Number(raw);
     if (Number.isNaN(n)) {
       setText(decimals ? ctrl.value.toFixed(decimals) : String(ctrl.value));
       return;

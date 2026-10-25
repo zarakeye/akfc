@@ -134,7 +134,7 @@ export default function EditUserPage({
           >
             groupes de membres
           </Link>{" "}
-          (le groupe Administrateurs confère l'accès admin).
+          (le groupe Administrateurs confère l’accès admin).
         </p>
         {isSelf && <p className="text-xs">Tu ne peux pas te supprimer.</p>}
         {actionError && (

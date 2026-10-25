@@ -98,7 +98,6 @@ export default function EditDisciplinePage({
         <DisciplineForm
           initial={discipline}
           onSubmit={handleSubmit}
-          submitLabel="Enregistrer"
         />
       )}
 

@@ -419,7 +419,7 @@ export function EventForm({
             </ul>
           )}
           <span className="text-xs text-muted-foreground">
-            Pour les domaines que le club n'enseigne pas.
+            Pour les domaines que le club n’enseigne pas.
           </span>
         </div>
 

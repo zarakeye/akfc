@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { trpc } from '@trpc/trpcClient';
 import { useSessionStore } from '@lib/stores/useSessionStore';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
-import { APP_ROOT } from '@config/app';
 import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
 
 import type { PictureItem } from '@features/gallery-crop/types/picture.types';
@@ -218,7 +217,6 @@ function iconForMime(mime: string): string {
 
 export default function DragNDropForm(): JSX.Element {
   const user = useSessionStore((s) => s.session?.user);
-  const { data: categories = [] } = trpc.category.getAll.useQuery();
 
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
   const utils = trpc.useUtils();
@@ -243,7 +241,6 @@ export default function DragNDropForm(): JSX.Element {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const destinationKind = watch('destinationKind');
-  const categoryId = watch('categoryId');
 
 
   // -------------------------------
@@ -1092,7 +1089,7 @@ export default function DragNDropForm(): JSX.Element {
               onChange={(e) => setPublishToMembers(e.target.checked)}
               className="accent-emerald-600"
             />
-            Rendre les PDF disponibles aux membres après l'envoi
+            Rendre les PDF disponibles aux membres après l’envoi
           </label>
           {publishToMembers && (
             <div className="mt-3 space-y-2">

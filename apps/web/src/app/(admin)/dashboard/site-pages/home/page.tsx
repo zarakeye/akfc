@@ -60,8 +60,8 @@ export default function HomeHeroEditorPage(): JSX.Element {
         </span>
       </div>
       <p className="mb-6 text-sm text-gray-600">
-        Titre et texte d'introduction de la page d'accueil. Le reste de la page
-        n'est pas affecté.{" "}
+        Titre et texte d’introduction de la page d’accueil. Le reste de la page
+        n’est pas affecté.{" "}
         <Link href="/" className="text-blue-600 hover:underline">
           Voir la page
         </Link>

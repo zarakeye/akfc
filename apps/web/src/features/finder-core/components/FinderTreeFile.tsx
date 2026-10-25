@@ -347,7 +347,6 @@ function TreeFileVisual({ node }: { node: FinderNode }): JSX.Element {
     );
   } else if (videoThumb && !imgFailed) {
     inner = (
-      // eslint-disable-next-line @next/next/no-img-element
       <span className="relative inline-flex h-5 w-5 shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

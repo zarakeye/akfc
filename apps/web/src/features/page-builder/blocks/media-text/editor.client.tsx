@@ -43,7 +43,7 @@ export function MediaTextEditor({
           bibliothèque et inversement. */}
       <div className="space-y-3">
         <span className="text-sm font-medium text-muted-foreground">
-          Média (une image/vidéo de la bibliothèque, ou un avatar d'admin)
+          Média (une image/vidéo de la bibliothèque, ou un avatar d’admin)
         </span>
 
         {/* Option 1 : bibliothèque (masquée si un avatar est référencé) */}
@@ -103,7 +103,7 @@ export function MediaTextEditor({
         {/* Option 2 : avatar d'admin */}
         <div className="space-y-1">
           <span className="text-xs uppercase tracking-wide text-muted-foreground">
-            …ou l'avatar d'un administrateur
+            …ou l’avatar d’un administrateur
           </span>
           <AvatarPicker
             selectedUserId={

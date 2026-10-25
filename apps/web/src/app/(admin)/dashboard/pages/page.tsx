@@ -30,7 +30,7 @@ export default function EditorialPagesHub(): JSX.Element {
       <h1 className="mb-1 text-2xl font-semibold">Pages éditoriales</h1>
       <p className="mb-6 text-sm text-gray-600">
         Pages au contenu propre, non alimentées par un autre éditeur. Composez-les
-        dans leur constructeur, puis publiez-les. Une page en brouillon n'est
+        dans leur constructeur, puis publiez-les. Une page en brouillon n’est
         visible que des administrateurs.
       </p>
 
