@@ -391,12 +391,12 @@ function EntityPanel({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative flex h-full w-[min(640px,100vw)] flex-col border-l bg-background text-left shadow-xl outline-none"
+        className="relative flex h-full w-[min(640px,100vw)] flex-col border-l bg-background text-left shadow-xl outline-none short:w-screen"
       >
-        <div className="flex items-center justify-between border-b p-4">
+        <div className="flex items-center justify-between border-b p-4 short:py-1.5">
           <div>
             <p className="text-sm font-semibold">Entités du chapitre</p>
-            <p className="text-xs text-muted-foreground">Lues dans prisma/schema.prisma</p>
+            <p className="text-xs text-muted-foreground short:hidden">Lues dans prisma/schema.prisma</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Fermer la carte" className="rounded p-1 text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
@@ -404,8 +404,10 @@ function EntityPanel({
         </div>
 
         {/* La molécule reste en place ; seule la fiche défile (une propriété désignée depuis le
-            texte est amenée dans la vue sans faire sortir la carte). */}
-        <div className="shrink-0">
+            texte est amenée dans la vue sans faire sortir la carte). Écran bas (téléphone en
+            paysage) : la molécule à gauche, la fiche à droite, sur toute la largeur. */}
+        <div className="flex min-h-0 flex-1 flex-col short:flex-row">
+        <div className="shrink-0 short:flex short:min-h-0 short:w-1/2 short:flex-col short:overflow-y-auto short:border-r">
           {stories.length > 0 && (
             <StoryBar
               stories={stories}
@@ -440,7 +442,7 @@ function EntityPanel({
             )}
           </div>
 
-          <svg viewBox={layout.viewBox} className="mx-auto block h-[44vh] w-full" role="group" aria-label="Molécule des entités">
+          <svg viewBox={layout.viewBox} className="mx-auto block h-[44vh] w-full short:h-auto short:min-h-[160px] short:flex-1" role="group" aria-label="Molécule des entités">
             {links.map((l) => (
               <LinkView
                 key={l.id}
@@ -480,7 +482,7 @@ function EntityPanel({
           </svg>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto border-t p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto border-t p-4 short:border-t-0">
             {model ? (
               <ModelCard
                 model={model}
@@ -499,6 +501,7 @@ function EntityPanel({
                 {stories.length > 0 ? ", ou rejouez un parcours." : "."}
               </p>
             )}
+        </div>
         </div>
       </div>
     </div>

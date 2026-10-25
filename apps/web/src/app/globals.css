@@ -3,6 +3,18 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+/* Écran bas (téléphone en paysage) : la documentation libère la hauteur pour le texte. */
+@custom-variant short {
+  @media (max-height: 599px) {
+    @slot;
+  }
+}
+/* Téléphone en portrait : la documentation invite à tourner l'écran. */
+@custom-variant phone-portrait {
+  @media (orientation: portrait) and (max-width: 767px) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);

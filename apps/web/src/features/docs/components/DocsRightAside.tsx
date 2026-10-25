@@ -3,33 +3,12 @@
 import { useEffect, useState } from "react"
 import type { TocItem } from "@features/docs/lib/docs.types"
 import { InlineTocText } from "@features/docs/ui/InlineTocText"
-
-function getCenterScrollContainer(): HTMLElement | null {
-  return document.getElementById("docs-content-scroll")
-}
-
-function getOffsetTopWithinContainer(
-  element: HTMLElement,
-  container: HTMLElement
-): number {
-  let top = 0
-  let current: HTMLElement | null = element
-
-  while (current && current !== container) {
-    top += current.offsetTop
-    current = current.offsetParent as HTMLElement | null
-  }
-
-  return top
-}
+import { getDocsScroller, offsetWithin, onDocsScroll } from "@features/docs/lib/docsScroller"
 
 export function DocsRightAside({ items }: { items: TocItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
-    const container = getCenterScrollContainer()
-    if (!container) return
-
     const headings = items
       .map((item) => document.getElementById(item.id))
       .filter((el): el is HTMLElement => !!el)
@@ -37,15 +16,15 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
     if (!headings.length) return
 
     const updateActiveHeading = () => {
+      const container = getDocsScroller()
+      if (!container) return
       const scrollTop = container.scrollTop
       const offsetThreshold = 120
 
       let current: string | null = null
 
       for (const heading of headings) {
-        const headingTop = getOffsetTopWithinContainer(heading, container)
-
-        if (headingTop - scrollTop <= offsetThreshold) {
+        if (offsetWithin(heading, container) - scrollTop <= offsetThreshold) {
           current = heading.id
         }
       }
@@ -54,23 +33,17 @@ export function DocsRightAside({ items }: { items: TocItem[] }) {
     }
 
     updateActiveHeading()
-
-    container.addEventListener("scroll", updateActiveHeading, { passive: true })
-    window.addEventListener("resize", updateActiveHeading)
-
-    return () => {
-      container.removeEventListener("scroll", updateActiveHeading)
-      window.removeEventListener("resize", updateActiveHeading)
-    }
+    return onDocsScroll(updateActiveHeading)
   }, [items])
 
   const scrollToHeading = (id: string) => {
-    const container = getCenterScrollContainer()
+    const container = getDocsScroller()
     const heading = document.getElementById(id)
 
     if (!container || !heading) return
 
-    const top = getOffsetTopWithinContainer(heading, container) - 96
+    // Un peu d'air au-dessus du titre visé.
+    const top = offsetWithin(heading, container) - 24
 
     container.scrollTo({
       top: Math.max(top, 0),

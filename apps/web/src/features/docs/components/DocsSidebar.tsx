@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 
 import type { DocPage } from "@features/docs/lib/docs.types"
@@ -12,6 +12,19 @@ type NavigationSection = {
   items: DocPage[]
 }
 
+/*
+ * Écran étroit (téléphone, petite tablette) : la navigation démarre repliée et s'ouvre PAR-DESSUS
+ * le texte, au lieu de le pousser ; choisir un chapitre la referme. Sur grand écran, rien ne
+ * change : elle démarre ouverte et pousse le contenu.
+ */
+const NARROW_QUERY = "(max-width: 1023px)"
+function subscribeNarrow(onChange: () => void): () => void {
+  const query = window.matchMedia(NARROW_QUERY)
+  query.addEventListener("change", onChange)
+  return () => query.removeEventListener("change", onChange)
+}
+const readNarrow = () => window.matchMedia(NARROW_QUERY).matches
+
 export function DocsSidebar({
   currentPath,
   navigation,
@@ -19,13 +32,33 @@ export function DocsSidebar({
   currentPath?: string
   navigation: NavigationSection[]
 }) {
-  const [open, setOpen] = useState(true)
+  // Rendu serveur : grand écran (la navigation ouverte) ; le navigateur corrige aussitôt.
+  const narrow = useSyncExternalStore(subscribeNarrow, readNarrow, () => false)
+  // null : pas de choix du lecteur, l'état par défaut suit la largeur de l'écran.
+  const [choice, setChoice] = useState<boolean | null>(null)
+  const open = choice ?? !narrow
+  const overlay = narrow && open
+  const setOpen = (update: (value: boolean) => boolean) => setChoice(update(open))
+  const closeIfOverlay = () => {
+    if (overlay) setChoice(false)
+  }
 
   return (
+    <>
+      {/* Place de la barre repliée, gardée sous la navigation ouverte par-dessus. */}
+      {overlay ? <div className="w-[64px] shrink-0 border-r" aria-hidden="true" /> : null}
+      {overlay ? (
+        <button
+          type="button"
+          aria-label="Fermer la navigation"
+          onClick={() => setChoice(false)}
+          className="fixed inset-0 z-30 bg-black/30"
+        />
+      ) : null}
     <aside
       className={`flex h-full min-h-0 shrink-0 flex-col border-r bg-background transition-all duration-300 ${
         open ? "w-[260px]" : "w-[64px]"
-      }`}
+      } ${overlay ? "fixed inset-y-0 left-0 z-40 shadow-xl" : ""}`}
     >
       <div className="flex shrink-0 items-center justify-between border-b px-3 py-3">
         <button
@@ -48,6 +81,7 @@ export function DocsSidebar({
       {/* Sortie de la documentation, toujours visible (barre repliée comprise). */}
       <Link
         href="/"
+        onClick={closeIfOverlay}
         title="Retour au site"
         aria-label="Retour au site"
         className={`flex shrink-0 items-center gap-2 border-b px-5 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-muted dark:text-emerald-400 ${
@@ -75,6 +109,7 @@ export function DocsSidebar({
                     <li key={slug}>
                       <Link
                         href={slug}
+                        onClick={closeIfOverlay}
                         className={
                           active
                             ? "block rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-foreground"
@@ -104,6 +139,7 @@ export function DocsSidebar({
         )}
       </div>
     </aside>
+    </>
   )
 }
 

@@ -1,23 +1,20 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { getDocsScroller, onDocsScroll } from "@features/docs/lib/docsScroller"
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-function getCenterScrollContainer(): HTMLElement | null {
-  return document.getElementById("docs-content-scroll")
-}
 
 export function DocsMainScrollControls() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const container = getCenterScrollContainer()
-    if (!container) return
-
     const updateProgress = () => {
+      const container = getDocsScroller()
+      if (!container) return
       const scrollTop = container.scrollTop
       const maxScroll = container.scrollHeight - container.clientHeight
 
@@ -30,14 +27,7 @@ export function DocsMainScrollControls() {
     }
 
     updateProgress()
-
-    container.addEventListener("scroll", updateProgress, { passive: true })
-    window.addEventListener("resize", updateProgress)
-
-    return () => {
-      container.removeEventListener("scroll", updateProgress)
-      window.removeEventListener("resize", updateProgress)
-    }
+    return onDocsScroll(updateProgress)
   }, [])
 
   const bubbleStyle = useMemo(
@@ -48,7 +38,7 @@ export function DocsMainScrollControls() {
   )
 
   const scrollToTop = () => {
-    const container = getCenterScrollContainer()
+    const container = getDocsScroller()
     if (!container) return
 
     container.scrollTo({
@@ -58,7 +48,7 @@ export function DocsMainScrollControls() {
   }
 
   const scrollToBottom = () => {
-    const container = getCenterScrollContainer()
+    const container = getDocsScroller()
     if (!container) return
 
     container.scrollTo({
