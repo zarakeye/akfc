@@ -60,12 +60,12 @@ export default function UserCard({
       </div>
 
       <div className="flex text-gray-600 mb-1">
-        <Image src="/email.svg" alt="email" width={20} height={20} />:{" "}
+        <Image src="/email.svg" alt="email" width={20} height={20} className="dark:invert" />:{" "}
         {user?.email}
       </div>
       {user?.phone && (
         <div className="flex text-gray-600 mb-1">
-          <Image src="/mobilePhone.svg" alt="phone" width={20} height={20} /> :{" "}
+          <Image src="/mobilePhone.svg" alt="phone" width={20} height={20} className="dark:invert" /> :{" "}
           <span>{user.phone}</span>
         </div>
       )}
