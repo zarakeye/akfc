@@ -3,12 +3,65 @@ title: "L'authentification et les droits"
 description: "Comment le projet sait qui fait une requête (cookie, jeton signé, session en base) et ce que cette personne a le droit de faire (groupes, niveaux d'accès, héritage)."
 section: "Authentification et droits"
 order: 1
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  PasswordResetToken: [tokenHash, expiresAt, usedAt, requestIp, userAgent]
+  MemberGroup: [name, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+  PageVisibility: [key, published]
+stories:
+  - title: Un membre se connecte, puis navigue
+    actor: Membre
+    steps:
+      - label: Il se connecte ; une session est créée en base, un jeton signé la désigne dans un cookie
+        call: auth.login
+        section: Se connecter
+      - label: À chaque requête, le serveur relit la session (et supprime celle qui a expiré), puis calcule si le membre est administrateur
+        call: getSessionFromRequest
+        section: Lire la session à chaque requête
+      - label: Chaque appel tRPC reçoit cette session dans son contexte
+        call: createTRPCContext
+        section: Le contexte tRPC et les procédures
+  - title: Le membre a oublié son mot de passe
+    actor: Visiteur
+    steps:
+      - label: Il demande un lien ; seule l'empreinte du jeton est gardée en base
+        call: auth.requestPasswordReset
+        section: Le mot de passe oublié
+      - label: Il choisit un nouveau mot de passe ; le lien est consommé et ses sessions fermées
+        call: auth.resetPassword
+        section: Le mot de passe oublié
+  - title: Le membre change de mot de passe, puis se déconnecte
+    actor: Membre connecté
+    steps:
+      - label: Il change son mot de passe ; ses autres sessions sont fermées
+        call: auth.changePassword
+        section: Se déconnecter et changer de mot de passe
+      - label: Il se déconnecte ; sa session est supprimée
+        call: auth.logout
+        section: Se déconnecter et changer de mot de passe
+  - title: Un administrateur ouvre le tableau de bord
+    actor: Administrateur
+    steps:
+      - label: Le gabarit du tableau de bord vérifie l'appartenance au groupe Administrateurs
+        call: layout /(admin)
+        section: "Les droits : des groupes"
+      - label: Il publie une page restée en construction
+        call: pageVisibility.setPublished
+        section: Les pages en construction
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Chaque procédure tRPC reçoit un contexte, et les procédures d'administration exigent un administrateur. Le chapitre sur le routage a montré trois niveaux de contrôle autour du tableau de bord. Il reste à voir d'où vient ce que tous ces contrôles consultent : la session.
+
+## Les parcours du chapitre
+
+Quatre cas d'utilisation traversent ce chapitre : se connecter et naviguer, retrouver un mot de passe oublié, en changer et se déconnecter, et ouvrir le tableau de bord en administrateur. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Deux questions
 
