@@ -5,11 +5,22 @@ import { slugifyHeading } from "@features/docs/lib/slugifyHeading";
  * Parcours d'un chapitre : un cas d'utilisation (« un membre dépose une demande ») raconté en
  * étapes. Chaque étape cite une procédure tRPC (`ticket.submit`) ou une fonction du serveur
  * (`processInboundEmail`) ; ses effets sur les entités ne sont PAS écrits à la main : ils viennent
- * de la carte des procédures, produite par l'analyse du code (scripts/build-procedure-map.mjs).
+ * de la carte des procédures, produite par l'analyse du code (scripts/build-procedure-map.mjs),
+ * avec la piste de chacun : les appels traversés jusqu'à la base.
  */
 
 export type EffectOp = "read" | "create" | "update" | "delete";
-export type StepEffect = { model: string; op: EffectOp; fields: string[] };
+/** Un appel traversé : ce qui est appelé (`adapter.move`), et où le lire (`fichier:ligne`). */
+export type TrailHop = [label: string, location: string];
+export type StepEffect = {
+  model: string;
+  op: EffectOp;
+  fields: string[];
+  /** Écrit par une requête SQL écrite à la main (`$executeRaw`), pas par le client Prisma. */
+  raw?: boolean;
+  /** Pistes : les appels traversés depuis l'étape jusqu'à l'appel qui touche la base (trois au plus). */
+  trails: TrailHop[][];
+};
 
 type MapEntry = {
   kind?: string;
@@ -20,8 +31,8 @@ type MapEntry = {
   emails: string[];
 };
 
-const PROCEDURES = procedureMap.procedures as Record<string, MapEntry>;
-const FUNCTIONS = procedureMap.functions as Record<string, MapEntry>;
+const PROCEDURES = procedureMap.procedures as unknown as Record<string, MapEntry>;
+const FUNCTIONS = procedureMap.functions as unknown as Record<string, MapEntry>;
 
 export type StoryStep = {
   label: string;

@@ -2,9 +2,11 @@
 // Carte des procédures : pour chaque procédure tRPC (et chaque fonction exportée du backend), les
 // entités Prisma qu'elle lit, crée, modifie ou supprime, et les e-mails qu'elle envoie.
 //
-// Le code est la source : ce script lit packages/backend avec l'analyseur de TypeScript et suit
-// les appels (services du backend importés) jusqu'aux appels Prisma (`prisma.ticket.create`,
-// `tx.ticketEvent.create`…). Le résultat alimente les parcours de la documentation.
+// Le code est la source : ce script charge packages/backend avec le vérificateur de types de
+// TypeScript et suit les appels (fonctions, méthodes d'objets et de classes, implémentations
+// d'interfaces) jusqu'aux appels Prisma (`prisma.ticket.create`, `tx.ticketEvent.create`…) et aux
+// requêtes SQL écrites à la main. Chaque effet garde sa piste (les appels traversés, avec fichier
+// et ligne). Le résultat alimente les parcours de la documentation.
 //
 //   node scripts/build-procedure-map.mjs           → vérifie que le fichier est à jour (pnpm check)
 //   node scripts/build-procedure-map.mjs --write   → le régénère (pnpm docs:procedures)
@@ -66,20 +68,35 @@ function walk(dir) {
   });
 }
 
-const files = new Map(); // chemin → SourceFile
-const parse = (f) => ts.createSourceFile(f, readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true, f.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-for (const f of walk(BACKEND)) files.set(f, parse(f));
-
-// Server actions du front (fichiers « use server ») : elles écrivent aussi en base (profil…).
+// Le backend et les server actions du front sont chargés comme un projet TypeScript complet, avec
+// le vérificateur de types : c'est lui qui dit quelle fonction se cache derrière `adapter.move(…)`
+// ou `service.publish(…)`, comme le ferait « Aller à la définition » dans l'éditeur.
 const WEB = join(ROOT, "apps/web/src");
-const serverActions = new Set();
-for (const f of walk(WEB)) {
-  const head = readFileSync(f, "utf8").slice(0, 200);
-  if (/^\s*["']use server["']/.test(head)) {
-    files.set(f, parse(f));
-    serverActions.add(f);
-  }
+const backendFiles = walk(BACKEND);
+// Server actions du front (fichiers « use server ») : elles écrivent aussi en base (profil…).
+const serverActions = new Set(
+  walk(WEB).filter((f) => /^\s*["']use server["']/.test(readFileSync(f, "utf8").slice(0, 200))),
+);
+
+const backendConfig = join(ROOT, "packages/backend/tsconfig.json");
+const parsedConfig = ts.parseJsonConfigFileContent(
+  ts.readConfigFile(backendConfig, ts.sys.readFile).config,
+  ts.sys,
+  dirname(backendConfig),
+);
+const program = ts.createProgram({
+  rootNames: [...new Set([...parsedConfig.fileNames, ...backendFiles, ...serverActions])],
+  options: { ...parsedConfig.options, noEmit: true },
+});
+const checker = program.getTypeChecker();
+
+const files = new Map(); // chemin → SourceFile (ceux du programme : les nœuds sont partagés avec le vérificateur)
+for (const f of [...backendFiles, ...serverActions]) {
+  const sf = program.getSourceFile(f);
+  if (sf) files.set(f, sf);
 }
+/** Fichier du projet (pas une bibliothèque de node_modules) : on y suit les appels. */
+const isProjectFile = (f) => f.startsWith(ROOT) && !f.includes("/node_modules/");
 
 function resolveModule(fromFile, spec) {
   let base;
@@ -88,26 +105,6 @@ function resolveModule(fromFile, spec) {
   else return null;
   for (const c of [base + ".ts", base + ".tsx", join(base, "index.ts")]) if (files.has(c)) return c;
   return null;
-}
-
-/** Fonctions déclarées dans un fichier : `function f`, `const f = (…) =>` / `async (…) =>`. */
-const declsOf = new Map();
-function declarations(file) {
-  if (declsOf.has(file)) return declsOf.get(file);
-  const map = new Map();
-  const sf = files.get(file);
-  for (const st of sf.statements) {
-    if (ts.isFunctionDeclaration(st) && st.name) map.set(st.name.text, st);
-    if (ts.isVariableStatement(st)) {
-      for (const d of st.declarationList.declarations) {
-        if (ts.isIdentifier(d.name) && d.initializer && (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer))) {
-          map.set(d.name.text, d.initializer);
-        }
-      }
-    }
-  }
-  declsOf.set(file, map);
-  return map;
 }
 
 /** Imports d'un fichier : nom local → { fichier, nom exporté }. */
@@ -129,43 +126,84 @@ function imports(file) {
   return map;
 }
 
+/** Corps de fonction d'une déclaration : fonction, méthode, `x: async (…) => …`, `const f = (…) =>`. */
+function functionNodeOf(d) {
+  if (ts.isFunctionDeclaration(d) || ts.isMethodDeclaration(d) || ts.isFunctionExpression(d) || ts.isArrowFunction(d)) return d.body ? d : null;
+  if ((ts.isPropertyAssignment(d) || ts.isVariableDeclaration(d) || ts.isPropertyDeclaration(d)) && d.initializer) {
+    const i = d.initializer;
+    return ts.isArrowFunction(i) || ts.isFunctionExpression(i) ? i : null;
+  }
+  return null;
+}
+
 /*
- * Méthodes du backend : `adapter.registerUploadedAsset(…)` appelle une méthode d'objet (adaptateur
- * de stockage, service en objet) ou de classe. Sans types, on ne sait pas quel objet est derrière
- * `adapter` ; on suit donc la méthode seulement si son nom est déclaré UNE seule fois dans le
- * backend (et qu'il est composé, comme `registerUploadedAsset` : pas `get` ni `list`).
+ * Implémentations des méthodes : `adapter.move` est déclaré dans une interface (StorageAdapter, dans
+ * contracts) ; le code qui s'exécute est la méthode de l'objet renvoyé par createR2StorageAdapter.
+ * On indexe donc chaque méthode d'objet ou de classe du projet avec le type de son objet, pour
+ * retrouver celles qui réalisent une méthode d'interface.
  */
-const methodIndex = new Map(); // nom → [{ file, node }]
-for (const [file, sf] of files) {
-  if (serverActions.has(file)) continue;
+const implIndex = new Map(); // nom → [{ node, container }]
+for (const sf of files.values()) {
   const visit = (n) => {
-    let name = null;
-    let fn = null;
-    if ((ts.isMethodDeclaration(n) || ts.isPropertyAssignment(n)) && n.name && ts.isIdentifier(n.name)) {
-      name = n.name.text;
-      fn = ts.isMethodDeclaration(n) ? n : n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) ? n.initializer : null;
-    }
-    if (name && fn && /^[a-z]+[A-Z]/.test(name)) {
-      if (!methodIndex.has(name)) methodIndex.set(name, []);
-      methodIndex.get(name).push({ file, node: fn, name });
+    if ((ts.isMethodDeclaration(n) || ts.isPropertyAssignment(n) || ts.isPropertyDeclaration(n)) && n.name && ts.isIdentifier(n.name) && functionNodeOf(n)) {
+      const container = n.parent;
+      if (ts.isObjectLiteralExpression(container) || ts.isClassLike(container)) {
+        if (!implIndex.has(n.name.text)) implIndex.set(n.name.text, []);
+        implIndex.get(n.name.text).push({ node: n, container });
+      }
     }
     ts.forEachChild(n, visit);
   };
   visit(sf);
 }
-function resolveMethod(name) {
-  const found = methodIndex.get(name);
-  return found && found.length === 1 ? found[0] : null;
+
+function implementationsOf(signature, name, receiver) {
+  const owner = signature.parent;
+  if (!owner || !(ts.isInterfaceDeclaration(owner) || ts.isTypeLiteralNode(owner))) return [];
+  // Le type de l'objet sur lequel on appelle (`adapter` : R2StorageAdapter, paramètres de type
+  // résolus) ; à défaut, celui de l'interface.
+  const target = receiver ? checker.getTypeAtLocation(receiver) : checker.getTypeAtLocation(owner);
+  return (implIndex.get(name) ?? []).filter(({ container }) => {
+    const t = ts.isObjectLiteralExpression(container)
+      ? checker.getContextualType(container) ?? checker.getTypeAtLocation(container)
+      : checker.getTypeAtLocation(container);
+    return t && checker.isTypeAssignableTo(t, target);
+  });
 }
 
-/** Résout un appel `f(…)` vers sa déclaration (même fichier, ou fichier importé). */
-function resolveCallee(file, name) {
-  const local = declarations(file).get(name);
-  if (local) return { file, node: local, name };
-  const imp = imports(file).get(name);
-  if (!imp) return null;
-  const node = declarations(imp.file).get(imp.name);
-  return node ? { file: imp.file, node, name: imp.name } : null;
+/**
+ * Ce qu'exécute un appel `f(…)` ou `objet.méthode(…)` : la ou les fonctions du projet, trouvées par
+ * le vérificateur de types (imports, réexportations, méthodes d'objets et de classes, interfaces).
+ */
+function resolveCall(call) {
+  const e = call.expression;
+  const at = ts.isPropertyAccessExpression(e) ? e.name : ts.isIdentifier(e) ? e : null;
+  if (!at) return [];
+  let sym = checker.getSymbolAtLocation(at);
+  if (sym && sym.flags & ts.SymbolFlags.Alias) sym = checker.getAliasedSymbol(sym);
+  const out = [];
+  for (const d of sym?.declarations ?? []) {
+    const file = d.getSourceFile().fileName;
+    if (!isProjectFile(file)) continue;
+    if (ts.isShorthandPropertyAssignment(d)) {
+      // `{ publish }` : la fonction `publish` du fichier.
+      const v = checker.getShorthandAssignmentValueSymbol(d);
+      for (const vd of v?.declarations ?? []) {
+        const fn = functionNodeOf(vd);
+        if (fn && isProjectFile(vd.getSourceFile().fileName)) out.push({ file: vd.getSourceFile().fileName, node: fn, name: at.text });
+      }
+      continue;
+    }
+    if (ts.isMethodSignature(d) || ts.isPropertySignature(d)) {
+      for (const impl of implementationsOf(d, at.text, ts.isPropertyAccessExpression(e) ? e.expression : null)) {
+        out.push({ file: impl.node.getSourceFile().fileName, node: functionNodeOf(impl.node), name: at.text });
+      }
+      continue;
+    }
+    const fn = functionNodeOf(d);
+    if (fn) out.push({ file, node: fn, name: at.text });
+  }
+  return out;
 }
 
 // ─── Effets ────────────────────────────────────────────────────────────
@@ -218,7 +256,7 @@ function prop(obj, key) {
 }
 
 /** Écritures imbriquées dans `data` : create / createMany / update / delete sur une relation. */
-function nestedWrites(model, data, acc) {
+function nestedWrites(model, data, acc, trail) {
   if (!ts.isObjectLiteralExpression(data)) return;
   const rels = relationsOf.get(model) ?? new Map();
   for (const p of data.properties) {
@@ -228,55 +266,107 @@ function nestedWrites(model, data, acc) {
     const firstObject = (x) => (x && ts.isArrayLiteralExpression(x) ? x.elements[0] : x);
     const create = firstObject(prop(p.initializer, "create"));
     if (create) {
-      acc.effects.push({ model: target, op: "create", fields: keysOf(create) });
-      nestedWrites(target, create, acc);
+      acc.effects.push({ model: target, op: "create", fields: keysOf(create), trail });
+      nestedWrites(target, create, acc, trail);
     }
     const many = prop(p.initializer, "createMany");
-    if (many) acc.effects.push({ model: target, op: "create", fields: keysOf(firstObject(prop(many, "data"))) });
+    if (many) acc.effects.push({ model: target, op: "create", fields: keysOf(firstObject(prop(many, "data"))), trail });
     if (prop(p.initializer, "update") || prop(p.initializer, "updateMany") || prop(p.initializer, "upsert")) {
-      acc.effects.push({ model: target, op: "update", fields: [] });
+      acc.effects.push({ model: target, op: "update", fields: [], trail });
     }
     if (prop(p.initializer, "delete") || prop(p.initializer, "deleteMany")) {
-      acc.effects.push({ model: target, op: "delete", fields: [] });
+      acc.effects.push({ model: target, op: "delete", fields: [], trail });
     }
   }
 }
 
-/** Effets d'un nœud (corps d'une procédure ou d'une fonction), appels suivis. */
-function collect(file, node, acc, seen, depth) {
+// Tables SQL → modèles (`@@map("…")` sinon le nom du modèle), pour les requêtes SQL écrites à la main.
+const tableToModel = new Map([...models.values()].map((m) => [m, m]));
+{
+  let current = null;
+  for (const raw of readFileSync(SCHEMA, "utf8").split(/\r?\n/)) {
+    const open = /^model\s+(\w+)\s*\{/.exec(raw.trim());
+    if (open) current = open[1];
+    const mapped = /^\s*@@map\(\s*"([^"]+)"/.exec(raw);
+    if (mapped && current) {
+      tableToModel.delete(current);
+      tableToModel.set(mapped[1], current);
+    }
+  }
+}
+
+/** Effets d'une requête SQL écrite à la main (`prisma.$executeRaw\`UPDATE "User" SET …\``). */
+function sqlEffects(sql) {
+  const out = [];
+  const model = (t) => tableToModel.get(t);
+  for (const m of sql.matchAll(/INSERT\s+INTO\s+"(\w+)"\s*(?:\(([^)]*)\))?/gi)) {
+    if (model(m[1])) out.push({ model: model(m[1]), op: "create", fields: [...(m[2] ?? "").matchAll(/"(\w+)"/g)].map((x) => x[1]) });
+  }
+  for (const m of sql.matchAll(/UPDATE\s+"(\w+)"\s+SET\s+([\s\S]*?)(?:\bWHERE\b|\bFROM\b|\bRETURNING\b|$)/gi)) {
+    if (model(m[1])) out.push({ model: model(m[1]), op: "update", fields: [...m[2].matchAll(/"(\w+)"\s*=/g)].map((x) => x[1]) });
+  }
+  for (const m of sql.matchAll(/DELETE\s+FROM\s+"(\w+)"/gi)) {
+    if (model(m[1])) out.push({ model: model(m[1]), op: "delete", fields: [] });
+  }
+  for (const m of sql.matchAll(/(?<!DELETE\s{1,10})\b(?:FROM|JOIN)\s+"(\w+)"/gi)) {
+    if (model(m[1])) out.push({ model: model(m[1]), op: "read", fields: [] });
+  }
+  return out;
+}
+
+const lineOf = (node) => node.getSourceFile().getLineAndCharacterOfPosition(node.getStart()).line + 1;
+const rel = (f) => relative(ROOT, f);
+/** Une étape de la piste : ce qui est appelé, et où le lire (`fichier:ligne`). */
+const hop = (label, node) => [label.replace(/\s+/g, " ").slice(0, 80), `${rel(node.getSourceFile().fileName)}:${lineOf(node)}`];
+
+/**
+ * Effets d'un nœud (corps d'une procédure ou d'une fonction), appels suivis. Chaque effet garde sa
+ * PISTE : les appels traversés depuis la procédure jusqu'à l'appel Prisma, avec l'endroit où lire
+ * chacun. C'est le chemin qu'on suivrait à la main avec « Aller à la définition ».
+ */
+function collect(node, acc, seen, depth, trail) {
   const visit = (n) => {
+    // Une méthode d'objet ou de classe (`return { async move() { … } }`) n'est pas exécutée là où
+    // elle est écrite : on la suivra seulement là où elle est appelée (`adapter.move(…)`).
+    if (n !== node && isMemberFunction(n)) return;
+    // Requête SQL écrite à la main : `prisma.$executeRaw\`…\``, `prisma.$queryRawUnsafe("…")`.
+    const rawTag = ts.isTaggedTemplateExpression(n) ? n.tag : ts.isCallExpression(n) ? n.expression : null;
+    if (rawTag && ts.isPropertyAccessExpression(rawTag) && /^\$(query|execute)Raw(Unsafe)?$/.test(rawTag.name.text)) {
+      const sql = ts.isTaggedTemplateExpression(n) ? n.template.getText() : n.arguments[0]?.getText() ?? "";
+      const where = [...trail, hop(`${rawTag.getText()} (SQL)`, n)];
+      for (const e of sqlEffects(sql)) acc.effects.push({ ...e, raw: true, trail: where });
+    }
     if (ts.isCallExpression(n)) {
       const e = n.expression;
+      let prismaCall = false;
       // `<x>.<modèle>.<opération>(…)` : un appel Prisma.
       if (ts.isPropertyAccessExpression(e) && ts.isPropertyAccessExpression(e.expression)) {
         const op = OPS[e.name.text];
         const model = models.get(e.expression.name.text);
         if (op && model) {
+          prismaCall = true;
           const fields = [];
           if (op !== "read" && op !== "delete") {
             const data = argProperty(n, "data") ?? argProperty(n, "create") ?? argProperty(n, "update");
             fields.push(...keysOf(data, node));
             if (op === "upsert") fields.push(...keysOf(argProperty(n, "update"), node));
           }
+          const where = [...trail, hop(e.getText(), n)];
           const kinds = op === "upsert" ? ["create", "update"] : [op];
-          for (const k of kinds) acc.effects.push({ model, op: k, fields });
+          for (const k of kinds) acc.effects.push({ model, op: k, fields, trail: where });
           // Écritures imbriquées : `data: { messages: { create: { … } } }` crée un TicketMessage.
           const data = argProperty(n, "data");
-          if (data) nestedWrites(model, data, acc);
+          if (data) nestedWrites(model, data, acc, where);
         }
       }
-      // `f(…)` : une fonction du backend, suivie ; `objet.méthode(…)` : une méthode au nom unique.
-      const calleeName = ts.isIdentifier(e) ? e.text : null;
-      const methodName = ts.isPropertyAccessExpression(e) && !OPS[e.name.text] && ts.isIdentifier(e.name) ? e.name.text : null;
-      if ((calleeName || methodName) && depth < 6) {
-        const target = calleeName ? resolveCallee(file, calleeName) : resolveMethod(methodName);
-        if (target) {
+      // Tout autre appel : la ou les fonctions du projet qu'il exécute, suivies.
+      if (!prismaCall && depth < 8) {
+        for (const target of resolveCall(n)) {
           if (/\/email\//.test(target.file) && /^send/.test(target.name)) acc.emails.add(target.name);
-          const key = `${target.file}#${target.name}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            collect(target.file, target.node, acc, seen, depth + 1);
-          }
+          const key = `${target.file}#${target.node.pos}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          collect(target.node, acc, seen, depth + 1, [...trail, hop(e.getText(), target.node)]);
         }
       }
     }
@@ -285,31 +375,38 @@ function collect(file, node, acc, seen, depth) {
   visit(node);
 }
 
+function isMemberFunction(n) {
+  if (ts.isMethodDeclaration(n) || ts.isGetAccessor(n) || ts.isSetAccessor(n) || ts.isConstructorDeclaration(n)) return true;
+  return (ts.isPropertyAssignment(n) || ts.isPropertyDeclaration(n)) && functionNodeOf(n) !== null;
+}
+
+const MAX_TRAILS = 3;
+
 function summarize(acc) {
-  // Fusion par (entité, opération), champs dédoublonnés.
+  // Fusion par (entité, opération) : champs dédoublonnés, pistes distinctes (trois au plus).
   const merged = new Map();
   for (const e of acc.effects) {
     const k = `${e.model}:${e.op}`;
-    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set() });
-    for (const f of e.fields) merged.get(k).fields.add(f);
+    if (!merged.has(k)) merged.set(k, { model: e.model, op: e.op, fields: new Set(), raw: false, trails: new Map() });
+    const m = merged.get(k);
+    for (const f of e.fields) m.fields.add(f);
+    if (e.raw) m.raw = true;
+    const t = JSON.stringify(e.trail);
+    if (m.trails.size < MAX_TRAILS && !m.trails.has(t)) m.trails.set(t, e.trail);
   }
   return {
     effects: [...merged.values()]
-      .map((e) => ({ model: e.model, op: e.op, fields: [...e.fields].sort() }))
+      .map((e) => ({ model: e.model, op: e.op, fields: [...e.fields].sort(), ...(e.raw ? { raw: true } : {}), trails: [...e.trails.values()] }))
       .sort((a, b) => a.model.localeCompare(b.model) || a.op.localeCompare(b.op)),
     emails: [...acc.emails].sort(),
   };
 }
 
-function effectsOf(file, node) {
+function effectsOf(node) {
   const acc = { effects: [], emails: new Set() };
-  collect(file, node, acc, new Set(), 0);
+  collect(node, acc, new Set(), 0, []);
   return summarize(acc);
 }
-
-const lineOf = (file, node) => files.get(file).getLineAndCharacterOfPosition(node.getStart()).line + 1;
-const rel = (f) => relative(ROOT, f);
-
 // ─── Routeurs ──────────────────────────────────────────────────────────
 
 const indexFile = join(BACKEND, "modules/index.ts");
@@ -377,7 +474,7 @@ for (const [routerVar, prefix] of appRouterKeys) {
         if (!ts.isPropertyAssignment(p)) continue;
         const name = `${prefix}.${p.name.getText(sf)}`;
         const { kind, access } = procedureShape(file, p.initializer);
-        procedures[name] = { kind, access, file: rel(file), line: lineOf(file, p), ...effectsOf(file, p.initializer) };
+        procedures[name] = { kind, access, file: rel(file), line: lineOf(p), ...effectsOf(p.initializer) };
       }
       return;
     }
@@ -394,13 +491,13 @@ for (const [file, sf] of files) {
     if (!exported) continue;
     const name = ts.isFunctionDeclaration(st) && st.name ? st.name.text : null;
     if (!name) continue;
-    const s = effectsOf(file, st);
+    const s = effectsOf(st);
     if (s.effects.length || s.emails.length) {
       functions[name] = {
         // Une server action vérifie elle-même la session : son accès se lit dans son code.
         ...(serverActions.has(file) ? { kind: "server action" } : {}),
         file: rel(file),
-        line: lineOf(file, st),
+        line: lineOf(st),
         ...s,
       };
     }

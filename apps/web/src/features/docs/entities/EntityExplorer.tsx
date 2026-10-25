@@ -12,11 +12,11 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Atom, BookOpen, ChevronLeft, ChevronRight, Mail, X } from "lucide-react";
+import { Atom, BookOpen, ChevronLeft, ChevronRight, Mail, Route, X } from "lucide-react";
 
 import type { ChapterGraph, GraphModel } from "@features/docs/entities/chapterGraph";
 import type { EntityField, EntityLink } from "@features/docs/entities/prismaSchema";
-import type { EffectOp, Story, StoryStep } from "@features/docs/entities/stories";
+import type { EffectOp, StepEffect, Story, StoryStep, TrailHop } from "@features/docs/entities/stories";
 import { layoutGraph, type Point } from "@features/docs/entities/layoutGraph";
 
 /*
@@ -210,6 +210,7 @@ export function StoryTabs(): JSX.Element | null {
                         <li key={`${e.model}-${e.op}`} className={`rounded-full px-2 py-0.5 text-xs ${OP_CHIP[e.op]}`}>
                           {e.model} {OP_LABEL[e.op]}
                           {e.fields.length > 0 && <span className="opacity-75"> : {e.fields.join(", ")}</span>}
+                          {e.raw && <span className="opacity-75"> · SQL direct</span>}
                         </li>
                       ))}
                     </ul>
@@ -220,6 +221,7 @@ export function StoryTabs(): JSX.Element | null {
                   {st.emails.length > 0 && (
                     <p className="text-xs text-muted-foreground">E-mails : {st.emails.join(", ")}</p>
                   )}
+                  <CodeTrail step={st} />
                   <p className="flex flex-wrap gap-x-4 gap-y-1">
                     {st.sectionId && (
                       <button
@@ -636,6 +638,99 @@ function StoryThread({
 /** Positions des numéros d'étape autour d'un atome, en degrés (0 = droite, -90 = haut). */
 const BADGE_ANGLES = [-45, -10, -80, 25, -115, -150];
 
+/** Un nœud de l'arbre des pistes : un appel, ses suites, et ce qu'il fait à la base s'il y touche. */
+type TrailNode = { hop: TrailHop; children: TrailNode[]; effects: StepEffect[] };
+
+/** Les pistes d'une étape réunies en arbre : les appels communs ne sont écrits qu'une fois. */
+function trailTree(effects: StepEffect[]): TrailNode[] {
+  const roots: TrailNode[] = [];
+  for (const e of effects) {
+    for (const trail of e.trails) {
+      let level = roots;
+      trail.forEach((hop, i) => {
+        let node = level.find((n) => n.hop[0] === hop[0] && n.hop[1] === hop[1]);
+        if (!node) {
+          node = { hop, children: [], effects: [] };
+          level.push(node);
+        }
+        if (i === trail.length - 1 && !node.effects.includes(e)) node.effects.push(e);
+        level = node.children;
+      });
+    }
+  }
+  return roots;
+}
+
+/**
+ * Le chemin dans le code : depuis la procédure de l'étape, chaque appel traversé (et l'endroit où
+ * le lire) jusqu'à l'appel qui touche la base. C'est le trajet qu'on ferait dans l'éditeur avec
+ * « Aller à la définition », déjà tracé. Replié par défaut ; les lectures sur demande.
+ */
+function CodeTrail({ step }: { step: StoryStep }): JSX.Element | null {
+  const writes = step.effects.filter((e) => e.op !== "read");
+  const [withReads, setWithReads] = useState(writes.length === 0);
+  const tree = useMemo(
+    () => trailTree(withReads ? step.effects : step.effects.filter((e) => e.op !== "read")),
+    [withReads, step.effects],
+  );
+  if (step.effects.every((e) => e.trails.length === 0)) return null;
+  return (
+    <details className="rounded-md border bg-muted/30 text-xs">
+      <summary className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 font-medium text-emerald-700 dark:text-emerald-300">
+        <Route className="h-3.5 w-3.5" aria-hidden="true" />
+        Le chemin dans le code
+      </summary>
+      <div className="space-y-2 border-t px-2 py-2">
+        <p className="text-muted-foreground">
+          Chaque ligne est un appel, suivi de l&apos;endroit où le lire (à ouvrir dans l&apos;éditeur, par
+          exemple avec la recherche de fichier).
+        </p>
+        <div>
+          <TrailLine label={step.call} location={`${step.file}:${step.line}`} />
+          <TrailList nodes={tree} />
+        </div>
+        {writes.length > 0 && writes.length < step.effects.length && (
+          <label className="flex items-center gap-1.5 text-muted-foreground">
+            <input type="checkbox" checked={withReads} onChange={(ev) => setWithReads(ev.target.checked)} />
+            Afficher aussi les lectures
+          </label>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function TrailLine({ label, location, effects = [] }: { label: string; location: string; effects?: StepEffect[] }): JSX.Element {
+  return (
+    <div className="py-0.5">
+      <code className="font-semibold text-foreground">{label}</code>{" "}
+      <code className="break-all text-muted-foreground" title="Fichier et ligne">
+        {location}
+      </code>
+      {effects.map((e) => (
+        <span key={`${e.model}-${e.op}`} className={`ml-1.5 inline-block rounded-full px-1.5 ${OP_CHIP[e.op]}`}>
+          {e.model} {OP_LABEL[e.op]}
+          {e.raw ? " · SQL direct" : ""}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function TrailList({ nodes }: { nodes: TrailNode[] }): JSX.Element | null {
+  if (nodes.length === 0) return null;
+  return (
+    <ul className="ml-2 border-l pl-3">
+      {nodes.map((n) => (
+        <li key={`${n.hop[0]}@${n.hop[1]}`}>
+          <TrailLine label={n.hop[0]} location={n.hop[1]} effects={n.effects} />
+          <TrailList nodes={n.children} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Fiche de l'étape : qui, par quelle procédure, ce qu'elle fait aux entités, les e-mails. */
 function StepCard({
   step,
@@ -682,6 +777,7 @@ function StepCard({
             )}
             <span className="text-muted-foreground">{OP_LABEL[e.op]}</span>
             {e.fields.length > 0 && <span className="text-xs text-muted-foreground">({e.fields.join(", ")})</span>}
+            {e.raw && <span className="rounded bg-muted px-1.5 text-xs">SQL direct</span>}
           </li>
         ))}
       </ul>
@@ -691,6 +787,7 @@ function StepCard({
           E-mails : {step.emails.map((m) => <code key={m}>{m}</code>)}
         </p>
       )}
+      <CodeTrail step={step} />
       {step.sectionId && (
         <button
           type="button"
@@ -702,8 +799,8 @@ function StepCard({
         </button>
       )}
       <p className="text-xs text-muted-foreground">
-        Effets relevés dans le code par scripts/build-procedure-map.mjs (appels Prisma de la procédure et des
-        fonctions qu&apos;elle appelle).
+        Effets relevés dans le code par scripts/build-procedure-map.mjs : appels Prisma et requêtes SQL de la
+        procédure et de tout ce qu&apos;elle appelle, méthodes d&apos;objets comprises.
       </p>
     </div>
   );

@@ -131,7 +131,15 @@ stories:
 
 Les effets d'une étape (entités créées, modifiées, lues, supprimées, propriétés écrites, e-mails envoyés) ne sont pas écrits à la main : `scripts/build-procedure-map.mjs` les relève dans le code du backend, en suivant les appels jusqu'aux appels Prisma. Après une modification du backend, `pnpm check` demande de régénérer cette carte avec `pnpm docs:procedures`.
 
-L'analyse lit le code sans l'exécuter ni connaître ses types. Elle suit les fonctions importées, les server actions du front (fichiers `"use server"`) et les méthodes d'objet dont le nom n'est déclaré qu'une fois dans le backend, comme `adapter.registerUploadedAsset`. Elle ne suit pas une méthode au nom courant ou partagé entre plusieurs adaptateurs (`adapter.move`), ni les requêtes SQL écrites à la main. Une étape « sans effet » mérite donc un coup d'œil au code avant d'en conclure qu'elle n'écrit rien.
+Chaque effet garde aussi sa **piste** : les appels traversés depuis la procédure jusqu'à l'appel qui touche la base, avec le fichier et la ligne où lire chacun. Une étape propose ce « chemin dans le code », replié par défaut :
+
+```text
+storage.registerR2Upload           packages/backend/src/modules/storage/router.ts:…
+ └ adapter.registerUploadedAsset    packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:…
+    └ prisma.mediaAsset.upsert      MediaAsset créée, modifiée
+```
+
+Pour suivre les appels, l'analyse charge le backend comme le fait `pnpm typecheck` et interroge le vérificateur de types, comme « Aller à la définition » dans l'éditeur. Elle suit ainsi les fonctions importées, les server actions du front (fichiers `"use server"`) et les méthodes d'objets ou de classes. Quand une méthode est déclarée dans une interface (`adapter.move`, déclarée par `StorageAdapter`), elle retrouve les objets qui la réalisent ; s'il y en a plusieurs, chaque piste est montrée. Les requêtes SQL écrites à la main (`$executeRaw`) sont lues aussi, et marquées « SQL direct ». Ce qu'elle ne peut pas voir : une fonction reçue en paramètre et appelée plus loin, ou une requête construite morceau par morceau. Un doute sur une étape se lève en ouvrant sa piste et en lisant le code.
 
 <Callout type="tip">
 Le fil de cette partie : **rendre visibles les erreurs silencieuses avant qu'elles n'atteignent la production**. `pnpm check` en est l'outil, le petit commit la discipline, le contrat `data-tour` un exemple.
