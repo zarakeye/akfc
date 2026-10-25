@@ -8,9 +8,11 @@ import { buildICalendar, type ICalEventInput } from "@lib/calendar/ical";
  * importable dans n'importe quel agenda (Google, Apple, Outlook).
  *
  * Chaque `SeminarSession` devient un `VEVENT` daté en heure locale du
- * club (TZID=Europe/Paris). Pas de garde de publication : un stage est
- * toujours public (contrairement à Event). Si tu veux restreindre,
- * ajoute une condition ici.
+ * club (TZID=Europe/Paris).
+ *
+ * Garde de publication : seul un stage publié (publicationDate passée)
+ * est servi ; un brouillon ou un stage programmé renvoie 404, comme sa
+ * page publique et comme la route des événements.
  */
 export async function GET(
   _req: Request,
@@ -22,8 +24,8 @@ export async function GET(
     return new Response("Invalid id", { status: 400 });
   }
 
-  const stage = await prisma.seminar.findUnique({
-    where: { id: seminarId },
+  const stage = await prisma.seminar.findFirst({
+    where: { id: seminarId, publicationDate: { not: null, lte: new Date() } },
     include: {
       sessions: { orderBy: [{ date: "asc" }, { beginTime: "asc" }] },
     },

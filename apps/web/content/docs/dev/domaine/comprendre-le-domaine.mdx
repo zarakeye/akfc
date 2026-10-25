@@ -3,12 +3,60 @@ title: "Le domaine du club"
 description: "Ce que représentent vraiment une catégorie, une discipline, un cours, un stage et un événement, comment ils se relient, et les décisions de modélisation qui en découlent."
 section: "Domaine du club"
 order: 1
+entities:
+  Category: [type]
+  Discipline: [name, type, slug, publicationDate, familyId, originId, description, summary, summaryMediaId, categoryId, instructorId]
+  DisciplineFamily: [name, slug]
+  Origin: [name, slug]
+  Course: [disciplineId, audience, day, beginTime, endTime, instructorId]
+  Seminar: [label, disciplineId, externalDisciplineLabel, publicationDate, primaryAnimatorId]
+  SeminarSession: [seminarId, date, beginTime, endTime, location]
+  Event: [label, externalDisciplineLabels, publicationDate, organizerId]
+  EventSession: [eventId, date, beginTime, endTime]
+  EventDiscipline: [eventId, disciplineId]
+stories:
+  - title: Le club ouvre une discipline et ses cours
+    actor: Administrateur
+    steps:
+      - label: Il crée la discipline dans une catégorie, avec sa famille, son origine et son instructeur principal
+        call: discipline.create
+        section: La discipline, au centre
+      - label: Il ajoute un créneau hebdomadaire, pour un public
+        call: course.create
+        section: "Le cours : un créneau, pas une date"
+  - title: Le club programme un stage
+    actor: Administrateur
+    steps:
+      - label: Il crée la fiche du stage, rattachée à une discipline du club ou à une discipline extérieure
+        call: seminar.create
+        section: "Le stage et l'événement : des séances datées"
+      - label: Il ajoute une séance datée
+        call: seminarSession.create
+        section: "Le stage et l'événement : des séances datées"
+  - title: Un visiteur consulte l'agenda
+    actor: Visiteur
+    steps:
+      - label: L'agenda réunit stages et événements publiés, triés sur leur prochaine séance
+        call: page /agenda
+        section: "L'agenda : deux modèles, une liste"
+      - label: Il ouvre la fiche d'un stage
+        call: page /seminars/[slug]
+        section: "Le stage et l'événement : des séances datées"
+      - label: Il ajoute le stage à son agenda personnel (fichier .ics)
+        call: GET /api/calendar/seminars/[id]
+        section: "Le stage et l'événement : des séances datées"
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Les actualités et les pages se construisent avec des blocs, et chaque contenu tient à jour la liste des médias qu'il affiche. L'identité du site et ses coordonnées se règlent dans une ligne unique, depuis le tableau de bord. Les contenus les plus importants du site, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements du club.
+
+## Les parcours du chapitre
+
+Trois cas d'utilisation traversent ce chapitre : ouvrir une discipline et ses cours, programmer un stage, et ce qu'en voit un visiteur. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Pourquoi commencer par le vocabulaire
 
@@ -94,6 +142,18 @@ Ils diffèrent par leur rapport aux disciplines :
 Le stage accepte une discipline **extérieure** sous forme de texte (`externalDisciplineLabel`) : le club accueille parfois un intervenant pour une pratique qu'il n'enseigne pas, comme la calligraphie chinoise. Créer une `Discipline` pour l'occasion la ferait apparaître dans le menu des disciplines enseignées. L'origine permet alors de classer le stage quand il n'a pas de discipline du club.
 
 Comme les disciplines, stages et événements ont un `summary` et une image de carte, et une date de publication. Leurs lectures publiques sont filtrées ; les écrans d'administration utilisent des procédures séparées (`seminar.getAllAdmin`, `seminar.getByIdAdmin`), réservées aux administrateurs.
+
+Chaque fiche publique propose aussi d'**ajouter le stage ou l'événement à son agenda** : une route d'API produit un fichier `.ics` (le format que lisent Google Agenda, Apple Calendrier ou Outlook), où chaque séance devient un rendez-vous à l'heure de Paris. La route applique le même filtre de publication que la fiche : un brouillon n'est pas plus téléchargeable qu'il n'est visible.
+
+```ts
+// apps/web/src/app/api/calendar/seminars/[id]/route.ts (extrait)
+const stage = await prisma.seminar.findFirst({
+  where: { id: seminarId, publicationDate: { not: null, lte: new Date() } },
+  include: {
+    sessions: { orderBy: [{ date: "asc" }, { beginTime: "asc" }] },
+  },
+});
+```
 
 ## L'agenda : deux modèles, une liste
 

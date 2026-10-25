@@ -21515,6 +21515,3023 @@
     }
    ],
    "emails": []
+  },
+  "page /dashboard/categories/[id]/edit": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/categories/[id]/edit/page.tsx",
+   "line": 15,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.category.findUnique",
+        "apps/web/src/app/(admin)/dashboard/categories/[id]/edit/page.tsx:24"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/categories/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/categories/[id]/page.tsx",
+   "line": 12,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.category.findUnique",
+        "apps/web/src/app/(admin)/dashboard/categories/[id]/page.tsx:21"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.count",
+        "apps/web/src/app/(admin)/dashboard/categories/[id]/page.tsx:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.count",
+        "apps/web/src/app/(admin)/dashboard/categories/[id]/page.tsx:28"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/courses/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx",
+   "line": 50,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/discipline-families/[id]/edit": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/discipline-families/[id]/edit/page.tsx",
+   "line": 10,
+   "effects": [
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.disciplineFamily.findUnique",
+        "apps/web/src/app/(admin)/dashboard/discipline-families/[id]/edit/page.tsx:19"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/discipline-families/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/discipline-families/[id]/page.tsx",
+   "line": 8,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.count",
+        "apps/web/src/app/(admin)/dashboard/discipline-families/[id]/page.tsx:22"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.disciplineFamily.findUnique",
+        "apps/web/src/app/(admin)/dashboard/discipline-families/[id]/page.tsx:17"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/disciplines/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx",
+   "line": 37,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(admin)/dashboard/disciplines/[id]/page.tsx:46"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/events/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx",
+   "line": 43,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(admin)/dashboard/events/[id]/page.tsx:52"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/galleries/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx",
+   "line": 21,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.gallery.findUnique",
+        "apps/web/src/app/(admin)/dashboard/galleries/[id]/page.tsx:30"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/origins/[id]/edit": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/origins/[id]/edit/page.tsx",
+   "line": 10,
+   "effects": [
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.origin.findUnique",
+        "apps/web/src/app/(admin)/dashboard/origins/[id]/edit/page.tsx:19"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/origins/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/origins/[id]/page.tsx",
+   "line": 8,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.count",
+        "apps/web/src/app/(admin)/dashboard/origins/[id]/page.tsx:21"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.count",
+        "apps/web/src/app/(admin)/dashboard/origins/[id]/page.tsx:23"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.origin.findUnique",
+        "apps/web/src/app/(admin)/dashboard/origins/[id]/page.tsx:17"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.count",
+        "apps/web/src/app/(admin)/dashboard/origins/[id]/page.tsx:22"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/posts/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/posts/[id]/page.tsx",
+   "line": 30,
+   "effects": [
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.post.findUnique",
+        "apps/web/src/app/(admin)/dashboard/posts/[id]/page.tsx:39"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/rgpd": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/rgpd/page.tsx",
+   "line": 30,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getLegalInfo",
+        "apps/web/src/features/legal/getLegalInfo.ts:26"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/legal/getLegalInfo.ts:27"
+       ]
+      ],
+      [
+       [
+        "listInactiveAccounts",
+        "packages/backend/src/modules/privacy/retention.service.ts:61"
+       ],
+       [
+        "retentionSettings",
+        "packages/backend/src/modules/privacy/retention.service.ts:23"
+       ],
+       [
+        "db.siteSettings.findUnique",
+        "packages/backend/src/modules/privacy/retention.service.ts:24"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "listInactiveAccounts",
+        "packages/backend/src/modules/privacy/retention.service.ts:61"
+       ],
+       [
+        "db.user.findMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:64"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/seminars/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx",
+   "line": 27,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(admin)/dashboard/seminars/[id]/page.tsx:36"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /dashboard/users/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx",
+   "line": 11,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx:18"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /about/instructeurs": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/about/instructeurs/page.tsx",
+   "line": 23,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "prisma.user.findMany",
+        "apps/web/src/app/(public)/about/instructeurs/page.tsx:28"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /about": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/about/page.tsx",
+   "line": 32,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "prisma.pageVisibility.findUnique",
+        "apps/web/src/features/editorial/editorialGate.tsx:16"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/app/(public)/about/page.tsx:37"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /agenda": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/agenda/page.tsx",
+   "line": 45,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findMany",
+        "apps/web/src/app/(public)/agenda/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findMany",
+        "apps/web/src/app/(public)/agenda/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findMany",
+        "apps/web/src/app/(public)/agenda/page.tsx:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findMany",
+        "apps/web/src/app/(public)/agenda/page.tsx:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteStyle",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteStyle.findUnique",
+        "apps/web/src/app/(public)/agenda/page.tsx:121"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /contacts": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/contacts/page.tsx",
+   "line": 33,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "prisma.pageVisibility.findUnique",
+        "apps/web/src/features/editorial/editorialGate.tsx:16"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/app/(public)/contacts/page.tsx:39"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/app/(public)/contacts/page.tsx:40"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /course/[id]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/course/[id]/page.tsx",
+   "line": 57,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findUnique",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /disciplines/[slug]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/disciplines/[slug]/page.tsx",
+   "line": 48,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(public)/disciplines/[slug]/page.tsx:55"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(public)/disciplines/[slug]/page.tsx:55"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findUnique",
+        "apps/web/src/app/(public)/disciplines/[slug]/page.tsx:55"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /events/[slug]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/events/[slug]/page.tsx",
+   "line": 59,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventDiscipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findUnique",
+        "apps/web/src/app/(public)/events/[slug]/page.tsx:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /infos/[slug]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/infos/[slug]/page.tsx",
+   "line": 42,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/app/(public)/infos/[slug]/page.tsx:48"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /infos/confidentialite": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/infos/confidentialite/page.tsx",
+   "line": 25,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getLegalComplement",
+        "apps/web/src/features/legal/getLegalInfo.ts:49"
+       ],
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/features/legal/getLegalInfo.ts:50"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getLegalInfo",
+        "apps/web/src/features/legal/getLegalInfo.ts:26"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/legal/getLegalInfo.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /infos/mentions-legales": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/infos/mentions-legales/page.tsx",
+   "line": 22,
+   "effects": [
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getLegalComplement",
+        "apps/web/src/features/legal/getLegalInfo.ts:49"
+       ],
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/features/legal/getLegalInfo.ts:50"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getLegalInfo",
+        "apps/web/src/features/legal/getLegalInfo.ts:26"
+       ],
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/features/legal/getLegalInfo.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /inscription": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/inscription/page.tsx",
+   "line": 23,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "prisma.pageVisibility.findUnique",
+        "apps/web/src/features/editorial/editorialGate.tsx:16"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePage.findUnique",
+        "apps/web/src/app/(public)/inscription/page.tsx:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getActivePartners",
+        "apps/web/src/features/partners/getActivePartners.ts:16"
+       ],
+       [
+        "prisma.sitePartner .findMany",
+        "apps/web/src/features/partners/getActivePartners.ts:17"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/page.tsx",
+   "line": 66,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.comment.groupBy",
+        "apps/web/src/app/(public)/page.tsx:148"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findMany",
+        "apps/web/src/app/(public)/page.tsx:78"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "HomeHero",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.homeHero.findUnique",
+        "apps/web/src/app/(public)/page.tsx:170"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resolveMediaByIds",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:50"
+       ],
+       [
+        "db.mediaAsset.findMany",
+        "packages/backend/src/modules/media/services/resolveMediaByIds.service.ts:59"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageVisibility",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "prisma.pageVisibility.findUnique",
+        "apps/web/src/features/editorial/editorialGate.tsx:16"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Poll",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.post.findMany",
+        "apps/web/src/app/(public)/page.tsx:125"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.post.findMany",
+        "apps/web/src/app/(public)/page.tsx:125"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.reaction.findMany",
+        "apps/web/src/app/(public)/page.tsx:143"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteSettings",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteSettings.findUnique",
+        "apps/web/src/app/(public)/page.tsx:174"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SiteStyle",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.siteStyle.findUnique",
+        "apps/web/src/app/(public)/page.tsx:120"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isEditorialPageGated",
+        "apps/web/src/features/editorial/editorialGate.tsx:15"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "prisma.post.findMany",
+        "apps/web/src/app/(public)/page.tsx:125"
+       ]
+      ],
+      [
+       [
+        "prisma.reaction.findMany",
+        "apps/web/src/app/(public)/page.tsx:143"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /seminars/[slug]": {
+   "kind": "page",
+   "file": "apps/web/src/app/(public)/seminars/[slug]/page.tsx",
+   "line": 63,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Origin",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findUnique",
+        "apps/web/src/app/(public)/seminars/[slug]/page.tsx:70"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "POST /api/admin/revalidate-style": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/admin/revalidate-style/route.ts",
+   "line": 21,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/calendar/events/[id]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/calendar/events/[id]/route.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findFirst",
+        "apps/web/src/app/api/calendar/events/[id]/route.ts:24"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findFirst",
+        "apps/web/src/app/api/calendar/events/[id]/route.ts:24"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/calendar/seminars/[id]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/calendar/seminars/[id]/route.ts",
+   "line": 17,
+   "effects": [
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findFirst",
+        "apps/web/src/app/api/calendar/seminars/[id]/route.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findFirst",
+        "apps/web/src/app/api/calendar/seminars/[id]/route.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/me/export": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/me/export/route.ts",
+   "line": 11,
+   "effects": [
+    {
+     "model": "Comment",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "DocumentReceipt",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocumentRecipient",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PollVote",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Preferences",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Reaction",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Ticket",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketCategory",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "TicketMessage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.ticketMessage.count",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/image-consent/[id]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/image-consent/[id]/route.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.imageConsentForm.findUnique",
+        "apps/web/src/app/api/media/image-consent/[id]/route.ts:19"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/image-consent/prefilled": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/image-consent/prefilled/route.ts",
+   "line": 14,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ],
+      [
+       [
+        "prisma.user.findUnique",
+        "apps/web/src/app/api/media/image-consent/prefilled/route.ts:20"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/member-document/[id]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/member-document/[id]/route.ts",
+   "line": 33,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.memberDocument.findFirst",
+        "apps/web/src/app/api/media/member-document/[id]/route.ts:47"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberDocument",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.memberDocument.findFirst",
+        "apps/web/src/app/api/media/member-document/[id]/route.ts:47"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/public/avatar/[userId]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/public/avatar/[userId]/route.ts",
+   "line": 26,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "apps/web/src/app/api/media/public/avatar/[userId]/route.ts:37"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/public/r2/[...path]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/public/r2/[...path]/route.ts",
+   "line": 59,
+   "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findFirst",
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/media/r2/[...path]": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/media/r2/[...path]/route.ts",
+   "line": 55,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ],
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "GET /api/site-partners/[id]/logo": {
+   "kind": "route",
+   "file": "apps/web/src/app/api/site-partners/[id]/logo/route.ts",
+   "line": 10,
+   "effects": [
+    {
+     "model": "SitePartner",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePartner.findUnique",
+        "apps/web/src/app/api/site-partners/[id]/logo/route.ts:12"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /docs/[...slug]": {
+   "kind": "page",
+   "file": "apps/web/src/app/docs/[...slug]/page.tsx",
+   "line": 31,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "page /docs": {
+   "kind": "page",
+   "file": "apps/web/src/app/docs/page.tsx",
+   "line": 14,
+   "effects": [
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
   }
  }
 }

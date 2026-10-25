@@ -737,6 +737,14 @@ function TrailList({ nodes }: { nodes: TrailNode[] }): JSX.Element | null {
   );
 }
 
+const CALL_KIND_LABEL: Record<StoryStep["callKind"], string> = {
+  procedure: "Procédure tRPC",
+  action: "Server action",
+  function: "Fonction du serveur",
+  page: "Page (composant serveur)",
+  route: "Route d'API",
+};
+
 /** Fiche de l'étape : qui, par quelle procédure, ce qu'elle fait aux entités, les e-mails. */
 function StepCard({
   step,
@@ -756,7 +764,7 @@ function StepCard({
       <div>
         <h3 className="text-base font-semibold">{step.label}</h3>
         <p className="mt-1 text-muted-foreground">
-          {step.callKind === "procedure" ? "Procédure tRPC" : step.callKind === "action" ? "Server action" : "Fonction du serveur"}{" "}
+          {CALL_KIND_LABEL[step.callKind]}{" "}
           <code>{step.call}</code>
           {step.access && <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">{step.access}</span>}
         </p>

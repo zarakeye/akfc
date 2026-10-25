@@ -27,7 +27,7 @@ stories:
     actor: Membre connecté
     steps:
       - label: Depuis son profil, il obtient un fichier JSON de toutes ses données
-        call: exportMyData
+        call: GET /api/me/export
         section: "Le droit d'accès : télécharger ses données"
 ---
 

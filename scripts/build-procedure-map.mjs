@@ -78,20 +78,32 @@ const serverActions = new Set(
   walk(WEB).filter((f) => /^\s*["']use server["']/.test(readFileSync(f, "utf8").slice(0, 200))),
 );
 
+// Pages (composants serveur) et routes d'API du front qui lisent ou écrivent la base elles-mêmes :
+// `/agenda`, `GET /api/me/export`… Elles peuvent aussi servir d'étape à un parcours.
+const APP = join(WEB, "app");
+const appEntries = walk(APP).filter((f) => /\/(page\.tsx|route\.ts)$/.test(f));
+
 const backendConfig = join(ROOT, "packages/backend/tsconfig.json");
 const parsedConfig = ts.parseJsonConfigFileContent(
   ts.readConfigFile(backendConfig, ts.sys.readFile).config,
   ts.sys,
   dirname(backendConfig),
 );
+// Alias des deux côtés (`@backend/…`, `@features/…`, `@/…`), en chemins absolus : un même programme
+// résout les imports du backend et ceux du front.
+const webConfig = join(ROOT, "apps/web/tsconfig.json");
+const webPaths = ts.parseJsonConfigFileContent(ts.readConfigFile(webConfig, ts.sys.readFile).config, ts.sys, dirname(webConfig)).options.paths ?? {};
+const absolutePaths = {};
+for (const [alias, targets] of Object.entries(webPaths)) absolutePaths[alias] = targets.map((t) => resolve(dirname(webConfig), t));
+for (const [alias, targets] of Object.entries(parsedConfig.options.paths ?? {})) absolutePaths[alias] = targets.map((t) => resolve(dirname(backendConfig), t));
 const program = ts.createProgram({
-  rootNames: [...new Set([...parsedConfig.fileNames, ...backendFiles, ...serverActions])],
-  options: { ...parsedConfig.options, noEmit: true },
+  rootNames: [...new Set([...parsedConfig.fileNames, ...backendFiles, ...serverActions, ...appEntries])],
+  options: { ...parsedConfig.options, paths: absolutePaths, noEmit: true, jsx: ts.JsxEmit.Preserve },
 });
 const checker = program.getTypeChecker();
 
 const files = new Map(); // chemin → SourceFile (ceux du programme : les nœuds sont partagés avec le vérificateur)
-for (const f of [...backendFiles, ...serverActions]) {
+for (const f of [...backendFiles, ...serverActions, ...appEntries]) {
   const sf = program.getSourceFile(f);
   if (sf) files.set(f, sf);
 }
@@ -597,7 +609,9 @@ for (const [routerVar, prefix] of appRouterKeys) {
 // Fonctions exportées du backend (tâches du serveur, services) et server actions du front :
 // utilisables comme étape d'un parcours.
 const functions = {};
+const appEntrySet = new Set(appEntries);
 for (const [file, sf] of files) {
+  if (appEntrySet.has(file)) continue;
   for (const st of sf.statements) {
     const exported = st.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
     if (!exported) continue;
@@ -612,6 +626,46 @@ for (const [file, sf] of files) {
         line: lineOf(st),
         ...s,
       };
+    }
+  }
+}
+
+// Pages et routes : nommées par leur adresse (`page /agenda`, `GET /api/me/export`), groupes de
+// routes `(public)` retirés comme le fait Next.
+const routeOf = (file) =>
+  "/" +
+  relative(APP, dirname(file))
+    .split("/")
+    .filter((seg) => seg && !/^\(.*\)$/.test(seg))
+    .join("/");
+for (const file of appEntries) {
+  const sf = files.get(file);
+  if (!sf) continue;
+  const isPage = file.endsWith("page.tsx");
+  for (const st of sf.statements) {
+    const mods = st.modifiers ?? [];
+    if (!mods.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    let fn = null;
+    let name = null;
+    if (ts.isFunctionDeclaration(st)) {
+      fn = st;
+      name = st.name?.text ?? "default";
+    } else if (ts.isVariableStatement(st)) {
+      const d = st.declarationList.declarations[0];
+      if (d && ts.isIdentifier(d.name) && d.initializer && functionNodeOf(d)) {
+        fn = functionNodeOf(d);
+        name = d.name.text;
+      }
+    }
+    if (!fn) continue;
+    const isDefault = mods.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword);
+    let key = null;
+    if (isPage && isDefault) key = `page ${routeOf(file)}`;
+    if (!isPage && /^(GET|POST|PUT|PATCH|DELETE)$/.test(name)) key = `${name} ${routeOf(file)}`;
+    if (!key) continue;
+    const s = effectsOf(fn);
+    if (s.effects.length || s.emails.length) {
+      functions[key] = { kind: isPage ? "page" : "route", file: rel(file), line: lineOf(st), ...s };
     }
   }
 }

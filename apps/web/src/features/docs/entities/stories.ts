@@ -3,8 +3,9 @@ import { slugifyHeading } from "@features/docs/lib/slugifyHeading";
 
 /*
  * Parcours d'un chapitre : un cas d'utilisation (« un membre dépose une demande ») raconté en
- * étapes. Chaque étape cite une procédure tRPC (`ticket.submit`) ou une fonction du serveur
- * (`processInboundEmail`) ; ses effets sur les entités ne sont PAS écrits à la main : ils viennent
+ * étapes. Chaque étape cite une procédure tRPC (`ticket.submit`), une fonction du serveur
+ * (`processInboundEmail`), une server action, une page (`page /agenda`) ou une route d'API
+ * (`GET /api/me/export`) ; ses effets sur les entités ne sont PAS écrits à la main : ils viennent
  * de la carte des procédures, produite par l'analyse du code (scripts/build-procedure-map.mjs),
  * avec la piste de chacun : les appels traversés jusqu'à la base.
  */
@@ -41,7 +42,7 @@ export type StoryStep = {
   /** Procédure (`ticket.submit`) ou fonction du serveur (`processInboundEmail`). */
   call: string;
   /** Procédure tRPC, ou fonction appelée par le serveur (tâche, relève…). */
-  callKind: "procedure" | "function" | "action";
+  callKind: "procedure" | "function" | "action" | "page" | "route";
   /** public | membre | admin (procédures). */
   access: string | null;
   file: string;
@@ -63,7 +64,9 @@ const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? 
 export function lookupCall(call: string): { callKind: StoryStep["callKind"]; entry: MapEntry } | null {
   if (PROCEDURES[call]) return { callKind: "procedure", entry: PROCEDURES[call] };
   if (FUNCTIONS[call]) {
-    return { callKind: FUNCTIONS[call].kind === "server action" ? "action" : "function", entry: FUNCTIONS[call] };
+    const kind = FUNCTIONS[call].kind;
+    const callKind = kind === "server action" ? "action" : kind === "page" ? "page" : kind === "route" ? "route" : "function";
+    return { callKind, entry: FUNCTIONS[call] };
   }
   return null;
 }
