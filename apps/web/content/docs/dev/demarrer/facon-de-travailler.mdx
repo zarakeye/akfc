@@ -131,6 +131,8 @@ stories:
 
 Les effets d'une étape (entités créées, modifiées, lues, supprimées, propriétés écrites, e-mails envoyés) ne sont pas écrits à la main : `scripts/build-procedure-map.mjs` les relève dans le code du backend, en suivant les appels jusqu'aux appels Prisma. Après une modification du backend, `pnpm check` demande de régénérer cette carte avec `pnpm docs:procedures`.
 
+L'analyse lit le code sans l'exécuter ni connaître ses types. Elle suit les fonctions importées, les server actions du front (fichiers `"use server"`) et les méthodes d'objet dont le nom n'est déclaré qu'une fois dans le backend, comme `adapter.registerUploadedAsset`. Elle ne suit pas une méthode au nom courant ou partagé entre plusieurs adaptateurs (`adapter.move`), ni les requêtes SQL écrites à la main. Une étape « sans effet » mérite donc un coup d'œil au code avant d'en conclure qu'elle n'écrit rien.
+
 <Callout type="tip">
 Le fil de cette partie : **rendre visibles les erreurs silencieuses avant qu'elles n'atteignent la production**. `pnpm check` en est l'outil, le petit commit la discipline, le contrat `data-tour` un exemple.
 </Callout>

@@ -67,8 +67,18 @@ function walk(dir) {
 }
 
 const files = new Map(); // chemin → SourceFile
-for (const f of walk(BACKEND)) {
-  files.set(f, ts.createSourceFile(f, readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS));
+const parse = (f) => ts.createSourceFile(f, readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true, f.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+for (const f of walk(BACKEND)) files.set(f, parse(f));
+
+// Server actions du front (fichiers « use server ») : elles écrivent aussi en base (profil…).
+const WEB = join(ROOT, "apps/web/src");
+const serverActions = new Set();
+for (const f of walk(WEB)) {
+  const head = readFileSync(f, "utf8").slice(0, 200);
+  if (/^\s*["']use server["']/.test(head)) {
+    files.set(f, parse(f));
+    serverActions.add(f);
+  }
 }
 
 function resolveModule(fromFile, spec) {
@@ -119,6 +129,35 @@ function imports(file) {
   return map;
 }
 
+/*
+ * Méthodes du backend : `adapter.registerUploadedAsset(…)` appelle une méthode d'objet (adaptateur
+ * de stockage, service en objet) ou de classe. Sans types, on ne sait pas quel objet est derrière
+ * `adapter` ; on suit donc la méthode seulement si son nom est déclaré UNE seule fois dans le
+ * backend (et qu'il est composé, comme `registerUploadedAsset` : pas `get` ni `list`).
+ */
+const methodIndex = new Map(); // nom → [{ file, node }]
+for (const [file, sf] of files) {
+  if (serverActions.has(file)) continue;
+  const visit = (n) => {
+    let name = null;
+    let fn = null;
+    if ((ts.isMethodDeclaration(n) || ts.isPropertyAssignment(n)) && n.name && ts.isIdentifier(n.name)) {
+      name = n.name.text;
+      fn = ts.isMethodDeclaration(n) ? n : n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) ? n.initializer : null;
+    }
+    if (name && fn && /^[a-z]+[A-Z]/.test(name)) {
+      if (!methodIndex.has(name)) methodIndex.set(name, []);
+      methodIndex.get(name).push({ file, node: fn, name });
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+}
+function resolveMethod(name) {
+  const found = methodIndex.get(name);
+  return found && found.length === 1 ? found[0] : null;
+}
+
 /** Résout un appel `f(…)` vers sa déclaration (même fichier, ou fichier importé). */
 function resolveCallee(file, name) {
   const local = declarations(file).get(name);
@@ -132,18 +171,43 @@ function resolveCallee(file, name) {
 // ─── Effets ────────────────────────────────────────────────────────────
 
 /** Clés d'un objet littéral `{ a: …, b }` (champs écrits par data:, lus par select:). */
-function keysOf(obj) {
+function keysOf(obj, scope = null) {
+  obj = resolveObject(obj, scope);
   if (!obj || !ts.isObjectLiteralExpression(obj)) return [];
-  return obj.properties
-    .map((p) => (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && p.name && ts.isIdentifier(p.name) ? p.name.text : null)
-    .filter(Boolean);
+  const keys = [];
+  for (const p of obj.properties) {
+    if ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && p.name && ts.isIdentifier(p.name)) keys.push(p.name.text);
+    // `...(cond ? {} : { a })`, `...base` : les clés des objets étalés.
+    else if (ts.isSpreadAssignment(p)) {
+      let x = p.expression;
+      while (ts.isParenthesizedExpression(x)) x = x.expression;
+      const parts = ts.isConditionalExpression(x) ? [x.whenTrue, x.whenFalse] : [x];
+      for (const part of parts) keys.push(...keysOf(part, scope));
+    }
+  }
+  return [...new Set(keys)];
+}
+
+/** `data: updateData` : l'objet littéral d'une constante locale de la fonction analysée. */
+function resolveObject(expr, scope) {
+  while (expr && ts.isParenthesizedExpression(expr)) expr = expr.expression;
+  if (!expr || !scope || !ts.isIdentifier(expr)) return expr;
+  let found = null;
+  const find = (n) => {
+    if (found) return;
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === expr.text && n.initializer) found = n.initializer;
+    else ts.forEachChild(n, find);
+  };
+  find(scope);
+  while (found && (ts.isParenthesizedExpression(found) || ts.isSatisfiesExpression?.(found) || ts.isAsExpression(found))) found = found.expression;
+  return found && ts.isObjectLiteralExpression(found) ? found : expr;
 }
 
 function argProperty(call, key) {
   const arg = call.arguments[0];
   if (!arg || !ts.isObjectLiteralExpression(arg)) return null;
-  const p = arg.properties.find((x) => ts.isPropertyAssignment(x) && ts.isIdentifier(x.name) && x.name.text === key);
-  return p ? p.initializer : null;
+  const p = arg.properties.find((x) => (ts.isPropertyAssignment(x) || ts.isShorthandPropertyAssignment(x)) && ts.isIdentifier(x.name) && x.name.text === key);
+  return p ? (ts.isShorthandPropertyAssignment(p) ? p.name : p.initializer) : null;
 }
 
 /** Propriété `key` d'un objet littéral. */
@@ -191,8 +255,8 @@ function collect(file, node, acc, seen, depth) {
           const fields = [];
           if (op !== "read" && op !== "delete") {
             const data = argProperty(n, "data") ?? argProperty(n, "create") ?? argProperty(n, "update");
-            fields.push(...keysOf(data));
-            if (op === "upsert") fields.push(...keysOf(argProperty(n, "update")));
+            fields.push(...keysOf(data, node));
+            if (op === "upsert") fields.push(...keysOf(argProperty(n, "update"), node));
           }
           const kinds = op === "upsert" ? ["create", "update"] : [op];
           for (const k of kinds) acc.effects.push({ model, op: k, fields });
@@ -201,10 +265,11 @@ function collect(file, node, acc, seen, depth) {
           if (data) nestedWrites(model, data, acc);
         }
       }
-      // `f(…)` : une fonction du backend, suivie.
+      // `f(…)` : une fonction du backend, suivie ; `objet.méthode(…)` : une méthode au nom unique.
       const calleeName = ts.isIdentifier(e) ? e.text : null;
-      if (calleeName && depth < 6) {
-        const target = resolveCallee(file, calleeName);
+      const methodName = ts.isPropertyAccessExpression(e) && !OPS[e.name.text] && ts.isIdentifier(e.name) ? e.name.text : null;
+      if ((calleeName || methodName) && depth < 6) {
+        const target = calleeName ? resolveCallee(file, calleeName) : resolveMethod(methodName);
         if (target) {
           if (/\/email\//.test(target.file) && /^send/.test(target.name)) acc.emails.add(target.name);
           const key = `${target.file}#${target.name}`;
@@ -261,6 +326,42 @@ ts.forEachChild(files.get(indexFile), function find(n) {
   ts.forEachChild(n, find);
 });
 
+/**
+ * Nature et accès d'une procédure, lus dans sa CHAÎNE seulement (`adminProcedure.input(…).query(…)`,
+ * `protectedProcedure.use(isAdmin)…`) — jamais dans son corps, qui peut très bien appeler
+ * isAdminByGroup sans être réservé aux admins. Une base locale (`const adminProcedure =
+ * protectedProcedure.use(isAdmin)`) est remplacée par sa définition.
+ */
+function procedureShape(file, node) {
+  let kind = "autre";
+  const uses = [];
+  let cur = node;
+  while (ts.isCallExpression(cur) && ts.isPropertyAccessExpression(cur.expression)) {
+    const method = cur.expression.name.text;
+    if (method === "query" || method === "mutation" || method === "subscription") kind = kind === "autre" ? method : kind;
+    if (method === "use") uses.push(...cur.arguments.map((a) => a.getText()));
+    cur = cur.expression.expression;
+  }
+  let base = ts.isIdentifier(cur) ? cur.text : cur.getText();
+  const local = declarationsAny(file).get(base);
+  if (local) base = local;
+  const chain = `${base} ${uses.join(" ")}`;
+  const access = /isAdmin\b|adminProcedure/.test(chain) ? "admin" : /protectedProcedure/.test(chain) ? "membre" : "public";
+  return { kind, access };
+}
+
+/** Constantes du fichier (texte de leur valeur) : bases de procédure définies localement. */
+function declarationsAny(file) {
+  const map = new Map();
+  for (const st of files.get(file).statements) {
+    if (!ts.isVariableStatement(st)) continue;
+    for (const d of st.declarationList.declarations) {
+      if (ts.isIdentifier(d.name) && d.initializer) map.set(d.name.text, d.initializer.getText());
+    }
+  }
+  return map;
+}
+
 const procedures = {};
 for (const [routerVar, prefix] of appRouterKeys) {
   const imp = imports(indexFile).get(routerVar);
@@ -275,13 +376,7 @@ for (const [routerVar, prefix] of appRouterKeys) {
       for (const p of obj.properties) {
         if (!ts.isPropertyAssignment(p)) continue;
         const name = `${prefix}.${p.name.getText(sf)}`;
-        const text = p.initializer.getText(sf);
-        const kind = /\.mutation\(/.test(text) ? "mutation" : /\.query\(/.test(text) ? "query" : "autre";
-        const access = /isAdmin|adminProcedure/.test(text)
-          ? "admin"
-          : /protectedProcedure/.test(text)
-            ? "membre"
-            : "public";
+        const { kind, access } = procedureShape(file, p.initializer);
         procedures[name] = { kind, access, file: rel(file), line: lineOf(file, p), ...effectsOf(file, p.initializer) };
       }
       return;
@@ -290,7 +385,8 @@ for (const [routerVar, prefix] of appRouterKeys) {
   });
 }
 
-// Fonctions exportées du backend (tâches du serveur, services) : utilisables comme étape.
+// Fonctions exportées du backend (tâches du serveur, services) et server actions du front :
+// utilisables comme étape d'un parcours.
 const functions = {};
 for (const [file, sf] of files) {
   for (const st of sf.statements) {
@@ -299,7 +395,15 @@ for (const [file, sf] of files) {
     const name = ts.isFunctionDeclaration(st) && st.name ? st.name.text : null;
     if (!name) continue;
     const s = effectsOf(file, st);
-    if (s.effects.length || s.emails.length) functions[name] = { file: rel(file), line: lineOf(file, st), ...s };
+    if (s.effects.length || s.emails.length) {
+      functions[name] = {
+        // Une server action vérifie elle-même la session : son accès se lit dans son code.
+        ...(serverActions.has(file) ? { kind: "server action" } : {}),
+        file: rel(file),
+        line: lineOf(file, st),
+        ...s,
+      };
+    }
   }
 }
 

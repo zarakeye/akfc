@@ -655,7 +655,8 @@ function StepCard({
       <div>
         <h3 className="text-base font-semibold">{step.label}</h3>
         <p className="mt-1 text-muted-foreground">
-          {step.callKind === "procedure" ? "Procédure tRPC" : "Fonction du serveur"} <code>{step.call}</code>
+          {step.callKind === "procedure" ? "Procédure tRPC" : step.callKind === "action" ? "Server action" : "Fonction du serveur"}{" "}
+          <code>{step.call}</code>
           {step.access && <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">{step.access}</span>}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">

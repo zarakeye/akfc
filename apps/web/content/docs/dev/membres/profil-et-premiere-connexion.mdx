@@ -3,6 +3,43 @@ title: "Le profil et la première connexion"
 description: "Un compte créé par le club avec un mot de passe robuste qui ne parvient qu'au membre, une première connexion qui le guide vers son profil, un profil que seul son titulaire modifie, et un avatar envoyé et vérifié à part."
 section: "Membres et collaboration"
 order: 1
+entities:
+  User: [email, password, firstName, lastName, pseudo, aboutMe, phone, birthDate, avatar, isFirstLogin]
+  MemberGroupMembership: [groupId, userId]
+  MemberGroup: [name]
+  Session: [userId, expiresAt]
+  PasswordResetToken: [tokenHash, expiresAt, usedAt]
+stories:
+  - title: Le club crée un compte
+    actor: Administrateur
+    steps:
+      - label: L'administrateur crée le compte, rattaché à au moins un groupe
+        call: user.create
+        section: Un compte créé par le club
+      - label: Le mot de passe part au seul membre ; la boîte du club reçoit un avis sans mot de passe
+        call: sendWelcomeEmail
+        section: Un mot de passe qui ne va qu'au membre
+  - title: Le membre se connecte pour la première fois
+    actor: Nouveau membre
+    steps:
+      - label: Il se connecte ; une session est ouverte
+        call: auth.login
+        section: La première connexion
+      - label: Ramené sur son profil, il l'enregistre ; isFirstLogin passe à faux
+        call: updateMeFormAction
+        section: Le profil, scellé sur son titulaire
+      - label: Le formulaire relit la session avant de quitter la page
+        call: auth.getSession
+        section: Relire la session après une écriture
+  - title: Le membre change son avatar
+    actor: Membre connecté
+    steps:
+      - label: Le navigateur demande une autorisation d'envoi dans le dossier du membre
+        call: avatar.createUpload
+        section: L'avatar, un envoi à part
+      - label: Le serveur vérifie le fichier envoyé et l'enregistre comme avatar
+        call: avatar.register
+        section: L'avatar, un envoi à part
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +48,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Les disciplines, les cours, les stages et les événements sont les contenus du club, chacun avec sa façon de porter le temps. Les membres, eux, ont leur propre espace sur le site.
 
 Cette partie suit un membre à travers les fonctions qui lui sont réservées. Ce chapitre commence par son arrivée : la création de son compte, sa première connexion, son profil et son avatar.
+
+## Les parcours du chapitre
+
+Trois cas d'utilisation traversent ce chapitre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Un compte créé par le club
 

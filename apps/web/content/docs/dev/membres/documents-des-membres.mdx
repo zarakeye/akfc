@@ -3,6 +3,36 @@ title: "Les documents des membres"
 description: "Mettre un fichier de la bibliothèque à disposition des membres sans le copier, choisir qui le reçoit (tous, des groupes, des personnes), suivre ce que chacun a lu, et ne servir le fichier qu'à ses destinataires."
 section: "Membres et collaboration"
 order: 2
+entities:
+  MemberDocument: [mediaAssetId, title, audience, publishedAt, publishedById]
+  MediaAsset: [fullPath, originalFileName, mimeType]
+  MemberDocumentGroup: [memberDocumentId, groupId]
+  MemberDocumentRecipient: [memberDocumentId, userId]
+  DocumentReceipt: [memberDocumentId, userId, readAt]
+  MemberGroupMembership: [groupId, userId]
+  User: [memberSince]
+stories:
+  - title: Le club publie un document
+    actor: Administrateur
+    steps:
+      - label: Depuis le finder, il choisit un fichier et sa diffusion
+        call: memberDocument.publish
+        section: Publier depuis le finder
+  - title: Un membre lit ses documents
+    actor: Membre connecté
+    steps:
+      - label: Le menu signale ce qu'il n'a pas encore lu, par provenance
+        call: memberDocument.unreadBreakdownForMe
+        section: Ce qui est signalé, et à partir de quand
+      - label: La page « Documents » liste ceux qui lui sont adressés
+        call: memberDocument.listForMe
+        section: Qui reçoit le document
+      - label: Il en ouvre un ; un accusé de lecture est créé
+        call: memberDocument.markRead
+        section: Lu, non lu
+      - label: Il peut le remettre en non lu
+        call: memberDocument.markUnread
+        section: Lu, non lu
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +41,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Le membre a son compte, son mot de passe et son profil. Le club peut maintenant lui transmettre des documents.
 
 Le club diffuse des documents à ses membres : le compte rendu de l'assemblée générale pour tous, une attestation pour une seule personne, un planning pour un groupe. Les membres les retrouvent sur la page « Documents », les lisent dans un panneau d'aperçu, et l'entrée « Documents » du menu signale ce qu'ils n'ont pas encore lu.
+
+## Les parcours du chapitre
+
+Deux cas d'utilisation traversent ce chapitre : la publication, côté club, et la lecture, côté membre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Une publication, pas une copie
 

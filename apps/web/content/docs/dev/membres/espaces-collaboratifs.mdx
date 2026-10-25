@@ -3,6 +3,41 @@ title: "Les espaces collaboratifs"
 description: "Un espace de fichiers par groupe, des droits de lecture ou d'écriture propres à chaque espace, une hiérarchie de groupes qui transmet ses droits vers le bas, des gardes qui déduisent tout du chemin, et un finder réservé aux membres."
 section: "Membres et collaboration"
 order: 3
+entities:
+  MemberGroup: [name, isCollaborative, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+  Folder: [appRoot, fullPath, status]
+  MediaAsset: [fullPath, uploaderUserId]
+  MemberDocument: [mediaAssetId, audience]
+  MemberDocumentGroup: [memberDocumentId, groupId]
+stories:
+  - title: Le club ouvre un espace à un groupe
+    actor: Administrateur
+    steps:
+      - label: Il crée un groupe collaboratif ; son dossier est créé avec lui
+        call: memberGroup.create
+        section: Deux sortes de groupes
+      - label: Il le range sous un groupe parent, dont il hérite les droits
+        call: memberGroup.setParentGroup
+        section: Une hiérarchie qui transmet ses droits vers le bas
+      - label: Il y ajoute un membre, lecteur ou éditeur
+        call: memberGroup.addMember
+        section: Lecteur ou éditeur
+  - title: Un membre dépose un fichier dans l'espace de son groupe
+    actor: Membre éditeur d'un groupe
+    steps:
+      - label: Le finder des membres liste les espaces auxquels il a accès
+        call: storage.myCollaborativeSpaces
+        section: Le finder des membres
+      - label: Le serveur autorise l'envoi, après avoir vérifié le chemin
+        call: storage.createR2Upload
+        section: "Les gardes : tout se déduit du chemin"
+      - label: Le fichier envoyé est enregistré dans la bibliothèque
+        call: storage.registerR2Upload
+        section: "Les gardes : tout se déduit du chemin"
+      - label: Il le partage avec son groupe, comme document du groupe
+        call: memberDocument.depositToGroupSpace
+        section: "Les gardes : tout se déduit du chemin"
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -11,6 +46,12 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 > **Précédemment.** Le club diffuse des documents à tous ses membres, à des groupes ou à des personnes. Une seule condition décide de ce qu'un membre peut voir et ouvrir, et elle est posée à chaque lecture.
 
 Les documents des membres descendent du club vers ses membres. Certains groupes ont aussi besoin de travailler ensemble : le bureau prépare l'assemblée générale, les instructeurs partagent leurs programmes. Il leur faut un espace où déposer leurs propres fichiers, les ranger et les consulter, sans voir ceux des autres groupes.
+
+## Les parcours du chapitre
+
+Deux cas d'utilisation traversent ce chapitre : l'ouverture d'un espace, côté club, et le dépôt d'un fichier, côté membre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
 
 ## Deux sortes de groupes
 
