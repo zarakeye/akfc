@@ -26,9 +26,9 @@ Toutes les vérifications tiennent dans une commande, lancée à la racine :
 pnpm check
 ```
 
-Elle enchaîne cinq étapes et s'arrête à la première qui échoue :
+Elle enchaîne six étapes et s'arrête à la première qui échoue :
 
-<DocsTable columnsJson='["Étape","Ce qu’elle vérifie","Ce qu’elle garantit"]' rowsJson='[["scripts/check-next-conventions.mjs","Les fichiers de convention de Next sont au bon endroit (apps/web/src), et middleware et proxy ne coexistent pas.","Le filtre d’authentification et l’initialisation au démarrage sont bien exécutés."],["scripts/check-tour-targets.mjs","Chaque étape d’un tutoriel interactif vise un élément qui porte bien l’attribut data-tour correspondant.","Aucun tutoriel ne se bloque chez l’utilisateur après un renommage."],["pnpm clean","Efface .next et le cache.","La suite repart d’un état propre, sans fichier compilé périmé."],["typecheck du backend","TypeScript sur packages/backend.","Chaque procédure renvoie ce que le front attend."],["typecheck du web","TypeScript sur apps/web.","Chaque composant appelle les procédures avec les bons arguments."]]' />
+<DocsTable columnsJson='["Étape","Ce qu’elle vérifie","Ce qu’elle garantit"]' rowsJson='[["scripts/check-next-conventions.mjs","Les fichiers de convention de Next sont au bon endroit (apps/web/src), et middleware et proxy ne coexistent pas.","Le filtre d’authentification et l’initialisation au démarrage sont bien exécutés."],["scripts/check-tour-targets.mjs","Chaque étape d’un tutoriel interactif vise un élément qui porte bien l’attribut data-tour correspondant.","Aucun tutoriel ne se bloque chez l’utilisateur après un renommage."],["scripts/check-doc-entities.mjs","Les entités et propriétés déclarées dans l’en-tête des chapitres existent dans prisma/schema.prisma.","La carte des entités d’un chapitre reste juste après une migration."],["pnpm clean","Efface .next et le cache.","La suite repart d’un état propre, sans fichier compilé périmé."],["typecheck du backend","TypeScript sur packages/backend.","Chaque procédure renvoie ce que le front attend."],["typecheck du web","TypeScript sur apps/web.","Chaque composant appelle les procédures avec les bons arguments."]]' />
 
 Les deux scripts maison sont courts : chacun traque une seule erreur silencieuse et l'explique en français quand il la trouve. Quand une nouvelle erreur de ce genre apparaît, la réponse est une vérification de plus.
 
@@ -104,6 +104,18 @@ Le compilateur MDX supprime sans prévenir les expressions JavaScript dans les a
 ```mdx
 <DocsTable columnsJson='["Colonne A","Colonne B"]' rowsJson='[["L’exemple","oui"],["Autre","non"]]' />
 ```
+
+### La carte des entités
+
+Un chapitre qui s'appuie sur la base déclare dans son en-tête les entités qu'il mobilise, et pour chacune les propriétés dont il parle :
+
+```yaml
+entities:
+  Ticket: [number, status, dueAt]
+  TicketCategory: [label, replyTo, groupId]
+```
+
+La page affiche alors un bouton « Entités » : une carte des entités du chapitre, lue dans `prisma/schema.prisma`, avec leurs relations, leurs propriétés et leurs commentaires `///`. Les propriétés déclarées y sont mises en évidence. Dans le texte, un nom d'entité ou de propriété écrit en code (`` `Ticket` ``, `` `dueAt` ``, `` `Ticket.dueAt` ``) devient un lien vers la carte. Le schéma est la seule source : une migration qui ajoute un champ l'ajoute à la carte, et `scripts/check-doc-entities.mjs` signale une entité ou une propriété déclarée qui n'existe plus.
 
 <Callout type="tip">
 Le fil de cette partie : **rendre visibles les erreurs silencieuses avant qu'elles n'atteignent la production**. `pnpm check` en est l'outil, le petit commit la discipline, le contrat `data-tour` un exemple.

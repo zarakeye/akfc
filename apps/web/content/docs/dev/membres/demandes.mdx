@@ -3,6 +3,14 @@ title: "Les demandes"
 description: "Un message, un numéro, un responsable, un délai : les demandes des membres au club, qui peut les traiter, le passage de relais, les réponses envoyées depuis le site, la relève des réponses par e-mail et le récapitulatif quotidien."
 section: "Membres et collaboration"
 order: 4
+entities:
+  Ticket: [number, status, categoryId, requesterEmail, requesterName, assigneeId, dueAt, firstResponseAt, closedAt]
+  TicketCategory: [label, replyTo, groupId]
+  TicketMessage: [direction, authorName, fromEmail, body, emailMessageId]
+  TicketEvent: [type, actorId, toUserId, note]
+  MemberGroup: [name]
+  MemberGroupMembership: [groupId, userId]
+  User: [pseudo]
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"

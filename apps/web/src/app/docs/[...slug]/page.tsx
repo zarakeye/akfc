@@ -17,6 +17,9 @@ import DocsSearch from "@features/docs/components/DocsSearch"
 import { getSearchDocuments } from "@features/docs/lib/docs.search"
 import { spaceOf } from "@features/docs/lib/docs.spaces"
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest"
+import { getEntityMap } from "@features/docs/entities/prismaSchema"
+import { buildChapterGraph } from "@features/docs/entities/chapterGraph"
+import { EntityCode, EntityExplorer } from "@features/docs/entities/EntityExplorer"
 
 interface PageProps {
   params: Promise<{
@@ -58,10 +61,15 @@ export default async function Page({ params }: PageProps) {
   // fichier dépliable, navigation entre les extraits d'un même fichier).
   const fenceIndex = buildFenceIndex(source)
 
+  // Carte des entités : seulement pour un chapitre qui déclare ses entités dans son en-tête.
+  // Le code en ligne du texte (`Ticket`, `dueAt`) devient alors un lien vers la carte.
+  const entityGraph = frontmatter.entities ? buildChapterGraph(getEntityMap(), frontmatter.entities) : null
+
   const compiled = await compileMDX<DocFrontmatter>({
     source,
     components: {
       ...mdxComponents,
+      ...(entityGraph ? { code: EntityCode } : {}),
       pre: (props) => <MdxCodeFence index={fenceIndex}>{props.children}</MdxCodeFence>,
     },
     options: {
@@ -103,7 +111,7 @@ export default async function Page({ params }: PageProps) {
       footer={footer}
       rightAside={<DocsRightAsideDrawer items={toc} />}
     >
-      {compiled.content}
+      {entityGraph ? <EntityExplorer graph={entityGraph}>{compiled.content}</EntityExplorer> : compiled.content}
     </DocsLayout>
   )
 }

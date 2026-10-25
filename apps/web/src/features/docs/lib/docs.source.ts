@@ -3,6 +3,7 @@ import path from "node:path"
 import matter from "gray-matter"
 
 import type { DocFrontmatter, DocPage } from "@features/docs/lib/docs.types"
+import { readChapterEntities } from "@features/docs/entities/chapterGraph"
 
 function resolveDocsRoot(): string {
   const cwd = process.cwd()
@@ -113,6 +114,7 @@ export function getDocSource(slug: string[]): {
           : undefined,
       order:
         typeof frontmatter.order === "number" ? frontmatter.order : undefined,
+      entities: readChapterEntities(frontmatter.entities),
     },
   }
 }
