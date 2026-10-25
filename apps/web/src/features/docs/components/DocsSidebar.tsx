@@ -96,7 +96,9 @@ export function DocsSidebar({
         {open ? (
           navigation.map(({ section, items }) => (
             <div key={section} className="mb-8">
-              <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {/* Titre de partie : en capitales, gras, couleur du texte (noir en clair, blanc en
+                  sombre), pour se détacher des chapitres en gris dessous. */}
+              <h3 className="mb-3 px-2 text-sm font-bold uppercase tracking-wider text-foreground">
                 {section}
               </h3>
 
