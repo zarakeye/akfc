@@ -14,5 +14,9 @@ export default function DocsRootLayout({
 }: {
   children: ReactNode
 }) {
-  return <div className="h-full min-h-0 overflow-hidden">{children}</div>
+  // Hauteur de l'écran (`h-dvh`), pas `h-full` : `<html>` et `<body>` n'ont pas de hauteur fixée,
+  // un `h-full` laisserait la page grandir avec le contenu. C'est alors la fenêtre qui défilerait,
+  // et non la colonne centrale (#docs-content-scroll) que pilotent la table des matières « On this
+  // page », la barre de progression et les boutons haut / bas.
+  return <div className="h-dvh min-h-0 overflow-hidden">{children}</div>
 }
