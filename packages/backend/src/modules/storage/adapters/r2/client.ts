@@ -35,7 +35,7 @@ function readEnv(name: string): string {
     throw new Error(
       `R2 env var manquante : ${name}. ` +
         `Vérifie ton .env.local — toutes les vars R2_* doivent être définies ` +
-        `(R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_ENDPOINT).`
+        `(R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).`
     );
   }
   return value;

@@ -1,0 +1,229 @@
+---
+title: "Les variables d'environnement"
+description: "D'où viennent les réglages qui ne sont pas dans le code : les fichiers .env du développement et qui les lit, l'injection en production, les variables NEXT_PUBLIC_ figées au build, les trois façons dont le code lit une variable, et l'inventaire complet du projet."
+section: "Configuration"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** `next.config.ts` règle la forme du build, et ne lit aucune variable d'environnement. Le reste de l'application, si.
+
+L'adresse de la base de données, la clé qui signe les sessions, les identifiants du stockage et du serveur d'e-mails : rien de cela n'est écrit dans le code. Ces valeurs changent d'une machine à l'autre (notre base locale n'est pas celle du serveur), et certaines sont des secrets qui ne doivent jamais entrer dans le dépôt. Le code les lit au moment où il s'exécute, dans `process.env`, un objet que Node remplit avec les **variables d'environnement** du processus.
+
+Ce chapitre suit le chemin d'une variable, du fichier où on l'écrit jusqu'à la ligne qui la lit, en développement puis en production. C'est sur ce chemin que se cachent les erreurs les plus sournoises : une variable bien définie, mais lue par un programme qui ne regarde pas ce fichier-là.
+
+## En développement : deux fichiers, trois lecteurs
+
+La mise en route a fait copier le même modèle deux fois. Voici ce qu'il contient, sans les commentaires d'en-tête :
+
+```bash
+# .env.dev.example (extrait)
+# ─── Base de données : le Postgres de docker-compose.dev.yml ────────────
+DATABASE_URL="postgresql://akfc:akfc-dev@127.0.0.1:5435/akfc_db?schema=public"
+DIRECT_DATABASE_URL="postgresql://akfc:akfc-dev@127.0.0.1:5435/akfc_db?schema=public"
+PRISMA_CLIENT_ENGINE_TYPE="library"
+
+# ─── Auth ────────────────────────────────────────────────────────────────
+JWT_SECRET="dev-only-jwt-secret-0123456789-abcdefghijklmnopqrstuvwxyz"
+
+# ─── Stockage : MinIO joue le rôle de Cloudflare R2 ──────────────────────
+R2_ENDPOINT="http://127.0.0.1:9200"
+R2_ACCESS_KEY_ID="akfc-dev"
+R2_SECRET_ACCESS_KEY="akfc-dev-secret"
+R2_BUCKET="akfc-dev"
+R2_FORCE_PATH_STYLE="true"
+
+# ─── Identité et adresses de l'app ───────────────────────────────────────
+APP_FULL_NAME="Association Kung Fu Chambéry (dev)"
+APP_SHORT_NAME="AKFC"
+NEXT_PUBLIC_APP_SHORT_NAME="AKFC"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+APP_SUPPORT_EMAIL="contact@akfc.localhost"
+
+# ─── E-mails : tous capturés par Mailpit (http://localhost:8026) ─────────
+SMTP_HOST="127.0.0.1"
+SMTP_PORT="1026"
+SMTP_USER="dev"
+SMTP_PASSWORD="dev"
+SMTP_FROM_NOREPLY="noreply@akfc.localhost"
+```
+
+Ces valeurs ne sont pas des secrets : elles désignent les conteneurs de `docker-compose.dev.yml`, qui n'écoutent que sur notre machine (`127.0.0.1`). C'est pour cela que ce fichier-là peut être versionné.
+
+Pourquoi deux copies ? Parce que trois programmes lisent ces variables, et chacun cherche son fichier à un endroit différent.
+
+<DocsTable columnsJson='["Programme", "Lancé depuis", "Fichier lu", "Comment"]' rowsJson='[["Next.js (pnpm dev, pnpm build)", "apps/web", "apps/web/.env.local (puis .env.development, .env)", "Next.js charge lui-même les fichiers .env* de son dossier."], ["La CLI Prisma (migrate, generate)", "la racine", ".env de la racine", "prisma.config.ts commence par import \"dotenv/config\"."], ["Le seed (pnpm db:seed:dev)", "la racine", ".env de la racine", "Node lui-même, avec l’option --env-file=.env."]]' />
+
+```ts
+// prisma.config.ts (extrait)
+import 'dotenv/config'
+import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: process.env.DATABASE_URL!,
+    directUrl: process.env.DIRECT_DATABASE_URL,
+  },
+```
+
+`dotenv/config` lit le fichier `.env` du dossier courant et recopie chaque ligne dans `process.env`, sans écraser une variable déjà définie. Next.js fait de même avec plusieurs fichiers, dans un ordre de priorité : une variable déjà présente dans l'environnement du terminal l'emporte sur tout, puis viennent `.env.local`, `.env.development` (ou `.env.production` au build), et enfin `.env`. Le projet n'utilise que `.env.local`.
+
+<Callout type="warning">
+**Une variable ajoutée à un seul des deux fichiers ne sera vue que par la moitié des programmes.** Une nouvelle variable lue par l'application va dans `apps/web/.env.local` ; si la CLI Prisma ou le seed en a besoin, aussi dans le `.env` de la racine. Et Next.js ne relit pas ses fichiers `.env` en cours de route : après une modification, on relance `pnpm dev`.
+</Callout>
+
+## Jamais dans le dépôt, jamais dans l'image
+
+Les vraies valeurs de production (mot de passe de la base, clé de signature des sessions, clés du stockage R2) sont des secrets. Deux fichiers les tiennent à l'écart :
+
+```bash
+# .gitignore (extrait)
+# Dumps de base et secrets : jamais versionnés
+*.sql
+!prisma/migrations/**/*.sql
+*.dump
+.env
+.env.*
+!.env.example
+!.env.dev.example
+```
+
+```bash
+# .dockerignore (extrait)
+# Secrets. Les variables d'environnement se passent au CONTENEUR, jamais à
+# l'image : une valeur copiée dans une couche y reste, même supprimée ensuite.
+.env
+.env.*
+!.env.example
+```
+
+Le `.gitignore` empêche de committer un fichier `.env`, à l'exception des deux modèles. Le `.dockerignore` empêche de le copier dans l'image Docker, pour la raison que donne le commentaire : une image est faite de couches empilées, et un fichier copié dans une couche y reste lisible même si une couche suivante le supprime. Quiconque obtient l'image obtiendrait les secrets.
+
+## En production : au démarrage, ou au build
+
+L'image ne contient donc aucune variable secrète. Le serveur les lui donne au moment de lancer le conteneur : le fichier `docker-compose.yml` du serveur désigne, pour le service de l'application, un fichier d'environnement (`env_file:`) qui ne quitte jamais le serveur. Le code lit ces valeurs au démarrage et à chaque requête, exactement comme en développement.
+
+Une famille de variables échappe à cette règle : celles dont le nom commence par `NEXT_PUBLIC_`.
+
+### NEXT_PUBLIC_ : recopiées dans le code au build
+
+Le code qui s'exécute dans le navigateur n'a pas de `process.env` : le navigateur n'a pas accès à l'environnement du serveur. Pour qu'un composant puisse lire une valeur de configuration, Next.js la **recopie en dur dans le code compilé**, au moment du build : chaque `process.env.NEXT_PUBLIC_APP_SHORT_NAME` est remplacé par `"AKFC"`. Seules les variables préfixées `NEXT_PUBLIC_` sont traitées ainsi ; les autres ne quittent jamais le serveur. C'est le préfixe qui protège les secrets : une variable sans lui ne peut pas finir dans le navigateur, même par erreur.
+
+La conséquence : une variable `NEXT_PUBLIC_` doit exister **pendant `next build`**, dans l'étape de construction de l'image, et pas seulement au démarrage du conteneur. Le Dockerfile la reçoit comme argument de build :
+
+```dockerfile
+# Dockerfile (extrait)
+ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_APP_SHORT_NAME
+ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
+RUN pnpm --filter web build
+```
+
+`ARG` déclare une valeur que `docker compose build` peut fournir (la section `build: args:` du compose) ; `ENV` la rend visible de la commande suivante, le build. Changer cette valeur impose donc de **reconstruire l'image** : redémarrer le conteneur ne suffit pas.
+
+<Callout type="info">
+**La recopie vaut aussi pour le code serveur.** Une vérification sur le code compilé l'a montré : une `NEXT_PUBLIC_` définie au moment du build est remplacée partout où Next.js compile, y compris dans le backend (les e-mails, par exemple). Une `NEXT_PUBLIC_` **absente** au build, au contraire, reste une lecture de `process.env` côté serveur, et vaut `undefined` côté navigateur. C'est le cas de `NEXT_PUBLIC_SITE_URL`, que le build de production ne reçoit pas : le serveur la lit à l'exécution, et sans elle, `SITE_URL` prend sa valeur par défaut.
+</Callout>
+
+```ts
+// apps/web/src/config/siteUrl.ts (extrait)
+export const SITE_URL: string = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://akfc.fr"
+).replace(/\/+$/, "");
+```
+
+### Deux noms pour une même valeur
+
+Le stockage des fichiers est rangé sous un dossier racine, nommé d'après le club. Deux morceaux de code ont besoin de ce nom, de part et d'autre de la frontière :
+
+```ts
+// packages/config/app.ts (fichier complet)
+export const APP_ROOT = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my_app';
+```
+
+```ts
+// apps/web/src/instrumentation.ts (extrait)
+  const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
+```
+
+`packages/config/app.ts` est lu par l'explorateur de fichiers, dans le navigateur : il lui faut une `NEXT_PUBLIC_`, figée au build. `instrumentation.ts` crée les dossiers racines au démarrage du serveur, et lit `APP_SHORT_NAME`, injectée au lancement du conteneur. Deux variables, deux moments, deux fichiers de configuration différents sur le serveur (les arguments de build et le fichier d'environnement) : si l'une manque ou diffère, le serveur crée `AKFC` pendant que l'explorateur cherche `my_app`, la valeur de secours. C'est arrivé en production, quand les arguments de build avaient disparu du compose.
+
+## Trois façons de lire une variable
+
+Le code du projet lit ses variables de trois façons, selon ce que coûte leur absence.
+
+**Obligatoire : échouer tout de suite.** Sans ses identifiants, le stockage ne peut rien faire. Plutôt que de laisser partir une requête vouée à l'échec avec une erreur obscure du SDK, le client R2 vérifie chaque variable et lève une erreur qui dit laquelle manque :
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/client.ts (extrait)
+function readEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `R2 env var manquante : ${name}. ` +
+        `Vérifie ton .env.local — toutes les vars R2_* doivent être définies ` +
+        `(R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).`
+    );
+  }
+  return value;
+}
+```
+
+**Facultative, avec une valeur par défaut.** `??` (ou `||`) donne une valeur de secours : `SITE_URL` vaut `https://akfc.fr` sans `NEXT_PUBLIC_SITE_URL`, le récapitulatif des demandes part à 8 h sans `TICKET_RECAP_HOUR`. La différence entre les deux opérateurs compte : `??` ne remplace que `undefined` ou `null`, `||` remplace aussi une chaîne vide, ce qui est souvent ce qu'on veut pour une variable écrite `TICKET_RECAP_HOUR=` dans un fichier.
+
+**Une fonction activée par sa présence.** La relève des réponses aux demandes par IMAP ne démarre que si son serveur est configuré :
+
+```ts
+// packages/backend/src/modules/tickets/imapIntake.service.ts (extrait)
+  const host = process.env.TICKET_IMAP_HOST?.trim();
+  if (!host) return null;
+  const port = Number.parseInt(process.env.TICKET_IMAP_PORT || "993", 10);
+  const user = process.env.TICKET_IMAP_USER?.trim() || process.env.SMTP_USER?.trim() || "";
+  const password = process.env.TICKET_IMAP_PASSWORD || process.env.SMTP_PASSWORD || "";
+  if (!user || !password) return null;
+```
+
+Sans `TICKET_IMAP_HOST`, la fonction renvoie `null` et la relève reste éteinte, ce que le journal de démarrage signale. Les identifiants retombent sur ceux du SMTP, puisque c'est en général la même boîte. Les tâches planifiées suivent la logique inverse, avec un interrupteur : `TICKET_RECAP_DISABLED=1` ou `RETENTION_PURGE_DISABLED=1` les coupent, par exemple sur une copie de la base où l'on ne veut ni envoyer de récapitulatif ni purger de données.
+
+## NODE_ENV, la variable qu'on ne règle pas
+
+`NODE_ENV` vaut `development` sous `pnpm dev`, `production` sous `pnpm build` et `pnpm start` : Next.js la fixe lui-même, et le Dockerfile la répète pour l'image. Elle ne s'écrit dans aucun fichier `.env`. Le code s'en sert pour ce qui doit différer entre la machine du développeur et le serveur :
+
+```ts
+// packages/backend/src/lib/session/session.server.ts (extrait)
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    expires: expiresAt,
+    path: "/",
+  });
+```
+
+`secure: true` réserve le cookie de session aux connexions HTTPS. En production, c'est indispensable ; en développement, sur `http://localhost`, le navigateur refuserait de le renvoyer et la connexion serait impossible. Le même principe garde un seul client Prisma en mémoire pendant le développement (le rechargement à chaud recréerait sinon un client à chaque modification), et, quand aucun serveur d'e-mails n'est configuré, fait écrire dans la console le lien qu'aurait contenu l'e-mail plutôt que d'échouer.
+
+## L'inventaire
+
+<DocsTable columnsJson='["Variable", "Lue par", "Requise ?", "Rôle"]' rowsJson='[["DATABASE_URL, DIRECT_DATABASE_URL", "Prisma (application et CLI)", "Oui", "Adresse de la base ; la seconde contourne le regroupeur de connexions pour les migrations."], ["PRISMA_CLIENT_ENGINE_TYPE", "Prisma", "Non", "Moteur du client Prisma (library)."], ["JWT_SECRET", "proxy.ts, sessions", "Oui", "Signe et vérifie le jeton de session."], ["R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET", "Client de stockage", "Oui (erreur explicite)", "Le stockage compatible S3 : R2 en production, MinIO en développement."], ["R2_FORCE_PATH_STYLE, R2_PUBLIC_ENDPOINT", "Client de stockage", "Non", "Adresses à la MinIO ; adresse vue par le navigateur pour les URL signées."], ["APP_SHORT_NAME, NEXT_PUBLIC_APP_SHORT_NAME", "instrumentation.ts ; explorateur de fichiers", "Oui, identiques", "Dossier racine du stockage, côté serveur et côté navigateur."], ["APP_FULL_NAME, APP_SUPPORT_EMAIL", "E-mails", "Non", "Valeurs de secours si les réglages du site sont vides."], ["NEXT_PUBLIC_SITE_URL, NEXTAUTH_URL", "SEO, liens des e-mails", "Non", "Adresse publique du site (défaut https://akfc.fr)."], ["SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_NOREPLY", "Envoi des e-mails", "Oui", "Le serveur d’envoi (Mailpit en développement)."], ["SMTP_REPLY_TO, TICKET_ARCHIVE_BCC", "E-mails, demandes", "Non", "Adresse de réponse ; copie cachée des réponses du site."], ["TICKET_IMAP_*", "Relève des demandes", "Non (active si TICKET_IMAP_HOST)", "Lecture des réponses par e-mail."], ["TICKET_RECAP_HOUR, TICKET_RECAP_DISABLED, RETENTION_PURGE_DISABLED", "Tâches planifiées", "Non", "Heure du récapitulatif ; interrupteurs."], ["NODE_ENV, NEXT_RUNTIME", "Partout ; instrumentation.ts", "Fixées par Next.js", "Mode de fonctionnement ; environnement d’exécution (Node ou Edge)."]]' />
+
+`.env.example`, à la racine, reprend cette liste avec un commentaire par variable et des valeurs bidon. Toute nouvelle variable y entre en même temps que le code qui la lit : c'est la seule documentation que lira celui qui installera le projet ailleurs.
+
+<Callout type="info">
+**Ce qui a été retiré.** En dressant cet inventaire, trois variables présentes dans les modèles se sont révélées lues nulle part : `APP_URL`, `R2_ACCOUNT_ID` (seulement citée dans un message d'erreur) et `NEXT_PUBLIC_APP_FULL_NAME` (déclarée comme argument de build, jamais lue). Elles ont été retirées des modèles, du compose de la sandbox et du Dockerfile. Une variable qu'on définit sans qu'elle serve n'est pas inoffensive : on la croit active, et on cherche au mauvais endroit le jour où quelque chose ne marche pas.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où écrire une variable en développement ?", "apps/web/.env.local pour l’application ; aussi le .env de la racine si Prisma ou le seed en a besoin."], ["Où sont les valeurs de production ?", "Sur le serveur seulement, dans le fichier d’environnement du compose ; jamais dans le dépôt ni dans l’image."], ["Que change le préfixe NEXT_PUBLIC_ ?", "La valeur présente au build est recopiée dans le code compilé : visible du navigateur, et figée jusqu’au prochain build."], ["Une variable obligatoire manque ?", "Le code lève une erreur qui la nomme (stockage), plutôt qu’une panne obscure plus loin."], ["Où trouver la liste ?", ".env.example, commenté variable par variable."]]' />
+
+## À suivre
+
+La partie « Configuration » s'achève : nous savons d'où viennent les paquets, les types, le build et les réglages. Il est temps d'ouvrir l'application elle-même, par la question que se pose tout visiteur sans le savoir : quand il tape une adresse, quel fichier lui répond ?
+
+<Callout type="tip">
+**Partie suivante : les fondations du front, en commençant par le routage.** Des dossiers qui deviennent des adresses, des groupes de routes invisibles, trois layouts aux rôles opposés, et la défense en profondeur du tableau de bord.
+</Callout>

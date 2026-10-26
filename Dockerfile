@@ -48,9 +48,7 @@ RUN rm -rf node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/client \
 RUN pnpm prisma generate --schema=prisma/schema.prisma
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_APP_SHORT_NAME
-ARG NEXT_PUBLIC_APP_FULL_NAME
 ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
-ENV NEXT_PUBLIC_APP_FULL_NAME=${NEXT_PUBLIC_APP_FULL_NAME}
 RUN pnpm --filter web build
 # sharp avec ses dépendances (detect-libc, semver, @img/*) à plat : le traçage Next ne les emporte pas.
 # Le build échoue ici si sharp ne se charge pas, plutôt que l'API en production.

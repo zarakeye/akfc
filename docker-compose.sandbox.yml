@@ -94,7 +94,6 @@ services:
       target: runner
       args:
         NEXT_PUBLIC_APP_SHORT_NAME: "AKFC"
-        NEXT_PUBLIC_APP_FULL_NAME: "AKFC — Sandbox de démonstration"
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -117,13 +116,11 @@ services:
       # ── Auth / identité ──
       JWT_SECRET: "sandbox-demo-jwt-secret-change-me-please-0123456789"
       NEXTAUTH_URL: "http://localhost:3010"
-      APP_URL: "http://localhost:3010"
       APP_SHORT_NAME: "AKFC"
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"
 
       # ── Stockage (R2) → MinIO : tous les fichiers, bucket « documents ». Path-style. ──
-      R2_ACCOUNT_ID: "sandbox"
       R2_ENDPOINT: "http://minio:9000"
       R2_ACCESS_KEY_ID: "sandbox"
       R2_SECRET_ACCESS_KEY: "sandbox-secret"

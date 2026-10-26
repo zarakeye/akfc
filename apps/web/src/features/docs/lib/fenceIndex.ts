@@ -25,8 +25,9 @@ export type FenceIndex = {
   files: Map<string, string>
 }
 
-// Un chemin a une extension (`proxy.ts`), ou c'est un Dockerfile (`Dockerfile`, `apps/x/Dockerfile`).
-const PATH_LINE = /^\s*(?:\/\/|#|--)\s*(\S+\.[A-Za-z0-9]+|(?:\S+\/)?Dockerfile)(?:\s+\((.+)\))?\s*$/
+// Un chemin a une extension (`proxy.ts`), ou c'est un Dockerfile (`Dockerfile`, `apps/x/Dockerfile`),
+// ou un fichier caché sans extension (`.gitignore`, `.dockerignore`).
+const PATH_LINE = /^\s*(?:\/\/|#|--)\s*(\S+\.[A-Za-z0-9]+|(?:\S+\/)?Dockerfile|(?:\S+\/)?\.[A-Za-z][\w-]*)(?:\s+\((.+)\))?\s*$/
 
 const LANGUAGE_ALIASES: Record<string, string> = {
   "": "text",
