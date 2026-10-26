@@ -18,7 +18,125 @@ En production, ces services sont réels : PostgreSQL sur le serveur, Cloudflare 
 
 ## Les outils
 
-<DocsTable columnsJson='["Outil","Version","Pourquoi"]' rowsJson='[["Git","récente","Récupérer le dépôt et y enregistrer notre travail."],["Node.js","22","La version de l’image de production (Dockerfile, NODE_VERSION=22). Une autre version majeure peut marcher, mais nous visons la même que le serveur."],["pnpm","10.24, via corepack","Le gestionnaire de paquets du monorepo. La version exacte est épinglée dans package.json (packageManager) ; corepack l’installe tout seul."],["Docker","Docker Desktop sur Mac ou Windows, Docker Engine sur Linux","Faire tourner la base, le stockage et la boîte mail de développement."]]' />
+<DocsTable columnsJson='["Outil","Version","Pourquoi"]' rowsJson='[["Git","récente","Récupérer le dépôt et y enregistrer notre travail."],["Node.js","22, épinglée dans .nvmrc","La version de l’image de production (Dockerfile, NODE_VERSION=22). Une autre version majeure peut marcher, mais nous visons la même que le serveur."],["pnpm","10.24, via corepack","Le gestionnaire de paquets du monorepo. La version exacte est épinglée dans package.json (packageManager) ; corepack l’installe tout seul."],["Docker","Docker Desktop sur Mac ou Windows, Docker Engine sur Linux","Faire tourner la base, le stockage et la boîte mail de développement."]]' />
+
+Les commandes qui diffèrent d'un système à l'autre sont présentées par onglets ; le système choisi est retenu pour toute la documentation.
+
+### Windows : travailler dans WSL 2
+
+Le projet ne se développe pas dans PowerShell ni dans l'invite de commandes de Windows. Sous Windows, nous travaillons dans **WSL 2** (Windows Subsystem for Linux) : un vrai Linux, Ubuntu, qui tourne à côté de Windows. Tous les outils s'installent dans ce Linux, le dépôt y est cloné, et les commandes de cette documentation s'y tapent telles qu'elles sont données pour Linux.
+
+WSL s'installe une seule fois, depuis une invite de commandes Windows ouverte en administrateur ; c'est la seule commande Windows de ce chapitre :
+
+```bash
+wsl --install
+```
+
+Après le redémarrage, Ubuntu s'ouvre et demande un nom d'utilisateur et un mot de passe Linux. À partir de là, tout se passe dans son terminal.
+
+<Callout type="warning">
+Dans WSL, le dépôt se clone dans le dossier personnel Linux (`~/akfc`), pas sous `/mnt/c/…` : les fichiers de Windows vus depuis Linux sont plusieurs fois plus lents, et `pnpm install` comme le rechargement de Next.js en souffriraient.
+</Callout>
+
+### Git
+
+<OsTabs>
+<Os name="mac">
+
+macOS fournit Git avec les outils de développement d'Apple. La première commande `git` propose de les installer ; on peut aussi les demander directement :
+
+```bash
+xcode-select --install
+git --version
+```
+
+</Os>
+<Os name="linux">
+
+Sur Debian, Ubuntu et WSL :
+
+```bash
+sudo apt update
+sudo apt install -y git curl
+git --version
+```
+
+</Os>
+</OsTabs>
+
+### Node.js, par nvm
+
+Node.js ne s'installe pas depuis le site de Node, mais avec **nvm** (Node Version Manager). nvm installe une version de Node dans le dossier personnel, sans droits d'administrateur, et passe d'une version à l'autre d'un dossier à l'autre. La version du projet est écrite dans le fichier `.nvmrc` de la racine, qui ne contient qu'une ligne : `22`.
+
+nvm s'installe de la même façon sur macOS, Linux et WSL. Le script d'installation ajoute nvm au fichier de démarrage du terminal (`~/.zshrc` sur macOS, `~/.bashrc` sur Linux) : il faut ensuite **ouvrir un nouveau terminal**.
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
+```
+
+Puis, dans un nouveau terminal, à la racine du dépôt une fois cloné (`nvm install` lit `.nvmrc`), ou n'importe où en précisant la version :
+
+```bash
+nvm install 22
+node --version
+```
+
+`node --version` doit afficher `v22.…`. La même version est utilisée par l'image de production : `.nvmrc` et `NODE_VERSION` dans le `Dockerfile` doivent changer ensemble.
+
+### Docker
+
+<OsTabs>
+<Os name="mac">
+
+Sur macOS, Docker tourne dans **Docker Desktop**, une application qui démarre une petite machine virtuelle Linux. Avec Homebrew :
+
+```bash
+brew install --cask docker-desktop
+```
+
+Sans Homebrew, on télécharge Docker Desktop sur docker.com (version Apple Silicon ou Intel selon le Mac). Il faut ensuite **lancer l'application une fois** et accepter ses conditions : tant qu'elle ne tourne pas, la commande `docker` ne répond pas.
+
+```bash
+docker version
+docker compose version
+```
+
+</Os>
+<Os name="linux">
+
+Sur Linux, on installe **Docker Engine**, sans interface graphique. Le script officiel de Docker ajoute son dépôt de paquets et l'installe :
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+Pour lancer `docker` sans `sudo`, notre utilisateur rejoint le groupe `docker`, puis on se déconnecte et se reconnecte (ou on ouvre un nouveau terminal de session) :
+
+```bash
+sudo usermod -aG docker $USER
+docker run --rm hello-world
+docker compose version
+```
+
+</Os>
+<Os name="windows">
+
+Sous Windows, on installe **Docker Desktop pour Windows** (docker.com). Dans ses réglages : **General** → « Use the WSL 2 based engine » coché, puis **Resources → WSL integration** → activer l'intégration avec Ubuntu.
+
+Docker Desktop doit être lancé. Les commandes `docker` se tapent ensuite dans le terminal Ubuntu, comme sous Linux :
+
+```bash
+docker run --rm hello-world
+docker compose version
+```
+
+</Os>
+</OsTabs>
+
+`docker compose` (avec une espace) est le module Compose v2, fourni avec Docker Desktop et avec Docker Engine. L'ancienne commande `docker-compose` (avec un tiret) n'est plus utilisée par le projet.
+
+### pnpm, par corepack
 
 pnpm ne s'installe pas à la main. Node.js 22 fournit **corepack**, un outil qui procure le bon gestionnaire de paquets à chaque projet. On l'active **une fois par machine**, avant la toute première installation :
 
@@ -27,6 +145,10 @@ corepack enable
 ```
 
 Cette commande n'est écrite dans aucun fichier du dépôt pour le poste de développement, et `pnpm install` ne peut pas la lancer lui-même : tant qu'elle n'a pas été tapée, la commande `pnpm` n'existe pas. Elle installe, à côté de `node`, un petit lanceur nommé `pnpm`.
+
+<Callout type="info">
+À partir de Node.js 25, corepack n'est plus fourni avec Node. Le projet est sur Node 22, qui le fournit encore ; sur une version plus récente, on l'installe d'abord à part avec `npm install -g corepack`, puis `corepack enable` s'utilise de la même façon.
+</Callout>
 
 Ce lanceur, à chaque appel, lit le champ `packageManager` du `package.json` le plus proche :
 
