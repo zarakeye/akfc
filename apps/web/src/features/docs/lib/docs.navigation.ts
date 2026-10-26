@@ -9,6 +9,7 @@ const SECTION_ORDER = [
   "Configuration",
   "Fondations front",
   "Données",
+  "Formulaires",
   "API",
   "Authentification et droits",
   "Stockage et médias",

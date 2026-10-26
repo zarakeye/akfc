@@ -186,8 +186,8 @@ Une migration déjà appliquée ne se modifie plus : Prisma enregistre une empre
 
 ## À suivre
 
-Le serveur sait lire et écrire les données du club de façon cohérente. Il reste à les mettre à la disposition du navigateur, sans exposer la base, sans dupliquer les types, et avec des règles d'accès que personne ne puisse oublier.
+Le serveur sait lire et écrire les données du club de façon cohérente. Mais ce modèle strict est encore fermé : il faut maintenant laisser un utilisateur y faire entrer des données, qui n'ont rien de fiable, sans le corrompre. C'est le rôle du formulaire, et il est moins simple qu'il n'y paraît.
 
 <Callout type="tip">
-**Partie suivante : l'API avec tRPC.** Un routeur par domaine, des procédures typées de bout en bout, la validation par Zod, et ce que le navigateur reçoit vraiment.
+**Partie suivante : les formulaires.** Sept chapitres, du `<form>` HTML d'origine aux server actions de l'App Router : qui valide, qui décide, et les pièges d'un modèle qui donne confiance.
 </Callout>

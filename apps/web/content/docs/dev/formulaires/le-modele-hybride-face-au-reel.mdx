@@ -1,0 +1,443 @@
+---
+title: "Le modèle hybride face au réel"
+description: "Quand le backend est externe et que fetch redevient nécessaire : la différence entre un mauvais modèle et un modèle contraint, les contrats partagés et leurs limites, la hiérarchie de vérité, et un contre-exemple réel tiré du formulaire de connexion du projet."
+section: "Formulaires"
+order: 5
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+
+> **Précédemment.** Avec l’App Router, le formulaire appelle directement une fonction serveur. Une action du projet vérifie ses droits, valide avec le schéma partagé, écrit avec Prisma et renvoie un état. Le modèle tient — dans le contexte qui l’a vu naître.
+
+## 6 — RHF, useActionState et server actions : renouer avec le modèle d’origine du web
+
+Jusqu’ici, nous avons construit quelque chose de solide.
+
+Mais si nous sommes honnêtes — vraiment honnêtes — il reste une zone floue.
+
+👉 Nous avons présenté un modèle… mais nous ne l’avons pas encore confronté au réel.
+
+Et c’est exactement là que tout se joue.
+
+---
+
+## 🧠 Le moment où nous devenons rigoureux
+
+Nous pourrions nous arrêter ici et dire :
+
+👉 “voilà le bon modèle”
+
+Mais si nous faisons ça :
+
+👉 nous mentons un peu
+
+Parce que ce modèle :
+
+👉 **n’est pas universel**
+
+Et ça, c’est une bascule importante.
+
+---
+
+### ⚠️ 6.1 — Le cas réel : quand notre architecture nous contraint
+
+Reprenons ensemble.
+
+Jusqu’ici, nous avons travaillé dans un contexte très particulier :
+
+- monorepo
+- backend accessible
+- Server Actions possibles
+
+👉 donc nous pouvions faire :
+
+- logique métier côté serveur
+- accès direct à Prisma
+- zéro fetch manuel
+
+---
+
+Mais maintenant, posons-nous une vraie question.
+
+👉 **Et si nous n’avions PAS ce luxe ?**
+
+---
+
+### 🧠 Situation réelle (que nous avons tous rencontrée)
+
+Nous sommes dans un projet où :
+
+- le backend est externe
+- l’API est publique
+- le frontend est découplé
+
+Exemple :
+
+- une API REST fournie par un service tiers
+- ou un backend maintenu par une autre équipe
+
+---
+
+Et là, nous nous rendons compte de quelque chose de très concret :
+
+👉 nous ne pouvons PAS appeler une Server Action interne  
+👉 nous DEVONS passer par HTTP  
+
+---
+
+### 🔥 Donc soyons clairs
+
+👉 `fetch` redevient normal  
+👉 `fetch` redevient nécessaire  
+
+---
+
+<Callout type="info">
+Le problème n’a jamais été `fetch`.
+
+👉 Le problème commence quand le client devient une autorité métier.
+</Callout>
+
+---
+
+## ⚔️ Mauvais modèle vs modèle contraint
+
+Ici, il faut être très précis.
+
+Parce que tout n’est pas “mauvais” ou “bon”.
+
+---
+
+### ❌ Mauvais modèle (ce que nous avons tous fait au début)
+
+Nous nous retrouvons avec un client qui :
+
+- valide des règles métier
+- décide de ce qui est correct ou non
+- reconstruit la vérité
+- interprète les erreurs serveur
+
+👉 autrement dit :
+
+👉 nous transformons le frontend en backend déguisé
+
+---
+
+### ⚠️ Modèle contraint (réalité propre)
+
+Dans un contexte API publique :
+
+👉 nous acceptons la contrainte
+
+Le client :
+
+- envoie les données (`fetch`)
+- affiche le résultat
+
+Le serveur :
+
+- valide
+- décide
+- persiste
+
+👉 le client reste un **consommateur**
+
+---
+
+Et là, tout devient plus clair.
+
+👉 le problème n’est pas l’outil  
+👉 c’est la répartition des responsabilités
+
+---
+
+### 6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)
+
+Quand nous ne pouvons pas utiliser Server Actions, nous ne cherchons pas la perfection.
+
+👉 nous cherchons à **limiter la divergence**
+
+---
+
+#### 1 — Partager un contrat
+
+<CodeSnippet
+  language="ts"
+  title="Contrat partagé (Zod + TS)"
+  filename="@acme/contracts/user.ts"
+  codeJson='"import { z } from \"zod\"\n\nexport const LoginSchema = z.object({\n  email: z.string().email(),\n  password: z.string().min(8),\n})\n\nexport type LoginInput = z.infer<typeof LoginSchema>"'
+/>
+
+👉 frontend et backend parlent la même langue
+
+---
+
+Mais soyons lucides.
+
+👉 ce contrat :
+
+- n’exécute rien
+- ne valide rien côté serveur
+
+👉 c’est une **projection**
+
+---
+
+#### 🔎 Dans le projet : `packages/contracts/src/forms`
+
+Ce contrat partagé, le projet l'a, même s'il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Le schéma de la catégorie, par exemple :
+
+```ts
+// packages/contracts/src/forms/saveCategoryForm.schema.ts (fichier complet)
+import { z } from "zod";
+
+/**
+ * Schéma unifié création + édition.
+ *   - `id` ABSENT  → création
+ *   - `id` PRÉSENT → édition
+ *
+ * `id` est `z.coerce.number()` car il provient d'un input caché (string dans
+ * le FormData) et il est EXCLU du resolver client via `.pick({ type: true })`.
+ * Le champ saisi (`type`) est le seul validé côté client ; l'action valide le
+ * schéma complet.
+ */
+export const saveCategoryFormSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  type: z.string().trim().min(1, "Le type est obligatoire."),
+});
+
+export type SaveCategoryFormValues = z.infer<typeof saveCategoryFormSchema>;
+```
+
+Il est utilisé deux fois, de deux façons différentes :
+
+- côté client, par le résolveur de React Hook Form, mais en partie seulement : `.pick({ type: true })` ne garde que `type`, car `id` vient d'un champ caché que l'utilisateur ne saisit pas ;
+- côté serveur, par l'action, en entier, `id` compris.
+
+Les messages d'erreur sont écrits dans le schéma, en français, pour l'utilisateur final : ce sont eux qui s'affichent sous les champs, qu'ils viennent du navigateur ou du serveur.
+
+Et la remarque précédente vaut ici aussi : ce fichier n'exécute rien. Il n'empêche rien tant que l'action ne l'appelle pas. Sa seule garantie est que, **quand** les deux côtés l'utilisent, ils appliquent la même règle.
+
+---
+
+
+#### 2 — Génération via OpenAPI
+
+<CodeSnippet
+  language="yaml"
+  title="Extrait OpenAPI"
+  filename="openapi.yaml"
+  codeJson='"paths:\n  /login:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              $ref: \"#/components/schemas/LoginInput\""'
+/>
+
+👉 nous automatisons  
+👉 nous sécurisons le transport  
+
+---
+
+Mais encore une fois :
+
+👉 ça ne remplace PAS la logique serveur
+
+---
+
+#### 3 — SDK backend
+
+- client npm
+- fonctions typées
+- fetch encapsulé
+
+👉 meilleure DX  
+👉 même contrainte fondamentale  
+
+---
+
+### 6.3 — Hiérarchie de vérité (le vrai déclic)
+
+C’est ici que nous devons être très clairs entre nous.
+
+---
+
+#### 🧱 Cas Server Actions (idéal)
+
+- Prisma = vérité
+- Server Action = point d’entrée
+- client = interface
+
+---
+
+#### 🌐 Cas API publique (contraint)
+
+- backend = vérité
+- contrat = projection
+- client = consommateur
+
+---
+
+👉 phrase que nous devons retenir ensemble :
+
+<Callout type="info">
+Le client ne doit jamais être la source de vérité métier.
+
+👉 il doit consommer une vérité définie ailleurs
+</Callout>
+
+---
+
+### 6.4 — Contre-exemple réel : quand nous dérapons
+
+Regardons un cas que nous avons tous écrit à un moment.
+
+<CodeSnippetWalkthrough
+  language="tsx"
+  title="Anti-pattern : le client devient backend"
+  filename="BadForm.tsx"
+  kind="anti-pattern"
+  codeJson='"const handleSubmit = async () => {\n  if (!email.includes(\"@\")) {\n    setError(\"Email invalide\")\n    return\n  }\n\n  const res = await fetch(\"/api/login\", {\n    method: \"POST\",\n    body: JSON.stringify({ email, password }),\n  })\n\n  if (res.status === 403) {\n    setError(\"Accès refusé\")\n  }\n}"'
+  stepsJson='[{"title": "Validation métier côté client", "body": "Nous décidons ici de ce qui est valide. C’est déjà une fuite de responsabilité.", "scope": "2-5", "focus": "2"}, {"title": "Logique dispersée", "body": "Les règles sont noyées dans le composant, à côté de l’appel réseau.", "scope": "7-10", "focus": "7"}, {"title": "Mapping HTTP → métier", "body": "Le client interprète des statuts HTTP comme des règles métier.", "scope": "12-14", "focus": "12"}]'
+/>
+
+👉 ce code fonctionne  
+👉 mais il est instable structurellement  
+
+
+#### 🔎 Le même dérapage, dans le projet
+
+Ce contre-exemple n'est pas inventé pour l'occasion. Le formulaire de connexion du site en est une version réelle : un état contrôlé, une validation écrite à la main dans le composant, et un appel tRPC.
+
+```tsx
+// apps/web/src/features/auth/components/LoginForm.tsx (extrait)
+    if (!password) {
+      return 'Please enter your password.';
+    }
+
+    if (password.length < 12) {
+      return 'Password must be at least 12 characters long.';
+    }
+```
+
+La règle « au moins 12 caractères » existe pourtant déjà ailleurs. Dans la procédure de connexion :
+
+```ts
+// packages/backend/src/modules/auth/router.ts (extrait)
+  login: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
+      })
+    )
+```
+
+Et une troisième fois dans `packages/contracts`, dans un schéma prévu pour être partagé :
+
+```ts
+// packages/contracts/src/auth/auth.schema.ts (extrait)
+export const authSchema = z.object({
+  email: z.string().refine((value) => {
+    // Regular expression to validate email format
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }, 'Invalid email format'),
+  password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
+});
+```
+
+Trois copies de la même règle, et aucune ne connaît les autres. Le schéma partagé `authSchema` n'est importé nulle part : il existe, il est juste, et il ne sert à rien. Les messages divergent déjà : en anglais dans le composant, en français dans la procédure.
+
+Le jour où la longueur minimale passera à 14 caractères, il faudra penser aux trois fichiers. Si l'un est oublié, deux scénarios sont possibles :
+
+- le composant exige 12, la procédure 14 : l'utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu'il n'a jamais vu ;
+- le composant exige 14, la procédure 12 : rien ne casse, mais la règle affichée n'est plus celle du système.
+
+La correction suit la hiérarchie de vérité de la section 6.3 : la procédure et le composant importeraient tous les deux `authSchema`, et le composant passerait à React Hook Form avec un résolveur, comme les formulaires du tableau de bord. Elle n'est pas encore faite. Ce formulaire reste dans la doc tel qu'il est, parce qu'il montre mieux qu'un exemple inventé comment une duplication s'installe : chaque copie a été écrite de bonne foi, à un moment différent.
+
+---
+
+---
+
+## 🧠 Conclusion — version adulte (celle que nous gardons)
+
+Nous pourrions résumer ça simplement.
+
+Mais ce serait dommage.
+
+---
+
+👉 Ce n’est pas React qui est le problème  
+👉 Ce n’est pas `fetch` qui est le problème  
+
+---
+
+👉 Le vrai problème, c’est :
+
+👉 **où vit la vérité**
+
+---
+
+### Ce que nous gardons ensemble
+
+👉 Quand nous pouvons :
+
+- Server Actions  
+- logique serveur  
+- modèle centralisé  
+
+👉 nous le faisons
+
+---
+
+👉 Quand nous ne pouvons pas :
+
+- API publique  
+- backend séparé  
+
+👉 nous structurons :
+
+- contrats  
+- validation serveur  
+- client passif  
+
+---
+
+<Callout type="info">
+Un bon système ne dépend pas des outils.
+
+👉 il dépend de la bonne répartition des responsabilités
+</Callout>
+
+---
+
+Et si nous devions garder une seule idée de toute cette section :
+
+👉 ce n’est pas une question de “comment envoyer un formulaire”
+
+👉 c’est une question de :
+
+👉 **qui a le droit de décider**
+
+---
+
+👉 **Où nous en sommes :** le modèle hybride tient. Nous avons vu chaque pièce à sa place — RHF pour l’expérience, `useActionState` pour le pont, Server Actions pour la vérité — et nous avons confronté ce modèle aux contraintes du réel sans qu’il s’effondre. Mais un modèle qui fonctionne toujours n’apprend rien sur ses propres limites. Reste à changer de posture, et à regarder ce même modèle pour y trouver ce qui casse — parce que ce qui semble trop solide cache souvent ses pièges les plus dangereux.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons réparé la fracture. Trois idées en sont ressorties :
+
+- **`useActionState` est un pont, pas une destination.** Il ne remplace pas le contrat natif du web, il l’augmente — en permettant à une fonction métier de se brancher à un `<form>` sans reconstruire à la main tout ce que le navigateur faisait déjà. C’est le chaînon qui manquait pour reconnecter React au modèle ancien sans renoncer à ses forces.
+- **App Router change la nature du serveur dans le code.** Les Server Actions transforment le serveur d’une « URL à appeler » en une fonction directement référencée depuis le formulaire. Le fetch manuel disparaît, le formulaire retrouve sa cible naturelle, et la plomberie réseau sort du code applicatif.
+- **Le modèle hybride redistribue les responsabilités clairement.** RHF tient l’UX et la validation instantanée ; `useActionState` tient la traduction vers le `<form>` ; la Server Action tient la logique métier et revalide tout ce qui vient du client. Chacun fait ce qu’il fait le mieux — et surtout, plus rien ne fait ce qu’il ne devrait pas.
+
+Le Mouvement 3 va maintenant regarder ce modèle sous un autre angle : celui de ses limites. Parce qu’un pattern vraiment mature ne se juge pas sur ce qu’il permet de faire, mais sur ce qu’il nous interdit de faire mal — et sur ce qu’il ne peut pas du tout faire.
+
+## À suivre
+
+Le modèle hybride a résisté à la confrontation. C’est justement le moment de changer de posture : un modèle qui donne confiance cache ses pièges les plus dangereux là où il semble le plus solide.
+
+<Callout type="tip">
+**Chapitre suivant : les pièges du modèle hybride.** La fausse sécurité du client, `useActionState` détourné, le `FormData` qui ment, l’interface qui affiche une vérité périmée, et la duplication qu’il faut garder.
+</Callout>

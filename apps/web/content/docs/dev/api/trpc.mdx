@@ -8,7 +8,7 @@ order: 1
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le schéma Prisma décrit les données du club, et le client généré les lit et les écrit en TypeScript, côté serveur. Le navigateur, lui, n'a pas accès à la base. Il lui faut une API.
+> **Précédemment.** Le schéma Prisma décrit les données du club, et les formulaires savent y faire entrer une mutation sans trahir le modèle. Mais une application lit, liste, synchronise et invalide bien plus qu'elle ne soumet, et le navigateur n'a pas accès à la base. Il lui faut une API.
 
 ## Le besoin : des appels typés de bout en bout
 

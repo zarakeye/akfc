@@ -1,0 +1,829 @@
+---
+title: "Choisir son modèle, et ce qui déborde du formulaire"
+description: "Les actions et les flux de données, le vrai critère de choix (le centre de gravité de l’écran), les trois techniques de formulaire du projet avec leur code, et pourquoi tout ce qui n’est pas un formulaire appelle un autre modèle d’échange : tRPC."
+section: "Formulaires"
+order: 7
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+
+> **Précédemment.** Le modèle hybride casse sans bruit : un client pris pour une barrière, un `FormData` converti trop vite, une interface qui affiche sa propre copie au lieu de relire le serveur. Chaque piège a sa parade, et le projet les applique.
+
+## 8 — Choisir le bon modèle d’échange
+
+Après avoir construit le modèle hybride, une question importante apparaît.
+
+> Faut-il désormais tout faire avec RHF + `useActionState` + Server Actions ?
+
+La réponse est non.
+
+Et c’est une bonne nouvelle.
+
+Un bon modèle n’est pas un modèle que nous utilisons partout.  
+C’est un modèle que nous savons situer.
+
+Le pattern hybride construit dans cette série est extrêmement fort pour les cas suivants :
+
+- formulaires orientés modification de données côté serveur
+- flux utilisateur centrés sur une action
+- écrans où le serveur doit redevenir la source de vérité
+- besoins de validation locale + validation serveur
+- interfaces où nous voulons éviter la plomberie réseau manuelle
+
+Dans ces cas-là, ce modèle apporte beaucoup :
+
+- une meilleure séparation des responsabilités
+- moins de code réseau manuel
+- un retour structuré vers l’interface
+- une lecture plus naturelle du cycle du formulaire
+
+Mais dès que nous sortons du seul cadre du formulaire, les besoins changent.
+
+---
+
+### 8.1 — Quand le modèle hybride est le bon choix
+
+Ici, le mot **mutation** désigne simplement une action qui modifie un état côté serveur.
+
+Par exemple :
+
+- créer une ressource  
+- modifier un profil  
+- supprimer une donnée  
+- changer un mot de passe  
+
+Autrement dit, une mutation n’est pas une lecture de données.  
+C’est une opération qui transforme quelque chose dans le système.
+
+Le modèle RHF + `useActionState` + Server Actions est particulièrement adapté quand :
+
+- un utilisateur remplit puis soumet un formulaire
+- une action unique déclenche une logique métier claire
+- le serveur doit revalider et persister
+- l’interface a surtout besoin de refléter un succès, un échec, ou des erreurs de champ
+
+Autrement dit :
+
+👉 il est excellent pour les mutations pilotées par formulaire
+
+<Callout type="info">
+Quand le centre de gravité de l’écran est un formulaire,  
+ce modèle est souvent le plus naturel.
+
+👉 il épouse bien la mécanique du web
+</Callout>
+
+---
+
+### 8.2 — Quand ce modèle montre ses limites
+
+Dès que nous avons besoin de quelque chose de plus riche qu’une simple soumission, le paysage change.
+
+Par exemple :
+
+- lecture fréquente de données
+- invalidations fines
+- composition de multiples sources de données
+- synchronisation d’état
+- interactions fréquentes
+- dashboards complexes
+
+Dans ces situations, ce modèle seul devient moins adapté.
+
+Pourquoi ?
+
+Parce qu’il est conçu pour :
+
+👉 une action ponctuelle
+
+et non pour :
+
+👉 un flux continu de données
+
+---
+
+### 8.3 — Deux types de besoins différents
+
+Il est important de comprendre qu’il existe deux grandes catégories de besoins.
+
+#### 1. Les actions
+
+- soumettre un formulaire
+- modifier une ressource
+- déclencher une logique métier
+
+👉 le modèle hybride est idéal ici
+
+#### 2. Les flux de données
+
+- lire des données
+- les synchroniser
+- les partager entre composants
+- les rafraîchir intelligemment
+
+👉 ces besoins nécessitent une autre approche
+
+---
+
+### 8.4 — Vue comparative
+
+<div className="my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Modèle hybride formulaire</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Optimisé pour la soumission, la validation et les mutations.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Systèmes de gestion de données</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Optimisés pour la récupération, la synchronisation et l’invalidation des données.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Server Actions seules</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Adaptées à des cas simples centrés sur une action.
+    </span>
+  </div>
+
+  <div className="rounded-xl border p-4">
+    <div className="font-semibold">Approches classiques HTTP</div>
+    <span className="block mt-2 text-sm text-muted-foreground">
+      Plus verbeuses, mais universelles et toujours pertinentes selon le contexte.
+    </span>
+  </div>
+</div>
+
+---
+
+### 8.5 — Le vrai critère de choix
+
+Le bon critère n’est pas :
+
+> “quel outil est le plus moderne ?”
+
+Le bon critère est :
+
+> où se trouve le centre de gravité de l’écran ?
+
+👉 ce n’est pas une question d’outil  
+👉 c’est une question de responsabilité dominante
+
+#### Si le centre de gravité est :
+
+- la saisie
+- la soumission
+- le feedback utilisateur immédiat
+- la validation champ par champ
+
+👉 le modèle hybride est le meilleur choix
+
+#### Si le centre de gravité est :
+
+- la donnée
+- sa lecture
+- sa synchronisation
+- sa réutilisation
+
+👉 une approche orientée données devient plus adaptée
+
+<Callout type="info">
+Le bon outil n’est pas celui qui fait tout.
+
+C’est celui qui correspond le mieux à la responsabilité dominante du flux.
+</Callout>
+
+---
+
+
+### 8.6 — Les trois techniques du projet
+
+Ce critère n'est pas théorique : le projet l'applique, et le résultat se voit. Ses formulaires ne sont pas tous construits de la même façon, et c'est voulu. Quelle que soit sa technique, chacun tient pourtant les quatre promesses que cette série a construites :
+
+1. **une règle de validation n'est écrite qu'une fois**, dans un schéma Zod, et appliquée des deux côtés : dans le navigateur pour afficher l'erreur sous le champ, sur le serveur parce que le navigateur ne fait foi de rien ;
+2. **le serveur a le dernier mot**, sur la validité comme sur les droits ;
+3. **l'utilisateur voit l'état** : envoi en cours, erreur sous le champ concerné, message de réussite ;
+4. **la donnée affichée ailleurs se met à jour** après l'enregistrement.
+
+(Le formulaire de connexion, nous l'avons vu au chapitre 5, ne tient pas encore la première.)
+
+<DocsTable columnsJson='["Technique","Envoi","Utilisée pour","Exemples"]' rowsJson='[["React Hook Form + server action (useActionState)","Le formulaire HTML est envoyé à une fonction serveur.","Formulaires courts, champs simples.","Catégorie, origine, famille, galerie, profil"],["React Hook Form + mutation tRPC","handleSubmit appelle une procédure.","Formulaires simples dont le serveur est déjà une procédure tRPC.","Changement de mot de passe, dépôt de fichiers"],["État contrôlé + mutation tRPC","Le composant assemble l’objet et appelle une procédure.","Formulaires riches : constructeur de pages, sélecteurs, plusieurs boutons d’envoi.","Discipline, stage, événement, actualité"]]' />
+
+La première technique est celle que cette série a construite, des chapitres 3 à 6. Les deux autres font appel à **tRPC**, que la partie suivante détaille : une procédure tRPC est une fonction du serveur, typée, que le navigateur appelle comme une fonction locale. Une « mutation » tRPC est une procédure qui modifie des données, au sens de la section 8.1.
+
+#### Technique 2 : React Hook Form et mutation tRPC
+
+Quand le serveur est déjà une procédure tRPC, le formulaire n'a pas besoin de server action. Il l'appelle depuis le `handleSubmit` de React Hook Form, qui ne déclenche la fonction que si la validation passe :
+
+```tsx
+// apps/web/src/features/auth/ChangePasswordForm.tsx (extrait)
+  const changePassword = trpc.auth.changePassword.useMutation();
+
+  const onSubmit = handleSubmit(async (values) => {
+    setOkMsg(null);
+    setErrMsg(null);
+    try {
+      await changePassword.mutateAsync({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      });
+      reset();
+      setOkMsg("Mot de passe modifié. Les autres appareils ont été déconnectés.");
+    } catch (e) {
+      setErrMsg(
+        e instanceof Error ? e.message : "Impossible de changer le mot de passe.",
+      );
+    }
+  });
+```
+
+Ici, `handleSubmit` est bien appelé : contrairement au montage avec une server action, il n'y a pas d'envoi natif à arrêter, puisque le formulaire n'a pas d'attribut `action`. Le schéma du client est celui vu au chapitre 6, plus riche que celui de la procédure (la confirmation). La procédure garde ses propres vérifications (ancien mot de passe correct, nouveau mot de passe différent), et son message de refus remonte dans le `catch`.
+
+#### Technique 3 : état contrôlé et mutation tRPC
+
+Le formulaire d'une discipline contient deux éditeurs du constructeur de pages, des sélecteurs de famille, d'origine et d'instructeur, un sélecteur d'image, et **deux** boutons d'envoi. React Hook Form n'apporte plus grand-chose ici : les valeurs sont des objets (des contenus de blocs), pas des champs texte, et un `<form>` HTML ne saurait pas les transmettre.
+
+Le composant garde donc chaque valeur dans un état React, vérifie à l'envoi ce qui doit l'être, et transmet un objet complet :
+
+```tsx
+// apps/web/src/features/admin/disciplines/forms/DisciplineForm.tsx (extrait)
+  const handleSubmit = async (publish: boolean) => {
+    setSubmitError(null);
+
+    if (name.trim() === "") {
+      setSubmitError("Le nom est obligatoire.");
+      return;
+    }
+    if (slug.trim() === "") {
+      setSubmitError("Le slug est obligatoire.");
+      return;
+    }
+    if (categoryId === 0) {
+      setSubmitError("Veuillez sélectionner une catégorie.");
+      return;
+    }
+    if (instructorId === null) {
+      setSubmitError(
+        "L'instructeur principal est obligatoire. Sélectionne quelqu'un.",
+      );
+      return;
+    }
+
+    if (summaryOverLimit) {
+      setSubmitError(
+        `La présentation synthétique dépasse la limite : ${summaryChars} caractères pour ${maxChars} autorisés. Raccourcissez-la — le détail a sa place dans la description ci-dessus.`,
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        publicationDate: publish
+          ? (initial?.publicationDate ?? new Date())
+          : null,
+        name: name.trim(),
+        slug: slug.trim(),
+        type,
+        familyId,
+        school: school.trim() === "" ? null : school.trim(),
+        classification:
+          classification.trim() === "" ? null : classification.trim(),
+        originId,
+        description,
+        summary,
+        summaryMediaId,
+        categoryId,
+        instructorId,
+      });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+```
+
+Les vérifications du composant sont du confort, au sens du chapitre 6 : elles évitent un aller-retour pour une erreur évidente. La procédure, elle, revalide tout avec son schéma, et c'est elle qui refuse un slug déjà utilisé, dont le message s'affiche par le `catch`.
+
+Le choix entre brouillon et publication se fait **au bouton** :
+
+```tsx
+// apps/web/src/features/admin/disciplines/forms/DisciplineForm.tsx (extrait)
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => handleSubmit(false)}
+          disabled={isSubmitting}
+          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
+        >
+          {isSubmitting ? "Enregistrement…" : "Enregistrer en brouillon"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSubmit(true)}
+          disabled={isSubmitting}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isSubmitting ? "Enregistrement…" : "Publier"}
+        </button>
+      </div>
+```
+
+« Publier » pose la date de publication (ou garde celle qui existait), « Enregistrer en brouillon » la retire. C'est cette date que filtrent ensuite toutes les lectures publiques de l'API.
+
+Le formulaire ne contient pas la logique d'enregistrement : il reçoit une fonction `onSubmit`. La page de création y appelle `discipline.create`, la page d'édition `discipline.update`, puis invalide les lectures concernées :
+
+```tsx
+// apps/web/src/app/(admin)/dashboard/disciplines/[id]/edit/page.tsx (extrait)
+  const handleSubmit = async (input: DisciplineFormInput): Promise<void> => {
+    await updateMutation.mutateAsync({
+      id: disciplineId,
+      publicationDate: input.publicationDate,
+      name: input.name,
+      slug: input.slug,
+      type: input.type,
+      familyId: input.familyId,
+      school: input.school,
+      classification: input.classification,
+      originId: input.originId,
+      instructorId: input.instructorId,
+      description: input.description,
+      // Énumération explicite ici, contrairement à la page de création qui
+      // transmet l'objet entier : sans cette ligne le résumé serait éditable
+      // mais jamais enregistré en modification.
+      summary: input.summary,
+      summaryMediaId: input.summaryMediaId,
+    });
+    await utils.discipline.getAll.invalidate();
+    await utils.discipline.getById.invalidate({ id: disciplineId });
+    setDone(true);
+  };
+```
+
+Le commentaire signale un piège de cette séparation : la page d'édition énumère les champs, la page de création transmet l'objet entier. Un champ ajouté au formulaire doit donc l'être aussi dans la page d'édition, sinon il s'affiche, se modifie… et n'est jamais enregistré. Le commentaire le rappelle précisément pour la présentation synthétique (`summary`).
+
+#### Choisir sa technique
+
+<DocsTable columnsJson='["Le formulaire…","Choix"]' rowsJson='[["n’a que des champs simples et écrit une seule table","React Hook Form + server action, avec vérification des droits en tête de l’action et envoi suspendu le temps de la validation."],["envoie vers une procédure tRPC existante","React Hook Form + mutation, dans handleSubmit."],["contient des éditeurs, des sélecteurs complexes ou plusieurs boutons d’envoi","État contrôlé + mutation, avec un composant de formulaire qui reçoit onSubmit."]]' />
+
+Dans tous les cas, le schéma Zod partagé reste la référence, et le serveur revalide tout. Le critère de la section 8.5 tient : là où la saisie domine, le formulaire garde le premier rôle ; là où l'objet à enregistrer devient trop riche pour un `<form>`, c'est l'échange de données, et donc tRPC, qui prend le relais.
+
+---
+
+### 8.7 — Ce que cette série nous a appris
+
+Cette série ne nous a pas seulement appris à construire un formulaire.
+
+Il nous a appris à :
+
+- répartir les responsabilités
+- distinguer client et serveur
+- construire un contrat clair
+- éviter les confusions d’architecture
+
+Et cela prépare directement la suite.
+
+---
+
+### 8.8 — Transition vers la suite
+
+Le formulaire était un excellent point d’entrée.
+
+Mais une application ne se limite pas à des formulaires.
+
+Très vite, il faut gérer :
+
+- des lectures de données
+- des listes
+- des synchronisations
+- des flux plus complexes
+
+👉 C’est précisément là que la suite intervient.
+
+<Callout type="info">
+Cette série nous a appris à penser une mutation.
+
+Le prochain nous apprendra à penser l’ensemble du système d’échange de données.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** nous savons maintenant situer le modèle hybride. Il est excellent pour les mutations pilotées par formulaire — mais il n’est pas fait pour tout, et c’est exactement pour cela qu’il reste un bon modèle. Un bon pattern se reconnaît à la fois à ce qu’il permet et à ce qu’il refuse de couvrir. Reste à regarder ce qui déborde de son cadre — les lectures, les listes, les flux plus complexes — et à comprendre pourquoi l’étape d’après n’est pas un nouvel outil, mais un changement de modèle d’échange.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons regardé notre propre travail avec lucidité. Trois idées en sont ressorties :
+
+- **Ce qui ne casse pas bruyamment casse silencieusement.** Les pièges du modèle hybride ne sont pas des erreurs de syntaxe — ce sont des détournements confortables, des fausses sécurités, des UX qui donnent l’illusion d’une cohérence que le backend ne garantit pas. Les voir, c’est déjà ne plus les commettre.
+- **Un bon pattern est un pattern situé, pas un pattern universel.** Le modèle RHF + `useActionState` + Server Actions est taillé pour un usage précis — les mutations pilotées par formulaire. L’appliquer partout, c’est le vider de son sens et le faire casser là où un autre modèle aurait tenu.
+- **La maturité se mesure à la reconnaissance des limites.** Savoir faire fonctionner un pattern est une étape. Savoir quand ne pas l’utiliser en est une autre, souvent plus exigeante — parce qu’elle demande de renoncer à un confort que le pattern offre, au profit d’une cohérence que seule une autre approche peut donner.
+
+La Section 9 va maintenant regarder ce qui déborde du formulaire — les lectures, les listes, les flux complexes — et montrer pourquoi, pour aller plus loin, il faut maintenant changer de modèle d’échange.
+
+---
+
+## 9 — Transition naturelle vers tRPC
+
+À ce stade, quelque chose de très important s’est produit.
+
+Nous avons appris à construire un formulaire.  
+Mais surtout :
+
+👉 nous avons appris à **penser une mutation correctement**
+
+---
+
+Nous savons désormais :
+
+- où commence le client  
+- où le serveur doit reprendre la main  
+- pourquoi la validation serveur est non négociable  
+- comment un contrat stabilise le système  
+- pourquoi une action doit être orchestrée, pas bricolée  
+
+---
+
+Et honnêtement ?
+
+👉 c’est déjà un énorme cap
+
+---
+
+Mais maintenant, faisons quelque chose de beaucoup plus honnête.
+
+---
+
+### ⚠️ 9.1 — Le moment où tout recommence à se compliquer
+
+Imaginons.
+
+Nous construisons une vraie page.
+
+Pas un formulaire isolé.
+
+Une page réelle.
+
+---
+
+Par exemple :
+
+- une liste d’utilisateurs  
+- avec un détail sélectionnable  
+- un bouton de suppression  
+- une édition inline  
+- et une mise à jour automatique après modification  
+
+---
+
+Et là…
+
+👉 sans nous en rendre compte  
+👉 nous recommençons à écrire ça
+
+---
+
+<CodeSnippet
+  language="ts"
+  title="Multiplication des appels côté client"
+  filename="users.page.tsx"
+  kind="anti-pattern"
+  codeJson='"const users = await fetch(\"/api/users\").then((r) => r.json())\n\nconst user = await fetch(`/api/users/${id}`).then((r) => r.json())\n\nawait fetch(`/api/users/${id}`, {\n  method: \"DELETE\",\n})\n\nawait fetch(`/api/users/${id}`, {\n  method: \"PATCH\",\n  body: JSON.stringify(data),\n})"'
+/>
+
+---
+
+Au début, ça semble normal.
+
+👉 c’est juste du fetch  
+👉 rien de compliqué  
+
+---
+
+Mais très vite…
+
+👉 quelque chose commence à dériver
+
+---
+
+### 😬 9.2 — Les premiers signes de dérive
+
+Nous ajoutons :
+
+- du typage côté client  
+- des interfaces  
+- des mappings  
+- des helpers  
+
+---
+
+Et sans nous en rendre compte :
+
+👉 nous redéfinissons notre backend… côté frontend
+
+---
+
+### 🔁 Duplication invisible
+
+- types backend → dupliqués côté client  
+- validation backend → imitée côté client  
+- logique métier → interprétée côté client  
+
+---
+
+👉 rien ne casse immédiatement  
+
+👉 mais le système commence à diverger
+
+---
+
+<Callout type="warning">
+Ce moment est critique.
+
+👉 le système fonctionne encore  
+👉 mais il commence déjà à se désaligner
+</Callout>
+
+---
+
+### 🧠 9.3 — Le vrai problème (celui que nous ne voyons pas)
+
+Le problème n’est pas `fetch`.
+
+👉 Le problème, c’est ça :
+
+👉 **le client ne sait plus exactement à quoi il parle**
+
+---
+
+Parce que maintenant :
+
+- chaque appel est écrit à la main  
+- chaque réponse est interprétée localement  
+- chaque type est approximé  
+- chaque erreur est mappée différemment  
+
+---
+
+👉 il n’y a plus de contrat global
+
+---
+
+Et ça, c’est dangereux.
+
+Pas tout de suite.
+
+👉 mais inévitablement
+
+---
+
+### 🔥 9.4 — Le point de rupture
+
+Continuons encore un peu.
+
+Ajoutons :
+
+- une pagination  
+- un tri  
+- un filtre  
+- une invalidation après mutation  
+
+---
+
+Et là…
+
+👉 nous passons plus de temps à gérer les échanges  
+👉 qu’à écrire notre métier
+
+---
+
+Nous commençons à nous poser des questions :
+
+- “est-ce que ce type est à jour ?”
+- “est-ce que cette route renvoie bien ça ?”
+- “est-ce que je dois refetch ici ?”
+- “est-ce que je dois invalider ça ?”
+
+---
+
+👉 notre système devient flou
+
+---
+
+<Callout type="warning">
+Ce n’est pas un problème de code.
+
+👉 c’est un problème de modèle mental
+
+Nous n’avons plus une vision claire des échanges client ↔ serveur.
+</Callout>
+
+---
+
+### 🧠 9.5 — Ce que nous avons réellement appris avec les formulaires
+
+Revenons un instant en arrière.
+
+---
+
+Avec les formulaires, nous avons appris :
+
+👉 à **ne plus laisser le client inventer le système**
+
+---
+
+Nous avons :
+
+- redonné l’autorité au serveur  
+- structuré le retour  
+- imposé un contrat  
+- clarifié les responsabilités  
+
+---
+
+👉 le système est redevenu lisible
+
+---
+
+Mais ce que nous avons fait…
+
+👉 ne concerne encore qu’un seul type d’échange :
+
+👉 **la mutation**
+
+---
+
+### ⚠️ 9.6 — Le problème non résolu
+
+Une application réelle ne fait pas que muter.
+
+Elle :
+
+- lit  
+- compose  
+- synchronise  
+- partage  
+- invalide  
+- rafraîchit  
+
+---
+
+👉 et là, le modèle du formulaire ne suffit plus
+
+---
+
+Nous avons appris à gérer :
+
+👉 une action
+
+---
+
+Mais maintenant, il faut gérer :
+
+👉 **un système d’échange complet**
+
+---
+
+### 🚀 9.7 — Pourquoi tRPC devient inévitable
+
+C’est ici que tRPC entre en scène.
+
+Pas comme un outil “cool”.
+
+👉 comme une réponse à un problème devenu impossible à ignorer
+
+---
+
+tRPC permet de :
+
+- centraliser les échanges  
+- partager les types automatiquement  
+- supprimer la duplication  
+- structurer les appels  
+- rendre le système lisible  
+
+---
+
+👉 exactement ce que nous venons de perdre avec `fetch`
+
+---
+
+### 🔁 Ce que tRPC restaure
+
+Avec tRPC :
+
+- le client sait ce qu’il appelle  
+- le serveur expose un contrat réel  
+- les types sont partagés automatiquement  
+- les erreurs sont cohérentes  
+- les appels sont structurés  
+
+---
+
+👉 nous retrouvons ce que nous avions avec les formulaires  
+👉 mais à l’échelle de toute l’application
+
+---
+
+<Callout type="info">
+Les Server Actions ont restauré la cohérence pour les mutations.
+
+👉 tRPC va restaurer la cohérence pour tout le reste
+</Callout>
+
+---
+
+### 🧠 9.8 — Le lien profond entre les deux
+
+Ce n’est pas une rupture.
+
+👉 c’est une continuité
+
+---
+
+Les formulaires nous ont appris :
+
+- à penser une mutation  
+- à structurer un flux  
+- à respecter les responsabilités  
+
+---
+
+La partie API, avec tRPC, va nous apprendre :
+
+- à généraliser cette discipline  
+- à structurer tous les échanges  
+- à typer tout le système  
+- à garder la cohérence à grande échelle  
+
+---
+
+👉 nous ne changeons pas de sujet  
+👉 nous élargissons le champ
+
+---
+
+### 🔥 9.9 — Le vrai déclic
+
+Si nous devons retenir une seule chose :
+
+---
+
+👉 les formulaires nous ont appris à ne plus bricoler une mutation
+
+👉 tRPC va nous apprendre à ne plus bricoler un système
+
+---
+
+<Callout type="info">
+Un formulaire bien conçu est déjà une architecture en miniature.
+
+tRPC va nous permettre de construire cette architecture à l’échelle de toute notre application.
+</Callout>
+
+---
+
+### 🚪 9.10 — La suite
+
+Nous sommes prêts.
+
+---
+
+Nous savons maintenant :
+
+- où doit vivre la vérité  
+- comment structurer une action  
+- pourquoi un contrat est indispensable  
+
+---
+
+👉 il ne reste plus qu’à répondre à la vraie question :
+
+---
+
+> comment faire circuler la donnée dans toute l’application  
+> sans perdre cette cohérence ?
+
+---
+
+👉 c’est exactement ce que nous allons voir avec tRPC
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un formulaire ?","Un point de passage entre une intention humaine et un modèle typé, pas une couche d’interface."],["Qui a le dernier mot ?","Le serveur, sur la validité comme sur les droits ; la validation du client n’est qu’un filtre d’expérience."],["Où écrire une règle de validation ?","Dans un schéma Zod de packages/contracts, utilisé des deux côtés (et vraiment importé des deux côtés)."],["Que fait useActionState ?","Il fabrique, à partir de la fonction métier, la fonction que le formulaire appelle, et renvoie l’état et l’indicateur d’envoi."],["Comment bloquer un envoi invalide avec une server action ?","preventDefault() toujours, puis trigger() et relance dans startTransition."],["Qui protège une server action ?","Elle-même : vérification des droits à sa première ligne, identifiant de l’utilisateur tiré de la session."],["Comment une action signale-t-elle un refus ?","En renvoyant un état (FormActionState), pas en levant une exception."],["Comment traiter un FormData ?","Comme une matière première : extraire, normaliser, puis valider."],["Que faire après un enregistrement ?","Relire la vérité du serveur (invalider, refetch), jamais compléter un état local à la main."],["Quelle technique choisir ?","Server action pour un formulaire simple ; mutation tRPC quand la procédure existe ou que l’objet dépasse ce qu’un formulaire HTML transmet."]]' />
+
+## À suivre
+
+Les formulaires ont redonné l’autorité au serveur pour une mutation. Une application lit, compose, synchronise et invalide bien davantage qu’elle ne soumet : il lui faut un contrat pour **tous** ses échanges.
+
+<Callout type="tip">
+**Partie suivante : l’API avec tRPC.** Un routeur par domaine, des procédures typées de bout en bout, la validation par Zod, et ce que le navigateur reçoit vraiment.
+</Callout>

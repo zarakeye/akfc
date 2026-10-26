@@ -1,0 +1,390 @@
+---
+title: "Les server actions : le serveur au bout du formulaire"
+description: "Du Pages Router à l’App Router : le formulaire n’appelle plus une URL mais une fonction serveur. Une server action du projet lue ligne par ligne, la vérification des droits qu’elle doit faire elle-même, et le contrat de ses états de retour."
+section: "Formulaires"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+
+> **Précédemment.** `useActionState` relie une fonction métier à un `<form>` réel : le navigateur soumet, React orchestre, l’interface lit un état. Mais la fonction métier appelait encore `fetch` : le serveur restait « derrière une URL ».
+
+## 5 — Le changement de paradigme : du Pages Router à l’App Router
+
+C’est précisément ici qu’App Router change la donne.
+
+Dans un modèle React classique — et dans Next.js avec le Pages Router — le client reste responsable de l’orchestration :
+
+- il déclenche l’événement
+- il construit la requête
+- il appelle une API (fetch)
+- il interprète la réponse
+
+👉 le serveur est toujours “derrière une URL”
+
+---
+
+## 🧨 Le problème réel
+
+Même en monorepo :
+
+- frontend et backend peuvent être proches
+- le code peut être partagé
+
+👉 mais le pont reste HTTP
+
+---
+
+👉 le `<form>` ne peut pas appeler directement une fonction serveur  
+👉 il doit passer par une API route  
+
+---
+
+## 🚀 Le vrai changement avec App Router
+
+Avec App Router, quelque chose de beaucoup plus profond devient possible :
+
+👉 le formulaire n’appelle plus une URL  
+👉 il appelle une fonction serveur
+
+---
+
+## 🧠 Nouveau modèle mental
+
+```
+<form> → formAction → Server Action → Prisma / DB
+```
+
+---
+
+👉 plus de fetch manuel  
+👉 plus de route intermédiaire obligatoire  
+👉 plus de duplication client / serveur  
+
+---
+
+## 🔗 Concrètement
+
+Avant :
+
+- `<form>` → onSubmit  
+- JS → fetch  
+- fetch → API route  
+- API → logique métier  
+
+---
+
+Maintenant :
+
+- `<form action={formAction}>`  
+- React → appelle Server Action  
+- Server Action → exécute la logique métier  
+
+---
+
+👉 le pont est intégré au framework
+
+---
+
+## ⚙️ Le rôle de useActionState dans ce nouveau monde
+
+Dans Pages Router :
+
+👉 useActionState = meilleure organisation  
+👉 MAIS toujours basé sur fetch
+
+---
+
+Dans App Router :
+
+👉 useActionState devient un vrai pont :
+
+- DOM → déclenchement  
+- React → orchestration  
+- Server → exécution  
+- UI → retour d’état  
+
+---
+
+👉 il connecte directement le formulaire au serveur
+
+---
+
+## ⚖️ RHF, useActionState, Server Actions — répartition finale
+
+- RHF → UX (inputs, validation locale)  
+- Server Action → logique métier + validation réelle  
+- useActionState → orchestration du cycle  
+- Prisma → source de vérité  
+
+---
+
+👉 chaque couche a enfin une responsabilité claire
+
+---
+
+## ⚠️ Pourquoi ce n’est PAS possible en Pages Router
+
+Dans Pages Router :
+
+- pas de Server Actions  
+- pas d’appel direct serveur  
+- fetch obligatoire  
+- client = coordinateur principal  
+
+---
+
+👉 le modèle reste client-centré
+
+---
+
+## ✅ Ce que App Router restaure
+
+Nous ne revenons pas au web pur.
+
+👉 nous faisons mieux
+
+---
+
+- le `<form>` redevient central  
+- le serveur redevient accessible directement  
+- React n’intercepte plus tout  
+- il orchestre intelligemment  
+
+---
+
+<Callout type="info">
+Le vrai changement ne vient pas de useActionState seul.
+
+👉 il vient du couple :
+
+- Server Actions  
+- App Router  
+
+---
+
+Ce duo permet enfin :
+
+- de supprimer le fetch manuel  
+- de reconnecter le formulaire au serveur  
+- de s’appuyer à nouveau sur le modèle du web  
+
+---
+
+👉 nous ne contournons plus le web  
+👉 nous construisons avec lui
+</Callout>
+
+---
+
+## 🔬 Une server action du projet, ligne par ligne
+
+Le schéma `<form> → formAction → Server Action → Prisma` reste abstrait tant que nous ne l'avons pas lu dans du vrai code. Voici l'action qui enregistre une catégorie, celle que le `CategoryForm` du chapitre précédent passe à `useActionState` :
+
+```ts
+// apps/web/src/features/admin/categories/actions/saveCategoryForm.action.ts (fichier complet)
+'use server';
+
+import { prisma } from "@backend/prisma";
+import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
+import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
+
+export type SaveCategoryFormState = {
+  success: boolean;
+  error?: string;
+  /** Id de la catégorie upsertée — nouvel id en création, même id en édition. */
+  categoryId?: number;
+};
+
+/**
+ * 🧩 Action unique create + update. S'adapte sur la présence d'`id` :
+ *   - absent  → création (refus si le type existe déjà) ;
+ *   - présent → mise à jour (refus si un AUTRE enregistrement porte ce type).
+ */
+export const saveCategoryFormAction = async (
+  prevState: SaveCategoryFormState,
+  formData: FormData,
+): Promise<SaveCategoryFormState> => {
+  // Point d'accès public : les droits se vérifient ici, avant toute lecture du formulaire.
+  if (!(await callerIsAdmin())) return { success: false, error: ADMIN_ONLY_MESSAGE };
+
+  // `id` absent en création → formData.get renvoie null → undefined → optional.
+  const parsed = saveCategoryFormSchema.safeParse({
+    id: formData.get("id") ?? undefined,
+    type: formData.get("type")?.toString() ?? "",
+  });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const { id, type } = parsed.data;
+
+  // Conflit d'unicité — on exclut soi-même en édition.
+  const existing = await prisma.category.findUnique({ where: { type } });
+  if (existing && existing.id !== id) {
+    return {
+      success: false,
+      error:
+        id === undefined
+          ? "Cette catégorie existe déjà."
+          : "Une autre catégorie porte déjà ce type.",
+    };
+  }
+
+  try {
+    if (id === undefined) {
+      const created = await prisma.category.create({ data: { type } });
+      return { success: true, categoryId: created.id };
+    }
+    const updated = await prisma.category.update({
+      where: { id },
+      data: { type },
+    });
+    return { success: true, categoryId: updated.id };
+  } catch {
+    return { success: false, error: "Enregistrement impossible." };
+  }
+};
+```
+
+Prenons-la dans l'ordre.
+
+**`'use server'`, première ligne.** C'est elle qui fait de ce fichier un module d'actions serveur. Le composant client importe `saveCategoryFormAction` comme une fonction ordinaire ; au build, Next.js remplace cet import par une **référence** : un identifiant, et le moyen de l'appeler. Le code de l'action ne part jamais dans le navigateur, et pas davantage `prisma` qu'elle importe.
+
+**La signature `(prevState, formData)`.** C'est le contrat de `useActionState` vu au chapitre précédent : l'état précédent, puis le `FormData` brut que le navigateur a construit à partir des champs `name`. La valeur renvoyée devient le nouvel état du composant.
+
+**Le contrôle des droits, avant tout le reste.** Nous y revenons juste après : c'est la ligne la plus importante du fichier.
+
+**La validation par le schéma.** Le `FormData` est converti en objet, puis passé au **même** schéma que celui du résolveur côté client, mais complet cette fois (`id` compris). Le `?? undefined` n'est pas un détail : nous verrons au chapitre 6 ce qu'il évite.
+
+**Les règles que seul le serveur connaît.** L'unicité du type ne peut pas être vérifiée dans le navigateur : il faudrait connaître toutes les catégories existantes. C'est le serveur, avec Prisma, qui la vérifie, en s'excluant lui-même en édition.
+
+**L'écriture**, création ou mise à jour selon la présence d'`id`, et un état de retour qui donne l'identifiant de la catégorie : le composant s'en sert pour rediriger vers sa fiche.
+
+---
+
+## 🚪 Une server action est une porte ouverte
+
+C'est la conséquence la moins visible du modèle, et la plus dangereuse à oublier.
+
+Une server action n'est pas une fonction privée de la page qui l'utilise. Next.js lui attribue un identifiant, et l'expose comme un **point d'accès HTTP** : n'importe quel navigateur peut l'appeler en `POST`, qu'il ait affiché le formulaire ou non. Les identifiants figurent dans le JavaScript envoyé au navigateur ; il suffit de les lire.
+
+👉 masquer le formulaire aux non-administrateurs ne protège rien
+
+---
+
+Les actions d'administration vérifient donc les droits **à leur première ligne**, avant même de lire le formulaire. La vérification est partagée :
+
+```ts
+// apps/web/src/features/admin/common/actions/callerIsAdmin.ts (fichier complet)
+import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
+
+/**
+ * Garde des server actions d'administration.
+ *
+ * Une server action est un point d'accès HTTP public : Next lui attribue un identifiant que tout
+ * navigateur peut appeler en POST, qu'il ait affiché ou non le formulaire qui l'utilise. Elle doit
+ * donc vérifier les droits elle-même, comme une procédure tRPC, dès sa première ligne.
+ *
+ * Ce module n'est PAS un module "use server" : il n'exporte pas d'action, seulement une fonction
+ * appelée par les actions.
+ */
+export async function callerIsAdmin(): Promise<boolean> {
+  const session = await getSessionFromRequest().catch(() => null);
+  return session?.user?.isAdmin === true;
+}
+
+/** Message renvoyé par une action d'administration appelée sans les droits. */
+export const ADMIN_ONLY_MESSAGE = "Action réservée aux administrateurs.";
+```
+
+`callerIsAdmin` lit la session comme le reste de l'application (cookie, puis session en base). Ce fichier n'a pas la directive `"use server"` : il ne définit pas d'action, seulement une fonction que les actions appellent. S'il l'avait, `callerIsAdmin` deviendrait elle-même un point d'accès public.
+
+L'action du profil suit la même règle avec une exigence différente : il suffit d'être connecté, mais elle ne modifie **que** le compte de l'appelant, dont l'identifiant vient de la session, jamais du formulaire.
+
+```ts
+// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
+export async function updateMeFormAction(
+  _prevState: UpdateMeFormState,
+  formData: FormData,
+): Promise<UpdateMeFormState> {
+  const sessionClient = await getSessionFromRequest();
+  const userId = sessionClient?.user?.id;
+
+  if (!userId) {
+    return {
+      status: "error",
+      error: "Vous devez être connecté pour mettre à jour votre profil.",
+    };
+  }
+```
+
+Si l'identifiant venait d'un champ caché, n'importe quel membre connecté pourrait le remplacer par celui d'un autre et modifier son profil.
+
+<Callout type="warning">
+Une procédure tRPC déclare ses droits par son type (`protectedProcedure`, `.use(isAdmin)`) : l'oublier est visible dans le code. Une server action n'a pas ce garde-fou : **rien** ne la protège si elle ne vérifie pas elle-même. Toute nouvelle action commence par sa vérification de droits.
+</Callout>
+
+---
+
+## 📮 Le retour de l'action : un état, pas une exception
+
+Une server action ne lève pas d'erreur pour un refus attendu (catégorie déjà existante, champ invalide, droits insuffisants) : elle **renvoie** un état que le composant affiche. Une exception, elle, interromprait le rendu et finirait dans la page d'erreur de Next.js, sans message utile pour l'utilisateur.
+
+Le projet a un contrat commun pour ces états, dans `packages/contracts` :
+
+```ts
+// packages/contracts/src/forms/form-action.types.ts (fichier complet)
+export type FormActionIdle = {
+  status: "idle";
+};
+
+export type FormActionSuccess<T = undefined> = {
+  status: "success";
+  data?: T;
+  message?: string;
+};
+
+export type FormActionError<F extends string = string> = {
+  status: "error";
+  error: string;
+  fieldErrors?: Partial<Record<F, string>>;
+};
+
+export type FormActionState<T = undefined, F extends string = string> =
+  | FormActionIdle
+  | FormActionSuccess<T>
+  | FormActionError<F>;
+```
+
+Trois états possibles, que TypeScript distingue par `status` : rien n'a encore été envoyé, l'envoi a réussi, ou il a échoué. En cas d'échec, `fieldErrors` peut associer un message à chaque champ : le formulaire de profil s'en sert pour afficher, sous chaque champ, l'erreur trouvée par le serveur (chapitre 6). Les formulaires plus anciens (catégorie, origine, famille, galerie) utilisent une forme plus simple, `{ success, error }`, comme `SaveCategoryFormState` plus haut.
+
+Un piège propre aux fichiers `"use server"` : ils ne peuvent exporter **que des fonctions asynchrones**, puisque chaque export devient un point d'accès. Une constante, même un simple état initial, y provoque une erreur au premier envoi. L'état initial du formulaire de profil vit donc dans un fichier de types à part, sans la directive :
+
+```ts
+// apps/web/src/features/admin/users/forms/update-me/updateMeForm.types.ts (extrait)
+/**
+ * État initial du formulaire. Défini ICI (fichier de types, sans
+ * "use server") et NON dans l'action : un module "use server" ne peut
+ * exporter que des fonctions async (sinon crash au submit).
+ */
+export const initialUpdateMeFormState: UpdateMeFormState = {
+  status: "idle",
+};
+```
+
+---
+
+
+👉 **Où nous en sommes :** App Router a redonné au serveur son statut — pas « derrière une URL » à construire, mais directement au bout du `<form>`, via les Server Actions. Combiné à `useActionState`, cela permet enfin de supprimer le fetch manuel et de reconnecter le formulaire au modèle natif du web, en version augmentée. Reste à voir ce qui se passe quand nous confrontons vraiment ce modèle au réel — aux contraintes d’architecture, aux compromis, et aux cas où la théorie rencontre la complexité d’un vrai projet.
+
+## À suivre
+
+Le modèle tient sur le papier, et sur un vrai formulaire du projet. Reste à le confronter à ce qui ne dépend pas de nous : une API externe, un backend séparé, et nos propres raccourcis.
+
+<Callout type="tip">
+**Chapitre suivant : le modèle hybride face au réel.** Quand `fetch` redevient nécessaire, ce qu’un contrat partagé garantit (et ce qu’il ne garantit pas), la hiérarchie de vérité, et un contre-exemple tiré du projet.
+</Callout>

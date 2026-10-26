@@ -1,0 +1,599 @@
+---
+title: "Les pièges du modèle hybride"
+description: "Là où le modèle casse sans bruit : la validation client prise pour une barrière, useActionState détourné en gestionnaire d’état, le FormData converti trop vite, l’interface qui ment après un enregistrement, la double validation et l’excès d’application ; chaque piège confronté au code du projet."
+section: "Formulaires"
+order: 6
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+
+> **Précédemment.** Le modèle hybride tient face au réel : les server actions quand nous le pouvons, un contrat et un client passif quand nous ne le pouvons pas. Et la question centrale n’est plus « comment envoyer », mais « qui a le droit de décider ».
+
+## Mouvement 3 — Les limites du modèle
+
+Jusqu’ici, nous avons construit. Ce mouvement change de posture : nous ne cherchons plus à faire tenir le modèle, nous cherchons à comprendre où il ne tient plus. Parce qu’un modèle que nous appliquons partout perd son sens ; seul un modèle que nous savons situer reste un bon modèle.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 7** — Nous regardons les pièges réels du modèle hybride : les détournements confortables, les fausses sécurités, les moments où l’UX ment à l’utilisateur. Tout ce qui donne l’impression que ça marche… jusqu’à ce que ça casse.
+- **Section 8** — Nous apprenons à situer le modèle : quand il est le bon choix, quand il ne l’est pas, et ce qui distingue un pattern utilisé à bon escient d’un pattern appliqué par réflexe.
+
+À la fin de ce mouvement, nous ne serons plus seulement capables d’utiliser RHF + `useActionState` + Server Actions — nous saurons aussi dire, avec lucidité, quand ne pas l’utiliser.
+
+---
+
+## 7 — Là où le modèle casse : les pièges réels du modèle hybride
+
+Jusqu’ici, tout tenait.
+
+Et c’est justement pour ça que c’est dangereux.
+
+Parce que le modèle hybride ne casse pas immédiatement.  
+Il fonctionne. Il donne confiance. Il donne même une sensation de maîtrise.
+
+👉 Et c’est exactement là que les erreurs commencent.
+
+---
+
+## 🧠 Changement de posture
+
+Jusqu’ici, nous avons construit.
+
+Maintenant, nous allons faire quelque chose de beaucoup plus important :
+
+👉 nous allons observer **comment ça casse dans la vraie vie**
+
+Pas en théorie.  
+Pas dans un slide.  
+
+👉 dans des situations qui arrivent réellement.
+
+---
+
+### ⚠️ 7.1 — Le faux sentiment de sécurité (le piège le plus dangereux)
+
+Nous construisons un formulaire.
+
+- RHF valide
+- les erreurs s’affichent
+- le bouton se désactive
+- tout semble propre
+
+👉 Et nous nous disons :
+
+👉 “ok, mes données sont clean”
+
+---
+
+Imaginons maintenant.
+
+Un utilisateur contourne le client.  
+Ou une requête est rejouée.  
+Ou une valeur est modifiée.
+
+👉 Le serveur reçoit quelque chose d’invalide.
+
+---
+
+Et là :
+
+- soit il accepte → bug métier
+- soit il refuse → UX incohérente
+
+---
+
+👉 Ce moment-là, il arrive toujours.
+
+Et quand il arrive :
+
+👉 nous réalisons que le client n’a jamais été une barrière  
+👉 seulement un filtre UX
+
+---
+
+<Callout type="warning">
+Le client rassure.
+
+👉 Le serveur protège.
+</Callout>
+
+---
+
+### ⚠️ 7.2 — Le piège confortable : détourner useActionState
+
+Nous découvrons `useActionState`.
+
+Et très vite, nous nous disons :
+
+👉 “je peux tout faire avec ça”
+
+---
+
+Alors nous commençons à :
+
+- stocker des données
+- synchroniser des écrans
+- centraliser des appels
+
+---
+
+Et ça marche… au début.
+
+---
+
+Puis un jour :
+
+- deux composants dépendent du même état
+- une action modifie autre chose ailleurs
+- un refresh casse tout
+
+---
+
+👉 et là, nous comprenons :
+
+👉 ce n’est pas un state manager  
+👉 ce n’est pas un data layer  
+
+---
+
+👉 c’est un outil **local, contextuel, éphémère**
+
+---
+
+<Callout type="warning">
+`useActionState` ne structure pas notre app.
+
+👉 il structure une interaction
+</Callout>
+
+---
+
+### ⚠️ 7.3 — Le piège silencieux : FormData
+
+C’est ici que les bugs les plus vicieux apparaissent.
+
+Le serveur reçoit :
+
+<CodeSnippet
+  language="ts"
+  title="Entrée brute"
+  filename="server.action.ts"
+  codeJson='"formData: FormData"'
+/>
+
+---
+
+Ce que ça veut dire en réalité :
+
+- tout est string
+- rien n’est garanti
+- certaines valeurs peuvent être null
+
+---
+
+Imaginons maintenant :
+
+Nous faisons :
+
+<CodeSnippet
+  language="ts"
+  title="Bug silencieux"
+  filename="server.action.ts"
+  codeJson='"const age = Number(formData.get("age"))"'
+/>
+
+---
+
+Si `age` est null :
+
+👉 `Number(null)` → 0
+
+---
+
+👉 Nous venons d’introduire un bug… sans aucune erreur
+
+---
+
+C’est ça, le danger.
+
+👉 pas un crash  
+👉 une dérive silencieuse
+
+---
+
+### Le vrai pipeline
+
+<CodeSnippet
+  language="ts"
+  title="Pipeline sûr"
+  filename="server.action.ts"
+  codeJson='"const raw = formData.get("age")
+
+const age = raw ? Number(raw) : undefined
+
+const parsed = schema.safeParse({ age })"'
+/>
+
+---
+
+<Callout type="info">
+FormData n’est pas une donnée.
+
+👉 c’est une matière première
+</Callout>
+
+---
+
+#### 🔎 Dans le projet : deux façons de traiter la matière première
+
+L'action du profil applique ce pipeline à la lettre, en trois temps :
+
+```ts
+// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
+  const raw = {
+    firstName: String(formData.get("firstName") ?? ""),
+    lastName: String(formData.get("lastName") ?? ""),
+    pseudo: String(formData.get("pseudo") ?? ""),
+    aboutMe: String(formData.get("aboutMe") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+    birthDate: String(formData.get("birthDate") ?? ""),
+  };
+
+  const input = {
+    firstName: raw.firstName.trim(),
+    lastName: raw.lastName.trim(),
+    pseudo: raw.pseudo.trim() || undefined,
+    aboutMe: raw.aboutMe.trim() || undefined,
+    phone: raw.phone.trim() || undefined,
+    birthDate: raw.birthDate.trim() || undefined,
+  };
+
+  const parsed = updateMeFormSchema.safeParse(input);
+```
+
+- **`raw`** : chaque valeur est extraite et forcée en chaîne. `formData.get` renvoie `null` pour un champ absent, et `?? ""` en fait une chaîne vide plutôt que la chaîne `"null"` que produirait `String(null)` ;
+- **`input`** : les chaînes sont nettoyées (`trim`), et un champ facultatif laissé vide devient `undefined`, c'est-à-dire « non renseigné » pour le schéma, et non « renseigné avec une chaîne vide » ;
+- **`safeParse`** : seulement maintenant, le schéma décide.
+
+L'action de la catégorie, plus courte, contient le même soin en une seule ligne :
+
+```ts
+// apps/web/src/features/admin/categories/actions/saveCategoryForm.action.ts (extrait)
+  // `id` absent en création → formData.get renvoie null → undefined → optional.
+  const parsed = saveCategoryFormSchema.safeParse({
+    id: formData.get("id") ?? undefined,
+    type: formData.get("type")?.toString() ?? "",
+  });
+```
+
+En création, il n'y a pas de champ `id` : `formData.get("id")` renvoie `null`. Or le schéma déclare `id: z.coerce.number().int().positive().optional()`. Sans `?? undefined`, `z.coerce.number()` convertirait `null` en `0` (exactement le `Number(null)` de plus haut), et `.positive()` refuserait ce zéro : **aucune catégorie ne pourrait être créée**, avec un message d'erreur sur un champ que l'utilisateur ne voit même pas. Avec `?? undefined`, l'absence reste une absence, et `.optional()` l'accepte.
+
+---
+
+
+### ⚠️ 7.4 — Le moment où l’UX ment
+
+Scène réelle.
+
+Nous modifions notre profil.
+
+- le formulaire valide
+- la requête passe
+- nous mettons à jour le state local
+
+👉 tout semble OK
+
+---
+
+Puis :
+
+👉 nous rafraîchissons la page
+
+---
+
+Et là :
+
+👉 les données ne correspondent pas
+
+---
+
+Pourquoi ?
+
+- le serveur a normalisé
+- le serveur a modifié
+- le serveur a rejeté partiellement
+
+---
+
+👉 mais notre client ne le sait pas
+
+---
+
+👉 notre UI ment
+
+---
+
+<Callout type="warning">
+Un state local n’est jamais une vérité.
+
+👉 c’est une projection temporaire
+</Callout>
+
+---
+
+#### 🔎 Dans le projet : relire après avoir écrit
+
+Le projet ne met jamais à jour un état local « à la main » après un enregistrement. Il redemande la vérité au serveur.
+
+Après la création ou la modification d'une catégorie, le formulaire invalide les lectures tRPC qui l'affichent ailleurs, puis redirige vers la fiche :
+
+```tsx
+// apps/web/src/features/admin/categories/forms/CategoryForm.tsx (extrait)
+  useEffect(() => {
+    if (state.success) {
+      void utils.category.getAll.invalidate();
+      if (initial) void utils.category.getById.invalidate({ id: initial.id });
+    }
+  }, [state.success, utils, initial]);
+
+  if (state.success && state.categoryId != null) {
+    return (
+      <SuccessRedirect
+        target={`/dashboard/categories/${state.categoryId}`}
+        message={initial ? "Catégorie mise à jour." : "Catégorie créée."}
+      />
+    );
+  }
+```
+
+« Invalider » une lecture, c'est la déclarer périmée : la prochaine fois qu'un composant en a besoin, la liste des catégories est relue sur le serveur, avec ce qu'il a réellement enregistré.
+
+Le formulaire de profil va plus loin, parce que les données modifiées vivent à deux endroits :
+
+```tsx
+// apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx (extrait)
+  useEffect(() => {
+    if (state.status !== "success") return;
+    profileQuery.refetch();
+    // La session du store date du chargement de la page : elle porte encore
+    // `isFirstLogin` et l'ancien nom. Une server action ne la rafraîchit pas.
+    // On la relit AVANT de partir, sinon FirstLoginRedirect ramènerait aussitôt
+    // ici, et le header garderait l'ancien nom.
+    // Redirige ensuite vers la page d'où l'on vient (profil ou dashboard).
+    void useSessionStore
+      .getState()
+      .fetchSession()
+      .then(() => router.push(back.href));
+  }, [state.status, profileQuery, router, back.href]);
+```
+
+Le profil est relu (`refetch`), mais aussi la **session** gardée dans le navigateur, qui contient le nom affiché dans le header et l'indicateur de première connexion. Le commentaire explique ce qui se passerait sans cette relecture : le serveur aurait bien enregistré le profil, mais le header afficherait encore l'ancien nom, et la redirection de première connexion, se fiant à sa copie périmée, ramènerait aussitôt le membre sur ce même formulaire. C'est exactement « l'UX qui ment » : chaque morceau d'interface aurait cru sa propre copie.
+
+---
+
+
+### ⚠️ 7.5 — La duplication inévitable (et saine)
+
+Oui, nous validons deux fois.
+
+Et non, ce n’est pas un problème.
+
+---
+
+Le problème serait :
+
+👉 de croire que ces validations doivent être identiques
+
+---
+
+- client → UX
+- serveur → vérité
+
+---
+
+👉 même forme  
+👉 même intention  
+
+👉 mais pas le même rôle
+
+---
+
+Le piège :
+
+👉 “je veux une seule validation”
+
+---
+
+Résultat :
+
+👉 soit UX dégradée  
+👉 soit sécurité fragile  
+
+---
+
+
+#### 🔎 Dans le projet : deux validations, deux rôles
+
+Le formulaire de changement de mot de passe montre une validation client **plus riche** que celle du serveur, sans contradiction :
+
+```tsx
+// apps/web/src/features/auth/ChangePasswordForm.tsx (extrait)
+const formSchema = changePasswordSchema
+  .extend({ confirmPassword: z.string().min(1, "Confirmation requise") })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Les mots de passe ne correspondent pas",
+  });
+```
+
+Le schéma partagé `changePasswordSchema` (mot de passe actuel, nouveau mot de passe d'au moins 12 caractères) est celui que la procédure applique. Le formulaire l'**étend** avec une confirmation, et vérifie que les deux saisies sont identiques (`refine`). La confirmation n'intéresse que l'utilisateur, qui pourrait faire une faute de frappe dans un champ masqué : elle n'est jamais envoyée. Le serveur, lui, garde ses propres vérifications, que le navigateur ne peut pas faire : l'ancien mot de passe correspond-il au compte ?
+
+Le formulaire de profil fait le choix inverse : **aucun** résolveur côté client. Toute la validation est faite par l'action, qui renvoie une erreur par champ :
+
+```ts
+// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
+  if (!parsed.success) {
+    const flat = parsed.error.flatten();
+
+    return {
+      status: "error",
+      error: flat.formErrors?.[0] ?? "Veuillez corriger les champs en erreur.",
+      fieldErrors: {
+        firstName: firstError(flat.fieldErrors.firstName),
+        lastName: firstError(flat.fieldErrors.lastName),
+        pseudo: firstError(flat.fieldErrors.pseudo),
+        aboutMe: firstError(flat.fieldErrors.aboutMe),
+        phone: firstError(flat.fieldErrors.phone),
+        birthDate: firstError(flat.fieldErrors.birthDate),
+      },
+    };
+  }
+```
+
+Et le composant range ces erreurs du serveur dans React Hook Form, comme si elles venaient de lui :
+
+```tsx
+// apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx (extrait)
+  useEffect(() => {
+    if (state.status === "success") {
+      clearErrors();
+      return;
+    }
+
+    if (state.status !== "error") return;
+    if (!state.fieldErrors) return;
+
+    clearErrors();
+
+    const fe = state.fieldErrors;
+
+    if (fe.firstName)
+      setError("firstName", { type: "server", message: fe.firstName });
+    if (fe.lastName)
+      setError("lastName", { type: "server", message: fe.lastName });
+    if (fe.pseudo) setError("pseudo", { type: "server", message: fe.pseudo });
+    if (fe.aboutMe)
+      setError("aboutMe", { type: "server", message: fe.aboutMe });
+    if (fe.phone) setError("phone", { type: "server", message: fe.phone });
+    if (fe.birthDate)
+      setError("birthDate", { type: "server", message: fe.birthDate });
+  }, [state, setError, clearErrors]);
+```
+
+`setError(champ, { type: "server", ... })` place le message sous le bon champ, au même endroit qu'une erreur locale. L'utilisateur ne voit pas de différence ; le code, lui, sait d'où vient chaque erreur. Le prix de ce choix : un aller-retour serveur pour découvrir une erreur qu'un résolveur aurait signalée tout de suite. Pour un formulaire qu'on remplit rarement, c'est un prix acceptable.
+
+---
+
+### ⚠️ 7.6 — Le piège d’over-application
+
+Nous découvrons un modèle puissant.
+
+Alors nous voulons tout faire avec.
+
+---
+
+Et nous commençons à l’utiliser pour :
+
+- dashboards
+- temps réel
+- polling
+- cache
+
+---
+
+👉 erreur
+
+---
+
+Parce que ce modèle est optimisé pour :
+
+👉 une action ponctuelle
+
+---
+
+Pas pour :
+
+👉 un flux continu
+
+---
+
+👉 chaque outil a un terrain
+
+---
+
+### ⚠️ 7.7 — Le vrai piège (le plus subtil)
+
+Ce modèle ne casse pas quand nous faisons une erreur.
+
+👉 il casse quand nous faisons quelque chose qui semble correct
+
+---
+
+- mettre à jour un state local
+- faire confiance à RHF
+- convertir un FormData directement
+
+---
+
+👉 tout fonctionne
+
+---
+
+👉 jusqu’au jour où ça ne fonctionne plus
+
+---
+
+Et ce jour-là :
+
+👉 le bug est difficile à comprendre  
+👉 parce qu’il vient d’une mauvaise hypothèse
+
+---
+
+## 🧠 Le point clé (celui que nous gardons vraiment)
+
+<Callout type="info">
+Le modèle hybride fonctionne…
+
+👉 uniquement si nous respectons la hiérarchie
+
+- client → interface
+- serveur → vérité
+- formulaire → passage
+</Callout>
+
+---
+
+## 🎯 Conclusion (version adulte)
+
+Un développeur junior cherche à faire fonctionner.
+
+Un développeur intermédiaire cherche à optimiser.
+
+Un développeur senior cherche à comprendre :
+
+👉 où ça casse  
+👉 et pourquoi
+
+---
+
+Et nous, ici :
+
+👉 nous ne voulons pas juste utiliser ce modèle
+
+👉 nous voulons savoir **quand il devient dangereux**
+
+---
+
+👉 **Où nous en sommes :** nous avons vu que le modèle hybride ne casse pas en hurlant — il casse discrètement, dans les moments où il donne l’impression de tenir. Les pièges les plus dangereux ne sont pas ceux qui produisent des bugs visibles, mais ceux qui installent une fausse sécurité : un détournement ici, un raccourci là, une UX qui ment à l’utilisateur sans que personne ne s’en aperçoive. Reste à franchir l’étape suivante — celle qui distingue le développeur qui fait marcher un pattern de celui qui sait le situer.
+
+## À suivre
+
+Nous savons maintenant où le modèle casse. Il reste à savoir où il ne s’applique pas du tout : un bon modèle se reconnaît aussi à ce qu’il refuse de couvrir.
+
+<Callout type="tip">
+**Chapitre suivant : choisir son modèle.** Les actions et les flux de données, le vrai critère de choix, les trois techniques de formulaire du projet, et ce qui déborde du formulaire.
+</Callout>

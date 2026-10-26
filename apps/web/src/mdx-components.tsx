@@ -127,6 +127,9 @@ export const mdxComponents: MDXComponents = {
     )
   },
 
+  // Sous-sections d'un ###, sans ancre ni entrée dans « Sur cette page ».
+  h4: (props) => <h4 className="mt-6 mb-2 text-lg font-semibold tracking-tight" {...props} />,
+
   p: (props) => <p className="mb-4 leading-7" {...props} />,
   ul: (props) => <ul className="mb-4 list-disc space-y-2 pl-6" {...props} />,
   ol: (props) => <ol className="mb-4 list-decimal space-y-2 pl-6" {...props} />,

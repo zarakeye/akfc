@@ -1,0 +1,265 @@
+---
+title: "React Hook Form : le confort côté client"
+description: "Ce que React Hook Form apporte à un formulaire (champs enregistrés, validation locale, erreurs structurées), son usage dans le projet avec un résolveur Zod, et pourquoi il améliore l’expérience sans restaurer le contrat avec le serveur."
+section: "Formulaires"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeSnippetWalkthrough } from "@/features/docs/ui/CodeSnippetWalkthrough"
+
+> **Précédemment.** Le web avait un contrat simple : le navigateur transmet, le serveur décide. En interceptant l’envoi, React a confié à JavaScript tout ce que le navigateur faisait en silence, y compris ce qui n’aurait jamais dû quitter le serveur.
+
+## 3 — Remettre de l’ordre : l’essor des bibliothèques de formulaires
+
+Face à cette complexité croissante, une évidence s’est imposée :
+
+👉 gérer un formulaire entièrement à la main devient vite ingérable.
+
+Chaque implémentation répétait les mêmes patterns :
+
+- gestion des inputs  
+- synchronisation des valeurs  
+- validation  
+- affichage des erreurs  
+- contrôle du submit  
+
+---
+
+Très vite, des bibliothèques sont apparues pour simplifier ce travail.
+
+Parmi elles, React Hook Form s’est imposée comme une solution particulièrement efficace.
+
+---
+
+## 🧩 Le rôle réel de React Hook Form
+
+Son objectif est clair :
+
+👉 redonner de la structure à la gestion des formulaires côté client
+
+---
+
+Avec React Hook Form, une grande partie de la mécanique est abstraite :
+
+- les champs sont enregistrés automatiquement  
+- les valeurs sont suivies sans re-render excessif  
+- la validation peut être centralisée (souvent avec Zod)  
+- les erreurs sont gérées de manière structurée  
+
+---
+
+Nous ne manipulons plus directement chaque input.  
+Nous déléguons leur gestion à un système pensé pour ça.
+
+---
+
+👉 RHF ne simplifie pas seulement le code
+
+👉 il structure le **comportement du formulaire côté client**
+
+---
+
+## ⚙️ Avant / Après — côté client uniquement
+
+<CodeSnippet
+  language="tsx"
+  title="React vs React Hook Form"
+  filename="LoginForm.tsx"
+  kind="educational"
+  codeJson='"// ❌ sans RHF\nconst [email, setEmail] = useState(\"\")\nconst [error, setError] = useState(\"\")\n\n<input\n  value={email}\n  onChange={(e) => setEmail(e.target.value)}\n/>\n\n// ✅ avec RHF\nconst { register, handleSubmit } = useForm()\n\n<form onSubmit={handleSubmit((data) => console.log(data))}>\n  <input {...register(\"email\")} />\n</form>"'
+/>
+
+---
+
+Résultat :
+
+- moins de boilerplate  
+- moins de bugs liés aux états  
+- meilleure performance  
+- structure plus claire  
+
+---
+
+👉 côté développeur, c’est un énorme gain
+
+---
+
+
+## 🔎 Dans le projet : React Hook Form et un résolveur Zod
+
+Le tableau de bord du club s'appuie sur React Hook Form dans la plupart de ses formulaires simples. Celui d'une catégorie (« Cours », « Stage », « Évènement ») en est le plus petit exemple :
+
+```tsx
+// apps/web/src/features/admin/categories/forms/CategoryForm.tsx (extrait)
+  // Resolver client : on ne valide QUE `type` (l'`id` vient de l'input caché).
+  const form = useForm<FormValues>({
+    resolver: zodResolver(saveCategoryFormSchema.pick({ type: true })),
+    defaultValues: { type: initial?.type ?? "" },
+    mode: "onBlur",
+  });
+```
+
+Trois réglages, trois décisions :
+
+- `resolver: zodResolver(...)` branche un **schéma Zod** sur React Hook Form. Les règles ne sont plus écrites champ par champ (`register("email", { required: "Email requis" })`), mais dans un schéma, une seule fois ;
+- ce schéma, `saveCategoryFormSchema`, n'est pas défini dans le composant : il est importé de `packages/contracts`, le paquet que partagent le navigateur et le serveur. Nous y reviendrons au chapitre 5 ;
+- `mode: "onBlur"` vérifie un champ quand l'utilisateur le quitte, plutôt qu'à chaque frappe : l'erreur apparaît au bon moment, sans clignoter pendant la saisie.
+
+C'est React Hook Form utilisé à son meilleur. Et pourtant, tout ce que la suite de cette section décrit s'applique ici aussi : ce résolveur ne protège rien. Il filtre ce que l'utilisateur honnête tape dans un navigateur ordinaire. Il ne voit pas le reste.
+
+---
+
+## ⚠️ Mais le problème fondamental reste entier
+
+Et c’est ici que beaucoup de développeurs se trompent.
+
+---
+
+Même avec React Hook Form :
+
+👉 le modèle fondamental **ne change pas**
+
+---
+
+Le client reste responsable de :
+
+- la validation côté client  
+- la construction de la requête  
+- l’appel réseau (`fetch`)  
+- la gestion des réponses serveur  
+
+---
+
+Autrement dit :
+
+👉 RHF améliore l’expérience  
+👉 mais ne répare pas l’architecture
+
+---
+
+## 🧨 Le piège : une illusion de sécurité
+
+RHF donne une impression de solidité :
+
+- validation propre  
+- erreurs bien gérées  
+- code structuré  
+
+---
+
+Mais cette solidité est locale.
+
+---
+
+👉 elle ne garantit **rien** côté serveur
+
+👉 elle ne garantit **rien** vis-à-vis du modèle Prisma
+
+---
+
+Dans notre projet :
+
+👉 la source de vérité est le `schema.prisma`
+
+---
+
+Mais avec RHF seul :
+
+- les types peuvent diverger  
+- les validations peuvent différer  
+- les structures peuvent évoluer indépendamment  
+
+---
+
+👉 nous restons dans un système potentiellement incohérent
+
+---
+
+<Callout type="warning">
+React Hook Form structure le client…
+
+mais ne garantit pas la cohérence avec le serveur.
+
+- ❌ le modèle Prisma n’est pas directement impliqué  
+- ❌ la validation doit être dupliquée  
+- ❌ les règles métier restent côté serveur  
+
+👉 RHF améliore l’UX  
+👉 mais ne restaure pas le contrat du système
+</Callout>
+
+---
+
+## 🧠 Le bon positionnement mental
+
+Pour comprendre correctement RHF, il faut le remettre à sa place.
+
+---
+
+👉 ce n’est pas une solution complète  
+👉 c’est une couche spécialisée
+
+---
+
+👉 RHF est une **couche UX client**
+
+Son rôle :
+
+- capturer les inputs  
+- organiser les données  
+- améliorer l’expérience utilisateur  
+
+---
+
+Mais :
+
+👉 il ne décide pas  
+👉 il ne valide pas réellement  
+👉 il ne garantit rien  
+
+---
+
+👉 le serveur reste la source de vérité
+
+👉 et ce serveur s’appuie sur Prisma
+
+---
+
+<Callout type="info">
+React Hook Form est un excellent outil…
+
+👉 à condition de ne pas lui donner un rôle qu’il n’a pas
+
+- RHF gère l’expérience utilisateur  
+- le serveur applique les règles métier  
+- Prisma définit la structure réelle des données  
+
+👉 chaque couche a une responsabilité précise
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** React Hook Form a fait un travail honnête côté client — gestion des champs, validation locale, affichage des erreurs. Mais il n’a pas touché la fracture originale : le serveur reste contourné, la validation métier reste à refaire ailleurs, et le contrat entre le formulaire et le backend reste à réécrire à la main. Le confort est revenu ; la cohérence, non. Reste à trouver le pont qui réconcilie enfin ces deux mondes — et c’est là que commence le vrai mouvement.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons fait un détour historique, et trois idées en sont ressorties :
+
+- **Le contrat natif n’était pas naïf, il était juste.** Un `<form action>` et une méthode suffisaient à faire parler le navigateur et le serveur dans une langue commune, où chacun tenait son rôle. Nous avons perdu cette clarté, pas parce qu’elle était fausse, mais parce qu’elle ne répondait plus aux besoins d’expérience utilisateur que React allait permettre.
+- **React a gagné en flexibilité, mais il a fracturé l’architecture.** En interceptant le submit, il s’est rendu responsable de tout ce que le navigateur faisait silencieusement — transport, validation, orchestration — sans toujours mesurer ce qu’il prenait en charge. Le formulaire n’est plus un mécanisme, c’est devenu un pattern fragile.
+- **Les form libraries ont soigné le symptôme, pas la cause.** RHF a remis de l’ordre dans le chaos local du client, mais la fracture avec le serveur est restée entière. Nous avons gagné en confort ce que nous continuions de perdre en cohérence.
+
+Le Mouvement 2 va maintenant reconstruire le pont — en passant par `useActionState`, puis par App Router et les Server Actions, puis par un modèle hybride où chaque couche retrouve enfin sa place.
+
+## À suivre
+
+Le confort est revenu ; la cohérence, non. Il manque un pont qui rebranche une fonction métier sur un vrai `<form>`, sans que nous jouions nous-mêmes le rôle du navigateur.
+
+<Callout type="tip">
+**Chapitre suivant : useActionState, le pont.** La différence entre la fonction que nous écrivons et celle que le formulaire appelle vraiment, et ce que React Hook Form ne bloque pas.
+</Callout>
