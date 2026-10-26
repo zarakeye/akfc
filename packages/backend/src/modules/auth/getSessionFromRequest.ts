@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@backend/prisma";
 import { COOKIE_NAME } from "@contracts/auth/constants";
-import type { Session, User } from "@prisma/client";
+import type { Prisma, Session } from "@prisma/client";
 import type { SessionClient } from "@contracts/auth/session.types";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -12,9 +12,8 @@ type SessionJwtPayload = {
   sessionId: Session["id"];
 };
 
-type SessionDB = Session & {
-  user: User | null;
-};
+/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la requête elle-même. */
+type SessionDB = Prisma.SessionGetPayload<{ include: { user: true } }>;
 
 function mapSessionDBToSessionClient(
   session: SessionDB,
@@ -23,13 +22,13 @@ function mapSessionDBToSessionClient(
   return {
     expiresAt: session.expiresAt,
     user: {
-      id: session.user!.id,
-      email: session.user!.email,
-      firstName: session.user!.firstName,
-      lastName: session.user!.lastName,
-      pseudo: session.user!.pseudo,
-      avatar: session.user!.avatar,
-      isFirstLogin: session.user!.isFirstLogin,
+      id: session.user.id,
+      email: session.user.email,
+      firstName: session.user.firstName,
+      lastName: session.user.lastName,
+      pseudo: session.user.pseudo,
+      avatar: session.user.avatar,
+      isFirstLogin: session.user.isFirstLogin,
       isAdmin,
     },
   };
@@ -101,12 +100,8 @@ export async function getSessionFromRequest(req?: Request): Promise<SessionClien
     return null;
   }
 
-  if (!sessionDB.user) {
-    return null;
-  }
-
-  // Source de vérité « admin » : appartenance au groupe Administrateurs
-  // (isAdminGroup). Additif — remplacera le check sur le rôle (phases B/C).
+  // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
+  // Aucun champ de User ne le dit : le droit se lit dans les relations.
   const isAdmin =
     (await prisma.memberGroupMembership.findFirst({
       where: { userId: sessionDB.user.id, group: { isAdminGroup: true } },

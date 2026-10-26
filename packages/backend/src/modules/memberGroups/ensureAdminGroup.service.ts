@@ -5,9 +5,10 @@ import { ensureGroupSpaceFolder } from "@backend/modules/memberGroups/ensureGrou
 const ADMIN_GROUP_NAME = "Administrateurs";
 
 /**
- * Garantit le groupe « Administrateurs » UNIQUE (collaboratif, isAdminGroup),
- * y inscrit tous les utilisateurs de rôle ADMIN en EDITOR, et matérialise son
- * espace. Idempotent — appelé au boot.
+ * Garantit le groupe « Administrateurs » UNIQUE (collaboratif, isAdminGroup) et
+ * matérialise son espace. Idempotent — appelé au boot. Ne touche pas aux adhésions :
+ * ses membres sont les administrateurs du site (getSessionFromRequest), et s'y
+ * ajoutent ou s'en retirent depuis le panneau de contrôle.
  *
  * NB : le DÉPLACEMENT de l'ex-dossier « general » dans cet espace est une étape
  * SÉPARÉE (déplacement de données, avec sauvegarde) — pas ici.

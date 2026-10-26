@@ -1,0 +1,417 @@
+---
+title: "Lire schema.prisma comme une carte"
+description: "Le schéma comme description d’un système : datasource et generator (avec les réglages du projet), modèles et relations, la convention des commentaires ///, la lecture d’un modèle réel, et ce que Prisma génère à partir de tout cela."
+section: "Données"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+
+> **Précédemment.** Prisma vit à la racine du monorepo, configuré par `prisma.config.ts`, et le backend n’a qu’un client. Nous savons où vit la donnée et par quoi elle est décrite.
+
+## 2 — Lire le `schema.prisma` comme une carte du système
+
+Jusqu’ici, nous avons installé Prisma et compris où il s’insère dans le monorepo. Mais nous n’avons pas encore touché au cœur du sujet. Parce que le vrai point d’entrée de Prisma n’est pas une commande.
+
+👉 c’est le fichier `schema.prisma`
+
+Et ce fichier mérite d’être abordé avec beaucoup plus de sérieux que dans la plupart des tutoriels.
+
+### 2.1 — Un changement de perspective : on ne lit pas un fichier, on lit un système
+
+Quand on ouvre `schema.prisma` pour la première fois, il est très tentant de le lire comme une simple liste de modèles : un `User`, une `Session`, un `MemberGroup`, quelques relations.
+
+Mais très vite, cette lecture montre ses limites.
+
+---
+
+Parce que ce fichier n’est pas une collection de tables.
+
+👉 c’est une **description complète du système métier**
+
+---
+
+Chaque modèle représente une entité réelle du domaine.  
+Chaque champ porte une contrainte.  
+Chaque relation impose une manière de structurer la donnée.
+
+Et sans même s’en rendre compte, on est déjà en train de lire :
+
+👉 l’architecture du système
+
+---
+
+Lire le schéma, c’est comprendre l’application avant même d’avoir vu une seule route.
+
+<Callout type="info">
+Un bon schéma Prisma se lit comme un diagramme de domaine.
+
+👉 pas comme un fichier technique
+</Callout>
+
+---
+
+### 2.2 — Les blocs fondamentaux du schéma
+
+Avant d’entrer dans les modèles eux-mêmes, il est utile de prendre un instant pour regarder la structure globale du fichier.
+
+Non pas pour la mémoriser.
+
+👉 mais pour comprendre ce qu’elle sépare.
+
+---
+
+Un `schema.prisma` contient généralement trois grandes parties :
+
+- le `datasource`
+- le `generator`
+- les `models`
+
+Mais ce découpage n’est pas là pour être appris par cœur.
+
+👉 il est là pour rendre le système lisible
+
+---
+
+Il distingue :
+
+- **le lien au réel** (la base de données)  
+- **la transformation en code** (le client généré)  
+- **la description du système** (les modèles)
+
+---
+
+<CodeSnippet
+  language="prisma"
+  title="Structure minimale d’un schema Prisma"
+  filename="schema.prisma"
+  kind="educational"
+  codeJson='"datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\nmodel User {\n  id    String @id @default(uuid())\n  email String @unique\n}"'
+/>
+
+Voici les deux premiers blocs du vrai fichier :
+
+```prisma
+// prisma/schema.prisma (extrait)
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native"]
+  engineType      = "binary"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+Trois réglages du `generator` méritent un mot, parce qu’ils ne sont pas ceux d’un projet minimal :
+
+- `previewFeatures = ["relationJoins"]` active une fonction encore marquée « en aperçu » par Prisma : quand une requête demande une entité **avec** ses relations, Prisma la lit en une seule requête SQL, par une jointure, au lieu d’enchaîner plusieurs requêtes. Le chapitre 5 en montre un usage ;
+- `engineType = "binary"` et `binaryTargets = ["native"]` décident de la façon dont Prisma exécute les requêtes : un petit programme séparé (le « moteur »), compilé pour la machine qui génère le client. Le client est généré **dans** l’image Docker (l’étape `pnpm prisma generate` du Dockerfile), donc pour la machine qui l’exécutera.
+
+Le `datasource`, lui, lit l’adresse de la base dans la variable `DATABASE_URL`, comme `prisma.config.ts`. Le schéma ne contient jamais l’adresse elle-même : seulement le nom de la variable qui la porte.
+
+Ce qui est intéressant ici, ce n’est pas la syntaxe.
+
+👉 c’est la séparation des responsabilités
+
+---
+
+### 2.3 — Le datasource : connecter le modèle au réel
+
+
+Le bloc `datasource` indique à Prisma où se trouve la base.
+
+Mais surtout :
+
+👉 il relie le modèle à quelque chose de concret
+
+---
+
+Dans notre projet, cela pointe vers PostgreSQL, avec une URL injectée via l’environnement.
+
+Cela implique immédiatement :
+
+- une base relationnelle réelle  
+- des contraintes appliquées réellement  
+- des relations qui ne sont pas simulées  
+
+---
+
+👉 Prisma ne simule pas une base  
+👉 il s’appuie sur une base réelle
+
+---
+
+### 2.4 — Le generator : là où le modèle devient exploitable
+
+Le bloc `generator` passe souvent inaperçu.
+
+Et pourtant, c’est ici que quelque chose de décisif se produit.
+
+---
+
+Il dit simplement :
+
+👉 “à partir de ce schéma, génère-moi un client TypeScript”
+
+---
+
+Mais les conséquences sont énormes.
+
+Parce que ce client :
+
+- connaît les entités  
+- connaît les relations  
+- connaît les contraintes  
+- et surtout… expose tout cela en types  
+
+---
+
+C’est ici que la promesse “type-safe de bout en bout” commence réellement à prendre forme.
+
+<Callout type="info">
+Sans generator, Prisma resterait un DSL de base de données.
+
+Avec lui :
+
+👉 il devient une source de types pour tout le backend
+</Callout>
+
+---
+
+### 2.5 — Les modèles : là où le système prend forme
+
+C’est ici que tout devient tangible.
+
+Un modèle Prisma ressemble à une table.
+
+Mais il fait bien plus que cela.
+
+---
+
+Prenons un modèle réel et court, celui d’une session de connexion :
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Session de connexion, stockée en base. Le cookie ne porte qu'un JWT contenant
+/// l'`id` de cette ligne : supprimer la ligne déconnecte l'appareil à sa
+/// prochaine requête (déconnexion ; changement de mot de passe, qui supprime les
+/// sessions des autres appareils).
+model Session {
+  /// Identifiant CUID, embarqué dans le JWT du cookie de session.
+  id        String   @id @default(cuid())
+  /// Membre connecté.
+  userId    String
+  /// Ouverture de la session (connexion).
+  createdAt DateTime @default(now())
+  /// Fin de validité : ouverture + 7 jours (SESSION_DURATION_MS). Une session
+  /// expirée est refusée, et supprimée au moment où elle est présentée.
+  expiresAt DateTime
+  /// Membre (N–1, User.sessions). Session effacée avec le membre (CASCADE).
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+---
+
+À première vue, c’est simple.
+
+Mais en réalité, ce bloc contient déjà une grande partie du système :
+
+- une identité (`id`)
+- une contrainte (`expiresAt` est obligatoire : une session sans fin de validité n’existe pas)
+- une relation (`userId`)
+- un lien explicite (`user`), avec ce qui se passe quand le membre est supprimé (`onDelete: Cascade`)  
+
+---
+
+👉 ce n’est pas une structure  
+👉 c’est une décision d’architecture
+
+---
+
+#### 🔎 Dans le projet : un schéma qui se commente lui-même
+
+Le schéma du projet décrit la base entière : près d’une cinquantaine de modèles et une vingtaine d’énumérations, rangés en sections (`USER & AUTH`, domaine du club, contenus, médias…). Pour comprendre une fonctionnalité, on commence par lire ses modèles : la plupart des règles métier y sont déjà visibles.
+
+Une convention le rend lisible : chaque modèle et chaque champ porte un commentaire `///`, en français, qui dit ce qu’il représente et ce qui se passe quand on le supprime. Ces commentaires ne sont pas perdus pour le code : l’éditeur les affiche au survol d’un champ, et dans l’autocomplétion.
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Membre de l'association, et compte de connexion au site.
+///
+/// Création : par un administrateur (`user.create`), avec un mot de passe généré
+/// côté serveur et envoyé par e-mail ; le membre est inscrit d'office dans un
+/// groupe (accès EDITOR). Être administrateur ne dépend d'aucun champ de ce
+/// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
+///
+/// Suppression d'un membre (actions réelles en base) :
+/// - BLOQUÉE (RESTRICT) tant qu'il est auteur de posts, commentaires, réactions
+///   ou votes, instructeur principal d'une discipline, animateur principal d'un
+///   séminaire, organisateur d'un évènement, uploader d'un média, ou qu'il
+///   possède une ligne Preferences ;
+/// - EFFACE avec lui (CASCADE) : sessions, jetons de réinitialisation, adhésions
+///   aux groupes, destinations et accusés de lecture de documents, liens de
+///   co-animation de séminaires ;
+/// - DÉTACHE (SET NULL) : créneaux dont il est l'instructeur attitré, documents
+///   dont il est l'éditeur, entrées du journal d'audit.
+model User {
+```
+
+Ce commentaire de `User` contient déjà une bonne partie du chapitre suivant : comment un membre est créé, ce qui le rend administrateur, et ce que sa suppression bloque, efface ou détache. Un commentaire signale aussi ce qui est inutilisé ou fragile (« ⚠ Inutilisé », « Candidat à suppression ») : le schéma dit la vérité sur l’état du code, y compris ses dettes.
+
+---
+
+#### 🔎 Lire un modèle du projet : `MediaAsset`
+
+Pour s’entraîner sur un modèle plus fourni, prenons celui qui décrit un fichier de la médiathèque. Voici sa forme, sans ses commentaires ni ses champs secondaires :
+
+<CodeSnippet
+  language="prisma"
+  title="Un modèle réel, réduit à sa structure"
+  filename="schema.prisma (MediaAsset, simplifié)"
+  kind="educational"
+  codeJson='"model MediaAsset {\n  id               String   @id @default(cuid())\n  fullPath         String   @unique\n  mimeType         String\n  originalFileName String\n  displayName      String?\n  bytes            Int\n  appRoot          String\n  status           String\n  categoryId       Int?\n  disciplineId     Int?\n  uploaderUserId   String\n  createdAt        DateTime @default(now())\n  updatedAt        DateTime @updatedAt\n\n  category       Category?            @relation(fields: [categoryId], references: [id])\n  discipline     Discipline?          @relation(fields: [disciplineId], references: [id])\n  uploader       User                 @relation(\"UserMediaUploads\", fields: [uploaderUserId], references: [id])\n  pageReferences PageMediaReference[]\n  galleryItems   GalleryItem[]\n  memberDocument MemberDocument?\n\n  @@index([status])\n}"'
+/>
+
+<DocsTable columnsJson='["Élément","Ce qu’il dit"]' rowsJson='[["@id @default(cuid())","Identifiant texte généré, impossible à deviner. Les entités éditoriales simples (Discipline, Category) utilisent plutôt un entier autoincrémenté."],["fullPath @unique","Deux lignes ne peuvent pas désigner la même clé de stockage ; c’est sur ce champ que s’appuient les upsert."],["displayName String?","Le ? rend le champ facultatif (NULL en base, null en TypeScript)."],["@updatedAt","Prisma tient la date à jour à chaque modification."],["@relation(fields, references)","La clé étrangère et le champ qu’elle vise ; le champ de relation (category) n’existe pas en base, il sert aux requêtes."],["MediaAsset? / MediaAsset[]","Le côté opposé d’une relation : 0 ou 1, ou une liste."],["@@index([status])","Un index pour les filtres fréquents par statut."]]' />
+
+`status` est un `String`, pas une énumération : les valeurs autorisées (`pending`, `published`) sont garanties par le code (les schémas Zod des procédures), et le commentaire du champ le dit. Une énumération Prisma est préférée quand l’ensemble des valeurs est stable ; ici, il a évolué plusieurs fois.
+
+---
+
+### 2.6 — Les relations : là où tout est déjà en place
+
+Les relations sont souvent perçues comme un détail technique.
+
+En réalité, elles racontent presque tout.
+
+---
+
+Dans notre projet, les liens entre `User`, `Session`, `MemberGroup` et `MemberGroupMembership` ne sont pas accessoires.
+
+👉 ils définissent déjà :
+
+- l’authentification
+- les droits sur les espaces de groupe
+- qui est administrateur
+
+---
+
+Autrement dit, avant même d’avoir écrit une route :
+
+👉 la logique de sécurité du système est déjà visible
+
+---
+
+<Callout type="info">
+Pour comprendre un système :
+
+👉 regardez ses relations avant de regarder ses routes
+</Callout>
+
+---
+
+### 2.7 — Ce que Prisma génère réellement
+
+Une fois le schéma écrit, Prisma génère un client.
+
+Mais ce mot est trompeur.
+
+---
+
+Parce qu’il ne génère pas simplement des fonctions.
+
+👉 il génère une projection complète du modèle dans le code
+
+---
+
+Par exemple :
+
+<CodeSnippet
+  language="ts"
+  title="Requête Prisma typée automatiquement"
+  filename="users.service.ts"
+  kind="pattern"
+  codeJson='"const user = await prisma.user.findUnique({\n  where: { id: \"cm1…\" },\n  include: {\n    memberGroupMemberships: { include: { group: true } },\n  },\n})"'
+/>
+
+---
+
+Dans cet appel :
+
+- `user` est typé automatiquement  
+- chaque adhésion, et le groupe qu’elle désigne, sont typés automatiquement  
+- la structure complète est cohérente avec le schéma  
+
+---
+
+👉 aucun type n’est écrit à la main  
+👉 rien n’est dupliqué  
+
+---
+
+Le type vient du modèle.
+
+---
+
+### 2.8 — Pourquoi cette étape est critique pour la suite
+
+À ce stade, quelque chose d’important doit être clair. Quand nous arriverons sur les formulaires, tRPC ou l’authentification, nous verrons des types circuler partout. Mais ces types ne viennent pas de nulle part.
+
+Ils viennent :
+
+👉 du `schema.prisma`
+
+C’est pour ça que cette partie vient avant les autres. Parce que sans cette compréhension, tRPC semble magique, les formulaires semblent découplés, et l’auth semble indépendante. Alors qu’en réalité, tout repose sur ce modèle.
+
+### 2.9 — Ce que nous allons faire ensuite
+
+Maintenant que nous savons lire un schéma Prisma comme une carte du système, nous allons passer à une étape encore plus concrète :
+
+👉 analyser **les modèles réels du projet**
+
+- `User`
+- `Session`
+- `MemberGroup`
+- `MemberGroupMembership`
+
+Et surtout :
+
+👉 comprendre ce qu’ils racontent sur l’architecture globale
+
+C’est là que la théorie devient vraiment intéressante.
+
+---
+
+👉 **Où nous en sommes :** nous savons maintenant lire un `schema.prisma` comme une carte — repérer la datasource, comprendre le rôle du generator, reconnaître que les modèles décrivent un système plutôt que des tables. Mais lire la carte n’est pas encore lire le terrain. Reste à descendre dans les modèles réels de ce projet pour voir ce qu’ils racontent, ensemble, de l’architecture que nous construisons.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons posé le cadre. Trois idées en sont ressorties :
+
+- **Prisma a une place, et cette place compte.** Installer Prisma à la racine du monorepo, avec une configuration dédiée, ce n’est pas un détail d’outillage — c’est déclarer que le modèle de données est partagé par toutes les couches du projet, et pas seulement possédé par le backend.
+- **Le `schema.prisma` n’est pas un fichier de config.** C’est une carte du système, dont chaque bloc a une fonction précise : la datasource relie au réel, le generator produit les types, les modèles donnent forme aux entités, les relations dessinent les chemins entre elles.
+- **La cohérence part de la donnée, pas de l’API.** Tant que le modèle n’est pas explicite, le reste du projet devra bricoler des types. Une fois qu’il l’est, le typage devient structurel — et tout ce qui suivra pourra s’appuyer dessus sans redéfinition.
+
+Le Mouvement 2 va maintenant descendre dans ce modèle pour le lire comme une architecture, pas comme une liste d’entités.
+
+---
+
+## À suivre
+
+Nous savons lire la carte. Il reste à lire le terrain : les quatre modèles autour desquels tout le système d’accès est construit.
+
+<Callout type="tip">
+**Chapitre suivant : le noyau du modèle.** Membres, sessions, groupes et adhésions, lus comme une architecture, avec leurs deux diagrammes : la vue technique et la vue mentale.
+</Callout>

@@ -1,0 +1,298 @@
+---
+title: "Le noyau : membres, sessions, groupes"
+description: "Les modèles cœur du projet lus comme une architecture : User, central mais pas souverain ; MemberGroup, charnière entre identité et autorisation ; le niveau d’accès porté par l’adhésion ; la table de jointure ; Session ; une vue technique et une vue mentale du même noyau."
+section: "Données"
+order: 3
+entities:
+  User: [email, password, isFirstLogin]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isCollaborative, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+
+> **Précédemment.** Un `schema.prisma` se lit comme une carte : le datasource relie au réel, le generator produit les types, les modèles donnent forme aux entités, les relations dessinent les chemins entre elles.
+
+## Mouvement 2 — Modéliser le système
+
+Savoir lire un schéma, c’est une chose. Comprendre ce que les entités et leurs relations disent de l’application, c’en est une autre — et c’est là que le vrai travail de modélisation commence. Dans ce mouvement, nous cessons de parler de Prisma « en général » pour regarder **ce projet** précisément, à travers ses choix.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Section 3** (ce chapitre) — Nous ouvrons les modèles cœur — `User`, `Session`, `MemberGroup`, `MemberGroupMembership` — non pas comme une liste de tables, mais comme une architecture qui raconte déjà la philosophie du système.
+- **Section 4** (chapitre suivant) — Nous regardons les relations pour ce qu’elles sont vraiment : des décisions d’architecture, avec leurs contraintes, leurs libertés, et leur manière d’engager l’avenir du projet.
+
+À la fin de ce mouvement, le `schema.prisma` ne sera plus un document technique à lire : ce sera la photographie d’un système de pensée, où chaque relation dit ce que le projet se permet — et ce qu’il refuse.
+
+---
+
+## 3 — Lire les modèles cœur du projet comme une architecture, pas comme une liste de tables
+
+Jusqu’ici, nous avons posé le cadre. Prisma est installé, configuré, branché au bon endroit dans le monorepo, et nous savons déjà qu’un `schema.prisma` ne doit pas être lu comme un simple fichier technique. Mais tant que l’on reste à ce niveau, quelque chose manque encore.
+
+On sait où se trouve la donnée.  
+On sait comment Prisma s’intègre.  
+On sait même pourquoi cette étape précède les formulaires et tRPC.
+
+Mais on ne sait pas encore ce que le projet raconte réellement à travers ses entités.
+
+C’est précisément ici que la série devient intéressante.
+
+Parce qu’à partir de maintenant, nous n’allons plus parler de Prisma “en général”. Nous allons commencer à lire **notre système réel**. Non pas à travers ses pages, ni à travers ses routes, mais à travers ce qu’il manipule au plus profond : ses membres, leurs sessions, les groupes auxquels ils appartiennent, et les relations qui font tenir tout cela ensemble.
+
+Autrement dit :
+
+👉 nous allons lire le système depuis son centre de gravité
+
+---
+
+### 3.1 — Première lecture : voir la structure technique réelle
+
+Avant d’entrer dans le détail des modèles, il est utile de prendre une vue d’ensemble. Non pas pour tout comprendre immédiatement, mais pour situer les forces en présence. Le diagramme ci-dessous représente la structure technique du noyau « membres, sessions, groupes », tel qu’il est réellement écrit dans `schema.prisma`.
+
+<PrismaCoreErdDiagram />
+
+Ce schéma ne doit pas être lu comme une décoration. Il montre la vérité technique du système. On y voit immédiatement que `User` n’est pas une entité isolée. Il peut porter plusieurs `Session`. Il appartient à des groupes, par l’intermédiaire d’une table d’adhésions. Et la logique d’autorisation ne repose pas sur une propriété magique stockée dans le membre, mais sur une chaîne relationnelle explicite, où le groupe devient l’intermédiaire entre le membre et ce qu’il a le droit de faire.
+
+Il y a ici un premier enseignement très important.
+
+Dans beaucoup de projets juniors, l’authentification et les droits sont pensés tardivement, parfois presque “rajoutés” au-dessus du métier. Ici, ce n’est pas le cas. Ils sont déjà visibles dans le modèle de données. Cela signifie que la sécurité ne viendra pas seulement de middlewares ou de conditions écrites dans le code. Elle est déjà préparée au niveau structurel.
+
+<Callout type="info">
+Le schéma relationnel raconte déjà une partie de l’architecture applicative.
+
+👉 si les sessions, les groupes et les niveaux d’accès existent à ce niveau, c’est que la sécurité n’est pas un ajout tardif  
+👉 elle fait partie du système dès sa fondation
+</Callout>
+
+La carte des entités de ce chapitre (le bouton « Entités » de la page) montre les mêmes modèles, avec tous leurs liens réels : c’est elle qu’il faut ouvrir pour aller plus loin que ce noyau.
+
+---
+
+### 3.2 — `User` : l’entité centrale, mais pas souveraine
+
+Commençons par `User`, parce que c’est presque toujours l’entité que l’on regarde en premier. C’est elle qui porte l’identité, l’adresse e-mail (l’identifiant de connexion), l’empreinte du mot de passe, le profil. Mais il faut faire attention à une erreur très fréquente : confondre “central” et “souverain”.
+
+Oui, `User` est au centre.  
+Mais non, `User` ne décide pas seul du système.
+
+Le commentaire `///` du modèle le dit en une phrase :
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Membre de l'association, et compte de connexion au site.
+///
+/// Création : par un administrateur (`user.create`), avec un mot de passe généré
+/// côté serveur et envoyé par e-mail ; le membre est inscrit d'office dans un
+/// groupe (accès EDITOR). Être administrateur ne dépend d'aucun champ de ce
+/// modèle : c'est l'appartenance à un groupe marqué `MemberGroup.isAdminGroup`.
+```
+
+**Être administrateur ne dépend d’aucun champ de ce modèle.** Un membre ne contient pas les règles qui le gouvernent. Il appartient à des groupes, et ce sont ces appartenances qui ouvrent ses droits. En clair, le membre n’est pas défini uniquement par ce qu’il est, mais aussi par les relations qui l’entourent.
+
+C’est une excellente décision de modélisation, parce qu’elle évite un backend figé où tous les droits seraient câblés directement sur le membre. Ajouter un administrateur, retirer un droit d’écriture, créer un espace pour le bureau : rien de tout cela ne touche à `User`. Le système peut respirer sans être recousu à coups de champs bricolés.
+
+---
+
+### 3.3 — `MemberGroup` : la charnière entre identité et autorisation
+
+Le groupe est souvent sous-estimé quand on regarde un schéma rapidement. On le voit comme une simple liste de noms. En réalité, c’est beaucoup plus structurant que ça.
+
+Dans notre modèle, `MemberGroup` joue un rôle de charnière. Il sépare deux préoccupations :
+
+- qui est le membre
+- ce qu’il a le droit de faire
+
+Cette séparation est extrêmement saine.
+
+Elle signifie que l’identité et l’autorisation ne sont pas confondues. Un membre n’est pas “admin” par nature. Il appartient au groupe « Administrateurs ». Et ce groupe, lui, porte un niveau d’autorité dans le système, marqué par un seul booléen :
+
+```prisma
+// prisma/schema.prisma (extrait)
+  /// Groupe « Administrateurs » : ses membres sont les administrateurs du site.
+  /// Créé au démarrage s'il manque (ensureAdminGroup), toujours collaboratif,
+  /// non supprimable. Unique par convention : aucune contrainte en base
+  /// n'empêche un second groupe marqué ; c'est ensureAdminGroup qui s'en charge.
+  isAdminGroup Boolean @default(false)
+```
+
+Un groupe a aussi deux usages, que le même modèle réunit : une **liste de diffusion** (un document publié peut viser le groupe, et ses membres le reçoivent) et, si `isCollaborative` est vrai, un **espace** dans le finder, un dossier réservé à ses membres. Le bureau de l’association peut ainsi être une liste de diffusion, un espace de travail, ou les deux.
+
+En pratique, cela prépare déjà très bien la suite du projet :
+
+- l’authentification pourra reconstruire un membre et calculer s’il est administrateur
+- tRPC pourra lire ce calcul dans le contexte de chaque requête
+- les gardes du finder pourront vérifier l’accès d’un membre à l’espace d’un groupe
+
+Tout cela devient naturel, précisément parce que le schéma a été pensé correctement.
+
+---
+
+### 3.4 — `MemberGroupAccess` : exprimer les capacités, pas les personnes
+
+Le groupe donne une vision large : on en fait partie, ou non. Le **niveau d’accès**, lui, exprime une capacité concrète, et il est porté par l’adhésion, pas par le groupe :
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Droit d'un membre sur l'espace d'un groupe COLLABORATIF
+/// (MemberGroupMembership.access). Sans effet sur la diffusion des documents.
+enum MemberGroupAccess {
+  /// Consultation seule de l'espace (assertCanReadPath).
+  VIEWER
+  /// Consultation, écriture et mise à la corbeille dans l'espace
+  /// (assertCanWriteGroupSpace, assertCanTrashPaths).
+  EDITOR
+}
+```
+
+C’est ici que le système devient vraiment intéressant, parce qu’il cesse d’être binaire. On ne se contente plus de dire “ce membre fait partie du bureau”. On peut dire :
+
+- ce membre peut consulter l’espace du bureau
+- celui-ci peut aussi y déposer et y supprimer des fichiers
+- le même membre peut être lecteur dans un groupe et éditeur dans un autre
+
+Et cela change beaucoup de choses dans l’architecture.
+
+Parce qu’au lieu d’écrire des règles massives et rigides, nous pouvons composer les accès plus finement. Le schéma relationnel devient alors le support d’un vrai contrôle d’accès par groupe, pas d’une caricature où tout le monde est soit administrateur, soit rien.
+
+---
+
+### 3.5 — La table de jointure : indispensable techniquement, secondaire mentalement
+
+Sur le plan technique, la relation entre un membre et ses groupes ne peut pas rester implicite. Il faut la matérialiser. C’est le rôle de la table de jointure `MemberGroupMembership`. Côté base et côté Prisma, elle est indispensable, car elle transforme une relation conceptuelle many-to-many en structure relationnelle concrète.
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Appartenance d'un membre à un groupe. Un membre peut appartenir à plusieurs
+/// groupes, une seule fois par groupe.
+model MemberGroupMembership {
+  /// Identifiant CUID.
+  id      String      @id @default(cuid())
+  /// Groupe.
+  groupId String
+  /// Groupe (N–1, MemberGroup.memberships). Adhésion effacée avec le groupe.
+  group   MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// Membre.
+  userId  String
+  /// Membre (N–1, User.memberGroupMemberships). Adhésion effacée avec le membre.
+  user    User        @relation("MemberGroupMembership", fields: [userId], references: [id], onDelete: Cascade)
+  /// Droit du membre sur l'espace du groupe, si celui-ci est COLLABORATIF (voir
+  /// MemberGroupAccess). Sans effet sur la diffusion des documents.
+  access  MemberGroupAccess @default(EDITOR)
+
+  // Un membre au plus une fois par groupe.
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+```
+
+Elle porte une ligne par adhésion : un groupe, un membre, et le niveau d’accès de ce membre dans ce groupe. `@@unique([groupId, userId])` interdit d’inscrire deux fois le même membre dans le même groupe ; la base refuse, quel que soit le code qui essaierait.
+
+Mais il faut bien distinguer deux niveaux de lecture.
+
+Techniquement, la table de jointure est fondamentale.  
+Pédagogiquement, elle ne doit pas devenir le centre de l’attention.
+
+C’est exactement pour cela que nous avons deux diagrammes dans ce chapitre. Le premier respecte la réalité technique. Le second, lui, va nous aider à retenir le système sans laisser la mécanique relationnelle prendre toute la place dans notre tête.
+
+---
+
+### 3.6 — `Session` : la présence persistée du membre
+
+La session est un autre modèle très révélateur. Beaucoup de développeurs comprennent l’authentification uniquement à travers le prisme du JWT ou du cookie. Mais dans notre projet, le modèle de données montre autre chose : la session est aussi une entité en base.
+
+```prisma
+// prisma/schema.prisma (extrait)
+/// Session de connexion, stockée en base. Le cookie ne porte qu'un JWT contenant
+/// l'`id` de cette ligne : supprimer la ligne déconnecte l'appareil à sa
+/// prochaine requête (déconnexion ; changement de mot de passe, qui supprime les
+/// sessions des autres appareils).
+model Session {
+  /// Identifiant CUID, embarqué dans le JWT du cookie de session.
+  id        String   @id @default(cuid())
+  /// Membre connecté.
+  userId    String
+  /// Ouverture de la session (connexion).
+  createdAt DateTime @default(now())
+  /// Fin de validité : ouverture + 7 jours (SESSION_DURATION_MS). Une session
+  /// expirée est refusée, et supprimée au moment où elle est présentée.
+  expiresAt DateTime
+  /// Membre (N–1, User.sessions). Session effacée avec le membre (CASCADE).
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+C’est essentiel, parce que cela signifie que l’authentification n’est pas pensée comme un simple jeton flottant côté client. Elle a un ancrage serveur. Elle expire (`expiresAt`). Elle est relue à chaque requête. Elle peut être invalidée : se déconnecter, changer de mot de passe, c’est supprimer des lignes de cette table. Elle devient un objet réel du système.
+
+Et cela prépare directement la partie « Authentification et droits ». On voit déjà ici que l’authentification ne sera pas “juste un middleware”. Elle s’appuiera sur une structure de persistance explicite. Encore une fois, le schéma prépare la suite du système avant même que le code applicatif ne la déroule.
+
+---
+
+### 3.7 — Deuxième lecture : ce que nous devons retenir mentalement
+
+Maintenant que nous avons vu la structure technique réelle, nous pouvons faire quelque chose de très utile : simplifier volontairement la représentation pour en extraire l’image mentale juste.
+
+Dans cette seconde vue, on supprime le bruit technique. On ne montre plus la table de jointure. On garde seulement les entités que nous devons réellement conserver dans notre tête lorsque nous raisonnons sur le système.
+
+<PrismaCoreMemoryDiagram />
+
+Ce diagramme n’est pas “moins vrai” que le premier. Il est simplement plus proche de la manière dont un développeur doit penser au quotidien. Quand nous travaillons sur les formulaires, les procédures tRPC ou l’authentification, nous n’avons pas besoin de visualiser en permanence une table de jointure. Nous devons retenir quatre idées simples :
+
+- un membre appartient à des groupes, avec un niveau d’accès dans chacun
+- un groupe peut contenir des sous-groupes
+- être administrateur, c’est appartenir au groupe « Administrateurs »
+- un membre ouvre des sessions
+
+Et, très honnêtement, si cette image mentale est claire, alors toute la suite du projet devient beaucoup plus lisible.
+
+<Callout type="info">
+Le premier diagramme nous aide à respecter la vérité technique.  
+Le second nous aide à stabiliser la vérité mentale.
+
+👉 un bon développeur doit être capable de passer de l’un à l’autre sans les confondre
+</Callout>
+
+---
+
+### 3.8 — Ce que ce noyau de modèles raconte déjà sur l’architecture globale
+
+À ce stade, nous n’avons encore lu ni les formulaires, ni tRPC, ni l’authentification détaillée. Et pourtant, une partie énorme du projet est déjà là.
+
+Ce petit noyau de modèles raconte déjà :
+
+- qu’il existe une authentification persistée
+- qu’il existe un vrai système de groupes
+- que les droits sont portés par des appartenances, avec des niveaux
+- que l’administration elle-même n’est qu’un groupe particulier
+- que le membre est central, mais structuré par ses relations
+
+Autrement dit, la base ne stocke pas seulement des données. Elle stocke déjà une vision de l’application.
+
+C’est exactement pour cela que cette partie vient avant les autres dans le parcours. Tant que ce socle n’est pas compris, les couches suivantes risquent de sembler “magiques”. Les types circuleront, les formulaires enverront des données, tRPC transportera des procédures, et l’authentification reconstruira des sessions — mais sans fondation claire, tout cela sera vu comme une mécanique plus que comme un système.
+
+---
+
+### 3.9 — Ce que cette section prépare
+
+Maintenant que les modèles cœur sont posés, une question devient naturelle : comment ces entités tiennent-elles ensemble ? Un membre « appartient » à un groupe, un groupe « contient » des sous-groupes, une session « dépend » d’un membre. Derrière chacun de ces verbes, il y a une relation, et derrière chaque relation, un choix : ce qu’elle permet, ce qu’elle interdit, et ce qu’elle deviendra quand le projet changera.
+
+👉 Prisma structure le monde  
+👉 les relations décident de ce qu’on a le droit d’y faire
+
+---
+
+👉 **Où nous en sommes :** les entités cœur ne sont plus des tables abstraites — `User`, `Session`, `MemberGroup` et `MemberGroupMembership` racontent une philosophie claire : séparer l’identité, l’appartenance et les capacités pour que l’autorisation devienne composable plutôt que figée. Mais ces entités prises isolément ne sont qu’une partie de l’histoire. Ce qui fait réellement tenir un système, c’est la manière dont elles se relient entre elles — et c’est précisément là que les décisions d’architecture les plus engageantes sont prises.
+
+## À suivre
+
+Ces entités prises isolément ne sont qu’une partie de l’histoire. Ce qui fait tenir un système, c’est la manière dont elles se relient, et chacune de ces relations est un choix qui engage la suite.
+
+<Callout type="tip">
+**Chapitre suivant : les relations.** One-to-many et many-to-many, implicite ou explicite, nullable ou obligatoire, ce qui se passe à la suppression, et l’histoire d’un modèle qui a dû changer.
+</Callout>

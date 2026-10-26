@@ -1,267 +1,123 @@
 import type { JSX } from "react"
 
+/*
+ * Noyau relationnel du projet (vue technique) : membres, sessions, groupes et adhésions, tels que
+ * prisma/schema.prisma les décrit. Les boîtes et les liens sont des données : modifier le schéma,
+ * c'est modifier ces tableaux.
+ */
+
+type Field = { text: string; kind?: "pk" | "fk" | "plain" }
+type Box = { x: number; y: number; w: number; title: string; subtitle: string; fields: Field[] }
+
+const BOXES: Record<"user" | "session" | "membership" | "group", Box> = {
+  user: {
+    x: 40, y: 70, w: 300, title: "User", subtitle: "Le membre, et son compte",
+    fields: [
+      { text: "PK  id: String (cuid)", kind: "pk" },
+      { text: "email: String @unique" },
+      { text: "password: String (bcrypt)" },
+      { text: "isFirstLogin: Boolean" },
+    ],
+  },
+  session: {
+    x: 40, y: 450, w: 300, title: "Session", subtitle: "Une connexion ouverte",
+    fields: [
+      { text: "PK  id: String (cuid)", kind: "pk" },
+      { text: "FK  userId → User (Cascade)", kind: "fk" },
+      { text: "expiresAt: DateTime" },
+    ],
+  },
+  membership: {
+    x: 450, y: 250, w: 390, title: "MemberGroupMembership", subtitle: "Table de jointure, avec un attribut",
+    fields: [
+      { text: "PK  id: String (cuid)", kind: "pk" },
+      { text: "FK  userId → User (Cascade)", kind: "fk" },
+      { text: "FK  groupId → MemberGroup (Cascade)", kind: "fk" },
+      { text: "access: VIEWER | EDITOR" },
+      { text: "@@unique([groupId, userId])" },
+    ],
+  },
+  group: {
+    x: 960, y: 70, w: 400, title: "MemberGroup", subtitle: "Liste de diffusion ou espace",
+    fields: [
+      { text: "PK  id: String (cuid)", kind: "pk" },
+      { text: "name: String" },
+      { text: "isCollaborative: Boolean" },
+      { text: "isAdminGroup: Boolean" },
+      { text: "FK  parentGroupId → MemberGroup (SetNull)", kind: "fk" },
+    ],
+  },
+}
+
+const ROW = 30
+const HEAD = 100
+
+function boxHeight(b: Box): number {
+  return HEAD + b.fields.length * ROW + 24
+}
+
+function BoxView({ b }: { b: Box }): JSX.Element {
+  const h = boxHeight(b)
+  return (
+    <g>
+      <rect x={b.x} y={b.y} width={b.w} height={h} rx="18" fill="#0f172a" stroke="#334155" strokeWidth="2" />
+      <text x={b.x + 24} y={b.y + 40} fill="#f8fafc" fontSize="24" fontWeight="700">{b.title}</text>
+      <text x={b.x + 24} y={b.y + 66} fill="#94a3b8" fontSize="14">{b.subtitle}</text>
+      <rect x={b.x + 16} y={b.y + 82} width={b.w - 32} height={b.fields.length * ROW + 22} rx="12" fill="#111827" stroke="#334155" strokeWidth="1.5" />
+      {b.fields.map((f, i) => (
+        <text
+          key={f.text}
+          x={b.x + 32}
+          y={b.y + HEAD + 12 + i * ROW}
+          fill={f.kind === "pk" ? "#93c5fd" : f.kind === "fk" ? "#c4b5fd" : "#cbd5e1"}
+          fontSize="15"
+          fontWeight={f.kind === "pk" ? 700 : 400}
+        >
+          {f.text}
+        </text>
+      ))}
+    </g>
+  )
+}
+
+function Edge({ d, label, lx, ly }: { d: string; label: string; lx: number; ly: number }): JSX.Element {
+  return (
+    <g>
+      <path d={d} fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#erd-arrow)" />
+      <text x={lx} y={ly} fill="currentColor" fontSize="14" fontWeight="600" textAnchor="middle">{label}</text>
+    </g>
+  )
+}
+
 export default function PrismaCoreErdDiagram(): JSX.Element {
+  const { user, session, membership, group } = BOXES
+  const groupBottom = group.y + boxHeight(group)
   return (
     <figure className="my-8 overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="border-b bg-muted/30 px-5 py-4">
-        <div className="text-sm font-semibold text-foreground">
-          Noyau relationnel — Auth / RBAC / Sessions
-        </div>
+        <div className="text-sm font-semibold text-foreground">Noyau relationnel — membres, sessions, groupes</div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vue technique fidèle au modèle de données : entités, clés et table de
-          jointure.
+          Vue technique fidèle au schéma : clés primaires (bleu), clés étrangères (violet), table de jointure, et
+          règle de suppression de chaque lien.
         </p>
       </div>
-
       <div className="overflow-x-auto p-4">
-        <svg
-          viewBox="0 0 1260 760"
-          className="h-auto min-w-[980px] w-full"
-          role="img"
-          aria-label="Diagramme ERD du noyau auth RBAC sessions"
-        >
+        <svg viewBox="0 0 1400 680" className="h-auto min-w-[1040px] w-full text-foreground" role="img" aria-label="Diagramme du noyau relationnel : User, Session, MemberGroupMembership, MemberGroup">
           <defs>
-            <marker
-              id="erd-arrow"
-              markerWidth="10"
-              markerHeight="10"
-              refX="8"
-              refY="5"
-              orient="auto-start-reverse"
-            >
-              <path d="M0 0L10 5L0 10Z" fill="currentColor" />
+            <marker id="erd-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto-start-reverse">
+              <path d="M0 0L10 5L0 10Z" fill="#64748b" />
             </marker>
           </defs>
-
-          <rect x="0" y="0" width="1260" height="760" fill="transparent" />
-
-          <g>
-            <rect
-              x="40"
-              y="80"
-              width="290"
-              height="250"
-              rx="18"
-              fill="#0f172a"
-              stroke="#334155"
-              strokeWidth="2"
-            />
-            <text x="68" y="120" fill="#f8fafc" fontSize="26" fontWeight="700">
-              User
-            </text>
-            <text x="68" y="148" fill="#94a3b8" fontSize="14">
-              Entité centrale du système
-            </text>
-            <rect
-              x="60"
-              y="175"
-              width="250"
-              height="125"
-              rx="12"
-              fill="#111827"
-              stroke="#334155"
-              strokeWidth="1.5"
-            />
-            <text x="82" y="210" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK  id: String
-            </text>
-            <text x="82" y="240" fill="#cbd5e1" fontSize="16">
-              email: String @unique
-            </text>
-            <text x="82" y="270" fill="#cbd5e1" fontSize="16">
-              password: String
-            </text>
-            <text x="82" y="300" fill="#cbd5e1" fontSize="16">
-              FK  roleId: Int
-            </text>
-          </g>
-
-          <g>
-            <rect
-              x="470"
-              y="80"
-              width="250"
-              height="210"
-              rx="18"
-              fill="#0f172a"
-              stroke="#334155"
-              strokeWidth="2"
-            />
-            <text x="498" y="120" fill="#f8fafc" fontSize="26" fontWeight="700">
-              Role
-            </text>
-            <text x="498" y="148" fill="#94a3b8" fontSize="14">
-              Niveau d’autorité
-            </text>
-            <rect
-              x="490"
-              y="175"
-              width="210"
-              height="82"
-              rx="12"
-              fill="#111827"
-              stroke="#334155"
-              strokeWidth="1.5"
-            />
-            <text x="512" y="210" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK  id: Int
-            </text>
-            <text x="512" y="240" fill="#cbd5e1" fontSize="16">
-              name: String
-            </text>
-          </g>
-
-          <g>
-            <rect
-              x="930"
-              y="80"
-              width="290"
-              height="210"
-              rx="18"
-              fill="#0f172a"
-              stroke="#334155"
-              strokeWidth="2"
-            />
-            <text x="958" y="120" fill="#f8fafc" fontSize="26" fontWeight="700">
-              Permission
-            </text>
-            <text x="958" y="148" fill="#94a3b8" fontSize="14">
-              Capacité accordée
-            </text>
-            <rect
-              x="950"
-              y="175"
-              width="250"
-              height="82"
-              rx="12"
-              fill="#111827"
-              stroke="#334155"
-              strokeWidth="1.5"
-            />
-            <text x="972" y="210" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK  id: Int
-            </text>
-            <text x="972" y="240" fill="#cbd5e1" fontSize="16">
-              name: String
-            </text>
-          </g>
-
-          <g>
-            <rect
-              x="625"
-              y="460"
-              width="330"
-              height="195"
-              rx="18"
-              fill="#0f172a"
-              stroke="#334155"
-              strokeWidth="2"
-            />
-            <text x="653" y="500" fill="#f8fafc" fontSize="26" fontWeight="700">
-              RolePermission
-            </text>
-            <text x="653" y="528" fill="#94a3b8" fontSize="14">
-              Table de jointure many-to-many
-            </text>
-            <rect
-              x="645"
-              y="555"
-              width="290"
-              height="72"
-              rx="12"
-              fill="#111827"
-              stroke="#334155"
-              strokeWidth="1.5"
-            />
-            <text x="667" y="586" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK / FK  roleId: Int
-            </text>
-            <text x="667" y="614" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK / FK  permissionId: Int
-            </text>
-          </g>
-
-          <g>
-            <rect
-              x="40"
-              y="430"
-              width="300"
-              height="225"
-              rx="18"
-              fill="#0f172a"
-              stroke="#334155"
-              strokeWidth="2"
-            />
-            <text x="68" y="470" fill="#f8fafc" fontSize="26" fontWeight="700">
-              Session
-            </text>
-            <text x="68" y="498" fill="#94a3b8" fontSize="14">
-              Persistance auth côté serveur
-            </text>
-            <rect
-              x="60"
-              y="525"
-              width="260"
-              height="95"
-              rx="12"
-              fill="#111827"
-              stroke="#334155"
-              strokeWidth="1.5"
-            />
-            <text x="82" y="556" fill="#93c5fd" fontSize="16" fontWeight="700">
-              PK  id: String
-            </text>
-            <text x="82" y="584" fill="#cbd5e1" fontSize="16">
-              FK  userId: String
-            </text>
-            <text x="82" y="612" fill="#cbd5e1" fontSize="16">
-              expiresAt: DateTime
-            </text>
-          </g>
-
-          <g stroke="#60a5fa" strokeWidth="3" fill="none" color="#60a5fa">
-            <path
-              d="M330 200 C390 200, 410 200, 470 200"
-              markerEnd="url(#erd-arrow)"
-            />
-            <path
-              d="M190 330 C190 380, 190 380, 190 430"
-              markerEnd="url(#erd-arrow)"
-            />
-          </g>
-
-          <g stroke="#a78bfa" strokeWidth="3" fill="none" color="#a78bfa">
-            <path
-              d="M645 290 C700 360, 740 400, 785 460"
-              markerEnd="url(#erd-arrow)"
-            />
-            <path
-              d="M1075 290 C1025 360, 975 400, 910 460"
-              markerEnd="url(#erd-arrow)"
-            />
-          </g>
-
-          <text x="360" y="180" fill="#dbeafe" fontSize="14" fontWeight="600">
-            many users → one role
-          </text>
-          <text x="220" y="390" fill="#dbeafe" fontSize="14" fontWeight="600">
-            one user → many sessions
-          </text>
-          <text x="690" y="382" fill="#ede9fe" fontSize="14" fontWeight="600">
-            role ↔ join
-          </text>
-          <text x="958" y="382" fill="#ede9fe" fontSize="14" fontWeight="600">
-            permission ↔ join
-          </text>
+          <Edge d={`M ${user.x + 150} ${user.y + boxHeight(user)} L ${session.x + 150} ${session.y - 6}`} label="1 — N sessions" lx={user.x + 230} ly={(user.y + boxHeight(user) + session.y) / 2} />
+          <Edge d={`M ${user.x + user.w} ${user.y + 150} C 400 160, 410 300, ${membership.x - 6} ${membership.y + 60}`} label="1 — N adhésions" lx={395} ly={205} />
+          <Edge d={`M ${membership.x + membership.w} ${membership.y + 60} C 900 300, 900 200, ${group.x - 6} ${group.y + 150}`} label="N — 1 groupe" lx={900} ly={300} />
+          <Edge d={`M ${group.x + group.w - 40} ${groupBottom} C ${group.x + group.w - 40} ${groupBottom + 90}, ${group.x + 60} ${groupBottom + 90}, ${group.x + 60} ${groupBottom + 6}`} label="parent — sous-groupes" lx={group.x + group.w / 2} ly={groupBottom + 100} />
+          <BoxView b={user} />
+          <BoxView b={session} />
+          <BoxView b={membership} />
+          <BoxView b={group} />
         </svg>
       </div>
-
-      <figcaption className="border-t bg-muted/20 px-5 py-3 text-sm text-muted-foreground">
-        Lecture recommandée : commencez par <span className="font-medium text-foreground">User</span>,
-        puis suivez ses dépendances vers <span className="font-medium text-foreground">Role</span> et{" "}
-        <span className="font-medium text-foreground">Session</span>. La mécanique RBAC se lit ensuite
-        via <span className="font-medium text-foreground">Role → RolePermission → Permission</span>.
-      </figcaption>
     </figure>
   )
 }

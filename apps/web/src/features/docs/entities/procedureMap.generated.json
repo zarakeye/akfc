@@ -3522,7 +3522,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 25,
+   "line": 29,
    "effects": [
     {
      "model": "Session",
@@ -3696,7 +3696,7 @@
       [
        [
         "prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/router.ts:157"
+        "packages/backend/src/modules/auth/router.ts:153"
        ]
       ]
      ]
@@ -3709,7 +3709,7 @@
       [
        [
         "prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/router.ts:141"
+        "packages/backend/src/modules/auth/router.ts:137"
        ]
       ]
      ]
@@ -3739,7 +3739,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:132"
+        "packages/backend/src/modules/auth/router.ts:128"
        ]
       ]
      ]
@@ -3753,7 +3753,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 181,
+   "line": 177,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3763,7 +3763,7 @@
       [
        [
         "prisma.passwordResetToken.findUnique",
-        "packages/backend/src/modules/auth/router.ts:192"
+        "packages/backend/src/modules/auth/router.ts:183"
        ]
       ]
      ]
@@ -3778,7 +3778,7 @@
       [
        [
         "tx.passwordResetToken.update",
-        "packages/backend/src/modules/auth/router.ts:224"
+        "packages/backend/src/modules/auth/router.ts:215"
        ]
       ]
      ]
@@ -3791,7 +3791,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:229"
+        "packages/backend/src/modules/auth/router.ts:220"
        ]
       ]
      ]
@@ -3806,7 +3806,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:217"
+        "packages/backend/src/modules/auth/router.ts:208"
        ]
       ]
      ]
@@ -15931,7 +15931,7 @@
   },
   "getSessionFromRequest": {
    "file": "packages/backend/src/modules/auth/getSessionFromRequest.ts",
-   "line": 72,
+   "line": 71,
    "effects": [
     {
      "model": "MemberGroup",
@@ -15941,7 +15941,7 @@
       [
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -15954,7 +15954,7 @@
       [
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -15967,7 +15967,7 @@
       [
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -15980,7 +15980,7 @@
       [
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -15993,7 +15993,7 @@
       [
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -17316,7 +17316,7 @@
   },
   "ensureAdminGroup": {
    "file": "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts",
-   "line": 15,
+   "line": 16,
    "effects": [
     {
      "model": "Folder",
@@ -17393,7 +17393,7 @@
       [
        [
         "prisma.memberGroup.create",
-        "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts:25"
+        "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts:26"
        ]
       ]
      ]
@@ -17406,7 +17406,7 @@
       [
        [
         "prisma.memberGroup.findFirst",
-        "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts:19"
+        "packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts:20"
        ]
       ],
       [
@@ -23301,11 +23301,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23318,11 +23318,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23335,11 +23335,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -23352,11 +23352,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -23369,11 +23369,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -23397,11 +23397,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23418,11 +23418,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23439,11 +23439,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -23460,11 +23460,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -23481,11 +23481,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -23506,11 +23506,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23523,11 +23523,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -23540,11 +23540,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -23557,11 +23557,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -23574,11 +23574,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -24358,11 +24358,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -24385,11 +24385,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -24412,11 +24412,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -24429,11 +24429,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -24477,11 +24477,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -24658,11 +24658,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -24699,11 +24699,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -24740,11 +24740,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -24757,11 +24757,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -24791,11 +24791,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -24863,11 +24863,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -24880,11 +24880,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -24910,11 +24910,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -24927,11 +24927,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -24961,11 +24961,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -25031,11 +25031,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -25052,11 +25052,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -25090,11 +25090,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -25111,11 +25111,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -25162,11 +25162,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -25354,11 +25354,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -25375,11 +25375,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -25413,11 +25413,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -25434,11 +25434,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -25491,11 +25491,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -26166,11 +26166,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26187,11 +26187,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26225,11 +26225,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -26246,11 +26246,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -26314,11 +26314,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -26388,16 +26388,6 @@
        [
         "prisma.course .findMany",
         "apps/web/src/features/app-shell/Footer.tsx:40"
-       ]
-      ],
-      [
-       [
-        "<Footer>",
-        "apps/web/src/features/app-shell/Footer.tsx:35"
-       ],
-       [
-        "prisma.discipline .findMany",
-        "apps/web/src/features/app-shell/Footer.tsx:87"
        ]
       ]
      ]
@@ -26522,11 +26512,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26543,11 +26533,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26620,11 +26610,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -26641,11 +26631,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -26698,11 +26688,11 @@
        ],
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -26868,11 +26858,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26885,11 +26875,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -26902,11 +26892,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -26919,11 +26909,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -26936,11 +26926,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27131,11 +27121,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -27158,11 +27148,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -27253,11 +27243,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -27270,11 +27260,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -27368,11 +27358,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -27416,11 +27406,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27433,11 +27423,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27450,11 +27440,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -27467,11 +27457,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27484,11 +27474,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27509,11 +27499,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27526,11 +27516,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27543,11 +27533,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -27560,11 +27550,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27577,11 +27567,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ],
       [
@@ -27634,11 +27624,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27651,11 +27641,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27668,11 +27658,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -27685,11 +27675,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27702,11 +27692,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27808,11 +27798,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -27853,11 +27843,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ],
       [
@@ -27898,11 +27888,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -27915,11 +27905,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27932,11 +27922,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -27978,11 +27968,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -27995,11 +27985,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -28012,11 +28002,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -28029,11 +28019,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -28046,11 +28036,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -28071,11 +28061,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -28088,11 +28078,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -28105,11 +28095,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -28122,11 +28112,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -28139,11 +28129,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -28164,11 +28154,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -28181,11 +28171,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:111"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:106"
        ]
       ]
      ]
@@ -28198,11 +28188,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.deleteMany",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:97"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:96"
        ]
       ]
      ]
@@ -28215,11 +28205,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]
@@ -28245,11 +28235,11 @@
       [
        [
         "getSessionFromRequest",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:72"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:71"
        ],
        [
         "prisma.session.findUnique",
-        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:85"
        ]
       ]
      ]

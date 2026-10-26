@@ -1,0 +1,496 @@
+---
+title: "Écrire de façon cohérente, faire évoluer la base"
+description: "Les transactions et l’erreur d’unicité P2002, le SQL brut paramétré et ses pièges, les migrations (création, relecture d’un renommage, correction par une nouvelle migration), une migration oubliée en production, puis l’ouverture vers les formulaires."
+section: "Données"
+order: 6
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+
+> **Précédemment.** `prisma generate` a fait du schéma un client typé : les types viennent du modèle, et une incohérence ne compile plus. Le système est cohérent en lecture.
+
+Le modèle vit dans le code. Reste à l’écrire **correctement** : une opération métier touche souvent plusieurs tables, l’API de Prisma ne sait pas tout exprimer, et le schéma lui-même change au fil des mois. Ce chapitre traite ces trois questions avec le code du projet, puis ouvre sur la suite.
+
+## Écrire de façon cohérente : les transactions
+
+Une opération métier touche souvent plusieurs tables. Enregistrer une discipline, c’est écrire la discipline **et** recalculer les médias qu’elle utilise (la table `PageMediaReference` du chapitre 4, qui empêche de supprimer une image affichée). Si la seconde étape échoue, la première ne doit pas rester à moitié faite : une discipline enregistrée dont les images ne sont pas protégées est un piège pour plus tard.
+
+```ts
+// packages/backend/src/modules/disciplines/router.ts (extrait)
+      return await ctx.prisma.$transaction(async (tx) => {
+        let created;
+        try {
+          created = await tx.discipline.create({
+            data: {
+              name: input.name,
+              slug: input.slug,
+              type: input.type,
+              familyId: input.familyId ?? null,
+              school: input.school ?? null,
+              classification: input.classification ?? null,
+              originId: input.originId ?? null,
+              description: input.description as Prisma.InputJsonValue,
+              summary:
+                input.summary === undefined
+                  ? undefined
+                  : (input.summary as Prisma.InputJsonValue),
+              summaryMediaId: input.summaryMediaId ?? null,
+              categoryId: input.categoryId,
+              instructorId: input.instructorId,
+              publicationDate: input.publicationDate ?? null,
+            },
+          });
+        } catch (err) {
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2002"
+          ) {
+            const t = err.meta?.target;
+            const onSlug = Array.isArray(t)
+              ? t.includes("slug")
+              : String(t ?? "").includes("slug");
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: onSlug
+                ? "This slug is already used. Choose a different one."
+                : "A discipline with this name already exists in this category.",
+            });
+          }
+          throw err;
+        }
+
+        // UNION des deux composites. `syncPageMediaReferences` recalcule
+        // l'ensemble COMPLET des références de la page : ne lui passer que la
+        // description ferait passer les images du résumé pour orphelines.
+        await syncPageMediaReferences(tx, {
+          pageType: "DISCIPLINE",
+          pageId: String(created.id),
+          newContent: {
+            version: 1,
+            blocks: [
+              ...input.description.blocks,
+              ...(input.summary?.blocks ?? []),
+            ],
+          },
+          // L'image de carte vit hors composite : sans cette ligne elle
+          // échapperait au recensement et passerait pour orpheline.
+          extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
+        });
+
+        return created;
+      });
+```
+
+Dans la fonction passée à `$transaction`, toutes les requêtes passent par `tx`, et non par `prisma` : elles s’exécutent dans la même transaction PostgreSQL. Si une exception sort de la fonction, PostgreSQL annule l’ensemble : la discipline n’est pas créée.
+
+Deux détails de ce bloc valent d’être lus.
+
+**L’erreur P2002.** Le `catch` qui entoure la création reconnaît une erreur précise de Prisma : `P2002`, une violation de contrainte d’unicité. Le schéma déclare le slug unique (`@unique`) ; plutôt que de vérifier l’unicité avant d’écrire (une vérification qu’une autre requête pourrait rendre fausse entre-temps), le code laisse la base refuser, puis traduit son refus en erreur lisible (`CONFLICT`). C’est la contrainte du schéma qui fait foi, pas le code. (Les messages de ce routeur sont encore en anglais : une dette de cohérence du même ordre que celle corrigée dans la série « Formulaires ».)
+
+**Le commentaire « UNION des deux composites ».** Une discipline a deux contenus (sa description et sa présentation synthétique) et une image de carte. `syncPageMediaReferences` recalcule la liste **complète** des médias utilisés : lui passer un seul des contenus ferait passer les images de l’autre pour orphelines. Le commentaire explique un bug avant qu’il n’arrive.
+
+<Callout type="warning">
+Dans un bloc `$transaction(async (tx) => …)`, on n’utilise que `tx`. Une requête faite par erreur avec `prisma` dans ce bloc s’exécuterait **en dehors** de la transaction, et ne serait pas annulée. Les services appelés depuis une transaction reçoivent `tx` en paramètre (leur signature accepte `PrismaClient | Prisma.TransactionClient`).
+</Callout>
+
+## Quand Prisma ne suffit pas : le SQL brut
+
+Prisma couvre l’immense majorité des besoins. Le projet descend en SQL dans deux types de cas, avec `$executeRaw`.
+
+**Une opération que l’API ne sait pas exprimer.** Déplacer un dossier dans le finder, c’est réécrire le début de `fullPath` pour tous les médias qu’il contient. `updateMany` sait donner la même valeur à plusieurs lignes, pas transformer la valeur de chacune :
+
+```ts
+// packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
+      // Pour les folders : update tous les MediaAssets sous le préfixe.
+      // On fait ça en SQL raw pour profiter du UPDATE...SET en une passe
+      // (Prisma ne supporte pas REPLACE/SUBSTRING dans updateMany).
+      const oldPrefix = `${operation.source.path}/`;
+      const newPrefix = `${operation.target.path}/`;
+      await prisma.$executeRaw`
+        UPDATE "MediaAsset"
+        SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
+        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${oldPrefix + "%"};
+      `;
+```
+
+Une remarque en passant, qui montre que le SQL brut demande plus d’attention que l’API : dans un `LIKE`, `_` et `%` sont des jokers. Un dossier nommé `cours_2026` passé tel quel en préfixe correspondrait aussi à `coursX2026`. Le préfixe devrait être échappé avant d’être donné à `LIKE` ; ce n’est pas encore le cas.
+
+**Une écriture qui ne doit pas déclencher `@updatedAt`.** La date de dernière connexion ne doit pas passer pour une modification du profil :
+
+```ts
+// packages/backend/src/lib/session/session.server.ts (extrait)
+
+  // Dernière connexion, en SQL direct pour ne pas modifier updatedAt (dernière modification du profil).
+  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${user.id}`.catch((err: unknown) => {
+    console.error("[session] lastLoginAt non mis à jour :", err instanceof Error ? err.message : err);
+```
+
+Ces deux requêtes ressemblent à des chaînes de caractères, mais ce n’en sont pas. `$executeRaw` est un **gabarit étiqueté** : les valeurs écrites entre `${…}` ne sont pas collées dans le texte SQL, elles sont transmises à PostgreSQL comme des **paramètres**, à part. Un chemin de dossier contenant une apostrophe ou un fragment de SQL ne peut donc rien injecter. La règle qui en découle : ne jamais construire une requête SQL par concaténation, et ne jamais utiliser `$executeRawUnsafe` avec une valeur venue de l’extérieur.
+
+<Callout type="info">
+Le SQL brut sort du filet de Prisma : ni le type du résultat ni le nom des colonnes ne sont vérifiés à la compilation. Une colonne renommée dans le schéma casse ces requêtes sans que `pnpm typecheck` le voie. C’est pour cela qu’elles restent rares, courtes, et commentées.
+</Callout>
+
+## Faire évoluer la base : les migrations
+
+Le schéma change : une colonne s’ajoute, un modèle se renomme, une table disparaît. Mais la base de production, elle, contient déjà des données. On ne la recrée pas : on la **fait évoluer**.
+
+Une **migration** est un fichier SQL daté, dans `prisma/migrations/<date>_<nom>/migration.sql`. L’ensemble des migrations, appliquées dans l’ordre, reconstruit la base à l’identique. La première, `0_init`, contient l’état de départ ; les suivantes, chacune une évolution. Une table de la base, `_prisma_migrations`, garde la liste de celles déjà appliquées.
+
+<DocsTable columnsJson='["Commande","Où","Effet"]' rowsJson='[["pnpm prisma migrate dev --create-only --name <nom>","machine de développement","Compare le schéma à la base locale et écrit le SQL de la migration, sans l’appliquer."],["pnpm db:migrate (prisma migrate deploy)","développement et production","Applique les migrations pas encore appliquées, dans l’ordre ; n’en crée jamais."]]' />
+
+Le déroulé d’une évolution :
+
+1. modifier `schema.prisma`, avec ses commentaires `///` ;
+2. générer la migration (`migrate dev --create-only`), puis **la relire** ;
+3. ajouter en tête du fichier un commentaire qui explique l’évolution, comme dans les migrations existantes ;
+4. l’appliquer en local (`pnpm db:migrate`), vérifier, enregistrer dans le même commit que le code qui l’utilise ;
+5. l’appliquer en production avant que le nouveau code ne tourne.
+
+```sql
+-- prisma/migrations/20261207000000_legal_contact/migration.sql (extrait)
+-- Coordonnées légales de l'association (Informations légales) : siège, téléphone, e-mail, seules
+-- utilisées par les documents à valeur légale. Distinctes des coordonnées publiques.
+ALTER TABLE "SiteSettings" ADD COLUMN "legalAddress" TEXT;
+ALTER TABLE "SiteSettings" ADD COLUMN "legalPhone" TEXT;
+ALTER TABLE "SiteSettings" ADD COLUMN "legalEmail" TEXT;
+```
+
+### Relire la migration : l’exemple d’un renommage
+
+L’étape 2 n’est pas une formalité. Prisma écrit le SQL qu’il **croit** juste, en comparant deux états du schéma. Quand un modèle change de nom, il voit un modèle qui disparaît et un autre qui apparaît : sa migration supprime l’ancienne table et crée la nouvelle, vide. Les données sont perdues.
+
+Le renommage des stages en séminaires (`Stage` → `Seminar`) a été écrit à la main, pour cette raison :
+
+```sql
+-- prisma/migrations/20261111000000_rename_stage_to_seminar/migration.sql (extrait)
+-- Renommage Stage → Seminar (métadonnée pure ; validé en transaction au préalable).
+ALTER TABLE "Stage" RENAME TO "Seminar";
+ALTER TABLE "StageSession" RENAME TO "SeminarSession";
+ALTER TABLE "_StageAnimators" RENAME TO "_SeminarAnimators";
+ALTER TABLE "SeminarSession" RENAME COLUMN "stageId" TO "seminarId";
+ALTER TABLE "Gallery" RENAME COLUMN "stageId" TO "seminarId";
+```
+
+`RENAME TO`, `RENAME COLUMN` : les tables et les colonnes changent de nom, les lignes restent. La suite du fichier renomme aussi les séquences, les contraintes et les index, pour que la base corresponde exactement à ce que Prisma attend du nouveau schéma. Le commentaire de tête dit que l’opération a d’abord été « validée en transaction » : essayée, puis annulée, avant d’être écrite pour de bon.
+
+### Une migration appliquée ne se modifie plus
+
+Prisma enregistre une empreinte de chaque migration appliquée. Modifier un fichier déjà appliqué fait signaler la différence par `migrate dev`, qui propose de réinitialiser la base. On corrige donc par une **nouvelle** migration. Le dossier en garde un exemple, deux migrations à quelques heures d’intervalle :
+
+```sql
+-- prisma/migrations/20261101130000_drop_common_repository_label/migration.sql (fichier complet)
+DROP TABLE IF EXISTS "CommonRepositoryLabel";
+```
+
+La table ajoutée par `20261101120000_add_common_repository_label` n’a pas servi ; plutôt que de réécrire l’histoire, une seconde migration la retire. Les deux restent : sur une base qui n’a vu que la première, la seconde fait le ménage.
+
+`migrate dev` a besoin de créer une base temporaire (la « base fantôme ») pour calculer la différence. Le conteneur PostgreSQL de développement le permet ; l’utilisateur de la base de production, non : on n’y lance donc jamais que `migrate deploy`.
+
+### Quand une migration manque en production
+
+L’étape 5 est celle qui s’oublie, et le projet en a fait l’expérience.
+
+Après une mise à jour, plus personne ne pouvait se connecter au site, et les contenus ne se chargeaient plus. Les journaux du conteneur disaient pourquoi : une colonne `User.birthDateVerified` n’existait pas. Le code venait d’être déployé, le client Prisma avait été généré avec le nouveau schéma, et chaque lecture d’un membre demandait cette colonne… à une base qui n’avait pas reçu la migration `20261209000000_image_consent_online`.
+
+```sql
+-- prisma/migrations/20261209000000_image_consent_online/migration.sql (extrait)
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "birthDateVerified" BOOLEAN NOT NULL DEFAULT false,
+```
+
+Aucune donnée n’était perdue : la base était simplement en retard d’une migration. `prisma migrate deploy`, lancé contre la base de production, a rétabli le site.
+
+La cause était dans l’outillage. Le Dockerfile prévoit une étape dédiée aux migrations :
+
+```dockerfile
+# Dockerfile (extrait)
+# ─── Migrateur ────────────────────────────────────────────────────────────
+FROM base AS migrator
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY prisma.config.ts package.json ./
+CMD ["pnpm", "prisma", "migrate", "deploy"]
+```
+
+Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. La partie « Infrastructure et déploiement » y reviendra.
+
+<Callout type="warning">
+Le code et la base doivent évoluer ensemble. Toute mise à jour qui contient un dossier dans `prisma/migrations/` exige un `prisma migrate deploy` en production **avant** que le nouveau code ne serve des requêtes. Le symptôme d’un oubli est toujours le même : une erreur Prisma qui parle d’une colonne ou d’une table qui « n’existe pas ».
+</Callout>
+
+---
+
+## 6 — Et maintenant : faire entrer l’utilisateur dans le système
+
+À ce stade, le système est en place.
+
+La donnée est modélisée.  
+Les relations sont structurées.  
+Le typage est généré.  
+Le backend peut manipuler des entités cohérentes.
+
+---
+
+Mais quelque chose manque encore.
+
+---
+
+👉 rien de tout cela n’existe tant qu’un utilisateur ne peut pas interagir avec ce modèle
+
+C’est ici que les formulaires entrent en jeu.
+
+Les formulaires ne sont pas une couche UI.
+
+👉 ils sont la première traduction du modèle côté utilisateur
+
+---
+
+Jusqu’ici, nous avons construit un système qui tient.
+
+Maintenant, nous devons construire un système qui vit.
+
+---
+
+### 6.1 — Le prochain problème n’est plus la donnée, mais l’intention
+
+Une fois le modèle en place, une nouvelle question apparaît immédiatement.
+
+---
+
+👉 comment un utilisateur agit-il sur ce système ?
+
+---
+
+Comment crée-t-il un compte ?  
+Comment modifie-t-il ses informations ?  
+Comment envoie-t-il une intention au backend ?
+
+---
+
+Et surtout :
+
+👉 comment s’assurer que cette intention respecte le modèle que nous avons défini ?
+
+---
+
+C’est ici que beaucoup de projets commettent une erreur.
+
+Ils considèrent les formulaires comme une couche UI.
+
+---
+
+Mais en réalité :
+
+👉 un formulaire est le point de contact entre l’intention humaine et la structure du système
+
+---
+
+Et ce point de contact est critique.
+
+---
+
+### 6.2 — Le lien naturel entre Prisma et les formulaires
+
+Grâce à Prisma, nous avons déjà quelque chose de très puissant.
+
+👉 un modèle clair  
+👉 des types fiables  
+👉 une structure cohérente  
+
+---
+
+Cela signifie que les formulaires ne partent pas de zéro.
+
+Ils vont :
+
+- s’appuyer sur les types générés  
+- respecter les contraintes du modèle  
+- produire des données directement compatibles avec le backend  
+
+---
+
+Autrement dit :
+
+👉 les formulaires ne sont pas une couche indépendante
+
+👉 ils prolongent le modèle dans l’interface
+
+---
+
+<Callout type="info">
+Un bon formulaire ne “collecte” pas des données.
+
+👉 il traduit une intention utilisateur en une structure conforme au modèle
+
+Et ce modèle… vient directement de Prisma.
+</Callout>
+
+---
+
+### 6.3 — Une conséquence directe : moins de duplication, plus de cohérence
+
+Sans ce socle, chaque formulaire devient un cas particulier.
+
+- champs définis à la main  
+- validations bricolées  
+- types approximatifs  
+
+---
+
+Avec Prisma :
+
+- les structures sont connues  
+- les contraintes sont explicites  
+- les types sont déjà là  
+
+---
+
+👉 le frontend et le backend parlent déjà le même langage
+
+---
+
+Et cela va transformer complètement la manière dont nous allons construire nos formulaires.
+
+---
+
+### 6.4 — Et après les formulaires : transporter sans casser
+
+Une fois que l’utilisateur peut interagir avec le système, un autre problème apparaît.
+
+---
+
+👉 comment faire circuler cette donnée ?
+
+---
+
+Comment envoyer une structure typée :
+
+- depuis le formulaire  
+- vers le backend  
+- sans perdre la cohérence  
+- sans redéfinir des types  
+- sans casser le système  
+
+---
+
+C’est exactement là que tRPC entre en jeu.
+
+---
+
+Mais à ce stade, nous devons retenir une chose.
+
+---
+
+👉 tRPC n’est pas le point de départ
+
+---
+
+Si nous commençons par le transport sans comprendre :
+
+- le modèle  
+- les relations  
+- le typage  
+
+---
+
+👉 nous verrons des types circuler… sans savoir d’où ils viennent
+
+---
+
+Et nous retomberons dans une architecture “magique”.
+
+---
+
+### 6.5 — Ce que nous avons réellement construit
+
+Si nous prenons du recul sur toute cette partie, nous voyons apparaître une progression très claire.
+
+---
+
+Nous sommes partis :
+
+👉 de la donnée brute en base
+
+---
+
+Pour construire :
+
+- un modèle explicite (Prisma)  
+- des relations structurantes  
+- un typage généré  
+- une cohérence globale  
+
+---
+
+Et maintenant :
+
+👉 nous sommes prêts à ouvrir le système vers l’utilisateur
+
+---
+
+<Callout type="info">
+
+Prisma ne marque pas la fin du travail.
+
+👉 il marque le début d’un système cohérent
+
+La suite du parcours est naturelle :
+
+- les formulaires pour capturer l’intention  
+- tRPC pour transporter la donnée  
+- l’authentification pour sécuriser les accès  
+
+👉 tout repose sur le modèle que nous venons de construire
+
+</Callout>
+
+---
+
+### 6.6 — La suite du parcours
+
+Nous allons maintenant changer de perspective.
+
+---
+
+👉 quitter le modèle  
+👉 entrer dans l’interaction  
+
+---
+
+Dans la partie suivante, nous allons voir :
+
+- comment construire des formulaires alignés avec le modèle  
+- comment gérer la validation côté serveur  
+- comment relier React, Server Actions et TypeScript  
+- comment éviter la duplication entre frontend et backend  
+
+---
+
+Autrement dit :
+
+👉 comment faire entrer un utilisateur dans un système déjà cohérent
+
+---
+
+Et c’est à partir de là que le projet cesse d’être une architecture…
+
+👉 pour devenir une application vivante.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où est décrite la base ?","prisma/schema.prisma, à la racine : chaque modèle et chaque champ commenté en ///."],["Qui crée le client Prisma ?","prisma generate, lancé après chaque pnpm install et dans le Dockerfile ; un seul client, packages/backend/src/prisma.ts."],["Qu’est-ce qui rend un membre administrateur ?","Une adhésion au groupe marqué isAdminGroup ; aucun champ de User."],["Où vit le niveau d’accès à un espace ?","Sur l’adhésion (MemberGroupMembership.access), hérité par les sous-groupes."],["Que devient une ligne liée à une suppression ?","Cascade, SetNull ou Restrict, choisi selon ce qu’on perdrait ; défaut Prisma si non précisé, rendu explicite par un commentaire."],["D’où viennent les types des données ?","Du client généré ; un type de résultat se déduit de la requête (Prisma.XGetPayload), pas d’une réécriture à la main."],["Comment écrire plusieurs tables d’un coup ?","$transaction(async (tx) => …), en n’utilisant que tx."],["Quand utiliser du SQL brut ?","Pour ce que l’API Prisma ne sait pas exprimer, avec les gabarits paramétrés."],["Comment faire évoluer la base ?","migrate dev --create-only en local, relecture, puis migrate deploy partout, avant le nouveau code."]]' />
+
+## À suivre
+
+Le serveur sait lire et écrire les données du club de façon cohérente. Mais ce modèle strict est encore fermé : il faut maintenant laisser un utilisateur y faire entrer des données, qui n’ont rien de fiable, sans le corrompre. C’est le rôle du formulaire, et il est moins simple qu’il n’y paraît.
+
+<Callout type="tip">
+**Partie suivante : les formulaires.** Sept chapitres, du `<form>` HTML d’origine aux server actions de l’App Router : qui valide, qui décide, et les pièges d’un modèle qui donne confiance.
+</Callout>

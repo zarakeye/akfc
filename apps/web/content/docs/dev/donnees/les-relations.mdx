@@ -1,0 +1,513 @@
+---
+title: "Les relations, des décisions d’architecture"
+description: "Pourquoi une relation n’est jamais technique : isAdmin calculé plutôt que stocké, l’histoire du passage des rôles aux groupes, one-to-many et hiérarchie, many-to-many implicite ou explicite, null qui a un sens, et les règles de suppression (Cascade, SetNull, Restrict)."
+section: "Données"
+order: 4
+entities:
+  User: [email, password, isFirstLogin]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isCollaborative, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { CodeSnippet } from "@/features/docs/ui/CodeSnippet"
+import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
+import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
+import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
+
+> **Précédemment.** Le noyau du modèle sépare le membre, ses groupes et ses niveaux d’accès ; être administrateur, c’est appartenir à un groupe marqué. Une table de jointure relie le tout.
+
+## 4 — Les relations : là où les décisions d’architecture deviennent visibles
+
+Jusqu’ici, nous avons vu les relations à travers les modèles.
+
+Maintenant, nous allons les regarder pour ce qu’elles sont vraiment :
+
+👉 des décisions d’architecture.
+
+À ce stade, nous avons vu les entités du système.  
+Nous savons qu’il existe des membres, des sessions, des groupes et des adhésions.
+
+Mais si nous nous arrêtons là, nous passons à côté de l’essentiel.
+
+---
+
+Un système ne tient pas parce qu’il possède des entités.
+
+👉 il tient parce que ces entités sont reliées entre elles d’une certaine manière
+
+---
+
+Et cette manière n’est jamais neutre.
+
+---
+
+### 4.1 — Une relation n’est jamais “juste technique”
+
+Quand on découvre Prisma (ou une base relationnelle en général), on apprend rapidement des mots comme :
+
+- one-to-many  
+- many-to-many  
+- relation explicite  
+- clé étrangère  
+
+Mais ces termes peuvent être trompeurs.
+
+Parce qu’ils donnent l’impression que la relation est un choix technique.
+
+---
+
+Dans la réalité, c’est l’inverse.
+
+👉 la relation est un choix de modélisation  
+👉 et ce choix a des conséquences directes sur tout le système
+
+---
+
+Prenons un exemple simple.
+
+Un utilisateur pourrait avoir un champ `isAdmin` :
+
+<CodeSnippet
+  language="ts"
+  title="Exemple de raccourci trop rigide"
+  filename="user.types.ts"
+  kind="anti-pattern"
+  codeJson='"type User = {\n  isAdmin: boolean\n}"'
+/>
+
+C’est simple.  
+C’est rapide.  
+Et ça “fonctionne”.
+
+Si nous avons déjà utilisé un simple `isAdmin`, nous avons probablement vu ce qui se passe ensuite.
+
+- un deuxième drapeau apparaît (`isInstructor`)  
+- puis un troisième (`canEditGallery`)  
+- puis des conditions dans tous les sens  
+
+👉 et très vite, le système devient difficile à faire évoluer
+
+---
+
+Dans notre modèle, ce choix n’a pas été retenu. Il existe bien un `isAdmin` dans la session que reçoit chaque requête, mais ce n’est pas une colonne : c’est le **résultat d’une lecture** des relations.
+
+```ts
+// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
+  // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
+  // Aucun champ de User ne le dit : le droit se lit dans les relations.
+  const isAdmin =
+    (await prisma.memberGroupMembership.findFirst({
+      where: { userId: sessionDB.user.id, group: { isAdminGroup: true } },
+      select: { id: true },
+    })) !== null;
+```
+
+Être administrateur, c’est avoir une adhésion à un groupe dont `isAdminGroup` est vrai. Rien d’autre.
+
+---
+
+Ce choix change tout.
+
+---
+
+Il signifie que :
+
+- les droits ne sont pas figés dans le membre  
+- ils peuvent évoluer indépendamment  
+- ils peuvent être composés  
+- ils peuvent être enrichis sans casser le système  
+
+---
+
+👉 une simple relation remplace une décision rigide par une structure évolutive
+
+---
+
+<Callout type="info">
+Une relation bien pensée remplace du code conditionnel par une structure de données.
+
+👉 on ne “vérifie” plus les droits  
+👉 on les lit dans le modèle
+</Callout>
+
+---
+
+### 4.2 — Une relation encode une hypothèse sur le futur : l’histoire du projet
+
+La meilleure démonstration de cette idée est l’histoire de ce projet lui-même.
+
+Sa première version, et la première version de cette série, reposaient sur un autre noyau : un trio `Role`, `Permission`, `RolePermission`. Chaque membre portait une clé `roleId` : il appartenait à **un** rôle, et ce rôle donnait des permissions.
+
+<CodeSnippet
+  language="prisma"
+  title="Le noyau d’origine, aujourd’hui disparu"
+  filename="schema.prisma (première version, simplifiée)"
+  kind="educational"
+  codeJson='"model User {\n  id     String @id @default(cuid())\n  email  String @unique\n  roleId Int\n  role   Role   @relation(fields: [roleId], references: [id])\n}\n\nmodel Role {\n  id          Int              @id @default(autoincrement())\n  name        String\n  users       User[]\n  permissions RolePermission[]\n}"'
+/>
+
+C’était déjà mieux qu’un `isAdmin`. Mais cette relation one-to-many portait une hypothèse silencieuse :
+
+👉 un membre n’a qu’un seul rôle
+
+Et la première version de cette section le disait en toutes lettres : « Si demain vous avez besoin de rôles multiples, de contextes différents, de permissions dynamiques… ce modèle devra évoluer. »
+
+---
+
+C’est exactement ce qui s’est passé.
+
+Avec les espaces collaboratifs, un même membre devait pouvoir être **lecteur** de l’espace d’un groupe et **éditeur** de celui d’un autre. Un rôle unique ne savait pas le dire : le droit ne dépendait plus seulement de la personne, mais du **couple** personne–groupe.
+
+Le modèle a donc changé de forme. Le rôle a disparu ; le groupe, qui n’était qu’une liste de diffusion, est devenu la charnière des droits ; le niveau d’accès est passé sur l’adhésion. L’administration elle-même est devenue un groupe parmi d’autres, marqué par un booléen. Le changement a été mené par étapes, en ajoutant les nouveaux modèles à côté des anciens avant de retirer ceux-ci, pour que le site continue de fonctionner à chaque étape.
+
+👉 une relation n’est jamais “gratuite”  
+👉 elle encode une hypothèse sur le futur du système  
+👉 et le jour où l’hypothèse tombe, c’est le schéma qui doit changer, pas des conditions ajoutées dans le code
+
+---
+
+### 4.3 — One-to-many : structurer sans rigidifier
+
+Le noyau actuel contient deux relations one-to-many.
+
+La première relie un membre à ses sessions : un membre peut avoir plusieurs sessions ouvertes (son téléphone, son ordinateur), une session appartient à un seul membre. La clé étrangère `userId` est du côté « plusieurs », dans `Session`.
+
+La seconde relie un groupe à ses sous-groupes, et c’est une relation d’un modèle **vers lui-même** :
+
+```prisma
+// prisma/schema.prisma (extrait)
+  /// Groupe parent ; null = groupe racine. Un parent ne peut pas être un
+  /// descendant du groupe (cycle refusé par memberGroup.setParentGroup).
+  parentGroupId String?
+  /// Parent (N–1, MemberGroup.childGroups). Filet de sécurité : si le parent
+  /// disparaît sans passer par deleteGroupWithSpace, le groupe devient racine
+  /// (SET NULL).
+  parentGroup   MemberGroup?  @relation("GroupHierarchy", fields: [parentGroupId], references: [id], onDelete: SetNull)
+  /// Sous-groupes (1–N, MemberGroup.parentGroup).
+  childGroups   MemberGroup[] @relation("GroupHierarchy")
+```
+
+Un groupe a au plus un parent (`parentGroupId`), et autant d’enfants que l’on veut (`childGroups`). Comme les deux champs de relation visent le même modèle, ils portent un **nom** commun, `"GroupHierarchy"`, pour que Prisma sache qu’ils sont les deux côtés d’une même relation.
+
+Ce choix dit quelque chose de précis :
+
+👉 la hiérarchie des groupes est un arbre, pas un réseau
+
+Un groupe ne peut pas avoir deux parents. Le bureau ne peut pas être à la fois sous « Administrateurs » et sous « Instructeurs ». Si un jour ce besoin apparaît, ce sera, encore une fois, une décision de schéma.
+
+---
+
+### 4.4 — Many-to-many : introduire de la flexibilité… avec un coût
+
+La relation entre les membres et les groupes est différente.
+
+Ici, nous avons besoin de flexibilité.
+
+Un membre peut appartenir à plusieurs groupes.  
+Un groupe réunit plusieurs membres.
+
+---
+
+Conceptuellement, c’est simple.
+
+Mais techniquement, cela implique une table de jointure.
+
+---
+
+Prisma sait d’ailleurs la créer tout seul. Le projet en a un exemple, les co-animateurs d’un stage :
+
+```prisma
+// prisma/schema.prisma (extrait)
+  /// Co-animateurs (N–N, User.seminarsAsAnimator, table _SeminarAnimators).
+  animators User[] @relation("SeminarAnimators")
+```
+
+Deux listes qui se répondent (`Seminar.animators`, `User.seminarsAsAnimator`), et c’est tout : Prisma crée en base une table cachée, `_SeminarAnimators`, qui n’apparaît pas dans le schéma et qu’on n’écrit jamais soi-même. C’est une relation many-to-many **implicite**.
+
+Pour les groupes, le projet a choisi une table **explicite**, `MemberGroupMembership`, vue au chapitre précédent. La raison tient en un champ : `access`. Une table implicite ne peut porter que les deux clés ; dès que le lien lui-même a une propriété (ici, le niveau d’accès du membre **dans** ce groupe), il faut un modèle à part entière.
+
+---
+
+Et cette table introduit quelque chose d’important :
+
+👉 une couche intermédiaire que nous ne voyons pas toujours
+
+---
+
+C’est là que beaucoup de développeurs se perdent.
+
+Ils voient la table de jointure comme un détail technique.
+
+---
+
+Mais en réalité :
+
+👉 elle matérialise une relation essentielle du système
+
+---
+
+Sans elle :
+
+- nous dupliquons les droits sur le membre  
+- nous rigidifions les groupes  
+- nous perdons en cohérence  
+
+---
+
+Avec elle :
+
+- nous pouvons composer les accès  
+- nous pouvons faire évoluer les groupes  
+- nous gardons un système propre  
+
+---
+
+Mais elle a un coût.
+
+👉 elle complexifie la lecture  
+👉 elle complexifie les requêtes  
+👉 elle complexifie le modèle mental
+
+---
+
+Le coût des requêtes se voit dans le code qui calcule l’accès d’un membre à l’espace d’un groupe, sous-groupes compris :
+
+```ts
+// packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts (extrait)
+export async function resolveGroupAccessForUser(
+  prisma: PrismaClient,
+  userId: string,
+  groupId: string,
+): Promise<GroupAccessLevel> {
+  let best: GroupAccessLevel = "NONE";
+  let cursor: string | null = groupId;
+  const seen = new Set<string>();
+
+  while (cursor && !seen.has(cursor)) {
+    seen.add(cursor);
+
+    const membership = await prisma.memberGroupMembership.findUnique({
+      where: { groupId_userId: { groupId: cursor, userId } },
+      select: { access: true },
+    });
+    if (membership?.access === "EDITOR") return "EDITOR";
+    if (membership?.access === "VIEWER") best = "VIEWER";
+
+    const group: { parentGroupId: string | null } | null =
+      await prisma.memberGroup.findUnique({
+        where: { id: cursor },
+        select: { parentGroupId: true },
+      });
+    cursor = group?.parentGroupId ?? null;
+  }
+
+  return best;
+}
+```
+
+La boucle remonte la hiérarchie, du groupe visé vers ses ancêtres. À chaque étage, elle cherche une adhésion du membre, et garde le niveau le plus élevé : un membre du groupe parent hérite de l’accès aux espaces des sous-groupes. L’ensemble `seen` protège d’une boucle infinie si la base contenait un jour un cycle (le routeur les refuse, mais une protection de plus ne coûte rien).
+
+C’est exactement pour cela que nous avons deux diagrammes :
+
+- un technique (complet)  
+- un mental (simplifié)  
+
+---
+
+<Callout type="info">
+Une bonne architecture accepte la complexité technique  
+pour simplifier la compréhension métier.
+
+👉 la table de jointure est complexe techniquement  
+👉 mais elle simplifie le système global
+</Callout>
+
+---
+
+### 4.5 — Nullable ou obligatoire : une décision silencieuse mais critique
+
+Dans Prisma, une relation peut être :
+
+- obligatoire  
+- optionnelle (`?`)
+
+---
+
+Ce choix semble anodin.
+
+Il ne l’est pas.
+
+---
+
+`Session.userId` est obligatoire : une session sans membre n’aurait aucun sens. `MemberGroup.parentGroupId`, lui, est facultatif (`String?`), et son absence a un sens précis :
+
+👉 “ce groupe est une racine”
+
+---
+
+C’est un `null` qui **signifie** quelque chose, et le commentaire du champ le dit (« null = groupe racine »). À l’inverse, un `null` qui ne veut rien dire est une source de bugs : chaque lecture doit se demander ce qu’il faut faire quand la valeur manque.
+
+---
+
+Les deux modèles produisent des systèmes très différents.
+
+---
+
+Quand un `null` n’a pas de sens :
+
+- nous devons gérer des cas incomplets  
+- nous multiplions les vérifications  
+- nous ouvrons la porte à des incohérences  
+
+---
+
+Quand la relation est obligatoire, ou que le `null` a un sens écrit :
+
+- le système est plus strict  
+- les règles sont plus claires  
+- le code devient plus simple  
+
+---
+
+👉 une simple `?` peut transformer profondément le comportement du système
+
+---
+
+### 4.6 — Choisir ce qui se passe à la suppression
+
+Il reste une décision, attachée à chaque relation, que l’on oublie facilement parce qu’elle ne sert que le jour où l’on supprime : **que devient la ligne liée quand on supprime sa cible ?**
+
+C’est l’une des décisions les plus importantes d’un schéma, et le projet en utilise trois :
+
+<DocsTable columnsJson='["Règle","Effet","Exemple du projet"]' rowsJson='[["Cascade (26 relations)","La ligne liée est supprimée avec sa cible.","Supprimer un membre supprime ses sessions et ses adhésions aux groupes ; supprimer un fichier supprime sa présence dans les galeries."],["SetNull (11 relations)","La clé étrangère passe à NULL : la ligne survit, détachée.","Supprimer une discipline détache ses médias, qui restent dans la bibliothèque. Un groupe dont le parent disparaît devient une racine."],["Restrict (3 relations)","La suppression de la cible est refusée tant qu’une ligne liée existe.","Un média utilisé par une page (PageMediaReference) ne peut pas être supprimé."]]' />
+
+```prisma
+// prisma/schema.prisma (extrait)
+model PageMediaReference {
+  /// Identifiant CUID.
+  id           String             @id @default(cuid())
+  /// Fichier référencé.
+  mediaAssetId String
+  /// Type de contenu qui utilise le fichier (voir PageReferencerKind).
+  pageType     PageReferencerKind
+  /// Identifiant du contenu, en texte (les identifiants numériques sont
+  /// convertis).
+  pageId       String
+
+  /// Création du lien.
+  createdAt    DateTime           @default(now())
+
+  /// Fichier (N–1, MediaAsset.pageReferences). Le lien BLOQUE la suppression
+  /// du fichier (RESTRICT).
+  mediaAsset   MediaAsset         @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  // Un lien au plus par fichier et par contenu.
+  @@unique([mediaAssetId, pageType, pageId])
+  @@index([pageType, pageId])
+}
+```
+
+Le critère de choix : **que perdons-nous si la ligne liée disparaît ?** Une session sans membre n’a aucun sens (Cascade). Un média sans discipline reste un média (SetNull). Une page sans son image serait cassée sous les yeux des visiteurs (Restrict) : la base refuse, et l’application affiche pourquoi.
+
+Quand `onDelete` n’est pas écrit, Prisma applique sa valeur par défaut : `SetNull` pour une relation facultative, `Restrict` pour une relation obligatoire. C’est le cas de la relation `primaryAnimator` d’un stage, obligatoire : un membre animateur principal d’un stage ne peut pas être supprimé. Le commentaire `///` des relations concernées rend la règle explicite, pour qu’on n’ait pas à connaître les défauts de Prisma.
+
+`PageMediaReference.pageId` n’a **pas** de clé étrangère : selon `pageType`, il désigne une discipline, un stage, une actualité… Une clé étrangère ne peut viser qu’une seule table. L’intégrité de ce côté est donc tenue par le code (`syncPageMediaReferences`, appelé dans la même transaction que chaque enregistrement de contenu, chapitre 6).
+
+<Callout type="warning">
+Une règle de suppression est une règle métier. `Cascade` sur la mauvaise relation efface des données sans prévenir ; `Restrict` partout rend la suppression impossible. Elle se choisit en écrivant la relation, pas le jour où un administrateur clique sur « Supprimer ».
+</Callout>
+
+---
+
+### 4.7 — Lire les relations, c’est lire le futur du projet
+
+À ce stade, nous pouvons faire quelque chose de très puissant.
+
+---
+
+Nous pouvons regarder un schéma…  
+et anticiper le comportement du système.
+
+---
+
+Dans notre projet, les relations montrent déjà :
+
+- que l’authentification est persistée  
+- que les droits passent par les groupes  
+- que les accès sont composables, et héritables dans la hiérarchie  
+- que le membre n’est pas une entité isolée  
+- ce qui disparaît, ce qui survit, et ce qui bloque, à chaque suppression  
+
+---
+
+Autrement dit :
+
+👉 une grande partie de l’architecture est déjà écrite  
+👉 avant même d’avoir vu une seule ligne de code métier
+
+---
+
+### 4.8 — Ce que cette section change pour la suite
+
+Maintenant que nous comprenons les relations, une chose devient évidente.
+
+---
+
+Quand nous allons manipuler des données :
+
+- dans un formulaire  
+- dans une procédure tRPC  
+- dans une garde d’accès  
+
+---
+
+👉 nous ne manipulons jamais une entité seule
+
+---
+
+Nous manipulons :
+
+- un membre avec ses adhésions  
+- un groupe avec son parent et ses sous-groupes  
+- une session liée à un membre  
+
+---
+
+Et tout cela est déjà défini ici.
+
+---
+
+<Callout type="info">
+Les relations ne sont pas une couche technique supplémentaire.
+
+👉 elles sont le cœur du système
+
+Tout ce qui suit — formulaires, tRPC, authentification — s’appuie directement sur elles.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** les relations ont révélé leur vraie nature — ce ne sont pas des liens techniques, ce sont des décisions qui disent ce que le système se permet et ce qu’il refuse. Nous savons désormais lire un one-to-many, un many-to-many implicite ou explicite, une colonne nullable ou obligatoire, une règle de suppression, comme autant de choix qui engagent la suite du projet — et nous avons vu l’un de ces choix céder, puis être remplacé. Reste à franchir le dernier pas : faire passer ce modèle de son état déclaratif à un état vivant, utilisable par le code qui va le consommer.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons regardé le modèle pour ce qu’il est vraiment : une architecture. Trois idées en sont ressorties :
+
+- **Les entités cœur disent déjà la philosophie du système.** En séparant le membre, ses groupes et ses niveaux d’accès, le schéma affirme un choix structurant : les capacités ne sont pas attachées aux personnes, elles sont attachées aux appartenances — et cette séparation est ce qui rend l’autorisation évolutive plutôt que figée dans les procédures.
+- **Une relation n’est jamais « juste technique ».** One-to-many, many-to-many, nullable ou obligatoire, cascade ou restriction : chaque choix porte une règle métier silencieuse. Lire une relation, c’est lire ce que le projet promet — et ce qu’il interdit — sans jamais avoir besoin de l’écrire en prose.
+- **Le modèle dessine le futur autant que le présent.** Ce qui est facile à ajouter, ce qui est douloureux à supprimer, ce qui pourra évoluer sans migration — tout cela est déjà inscrit dans la forme des relations que nous choisissons aujourd’hui. Le passage des rôles aux groupes l’a montré : le `schema.prisma` n’est pas seulement une photographie, c’est une trajectoire.
+
+Le Mouvement 3 va maintenant prendre ce modèle déclaratif et franchir la frontière qui le rend exécutable — là où Prisma cesse de décrire pour commencer à faire.
+
+## À suivre
+
+Le modèle est décrit, ses relations sont des décisions assumées. Mais tout cela reste déclaratif : rien ne tourne encore.
+
+<Callout type="tip">
+**Chapitre suivant : quand le modèle devient exécutable.** `prisma generate`, les types et les requêtes générés, la fin de la duplication des types, un type écrit à la main remplacé par un type généré, et là où le typage s’arrête.
+</Callout>
