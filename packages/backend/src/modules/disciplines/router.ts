@@ -202,13 +202,13 @@ export const disciplineRouter = router({
   }),
 
   /**
-   * Disciplines du menu « Nos activités » : PUBLIÉES pour tous, PLUS les
-   * brouillons si la session est ADMIN. Gating SERVEUR — un visiteur
-   * non-admin ne peut pas récupérer les brouillons via cette query.
+   * Disciplines du menu « Nos disciplines » : les seules PUBLIÉES, pour TOUT LE MONDE, administrateurs
+   * compris. Le menu est la navigation publique, et la page d'un brouillon répond 404 à tous : un
+   * brouillon dans le menu serait un lien mort. Les brouillons se gèrent depuis le tableau de bord.
    */
   getAllForMenu: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.discipline.findMany({
-      where: visibleTo(ctx),
+      where: { publicationDate: { not: null, lte: new Date() } },
       orderBy: [{ categoryId: "asc" }, { name: "asc" }],
     });
   }),

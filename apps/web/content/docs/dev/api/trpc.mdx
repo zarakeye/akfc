@@ -101,6 +101,8 @@ getAll: publicProcedure.query(async ({ ctx }) => {
 
 Toutes les lectures du routeur (`getAll`, `getAllByCategory`, `getAllForMenu`, `getById`, `getBySlug`) appliquent ce filtre. Un administrateur voit tout ; un membre ou un visiteur ne voit que ce qui est publié, et un brouillon demandé par son identifiant répond « introuvable », exactement comme la page publique.
 
+Une seule lecture fait exception : `getAllForMenu`, qui alimente le menu « Nos disciplines », ne renvoie que les disciplines publiées, **même à un administrateur**. Elle suivait d'abord la règle commune, et un administrateur voyait ses brouillons dans le menu ; mais la page d'un brouillon répond 404 à tout le monde, et ces entrées menaient à des liens morts. Le menu est la navigation publique : il montre ce que voit le public.
+
 Les stages et les événements résolvent le même problème autrement : une lecture publique filtrée (`seminar.getAll`) et une lecture séparée réservée aux administrateurs (`seminar.getAllAdmin`). Pour les disciplines, le filtre selon l'appelant a été préféré parce que la même liste sert aussi aux formulaires des membres (le dépôt de fichiers propose les disciplines) : ils reçoivent désormais les seules disciplines publiées, sans qu'aucun écran ait eu à changer.
 
 <Callout type="warning">
