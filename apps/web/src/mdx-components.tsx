@@ -144,12 +144,3 @@ export const mdxComponents: MDXComponents = {
   pre: (props) => <MdxCodeFence>{props.children}</MdxCodeFence>,
   a: (props) => <a className="underline underline-offset-4" {...props} />,
 }
-
-export function useMDXComponents(
-  components: MDXComponents
-): MDXComponents {
-  return {
-    ...mdxComponents,
-    ...components,
-  }
-}

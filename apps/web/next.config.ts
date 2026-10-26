@@ -1,22 +1,5 @@
 import type { NextConfig } from "next"
-import createMDX from "@next/mdx"
 import path from "node:path"
-
-const withMDX = createMDX({
-  extension: /\.mdx?$/,
-  options: {
-    // Turbopack exige des options sérialisables (JSON) — donc on passe
-    // le plugin comme un chemin absolu (string), pas comme une référence
-    // de fonction. @next/mdx résout le chemin lui-même à la compilation.
-    //
-    // process.cwd() est utilisé plutôt que import.meta.url parce que
-    // next.config.ts est compilé en CommonJS, où import.meta n'existe pas.
-    // process.cwd() pointe vers apps/web quand on lance `pnpm dev`.
-    remarkPlugins: [
-      path.join(process.cwd(), "src/../mdx/remark-flatten-mdx-attrs.mjs"),
-    ],
-  },
-})
 
 const nextConfig: NextConfig = {
   /**
@@ -79,8 +62,9 @@ const nextConfig: NextConfig = {
    * était rétablie un jour. Le coût d'un 307 est nul, celui d'un 308 qu'on
    * regrette se compte en « vide ton cache ».
    *
-   * Le chemin source est EXACT : les fiches `/stages/mon-stage` ne sont pas
-   * concernées, et c'est bien elles que l'agenda cible.
+   * Les deux listes sont des chemins EXACTS. Une fiche `/stages/mon-stage`
+   * suit sa propre règle : elle mène à `/seminars/mon-stage`, et cette fois
+   * de façon PERMANENTE (308), car la fiche a définitivement changé d'adresse.
    */
   async redirects() {
     return [
@@ -89,7 +73,6 @@ const nextConfig: NextConfig = {
       { source: "/events", destination: "/agenda", permanent: false },
     ]
   },
-  transpilePackages: ["@workspace/backend", "@workspace/contracts"],
   // 🚀 Empêche Next/Turbopack de bundler `@prisma/client`. Le package est
   // traité comme un module Node externe, donc require() le résout une seule
   // fois → `globalThis.prisma` partage bien la même instance entre tous les
@@ -97,7 +80,12 @@ const nextConfig: NextConfig = {
   // Sans ça, chaque chunk a son propre module Prisma → multiples
   // PrismaClient instanciés → cold start + DEALLOCATE ALL à chaque requête.
   serverExternalPackages: ["@prisma/client", "imapflow", "mailparser", "sharp"],
-  pageExtensions: ["ts", "tsx", "md", "mdx"],
+  /**
+   * Seuls les fichiers .ts et .tsx de `app/` peuvent être des pages, des
+   * layouts ou des routes. La documentation (.mdx) n'en fait pas partie : elle
+   * vit dans `content/` et `docs/[...slug]/page.tsx` la compile à la demande.
+   */
+  pageExtensions: ["ts", "tsx"],
 }
 
-export default withMDX(nextConfig)
+export default nextConfig

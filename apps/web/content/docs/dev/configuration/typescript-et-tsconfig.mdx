@@ -167,17 +167,9 @@ Cette liste porte aussi des traces d'un ancien rangement : `app`, `components`, 
 
 Un fichier `.d.ts` ne contient que des types : il décrit à TypeScript ce qu'il ne peut pas deviner.
 
-<DocsTable columnsJson='["Fichier", "Ce qu’il déclare"]' rowsJson='[["apps/web/next-env.d.ts", "Les types de Next.js (images, routes typées). Généré par Next : ne pas le modifier."], ["apps/web/mdx.d.ts", "Qu’un import de fichier .mdx renvoie un composant React."], ["apps/web/src/global.d.ts", "Qu’un import de fichier .css, .scss ou .sass est accepté."]]' />
+<DocsTable columnsJson='["Fichier", "Ce qu’il déclare"]' rowsJson='[["apps/web/next-env.d.ts", "Les types de Next.js (images, routes typées). Généré par Next : ne pas le modifier."], ["apps/web/src/global.d.ts", "Qu’un import de fichier .css, .scss ou .sass est accepté."]]' />
 
-```ts
-// apps/web/mdx.d.ts (fichier complet)
-declare module "*.mdx" {
-  import type { ComponentType } from "react"
-
-  const MDXComponent: ComponentType<Record<string, unknown>>
-  export default MDXComponent
-}
-```
+Les pages de cette documentation sont des fichiers `.mdx`, mais aucun n'est importé par le code : elles sont lues sur le disque et compilées à la demande (chapitre suivant). Aucune déclaration n'est donc nécessaire pour eux.
 
 ## La configuration de la racine
 
@@ -200,7 +192,7 @@ Elle ne sert qu'à l'éditeur, pour `prisma.config.ts` et les scripts de `prisma
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui transforme le TypeScript en JavaScript ?", "Next.js, sans vérifier les types ; tsc ne fait que vérifier (noEmit)."], ["Où sont les options communes ?", "tsconfig.base.json, repris par chaque paquet avec extends."], ["Comment fonctionne un alias ?", "paths associe un préfixe à un dossier, relatif au tsconfig qui le déclare ; Next.js lit les mêmes."], ["Pourquoi le même alias est-il déclaré plusieurs fois ?", "Un fichier du backend est aussi compilé par la configuration du web : chaque tsconfig qui le compile doit connaître ses alias."], ["Que sont les .d.ts ?", "Des déclarations de types pour ce que TypeScript ne peut pas deviner (fichiers .mdx, .css, types de Next)."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui transforme le TypeScript en JavaScript ?", "Next.js, sans vérifier les types ; tsc ne fait que vérifier (noEmit)."], ["Où sont les options communes ?", "tsconfig.base.json, repris par chaque paquet avec extends."], ["Comment fonctionne un alias ?", "paths associe un préfixe à un dossier, relatif au tsconfig qui le déclare ; Next.js lit les mêmes."], ["Pourquoi le même alias est-il déclaré plusieurs fois ?", "Un fichier du backend est aussi compilé par la configuration du web : chaque tsconfig qui le compile doit connaître ses alias."], ["Que sont les .d.ts ?", "Des déclarations de types pour ce que TypeScript ne peut pas deviner (fichiers .css, types de Next)."]]' />
 
 ## À suivre
 

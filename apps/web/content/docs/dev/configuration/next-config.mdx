@@ -1,0 +1,255 @@
+---
+title: "Next.js et next.config.ts"
+description: "Le fichier qui règle le build : la sortie autonome pour l'image Docker et ce que le traceur oublie, les paquets laissés hors du bundle serveur, le React Compiler, les redirections, les extensions de page et la compilation de cette documentation, Turbopack en développement et webpack au build, et ce qui a été retiré du fichier."
+section: "Configuration"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** TypeScript vérifie le code avec six `tsconfig`, sans jamais produire de JavaScript. C'est Next.js qui construit l'application, et il a sa propre configuration.
+
+`apps/web/next.config.ts` est lu une seule fois, au démarrage de `pnpm dev` ou de `pnpm build`. Une modification n'a donc aucun effet tant que le serveur de développement tourne : il faut l'arrêter et le relancer. Le fichier tient en moins de cent lignes, et chaque réglage répond à une question précise. Nous les prenons dans l'ordre où ils servent : d'abord la forme du build, puis ce qu'il compile, enfin ce qu'il fait des adresses.
+
+```ts
+// apps/web/next.config.ts (extrait)
+import type { NextConfig } from "next"
+import path from "node:path"
+
+const nextConfig: NextConfig = {
+```
+
+Un seul objet, typé par `NextConfig` : l'éditeur complète les noms d'options et signale une faute de frappe. `path` sert plus bas, pour calculer des chemins à partir du dossier où la commande est lancée.
+
+## Le build autonome
+
+Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarrer, de tout le `node_modules` du projet. Dans un monorepo, c'est plusieurs centaines de mégaoctets, dont l'essentiel ne sert jamais en production (outils de lint, de test, de build).
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Sortie AUTONOME : Next produit un dossier contenant son propre serveur et
+   * uniquement les dépendances que le code atteint réellement. Sans elle,
+   * l'image Docker embarque tout `node_modules` du monorepo.
+   */
+  output: "standalone",
+```
+
+Avec `output: "standalone"`, Next.js suit chaque `import` depuis les pages et les routes, et recopie dans `.next/standalone` uniquement les fichiers réellement atteints, avec un petit `server.js` qui les sert. L'image Docker n'embarque que ce dossier :
+
+```dockerfile
+# Dockerfile (extrait)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
+```
+
+Le dossier `static` (les fichiers JavaScript et CSS envoyés au navigateur) et `public` ne font pas partie du dossier autonome : Next.js part du principe qu'ils peuvent être servis par un CDN. Le Dockerfile les recopie à côté. La dernière ligne concerne `sharp`, nous y revenons plus bas.
+
+### Tracer depuis la racine du dépôt
+
+Ce suivi des imports s'appelle le **traçage**. Il part par défaut du dossier de l'application, `apps/web`, et ne regarde jamais au-dessus. Or le backend et les contrats vivent dans `packages/`, un niveau plus haut.
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Racine de traçage des fichiers.
+   *
+   * Indispensable en monorepo, et souvent oublié : par défaut Next trace
+   * depuis `apps/web` et manque donc `packages/backend` et
+   * `packages/contracts`, qui vivent AU-DESSUS. Le serveur démarre alors
+   * normalement puis s'effondre au premier import.
+   */
+  outputFileTracingRoot: path.join(process.cwd(), "../../"),
+```
+
+`process.cwd()` est le dossier depuis lequel la commande est lancée. `pnpm --filter web build` l'exécute dans `apps/web`, donc `../../` désigne la racine du dépôt. Le chemin est calculé ainsi parce que `next.config.ts` est compilé en CommonJS, où `import.meta.url` (la façon moderne de connaître l'emplacement d'un fichier) n'existe pas.
+
+### Ce que le traçage ne voit pas
+
+Le traceur lit le code sans l'exécuter. Il suit un `import` écrit en toutes lettres, mais deux sortes de fichiers lui échappent.
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Le traceur du build `standalone` rate les fichiers atteints par des
+   * `await import()` DYNAMIQUES (instrumentation.ts → services backend, résolus
+   * via l'alias `@backend/*` vers la source) et les assets NON-JS (schéma
+   * Prisma, migrations). Sans eux dans l'image, le boot crashe en « Code file
+   * not found » et le self-heal ne tourne jamais. On force donc leur inclusion.
+   * Globs relatifs au dossier du projet (apps/web) ; clé `**` = toutes entrées.
+   */
+  outputFileTracingIncludes: {
+    "**": [
+      "../../packages/backend/**/*",
+      "../../packages/contracts/**/*",
+      "../../prisma/**/*",
+      // sharp (déclinaisons d'images R2) : binaires natifs chargés dynamiquement.
+      "../../node_modules/sharp/**/*",
+      "../../node_modules/.pnpm/sharp@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-linux-x64@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**/*",
+    ],
+  },
+```
+
+Les **imports dynamiques** d'abord. Au démarrage, `instrumentation.ts` charge les services du backend avec `await import(...)`, pour qu'ils ne soient lus que côté serveur Node. Le traceur ne les suit pas toujours. Les **fichiers qui ne sont pas du code** ensuite : le schéma Prisma et ses migrations, lus sur le disque, jamais importés. Sans eux, l'image démarre puis échoue au premier besoin. `outputFileTracingIncludes` force leur copie ; la clé `"**"` signifie « pour toutes les pages et routes ».
+
+Les quatre dernières lignes visent `sharp`, la bibliothèque qui produit les déclinaisons d'images. Elle s'appuie sur des binaires natifs, chargés par un `require` calculé à l'exécution selon la machine. Le Dockerfile prend une seconde précaution : il recopie `sharp` et ses dépendances à plat dans `/opt/sharp`, vérifie qu'il se charge (`node -e "require('/opt/sharp')"`), et le pose dans l'image (la ligne `/opt/sharp` vue plus haut). Si `sharp` ne se charge pas, c'est le build qui échoue, pas l'envoi d'une photo en production.
+
+<Callout type="warning">
+**Le symptôme d'un fichier non tracé est trompeur.** Tout fonctionne avec `pnpm dev`, qui lit directement le dépôt. Le build réussit aussi. C'est l'image Docker qui échoue, au démarrage ou à la première requête concernée, avec « Cannot find module » ou « Code file not found ». Devant ce message en production seulement, la première question est : ce fichier est-il atteint par un import écrit en toutes lettres ?
+</Callout>
+
+## Les paquets laissés hors du bundle
+
+Pour le serveur aussi, Next.js regroupe le code en quelques gros fichiers, les **bundles** (ou *chunks*). Certains paquets supportent mal ce regroupement.
+
+```ts
+// apps/web/next.config.ts (extrait)
+  // 🚀 Empêche Next/Turbopack de bundler `@prisma/client`. Le package est
+  // traité comme un module Node externe, donc require() le résout une seule
+  // fois → `globalThis.prisma` partage bien la même instance entre tous les
+  // chunks (Server Components, Route Handlers, Server Actions, etc.).
+  // Sans ça, chaque chunk a son propre module Prisma → multiples
+  // PrismaClient instanciés → cold start + DEALLOCATE ALL à chaque requête.
+  serverExternalPackages: ["@prisma/client", "imapflow", "mailparser", "sharp"],
+```
+
+Un paquet de `serverExternalPackages` n'est pas recopié dans les bundles : il reste un module Node ordinaire, chargé par `require` au moment de l'exécution. Le commentaire explique le cas de Prisma. Le client Prisma est rangé dans `globalThis.prisma` pour n'être créé qu'une fois ; si chaque bundle embarquait sa propre copie du module, chacun créerait son client, avec ses connexions à la base. Le commentaire ne dit rien des trois autres. `sharp` charge ses binaires natifs à l'exécution, ce qu'un bundle ne sait pas reproduire. `imapflow` et `mailparser`, qui lisent les boîtes mail, reposent sur les modules internes de Node (les flux, `stream`) et sur de nombreuses dépendances : les laisser à Node évite de les faire passer par l'assembleur, qui n'apporte rien à du code exclusivement serveur.
+
+## Le React Compiler
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * React Compiler : au build, chaque composant et chaque hook du projet est
+   * réécrit pour mémoïser lui-même ses calculs, ses fonctions et son JSX ; plus
+   * besoin de useMemo / useCallback / React.memo écrits à la main. Il ne touche
+   * qu'au code qui respecte les règles de React, celles que vérifie
+   * `pnpm lint` (eslint-plugin-react-hooks) : le reste est laissé tel quel.
+   * Nécessite le paquet babel-plugin-react-compiler (devDependency de web).
+   */
+  reactCompiler: true,
+```
+
+Le React Compiler n'est pas le compilateur de React : React n'en a pas besoin, le JSX est transformé en JavaScript par SWC, l'outil intégré à Next.js. C'est une **étape d'optimisation supplémentaire**, que Next.js n'active pas d'office, pour deux raisons : elle ralentit le build, et elle peut modifier le comportement d'un composant qui contourne les règles de React. Il faut l'option et le paquet `babel-plugin-react-compiler`, déclaré dans les `devDependencies` de `apps/web/package.json`.
+
+Au build, il analyse chaque composant et chaque hook, puis les réécrit pour qu'ils gardent en mémoire leurs calculs, leurs fonctions et leur JSX tant que leurs entrées ne changent pas. C'est le travail de `useMemo`, `useCallback` et `React.memo`, fait automatiquement et plus finement. Un composant qui enfreint une règle n'est pas cassé : il est laissé tel quel, sans optimisation. Ces règles sont celles que vérifie `pnpm lint`, et le chapitre « Typecheck et lint » en détaille les motifs.
+
+Au moment de l'activation, sur la même machine, la compilation de `next build` est passée de 61 à 83 secondes, et 33 des fichiers JavaScript envoyés au navigateur contenaient le code de mémorisation ajouté par le Compiler. Une vingtaine de secondes de build en plus, contre des rendus évités à chaque interaction.
+
+## Les redirections
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Les listes `/stages` et `/events` ont fusionné dans `/agenda`.
+   *
+   * Redirection plutôt que 404 : ces adresses ont pu être envoyées par
+   * message, mises en favori ou indexées, et l'agenda contient ce qu'on y
+   * cherchait.
+   *
+   * TEMPORAIRES (307) et non permanentes (308) : un 308 est mis en cache
+   * durablement par les navigateurs et resterait actif si une liste dédiée
+   * était rétablie un jour. Le coût d'un 307 est nul, celui d'un 308 qu'on
+   * regrette se compte en « vide ton cache ».
+   *
+   * Les deux listes sont des chemins EXACTS. Une fiche `/stages/mon-stage`
+   * suit sa propre règle : elle mène à `/seminars/mon-stage`, et cette fois
+   * de façon PERMANENTE (308), car la fiche a définitivement changé d'adresse.
+   */
+  async redirects() {
+    return [
+      { source: "/stages/:slug", destination: "/seminars/:slug", permanent: true },
+      { source: "/stages", destination: "/agenda", permanent: false },
+      { source: "/events", destination: "/agenda", permanent: false },
+    ]
+  },
+```
+
+`redirects()` renvoie une liste de règles appliquées **avant** toute page : si l'adresse demandée correspond à une `source`, le navigateur reçoit l'ordre d'aller à `destination`. `:slug` est un paramètre : il capture un segment de l'adresse et le recopie dans la destination.
+
+<DocsTable columnsJson='["Adresse demandée", "Destination", "Code", "Pourquoi"]' rowsJson='[["/stages", "/agenda", "307 (temporaire)", "La liste des stages a rejoint l’agenda ; une liste dédiée pourrait revenir."], ["/events", "/agenda", "307 (temporaire)", "Même raison pour les évènements."], ["/stages/mon-stage", "/seminars/mon-stage", "308 (permanente)", "La fiche a changé d’adresse pour de bon."], ["/events/mon-evenement", "aucune", "", "Les fiches d’évènement existent toujours à cette adresse."]]' />
+
+La différence entre les deux codes tient au cache du navigateur. Une redirection **permanente** est mémorisée : le navigateur ne redemande plus l'ancienne adresse et va directement à la nouvelle, parfois pendant des mois. Si on la supprime ensuite, les visiteurs qui l'ont déjà en mémoire continuent d'être redirigés. Une redirection **temporaire** est redemandée à chaque fois. D'où la règle du projet : permanente seulement quand le changement est définitif.
+
+## Les extensions de page
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Seuls les fichiers .ts et .tsx de `app/` peuvent être des pages, des
+   * layouts ou des routes. La documentation (.mdx) n'en fait pas partie : elle
+   * vit dans `content/` et `docs/[...slug]/page.tsx` la compile à la demande.
+   */
+  pageExtensions: ["ts", "tsx"],
+```
+
+Dans `app/`, un fichier ne devient une page, un layout ou une route que si son extension figure dans `pageExtensions`. Par défaut, Next.js accepte aussi `.js` et `.jsx` ; le projet s'en tient au TypeScript.
+
+Les pages de cette documentation sont pourtant des fichiers `.mdx`. Elles ne sont pas dans `app/` mais dans `apps/web/content/docs`, et une seule page Next.js les sert toutes, `app/docs/[...slug]/page.tsx`. À chaque requête, elle lit le fichier `.mdx` correspondant sur le disque et le compile avec `next-mdx-remote` :
+
+```tsx
+// apps/web/src/app/docs/[...slug]/page.tsx (extrait)
+  const compiled = await compileMDX<DocFrontmatter>({
+    source,
+    components: {
+      ...mdxComponents,
+      ...(entityGraph ? { code: EntityCode } : {}),
+      pre: (props) => <MdxCodeFence index={fenceIndex}>{props.children}</MdxCodeFence>,
+    },
+    options: {
+      parseFrontmatter: false,
+    },
+  })
+```
+
+`mdxComponents` (défini dans `apps/web/src/mdx-components.tsx`) associe chaque balise à un composant du projet : un titre `##` reçoit son ancre, un bloc de code passe par `MdxCodeFence`, qui le situe dans son fichier d'origine. Comme la compilation a lieu à la demande, une page de documentation modifiée s'affiche à jour sans redémarrer le serveur.
+
+<Callout type="info">
+**Pourquoi les tableaux s'écrivent en chaînes JSON.** `next-mdx-remote` supprime par défaut toute expression JavaScript entre accolades dans le MDX (`rows={[...]}` arriverait vide au composant) : c'est une protection prévue pour du contenu écrit par des inconnus. D'où la forme `rowsJson='[...]'` des `DocsTable`, une simple chaîne que le composant décode. Une chaîne d'attribut peut s'étendre sur plusieurs lignes : `compileMDX` la transmet telle quelle.
+</Callout>
+
+## Turbopack en développement, webpack au build
+
+```json
+// apps/web/package.json (extrait)
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+```
+
+Next.js dispose de deux outils pour assembler l'application. **Turbopack**, le plus récent, est utilisé par défaut, et `pnpm dev` s'en sert : il recompile très vite une page modifiée. **webpack**, l'outil historique, reste disponible avec `--webpack`, et `pnpm build` le demande explicitement.
+
+Ce choix date des débuts du projet : avec Turbopack, certaines étapes du build semblaient omises et le résultat n'était pas celui attendu. La cause exacte n'a pas été notée. Un indice est réapparu depuis : lancé avec Turbopack, le build a échoué en lisant l'un des dossiers de `sharp` listés dans `outputFileTracingIncludes`, qu'il prenait pour un fichier. C'est précisément l'étape du traçage, celle dont dépend l'image Docker.
+
+<Callout type="warning">
+**Deux outils, deux comportements possibles.** Ce qui fonctionne avec `pnpm dev` (Turbopack) n'est pas garanti avec `pnpm build` (webpack), et inversement. Un problème qui n'apparaît qu'après le build se reproduit en local avec `pnpm build && pnpm start`, sans passer par Docker. Revenir un jour à Turbopack pour le build demande de vérifier le contenu de `.next/standalone`, pas seulement que la commande réussit.
+</Callout>
+
+## Ce qui a été retiré
+
+Une configuration s'accumule : on ajoute un réglage pour un besoin, le besoin disparaît, le réglage reste. En relisant ce fichier pour écrire ce chapitre, quatre éléments se sont révélés inutiles. Chacun a été vérifié avant d'être retiré.
+
+<DocsTable columnsJson='["Élément retiré", "Ce qu’il faisait", "Pourquoi il ne servait plus"]' rowsJson='[["withMDX (paquet @next/mdx, avec @mdx-js/loader et @mdx-js/react)", "Transformer des fichiers .mdx placés dans app/ en pages, ou permettre d’importer un .mdx comme un composant.", "Aucun .mdx dans app/, aucun import de .mdx : la documentation passe par next-mdx-remote, qui a ses propres dépendances."], ["Le plugin remark-flatten-mdx-attrs (dossier apps/web/mdx)", "Mettre sur une ligne les attributs écrits sur plusieurs lignes, que @next/mdx perdait.", "Il n’était branché que sur @next/mdx ; compileMDX accepte les attributs sur plusieurs lignes."], ["Les extensions md et mdx de pageExtensions", "Faire d’un page.mdx une page.", "Il n’existe aucun fichier .md ou .mdx dans app/."], ["transpilePackages (@workspace/backend, @workspace/contracts)", "Faire compiler par Next.js des paquets chargés depuis node_modules par leur nom.", "Le code n’importe jamais ces paquets par leur nom, seulement par les alias @backend/* et @contracts/*, qui pointent vers les sources : Next.js les compile de toute façon. Le build réussit de la même façon sans."], ["mdx.d.ts, useMDXComponents, apps/README-MDX-DOCS-SETUP.txt", "Le type d’un import .mdx, le point d’entrée attendu par @next/mdx, une ancienne notice d’installation.", "Ils n’accompagnaient que @next/mdx."]]' />
+
+La méthode vaut pour tout fichier de configuration. Pour chaque ligne, une question : **qu'est-ce qui casse si on la retire ?** On cherche qui l'utilise (`git grep`), on la retire, on reconstruit (`pnpm build`), on vérifie les pages concernées. Une ligne qu'on ne sait pas justifier n'est pas forcément inutile : `outputFileTracingIncludes` a l'air superflu tant qu'on ne regarde que `pnpm dev`. Mais une ligne inutile coûte : elle doit être comprise par chaque nouveau lecteur, et elle fait croire à un mécanisme qui n'existe pas.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Réglage", "Ce qu’il règle"]' rowsJson='[["output: \"standalone\"", "Un dossier autonome, avec seulement les fichiers atteints, pour une image Docker légère."], ["outputFileTracingRoot", "Le traçage part de la racine du dépôt, pour atteindre packages/."], ["outputFileTracingIncludes", "Les fichiers que le traçage ne voit pas : imports dynamiques, Prisma, binaires de sharp."], ["serverExternalPackages", "Prisma, sharp, imapflow, mailparser restent des modules Node, hors des bundles."], ["reactCompiler", "Les composants qui respectent les règles de React sont optimisés au build."], ["redirects", "Les anciennes adresses mènent aux nouvelles : 307 si le changement peut s’inverser, 308 s’il est définitif."], ["pageExtensions", "Seuls les .ts et .tsx de app/ sont des pages ; la documentation est compilée à la demande."]]' />
+
+## À suivre
+
+`next.config.ts` ne lit aucune variable d'environnement. Le reste de l'application en lit des dizaines, de l'adresse de la base aux clés du stockage d'images. D'où viennent-elles en développement, en production, au build et à l'exécution, et pourquoi certaines commencent-elles par `NEXT_PUBLIC_` ?
+
+<Callout type="tip">
+**Chapitre suivant : les variables d'environnement.** Les fichiers `.env`, ce que lit chaque environnement, la différence entre une variable du serveur et une variable envoyée au navigateur, et celles qu'il ne faut jamais committer.
+</Callout>
