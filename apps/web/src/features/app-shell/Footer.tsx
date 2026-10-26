@@ -82,15 +82,6 @@ export default async function Footer(): Promise<JSX.Element> {
     ? `/api/media/site-logo?v=${settings.updatedAt.getTime()}`
     : "/AKFC_logo.svg";
 
-  // Disciplines PUBLIÉES (avec une page) : « Nos disciplines » est un menu déroulant dans le header ;
-  // un footer ne se déroule pas → intitulé simple suivi d'un lien par discipline, comme les Horaires.
-  const disciplines = await prisma.discipline
-    .findMany({
-      where: { publicationDate: { not: null, lte: now }, slug: { not: null } },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
-    })
-    .catch(() => []);
 
   const partners = await getActivePartners();
   const year = new Date().getFullYear();
@@ -164,6 +155,7 @@ export default async function Footer(): Promise<JSX.Element> {
               Le site
             </h2>
             <ul className="flex flex-col gap-2">
+              {/* Bloc désactivé. Pour le réactiver, rétablir la requête `disciplines` retirée du haut du composant (voir l'historique git de ce fichier). */}
               {/* {disciplines.length > 0 && (
                 <li>
                   <span className="text-sm font-bold text-white">Nos disciplines</span>

@@ -44,6 +44,9 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
   if (!s) return null;
 
   const prefilled = s.canDownloadPrefilled ? (
+    // Téléchargement d'un PDF servi par une route d'API, pas une page : <Link> (navigation
+    // côté client) ne convient pas, un vrai lien <a> si.
+    // eslint-disable-next-line @next/next/no-html-link-for-pages
     <a href="/api/media/image-consent/prefilled" className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline">
       <FileDown className="h-4 w-4" />
       Formulaire pré-rempli à imprimer
