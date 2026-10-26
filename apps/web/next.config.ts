@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   /**
+   * React Compiler : au build, chaque composant et chaque hook du projet est
+   * réécrit pour mémoïser lui-même ses calculs, ses fonctions et son JSX ; plus
+   * besoin de useMemo / useCallback / React.memo écrits à la main. Il ne touche
+   * qu'au code qui respecte les règles de React, celles que vérifie
+   * `pnpm lint` (eslint-plugin-react-hooks) : le reste est laissé tel quel.
+   * Nécessite le paquet babel-plugin-react-compiler (devDependency de web).
+   */
+  reactCompiler: true,
+
+  /**
    * Racine de traçage des fichiers.
    *
    * Indispensable en monorepo, et souvent oublié : par défaut Next trace
