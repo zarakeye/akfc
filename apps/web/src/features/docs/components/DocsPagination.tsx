@@ -19,7 +19,7 @@ export function DocsPagination({
           className="group rounded-xl border bg-background px-4 py-3 transition-colors hover:bg-muted/40"
         >
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
-            Previous
+            Précédent
           </div>
           <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
             ← {prev.title}
@@ -35,7 +35,7 @@ export function DocsPagination({
           className="group rounded-xl border bg-background px-4 py-3 text-right transition-colors hover:bg-muted/40"
         >
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
-            Next
+            Suivant
           </div>
           <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
             {next.title} →

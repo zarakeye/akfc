@@ -4,6 +4,7 @@ import { generateDocsIndex } from "@features/docs/lib/docs.index"
 import { DocsMainScrollControls } from "@features/docs/components/DocsMainScrollControls"
 import type { DocSpaceId } from "@features/docs/lib/docs.spaces"
 import { PortraitHint } from "@features/docs/components/PortraitHint"
+import { DOCS_ACTIONS_ID } from "@features/docs/lib/docsActionsSlot"
 
 export function DocsLayout({
   space = null,
@@ -73,6 +74,15 @@ export function DocsLayout({
               </div>
 
               <DocsMainScrollControls />
+
+              {/* Emplacement des boutons flottants (« Entités », « Sur cette page ») : des pastilles
+                  rondes en bas de la colonne, dans la marge entre le texte et la flèche « fin » /
+                  le pourcentage, donc jamais sur les liens « Précédent / Suivant ». Leur libellé se
+                  déplie au survol. Écran étroit ou bas : fixes dans la marge droite. */}
+              <div
+                id={DOCS_ACTIONS_ID}
+                className="pointer-events-none absolute right-[4.5rem] bottom-6 z-40 flex flex-col items-end gap-2 *:pointer-events-auto max-lg:fixed max-lg:right-1.5 max-lg:bottom-3 short:fixed short:right-1.5 short:bottom-3"
+              />
             </div>
 
             <div className="shrink-0 border-t bg-background py-3">{footer}</div>

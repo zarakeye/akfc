@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { List } from "lucide-react"
 import { DocsRightAside } from "./DocsRightAside"
+import { DocsAction, PILL, PILL_LABEL } from "@features/docs/lib/docsActions"
 import type { TocItem } from "@features/docs/lib/docs.types"
 
 export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
@@ -37,14 +38,17 @@ export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
 
   return (
     <>
-      {/* Écran étroit : une pastille ronde, dans la marge droite gardée libre par DocsLayout. */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed right-6 bottom-6 z-40 inline-flex items-center justify-center rounded-full border bg-background px-4 py-2 text-sm shadow-lg hover:bg-muted max-lg:right-1.5 max-lg:bottom-3 max-lg:h-10 max-lg:w-10 max-lg:p-0"
-      >
-        <List className="hidden h-4 w-4 max-lg:block" aria-hidden="true" />
-        <span className="max-lg:sr-only">On this page</span>
-      </button>
+      {/* Rangé dans l'emplacement des boutons flottants (lib/docsActions.tsx) ; écran étroit :
+          une pastille ronde. */}
+      <DocsAction>
+        <button
+          onClick={() => setOpen(true)}
+          className={`order-2 ${PILL}`}
+        >
+          <List className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className={PILL_LABEL}>Sur cette page</span>
+        </button>
+      </DocsAction>
 
       <div
         ref={drawerRef}
@@ -54,7 +58,7 @@ export function DocsRightAsideDrawer({ items }: { items: TocItem[] }) {
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex items-center justify-between border-b p-4">
-            <div className="text-sm font-semibold">On this page</div>
+            <div className="text-sm font-semibold">Sur cette page</div>
 
             <button
               onClick={() => setOpen(false)}

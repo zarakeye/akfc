@@ -12,7 +12,7 @@ export function DocsToc({ items }: { items: TocItem[] }) {
 
   return (
     <nav className="sticky top-6 px-4">
-      <p className="mb-3 text-sm font-semibold text-foreground">On this page</p>
+      <p className="mb-3 text-sm font-semibold text-foreground">Sur cette page</p>
 
       <ul className="space-y-1 text-sm">
         {items.map((item) => (
