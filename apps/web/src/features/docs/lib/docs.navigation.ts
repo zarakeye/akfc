@@ -6,6 +6,7 @@ const SECTION_ORDER = [
   "Introduction",
   "Accueil",
   "Démarrer",
+  "Configuration",
   "Fondations front",
   "Données",
   "API",

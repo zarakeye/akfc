@@ -1,0 +1,211 @@
+---
+title: "TypeScript et ses tsconfig"
+description: "Qui vérifie les types, avec quelle configuration : le tsconfig commun et ses options, l'héritage par extends, les alias de chemins, la contrainte qu'impose un fichier compilé par deux configurations, et les fichiers de déclaration."
+section: "Configuration"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le dépôt réunit quatre paquets, qui se rejoignent par des alias plutôt que par leurs noms. Ces alias, comme toutes les options de TypeScript, vivent dans les fichiers `tsconfig`.
+
+Un fichier `tsconfig.json` dit à TypeScript quels fichiers lire et avec quelles règles. Le projet en a six. Ce chapitre explique ce que chacun règle, et surtout comment ils s'articulent : c'est de là que viennent les erreurs les plus déroutantes, celles où un import marche dans l'éditeur et casse au typecheck.
+
+## TypeScript vérifie, il ne compile pas
+
+Dans ce projet, `tsc` (le compilateur TypeScript) ne produit aucun fichier JavaScript. Next.js transforme lui-même le TypeScript en JavaScript, très vite, en retirant simplement les types. Pendant `pnpm dev`, il ne les vérifie pas : une erreur de type n'empêche pas la page de s'afficher. La vérification est le travail de `tsc --noEmit`, lancé par `pnpm typecheck` et par `pnpm check`. `next build` la refait aussi avant de construire : une erreur de type oubliée fait échouer la construction de l'image au déploiement.
+
+<DocsTable columnsJson='["Fichier", "Lu par", "Pour"]' rowsJson='[["tsconfig.base.json", "Tous les autres (extends)", "Les options communes."], ["apps/web/tsconfig.json", "pnpm typecheck, next build, l’éditeur", "L’application, et tout ce qu’elle importe des paquets."], ["packages/backend/tsconfig.json", "pnpm --filter backend typecheck, l’éditeur", "Le backend seul."], ["packages/contracts/tsconfig.json", "L’éditeur", "Les contrats (non vérifiés par eux-mêmes, voir plus bas)."], ["packages/finder-core/tsconfig.json", "pnpm --filter finder-core typecheck, l’éditeur", "Le moteur du Finder."], ["tsconfig.json (racine)", "L’éditeur", "prisma.config.ts et les scripts de prisma/."]]' />
+
+L'éditeur (VS Code) prend, pour chaque fichier ouvert, le `tsconfig.json` le plus proche en remontant les dossiers. C'est pourquoi chaque paquet a le sien : un fichier du backend ouvert dans l'éditeur est vérifié avec la configuration du backend.
+
+## La configuration commune
+
+```json
+// tsconfig.base.json (fichier complet)
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    // "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [{ "name": "next" }]
+  }
+}
+```
+
+<DocsTable columnsJson='["Option", "Ce qu’elle règle"]' rowsJson='[["strict", "Le mode strict : null et undefined doivent être traités, les paramètres typés, etc. L’option qui rend TypeScript utile."], ["target, lib", "La version de JavaScript visée et les API connues (le DOM du navigateur, les nouveautés du langage)."], ["module, moduleResolution: bundler", "Des imports ES (import / export), résolus comme le fait un bundler : sans extension de fichier, avec les exports des package.json."], ["isolatedModules", "Chaque fichier doit pouvoir être traduit seul, comme le fait Next.js ; interdit les quelques constructions qui exigent de connaître les autres fichiers."], ["jsx: react-jsx", "Le JSX est compris sans import React en tête de chaque fichier."], ["skipLibCheck", "Ne vérifie pas les fichiers de déclaration des bibliothèques (node_modules) : plus rapide, et leurs erreurs ne sont pas les nôtres."], ["allowJs, resolveJsonModule", "Accepte les fichiers .js et l’import de fichiers .json."], ["incremental", "Garde le résultat de la vérification précédente pour aller plus vite."], ["plugins: next", "Ajoute à l’éditeur les vérifications propres à Next.js (directives use client, exports d’une page)."]]' />
+
+Un `tsconfig` est du JSON **avec commentaires** : `// "noEmit": true,` est une ligne désactivée, pas une erreur. Les virgules finales y sont tolérées aussi.
+
+## L'héritage : extends
+
+Chaque paquet part de la configuration commune et n'écrit que ce qui le distingue :
+
+```json
+// apps/web/tsconfig.json (extrait)
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "types": ["mdx"],
+```
+
+`extends` recopie toutes les options du fichier désigné, puis celles écrites ici s'y ajoutent ou les remplacent. Une option changée dans `tsconfig.base.json` vaut donc pour tous les paquets à la fois.
+
+## Les alias : paths
+
+```json
+// apps/web/tsconfig.json (extrait)
+"paths": {
+  "@/*": ["./src/*"],  // indispensable pour shadcn/ui
+  "@web/*": ["./src/*"],
+  "@app/*": ["./src/app/*"],
+  "@contracts/*": ["../../packages/contracts/src/*"],
+  "@backend/*": ["../../packages/backend/src/*"],
+  "@features/*": ["./src/features/*"],
+  "@components/*": ["./src/components/*"],
+  "@hooks/*": ["./src/hooks/*"],
+  "@lib/*": ["./src/lib/*"],
+  "@styles/*": ["./src/styles/*"],
+  "@types/*": ["./src/types/*"],
+  "@trpc/*": ["./src/core/trpc/*"],
+  "@config/*": ["../../packages/config/*"],
+  "@finder-core/*": ["../../packages/finder-core/src/*"]
+}
+```
+
+Chaque ligne associe un préfixe d'import à un dossier, **relatif au tsconfig qui la déclare** : `@features/admin/…` devient `apps/web/src/features/admin/…`, `@backend/prisma` devient `packages/backend/src/prisma`. Next.js lit ces mêmes alias pour construire l'application ; il n'y a pas de seconde liste à tenir.
+
+Deux alias désignent le même dossier, `@/` et `@web/`. `@/` est celui qu'attendent les composants générés par shadcn/ui (le commentaire le rappelle) ; `@web/` est l'usage du projet. Ils coexistent, mais un nouvel import devrait utiliser le plus parlant des alias spécialisés (`@features/…`, `@lib/…`).
+
+## Un fichier, deux configurations
+
+Les paquets ne sont pas compilés à part : quand une page importe `@backend/modules/tickets/router`, ce fichier du backend est lu et vérifié **avec la configuration de apps/web**. Et lui-même importe `@backend/prisma`, `@contracts/…`. Ces alias doivent donc exister dans le `tsconfig` du web, pas seulement dans celui du backend :
+
+```json
+// packages/backend/tsconfig.json (fichier complet)
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // "outDir": "dist",
+    "paths": {
+      "@backend/*": ["./src/*"],
+      "@contracts/*": ["../contracts/src/*"],
+    },
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src", "../contracts/src/**/*.ts", "../contracts/src/slug/slug.schema.ts"]
+}
+```
+
+C'est la contrainte principale de ce montage : **tout alias employé par un fichier doit être déclaré, sous le même nom et vers le même dossier, dans chaque tsconfig qui finit par compiler ce fichier**. `@contracts/*` figure ainsi dans les quatre configurations. Un alias ajouté au seul backend fonctionnerait dans l'éditeur, ouvert sur un fichier du backend, puis casserait `pnpm typecheck` dès qu'une page importerait ce fichier.
+
+<Callout type="warning">
+Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du web, alors que l'éditeur ne signale rien sur le fichier du backend. Le remède est d'ajouter l'alias au `tsconfig` qui échoue, pas de le retirer du code.
+</Callout>
+
+### Ce qui n'est pas vérifié à part
+
+```json
+// packages/contracts/tsconfig.json (fichier complet)
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "typeRoots": ["node"],
+    "noCheck": true,
+    "paths": {
+      "@contracts/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "**/*.ts"]
+}
+```
+
+`noCheck: true` désactive la vérification de ce paquet par lui-même. Les contrats ne sont pas vérifiés pour autant à l'aveugle : le web et le backend les incluent et les vérifient, avec leurs propres règles, comme le montre la liste `include` du web :
+
+```json
+// apps/web/tsconfig.json (extrait)
+"include": [
+  "next-env.d.ts",
+  "src/global.d.ts",
+  "instrumentation.ts",                                                                                                                                                               
+  "src",
+  "app",
+  "components",
+  "features",
+  "hooks",
+  "lib",
+  "styles",
+  "types",
+  "**/*.ts",
+  "**/*.tsx",
+  "src/**/*.d.ts",
+  "../../packages/contracts/src/**/*.ts",
+  "../../packages/contracts/src/finder",
+  "../../packages/config",
+  "../../packages/contracts/src/slug/slug.schema.ts",
+  "../../packages/finder-core/src/**/*.ts",
+],
+"exclude": ["node_modules"]
+```
+
+Cette liste porte aussi des traces d'un ancien rangement : `app`, `components`, `features`… n'existent pas à la racine de `apps/web` (tout est sous `src/`), et `**/*.ts` couvre déjà le reste. Elles sont sans effet, mais un nettoyage les retirerait.
+
+## Les fichiers de déclaration
+
+Un fichier `.d.ts` ne contient que des types : il décrit à TypeScript ce qu'il ne peut pas deviner.
+
+<DocsTable columnsJson='["Fichier", "Ce qu’il déclare"]' rowsJson='[["apps/web/next-env.d.ts", "Les types de Next.js (images, routes typées). Généré par Next : ne pas le modifier."], ["apps/web/mdx.d.ts", "Qu’un import de fichier .mdx renvoie un composant React."], ["apps/web/src/global.d.ts", "Qu’un import de fichier .css, .scss ou .sass est accepté."]]' />
+
+```ts
+// apps/web/mdx.d.ts (fichier complet)
+declare module "*.mdx" {
+  import type { ComponentType } from "react"
+
+  const MDXComponent: ComponentType<Record<string, unknown>>
+  export default MDXComponent
+}
+```
+
+## La configuration de la racine
+
+```json
+// tsconfig.json (fichier complet)
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true,
+    "paths": {
+      "@contracts/*": ["./packages/contracts/src/*"]
+    }
+  },
+  "include": ["prisma.config.ts", "prisma/**/*.ts"]
+}
+```
+
+Elle ne sert qu'à l'éditeur, pour `prisma.config.ts` et les scripts de `prisma/` : ils ne font partie d'aucun paquet, et sans elle l'éditeur les vérifierait avec des options par défaut.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui transforme le TypeScript en JavaScript ?", "Next.js, sans vérifier les types ; tsc ne fait que vérifier (noEmit)."], ["Où sont les options communes ?", "tsconfig.base.json, repris par chaque paquet avec extends."], ["Comment fonctionne un alias ?", "paths associe un préfixe à un dossier, relatif au tsconfig qui le déclare ; Next.js lit les mêmes."], ["Pourquoi le même alias est-il déclaré plusieurs fois ?", "Un fichier du backend est aussi compilé par la configuration du web : chaque tsconfig qui le compile doit connaître ses alias."], ["Que sont les .d.ts ?", "Des déclarations de types pour ce que TypeScript ne peut pas deviner (fichiers .mdx, .css, types de Next)."]]' />
+
+## À suivre
+
+TypeScript vérifie le code ; Next.js le construit. Sa propre configuration décide de la forme du build, de ce qu'il embarque pour Docker, et comment il traite les pages MDX de cette documentation.
+
+<Callout type="tip">
+**Chapitre suivant : Next.js et next.config.ts.** Le build autonome pour l'image Docker, les redirections, MDX, et ce que chaque réglage change.
+</Callout>

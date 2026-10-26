@@ -1,0 +1,170 @@
+---
+title: "Le package.json et le monorepo"
+description: "Un dépôt, quatre paquets : ce que déclare pnpm-workspace.yaml, ce qu'est un package.json de paquet (nom, exports, dépendance de workspace), où le projet déclare ses dépendances et pourquoi, le fichier de verrouillage, les forçages de version, et les scripts."
+section: "Configuration"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
+
+> **Précédemment.** Le projet est installé, vérifié par `pnpm check`, et nous savons travailler avec. Avant d'entrer dans le code, regardons les fichiers qui disent à chaque outil comment le lire.
+
+Cette partie passe en revue les fichiers de configuration du dépôt : ce qu'ils règlent, qui les lit, et ce qui casse quand on y touche. Elle commence par le plus central, le `package.json`, et par ce qu'il devient dans un **monorepo** : plusieurs paquets dans un seul dépôt Git.
+
+## Un dépôt, quatre paquets
+
+pnpm sait qu'il gère plusieurs paquets parce qu'un fichier, à la racine, le lui dit :
+
+```yaml
+# pnpm-workspace.yaml (extrait)
+packages:
+  - apps/*
+  - packages/*
+```
+
+Chaque dossier de `apps/` et de `packages/` qui contient un `package.json` est un **paquet** du workspace. `pnpm install`, lancé une fois à la racine, installe les dépendances de tous les paquets d'un coup, dans un seul `node_modules` partagé.
+
+<FileTree>
+  <FileTreeItem name="package.json — la racine : les scripts du projet, la plupart des dépendances, packageManager" />
+  <FileTreeItem name="apps/web — paquet « web » : l'application Next.js" />
+  <FileTreeItem name="packages/backend — paquet « @workspace/backend » : routeurs tRPC, services, accès base" />
+  <FileTreeItem name="packages/contracts — paquet « @workspace/contracts » : types et schémas Zod partagés" />
+  <FileTreeItem name="packages/finder-core — paquet « @workspace/finder-core » : le moteur du Finder" />
+  <FileTreeItem name="packages/config — un simple dossier (pas de package.json), atteint par l’alias @config" />
+</FileTree>
+
+Le **nom** d'un paquet est celui de son `package.json`, pas celui de son dossier. C'est lui qu'utilise l'option `--filter` : `pnpm --filter web build` lance le script `build` du paquet nommé `web`. Un nom à portée (`@workspace/backend`) peut être désigné sans sa portée tant qu'il n'y a pas d'ambiguïté : `pnpm --filter backend typecheck`, que lance `pnpm check`, vise `@workspace/backend`.
+
+## Le package.json d'un paquet
+
+Le plus court du dépôt montre tout ce qu'un paquet déclare :
+
+```json
+// packages/finder-core/package.json (fichier complet)
+{
+  "name": "@workspace/finder-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cart": "./src/cart/usePickerCartStore.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/contracts": "workspace:*"
+  }
+}
+```
+
+<DocsTable columnsJson='["Champ", "Ce qu’il dit"]' rowsJson='[["name", "Le nom du paquet, utilisé par --filter et par les dépendances des autres paquets."], ["private: true", "Le paquet ne sera jamais publié sur le registre npm : pnpm refuse de le publier par erreur."], ["type: module", "Ses fichiers .js sont des modules ES (import / export), pas du CommonJS (require)."], ["exports", "Ce qu’un autre paquet a le droit d’importer, et depuis quel fichier : le point d’entrée « . » et le sous-chemin « ./cart »."], ["dependencies", "Les paquets dont il a besoin ; ici un autre paquet du workspace."]]' />
+
+`"workspace:*"` est propre aux workspaces pnpm : la dépendance n'est pas téléchargée du registre, c'est le dossier `packages/contracts` lui-même, relié par un lien symbolique dans `node_modules/@workspace/contracts`. Une modification de `contracts` est donc visible immédiatement par les paquets qui en dépendent, sans publication ni réinstallation.
+
+Les paquets ne sont **pas compilés** séparément : il n'y a pas de dossier `dist/`. Leurs fichiers TypeScript sont lus tels quels par Next.js et par `tsc`, comme s'ils faisaient partie de l'application. C'est ce qui permet de modifier le backend et de voir le changement au rechargement suivant.
+
+## Deux façons de se joindre
+
+Le code du projet n'importe pourtant jamais `@workspace/backend` ou `@workspace/contracts` par leur nom de paquet. Il passe par des **alias** TypeScript :
+
+```json
+// apps/web/tsconfig.json (extrait)
+"@contracts/*": ["../../packages/contracts/src/*"],
+"@backend/*": ["../../packages/backend/src/*"],
+```
+
+`import { prisma } from "@backend/prisma"` est réécrit, à la compilation, en `packages/backend/src/prisma`. L'alias ne dépend ni du lien symbolique ni du champ `exports` : il pointe directement dans le code source.
+
+Le projet a donc deux mécanismes pour la même chose : les dépendances `workspace:*`, déclarées mais peu utilisées par les imports, et les alias, qui font réellement le travail. C'est un héritage de son histoire plus qu'un choix : un paquet pourrait se contenter des dépendances de workspace et de ses `exports`. Le chapitre suivant, sur TypeScript, détaille les alias et leur contrainte principale : tout `tsconfig` qui compile un fichier doit connaître les alias que ce fichier utilise.
+
+<Callout type="info">
+Pour s'y retrouver dans le code : un import qui commence par `@backend/`, `@contracts/`, `@features/` ou `@finder-core/` est un **alias**, résolu par les `tsconfig` ; un import comme `zod` ou `@prisma/client` est une **dépendance**, installée dans `node_modules`.
+</Callout>
+
+## Les dépendances : où elles sont déclarées
+
+La règle habituelle d'un monorepo veut que chaque paquet déclare ce qu'il importe. Le projet s'en écarte : le `package.json` de la racine porte l'essentiel des dépendances (environ quatre-vingts, de React à Prisma), et celui de `apps/web` seulement celles ajoutées plus tard (le stockage S3, MDX, l'aperçu des PDF…).
+
+Cela fonctionne grâce à la résolution de Node : un `import "zod"` depuis `apps/web/src/…` cherche `node_modules/zod` dans le dossier du fichier, puis dans chaque dossier parent, jusqu'à la racine du dépôt, où pnpm l'a installé. L'inconvénient : rien n'empêche un paquet d'importer une bibliothèque qu'il ne déclare pas, et le jour où un paquet serait sorti du dépôt, ses vraies dépendances seraient à reconstituer.
+
+### dependencies et devDependencies
+
+`dependencies` liste ce dont le code a besoin pour tourner, `devDependencies` ce qui ne sert qu'à le développer (types, linters, outils de build). Pour une application privée comme celle-ci, la différence est surtout documentaire : l'image de production installe tout, puis Next.js ne garde dans son build que ce que le code utilise réellement.
+
+```dockerfile
+# Dockerfile (extrait)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+  pnpm config set store-dir /pnpm/store \
+  && pnpm install --frozen-lockfile
+```
+
+### Les versions et le fichier de verrouillage
+
+Dans un `package.json`, `"zod": "^4.1.12"` est une **plage** : toute version 4 à partir de 4.1.12. La version réellement installée est écrite, avec son empreinte, dans `pnpm-lock.yaml`, pour chaque paquet de l'arbre de dépendances. Ce fichier est versionné : tous les développeurs et le serveur installent exactement les mêmes versions.
+
+`pnpm install` met le fichier de verrouillage à jour si un `package.json` a changé. `pnpm install --frozen-lockfile`, utilisé par le `Dockerfile`, refuse au contraire de le modifier et échoue si le fichier ne correspond plus aux `package.json` : la production n'installe jamais une version qui n'a pas été vue en développement.
+
+<Callout type="warning">
+Ajouter une dépendance se fait avec `pnpm add <paquet>` (à la racine, ou `pnpm --filter web add <paquet>` pour un paquet donné), qui met à jour le `package.json` **et** le fichier de verrouillage. Modifier le `package.json` à la main sans relancer `pnpm install` laisse les deux en désaccord, et la construction de l'image échoue.
+</Callout>
+
+### Forcer une version : overrides
+
+Deux bibliothèques peuvent demander deux versions différentes d'une même dépendance. Pour l'éditeur de texte, deux copies de `@tiptap/pm` dans l'arbre cassaient l'éditeur : chacune croyait être la seule. Le champ `pnpm.overrides` impose une version unique à tout l'arbre :
+
+```json
+// package.json (extrait)
+"pnpm": {
+  "overrides": {
+    "@tiptap/pm": "3.27.3",
+    "@tiptap/core": "3.27.3"
+  }
+},
+```
+
+### Les scripts d'installation des dépendances
+
+Certaines bibliothèques lancent un script à leur installation (compiler un binaire natif, télécharger un fichier). Depuis la version 10, pnpm ne les exécute plus par défaut : c'est une protection contre un paquet malveillant. Chaque exception se déclare dans `pnpm-workspace.yaml` ; le projet y range `sharp` parmi les scripts **ignorés**, ses binaires précompilés arrivant par des paquets séparés :
+
+```yaml
+# pnpm-workspace.yaml (extrait)
+ignoredBuiltDependencies:
+  - sharp
+```
+
+## Les scripts
+
+Le champ `scripts` donne un nom court aux commandes du projet. `pnpm dev` lance le script `dev` du `package.json` le plus proche ; s'il n'existe pas, pnpm cherche une commande installée du même nom.
+
+<DocsTable columnsJson='["Script (racine)", "Ce qu’il lance"]' rowsJson='[["dev, build, start", "next dev / build / start, dans le paquet web (--filter web)."], ["clean, dev:clean", "Efface le dossier .next et le cache ; puis relance dev."], ["dev:infra, dev:infra:stop", "Démarre ou arrête la base, le stockage et la boîte mail de développement (docker compose)."], ["db:migrate, db:seed:dev", "Applique les migrations ; remplit la base de démonstration."], ["typecheck, lint", "tsc et ESLint, dans le paquet web."], ["check", "La vérification complète avant commit (voir « Façon de travailler »)."], ["docs:procedures", "Régénère la carte des procédures de la documentation."], ["postinstall", "Lancé automatiquement par pnpm à la fin de chaque installation : prisma generate."]]' />
+
+Les scripts de la racine délèguent souvent au paquet concerné, qui a les siens :
+
+```json
+// apps/web/package.json (extrait)
+"scripts": {
+  "dev": "next dev",
+  "build": "next build --webpack",
+  "start": "next start",
+  "lint": "eslint . --max-warnings 0",
+  "typecheck": "tsc --noEmit"
+},
+```
+
+`postinstall` est un nom réservé : pnpm l'exécute de lui-même après `pnpm install`, comme `preinstall` avant. Les autres noms ne s'exécutent que lorsqu'on les appelle.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment pnpm connaît-il les paquets ?", "pnpm-workspace.yaml : tout dossier de apps/ et packages/ qui a un package.json."], ["Comment désigner un paquet ?", "Par le nom de son package.json (web, @workspace/backend), avec --filter."], ["Comment le code d’un paquet atteint-il un autre paquet ?", "Par des alias TypeScript (@backend/…), qui pointent dans le code source ; les dépendances workspace:* existent mais servent peu."], ["Où sont déclarées les dépendances ?", "Surtout à la racine ; Node les trouve en remontant les dossiers."], ["Qui fixe les versions installées ?", "pnpm-lock.yaml, versionné ; le Dockerfile l’exige à l’identique (--frozen-lockfile)."], ["Comment ajouter une dépendance ?", "pnpm add (ou pnpm --filter web add), jamais à la main dans le package.json."]]' />
+
+## À suivre
+
+Les paquets se rejoignent par des alias, et chaque paquet a son `tsconfig`. Qui compile quoi, avec quelles options, et pourquoi le même alias doit-il être déclaré dans plusieurs fichiers ?
+
+<Callout type="tip">
+**Chapitre suivant : TypeScript et ses tsconfig.** La configuration commune, l'héritage, les alias, et ce qui se passe quand un fichier est compilé par deux configurations à la fois.
+</Callout>

@@ -147,10 +147,8 @@ Le fil de cette partie : **rendre visibles les erreurs silencieuses avant qu'ell
 
 ## À suivre
 
-Les fondations du travail sont posées : un environnement jetable, des vérifications automatiques, une discipline de commit. Nous pouvons entrer dans le code.
-
-Première question, et elle est moins simple qu'il n'y paraît : quand un visiteur tape `/dashboard`, quel fichier répond, quels layouts l'enveloppent, et qui vérifie qu'il a le droit d'être là ? Le dossier `app` contient des noms entre parenthèses qui n'apparaissent dans aucune URL, et l'accès au tableau de bord est contrôlé à trois endroits différents.
+Les fondations du travail sont posées : un environnement jetable, des vérifications automatiques, une discipline de commit. Avant d'entrer dans le code, un détour par les fichiers qui le configurent : on les ouvre rarement, mais chacun décide de quelque chose que tout le reste suppose.
 
 <Callout type="tip">
-**Partie suivante : les fondations du front, en commençant par le routage.** Des dossiers qui deviennent des adresses, des groupes de routes invisibles, trois layouts aux rôles opposés, et la défense en profondeur du tableau de bord.
+**Partie suivante : la configuration, en commençant par package.json et le monorepo.** Comment pnpm relie les paquets entre eux, d'où viennent `packageManager` et les scripts, et ce que chaque `package.json` déclare.
 </Callout>

@@ -16,7 +16,7 @@ Une erreur qu'un outil peut trouver ne devrait jamais attendre qu'un humain la c
 
 <DocsTable columnsJson='["Vérification", "Question posée", "Exemple de ce qu’elle trouve"]' rowsJson='[["Typecheck (tsc)", "Les types sont-ils cohérents d’un bout à l’autre ?", "Une procédure qui renvoie un champ renommé, et un composant qui lit encore l’ancien nom."], ["Lint (ESLint)", "Le code respecte-t-il les règles d’usage du langage et de React ?", "Un état modifié dans un effet, un ref écrit pendant le rendu, une variable jamais lue."]]' />
 
-Le typecheck ne connaît que les types : un composant parfaitement typé peut quand même provoquer un rendu de trop, ou afficher une valeur périmée. Le lint connaît les **règles de React** : celles des hooks, et celles du **React Compiler**, qui optimise les composants du projet (mode strict). Les deux se complètent ; aucun ne remplace l'autre.
+Le typecheck ne connaît que les types : un composant parfaitement typé peut quand même provoquer un rendu de trop, ou afficher une valeur périmée. Le lint connaît les **règles de React** : celles des hooks, et celles du **React Compiler**, un outil qui sait optimiser les composants à condition qu'ils les respectent. Attention : ces règles sont vérifiées, mais le Compiler lui-même n'est **pas activé** dans `next.config.ts` ; le code est prêt pour lui, il ne tourne pas encore. Les deux se complètent ; aucun ne remplace l'autre.
 
 ## Le lint dans pnpm check
 
@@ -41,7 +41,11 @@ De même, deux états de l'arborescence du Finder (« chargement », « erreur �
 
 ## Les règles du React Compiler
 
-Le React Compiler réécrit chaque composant pour éviter les calculs et les rendus inutiles, sans `useMemo` ni `useCallback` écrits à la main. Il ne peut le faire que si le composant respecte les règles de React : un rendu ne doit rien modifier hors de lui, un effet sert à se synchroniser avec l'extérieur, pas à recopier des données. Quand un composant s'en écarte, le Compiler **renonce à l'optimiser**, et la règle de lint correspondante le signale. Les seize cas du projet relevaient de six motifs.
+Le React Compiler, une fois activé, réécrit chaque composant pour éviter les calculs et les rendus inutiles, sans `useMemo` ni `useCallback` écrits à la main. Il ne peut le faire que si le composant respecte les règles de React : un rendu ne doit rien modifier hors de lui, un effet sert à se synchroniser avec l'extérieur, pas à recopier des données. Quand un composant s'en écarte, le Compiler **renonce à l'optimiser**, et la règle de lint correspondante le signale. Les seize cas du projet relevaient de six motifs.
+
+<Callout type="warning">
+**Ce projet vérifie les règles du Compiler sans l'exécuter.** Le lint (`eslint-plugin-react-hooks`) applique ses règles, mais `next.config.ts` ne contient pas `reactCompiler: true` : aucun composant n'est réécrit au build. Les corrections ci-dessous restent utiles sans lui, car chacune corrige aussi un défaut de React (rendu de trop, valeur périmée). Le jour où le Compiler sera activé, il n'aura rien à refuser.
+</Callout>
 
 ### Ne pas recopier une donnée dans un état depuis un effet
 
@@ -138,7 +142,7 @@ useEffect(() => {
 
 ### Laisser le Compiler mémoïser
 
-Trois mémoïsations écrites à la main (`useMemo`, `useCallback`) empêchaient le Compiler de travailler, parce qu'il ne pouvait pas garantir que leurs dépendances ne changeraient pas en douce. La plus simple : sur la page « Documents », un `useMemo` dépendait d'un tableau recréé à chaque rendu tant que la requête n'avait pas répondu, et ne mémoïsait donc rien. Il a été retiré : le Compiler mémoïse lui-même.
+Trois mémoïsations écrites à la main (`useMemo`, `useCallback`) auraient empêché le Compiler de travailler, parce qu'il ne peut pas garantir que leurs dépendances ne changeraient pas en douce. La plus simple : sur la page « Documents », un `useMemo` dépendait d'un tableau recréé à chaque rendu tant que la requête n'avait pas répondu, et ne mémoïsait donc rien. Il a été retiré : il ne servait à rien, et le Compiler, une fois activé, mémoïsera lui-même.
 
 Dans le recadrage, le dessin de l'aperçu était un `useCallback` appelé avant d'être déclaré. Il est devenu un effet qui lit des constantes, et l'arrivée de l'image le relance par un état modifié dans le rappel `onload`, ce qui est permis : seul le corps de l'effet ne doit pas modifier d'état.
 
@@ -146,7 +150,7 @@ Sur la carte des entités, le placement des atomes, coûteux, est désormais gar
 
 ### Les bibliothèques : useWatch plutôt que watch
 
-Les formulaires de galerie lisaient leurs champs avec `form.watch()` de react-hook-form. Cette fonction renvoie des valeurs que le Compiler ne sait pas suivre, et il renonçait à optimiser tout le composant (`react-hooks/incompatible-library`). La bibliothèque fournit un hook prévu pour cela, `useWatch` :
+Les formulaires de galerie lisaient leurs champs avec `form.watch()` de react-hook-form. Cette fonction renvoie des valeurs que le Compiler ne sait pas suivre, et il renoncerait à optimiser tout le composant (`react-hooks/incompatible-library`). La bibliothèque fournit un hook prévu pour cela, `useWatch` :
 
 ```tsx
 // apps/web/src/features/admin/galleries/forms/UpdateGalleryForm.tsx (extrait)
