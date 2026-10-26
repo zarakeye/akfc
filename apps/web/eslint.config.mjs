@@ -11,6 +11,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Fichiers servis tels quels, écrits par d'autres (le worker de pdf.js, minifié) : pas notre code.
+      "public/**",
     ],
   },
 ];

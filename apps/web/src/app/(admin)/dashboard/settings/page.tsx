@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useRef, useState, type JSX } from "react";
 
 import { trpc } from "@/core/trpc/trpcClient";
 import { LogoPreview } from "@features/admin/site-settings/LogoPreview";
@@ -41,15 +41,18 @@ export default function SiteSettingsPage(): JSX.Element {
   const [logoError, setLogoError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (initialized || !settings.isSuccess) return;
+  // Le formulaire se remplit UNE fois, à l'arrivée des réglages. Pendant le rendu, et non dans un
+  // useEffect : un effet afficherait d'abord le formulaire vide, puis relancerait un rendu complet
+  // (règle react-hooks/set-state-in-effect). Le drapeau `initialized` garantit qu'on ne le fait
+  // qu'une fois : ensuite, ce que tape l'administrateur n'est plus écrasé.
+  if (!initialized && settings.isSuccess) {
     const s = settings.data;
+    setInitialized(true);
     setShortTitle(s?.shortTitle ?? "AKFC");
     setLongTitle(s?.longTitle ?? "Association de Kung Fu de Chambéry");
     setTagline(s?.tagline ?? "");
     setSupportEmail(s?.supportEmail ?? "");
-    setInitialized(true);
-  }, [initialized, settings.isSuccess, settings.data]);
+  }
 
   const hasCustomLogo = Boolean(settings.data?.logoKey);
   const logoSrc = settings.data?.logoUrl ?? EMBEDDED_LOGO;

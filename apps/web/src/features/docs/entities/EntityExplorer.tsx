@@ -366,27 +366,9 @@ function EntityPanel({
   const names = new Set(models.map((m) => m.name));
   const links = graph.links.filter((l) => names.has(l.from) && names.has(l.to));
 
-  // Placement recalculé seulement quand l'ensemble des atomes affichés change.
+  // Placement recalculé seulement quand l'ensemble des atomes affichés change (voir layoutFor).
   const visibleKey = models.map((m) => m.name).join(",");
-  const layout = useMemo(() => {
-    const visible = new Set(visibleKey.split(","));
-    const ms = graph.models.filter((m) => visible.has(m.name));
-    const ls = graph.links.filter((l) => visible.has(l.from) && visible.has(l.to));
-    const pos = layoutGraph(
-      ms.map((m) => ({ id: m.name, radius: RADIUS[m.role] + 30, mass: m.role === "focus" ? 2 : 1 })),
-      ls.map((l) => {
-        const join = ms.find((m) => m.name === l.from)?.isJoin;
-        return { source: l.from, target: l.to, length: join ? 110 : 170 };
-      }),
-    );
-    const pts = [...pos.values()];
-    const pad = 70;
-    const minX = Math.min(...pts.map((p) => p.x)) - pad;
-    const minY = Math.min(...pts.map((p) => p.y)) - pad;
-    const maxX = Math.max(...pts.map((p) => p.x)) + pad;
-    const maxY = Math.max(...pts.map((p) => p.y)) + pad;
-    return { pos, viewBox: `${minX} ${minY} ${Math.max(200, maxX - minX)} ${Math.max(200, maxY - minY)}` };
-  }, [graph, visibleKey]);
+  const layout = layoutFor(graph, visibleKey);
 
   const selectedLink = selection?.kind === "link" ? graph.links.find((l) => l.id === selection.id) ?? null : null;
   const model = selectedModel ? graph.models.find((m) => m.name === selectedModel) ?? null : null;
@@ -512,6 +494,45 @@ function EntityPanel({
       </div>
     </div>
   );
+}
+
+/*
+ * Placement de la molécule, mis en cache par graphe et par ensemble d'atomes affichés. Un cache de
+ * module plutôt qu'un useMemo : la clé est une chaîne calculée à partir d'un tableau filtré à chaque
+ * rendu, et le React Compiler refusait de garantir la mémoïsation manuelle sur cette base (règle
+ * react-hooks/preserve-manual-memoization). La simulation de forces est déterministe : le même
+ * ensemble donne toujours la même carte, ce qui rend le cache sûr.
+ */
+type GraphLayout = { pos: Map<string, Point>; viewBox: string };
+const layoutCache = new WeakMap<ChapterGraph, Map<string, GraphLayout>>();
+
+function layoutFor(graph: ChapterGraph, visibleKey: string): GraphLayout {
+  let byKey = layoutCache.get(graph);
+  if (!byKey) {
+    byKey = new Map();
+    layoutCache.set(graph, byKey);
+  }
+  const cached = byKey.get(visibleKey);
+  if (cached) return cached;
+  const visible = new Set(visibleKey.split(","));
+  const ms = graph.models.filter((m) => visible.has(m.name));
+  const ls = graph.links.filter((l) => visible.has(l.from) && visible.has(l.to));
+  const pos = layoutGraph(
+    ms.map((m) => ({ id: m.name, radius: RADIUS[m.role] + 30, mass: m.role === "focus" ? 2 : 1 })),
+    ls.map((l) => {
+      const join = ms.find((m) => m.name === l.from)?.isJoin;
+      return { source: l.from, target: l.to, length: join ? 110 : 170 };
+    }),
+  );
+  const pts = [...pos.values()];
+  const pad = 70;
+  const minX = Math.min(...pts.map((p) => p.x)) - pad;
+  const minY = Math.min(...pts.map((p) => p.y)) - pad;
+  const maxX = Math.max(...pts.map((p) => p.x)) + pad;
+  const maxY = Math.max(...pts.map((p) => p.y)) + pad;
+  const layout = { pos, viewBox: `${minX} ${minY} ${Math.max(200, maxX - minX)} ${Math.max(200, maxY - minY)}` };
+  byKey.set(visibleKey, layout);
+  return layout;
 }
 
 /* ─── Parcours ────────────────────────────────────────────────────────── */

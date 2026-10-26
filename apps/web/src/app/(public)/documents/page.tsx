@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { FileText, CircleDot } from "lucide-react";
 
@@ -96,10 +96,9 @@ export default function DocumentsPage() {
   });
 
   const docs = listQuery.data ?? [];
-  const selected = useMemo(
-    () => docs.find((d) => d.id === selectedId) ?? null,
-    [docs, selectedId],
-  );
+  // Sans useMemo : `docs` est un nouveau tableau à chaque rendu tant que la requête n'a pas répondu
+  // (`?? []`), ce qui rendait la mémoïsation inutile ; le React Compiler mémoïse lui-même.
+  const selected = docs.find((d) => d.id === selectedId) ?? null;
 
   const club = docs.filter((d) => d.audience === "ALL_MEMBERS");
   const groupDocs = docs.filter(

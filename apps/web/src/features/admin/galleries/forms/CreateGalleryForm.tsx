@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { JSX, startTransition, useActionState, useEffect, useState } from "react";
 import {
   createGalleryFormAction,
@@ -100,7 +100,10 @@ export function CreateGalleryForm({
 
   // Catégorie sélectionnée → son `type`, qui pilote l'affichage conditionnel
   // des facettes Stage / Event.
-  const selectedCategoryId = form.watch("categoryId");
+  // useWatch plutôt que form.watch : `watch` renvoie des valeurs que le React Compiler ne sait pas
+  // mémoïser (règle react-hooks/incompatible-library), ce qui le faisait renoncer à optimiser tout
+  // le composant. useWatch est l'abonnement prévu pour cela.
+  const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
   const selectedCategoryType = (categories ?? []).find(
     (c) => String(c.id) === selectedCategoryId,
   )?.type;

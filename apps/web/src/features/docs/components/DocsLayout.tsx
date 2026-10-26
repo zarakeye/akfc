@@ -81,7 +81,7 @@ export function DocsLayout({
                   déplie au survol. Écran étroit ou bas : fixes dans la marge droite. */}
               <div
                 id={DOCS_ACTIONS_ID}
-                className="pointer-events-none absolute right-[4.5rem] bottom-6 z-40 flex flex-col items-end gap-2 *:pointer-events-auto max-lg:fixed max-lg:right-1.5 max-lg:bottom-3 short:fixed short:right-1.5 short:bottom-3"
+                className="pointer-events-none absolute right-16 bottom-6 z-40 flex flex-col items-end gap-2 *:pointer-events-auto max-lg:fixed max-lg:right-1.5 max-lg:bottom-3 short:fixed short:right-1.5 short:bottom-3"
               />
             </div>
 

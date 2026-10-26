@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type JSX } from "react";
 import type { BreakingNews } from "@prisma/client";
 
 import { BreakingNewsTicker } from "@features/breaking-news/BreakingNewsTicker";
@@ -13,8 +13,9 @@ import { BreakingNewsSidebar } from "@features/breaking-news/BreakingNewsSidebar
  * **Badge sans backend** : `localStorage` garde l'horodatage de la
  * dernière ouverture du panneau ; non-vues = actus publiées depuis.
  * Zéro table de lecture, et ça marche pour les visiteurs anonymes.
- * Lu dans un effet (jamais au rendu) pour éviter tout mismatch
- * d'hydratation — le badge apparaît juste après le montage.
+ * Lu par `useSyncExternalStore` : le rendu serveur (et l'hydratation)
+ * voient « inconnu » → pas de badge, puis le navigateur lit sa valeur ;
+ * pas de mismatch d'hydratation, et pas de setState dans un effet.
  *
  * **Auto-apparition** (spec handoff : « apparaît qq s puis glisse ») :
  * 2 s après le chargement le panneau glisse en vue, 7 s plus tard il
@@ -31,8 +32,26 @@ interface BreakingNewsShellProps {
   news: BreakingNews[];
 }
 
-function countUnseen(news: BreakingNews[]): number {
-  const raw = window.localStorage.getItem(LAST_SEEN_KEY);
+/*
+ * La date de dernière ouverture, vue comme une source externe : React s'y abonne et relit sa
+ * valeur quand elle change, dans cet onglet (writeLastSeen) ou dans un autre (événement storage).
+ */
+const lastSeenListeners = new Set<() => void>();
+function subscribeLastSeen(onChange: () => void): () => void {
+  lastSeenListeners.add(onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    lastSeenListeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+const readLastSeen = (): string => window.localStorage.getItem(LAST_SEEN_KEY) ?? "";
+function writeLastSeen(iso: string): void {
+  window.localStorage.setItem(LAST_SEEN_KEY, iso);
+  lastSeenListeners.forEach((listener) => listener());
+}
+
+function countUnseen(news: BreakingNews[], raw: string): number {
   const lastSeen = raw ? new Date(raw) : null;
   if (!lastSeen || Number.isNaN(lastSeen.getTime())) return news.length;
   return news.filter(
@@ -44,20 +63,18 @@ export function BreakingNewsShell({
   news,
 }: BreakingNewsShellProps): JSX.Element | null {
   const [open, setOpen] = useState(false);
-  const [unseenCount, setUnseenCount] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const interactedRef = useRef(false);
 
-  // Badge : lecture localStorage post-montage (pas de mismatch SSR).
-  useEffect(() => {
-    setUnseenCount(countUnseen(news));
-  }, [news]);
+  // Badge : null côté serveur et pendant l'hydratation (valeur inconnue → pas de badge).
+  const lastSeenRaw = useSyncExternalStore(subscribeLastSeen, readLastSeen, () => null);
+  const unseenCount = lastSeenRaw === null ? 0 : countUnseen(news, lastSeenRaw);
 
   // Auto-apparition, une fois par session, seulement si non-vues.
   useEffect(() => {
     if (news.length === 0) return;
     if (window.sessionStorage.getItem(AUTOSHOW_SESSION_KEY)) return;
-    if (countUnseen(news) === 0) return;
+    if (countUnseen(news, readLastSeen()) === 0) return;
     window.sessionStorage.setItem(AUTOSHOW_SESSION_KEY, "1");
     const show = setTimeout(() => setOpen(true), 2000);
     const hide = setTimeout(() => {
@@ -70,17 +87,14 @@ export function BreakingNewsShell({
   }, [news]);
 
   // Ouvrir = tout marquer vu.
-  const markSeen = () => {
-    window.localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
-    setUnseenCount(0);
-  };
+  const markSeen = () => writeLastSeen(new Date().toISOString());
 
   const handleToggle = () => {
     interactedRef.current = true;
-    setOpen((o) => {
-      if (!o) markSeen();
-      return !o;
-    });
+    // Hors de la fonction de mise à jour de setOpen : celle-ci doit rester pure (React peut
+    // l'appeler deux fois), alors que marquer « vu » écrit dans le localStorage.
+    if (!open) markSeen();
+    setOpen(!open);
   };
 
   const handleSelect = (id: number) => {

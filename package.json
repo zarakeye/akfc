@@ -17,7 +17,7 @@
     "lint": "pnpm --filter web lint",
     "postinstall": "pnpm prisma generate",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
-    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && pnpm clean && pnpm --filter backend typecheck && pnpm typecheck"
+    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && pnpm clean && pnpm --filter backend typecheck && pnpm typecheck && pnpm lint"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

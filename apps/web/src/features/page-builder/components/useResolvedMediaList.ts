@@ -23,11 +23,23 @@ export interface ResolvedMediaList {
   status: MediaListStatus;
 }
 
+type Fetched = {
+  /** La liste d'identifiants à laquelle ce résultat répond. */
+  key: string;
+  byId: Record<string, ResolvedMedia | null>;
+  status: "ready" | "error";
+};
+
+/*
+ * Le résultat est ÉTIQUETÉ par la liste qu'il résout : « en cours » se déduit (une liste, et pas
+ * encore de résultat pour elle), sans setState synchrone dans l'effet (règle
+ * react-hooks/set-state-in-effect). Pendant un nouveau chargement, les médias déjà résolus restent
+ * affichés : ajouter une image à une galerie ne fait pas clignoter les autres.
+ */
 export function useResolvedMediaList(
   mediaIds: readonly string[],
 ): ResolvedMediaList {
-  const [byId, setById] = useState<Record<string, ResolvedMedia | null>>({});
-  const [status, setStatus] = useState<MediaListStatus>("idle");
+  const [fetched, setFetched] = useState<Fetched | null>(null);
 
   // Clé stable : le tableau change d'identité à chaque rendu du parent alors
   // que son CONTENU est le plus souvent inchangé. Sans cette clé, l'effet
@@ -35,27 +47,15 @@ export function useResolvedMediaList(
   const key = mediaIds.join(",");
 
   useEffect(() => {
+    if (key.length === 0) return;
     let cancelled = false;
-    const ids = key.length > 0 ? key.split(",") : [];
-
-    if (ids.length === 0) {
-      setById({});
-      setStatus("idle");
-      return;
-    }
-
-    setStatus("loading");
     void trpcClient.media.resolveByIds
-      .query({ mediaIds: ids })
+      .query({ mediaIds: key.split(",") })
       .then((resolved) => {
-        if (cancelled) return;
-        setById(resolved);
-        setStatus("ready");
+        if (!cancelled) setFetched({ key, byId: resolved, status: "ready" });
       })
       .catch(() => {
-        if (cancelled) return;
-        setById({});
-        setStatus("error");
+        if (!cancelled) setFetched({ key, byId: {}, status: "error" });
       });
 
     return () => {
@@ -63,5 +63,7 @@ export function useResolvedMediaList(
     };
   }, [key]);
 
-  return { byId, status };
+  if (key.length === 0) return { byId: {}, status: "idle" };
+  if (fetched === null || fetched.key !== key) return { byId: fetched?.byId ?? {}, status: "loading" };
+  return { byId: fetched.byId, status: fetched.status };
 }

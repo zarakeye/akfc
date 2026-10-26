@@ -29,7 +29,13 @@ function getSectionRank(section: string): number {
   return index === -1 ? SECTION_ORDER.length : index
 }
 
-export function getPrevNext(pages: DocPage[], slug: string[]) {
+/**
+ * Chapitres précédent et suivant, dans l'ordre de LECTURE : celui de la barre latérale (parties
+ * dans l'ordre de SECTION_ORDER, chapitres par `order`), pas celui des fichiers sur le disque
+ * (sinon « contenu/… » précédait « demarrer/… »).
+ */
+export function getPrevNext(unordered: DocPage[], slug: string[]) {
+  const pages = groupDocsBySection(unordered).flatMap((section) => section.items)
   const index = pages.findIndex(
     (page) => page.slug.join("/") === slug.join("/")
   )

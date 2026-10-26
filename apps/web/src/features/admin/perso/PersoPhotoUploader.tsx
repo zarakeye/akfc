@@ -77,9 +77,13 @@ export default function PersoPhotoUploader(): JSX.Element {
   const [isUploading, setIsUploading] = useState(false);
   const [banner, setBanner] = useState<Banner | null>(null);
 
-  // Ref pour révoquer les object-URLs au démontage (sans dépendance stale).
+  // Ref pour révoquer les object-URLs au démontage (sans dépendance stale). Mis à jour APRÈS le
+  // rendu, dans un effet : écrire un ref pendant le rendu est interdit (règle react-hooks/refs),
+  // car un rendu abandonné par React y laisserait une valeur qui n'a jamais été affichée.
   const itemsRef = useRef<UploadItem[]>([]);
-  itemsRef.current = items;
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   useEffect(
     () => () => {
       itemsRef.current.forEach((it) => URL.revokeObjectURL(it.previewUrl));

@@ -116,6 +116,7 @@ export function useStatusChange(): {
       setStatusMutation,
       trashToBinMutation,
       utils.trash.listBin,
+      utils.storage.getAttentionCounts,
       reloadFolderContent,
       exitMultiSelect,
     ],

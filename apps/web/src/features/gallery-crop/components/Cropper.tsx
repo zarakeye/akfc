@@ -60,17 +60,15 @@ function SliderField({
   label: string; ctrl: Ctrl; min: number; max: number; step: number;
   decimals: number; unit?: string; vertical: boolean; dark: boolean;
 }) {
-  const [text, setText] = useState("");
-  useEffect(() => {
-    setText(decimals ? ctrl.value.toFixed(decimals) : String(Math.round(ctrl.value)));
-  }, [ctrl.value, decimals]);
+  // Le champ affiche la valeur du curseur, sauf pendant la saisie : `draft` garde alors le texte
+  // tapé. Pas d'effet qui recopie la valeur dans un état (règle react-hooks/set-state-in-effect) :
+  // l'affichage se DÉDUIT de `draft ?? valeur`, et valider ou annuler la saisie remet `draft` à null.
+  const [draft, setDraft] = useState<string | null>(null);
+  const text = draft ?? (decimals ? ctrl.value.toFixed(decimals) : String(Math.round(ctrl.value)));
   const commitText = (raw: string) => {
     const n = Number(raw);
-    if (Number.isNaN(n)) {
-      setText(decimals ? ctrl.value.toFixed(decimals) : String(ctrl.value));
-      return;
-    }
-    ctrl.set(Math.min(max, Math.max(min, n)));
+    if (!Number.isNaN(n)) ctrl.set(Math.min(max, Math.max(min, n)));
+    setDraft(null);
   };
   const lbl = dark ? "text-zinc-400" : "text-gray-500";
   const fld = dark
@@ -94,7 +92,7 @@ function SliderField({
     <div className="flex items-center gap-1">
       <input
         type="number" value={text} min={min} max={max} step={step}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => setDraft(e.target.value)}
         onBlur={(e) => commitText(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") commitText((e.target as HTMLInputElement).value); }}
         className={`w-16 rounded-md border px-1.5 py-1 text-center text-xs outline-none ${fld}`}
@@ -203,24 +201,29 @@ export default function Cropper({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // L'image chargée vit dans un ref (le canvas la redessine, React ne l'affiche pas) ; `imgVersion`
+  // signale son arrivée à l'effet de dessin. Le setState est dans le rappel `onload`, pas dans le
+  // corps de l'effet.
+  const [imgVersion, setImgVersion] = useState(0);
   useEffect(() => {
     const img = new Image();
     img.src = picture.previewUrl;
     img.onload = () => {
       imgRef.current = img;
-      renderPreview();
+      setImgVersion((v) => v + 1);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picture.previewUrl]);
 
-  const renderPreview = useCallback(() => {
+  // Aperçu redessiné quand la grille, le zoom, la rotation ou l'image changent. Les valeurs sont
+  // lues dans des constantes : le React Compiler mémoïse lui-même, sans useCallback à maintenir.
+  const zoomValue = zoom.value;
+  const rotationValue = rotation.value;
+  useEffect(() => {
     const canvas = previewCanvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img) return;
-    drawCrop(canvas, img, grid, zoom.value, rotation.value, workspaceSize(), 120);
-  }, [grid, zoom.value, rotation.value, workspaceSize]);
-
-  useEffect(() => { renderPreview(); }, [renderPreview]);
+    drawCrop(canvas, img, grid, zoomValue, rotationValue, workspaceSize(), 120);
+  }, [grid, zoomValue, rotationValue, workspaceSize, imgVersion]);
 
   const handleCrop = () => {
     const img = imgRef.current;

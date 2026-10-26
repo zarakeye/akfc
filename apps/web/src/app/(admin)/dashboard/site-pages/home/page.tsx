@@ -1,6 +1,6 @@
 "use client";
 
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useState } from "react";
 import Link from "next/link";
 
 import { trpc } from "@trpc/trpcClient";
@@ -19,13 +19,12 @@ export default function HomeHeroEditorPage(): JSX.Element {
   const [body, setBody] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    if (!initialized && hero !== undefined) {
-      setTitle(hero?.title ?? "");
-      setBody(hero?.body ?? "");
-      setInitialized(true);
-    }
-  }, [hero, initialized]);
+  // Remplissage unique à l'arrivée des données, pendant le rendu (voir la page des Réglages).
+  if (!initialized && hero !== undefined) {
+    setInitialized(true);
+    setTitle(hero?.title ?? "");
+    setBody(hero?.body ?? "");
+  }
 
   const published =
     (states ?? []).find((s) => s.key === "home")?.published ?? false;

@@ -30,9 +30,11 @@ export function DocsMainScrollControls() {
     return onDocsScroll(updateProgress)
   }, [])
 
+  // La pastille du pourcentage descend le long de la colonne des flèches, ENTRE elles : de sous la
+  // flèche « début » (0 %) à au-dessus de la flèche « fin » (100 %), sans jamais les recouvrir.
   const bubbleStyle = useMemo(
     () => ({
-      top: `calc(${progress}% - 14px)`,
+      top: `calc(2.25rem + (100% - 5.75rem) * ${progress / 100})`,
     }),
     [progress]
   )
@@ -79,7 +81,7 @@ export function DocsMainScrollControls() {
         </button>
 
         <div
-          className="pointer-events-none absolute right- rounded-full border bg-background/95 px-2 py-0.5 text-[10px] font-semibold text-foreground shadow-sm backdrop-blur transition-[top] duration-150"
+          className="pointer-events-none absolute right-4 translate-x-1/2 rounded-full border bg-background/95 px-2 py-0.5 text-[10px] font-semibold text-foreground shadow-sm backdrop-blur transition-[top] duration-150"
           style={bubbleStyle}
         >
           {Math.round(progress)}%

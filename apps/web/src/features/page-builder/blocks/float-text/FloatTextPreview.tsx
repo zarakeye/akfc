@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type JSX } from "react";
+import { useState, type CSSProperties, type JSX } from "react";
 import { generateHTML } from "@tiptap/html";
 import type { JSONContent } from "@tiptap/core";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -11,9 +11,8 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 
-import { trpcClient } from "@trpc/trpcClient";
 import type { FloatTextBlockV1 } from "@contracts/page";
-import { avatarUrlFor } from "@features/social/userDisplay";
+import { useResolvedPreviewMedia } from "@features/page-builder/components/useResolvedPreviewMedia";
 
 /**
  * Aperçu CLIENT du bloc float, affiché sous l'éditeur dans le builder.
@@ -28,134 +27,18 @@ import { avatarUrlFor } from "@features/social/userDisplay";
  * donc pas dans l'aperçu, ce qui est acceptable.
  */
 
-/**
- * État de la résolution du média.
- *
- * `missing` = la requête a abouti mais n'a rien rendu (média absent, ou
- * administrateur sans avatar). `error` = la requête elle-même a échoué.
- */
-type Resolution = "idle" | "loading" | "ready" | "missing" | "error";
-
-interface ResolvedPreviewMedia {
-  url: string;
-  kind: string;
-  posterUrl: string | null;
-  caption?: string;
-}
-
 export function FloatTextPreview({
   block,
 }: {
   block: FloatTextBlockV1;
 }): JSX.Element | null {
-  const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
-  const [resolution, setResolution] = useState<Resolution>("idle");
-  // Distinct de `resolution` : la résolution peut réussir (on a une URL) et
-  // le binaire échouer quand même. Avec un `alt` vide, une image cassée
-  // n'occupe aucune place — l'écran reste blanc sans le moindre signe.
-  const [imageFailed, setImageFailed] = useState(false);
-
-  // Capture locale : c'est elle qui permet à TypeScript de conserver le
-  // rétrécissement obtenu par `m.kind === "avatar"` jusque dans les closures
-  // asynchrones. Un `block.media!` à l'intérieur du `.then()` le perdrait.
-  const m = block.media ?? null;
-  const mediaKey =
-    m == null
-      ? null
-      : m.kind === "avatar"
-        ? `avatar:${m.userId}`
-        : m.kind === "site-logo"
-          ? "site-logo"
-          : m.mediaId;
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!m) {
-      setMedia(null);
-      setResolution("idle");
-      return;
-    }
-
-    setMedia(null);
-    setImageFailed(false);
-    setResolution("loading");
-
-    if (m.kind === "avatar") {
-      void trpcClient.user.listAvatarCandidates
-        .query()
-        .then((admins) => {
-          if (cancelled) return;
-          const user = admins.find((a) => a.id === m.userId);
-          if (user?.avatar) {
-            setMedia({
-              // Même URL que la page publique : un aperçu qui emprunte un
-              // autre chemin que le rendu final n'est pas un aperçu.
-              url: avatarUrlFor(user.id),
-              kind: "image",
-              posterUrl: null,
-              caption: m.caption,
-            });
-            setResolution("ready");
-          } else {
-            setMedia(null);
-            setResolution("missing");
-          }
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    } else if (m.kind === "site-logo") {
-      // Logo du site : URL publique via siteSettings.get (repli embarqué).
-      void trpcClient.siteSettings.get
-        .query()
-        .then((s) => {
-          if (cancelled) return;
-          setMedia({
-            url: s?.logoUrl ?? "/AKFC_logo.svg",
-            kind: "image",
-            posterUrl: null,
-            caption: m.caption,
-          });
-          setResolution("ready");
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    } else {
-      void trpcClient.media.resolveByIds
-        .query({ mediaIds: [m.mediaId] })
-        .then((resolved) => {
-          if (cancelled) return;
-          const r = resolved[m.mediaId];
-          if (r) {
-            setMedia({
-              url: r.url,
-              kind: r.kind,
-              posterUrl: r.posterUrl,
-              caption: m.caption,
-            });
-            setResolution("ready");
-          } else {
-            setMedia(null);
-            setResolution("missing");
-          }
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaKey]);
+  const { media, resolution } = useResolvedPreviewMedia(block.media ?? null);
+  // Distinct de `resolution` : la résolution peut réussir (on a une URL) et le binaire échouer
+  // quand même. Avec un `alt` vide, une image cassée n'occupe aucune place — l'écran reste blanc
+  // sans le moindre signe. L'échec est noté pour une URL : choisir un autre média l'efface de
+  // lui-même, sans effet à écrire.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const imageFailed = media !== null && failedUrl === media.url;
 
   const hasText =
     block.content !== undefined &&
@@ -228,7 +111,7 @@ export function FloatTextPreview({
               <img
                 src={media.url}
                 alt={media.caption ?? ""}
-                onError={() => setImageFailed(true)}
+                onError={() => setFailedUrl(media.url)}
                 className="block w-full rounded-md object-cover"
               />
             )}

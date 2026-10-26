@@ -215,6 +215,7 @@ export function useNodeActions(): {
       trashToBinMutation,
       purgeMutation,
       utils.trash.listBin,
+      utils.storage.getAttentionCounts,
       reloadFolderContent,
       exitMultiSelect,
     ],

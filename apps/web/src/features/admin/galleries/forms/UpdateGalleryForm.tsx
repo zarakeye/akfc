@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { JSX, startTransition, useActionState, useState, useEffect, useRef } from "react";
 import {
   updateGalleryFormAction,
@@ -119,7 +119,12 @@ export function UpdateGalleryForm({
   const { data: origins } = trpc.origin.getAll.useQuery();
 
   // Catégorie sélectionnée → son type. Pilote l'affichage de Stage / Event.
-  const selectedCategoryId = form.watch("categoryId");
+  // useWatch plutôt que form.watch : `watch` renvoie des valeurs que le React Compiler ne sait pas
+  // mémoïser (règle react-hooks/incompatible-library), ce qui le faisait renoncer à optimiser tout
+  // le composant. useWatch est l'abonnement prévu pour cela.
+  const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
+  const watchedSeminarId = useWatch({ control: form.control, name: "seminarId" });
+  const watchedEventId = useWatch({ control: form.control, name: "eventId" });
   const selectedCategoryType = (categories ?? []).find(
     (c) => String(c.id) === selectedCategoryId,
   )?.type;
@@ -129,10 +134,10 @@ export function UpdateGalleryForm({
   // non concernée réinitialise ensuite le champ (useEffect ci-dessous).
   const showStage =
     selectedCategoryType === CATEGORY_TYPE_STAGE ||
-    Boolean(form.watch("seminarId"));
+    Boolean(watchedSeminarId);
   const showEvent =
     selectedCategoryType === CATEGORY_TYPE_EVENT ||
-    Boolean(form.watch("eventId"));
+    Boolean(watchedEventId);
 
   // Reset d'une facette quand la catégorie ne la justifie plus. On IGNORE le
   // montage initial (première valeur de categoryId) pour ne pas effacer une

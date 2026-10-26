@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type JSX } from "react";
+import { type CSSProperties, type JSX } from "react";
 import { generateHTML } from "@tiptap/html";
 import type { JSONContent } from "@tiptap/core";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -11,9 +11,12 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 
-import { trpcClient } from "@trpc/trpcClient";
 import type { MediaTextBlockV1 } from "@contracts/page";
-import { avatarUrlFor } from "@features/social/userDisplay";
+import {
+  useResolvedPreviewMedia,
+  type PreviewResolution as Resolution,
+  type ResolvedPreviewMedia,
+} from "@features/page-builder/components/useResolvedPreviewMedia";
 
 /**
  * Preview CLIENT du bloc media-text, affichée sous l'éditeur dans le builder.
@@ -30,23 +33,6 @@ import { avatarUrlFor } from "@features/social/userDisplay";
  * pas dans la preview, ce qui est acceptable pour un aperçu).
  */
 
-/**
- * État de la résolution du média.
- *
- * `missing` = la requête a abouti mais n'a rien rendu (média absent de la
- * base, ou administrateur sans avatar). `error` = la requête elle-même a
- * échoué. Les deux méritaient d'être distingués : le premier est un
- * problème de contenu, le second un problème de transport.
- */
-type Resolution = "idle" | "loading" | "ready" | "missing" | "error";
-
-interface ResolvedPreviewMedia {
-  url: string;
-  kind: string;
-  posterUrl: string | null;
-  caption?: string;
-}
-
 export function MediaTextPreview({
   block,
   mediaSide = "left",
@@ -54,120 +40,7 @@ export function MediaTextPreview({
   block: MediaTextBlockV1;
   mediaSide?: "left" | "right";
 }): JSX.Element | null {
-  const [media, setMedia] = useState<ResolvedPreviewMedia | null>(null);
-
-  // Pourquoi un état explicite et pas seulement `media | null` : « aucun
-  // média choisi », « requête en cours » et « choisi mais introuvable »
-  // produisaient le même rendu — rien. L'admin ne pouvait pas les
-  // distinguer, et nous non plus au diagnostic.
-  const [resolution, setResolution] = useState<Resolution>("idle");
-
-  const m = block.media ?? null;
-  // Clé de dépendance stable selon le kind.
-  const mediaKey =
-    m == null
-      ? null
-      : m.kind === "avatar"
-        ? `avatar:${m.userId}`
-        : m.kind === "site-logo"
-          ? "site-logo"
-          : m.mediaId;
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!m) {
-      setMedia(null);
-      setResolution("idle");
-      return;
-    }
-
-    setMedia(null);
-    setResolution("loading");
-
-    if (m.kind === "avatar") {
-      // Référence avatar : on récupère l'avatar courant du user (via la liste
-      // des candidats) et on construit l'URL comme le portrait du header.
-      void trpcClient.user.listAvatarCandidates
-        .query()
-        .then((admins) => {
-          if (cancelled) return;
-          const user = admins.find((a) => a.id === m.userId);
-          if (user?.avatar) {
-            setMedia({
-              // Même URL que la page publique : un aperçu qui emprunte un
-              // autre chemin que le rendu final n'est pas un aperçu.
-              url: avatarUrlFor(user.id),
-              kind: "image",
-              posterUrl: null,
-              caption: m.caption,
-            });
-            setResolution("ready");
-          } else {
-            // L'administrateur existe mais n'a pas d'avatar — ou n'est plus
-            // dans la liste des candidats (rôle changé depuis la sélection).
-            setMedia(null);
-            setResolution("missing");
-          }
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    } else if (m.kind === "site-logo") {
-      // Logo du site : URL publique via siteSettings.get (repli embarqué).
-      void trpcClient.siteSettings.get
-        .query()
-        .then((s) => {
-          if (cancelled) return;
-          setMedia({
-            url: s?.logoUrl ?? "/AKFC_logo.svg",
-            kind: "image",
-            posterUrl: null,
-            caption: m.caption,
-          });
-          setResolution("ready");
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    } else {
-      // Média de bibliothèque.
-      void trpcClient.media.resolveByIds
-        .query({ mediaIds: [m.mediaId] })
-        .then((resolved) => {
-          if (cancelled) return;
-          const r = resolved[m.mediaId];
-          if (r) {
-            setMedia({
-              url: r.url,
-              kind: r.kind,
-              posterUrl: r.posterUrl,
-              caption: m.caption,
-            });
-            setResolution("ready");
-          } else {
-            // `resolveByIds` filtre sur `status: 'published'` : un média
-            // repassé en attente ou envoyé à la corbeille APRÈS avoir été
-            // choisi revient `null` ici, sans que rien ne le signale.
-            setMedia(null);
-            setResolution("missing");
-          }
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setMedia(null);
-          setResolution("error");
-        });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaKey]);
+  const { media, resolution } = useResolvedPreviewMedia(block.media ?? null);
 
   const hasText =
     block.content !== undefined &&
