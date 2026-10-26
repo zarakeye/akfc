@@ -36,7 +36,7 @@ export async function resolveGroupBaseFolder(params: {
   });
 
   if (!group) {
-    throw new Error(`Member group not found (id=${groupId})`);
+    throw new Error(`Groupe introuvable (id=${groupId})`);
   }
   if (!group.isCollaborative) {
     throw new Error(`Member group ${groupId} is not collaborative (no space)`);

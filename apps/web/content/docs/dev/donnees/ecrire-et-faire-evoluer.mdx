@@ -57,8 +57,8 @@ Une opération métier touche souvent plusieurs tables. Enregistrer une discipli
             throw new TRPCError({
               code: "CONFLICT",
               message: onSlug
-                ? "This slug is already used. Choose a different one."
-                : "A discipline with this name already exists in this category.",
+                ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+                : "Une discipline de ce nom existe déjà dans cette catégorie.",
             });
           }
           throw err;
@@ -90,7 +90,7 @@ Dans la fonction passée à `$transaction`, toutes les requêtes passent par `tx
 
 Deux détails de ce bloc valent d’être lus.
 
-**L’erreur P2002.** Le `catch` qui entoure la création reconnaît une erreur précise de Prisma : `P2002`, une violation de contrainte d’unicité. Le schéma déclare le slug unique (`@unique`) ; plutôt que de vérifier l’unicité avant d’écrire (une vérification qu’une autre requête pourrait rendre fausse entre-temps), le code laisse la base refuser, puis traduit son refus en erreur lisible (`CONFLICT`). C’est la contrainte du schéma qui fait foi, pas le code. (Les messages de ce routeur sont encore en anglais : une dette de cohérence du même ordre que celle corrigée dans la série « Formulaires ».)
+**L’erreur P2002.** Le `catch` qui entoure la création reconnaît une erreur précise de Prisma : `P2002`, une violation de contrainte d’unicité. Le schéma déclare le slug unique (`@unique`) ; plutôt que de vérifier l’unicité avant d’écrire (une vérification qu’une autre requête pourrait rendre fausse entre-temps), le code laisse la base refuser, puis traduit son refus en erreur lisible (`CONFLICT`). C’est la contrainte du schéma qui fait foi, pas le code.
 
 **Le commentaire « UNION des deux composites ».** Une discipline a deux contenus (sa description et sa présentation synthétique) et une image de carte. `syncPageMediaReferences` recalcule la liste **complète** des médias utilisés : lui passer un seul des contenus ferait passer les images de l’autre pour orphelines. Le commentaire explique un bug avant qu’il n’arrive.
 
@@ -111,14 +111,19 @@ Prisma couvre l’immense majorité des besoins. Le projet descend en SQL dans d
       // (Prisma ne supporte pas REPLACE/SUBSTRING dans updateMany).
       const oldPrefix = `${operation.source.path}/`;
       const newPrefix = `${operation.target.path}/`;
+      // Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
+      // aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
+      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique inverse est le
+      // caractère d'échappement par défaut de LIKE dans PostgreSQL.
+      const likePrefix = oldPrefix.replace(/[\\%_]/g, "\\$&");
       await prisma.$executeRaw`
         UPDATE "MediaAsset"
         SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
-        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${oldPrefix + "%"};
+        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likePrefix + "%"};
       `;
 ```
 
-Une remarque en passant, qui montre que le SQL brut demande plus d’attention que l’API : dans un `LIKE`, `_` et `%` sont des jokers. Un dossier nommé `cours_2026` passé tel quel en préfixe correspondrait aussi à `coursX2026`. Le préfixe devrait être échappé avant d’être donné à `LIKE` ; ce n’est pas encore le cas.
+Ce bloc montre aussi que le SQL brut demande plus d’attention que l’API. Dans un `LIKE`, `_` et `%` sont des **jokers** : `_` remplace n’importe quel caractère, `%` n’importe quelle suite. Un dossier nommé `cours_2026`, passé tel quel en préfixe, correspondait aussi à `coursX2026`, et un déplacement pouvait réécrire le chemin de fichiers qui n’étaient pas dans le dossier déplacé. Le préfixe est donc échappé avant d’être donné à `LIKE` : chaque `_`, `%` ou barre oblique inverse est précédé d’une barre oblique inverse, le caractère d’échappement par défaut de PostgreSQL. Seul le `%` ajouté à la fin reste un joker. Avec l’API de Prisma (`startsWith`), cet échappement est fait automatiquement : c’est le prix de la descente en SQL.
 
 **Une écriture qui ne doit pas déclencher `@updatedAt`.** La date de dernière connexion ne doit pas passer pour une modification du profil :
 

@@ -183,14 +183,19 @@ S3 n'a pas d'opération « renommer » : déplacer un objet, c'est le **copier**
 // packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
 const oldPrefix = `${operation.source.path}/`;
 const newPrefix = `${operation.target.path}/`;
+// Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
+// aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
+// préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique inverse est le
+// caractère d'échappement par défaut de LIKE dans PostgreSQL.
+const likePrefix = oldPrefix.replace(/[\\%_]/g, "\\$&");
 await prisma.$executeRaw`
   UPDATE "MediaAsset"
   SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
-  WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${oldPrefix + "%"};
+  WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likePrefix + "%"};
 `;
 ```
 
-Une seule requête SQL réécrit le préfixe de toutes les lignes concernées ; Prisma n'offre pas de fonction de remplacement de sous-chaîne dans `updateMany`, d'où le SQL brut. Le `/` final du préfixe n'est pas décoratif : sans lui, déplacer `cours` déplacerait aussi `cours-avance`.
+Une seule requête SQL réécrit le préfixe de toutes les lignes concernées ; Prisma n'offre pas de fonction de remplacement de sous-chaîne dans `updateMany`, d'où le SQL brut. Le `/` final du préfixe n'est pas décoratif : sans lui, déplacer `cours` déplacerait aussi `cours-avance`. Pour la même raison, le préfixe est échappé avant le `LIKE`, dont `_` et `%` sont des jokers (chapitre « Écrire de façon cohérente, faire évoluer la base »).
 
 La procédure `storage.move` planifie d'abord toutes les opérations d'un geste (une sélection multiple en produit plusieurs), écarte celles qui ne déplacent rien, puis les exécute **une par une** : des déplacements simultanés sur des préfixes voisins pourraient se marcher dessus. Un déplacement ne change jamais le statut d'un fichier : c'est une réorganisation, pas une validation.
 

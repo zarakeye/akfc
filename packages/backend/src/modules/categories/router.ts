@@ -20,7 +20,7 @@ export const categoryRouter = router({
       if (!category) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Category not found",
+          message: "Catégorie introuvable.",
         });
       }
 
@@ -37,7 +37,7 @@ export const categoryRouter = router({
       if (!category) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Category not found",
+          message: "Catégorie introuvable.",
         });
       }
 
@@ -55,7 +55,7 @@ export const categoryRouter = router({
       if (exists) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "This category already exists.",
+          message: "Cette catégorie existe déjà.",
         });
       }
 
@@ -82,7 +82,7 @@ export const categoryRouter = router({
       if (exists && exists.id !== input.id) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Another category with this type already exists.",
+          message: "Une autre catégorie porte déjà ce type.",
         });
       }
 

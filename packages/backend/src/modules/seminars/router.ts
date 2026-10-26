@@ -122,14 +122,14 @@ const createInput = z
   .refine(
     (data) => !data.coAnimatorIds.includes(data.primaryAnimatorId),
     {
-      message: "coAnimatorIds must not include primaryAnimatorId.",
+      message: "L’animateur principal ne peut pas être aussi co-animateur.",
       path: ["coAnimatorIds"],
     },
   )
   .refine(
     (data) => new Set(data.coAnimatorIds).size === data.coAnimatorIds.length,
     {
-      message: "coAnimatorIds must not contain duplicates.",
+      message: "Un co-animateur est sélectionné deux fois.",
       path: ["coAnimatorIds"],
     },
   )
@@ -141,7 +141,7 @@ const createInput = z
       (data.originId !== null && data.originId !== undefined),
     {
       message:
-        "At least one of disciplineId, externalDisciplineLabel, or originId must be provided.",
+        "Indiquez une discipline (du club ou extérieure) ou une origine.",
       path: ["disciplineId"],
     },
   );
@@ -189,7 +189,7 @@ const updateInput = z
       return true;
     },
     {
-      message: "coAnimatorIds must not include primaryAnimatorId.",
+      message: "L’animateur principal ne peut pas être aussi co-animateur.",
       path: ["coAnimatorIds"],
     },
   )
@@ -198,7 +198,7 @@ const updateInput = z
       data.coAnimatorIds === undefined ||
       new Set(data.coAnimatorIds).size === data.coAnimatorIds.length,
     {
-      message: "coAnimatorIds must not contain duplicates.",
+      message: "Un co-animateur est sélectionné deux fois.",
       path: ["coAnimatorIds"],
     },
   );
@@ -224,7 +224,7 @@ async function assertUsersExist(
   if (missing.length > 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `User(s) not found: ${missing.join(", ")}`,
+      message: `Membre(s) introuvable(s) : ${missing.join(", ")}`,
     });
   }
 }
@@ -251,7 +251,7 @@ async function assertDisciplineExists(
   if (!discipline) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Discipline not found (id=${disciplineId}).`,
+      message: `Discipline introuvable (id=${disciplineId}).`,
     });
   }
 }
@@ -268,7 +268,7 @@ async function assertOriginExists(
   if (!origin) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Origin not found (id=${originId}).`,
+      message: `Origine introuvable (id=${originId}).`,
     });
   }
 }
@@ -351,7 +351,7 @@ export const seminarRouter = router({
         },
       });
       if (!stage) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Stage not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Stage introuvable." });
       }
       return stage;
     }),
@@ -376,7 +376,7 @@ export const seminarRouter = router({
         },
       });
       if (!stage) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Stage not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Stage introuvable." });
       }
       return stage;
     }),
@@ -443,8 +443,8 @@ export const seminarRouter = router({
             throw new TRPCError({
               code: "CONFLICT",
               message: onSlug
-                ? "This slug is already used. Choose a different one."
-                : "A stage with this label already exists for this discipline.",
+                ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+                : "Un stage de ce libellé existe déjà pour cette discipline.",
             });
           }
           throw err;
@@ -512,7 +512,7 @@ export const seminarRouter = router({
       if (!existing) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Stage not found.",
+          message: "Stage introuvable.",
         });
       }
 
@@ -539,7 +539,7 @@ export const seminarRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "A stage must keep at least one of disciplineId, externalDisciplineLabel, or originId set.",
+            "Un stage doit garder une discipline (du club ou extérieure) ou une origine.",
         });
       }
 
@@ -571,7 +571,7 @@ export const seminarRouter = router({
           throw new TRPCError({
             code: "BAD_REQUEST",
             message:
-              "coAnimatorIds must not include the (new) primaryAnimatorId.",
+              "L’animateur principal ne peut pas être aussi co-animateur.",
           });
         }
 
@@ -636,14 +636,14 @@ export const seminarRouter = router({
               throw new TRPCError({
                 code: "CONFLICT",
                 message: onSlug
-                  ? "This slug is already used. Choose a different one."
-                  : "A stage with this label already exists for this discipline.",
+                  ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+                  : "Un stage de ce libellé existe déjà pour cette discipline.",
               });
             }
             if (err.code === "P2025") {
               throw new TRPCError({
                 code: "NOT_FOUND",
-                message: "Stage not found.",
+                message: "Stage introuvable.",
               });
             }
           }
@@ -723,7 +723,7 @@ export const seminarRouter = router({
           ) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Stage not found.",
+              message: "Stage introuvable.",
             });
           }
           throw err;

@@ -59,7 +59,7 @@ export const userRouter = router({
       if (!user) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "User not found",
+          message: "Membre introuvable.",
         });
       }
 
@@ -78,7 +78,7 @@ export const userRouter = router({
       if (!user) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "User not found",
+          message: "Membre introuvable.",
         });
       }
 
@@ -89,7 +89,7 @@ export const userRouter = router({
     .use(isAdmin)
     .input(
       z.object({
-        email: z.string().email("Invalid email format"),
+        email: z.string().email("Adresse e-mail invalide."),
         /** Un ou plusieurs groupes (au moins un). */
         groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
         /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
@@ -109,7 +109,7 @@ export const userRouter = router({
       if (exists) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "User already exists",
+          message: "Un membre utilise déjà cette adresse e-mail.",
         });
       }
 
@@ -251,7 +251,7 @@ export const userRouter = router({
     if (!user) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message: "User not found",
+        message: "Membre introuvable.",
       });
     }
 
@@ -288,7 +288,7 @@ export const userRouter = router({
       if (!user) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "User not found",
+          message: "Membre introuvable.",
         });
       }
 

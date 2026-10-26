@@ -11558,7 +11558,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:263"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
        ]
       ]
      ]
@@ -11656,7 +11656,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:263"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
        ]
       ],
       [
@@ -12238,11 +12238,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "prisma.discipline.count",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:440"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:445"
        ]
       ]
      ]
@@ -12272,11 +12272,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "prisma.eventDiscipline.createMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:442"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:447"
        ]
       ]
      ]
@@ -12326,11 +12326,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:450"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:455"
        ]
       ]
      ]
@@ -12343,25 +12343,25 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:361"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:366"
        ]
       ],
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "reject",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:360"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:365"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:361"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:366"
        ]
       ]
      ]
@@ -12390,11 +12390,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:335"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:450"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:455"
        ]
       ]
      ]
@@ -19042,7 +19042,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:263"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
        ]
       ],
       [
@@ -19092,7 +19092,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:263"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
        ]
       ],
       [

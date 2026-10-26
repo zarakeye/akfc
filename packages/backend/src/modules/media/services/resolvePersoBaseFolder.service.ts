@@ -32,7 +32,7 @@ export async function resolvePersoBaseFolder(params: {
   });
 
   if (!user) {
-    throw new Error(`Acting user not found (id=${userId})`);
+    throw new Error(`Membre introuvable (id=${userId})`);
   }
 
   const fullName = [user.firstName, user.lastName]

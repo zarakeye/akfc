@@ -30,7 +30,7 @@ export const sessionRouter = router({
       if (!session) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Session not found",
+          message: "Session introuvable.",
         });
       }
 

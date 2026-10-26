@@ -12,5 +12,5 @@ export const slugSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
     message:
-      "Slug must be lowercase alphanumeric with single hyphens (no leading/trailing hyphen).",
+      "Le slug ne contient que des minuscules sans accent, des chiffres et des tirets simples (pas de tiret au début ni à la fin).",
   });

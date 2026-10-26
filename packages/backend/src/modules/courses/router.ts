@@ -84,7 +84,7 @@ const hhmmSchema = z
   .min(0)
   .max(2359)
   .refine((v) => v % 100 < 60, {
-    message: "Minutes part must be 0-59 (e.g. 1860 is not a valid time).",
+    message: "Les minutes doivent être comprises entre 00 et 59 (1860 n’est pas une heure valide).",
   });
 
 const beginTimeSchema = hhmmSchema;
@@ -102,7 +102,7 @@ const createInput = z
     content: pageContentSchemaV1,
   })
   .refine((data) => data.endTime > data.beginTime, {
-    message: "endTime must be strictly greater than beginTime.",
+    message: "L’heure de fin doit être postérieure à l’heure de début.",
     path: ["endTime"],
   });
 
@@ -126,7 +126,7 @@ const updateInput = z
       data.endTime === undefined ||
       data.endTime > data.beginTime,
     {
-      message: "endTime must be strictly greater than beginTime.",
+      message: "L’heure de fin doit être postérieure à l’heure de début.",
       path: ["endTime"],
     }
   );
@@ -172,7 +172,7 @@ export const courseRouter = router({
       if (!course) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Course not found.",
+          message: "Créneau introuvable.",
         });
       }
 
@@ -199,7 +199,7 @@ export const courseRouter = router({
       if (!discipline) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Discipline not found (id=${input.disciplineId}).`,
+          message: `Discipline introuvable (id=${input.disciplineId}).`,
         });
       }
       if (discipline.category.type !== "Cours") {
@@ -217,7 +217,7 @@ export const courseRouter = router({
         if (!instructor) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Instructor not found (id=${input.instructorId}).`,
+            message: `Instructeur introuvable (id=${input.instructorId}).`,
           });
         }
       }
@@ -247,7 +247,7 @@ export const courseRouter = router({
             throw new TRPCError({
               code: "CONFLICT",
               message:
-                "A course already exists at this discipline/day/beginTime/audience.",
+                "Un créneau existe déjà pour cette discipline, ce jour, cette heure de début et ce public.",
             });
           }
           throw err;
@@ -279,7 +279,7 @@ export const courseRouter = router({
         if (!instructor) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Instructor not found (id=${rest.instructorId}).`,
+            message: `Instructeur introuvable (id=${rest.instructorId}).`,
           });
         }
       }
@@ -312,13 +312,13 @@ export const courseRouter = router({
               throw new TRPCError({
                 code: "CONFLICT",
                 message:
-                  "A course already exists at this discipline/day/beginTime/audience.",
+                  "Un créneau existe déjà pour cette discipline, ce jour, cette heure de début et ce public.",
               });
             }
             if (err.code === "P2025") {
               throw new TRPCError({
                 code: "NOT_FOUND",
-                message: "Course not found.",
+                message: "Créneau introuvable.",
               });
             }
           }
@@ -366,7 +366,7 @@ export const courseRouter = router({
           ) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Course not found.",
+              message: "Créneau introuvable.",
             });
           }
           throw err;

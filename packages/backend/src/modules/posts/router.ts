@@ -86,7 +86,7 @@ export const postRouter = router({
         },
       });
       if (!post) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post introuvable." });
       }
       return post;
     }),
@@ -103,7 +103,7 @@ export const postRouter = router({
         where: { id: input.id },
       });
       if (!post) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post introuvable." });
       }
       return post;
     }),
@@ -155,7 +155,7 @@ export const postRouter = router({
             err instanceof Prisma.PrismaClientKnownRequestError &&
             err.code === "P2025"
           ) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+            throw new TRPCError({ code: "NOT_FOUND", message: "Post introuvable." });
           }
           throw err;
         }
@@ -207,7 +207,7 @@ export const postRouter = router({
             err instanceof Prisma.PrismaClientKnownRequestError &&
             err.code === "P2025"
           ) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Post not found." });
+            throw new TRPCError({ code: "NOT_FOUND", message: "Post introuvable." });
           }
           throw err;
         }

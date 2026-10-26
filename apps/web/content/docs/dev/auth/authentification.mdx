@@ -166,13 +166,13 @@ La fonction renvoie un `SessionClient`, et non la ligne `User` complète :
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
 user: {
-  id: session.user!.id,
-  email: session.user!.email,
-  firstName: session.user!.firstName,
-  lastName: session.user!.lastName,
-  pseudo: session.user!.pseudo,
-  avatar: session.user!.avatar,
-  isFirstLogin: session.user!.isFirstLogin,
+  id: session.user.id,
+  email: session.user.email,
+  firstName: session.user.firstName,
+  lastName: session.user.lastName,
+  pseudo: session.user.pseudo,
+  avatar: session.user.avatar,
+  isFirstLogin: session.user.isFirstLogin,
   isAdmin,
 },
 ```

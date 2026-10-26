@@ -114,7 +114,7 @@ export const breakingNewsRouter = router({
       if (!news) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "BreakingNews not found.",
+          message: "Brève introuvable.",
         });
       }
       return news;
@@ -154,7 +154,7 @@ export const breakingNewsRouter = router({
       } catch {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "BreakingNews not found.",
+          message: "Brève introuvable.",
         });
       }
     }),
@@ -169,7 +169,7 @@ export const breakingNewsRouter = router({
       } catch {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "BreakingNews not found.",
+          message: "Brève introuvable.",
         });
       }
     }),

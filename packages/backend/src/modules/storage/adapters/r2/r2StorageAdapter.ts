@@ -260,10 +260,15 @@ export function createR2StorageAdapter(
       // (Prisma ne supporte pas REPLACE/SUBSTRING dans updateMany).
       const oldPrefix = `${operation.source.path}/`;
       const newPrefix = `${operation.target.path}/`;
+      // Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
+      // aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
+      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique inverse est le
+      // caractère d'échappement par défaut de LIKE dans PostgreSQL.
+      const likePrefix = oldPrefix.replace(/[\\%_]/g, "\\$&");
       await prisma.$executeRaw`
         UPDATE "MediaAsset"
         SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
-        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${oldPrefix + "%"};
+        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likePrefix + "%"};
       `;
     },
 

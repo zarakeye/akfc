@@ -29,7 +29,7 @@ export default function UserCard({
 
   if (!userId) return null;
   if (isLoading) return <div>Loading...</div>;
-  if (!user) return <div>User not found</div>;
+  if (!user) return <div>Membre introuvable.</div>;
 
   return (
     <div className="p-4 rounded shadow-md bg-white">

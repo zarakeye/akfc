@@ -101,7 +101,7 @@ const createInput = z
       (data.originId !== null && data.originId !== undefined),
     {
       message:
-        "At least one of disciplineIds, externalDisciplineLabels, or originId must be provided.",
+        "Indiquez au moins une discipline (du club ou extérieure) ou une origine.",
       path: ["disciplineIds"],
     },
   );
@@ -147,7 +147,7 @@ async function assertDisciplinesExist(
   if (missing.length > 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Discipline(s) not found: ${missing.join(", ")}.`,
+      message: `Discipline(s) introuvable(s) : ${missing.join(", ")}.`,
     });
   }
 }
@@ -164,7 +164,7 @@ async function assertOriginExists(
   if (!origin) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Origin not found (id=${originId}).`,
+      message: `Origine introuvable (id=${originId}).`,
     });
   }
 }
@@ -180,7 +180,7 @@ async function assertUserExists(
   if (!user) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `User not found (id=${userId}).`,
+      message: `Membre introuvable (id=${userId}).`,
     });
   }
 }
@@ -287,7 +287,7 @@ export const eventRouter = router({
         },
       });
       if (!event) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Évènement introuvable." });
       }
       return event;
     }),
@@ -318,7 +318,7 @@ export const eventRouter = router({
         },
       });
       if (!event) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Event not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Évènement introuvable." });
       }
       return event;
     }),
@@ -378,7 +378,7 @@ export const eventRouter = router({
             if (onSlug) {
               throw new TRPCError({
                 code: "CONFLICT",
-                message: "This slug is already used. Choose a different one.",
+                message: "Ce slug est déjà utilisé. Choisissez-en un autre.",
               });
             }
           }
@@ -420,7 +420,7 @@ export const eventRouter = router({
       if (!existing) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Event not found.",
+          message: "Évènement introuvable.",
         });
       }
 
@@ -446,7 +446,7 @@ export const eventRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "An event must keep at least one of disciplineIds, externalDisciplineLabels, or originId set.",
+            "Un évènement doit garder au moins une discipline (du club ou extérieure) ou une origine.",
         });
       }
 
@@ -502,14 +502,14 @@ export const eventRouter = router({
               if (onSlug) {
                 throw new TRPCError({
                   code: "CONFLICT",
-                  message: "This slug is already used. Choose a different one.",
+                  message: "Ce slug est déjà utilisé. Choisissez-en un autre.",
                 });
               }
             }
             if (err.code === "P2025") {
               throw new TRPCError({
                 code: "NOT_FOUND",
-                message: "Event not found.",
+                message: "Évènement introuvable.",
               });
             }
           }
@@ -585,7 +585,7 @@ export const eventRouter = router({
           ) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Event not found.",
+              message: "Évènement introuvable.",
             });
           }
           throw err;

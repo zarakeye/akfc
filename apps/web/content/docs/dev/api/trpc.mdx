@@ -147,8 +147,8 @@ return await ctx.prisma.$transaction(async (tx) => {
       throw new TRPCError({
         code: "CONFLICT",
         message: onSlug
-          ? "This slug is already used. Choose a different one."
-          : "A discipline with this name already exists in this category.",
+          ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+          : "Une discipline de ce nom existe déjà dans cette catégorie.",
       });
     }
     throw err;

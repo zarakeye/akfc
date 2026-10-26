@@ -118,8 +118,8 @@ export async function assertOperationsDontUnpublishReferencedAssets(
   });
 
   throw new Error(
-    `Cannot move out of \`published\`: ${blockedAssets.length} referenced asset(s) blocking.\n` +
-      `Remove these assets from the referencing pages first, then retry.\n` +
+    `Impossible de retirer de « published » : ${blockedAssets.length} fichier(s) encore utilisé(s) par des pages.\n` +
+      `Retirez-les d’abord de ces pages, puis recommencez.\n` +
       lines.join('\n'),
   );
 }

@@ -7,14 +7,14 @@ export const isAdmin = t.middleware(({ ctx, next }) => {
   if (!user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
-      message: "Authentication required.",
+      message: "Connexion requise.",
     });
   }
 
   if (!user.isAdmin) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Administrator access required.",
+      message: "Action réservée aux administrateurs.",
     });
   }
 

@@ -149,10 +149,10 @@ Chaque procédure d'administration passe par le middleware `isAdmin`, qui relit 
 export const isAdmin = t.middleware(({ ctx, next }) => {
   const user = ctx.sessionClient?.user;
   if (!user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required." });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Connexion requise." });
   }
   if (!user.isAdmin) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access required." });
+    throw new TRPCError({ code: "FORBIDDEN", message: "Action réservée aux administrateurs." });
   }
   return next();
 });

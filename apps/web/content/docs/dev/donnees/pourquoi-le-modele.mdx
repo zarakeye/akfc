@@ -196,7 +196,7 @@ Dans ce projet, les dépendances de la base sont déclarées dans le `package.js
 
 Après chaque `pnpm install`, le client est régénéré à partir du schéma : un développeur qui récupère le dépôt n'a jamais à y penser. Le Dockerfile, lui, lance `pnpm prisma generate` explicitement avant le build, pour la même raison.
 
-Deux autres dépendances figurent dans la liste, `pg` et `@prisma/adapter-pg`, mais aucun fichier ne les importe : Prisma parle à PostgreSQL avec son propre moteur. Ce sont des restes d'un essai, qu'un ménage pourra retirer.
+Deux autres dépendances y figuraient, `pg` et `@prisma/adapter-pg` (avec les types de la première), alors qu'aucun fichier ne les importait : Prisma parle à PostgreSQL avec son propre moteur. C'étaient les restes d'un essai, et elles ont été retirées. Une dépendance inutile n'est pas gratuite : elle s'installe, se met à jour, et fait croire à un mécanisme qui n'existe pas.
 
 👉 c'est exactement dans ce contexte réel que Prisma doit être compris
 

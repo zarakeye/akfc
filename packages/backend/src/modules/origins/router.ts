@@ -51,7 +51,7 @@ const slugSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
     message:
-      "Slug must be lowercase alphanumeric with single hyphens (no leading/trailing hyphen).",
+      "Le slug ne contient que des minuscules sans accent, des chiffres et des tirets simples (pas de tiret au début ni à la fin).",
   });
 
 const createInput = z.object({
@@ -90,13 +90,13 @@ function uniqueViolationMessage(err: Prisma.PrismaClientKnownRequestError): stri
   const target = err.meta?.target;
   if (Array.isArray(target)) {
     if (target.includes("name")) {
-      return "An origin with this name already exists.";
+      return "Une origine porte déjà ce nom.";
     }
     if (target.includes("slug")) {
-      return "An origin with this slug already exists.";
+      return "Une origine utilise déjà ce slug.";
     }
   }
-  return "An origin with this name or slug already exists.";
+  return "Une origine porte déjà ce nom ou ce slug.";
 }
 
 /* -------------------------------------------------------------------------- */
@@ -125,7 +125,7 @@ export const originRouter = router({
       if (!origin) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Origin not found.",
+          message: "Origine introuvable.",
         });
       }
 
@@ -146,7 +146,7 @@ export const originRouter = router({
       if (!origin) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Origin not found.",
+          message: "Origine introuvable.",
         });
       }
 
@@ -206,7 +206,7 @@ export const originRouter = router({
           if (err.code === "P2025") {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Origin not found.",
+              message: "Origine introuvable.",
             });
           }
         }
@@ -236,9 +236,9 @@ export const originRouter = router({
       if (deps.length > 0) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Cannot delete origin: ${deps.join(
+          message: `Impossible de supprimer l’origine : ${deps.join(
             ", ",
-          )} still reference it. Detach them first.`,
+          )} y sont encore rattachés. Détachez-les d’abord.`,
         });
       }
 
@@ -253,7 +253,7 @@ export const originRouter = router({
         ) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Origin not found.",
+            message: "Origine introuvable.",
           });
         }
         throw err;

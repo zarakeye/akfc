@@ -224,7 +224,7 @@ export const disciplineRouter = router({
       if (!discipline) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Discipline not found.",
+          message: "Discipline introuvable.",
         });
       }
 
@@ -244,7 +244,7 @@ export const disciplineRouter = router({
       if (!discipline) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Discipline not found.",
+          message: "Discipline introuvable.",
         });
       }
 
@@ -264,7 +264,7 @@ export const disciplineRouter = router({
       if (!category) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Category not found (id=${input.categoryId}).`,
+          message: `Catégorie introuvable (id=${input.categoryId}).`,
         });
       }
 
@@ -275,7 +275,7 @@ export const disciplineRouter = router({
       if (!instructor) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Instructor not found (id=${input.instructorId}).`,
+          message: `Instructeur introuvable (id=${input.instructorId}).`,
         });
       }
 
@@ -287,7 +287,7 @@ export const disciplineRouter = router({
         if (!family) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `DisciplineFamily not found (id=${input.familyId}).`,
+            message: `Famille de disciplines introuvable (id=${input.familyId}).`,
           });
         }
       }
@@ -300,7 +300,7 @@ export const disciplineRouter = router({
         if (!origin) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Origin not found (id=${input.originId}).`,
+            message: `Origine introuvable (id=${input.originId}).`,
           });
         }
       }
@@ -342,8 +342,8 @@ export const disciplineRouter = router({
             throw new TRPCError({
               code: "CONFLICT",
               message: onSlug
-                ? "This slug is already used. Choose a different one."
-                : "A discipline with this name already exists in this category.",
+                ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+                : "Une discipline de ce nom existe déjà dans cette catégorie.",
             });
           }
           throw err;
@@ -387,7 +387,7 @@ export const disciplineRouter = router({
         if (!instructor) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Instructor not found (id=${rest.instructorId}).`,
+            message: `Instructeur introuvable (id=${rest.instructorId}).`,
           });
         }
       }
@@ -402,7 +402,7 @@ export const disciplineRouter = router({
         if (!family) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `DisciplineFamily not found (id=${rest.familyId}).`,
+            message: `Famille de disciplines introuvable (id=${rest.familyId}).`,
           });
         }
       }
@@ -417,7 +417,7 @@ export const disciplineRouter = router({
         if (!origin) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Origin not found (id=${rest.originId}).`,
+            message: `Origine introuvable (id=${rest.originId}).`,
           });
         }
       }
@@ -462,14 +462,14 @@ export const disciplineRouter = router({
               throw new TRPCError({
                 code: "CONFLICT",
                 message: onSlug
-                  ? "This slug is already used. Choose a different one."
-                  : "A discipline with this name already exists in this category.",
+                  ? "Ce slug est déjà utilisé. Choisissez-en un autre."
+                  : "Une discipline de ce nom existe déjà dans cette catégorie.",
               });
             }
             if (err.code === "P2025") {
               throw new TRPCError({
                 code: "NOT_FOUND",
-                message: "Discipline not found.",
+                message: "Discipline introuvable.",
               });
             }
           }
@@ -552,7 +552,7 @@ export const disciplineRouter = router({
         select: { id: true, name: true, categoryId: true },
       });
       if (!disc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Discipline not found." });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Discipline introuvable." });
       }
       const cat = await ctx.prisma.category.findUnique({
         where: { id: disc.categoryId },
@@ -607,7 +607,7 @@ export const disciplineRouter = router({
           ) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Discipline not found.",
+              message: "Discipline introuvable.",
             });
           }
           throw err;

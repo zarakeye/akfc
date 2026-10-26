@@ -42,7 +42,7 @@ const hhmmSchema = z
   .min(0)
   .max(2359)
   .refine((v) => v % 100 < 60, {
-    message: "Minutes part must be 0-59 (e.g. 1860 is not a valid time).",
+    message: "Les minutes doivent être comprises entre 00 et 59 (1860 n’est pas une heure valide).",
   });
 
 const beginTimeSchema = hhmmSchema;
@@ -58,7 +58,7 @@ const createInput = z
     notes: z.string().trim().min(1).max(2000).nullable().optional(),
   })
   .refine((data) => data.endTime > data.beginTime, {
-    message: "endTime must be strictly greater than beginTime.",
+    message: "L’heure de fin doit être postérieure à l’heure de début.",
     path: ["endTime"],
   });
 
@@ -80,7 +80,7 @@ const updateInput = z
       data.endTime === undefined ||
       data.endTime > data.beginTime,
     {
-      message: "endTime must be strictly greater than beginTime.",
+      message: "L’heure de fin doit être postérieure à l’heure de début.",
       path: ["endTime"],
     },
   );
@@ -112,7 +112,7 @@ export const eventSessionRouter = router({
       if (!session) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Event session not found.",
+          message: "Séance introuvable.",
         });
       }
 
@@ -131,7 +131,7 @@ export const eventSessionRouter = router({
       if (!event) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Event not found (id=${input.eventId}).`,
+          message: `Évènement introuvable (id=${input.eventId}).`,
         });
       }
 
@@ -154,7 +154,7 @@ export const eventSessionRouter = router({
           throw new TRPCError({
             code: "CONFLICT",
             message:
-              "A session already exists for this event at this date and beginTime.",
+              "Une séance existe déjà pour cet évènement à cette date et à cette heure de début.",
           });
         }
         throw err;
@@ -178,13 +178,13 @@ export const eventSessionRouter = router({
             throw new TRPCError({
               code: "CONFLICT",
               message:
-                "A session already exists for this event at this date and beginTime.",
+                "Une séance existe déjà pour cet évènement à cette date et à cette heure de début.",
             });
           }
           if (err.code === "P2025") {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Event session not found.",
+              message: "Séance introuvable.",
             });
           }
         }
@@ -207,7 +207,7 @@ export const eventSessionRouter = router({
         ) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Event session not found.",
+            message: "Séance introuvable.",
           });
         }
         throw err;

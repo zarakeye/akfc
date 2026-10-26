@@ -61,13 +61,13 @@ function uniqueViolationMessage(
   const target = err.meta?.target;
   if (Array.isArray(target)) {
     if (target.includes("name")) {
-      return "A discipline family with this name already exists.";
+      return "Une famille de disciplines porte déjà ce nom.";
     }
     if (target.includes("slug")) {
-      return "A discipline family with this slug already exists.";
+      return "Une famille de disciplines utilise déjà ce slug.";
     }
   }
-  return "A discipline family with this name or slug already exists.";
+  return "Une famille de disciplines porte déjà ce nom ou ce slug.";
 }
 
 /* -------------------------------------------------------------------------- */
@@ -94,7 +94,7 @@ export const disciplineFamilyRouter = router({
       if (!family) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Discipline family not found.",
+          message: "Famille de disciplines introuvable.",
         });
       }
       return family;
@@ -109,7 +109,7 @@ export const disciplineFamilyRouter = router({
       if (!family) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Discipline family not found.",
+          message: "Famille de disciplines introuvable.",
         });
       }
       return family;
@@ -166,7 +166,7 @@ export const disciplineFamilyRouter = router({
           if (err.code === "P2025") {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: "Discipline family not found.",
+              message: "Famille de disciplines introuvable.",
             });
           }
         }
@@ -186,7 +186,7 @@ export const disciplineFamilyRouter = router({
       if (disciplineCount > 0) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Cannot delete family: ${disciplineCount} discipline(s) still reference it. Reassign or detach them first.`,
+          message: `Impossible de supprimer la famille : ${disciplineCount} discipline(s) y sont encore rattachées. Rattachez-les ailleurs ou détachez-les d’abord.`,
         });
       }
 
@@ -201,7 +201,7 @@ export const disciplineFamilyRouter = router({
         ) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Discipline family not found.",
+            message: "Famille de disciplines introuvable.",
           });
         }
         throw err;
