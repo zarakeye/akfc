@@ -390,7 +390,9 @@ export default function HomeCarousel(): JSX.Element | null {
   if (geo.list.length === 0) return null;
 
   return (
-    <section className="relative">
+    // isolate : le carrousel forme son propre empilement. Les z-index de ses boutons (jusqu'à
+    // z-[200]) ne valent qu'entre eux, et plus contre le header collant (z-50) qui passe dessus.
+    <section className="relative isolate">
       <div
         ref={containerRef}
         onPointerDown={onPointerDown}
