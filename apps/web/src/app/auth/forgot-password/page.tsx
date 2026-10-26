@@ -3,6 +3,7 @@
 import { JSX, useMemo, useState } from "react";
 // import { trpc } from "@backend /core/trpc/trpcClient";
 import { trpc } from '@trpc/trpcClient';
+import { emailSchema } from '@contracts/auth/auth.schema';
 
 /**
  * /auth/forgot-password
@@ -20,10 +21,8 @@ export default function ForgotPasswordPage(): JSX.Element {
 
   const emailNormalized = useMemo(() => email.trim().toLowerCase(), [email]);
 
-  const isEmailValid = useMemo(() => {
-    // Validation simple côté UI (le backend fait foi)
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalized);
-  }, [emailNormalized]);
+  // Même règle que la procédure (schéma partagé) ; le backend fait foi.
+  const isEmailValid = emailSchema.safeParse(emailNormalized).success;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

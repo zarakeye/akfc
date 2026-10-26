@@ -211,7 +211,7 @@ Ce critère n'est pas théorique : le projet l'applique, et le résultat se voit
 3. **l'utilisateur voit l'état** : envoi en cours, erreur sous le champ concerné, message de réussite ;
 4. **la donnée affichée ailleurs se met à jour** après l'enregistrement.
 
-(Le formulaire de connexion, nous l'avons vu au chapitre 5, ne tient pas encore la première.)
+(Le formulaire de connexion ne tenait pas la première : nous avons vu au chapitre 5 comment elle a été rétablie.)
 
 <DocsTable columnsJson='["Technique","Envoi","Utilisée pour","Exemples"]' rowsJson='[["React Hook Form + server action (useActionState)","Le formulaire HTML est envoyé à une fonction serveur.","Formulaires courts, champs simples.","Catégorie, origine, famille, galerie, profil"],["React Hook Form + mutation tRPC","handleSubmit appelle une procédure.","Formulaires simples dont le serveur est déjà une procédure tRPC.","Changement de mot de passe, dépôt de fichiers"],["État contrôlé + mutation tRPC","Le composant assemble l’objet et appelle une procédure.","Formulaires riches : constructeur de pages, sélecteurs, plusieurs boutons d’envoi.","Discipline, stage, événement, actualité"]]' />
 

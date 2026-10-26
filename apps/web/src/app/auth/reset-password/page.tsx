@@ -4,13 +4,14 @@ import { JSX, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
 import { PasswordField } from "@features/auth/PasswordField";
+import { PASSWORD_MIN_LENGTH, passwordSchema } from "@contracts/auth/auth.schema";
 
 /**
  * /auth/reset-password?token=...[&bienvenue=1]
  *
  * - Le token vient du lien de l'e-mail : « Mot de passe oublié », ou e-mail de bienvenue
  *   (`bienvenue=1`), où le nouveau membre choisit son PREMIER mot de passe
- * - L’utilisateur saisit un mot de passe (min 12)
+ * - L’utilisateur saisit un mot de passe (règle partagée : passwordSchema, packages/contracts)
  * - Appelle trpc.auth.resetPassword
  * - En cas de succès : message + bouton vers l'accueil, où se trouve le formulaire de connexion
  *
@@ -38,7 +39,7 @@ function ResetPasswordForm(): JSX.Element {
 
   const [done, setDone] = useState(false);
 
-  const passwordOk = useMemo(() => password.length >= 12, [password]);
+  const passwordOk = passwordSchema.safeParse(password).success;
   const confirmOk = useMemo(() => password === passwordConfirm, [password, passwordConfirm]);
 
   const canSubmit = token.length > 0 && passwordOk && confirmOk && !resetPassword.isPending;
@@ -74,8 +75,8 @@ function ResetPasswordForm(): JSX.Element {
         </h1>
         <p className="text-sm text-slate-600">
           {isWelcome
-            ? "Il te servira à te connecter au site, avec ton adresse e-mail. Il doit faire au moins 12 caractères."
-            : "Choisis un nouveau mot de passe. Il doit faire au moins 12 caractères."}
+            ? `Il te servira à te connecter au site, avec ton adresse e-mail. Il doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`
+            : `Choisis un nouveau mot de passe. Il doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`}
         </p>
       </header>
 
@@ -92,12 +93,12 @@ function ResetPasswordForm(): JSX.Element {
         <PasswordField
           label="Nouveau mot de passe"
           autoComplete="new-password"
-          placeholder="Min. 12 caractères"
+          placeholder={`Min. ${PASSWORD_MIN_LENGTH} caractères`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={!token || resetPassword.isPending || done}
           error={
-            !passwordOk && password.length > 0 ? "Minimum 12 caractères." : undefined
+            !passwordOk && password.length > 0 ? `Minimum ${PASSWORD_MIN_LENGTH} caractères.` : undefined
           }
         />
 

@@ -10,12 +10,16 @@ import {
 import { sendPasswordResetEmail } from "@backend/email/services/sendPasswordResetEmail";
 import { prisma } from "@backend/prisma";
 
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { verifyPassword } from "@backend/lib/auth/password";
 import { getToken, verifyJwt } from "@backend/lib/session/session.server";
-import { changePasswordSchema } from "@contracts/auth/auth.schema";
+import {
+  changePasswordSchema,
+  loginSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
+} from "@contracts/auth/auth.schema";
 
 /**
  * Router frontend-facing, permanently called by the client.
@@ -23,12 +27,8 @@ import { changePasswordSchema } from "@contracts/auth/auth.schema";
  */
 export const authRouter = router({
   login: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
-      })
-    )
+    // Même schéma que le formulaire de connexion (packages/contracts) : une seule règle, un seul message.
+    .input(loginSchema)
     .mutation(async ({ input }) => {
       const { email, password } = input;
 
@@ -121,11 +121,7 @@ export const authRouter = router({
   }),
 
   requestPasswordReset: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-      })
-    )
+    .input(requestPasswordResetSchema)
     .mutation(async ({ input, ctx }) => {
       const email = input.email.trim().toLowerCase();
 
@@ -179,12 +175,7 @@ export const authRouter = router({
     }),
 
   resetPassword: publicProcedure
-    .input(
-      z.object({
-        token: z.string().min(10),
-        newPassword: z.string().min(12, "Le mot de passe doit faire au moins 12 caractères"),
-      })
-    )
+    .input(resetPasswordSchema)
     .mutation(async ({ input }) => {
       const token = input.token.trim();
       const tokenHash = hashResetToken(token);

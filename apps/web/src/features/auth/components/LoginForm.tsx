@@ -1,16 +1,13 @@
 'use client';
 
-import { JSX, useMemo, useState, type FormEvent } from "react";
+import { JSX, useState, type FormEvent } from "react";
 import { trpcClient } from "@trpc/trpcClient";
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { useRouter } from "next/navigation";
 import { AUTH_ERRORS } from "@features/auth/errors/auth.errors";
+import { loginSchema } from "@contracts/auth/auth.schema";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 export default function LoginForm(): JSX.Element {
   const [email, setEmail] = useState('');
@@ -24,34 +21,18 @@ export default function LoginForm(): JSX.Element {
 
   const emailTrimmed = email.trim();
 
-  const validationMessage = useMemo(() => {
-    if (!emailTrimmed && !password) {
-      return 'Please fill in your email and password.';
-    }
-
-    if (!emailTrimmed) {
-      return 'Please enter your email address.';
-    }
-
-    if (!isValidEmail(emailTrimmed)) {
-      return 'Please enter a valid email address.';
-    }
-
-    if (!password) {
-      return 'Please enter your password.';
-    }
-
-    if (password.length < 12) {
-      return 'Password must be at least 12 characters long.';
-    }
-
-    return null;
-  }, [emailTrimmed, password]);
+  // Les règles viennent du schéma partagé avec la procédure auth.login : le formulaire affiche la
+  // même règle, avec le même message, que celle que le serveur appliquera.
+  const parsed = loginSchema.safeParse({ email, password });
+  const issues = parsed.success ? [] : parsed.error.issues;
+  const validationMessage = issues[0]?.message ?? null;
+  const emailInvalid = issues.some((i) => i.path[0] === "email");
+  const passwordInvalid = issues.some((i) => i.path[0] === "password");
 
   const isFormValid = validationMessage === null;
   const buttonTitle = loading
-    ? 'Logging in...'
-    : validationMessage ?? 'Submit login form';
+    ? 'Connexion…'
+    : validationMessage ?? 'Se connecter';
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -78,7 +59,7 @@ export default function LoginForm(): JSX.Element {
       const session = await trpcClient.auth.getSession.query();
 
       if (!session) {
-        setError('Login succeeded, but the session could not be restored.');
+        setError('Connexion réussie, mais la session n’a pas pu être chargée. Rechargez la page.');
         return;
       }
 
@@ -86,7 +67,7 @@ export default function LoginForm(): JSX.Element {
       router.push('/');
     } catch (err) {
       console.error('Login error:', err);
-      setError('An unexpected error occurred during login.');
+      setError('Une erreur inattendue est survenue pendant la connexion.');
     } finally {
       setLoading(false);
     }
@@ -103,9 +84,9 @@ export default function LoginForm(): JSX.Element {
             setEmail(e.target.value);
             if (error) setError(null);
           }}
-          placeholder="Email"
+          placeholder="Adresse e-mail"
           required
-          aria-invalid={!!error && (!emailTrimmed || !isValidEmail(emailTrimmed))}
+          aria-invalid={!!error && emailInvalid}
           className="border rounded bg-white px-2 py-1"
         />
 
@@ -118,9 +99,9 @@ export default function LoginForm(): JSX.Element {
               setPassword(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="Password"
+            placeholder="Mot de passe"
             required
-            aria-invalid={!!error && (!password || password.length < 12)}
+            aria-invalid={!!error && passwordInvalid}
             className="border rounded bg-white px-2 py-1 pr-9"
           />
           <button
@@ -147,7 +128,7 @@ export default function LoginForm(): JSX.Element {
             : "bg-blue-500 hover:opacity-90"
         ].join(' ')}
       >
-        {loading ? 'Logging in...' : 'Login'}
+        {loading ? 'Connexion…' : 'Se connecter'}
       </button>
 
       {error && <p className="text-red-500">{error}</p>}

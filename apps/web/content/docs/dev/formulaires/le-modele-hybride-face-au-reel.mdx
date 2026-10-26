@@ -304,55 +304,93 @@ Regardons un cas que nous avons tous écrit à un moment.
 👉 mais il est instable structurellement  
 
 
-#### 🔎 Le même dérapage, dans le projet
+#### 🔎 Le même dérapage, dans le projet — et sa correction
 
-Ce contre-exemple n'est pas inventé pour l'occasion. Le formulaire de connexion du site en est une version réelle : un état contrôlé, une validation écrite à la main dans le composant, et un appel tRPC.
+Ce contre-exemple n'est pas inventé pour l'occasion. Le formulaire de connexion du site en a longtemps été une version réelle : un état contrôlé, et une validation écrite à la main dans le composant, avec ses propres messages, en anglais.
 
-```tsx
-// apps/web/src/features/auth/components/LoginForm.tsx (extrait)
-    if (!password) {
-      return 'Please enter your password.';
-    }
+<CodeSnippet
+  language="tsx"
+  title="La règle, écrite dans le composant"
+  filename="LoginForm.tsx (avant)"
+  kind="anti-pattern"
+  codeJson='"const validationMessage = useMemo(() => {\n  // …\n  if (!isValidEmail(emailTrimmed)) {\n    return \u0027Please enter a valid email address.\u0027;\n  }\n  // …\n  if (password.length < 12) {\n    return \u0027Password must be at least 12 characters long.\u0027;\n  }\n  return null;\n}, [emailTrimmed, password]);"'
+/>
 
-    if (password.length < 12) {
-      return 'Password must be at least 12 characters long.';
-    }
+La règle « au moins 12 caractères » existait pourtant déjà ailleurs. Dans la procédure de connexion, avec un autre message, en français :
+
+<CodeSnippet
+  language="ts"
+  title="La même règle, réécrite dans la procédure"
+  filename="router.ts (avant)"
+  kind="anti-pattern"
+  codeJson='"login: publicProcedure\n  .input(\n    z.object({\n      email: z.string().email(),\n      password: z.string().min(12, \"Le mot de passe doit avoir au moins 12 caractères\"),\n    })\n  )"'
+/>
+
+Et une troisième fois dans `packages/contracts`, dans un schéma `authSchema` prévu pour être partagé… que personne n'importait. La procédure de réinitialisation, la page « Mot de passe oublié » et la page du nouveau mot de passe avaient chacune leur copie, de la règle des 12 caractères ou de celle de l'adresse e-mail.
+
+Le schéma partagé existait, il était juste, et il ne servait à rien : c'est la remarque de la section 6.2 (« ce contrat n'exécute rien ») prise sur le fait. Le jour où la longueur minimale serait passée à 14 caractères, il aurait fallu penser à six fichiers. Un seul oubli, et deux scénarios étaient possibles :
+
+- le formulaire exige 12, la procédure 14 : l'utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu'il n'a jamais vu ;
+- le formulaire exige 14, la procédure 12 : rien ne casse, mais la règle affichée n'est plus celle du système.
+
+Chaque copie avait été écrite de bonne foi, à un moment différent. C'est ainsi qu'une duplication s'installe : jamais d'un coup.
+
+La correction suit la hiérarchie de vérité de la section 6.3. Les règles ne vivent plus qu'à un endroit :
+
+```ts
+// packages/contracts/src/auth/auth.schema.ts (extrait)
+/** Longueur minimale d'un mot de passe. Les textes d'aide l'affichent à partir de cette valeur. */
+export const PASSWORD_MIN_LENGTH = 12;
+
+/** Une adresse e-mail saisie par le membre (connexion, mot de passe oublié). */
+export const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Saisissez votre adresse e-mail.")
+  .email("Adresse e-mail invalide.");
+
+/** Un mot de passe choisi par le membre (réinitialisation, changement). */
+export const passwordSchema = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`);
+
+/**
+ * Connexion. Un champ vide reçoit son propre message, avant les règles de forme : Zod renvoie les
+ * problèmes dans l'ordre des vérifications, et le formulaire affiche le premier.
+ */
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Saisissez votre mot de passe.").pipe(passwordSchema),
+});
 ```
 
-La règle « au moins 12 caractères » existe pourtant déjà ailleurs. Dans la procédure de connexion :
+La procédure applique le schéma tel quel :
 
 ```ts
 // packages/backend/src/modules/auth/router.ts (extrait)
   login: publicProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-        password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
-      })
-    )
+    // Même schéma que le formulaire de connexion (packages/contracts) : une seule règle, un seul message.
+    .input(loginSchema)
 ```
 
-Et une troisième fois dans `packages/contracts`, dans un schéma prévu pour être partagé :
+Et le formulaire l'applique aussi, sans rien réécrire :
 
-```ts
-// packages/contracts/src/auth/auth.schema.ts (extrait)
-export const authSchema = z.object({
-  email: z.string().refine((value) => {
-    // Regular expression to validate email format
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }, 'Invalid email format'),
-  password: z.string().min(12, "Le mot de passe doit avoir au moins 12 caractères"),
-});
+```tsx
+// apps/web/src/features/auth/components/LoginForm.tsx (extrait)
+  // Les règles viennent du schéma partagé avec la procédure auth.login : le formulaire affiche la
+  // même règle, avec le même message, que celle que le serveur appliquera.
+  const parsed = loginSchema.safeParse({ email, password });
+  const issues = parsed.success ? [] : parsed.error.issues;
+  const validationMessage = issues[0]?.message ?? null;
+  const emailInvalid = issues.some((i) => i.path[0] === "email");
+  const passwordInvalid = issues.some((i) => i.path[0] === "password");
+
+  const isFormValid = validationMessage === null;
 ```
 
-Trois copies de la même règle, et aucune ne connaît les autres. Le schéma partagé `authSchema` n'est importé nulle part : il existe, il est juste, et il ne sert à rien. Les messages divergent déjà : en anglais dans le composant, en français dans la procédure.
+`safeParse` ne lève pas d'erreur : il renvoie la liste des problèmes, dans l'ordre où le schéma les vérifie. Le formulaire affiche le premier, et marque comme invalide chaque champ concerné. Les messages sont désormais ceux du schéma, en français, identiques des deux côtés. La longueur minimale est une constante, `PASSWORD_MIN_LENGTH`, que les textes d'aide de la page du nouveau mot de passe affichent au lieu d'écrire « 12 » en dur.
 
-Le jour où la longueur minimale passera à 14 caractères, il faudra penser aux trois fichiers. Si l'un est oublié, deux scénarios sont possibles :
-
-- le composant exige 12, la procédure 14 : l'utilisateur voit un formulaire « valide » refusé par le serveur, avec un message qu'il n'a jamais vu ;
-- le composant exige 14, la procédure 12 : rien ne casse, mais la règle affichée n'est plus celle du système.
-
-La correction suit la hiérarchie de vérité de la section 6.3 : la procédure et le composant importeraient tous les deux `authSchema`, et le composant passerait à React Hook Form avec un résolveur, comme les formulaires du tableau de bord. Elle n'est pas encore faite. Ce formulaire reste dans la doc tel qu'il est, parce qu'il montre mieux qu'un exemple inventé comment une duplication s'installe : chaque copie a été écrite de bonne foi, à un moment différent.
+Le formulaire garde son état contrôlé plutôt que de passer à React Hook Form : le bouton reste désactivé tant que la saisie n'est pas valide, et son info-bulle donne la raison. Ce qui comptait n'était pas l'outil, mais la source de la règle.
 
 ---
 
