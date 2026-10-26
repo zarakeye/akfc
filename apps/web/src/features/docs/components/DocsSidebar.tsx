@@ -6,6 +6,7 @@ import Link from "next/link"
 import type { DocPage } from "@features/docs/lib/docs.types"
 import { ThemeToggle } from "@features/theme"
 import { ArrowLeft } from "lucide-react"
+import { OsSelect } from "@features/docs/ui/OsSelect"
 
 type NavigationSection = {
   section: string
@@ -77,6 +78,13 @@ export function DocsSidebar({
           </span>
         ) : null}
       </div>
+
+      {/* Système des commandes montrées par la doc (macOS, Linux, Windows WSL 2), à côté du thème. */}
+      {open ? (
+        <div className="shrink-0 border-b px-5 py-2">
+          <OsSelect />
+        </div>
+      ) : null}
 
       {/* Sortie de la documentation, toujours visible (barre repliée comprise). */}
       <Link

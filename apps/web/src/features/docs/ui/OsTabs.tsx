@@ -26,7 +26,7 @@ import {
 
 export type OsName = "mac" | "linux" | "windows"
 
-const OS_LABEL: Record<OsName, string> = {
+export const OS_LABEL: Record<OsName, string> = {
   mac: "macOS",
   linux: "Linux",
   windows: "Windows (WSL 2)",
@@ -67,13 +67,21 @@ function readOs(): OsName {
   return guessOs()
 }
 
-function chooseOs(os: OsName): void {
+export function chooseOs(os: OsName): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, os)
   } catch {
     // Le choix ne sera pas retenu, mais l'onglet change quand même pour cette page.
   }
   listeners.forEach((listener) => listener())
+}
+
+/**
+ * Le système choisi par le lecteur (null côté serveur et pendant l'hydratation). Partagé par les
+ * onglets des pages et par le sélecteur de la barre latérale (OsSelect).
+ */
+export function useChosenOs(): OsName | null {
+  return useSyncExternalStore(subscribe, readOs, () => null)
 }
 
 /** Le contenu d'un système (marqueur lu par OsTabs). */
@@ -86,7 +94,7 @@ export function OsTabs({ children }: { children?: ReactNode }) {
     (child): child is ReactElement<{ name: OsName; children?: ReactNode }> =>
       isValidElement(child) && typeof (child.props as { name?: unknown }).name === "string",
   )
-  const chosen = useSyncExternalStore(subscribe, readOs, () => null)
+  const chosen = useChosenOs()
   const available = panes.map((p) => p.props.name)
   // Le système choisi, s'il a un onglet ici ; sinon Linux (Windows passe par WSL), sinon le premier.
   const active =
@@ -127,6 +135,9 @@ export function OsTabs({ children }: { children?: ReactNode }) {
       <div role="tabpanel" className="px-4 pb-1 pt-3 [&>div:first-child]:mt-0 [&>p:last-child]:mb-3">
         {panes.find((p) => p.props.name === active)?.props.children}
       </div>
+      <p className="border-t px-4 py-1.5 text-xs text-muted-foreground">
+        Choix retenu pour toute la documentation ; il se change aussi dans la barre latérale.
+      </p>
     </div>
   )
 }
