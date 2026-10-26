@@ -25,7 +25,8 @@ export type FenceIndex = {
   files: Map<string, string>
 }
 
-const PATH_LINE = /^\s*(?:\/\/|#|--)\s*(\S+\.[A-Za-z0-9]+)(?:\s+\((.+)\))?\s*$/
+// Un chemin a une extension (`proxy.ts`), ou c'est un Dockerfile (`Dockerfile`, `apps/x/Dockerfile`).
+const PATH_LINE = /^\s*(?:\/\/|#|--)\s*(\S+\.[A-Za-z0-9]+|(?:\S+\/)?Dockerfile)(?:\s+\((.+)\))?\s*$/
 
 const LANGUAGE_ALIASES: Record<string, string> = {
   "": "text",
@@ -46,7 +47,9 @@ export function normalizeLanguage(raw: string | undefined): string {
 export function splitSourceLine(code: string): { path: string | null; note: string | null; body: string } {
   const lines = code.replace(/\n$/, "").split("\n")
   const match = PATH_LINE.exec(lines[0] ?? "")
-  if (!match || !match[1].includes("/")) {
+  // Un fichier de la racine (`package.json`, `Dockerfile`) n'a pas de « / » : il est accepté s'il est
+  // suivi d'une précision, `// package.json (extrait)`, pour ne pas prendre `// v1.2` pour un chemin.
+  if (!match || (!match[1].includes("/") && !match[2])) {
     return { path: null, note: null, body: lines.join("\n") }
   }
   return { path: match[1], note: match[2] ?? null, body: lines.slice(1).join("\n") }

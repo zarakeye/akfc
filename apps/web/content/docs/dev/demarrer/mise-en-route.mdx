@@ -20,10 +20,28 @@ En production, ces services sont réels : PostgreSQL sur le serveur, Cloudflare 
 
 <DocsTable columnsJson='["Outil","Version","Pourquoi"]' rowsJson='[["Git","récente","Récupérer le dépôt et y enregistrer notre travail."],["Node.js","22","La version de l’image de production (Dockerfile, NODE_VERSION=22). Une autre version majeure peut marcher, mais nous visons la même que le serveur."],["pnpm","10.24, via corepack","Le gestionnaire de paquets du monorepo. La version exacte est épinglée dans package.json (packageManager) ; corepack l’installe tout seul."],["Docker","Docker Desktop sur Mac ou Windows, Docker Engine sur Linux","Faire tourner la base, le stockage et la boîte mail de développement."]]' />
 
-pnpm ne s'installe pas à la main. Node.js embarque corepack, qui lit le champ `packageManager` du `package.json` et fournit la bonne version :
+pnpm ne s'installe pas à la main. Node.js 22 fournit **corepack**, un outil qui procure le bon gestionnaire de paquets à chaque projet. On l'active **une fois par machine**, avant la toute première installation :
 
 ```bash
 corepack enable
+```
+
+Cette commande n'est écrite dans aucun fichier du dépôt pour le poste de développement, et `pnpm install` ne peut pas la lancer lui-même : tant qu'elle n'a pas été tapée, la commande `pnpm` n'existe pas. Elle installe, à côté de `node`, un petit lanceur nommé `pnpm`.
+
+Ce lanceur, à chaque appel, lit le champ `packageManager` du `package.json` le plus proche :
+
+```json
+// package.json (extrait)
+"packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"
+```
+
+La première fois, il télécharge cette version exacte de pnpm, vérifie qu'elle correspond à l'empreinte qui suit `+sha512.`, puis l'exécute ; les fois suivantes, il la reprend dans son cache. Le champ ne s'écrit pas à la main : `corepack use pnpm@<version>` le remplit, empreinte comprise. C'est ainsi qu'on change de version de pnpm pour tout le monde : un commit qui modifie cette ligne.
+
+L'image de production procède de la même façon, au tout début de sa construction :
+
+```dockerfile
+# Dockerfile (extrait)
+RUN corepack enable
 ```
 
 Épingler la version garantit que tous les développeurs et le serveur produisent le même `pnpm-lock.yaml` pour les mêmes dépendances, et donc installent exactement les mêmes paquets.
@@ -36,7 +54,14 @@ cd akfc
 pnpm install
 ```
 
-À la fin de l'installation, pnpm lance `prisma generate` (le script `postinstall` du `package.json`). Prisma lit `prisma/schema.prisma` et fabrique un client TypeScript qui connaît chacun des 47 modèles : chaque requête en base est typée, et une colonne mal nommée devient une erreur de compilation.
+À la fin de l'installation, pnpm exécute le script `postinstall` du `package.json`, s'il existe. Le nôtre lance `prisma generate` :
+
+```json
+// package.json (extrait)
+"postinstall": "pnpm prisma generate",
+```
+
+ Prisma lit `prisma/schema.prisma` et fabrique un client TypeScript qui connaît chacun des 47 modèles : chaque requête en base est typée, et une colonne mal nommée devient une erreur de compilation.
 
 ## La base, le stockage et la boîte mail
 
@@ -44,7 +69,15 @@ pnpm install
 pnpm dev:infra
 ```
 
-Ce script lance `docker compose -f docker-compose.dev.yml up -d`. Docker télécharge les images au premier lancement, puis démarre :
+Comme toutes les commandes `pnpm <nom>` de ce chapitre, c'est un **script** du `package.json` de la racine : un raccourci vers une commande plus longue, le même pour tout le monde.
+
+```json
+// package.json (extrait)
+"dev:infra": "docker compose -f docker-compose.dev.yml up -d",
+"dev:infra:stop": "docker compose -f docker-compose.dev.yml stop",
+```
+
+Docker télécharge les images au premier lancement, puis démarre :
 
 <DocsTable columnsJson='["Service","Rôle","Adresse sur notre machine"]' rowsJson='[["db","PostgreSQL 17, la base de données","127.0.0.1:5435 (utilisateur akfc, mot de passe akfc-dev, base akfc_db)"],["storage","MinIO, un stockage compatible S3 qui joue le rôle de Cloudflare R2","API : 127.0.0.1:9200 · console : http://localhost:9201 (akfc-dev / akfc-dev-secret)"],["storage-init","Crée le bucket akfc-dev au premier démarrage, puis s’arrête","—"],["mail","Mailpit : capture tous les e-mails envoyés par l’application","SMTP : 127.0.0.1:1026 · boîte web : http://localhost:8026"]]' />
 
@@ -69,7 +102,22 @@ cp .env.dev.example apps/web/.env.local
 
 Deux programmes différents lisent la configuration, chacun dans son dossier :
 
-- la CLI Prisma (migrations, seed) se lance à la racine du dépôt ; son fichier `prisma.config.ts` commence par `import 'dotenv/config'` et charge le `.env` **de la racine** ;
+- la CLI Prisma (migrations, seed) se lance à la racine du dépôt ; son fichier `prisma.config.ts` commence par `import 'dotenv/config'` et charge le `.env` **de la racine**, où il trouve l'adresse de la base :
+
+```ts
+// prisma.config.ts (extrait)
+import 'dotenv/config'
+import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    url: process.env.DATABASE_URL!,
+    directUrl: process.env.DIRECT_DATABASE_URL,
+  },
+```
+
+
 - Next.js s'exécute dans `apps/web` et charge les fichiers `.env*` **de son propre dossier**, `.env.local` en priorité.
 
 <Callout type="warning">
@@ -86,7 +134,12 @@ Les **migrations** de `prisma/migrations` décrivent, dans l'ordre, chaque trans
 pnpm db:migrate
 ```
 
-Ce script lance `prisma migrate deploy`, qui applique les migrations manquantes et n'en crée aucune. C'est la commande utilisée en production : notre base se construit exactement de la même façon que celle du serveur.
+```json
+// package.json (extrait)
+"db:migrate": "prisma migrate deploy",
+```
+
+`prisma migrate deploy` applique les migrations manquantes et n'en crée aucune. C'est la commande utilisée en production : notre base se construit exactement de la même façon que celle du serveur.
 
 `prisma migrate dev`, elle, compare le schéma à la base et **écrit une nouvelle migration**. Nous l'utiliserons dans la partie « Données », quand nous modifierons le schéma.
 
@@ -98,6 +151,13 @@ Le script de démonstration crée deux comptes, le groupe Administrateurs, la ca
 pnpm db:seed:dev
 ```
 
+```json
+// package.json (extrait)
+"db:seed:dev": "node --env-file=.env prisma/seed.sandbox.mjs",
+```
+
+Le script n'importe pas `dotenv` : c'est Node lui-même qui charge le `.env` de la racine, grâce à l'option `--env-file`.
+
 <DocsTable columnsJson='["Compte","Mot de passe","Rôle"]' rowsJson='[["admin@akfc.demo","sandbox-demo","administrateur (membre du groupe Administrateurs)"],["membre@akfc.demo","sandbox-demo","simple membre"]]' />
 
 C'est le script de la sandbox recruteurs, `prisma/seed.sandbox.mjs`. Il est **idempotent** : le relancer ne crée pas de doublons et remet les mots de passe à leur valeur de démonstration. Nous pouvons donc le relancer à tout moment pour retrouver un état connu. C'est la séparation des bases qui rend ce geste sans danger.
@@ -106,6 +166,18 @@ C'est le script de la sandbox recruteurs, `prisma/seed.sandbox.mjs`. Il est **id
 
 ```bash
 pnpm dev
+```
+
+Le script de la racine ne lance pas Next.js lui-même : il délègue au paquet `web` (`apps/web`), dont le propre `package.json` a son script `dev`. L'option `--filter` de pnpm désigne le paquet visé par son nom.
+
+```json
+// package.json (extrait)
+"dev": "pnpm --filter web dev",
+```
+
+```json
+// apps/web/package.json (extrait)
+"dev": "next dev",
 ```
 
 L'application répond sur `http://localhost:3000`. Au démarrage, `apps/web/src/instrumentation.ts` crée les dossiers racines de la bibliothèque, s'assure que le groupe Administrateurs existe, prépare l'espace de chaque groupe collaboratif et les catégories de tickets. Une base neuve est ainsi utilisable sans aucune manipulation.

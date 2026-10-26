@@ -1,10 +1,29 @@
 import fs from "node:fs"
 import path from "node:path"
 
+/** Racine du dépôt : le premier dossier parent qui contient pnpm-workspace.yaml. */
+function repoRoot(): string | null {
+  let dir = process.cwd()
+  for (let i = 0; i < 6; i += 1) {
+    if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) return dir
+    const parent = path.dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+  return null
+}
+
+/**
+ * Les chemins cités dans la doc partent de la racine du dépôt (`apps/web/…`, `package.json`). On
+ * les cherche donc d'abord là : sinon `package.json`, lu depuis apps/web où tourne Next, désignerait
+ * celui de apps/web au lieu de celui de la racine.
+ */
 function resolveProjectPath(filepath: string): string | null {
   const cwd = process.cwd()
+  const root = repoRoot()
 
   const candidates = [
+    ...(root ? [path.join(root, filepath)] : []),
     path.join(cwd, filepath),
     path.join(cwd, "..", filepath),
     path.join(cwd, "..", "..", filepath),
