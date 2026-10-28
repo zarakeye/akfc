@@ -1,0 +1,407 @@
+---
+title: "Protéger une procédure"
+description: "Authentification, administrateur, accès à un espace : des niveaux distincts. protectedProcedure et isAdmin dans la chaîne plutôt qu’une garde recopiée dans le corps, le passage des rôles et permissions aux groupes, le piège des lectures publiques (les brouillons), et les règles « pas soi-même » garanties côté serveur."
+section: "API"
+order: 6
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une procédure se compose dans un ordre précis : accès, entrée, intention, contexte, délégation. Le squelette tient ; reste à durcir chaque articulation.
+
+## Mouvement 3 — Durcir chaque étape
+
+Le squelette tient. Mais un squelette n’est pas encore un backend robuste. Chaque couche que nous avons posée doit maintenant être durcie — pas pour faire plus, mais pour faire mieux : plus précisément, plus lisiblement, plus fidèlement.
+
+Voici les quatre étapes que nous allons traverser :
+
+- **Ce chapitre** — Nous descendons dans la sécurité : distinguer authentification et autorisation, déclarer la garde d’administration dans la chaîne de la procédure, et comprendre pourquoi certaines vérifications ne sont pas de la sécurité mais des règles métier.
+- **Chapitre 7** — Nous plaçons Zod comme frontière du backend : valider une fois, au bon endroit, avec un contrat qui peut rester local à la procédure ou monter dans `packages/contracts`.
+- **Chapitre 8** — Nous apprenons à lever des `TRPCError` avec les bons codes, à laisser les erreurs remonter sans les transformer en résultats, et à décider de ce qu’un navigateur voit d’une erreur imprévue.
+- **Chapitre 9** — Nous maîtrisons la sortie : filtrer avec `select`, stabiliser avec `satisfies`, et décider où vit la projection.
+
+À la fin de ce mouvement, chaque articulation du flux sera explicite, contrôlée et documentée par le code lui-même.
+
+---
+
+## Bien construite ne veut pas dire bien protégée
+
+Nous savons maintenant fabriquer une procédure.
+
+Mais quelque chose résiste encore.
+
+Une procédure peut être parfaitement construite — contexte injecté, validation en place, délégation propre — et rester fondamentalement poreuse.
+
+Parce qu’une procédure bien construite n’est pas nécessairement une procédure bien protégée.
+
+---
+
+## 🧠 Là où une confusion s’installe facilement
+
+Si nous ne faisons pas attention, plusieurs notions commencent à se mélanger.
+
+L’utilisateur est-il connecté ?  
+Est-il administrateur ?  
+A-t-il accès à cet espace ?  
+Peut-il exécuter cette intention précise ?
+
+Tout finit par s’appeler “auth”.
+
+Et à ce moment-là, une chose imperceptible se produit.
+
+👉 Le système commence à perdre sa lisibilité.
+
+Pas dans le code exécuté — dans le code lu. Parce que quand un mot unique désigne trois concepts distincts, le lecteur doit recharger le contexte à chaque ligne pour deviner duquel on parle.
+
+---
+
+## 🔥 Reposer les niveaux clairement
+
+Nous avons en réalité trois couches distinctes, qui ne répondent pas à la même question :
+
+<DocsTable
+  title="Trois niveaux à ne pas confondre"
+  columnsJson='["Niveau","Question posée","Ce que cela change"]'
+  rowsJson='[["Authentification","Qui agit ?","Le contexte est garanti non-nul"],["Autorisation","A-t-il le droit ?","L’action est filtrée"],["Intention","Que veut-il faire ?","La procédure s’exécute"]]'
+/>
+
+Ces trois niveaux sont liés — mais ils ne se substituent pas l’un à l’autre.
+
+Dans le code, ces niveaux deviennent trois façons de déclarer une procédure. Chacune hérite de la précédente :
+
+<DocsTable columnsJson='["Procédure","Garde","Exemples"]' rowsJson='[["publicProcedure","aucune","contenus publics, connexion, mot de passe oublié"],["protectedProcedure","session requise (UNAUTHORIZED sinon)","tout ce qui concerne le compte connecté : son profil, ses espaces, ses dépôts"],["protectedProcedure.use(isAdmin)","administrateur requis (FORBIDDEN sinon)","la gestion du club : membres, groupes, contenus, réglages"]]' />
+
+La garde est **déclarée sur la procédure** : une procédure d’administration ne peut pas oublier de vérifier les droits, puisque la vérification fait partie de sa définition.
+
+👉 Nous n’exécutons jamais une intention sans savoir qui agit et avec quel droit.
+
+---
+
+## 1) `protectedProcedure` : un premier seuil, pas une protection complète
+
+À ce stade, il serait tentant de croire que `protectedProcedure` suffit.
+
+Lisons ce qu’il fait réellement dans `core.ts` :
+
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="71-86"
+  snippetHighlight="4-6"
+  snippetTitle="isAuthed : ce que protectedProcedure garantit vraiment"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce middleware fait deux choses précises.
+
+Il vérifie que `sessionClient.user` existe.  
+Et s’il existe, il **requalifie le contexte** : `ctx.sessionClient` devient `AuthenticatedSessionClient`, un type plus fort dans lequel `user` n’est plus nullable.
+
+---
+
+👉 Ce que cela change est immédiat.
+
+Dans toute procédure construite sur `protectedProcedure`, nous n’avons plus à écrire ceci :
+
+<CodeSnippet
+  language="ts"
+  title="Vérification redondante (anti-pattern)"
+  kind="anti-pattern"
+  codeJson='"if (!ctx.sessionClient?.user) {\n  throw new TRPCError({ code: \u0027UNAUTHORIZED\u0027 })\n}"'
+/>
+
+👉 TypeScript le sait déjà.  
+👉 Le contexte le garantit.
+
+---
+
+Mais nous ne savons toujours pas si cet utilisateur a le droit d’agir.
+
+<Callout type="info">
+`protectedProcedure` répond à "qui agit ?"
+
+Il ne répond pas encore à "a-t-il le droit d’agir ici ?"
+</Callout>
+
+---
+
+## 2) L’erreur naturelle : disperser la sécurité dans les procédures
+
+Sans structure claire, voilà ce qui finit par s’écrire. Ce n’est pas un exemple inventé : c’est le code qu’avaient, jusqu’à récemment, trois routeurs du projet (les réglages du site, les partenaires, la visibilité des pages).
+
+<CodeSnippet
+  language="ts"
+  title="Sécurité dispersée — l’ancien code des réglages du site"
+  kind="anti-pattern"
+  codeJson='"/** Réserve l\u0027action aux administrateurs (appartenance au groupe Administrateurs). */\nasync function assertAdmin(ctx: { prisma: PrismaClient; user: { id: string } }): Promise<void> {\n  if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) {\n    throw new TRPCError({ code: \"FORBIDDEN\", message: \"Réservé aux administrateurs.\" });\n  }\n}\n\nsaveContact: protectedProcedure.input(saveSiteContactSchema).mutation(async ({ ctx, input }) => {\n  await assertAdmin(ctx);\n  // …\n}),"'
+/>
+
+Ce code fonctionne.
+
+Mais en le lisant, quelque chose dérange.
+
+La vérification d’autorisation vit dans la logique d’exécution. On ne peut pas lire la chaîne de la procédure (`protectedProcedure.input(…)`) sans croire qu’elle est ouverte à tous les membres : il faut lire son corps pour découvrir qu’elle est réservée. Et si quinze procédures font la même chose, nous avons quinze endroits où la règle peut dériver silencieusement.
+
+Ici, elle avait déjà dérivé, de plusieurs façons :
+
+- **une requête de plus par appel** : `isAdminByGroup` interroge la base, alors que la session sait déjà si le membre est administrateur ;
+- **un autre message** (« Réservé aux administrateurs. ») que celui du reste de l’application ;
+- **un ordre inversé** : l’entrée était validée avant la vérification des droits. Un membre qui n’avait rien à faire là recevait, selon ce qu’il envoyait, une erreur de validation détaillée plutôt qu’un refus ;
+- **un outil à tromper** : la carte des procédures de cette documentation, qui lit l’accès de chaque procédure dans sa chaîne, avait dû apprendre à reconnaître cette ligne dans le corps.
+
+Et surtout, le risque de fond : le jour où quelqu’un ajoute une procédure à l’un de ces routeurs en oubliant la première ligne, elle est ouverte à tous les membres, et rien ne le signale.
+
+---
+
+💥 La sécurité est devenue un bruit diffus.
+
+Et le bruit diffus, en sécurité, est plus dangereux que l’absence totale. Parce qu’il donne l’illusion d’être protégé.
+
+---
+
+## 3) Le middleware : déplacer la sécurité au bon endroit
+
+Dans ce projet, la garde d’administration vit dans `middleware.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/middleware.ts"
+  filename="middleware.ts"
+  snippetRange="1-22"
+  snippetHighlight="4-21"
+  snippetTitle="isAdmin : la garde d’administration"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/trpc/middleware.ts"
+  filename="middleware.ts"
+  snippetRange="1-22"
+  title="Lecture guidée de la garde d’administration"
+  stepsJson='[{"title": "isAdmin est un middleware tRPC", "body": "t.middleware crée une étape qui s’exécute avant la procédure, avec le même contexte. Elle peut laisser passer (next) ou refuser (une TRPCError).", "scope": "1-22", "focus": "4-4"}, {"title": "Deux vérifications, deux codes", "body": "Sans membre connecté, la garde lève UNAUTHORIZED : « qui êtes-vous ? ». Avec un membre qui n’est pas administrateur, FORBIDDEN : « je sais qui vous êtes, et c’est non ». Le client peut ainsi proposer de se connecter dans le premier cas, et seulement expliquer dans le second.", "scope": "1-22", "focus": "7-19"}, {"title": "isAdmin ne coûte aucune requête", "body": "user.isAdmin a été calculé une fois, à la lecture de la session, à partir de l’appartenance au groupe Administrateurs (partie suivante). La garde lit un booléen déjà présent dans le contexte.", "scope": "1-22", "focus": "5-5"}, {"title": "next() : la procédure peut s’exécuter", "body": "Si les deux vérifications passent, la garde rend la main à l’étape suivante de la chaîne : la validation de l’entrée, puis la procédure elle-même.", "scope": "1-22", "focus": "21-21"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — des rôles et permissions aux groupes
+
+La première version de ce tutoriel montrait deux gardes : `requirePermission("manage_users")`, qui vérifiait une permission précise, et `isAdmin`, qui vérifiait le nom d’un rôle. Le schéma avait alors des modèles `Role`, `Permission` et une table `RolePermissions`. C’est le modèle **RBAC** (*role-based access control*) classique : un rôle regroupe des permissions, un membre a un rôle.
+
+Ce modèle a disparu, et la raison vaut d’être comprise. Dans un club, les permissions configurables n’étaient configurées par personne : il y avait des administrateurs, et des membres. La finesse dont le club avait besoin n’était pas « qui peut appeler quelle procédure », mais « qui peut lire ou écrire dans quel espace partagé ». Elle s’est donc déplacée vers les groupes : un membre appartient à des groupes, avec un niveau (lecteur ou éditeur) sur l’espace de chacun, et être administrateur, c’est appartenir au groupe marqué `isAdminGroup`. La partie « Données » raconte cette évolution du schéma.
+
+Il en reste, côté procédures, une garde unique et lisible (`isAdmin`), et des gardes d’espace qui travaillent sur l’entrée. Un backend n’a pas à offrir plus de finesse que son domaine n’en demande : chaque permission configurable est une règle de plus à tester, à documenter, et à ne pas oublier de configurer.
+
+---
+
+## 4) Ce que cela change dans le router
+
+Voyons maintenant comment cette garde s’applique dans des routeurs réels. Elle s’écrit de deux façons, équivalentes. Chaînée sur chaque procédure, comme dans le routeur des membres :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="46-53"
+  snippetHighlight="2-3"
+  snippetTitle="Chaînée : protectedProcedure.use(isAdmin)"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ou nommée une fois, en tête du fichier, quand tout le routeur est réservé, comme celui des groupes :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/router.ts"
+  filename="router.ts"
+  snippetRange="10-28"
+  snippetHighlight="1-1"
+  snippetTitle="Nommée : un adminProcedure pour tout le routeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce que nous lisons ici est très instructif.
+
+Dans les deux cas, la garde est dans la **chaîne** de la procédure. Il suffit de lire sa première ligne pour savoir qui peut l’appeler : `protectedProcedure.use(isAdmin)` ou `adminProcedure`, c’est réservé ; `protectedProcedure` seul, c’est ouvert aux membres connectés ; `publicProcedure`, à tout le monde.
+
+---
+
+<Callout type="tip">
+`protectedProcedure` → qui agit (une session)  
+`.use(isAdmin)` → avec quel droit (le groupe Administrateurs)
+
+La première ligne d’une procédure dit qui peut l’appeler. Le reste du code n’a plus à le deviner.
+</Callout>
+
+---
+
+## 5) Le piège des lectures publiques : l’histoire des brouillons
+
+Un même routeur mélange souvent les niveaux. Celui des disciplines expose ses lectures publiquement (le site public en a besoin) et réserve ses écritures aux administrateurs. C’est là que le projet a appris qu’une `publicProcedure` demande une attention particulière.
+
+Une discipline n’est publique qu’à partir de sa date de publication : sans date, c’est un brouillon ; avec une date future, une publication programmée. Les administrateurs préparent ainsi une nouvelle discipline à leur rythme, et la page publique `/disciplines/[slug]` répond 404 tant qu’elle n’est pas publiée.
+
+Pendant longtemps, pourtant, les brouillons n’étaient pas secrets. Les lectures `discipline.getAll` et `discipline.getById` étaient des `publicProcedure` sans filtre : le tableau de bord en avait besoin pour lister et éditer toutes les disciplines, et seuls les écrans d’administration les appelaient. La page publique, elle, filtrait correctement. Tout semblait juste.
+
+Mais une procédure publique n’est pas publique « pour les écrans qui l’utilisent » : elle l’est pour quiconque connaît son nom. N’importe quel visiteur pouvait ouvrir `/api/trpc/discipline.getAll` dans son navigateur et lire la liste complète, brouillons compris, avec leur nom, leur description et leur date de publication prévue. Aucune page n’affichait ces informations ; l’API les donnait.
+
+La règle de visibilité vit désormais **dans les procédures**, en un seul endroit :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="154-191"
+  snippetHighlight="8-11,33-37"
+  snippetTitle="visibleTo : la visibilité décidée dans le routeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Toutes les lectures du routeur (`getAll`, `getAllByCategory`, `getById`, `getBySlug`) appliquent ce filtre. Un administrateur voit tout ; un membre ou un visiteur ne voit que ce qui est publié, et un brouillon demandé par son identifiant répond « introuvable », exactement comme la page publique.
+
+Une seule lecture fait exception : `getAllForMenu`, qui alimente le menu « Nos disciplines », ne renvoie que les disciplines publiées, **même à un administrateur**. Elle suivait d’abord la règle commune, et un administrateur voyait ses brouillons dans le menu ; mais la page d’un brouillon répond 404 à tout le monde, et ces entrées menaient à des liens morts. Le menu est la navigation publique : il montre ce que voit le public.
+
+Les stages et les événements résolvent le même problème autrement : une lecture publique filtrée (`seminar.getAll`) et une lecture séparée réservée aux administrateurs (`seminar.getAllAdmin`). Pour les disciplines, le filtre selon l’appelant a été préféré parce que la même liste sert aussi aux formulaires des membres (le dépôt de fichiers propose les disciplines) : ils reçoivent désormais les seules disciplines publiées, sans qu’aucun écran ait eu à changer.
+
+<Callout type="warning">
+Une `publicProcedure` est une URL publique. La question à se poser n’est pas « quelle page l’utilise ? » mais « que verrait un inconnu qui l’appelle directement ? ». Ce qui ne doit pas sortir est filtré **dans la procédure** ; masquer une information dans l’interface ne la protège pas.
+</Callout>
+
+---
+
+## 6) Une règle métier qui ne ressemble pas à de la sécurité
+
+Il existe un cas particulièrement révélateur dans le routeur des membres.
+
+`user.delete` est réservée aux administrateurs. Mais elle contient aussi ceci :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="240-267"
+  snippetHighlight="5-10,21-26"
+  snippetTitle="Une règle métier au cœur de la protection"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un administrateur a le droit de supprimer le compte d’un membre.  
+Mais il ne peut pas supprimer le sien.
+
+---
+
+👉 Ce n’est pas une question de droit : il est administrateur.  
+👉 Ce n’est pas une question d’authentification.
+
+C’est une **règle métier** — une contrainte propre au domaine. Un administrateur qui supprimerait son compte perdrait l’accès, et si c’était le dernier, le club n’aurait plus personne pour gérer le site : il faudrait intervenir directement dans la base.
+
+Et elle vit ici, dans la procédure, parce que c’est exactement sa place. Le middleware ne peut pas la porter : il ne connaît pas l’entrée. C’est seulement quand la procédure reçoit `input.id` qu’elle peut le comparer avec `ctx.sessionClient.user.id` et détecter qu’il s’agit de soi.
+
+Cette règle a une histoire qui résume tout ce chapitre. Le tableau des membres désactivait déjà le bouton « Supprimer » sur la ligne de l’administrateur connecté, avec une explication au survol. L’interface était correcte. Mais la procédure, elle, acceptait : un appel direct à `/api/trpc/user.delete` avec son propre identifiant passait. La règle vivait dans l’écran, pas dans le serveur. Elle a été ajoutée à la procédure, et l’écran garde son bouton désactivé, pour le confort : il évite de proposer une action vouée à l’échec.
+
+Le même raisonnement a fait apparaître une seconde porte : retirer quelqu’un du groupe Administrateurs. Un administrateur pouvait s’en retirer lui-même, avec les mêmes conséquences. Le routeur des groupes refuse désormais ce cas précis, et seulement lui :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/router.ts"
+  filename="router.ts"
+  snippetRange="244-268"
+  snippetHighlight="9-20"
+  snippetTitle="Ne pas se retirer soi-même du groupe Administrateurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un autre administrateur peut toujours le retirer : la règle protège contre la perte d’accès par erreur, pas contre une décision collective.
+
+---
+
+<Callout type="info">
+La sécurité filtre les accès.  
+Les règles métier filtrent les cas limites.
+
+Ces deux niveaux sont complémentaires — mais ils ne doivent pas être confondus. Et ni l’un ni l’autre ne peut vivre seulement dans l’interface.
+</Callout>
+
+---
+
+## 🔥 Le vrai bénéfice
+
+Le gain n’est pas seulement la sécurité.
+
+C’est la **lisibilité du contrat**.
+
+Quand nous lisons une procédure protégée correctement :
+
+<CodeSnippet
+  language="ts"
+  title="Procédure protégée, lisible d’un coup d’œil"
+  kind="pattern"
+  codeJson='"getAll: protectedProcedure\n  .use(isAdmin)\n  .query(async ({ ctx }) => {\n    return ctx.prisma.user.findMany({ omit: { password: true }, /* … */ })\n  })"'
+/>
+
+Nous savons immédiatement :
+
+- qui peut entrer → `protectedProcedure`
+- avec quel droit → `.use(isAdmin)`
+- ce qui est fait → `findMany`, sans l’empreinte des mots de passe
+
+---
+
+👉 Trois lignes. Trois questions répondues.
+
+Et c’est cette lisibilité qui fait la différence quand un développeur arrive sur le projet. Il n’a pas besoin de chercher la logique de sécurité ailleurs. Elle est là, compactée en une ligne, au sommet de la procédure.
+
+---
+
+## 🧠 Le flux devient stable
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard (.use) | règle métier | service | Prisma | réponse"
+/>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne dispersons plus la sécurité dans les procédures.
+
+Nous la **composons en amont**, là où elle devient visible.
+
+<Callout type="tip">
+Une procédure bien protégée dit en une lecture :
+— qui peut entrer  
+— avec quel droit  
+— et ce qu’elle fait
+
+Le reste du code n’a plus à le deviner.
+</Callout>
+
+---
+
+La suite est naturelle.
+
+Nous savons construire une procédure.  
+Nous savons la protéger.
+
+👉 Il reste à garantir que ce qui entre est toujours valide.
+
+---
+
+👉 **Où nous en sommes :** la sécurité a trouvé sa place — dans des middlewares (`protectedProcedure`, `isAdmin`) qui vérifient une fois, au bon endroit, avec un type requalifié pour la suite. Et nous avons distingué ce qui est de la sécurité de ce qui est une règle métier. Reste à verrouiller l’autre frontière : l’entrée elle-même, avant que quoi que ce soit ne la touche.
+
+## À suivre
+
+Nous savons qui peut appeler une procédure, et à quelles conditions. Reste la seconde frontière : ce qui entre.
+
+<Callout type="tip">
+**Chapitre suivant : valider l’entrée.** Zod comme frontière formelle, le schéma inline et le contrat partagé avec le front, et ce qui se passe quand la frontière est laissée ouverte.
+</Callout>

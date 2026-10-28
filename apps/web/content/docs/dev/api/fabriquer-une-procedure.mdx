@@ -1,0 +1,357 @@
+---
+title: "Fabriquer une procédure"
+description: "Ce qui fait d’une fonction une procédure : la forme canonique, l’ordre de construction (accès, entrée, intention, contexte, délégation), query ou mutation, et trois exemples réels du projet — la connexion, la présentation d’un instructeur, la création d’une discipline."
+section: "API"
+order: 5
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une procédure porte l’intention, une garde sécurise l’accès, un service porte la logique partagée, Prisma exécute. tRPC orchestre ; il ne remplace pas le backend.
+
+Jusqu’ici, nous avons compris le système de l’extérieur :
+
+- la fracture créée par le **JSON**
+- la proximité réelle offerte par **App Router**
+- le rôle du **contexte**
+- la distinction entre **intention** et **environnement**
+- la place du **router**, des **services**, des **guards** et de **Prisma**
+
+Il manque maintenant une pièce très concrète :
+
+👉 **comment fabriquons-nous réellement une procédure tRPC ?**
+
+Pas une procédure abstraite.  
+Pas une “fonction qui ressemble à tRPC”.  
+
+Une vraie procédure, pensée correctement dans un backend réel.
+
+---
+
+## Une procédure n’est pas juste une fonction
+
+C’est le premier réflexe à corriger.
+
+Nous pourrions croire qu’une procédure, c’est simplement :
+
+<CodeSnippet
+  language="ts"
+  title="Vision trop simpliste"
+  kind="anti-pattern"
+  codeJson='"const createUser = (input) => {\n  return prisma.user.create({ data: input })\n}"'
+/>
+
+Ce n’est pas complètement faux.
+
+Mais ce n’est pas encore une **procédure tRPC**.
+
+Une procédure tRPC, dans ce projet, est en réalité une composition de couches :
+
+- un **niveau d’accès**
+- une **validation d’entrée**
+- une **forme d’intention** (`query` ou `mutation`)
+- un **contexte déjà injecté**
+- une **délégation vers le métier**
+
+💡 Autrement dit, nous ne “déclarons” pas juste une procédure.
+
+👉 nous **la construisons**.
+
+Et cette construction suit un ordre. Pas un ordre arbitraire de style d’écriture, mais un ordre logique qui reflète la hiérarchie des responsabilités dans le système.
+
+---
+
+## La forme canonique d’une procédure
+
+Si nous réduisons la structure au squelette essentiel :
+
+<CodeSnippet
+  language="ts"
+  title="Squelette d’une procédure tRPC"
+  kind="educational"
+  codeJson='"protectedProcedure\n  .input(z.object({\n    email: z.string().email(),\n    password: z.string().min(12),\n  }))\n  .mutation(async ({ ctx, input }) => {\n    return userService.createUser(ctx, input)\n  })"'
+/>
+
+---
+
+🧠 Ce squelette dit déjà presque tout :
+
+- `protectedProcedure` → qui a le droit d’entrer ?
+- `.input(...)` → qu’a-t-on le droit de fournir ?
+- `.mutation(...)` → quelle intention exécute-t-on ?
+- `ctx` → dans quel environnement cela s’exécute-t-il ?
+- `userService.createUser(...)` → où vit réellement la logique métier ?
+
+Chaque partie répond à une question distincte. Et chaque question doit être répondue avant la suivante. C’est cette logique qui dicte l’ordre d’écriture.
+
+---
+
+## Une procédure se construit dans un ordre précis
+
+<DocsTable
+  title="Ordre de construction d’une procédure"
+  columnsJson='["Étape","Question traitée","Couche concernée"]'
+  rowsJson='[["1","Qui peut entrer ?","publicProcedure / protectedProcedure"],["2","Quelle entrée est acceptée ?",".input(zodSchema)"],["3","Que veut-on faire ?",".query(...) ou .mutation(...)"],["4","Dans quel environnement ?","ctx injecté par tRPC"],["5","Où vit la logique ?","service métier"]]'
+/>
+
+👉 Cet ordre matérialise une **hiérarchie de responsabilités**.
+
+Et cette hiérarchie a une propriété importante : **elle va du moins permissif au plus permissif**. Nous commençons par refuser tout le monde (choix du niveau d’accès), puis nous refusons les mauvaises entrées (validation), puis nous acceptons l’intention, puis nous exécutons. À chaque étape, nous pouvons encore dire non. Une fois dans le service, nous disons oui.
+
+---
+
+## Query vs Mutation — une distinction qui compte
+
+Avant d’entrer dans les exemples, il faut clarifier le choix entre `.query(...)` et `.mutation(...)`.
+
+La différence semble minime, mais elle porte une sémantique réelle :
+
+- `.query(...)` → **lecture**, idempotente, sans effet de bord. Peut être mise en cache.  
+- `.mutation(...)` → **écriture**, non idempotente, change l’état du système. Ne doit jamais être mise en cache.
+
+Côté HTTP, cela se traduit aussi : les queries passent en GET, les mutations en POST. Mais ce n’est qu’une conséquence. La distinction importante est sémantique : *est-ce que cette procédure modifie quelque chose ?*
+
+---
+
+
+## Premier exemple : une procédure publique
+
+Pour bien sentir cette construction, nous commençons par une procédure publique.
+
+Le bon candidat, c’est le router d’authentification. Il montre très bien qu’une procédure n’a pas besoin d’être protégée pour être structurée.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="28-52"
+  snippetHighlight="1-3"
+  snippetTitle="Une procédure publique bien construite"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="28-52"
+  title="Anatomie d’une procédure publique"
+  stepsJson='[{"title": "publicProcedure : un choix explicite, pas un défaut", "body": "Nous ne commençons pas par protectedProcedure. Ce choix est délibéré : un visiteur non connecté doit pouvoir se connecter. Écrire publicProcedure est une façon de déclarer cette décision explicitement.", "scope": "28-52", "focus": "28-28"}, {"title": ".input valide la forme AVANT toute exécution", "body": "loginSchema est évalué par tRPC avant même que .mutation ne soit appelée. Adresse vide ou invalide, mot de passe absent ou trop court : tRPC lève BAD_REQUEST, et le code métier ne s’exécute jamais sur des données invalides.", "scope": "28-52", "focus": "29-30"}, {"title": ".mutation reçoit une entrée typée", "body": "Grâce à Zod, input est strictement typé : { email: string, password: string }. TypeScript le sait, l’autocomplétion fonctionne, aucun cast n’est nécessaire.", "scope": "28-52", "focus": "31-32"}, {"title": "La procédure délègue immédiatement au service", "body": "loginService fait le vrai travail : retrouver le membre, vérifier l’empreinte, créer la session. Le routeur ne duplique pas cette logique : il l’invoque.", "scope": "28-52", "focus": "34-39"}, {"title": "Le try/catch ne garde qu’un seul cas", "body": "INVALID_CREDENTIALS est transformé en résultat lisible, parce que le formulaire sait quoi en faire. Tout le reste est relancé : une panne reste une panne (chapitre 8).", "scope": "28-52", "focus": "40-51"}]'
+/>
+
+---
+
+<Callout type="info">
+Une procédure bien construite ne commence jamais par Prisma.
+
+Elle commence par un **contrat d’accès**, un **contrat d’entrée**, puis une **intention**.
+</Callout>
+
+---
+
+## Deuxième exemple : une procédure protégée
+
+Maintenant, nous ajoutons une contrainte supplémentaire.
+
+La procédure ne doit plus seulement être valide. Elle doit aussi être réservée à un utilisateur authentifié.
+
+C’est ici que `protectedProcedure` change vraiment de dimension.
+
+Le bon candidat est la procédure par laquelle un instructeur enregistre sa présentation, celle qui s’affiche sur la page publique des instructeurs. (La modification du profil, elle, passe par une server action : la partie « Formulaires » l’a étudiée.)
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="347-387"
+  snippetHighlight="11-21"
+  snippetTitle="Une procédure protégée : saveMyInstructorBio"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de saveMyInstructorBio
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="347-387"
+  title="Une procédure où le contexte est réellement exploité"
+  stepsJson='[{"title": "protectedProcedure garantit un membre authentifié", "body": "Contrairement à login, cette procédure exige une session. protectedProcedure bloque les visiteurs et requalifie le contexte : ctx.sessionClient.user devient non nullable.", "scope": "357-387", "focus": "357-357"}, {"title": "L’entrée suit le contrat du constructeur de pages", "body": "bio est validé par pageContentSchemaV1, le schéma de tout contenu du constructeur, défini dans packages/contracts. Un document invalide est refusé avant toute écriture. Le chapitre 7 raconte ce que cette ligne a remplacé.", "scope": "357-387", "focus": "358-365"}, {"title": "userId vient du contexte, pas de l’entrée", "body": "C’est un détail de sécurité crucial. L’entrée ne dit pas quel membre modifier : cela permettrait de réécrire la présentation de quelqu’un d’autre. L’identifiant est lu dans ctx.sessionClient.user.id, garanti par protectedProcedure. Un membre ne peut modifier que la sienne.", "scope": "357-387", "focus": "366-367"}, {"title": "Une écriture et sa conséquence, ensemble", "body": "La présentation et la liste des médias qu’elle utilise sont enregistrées dans la même transaction : sans ce lien, les images de la bio ne seraient ni protégées contre la suppression, ni servies aux visiteurs.", "scope": "357-387", "focus": "368-385"}]'
+/>
+
+---
+
+## Ce que `protectedProcedure` change réellement
+
+Le gain n’est pas seulement :
+
+> “il faut être connecté”
+
+Le gain est plus profond.
+
+👉 La procédure est construite sur un **contexte requalifié**.  
+👉 Le backend n’a plus à se demander à chaque ligne si l’utilisateur existe.
+
+Cela change immédiatement la lecture du code.
+
+Nous passons de :
+
+- logique défensive (`if (!ctx.user) throw...`)  
+- vérifications répétées  
+- accès dispersés  
+
+à :
+
+- hypothèses plus fortes  
+- code plus lisible  
+- responsabilité mieux répartie  
+
+---
+
+## Authentification, administrateur, accès à un espace : trois niveaux différents
+
+Il faut être très net sur ces termes. Ils sont souvent confondus, et cette confusion mène à des backends fragiles.
+
+<DocsTable
+  title="Les niveaux à ne pas confondre"
+  columnsJson='["Niveau","Question posée","Où cela pèse sur la procédure ?"]'
+  rowsJson='[["Authentification","Qui es-tu ?","protectedProcedure (session requise)"],["Administrateur","Appartiens-tu au groupe Administrateurs ?",".use(isAdmin), dans la chaîne"],["Accès à un espace","Quel est ton niveau sur cet espace (lecteur, éditeur) ?","une garde dans la procédure, qui a besoin de l’entrée (le chemin visé)"],["Procédure","Quelle intention veux-tu exécuter ?","query / mutation"]]'
+/>
+
+🧠 Si nous mélangeons ces niveaux, le backend devient vite confus. Si nous les séparons, la procédure devient au contraire très lisible :
+
+- d’abord nous savons **qui** agit (authentification)  
+- ensuite nous savons **s’il a le droit** (administrateur, ou niveau d’accès à l’espace visé)  
+- enfin nous exécutons **ce qu’il veut faire** (intention)
+
+Le troisième niveau ne peut pas vivre dans la chaîne : pour savoir si un membre peut écrire dans un dossier, il faut connaître le dossier, c’est-à-dire l’entrée. Les procédures du finder commencent donc par une garde qui reçoit le chemin (`assertCanReadPath`, `assertCanTrashPaths`…) ; la partie « Stockage et médias » les détaille.
+
+---
+
+## Troisième exemple : une écriture complète
+
+Les deux exemples précédents sont courts. Une écriture réelle accumule plus d’étapes ; `discipline.create`, qu’un administrateur appelle depuis le tableau de bord, les montre toutes.
+
+**1. L’entrée est validée par Zod.** Le schéma décrit chaque champ, et tRPC refuse la requête avant même d’exécuter la procédure si l’entrée ne le respecte pas. Le type TypeScript de l’entrée est déduit du schéma : une seule déclaration sert de validation et de type.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="80-115"
+  snippetHighlight="1-4"
+  snippetTitle="Le schéma d’entrée de discipline.create"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+**2. Les références sont vérifiées.** Une catégorie, un instructeur, une famille ou une origine inexistants produisent une erreur `BAD_REQUEST` explicite, plutôt qu’une violation de clé étrangère incompréhensible. C’est le service `assertDisciplineReferences` du chapitre précédent.
+
+**3. L’écriture et ses conséquences forment une transaction.** Créer une discipline, c’est aussi enregistrer les médias que sa description utilise, pour que la route publique accepte de les servir et que personne ne puisse les supprimer tant qu’ils sont affichés :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="257-319"
+  snippetHighlight="1-5"
+  snippetTitle="Écrire la discipline et ses médias, ou rien"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Si l’enregistrement des médias échoue (par exemple parce que la description utilise un média encore en attente de validation), la création est annulée : il n’existe jamais de discipline enregistrée dont les médias ne le seraient pas.
+
+**4. Les erreurs de la base deviennent des erreurs lisibles.** L’unicité du slug et celle du nom dans une catégorie sont garanties par la base. Plutôt que de vérifier avant d’écrire, ce qui laisserait une fenêtre où deux requêtes simultanées passeraient toutes les deux, la procédure écrit, et traduit l’erreur Prisma `P2002` en `CONFLICT` en précisant quelle contrainte a sauté. Le chapitre 8 reviendra sur ce choix, que le projet n’avait pas fait partout.
+
+Quatre étapes, et pourtant la procédure reste lisible : chacune occupe un bloc, dans l’ordre où une requête les traverse.
+
+---
+
+## Le vrai but : alléger la procédure, pas la gonfler
+
+Nous pourrions être tentés d’empiler toujours plus dans la procédure : validation, sécurité, logique métier, Prisma, gestion d’erreur, mapping. 
+
+Mais une bonne procédure ne doit pas tout absorber.
+
+👉 Elle doit surtout **orchestrer**.
+
+C’est pour cela que, dans un backend propre :
+
+- la validation est décrite à l’entrée (Zod)  
+- l’accès est centralisé par middleware / guard  
+- la logique métier est déplacée dans un service  
+- Prisma reste le dernier maillon  
+
+<Callout type="tip">
+Fabriquer une procédure, ce n’est pas écrire toute la logique au même endroit.
+
+C’est composer proprement :
+👉 accès → validation → intention → contexte → délégation métier
+</Callout>
+
+---
+
+## Le modèle final d’une bonne procédure
+
+À ce stade, nous pouvons résumer la forme canonique d’une procédure tRPC dans ce projet :
+
+<ArchitectureDiagram
+  steps="Niveau d’accès | Validation Zod | Intention (query/mutation) | ctx injecté | service métier | Prisma"
+/>
+
+Et cette fois, la lecture devient très stable.
+
+Une bonne procédure :
+
+- ne recrée pas le contexte  
+- ne disperse pas la sécurité  
+- ne fait pas porter toute la logique au router  
+- ne commence pas par Prisma  
+
+👉 elle reçoit un cadre, affirme une intention, puis délègue correctement.
+
+---
+
+## Ce que la suite doit maintenant approfondir
+
+Nous savons désormais **fabriquer** une procédure.
+
+La suite logique consiste à descendre plus profondément dans chacune des couches qui la composent :
+
+- **protéger** une procédure (session, groupe Administrateurs, règles métier)
+- **valider** l’entrée avec Zod sans bruit inutile
+- **gérer** les erreurs sans casser la lisibilité du flux
+- **mapper** correctement les sorties vers des DTO stables
+
+🚀 Autrement dit : nous avons le squelette.
+
+La suite va montrer comment le rendre vraiment robuste.
+
+---
+
+👉 **Où nous en sommes :** nous savons désormais composer une procédure — intention d’abord, validation, contexte, sécurité, délégation au service, retour. Le squelette tient. Reste à durcir chaque articulation, une par une, pour qu’il résiste à la vie réelle d’un backend en production.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+Nous avons pris les pièces séparées du Mouvement 1 et nous les avons articulées. Trois idées en sont ressorties :
+
+- **Le router orchestre, mais ne fait pas.** Une procédure nomme une intention, vérifie son cadre, et délègue. Si nous voyons de la logique métier lourde à l’intérieur d’une procédure, c’est qu’elle est au mauvais endroit.
+- **Les services portent la logique, isolément de tRPC.** Ils ne connaissent ni les routes, ni les cookies, ni le protocole — ils travaillent sur un `ctx` et des données déjà validées. C’est cette ignorance qui les rend testables, réutilisables, et stables dans le temps.
+- **Une procédure se compose dans un ordre précis.** Guard, validation, règle métier, service, réponse — chaque étape apparaît une fois, à sa place, et peut être lue indépendamment des autres. C’est cet ordre qui transforme une procédure de « bloc de code » en « document lisible ».
+
+## À suivre
+
+Le squelette tient, et le Mouvement 2 s’achève. Mais un squelette n’est pas encore un backend robuste : chaque articulation doit maintenant être durcie, une par une, en commençant par la plus sensible.
+
+<Callout type="tip">
+**Chapitre suivant : protéger une procédure.** Authentification et autorisation, la garde `isAdmin`, une sécurité que le projet avait dispersée, l’histoire des brouillons visibles par tous, et des règles métier qui ne vivaient que dans l’interface.
+</Callout>

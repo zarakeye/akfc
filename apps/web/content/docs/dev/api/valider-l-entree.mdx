@@ -1,0 +1,312 @@
+---
+title: "Valider l’entrée"
+description: "Zod comme frontière formelle du backend : l’inférence de types, la validation à l’entrée de la procédure, le schéma inline et le contrat partagé (les règles d’authentification), une frontière laissée ouverte (z.any()) et sa correction, et qui valide quoi."
+section: "API"
+order: 7
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La sécurité est dans la chaîne des procédures (`protectedProcedure`, `isAdmin`), et les règles métier qui dépendent de l’entrée vivent dans la procédure, jamais seulement dans l’interface.
+
+Nous avons structuré le flux, le contexte, la sécurité.
+
+Mais une faille potentielle subsiste.
+
+Une faille silencieuse — parce qu’elle n’empêche pas le code de tourner. Elle le laisse tourner sur des données incertaines.
+
+---
+
+## 🧠 La question que nous devons maintenant poser
+
+Que se passe-t-il si l’entrée est invalide ?
+
+---
+
+Sans cadre clair, plusieurs dérives apparaissent naturellement :
+
+- la validation vit côté client, et le serveur fait confiance  
+- la validation est dispersée dans les services, couche par couche  
+- chaque procédure vérifie les champs à sa façon  
+- des données incohérentes finissent par atteindre Prisma  
+
+---
+
+💥 Et à ce moment-là, le backend redevient fragile.
+
+Non pas parce qu’il casse — mais parce qu’il accepte des états qu’il ne devrait pas accepter. Et dans un backend, accepter un état invalide silencieusement, c’est créer une bombe à retardement. Nous ne le saurons que plus tard, quand quelque chose d’autre échouera parce qu’il compte sur une invariante que nous n’avons pas garantie.
+
+---
+
+## 🔥 Le principe fondamental
+
+Une procédure ne devrait jamais recevoir une donnée incertaine.
+
+Elle devrait recevoir :
+
+👉 une donnée **déjà validée, fiable, exploitable**
+
+---
+
+C’est exactement ici que **Zod** entre en jeu.
+
+Pas comme une librairie de validation parmi d’autres.  
+Mais comme la **frontière formelle** entre ce qui vient du monde extérieur et ce qui circule dans le système.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi Zod et pas autre chose
+
+Zod n’est pas la seule librairie de validation. Il existe Yup, Joi, Valibot, ArkType, et d’autres. Pourquoi Zod dans ce projet ?
+
+Une raison principale : **l’inférence de types**.
+
+Avec Zod, nous écrivons un schéma. Et de ce schéma, nous pouvons dériver automatiquement le type TypeScript correspondant :
+
+```ts
+const schema = z.object({ email: z.string().email() });
+type Input = z.infer<typeof schema>;
+// Input = { email: string }
+```
+
+Cette inférence est la pierre angulaire du typage continu. Quand une procédure déclare `.input(schema)`, tRPC infère automatiquement le type de `input` dans la fonction de mutation. Aucun type n’est écrit à la main. Aucune divergence n’est possible entre le schéma de validation et le type utilisé.
+
+Et cette inférence voyage jusqu’au client : quand le frontend appelle `trpc.user.create({...})`, TypeScript sait exactement ce qui est attendu, parce qu’il remonte jusqu’au schéma Zod déclaré côté serveur.
+
+---
+
+## Où vit la validation ?
+
+C’est la vraie question.
+
+Nous pourrions être tentés de valider dans le frontend, dans le service, ou un peu partout.
+
+Dans une architecture propre :
+
+👉 la validation vit **à l’entrée de la procédure**, dans `.input(...)`
+
+Et elle produit deux effets simultanés.
+
+Si la donnée est invalide → une erreur est levée immédiatement, avant toute logique.  
+Si la donnée est valide → `input` devient un type TypeScript garanti.
+
+---
+
+## Deux cas à distinguer : inline et contrat partagé
+
+Dans ce projet, les schémas Zod vivent à deux endroits différents — et ce n’est pas par hasard.
+
+---
+
+
+### Le schéma inline : décrit à la procédure
+
+Certaines validations appartiennent directement à la procédure qui les utilise.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="116-126"
+  snippetHighlight="3-10"
+  snippetTitle="Validation inline dans la procédure user.create"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Le schéma décrit exactement ce que cette procédure attend.
+
+Pas plus.  
+Pas moins.
+
+👉 Il est à sa place parce qu’il ne sert qu’ici.
+
+C’est un principe général : tant qu’un artefact n’est utilisé qu’à un seul endroit, le garder à côté de son utilisateur est la décision la plus simple. La question du partage ne se pose que lorsque l’artefact doit être utilisé à plusieurs endroits.
+
+---
+
+### Le contrat partagé : défini en dehors du router
+
+D’autres schémas ont une portée plus large.
+
+Les règles de connexion et de mot de passe sont définies dans `packages/contracts`, une seule fois :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetRange="1-59"
+  snippetHighlight="11-33"
+  snippetTitle="Les règles d’authentification, partagées par le front et le back"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — pourquoi ce schéma mérite d’être partagé
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetRange="1-59"
+  title="Un contrat qui traverse la frontière frontend / backend"
+  stepsJson='[{"title": "Le fichier dit d’emblée qu’il est la source unique", "body": "Le commentaire de tête nomme les deux côtés qui l’importent : les procédures, qui font foi, et les formulaires, qui affichent la même règle avant l’envoi. En plaçant ces schémas dans packages/contracts, nous disons qu’ils appartiennent au système, pas à une couche.", "scope": "1-9", "focus": "3-9"}, {"title": "Une constante plutôt qu’un nombre répété", "body": "PASSWORD_MIN_LENGTH sert à la règle et aux textes d’aide des formulaires. Changer la longueur minimale, c’est changer une ligne : la règle et le texte qui l’annonce ne peuvent plus diverger.", "scope": "11-12", "focus": "11-12"}, {"title": "Des règles composées, avec leurs messages", "body": "emailSchema nettoie les espaces, exige une saisie, puis une adresse valide, chaque étape avec son message en français. Les messages sont écrits ici, une seule fois, et remontent tels quels à l’utilisateur, que l’erreur soit détectée par le formulaire ou par la procédure.", "scope": "14-24", "focus": "15-19"}, {"title": "pipe : un message pour le vide, puis la règle commune", "body": "Pour la connexion, un mot de passe vide reçoit « Saisissez votre mot de passe. » avant la règle de longueur. Zod renvoie les problèmes dans l’ordre des vérifications, et le formulaire affiche le premier.", "scope": "26-33", "focus": "30-33"}, {"title": "Les types sont inférés, pas dupliqués", "body": "z.infer produit le type TypeScript correspondant à chaque schéma. Aucun type n’est écrit à la main : le schéma de validation et le type sont indissociables par construction.", "scope": "35-59", "focus": "35-35"}]'
+/>
+
+---
+
+Ce fichier est ensuite importé des deux côtés :
+
+- dans les procédures `auth.login`, `auth.requestPasswordReset`, `auth.resetPassword` et `auth.changePassword`, côté backend (`.input(loginSchema)`…) ;
+- dans les formulaires de connexion, de mot de passe oublié et de réinitialisation, côté frontend, qui valident avec le même schéma avant l’envoi (`loginSchema.safeParse(…)`).
+
+---
+
+👉 Le même schéma.  
+👉 Le même contrat.  
+👉 Le même type TypeScript.  
+👉 Le même message, au mot près, qu’il soit affiché par le formulaire ou renvoyé par la procédure.
+
+Ce n’était pas le cas jusqu’à récemment : la règle des douze caractères et celle de l’adresse e-mail étaient réécrites dans six fichiers (le formulaire de connexion, trois procédures, deux pages), et un schéma prévu pour être partagé existait déjà… sans être importé nulle part. La partie « Formulaires » raconte comment ces règles ont été rassemblées. Un contrat partagé n’existe vraiment que s’il est **importé** des deux côtés ; un schéma « partagé » que le formulaire n’utilise pas ne protège de rien.
+
+---
+
+<Callout type="info">
+Un schéma inline protège une procédure.  
+Un schéma partagé protège un système entier contre la divergence.
+
+Le choix entre les deux n’est pas esthétique — il est architectural.
+</Callout>
+
+Dans le projet, quelques schémas ont ainsi monté dans `packages/contracts` :
+
+<DocsTable columnsJson='["Schéma","Utilisé par"]' rowsJson='[["contracts/src/auth/auth.schema.ts","les procédures auth.* et les formulaires de connexion et de mot de passe"],["contracts/src/storage/upload-destination.schema.ts","les procédures d’envoi de fichiers et le formulaire de dépôt"],["contracts/src/page (pageContentSchemaV1)","toutes les procédures qui enregistrent un contenu du constructeur de pages, et l’éditeur"],["contracts/src/forms/updateMeForm.schema.ts","la server action du profil et son formulaire (partie « Formulaires »)"]]' />
+
+---
+
+## Ce que la validation change dans le service
+
+C’est ici que l’effet devient concret, et le projet en a un exemple qui montre aussi ce qui se passe **sans** cette frontière.
+
+La présentation d’un instructeur (chapitre 5) est un document du constructeur de pages. Jusqu’à récemment, la procédure l’acceptait ainsi :
+
+<CodeSnippet
+  language="ts"
+  title="Avant : une frontière ouverte"
+  kind="anti-pattern"
+  codeJson='"saveMyInstructorBio: protectedProcedure\n  .input(z.object({\n    bio: z.any().nullable(),\n    order: z.number().int().nullable().optional(),\n  }))\n  .mutation(async ({ ctx, input }) => {\n    // … enregistre input.bio tel quel, puis :\n    newContent: input.bio ? parsePageContentV1(input.bio) : null,\n  })"'
+/>
+
+`z.any()` ne valide rien : n’importe quel JSON passait l’entrée. La procédure essayait ensuite de le lire avec `parsePageContentV1`, une fonction écrite pour relire **la base** sans planter : quand le contenu est invalide, elle renvoie un document vide. Résultat, pour une entrée invalide : la procédure enregistrait le JSON tel quel dans `instructorBio`, recensait zéro média, et répondait « succès ». Rien ne signalait le problème ; la page publique, qui relit avec la même fonction, affichait une présentation vide.
+
+La correction a consisté à placer le contrat là où il doit être :
+
+<CodeSnippet
+  language="ts"
+  title="Après : le contrat à l’entrée"
+  kind="pattern"
+  codeJson='".input(z.object({\n  bio: pageContentSchemaV1.nullable(),\n  order: z.number().int().nullable().optional(),\n}))\n// …\nnewContent: input.bio,"'
+/>
+
+Désormais, un document invalide est refusé à l’entrée (`BAD_REQUEST`), avant toute écriture. `input.bio` est typé comme un `PageContentV1` : la procédure l’enregistre et le passe à `syncPageMediaReferences` sans le relire. Le service n’a plus rien à vérifier.
+
+---
+
+👉 C’est ce que la validation en entrée permet : **écrire un service qui fait confiance à ce qu’il reçoit**.
+
+Et cette confiance n’est pas de la naïveté. Elle repose sur une garantie architecturale explicite : toute donnée qui atteint le service est passée par `.input(schema)`, donc toute donnée qui atteint le service est valide. Si un jour cette garantie devient fausse, ce sera qu’un développeur a enlevé le `.input(...)` — ou l’a écrit avec `z.any()` — ce qui est visible en une lecture.
+
+<Callout type="warning">
+Deux fonctions se ressemblent et ne font pas le même travail. `pageContentSchemaV1` (un schéma) **refuse** ce qui est invalide : c’est l’outil de l’entrée. `parsePageContentV1` (une fonction) **remplace** ce qui est invalide par un document vide : c’est l’outil de la lecture, pour qu’une ligne abîmée en base n’empêche pas une page de s’afficher. Utiliser la seconde à l’entrée transforme une erreur en succès silencieux.
+</Callout>
+
+---
+
+## ⚠️ Le piège classique
+
+Quand la validation est absente ou déplacée, nous finissons par écrire ceci dans le service :
+
+<CodeSnippet
+  language="ts"
+  title="Validation déplacée dans le service (anti-pattern)"
+  kind="anti-pattern"
+  codeJson='"if (!input.email || !input.email.includes(\"@\")) {\n  throw new Error(\"Adresse e-mail invalide\")\n}\nif (!input.password || input.password.length < 12) {\n  throw new Error(\"Mot de passe trop court\")\n}"'
+/>
+
+---
+
+Cela fonctionne.
+
+Mais cela signifie que :
+
+- le service doute de ce qu’il reçoit  
+- la logique métier se mêle à la validation  
+- les messages d’erreur sont définis au mauvais endroit  
+- la responsabilité est floue  
+
+---
+
+## 🔥 Le bon découpage
+
+<DocsTable
+  title="Qui valide quoi ?"
+  columnsJson='["Couche","Responsabilité"]'
+  rowsJson='[["Frontend","UX — retour immédiat à l’utilisateur"],[".input(zodSchema)","Frontière officielle — données fiables à partir d’ici"],["Service","Règles métier — jamais de vérification de forme"],["Prisma","Contraintes base — dernier rempart structurel"]]'
+/>
+
+---
+
+## 🧠 Le flux avec validation
+
+<ArchitectureDiagram
+  steps="Client | validation Zod (.input) | procédure | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+À partir du `.input(...)`, aucune donnée invalide ne circule.  
+Aucune couche ne doute.  
+Aucune logique n’est répétée.
+
+---
+
+<Callout type="tip">
+Zod n’est pas une "librairie de validation".
+
+C’est la frontière formelle qui protège le backend.  
+
+👉 En amont : données incertaines  
+👉 En aval : données exploitables
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne validons plus partout.
+
+Nous validons **une fois, au bon endroit**, avec un contrat explicite.
+
+---
+
+Et selon la portée de ce contrat :
+
+- il reste dans la procédure s’il lui appartient  
+- il monte dans `packages/contracts` s’il doit être partagé  
+
+---
+
+👉 Dans les deux cas, le service peut faire confiance à ce qu’il reçoit.
+
+---
+
+## À suivre
+
+Zod garde la porte d’entrée : le service reçoit des données sur lesquelles il peut s’appuyer. Reste à prévoir ce qui se passe quand, malgré tout, quelque chose échoue — et comment le dire proprement.
+
+<Callout type="tip">
+**Chapitre suivant : gérer les erreurs.** Ne pas transformer une erreur en résultat, `TRPCError` et ses codes, l’unicité garantie par la base, et ce que le navigateur reçoit d’une erreur imprévue.
+</Callout>

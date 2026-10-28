@@ -1,0 +1,372 @@
+---
+title: "La carte du système"
+description: "Le vrai point d’ancrage de tRPC dans le projet : l’appel typé et l’import type qui le rend possible, le contexte reconstruit à chaque requête dans core.ts, superjson, et la route /api/trpc par laquelle tout entre."
+section: "API"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La fracture n’est pas réseau, elle est structurelle : traduire à la main une donnée typée en JSON, puis la reconstruire, n’a plus de contrepartie quand le front et le back partagent leurs types. tRPC en est la conséquence.
+
+Nous avons posé le problème, identifié la fracture et fait émerger une contrainte simple :
+
+👉 **la donnée ne doit plus être traduite en JSON pour circuler**
+
+---
+
+Maintenant, nous entrons dans le système réel — non pas pour accumuler du code,  
+🧠 mais pour comprendre **où et comment la continuité est garantie**.
+
+---
+
+## Une nouvelle carte (claire)
+
+Avant :
+
+<ArchitectureDiagram
+  steps="Client | JSON | API (routes) | Backend | Prisma | Database"
+/>
+
+Maintenant :
+
+<ArchitectureDiagram
+  steps="Client | tRPC call | tRPC Context | tRPC Procedure | Prisma | Database"
+/>
+
+💥 Le point clé :
+
+👉 **l’API disparaît comme frontière forte**  
+👉 elle est remplacée par **un flux structuré**
+
+Attention : l’API ne disparaît pas physiquement. Il existe toujours une route HTTP qui reçoit la requête — tRPC passe par le réseau, comme REST. Ce qui disparaît, c’est la frontière **mentale** et **architecturale**. Nous ne pensons plus en endpoints. Nous ne maintenons plus de contrat externe. Le réseau devient un détail d’implémentation, non plus un élément de conception.
+
+---
+
+## Étape 1 — L’appel (sans sérialisation JSON)
+
+Côté client, nous ne “fabriquons plus une requête”.
+
+Nous appelons une capacité du système :
+
+<CodeSnippet
+  language="ts"
+  title="Appel (pseudo-code)"
+  kind="educational"
+  codeJson='"await trpc.user.create({\n  email,\n  password,\n})"'
+/>
+
+💡 Immédiatement :
+
+- pas de `fetch`  
+- pas de `JSON.stringify`  
+- pas de route à construire  
+
+👉 nous restons **dans le typé**
+
+Et ce “rester dans le typé” n’est pas seulement confortable pour le développeur. C’est ce qui permet à l’autocomplétion de fonctionner, au compilateur de détecter les erreurs avant l’exécution, et aux refactorings d’être sûrs. Le jour où nous renommons un champ dans le schéma Prisma, TypeScript nous indique immédiatement tous les endroits — côté serveur et côté client — où ce champ est utilisé.
+
+Nous ne découvrons plus les erreurs seulement en production. Nous les découvrons durant le développement, pendant que nous tapons.
+
+Comment le navigateur peut-il connaître les types d’une fonction qui s’exécute sur le serveur ? Le lien entre les deux côtés tient en une ligne :
+
+```ts
+// apps/web/src/core/trpc/trpcClient.ts (extrait)
+import type { AppRouter } from "@backend/modules"
+```
+
+C’est un `import type` : il est effacé à la compilation. Le navigateur reçoit les **types** du routeur, jamais son code, ni celui de Prisma, ni un secret du serveur. TypeScript lit ces types au moment où nous écrivons, et ils disparaissent du code livré. Il n’y a donc ni client à générer, ni fichier de types à tenir à jour : renommer un champ dans une procédure fait échouer `pnpm check` partout où le front l’utilise.
+
+
+---
+
+## Étape 2 — Le contexte (introduit tôt, ancré dans le code)
+
+Avant toute logique métier, le système ne traite pas directement la donnée.
+
+🧠 Il commence par reconstruire **le cadre dans lequel cette donnée va prendre du sens**.
+
+Pour bien saisir ce concept de *contexte*, une image aide. Imaginons une salle de réunion où se tient chaque jour une nouvelle délibération. Avant chaque réunion, un concierge silencieux prépare la salle : il place les dossiers sur la table, vérifie qui a le badge d’accès, s’assure que la cafetière fonctionne, note l’heure et la liste des participants.
+
+Quand les participants entrent, ils n’ont rien à préparer. Tout est déjà là. Ils peuvent se concentrer entièrement sur la délibération.
+
+Le contexte tRPC, c’est ce concierge. Il travaille silencieusement, **avant chaque procédure**, pour que la procédure n’ait plus à se soucier de qui est connecté, de quelle est la session, ou d’où se trouve la base de données.
+
+---
+
+Dans une API classique, chaque requête arrive seule.  
+La route qui la reçoit doit reconstruire le contexte à partir de rien :
+
+- lire le body  
+- retrouver la session  
+- vérifier l’utilisateur  
+- accéder à la base de données  
+
+👉 chaque route répète ce travail.
+
+Et c’est exactement ce que nous voulons éviter. Pas seulement pour des raisons de performance ou de duplication de code, mais pour une raison plus profonde : chaque fois qu’un développeur doit se souvenir de faire ces vérifications, il peut les oublier. Et dans un backend, oublier une vérification, c’est ouvrir une faille.
+
+---
+
+Ici, ce travail est **centralisé une fois pour toutes**… dans `core.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="1-53"
+  snippetHighlight="9-15,39-53"
+  snippetTitle="createTRPCContext : le contexte défini une fois"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du fichier `core.ts`
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="1-86"
+  title="Comment le contexte est défini, typé et injecté"
+  stepsJson='[{"title": "Le type TRPCContext décrit ce qui sera toujours disponible", "body": "Ce type est la promesse du système. Chaque procédure sait qu’elle aura accès à un sessionClient (null pour un visiteur), à prisma, à l’adresse IP et au navigateur de la requête, et à appRoot, la racine du stockage (APP_SHORT_NAME). Écrite une fois, cette définition gouverne tout le backend.", "scope": "9-15", "focus": "9-15"}, {"title": "AuthenticatedTRPCContext est un type plus fort, pour les procédures protégées", "body": "Une fois l’utilisateur authentifié, sessionClient.user ne peut plus être null. Le type requalifié évite d’avoir à écrire partout des vérifications défensives : TypeScript devient complice de l’architecture.", "scope": "17-24", "focus": "17-24"}, {"title": "getIpFromRequest lit l’adresse posée par le proxy", "body": "Derrière le proxy du serveur, l’adresse du visiteur arrive dans l’en-tête x-forwarded-for. Ce n’est pas une preuve : un client peut envoyer cet en-tête lui-même. Le projet ne s’en sert que pour journaliser une demande de réinitialisation de mot de passe, jamais pour décider d’un droit.", "scope": "26-37", "focus": "26-37"}, {"title": "createTRPCContext est la fabrique appelée à chaque requête", "body": "Cette fonction prend la requête, en extrait la session via getSessionFromRequest, ajoute l’accès à prisma, l’IP, le navigateur et la racine du stockage, puis renvoie un objet typé. Elle ne contient aucune logique métier : elle prépare le terrain.", "scope": "39-53", "focus": "39-53"}, {"title": "initTRPC crée l’instance tRPC, avec superjson comme transformer", "body": "superjson remplace l’encodage JSON brut par un encodage capable de préserver les Date, BigInt, Map, Set. Sans lui, une Date envoyée par le serveur arriverait comme une chaîne. Le errorFormatter qui suit décide de ce qu’un navigateur reçoit d’une erreur imprévue : le chapitre 8 y reviendra.", "scope": "55-66", "focus": "55-56"}, {"title": "isAuthed est le middleware qui construit protectedProcedure", "body": "Ce middleware vérifie la présence d’un user dans sessionClient. S’il est absent, il lève UNAUTHORIZED (« Connexion requise. »). S’il est présent, il requalifie le contexte vers AuthenticatedTRPCContext. Tout le reste du backend en profite sans y penser.", "scope": "71-86", "focus": "71-86"}]'
+/>
+
+---
+
+👉 Ce qu’il faut comprendre tout de suite :
+
+- le contexte est **défini une seule fois**  
+- il est **reconstruit à chaque requête**  
+- il est **injecté automatiquement dans chaque procédure**
+
+---
+
+💡 Concrètement, ce contexte contient déjà :
+
+- la session (et donc l’utilisateur éventuel)  
+- s’il est administrateur (calculé à partir de ses groupes)  
+- l’accès à Prisma  
+- des informations fiables sur la requête (IP, user-agent)  
+
+---
+
+👉 Ce que cela change est fondamental.
+
+Une procédure ne reçoit plus :
+
+- une donnée brute à traiter  
+
+Elle reçoit :
+
+- une donnée  
+- **dans un environnement déjà reconstruit et cohérent**
+
+---
+
+## 🔭 Pour aller plus loin — le transformer superjson
+
+Nous avons mentionné en passant `superjson`. Il mérite un arrêt, parce qu’il est la pièce discrète qui rend possible le typage continu dont nous parlons depuis le début.
+
+Le problème concret : `JSON.stringify` ne sait pas encoder tout ce que TypeScript sait exprimer. Un objet `Date`, après un aller-retour JSON, devient une string. Un `Map`, un `Set`, un `BigInt`, une valeur `undefined` dans un champ — tous perdent leur nature. Sans transformateur, `discipline.publicationDate.getTime()` planterait dans le navigateur : la date serait arrivée sous forme de texte, alors que le type inféré promettait une `Date`.
+
+Ce que fait `superjson` : il sérialise les données en deux parties. D’un côté, les valeurs elles-mêmes, encodées en JSON ordinaire. De l’autre, une petite annotation qui décrit quels types spéciaux existent dans la structure, et où. À la réception, il reconstruit tout fidèlement. Le réseau transporte donc toujours du JSON ; ce qui change, c’est que personne n’a à le décoder à la main, et que rien ne se perd au passage.
+
+Pour que cela marche, les deux extrémités doivent parler la même langue. Le transformateur est déclaré **deux fois** : côté serveur dans `initTRPC` (ligne 56 de `core.ts`, ci-dessus), côté navigateur dans le lien du client (chapitre 10). Si l’un des deux l’oubliait, l’autre recevrait un format qu’il ne sait pas lire.
+
+Résultat : quand le backend renvoie une `Date`, le client reçoit une `Date`. Le typage n’est plus une promesse qui se brise au passage du réseau — il est respecté jusqu’à la réception.
+
+C’est le chaînon qui rend crédible la phrase que nous répétons : *la donnée reste elle-même du début à la fin*.
+
+---
+
+<Callout type="info">
+Dans tRPC, nous ne traitons jamais une requête isolée.
+
+Nous traitons une requête **déjà comprise par le système**.
+</Callout>
+
+💥 Résultat :
+
+- plus de duplication de logique  
+- plus de vérifications répétées  
+- plus d’incohérences entre routes  
+
+👉 Le backend ne devine plus le contexte.  
+👉 Il le **possède déjà**.
+
+---
+
+🧠 Mais une question reste en suspens :
+
+> quand est-ce que ce contexte est réellement créé ?
+
+---
+
+Il ne suffit pas de définir `createTRPCContext`.
+
+Encore faut-il comprendre **qui l’appelle**.
+
+Parce qu’une fonction, tant qu’elle n’est pas appelée, n’existe pas vraiment. Elle attend.
+
+---
+
+Dans ce projet, ce rôle est assuré par la route App Router dédiée à tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
+  filename="route.ts"
+  snippetRange="1-26"
+  snippetHighlight="10-24"
+  snippetTitle="Le point d’entrée tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du point d’entrée
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
+  filename="route.ts"
+  snippetRange="1-26"
+  title="Comment une requête tRPC entre dans le système"
+  stepsJson='[{"title": "Le segment dynamique [trpc] capture toutes les procédures", "body": "Le dossier /api/trpc/[trpc] définit une route unique qui reçoit tous les chemins commençant par /api/trpc. La procédure user.create est appelée via /api/trpc/user.create ; plusieurs appels regroupés arrivent en une seule requête (/api/trpc/a,b?batch=1). tRPC lit ce chemin et sait quelles procédures exécuter.", "scope": "1-26", "focus": "10-14"}, {"title": "runtime nodejs : l’environnement complet", "body": "Le runtime Node est celui des routes par défaut ; la ligne le rend explicite. Prisma, bcrypt ou le SDK de stockage ne tournent pas sur le runtime edge, plus léger : la route ne doit jamais y être déplacée.", "scope": "1-26", "focus": "7-7"}, {"title": "dynamic force-dynamic : jamais de cache", "body": "Les appels tRPC dépendent du cookie de session et ne doivent jamais être servis depuis un cache. Depuis Next 15, une route n’est plus mise en cache par défaut ; la directive le garantit explicitement, au cas où ce comportement changerait.", "scope": "1-26", "focus": "8-8"}, {"title": "fetchRequestHandler est le pont officiel entre Next et tRPC", "body": "Cette fonction de @trpc/server/adapters/fetch parle le langage des Request/Response du web standard. Elle reçoit la requête Next, la transmet au routeur tRPC, récupère la réponse et la renvoie. C’est l’adaptateur qui relie les deux mondes.", "scope": "1-26", "focus": "11-14"}, {"title": "createContext fabrique le sac à dos du concierge", "body": "À chaque requête, fetchRequestHandler appelle cette fonction pour obtenir le contexte. Ici, nous lui passons notre createTRPCContext avec la requête. Le résultat est ensuite injecté automatiquement dans la procédure visée.", "scope": "1-26", "focus": "15-15"}, {"title": "onError garde la trace des pannes", "body": "Chaque erreur passe par ici, côté serveur. Seules les erreurs internes sont écrites dans les journaux, sans jamais l’entrée de la procédure, qui peut contenir un mot de passe. Le chapitre 8 raconte pourquoi cette ligne manquait.", "scope": "1-26", "focus": "16-22"}, {"title": "handler est exporté à la fois comme GET et POST", "body": "tRPC utilise GET pour les lectures (query) et POST pour les écritures (mutation). Les deux méthodes passent par le même handler.", "scope": "1-26", "focus": "26-26"}]'
+/>
+
+---
+
+👉 C’est ici que tout s’assemble.
+
+À chaque requête :
+
+- la route `/api/trpc` reçoit l’appel  
+- `fetchRequestHandler` prend la main  
+- et appelle automatiquement `createTRPCContext(req)`  
+
+---
+
+💡 Autrement dit :
+
+> le contexte n’est pas appelé manuellement  
+> il est injecté **systématiquement à chaque requête tRPC**
+
+Il n’y a pas d’exception possible. Aucune procédure ne peut s’exécuter sans contexte. Aucune procédure ne peut contourner cette étape. C’est une garantie architecturale, pas une convention.
+
+---
+
+Et c’est exactement ce qui garantit :
+
+- une cohérence globale  
+- aucune duplication  
+- un backend toujours exécuté dans un environnement fiable  
+
+<Callout type="info">
+Chaque appel tRPC déclenche :
+
+👉 création du contexte → exécution de la procédure
+
+Le contexte n’est jamais oublié.  
+Il fait partie du flux.
+</Callout>
+
+---
+
+## Étape 3 — La procédure (pas une route)
+
+Une fois le contexte prêt, nous entrons dans une procédure.
+
+<CodeSnippet
+  language="ts"
+  title="Procédure (pseudo-code)"
+  kind="educational"
+  codeJson='"const createUser = procedure({\n  input,\n  ctx,\n}) => {\n  return ctx.prisma.user.create(input)\n}"'
+/>
+
+💡 Différence majeure :
+
+- ❌ ce n’est pas une URL  
+- ❌ ce n’est pas une route  
+
+👉 c’est une **capacité du système**
+
+Pour bien sentir la différence, comparons deux façons de décrire la même chose.
+
+Avec REST, nous décrivons une **action sur une ressource** : `POST /api/users` signifie “ajouter un utilisateur à la collection des utilisateurs”. C’est une pensée géographique — il y a une ressource quelque part, et nous agissons dessus.
+
+Avec tRPC, nous décrivons une **capacité** : `user.create(data)` signifie “le système sait créer un utilisateur à partir de ces données”. C’est une pensée fonctionnelle — il y a une compétence dans le système, et nous l’invoquons.
+
+Ce déplacement mental est important. Il déplace notre attention de la topologie du réseau vers les intentions métier.
+
+---
+
+Chaque procédure :
+
+- reçoit une donnée validée  
+- reçoit un contexte fiable  
+- exécute la logique métier  
+- retourne une réponse typée  
+
+---
+
+## Le flux complet (sans rupture)
+
+<ArchitectureDiagram
+  steps="Client | tRPC call | Context (session + prisma) | Procedure | Prisma | Database | Réponse typée"
+/>
+
+🧠 Ce qu’il faut voir :
+
+- plus de JSON intermédiaire  
+- plus de reconstruction manuelle  
+- plus de perte de typage  
+
+👉 **la donnée reste elle-même du début à la fin**
+
+---
+
+## Le vrai changement
+
+Ce n’est pas juste une autre façon d’appeler un backend.
+
+💥 C’est une autre façon de le structurer.
+
+<Callout type="tip">
+tRPC remplace le modèle “API + JSON” par  
+👉 “contexte (core.ts) + procédures + données typées”.
+</Callout>
+
+---
+
+## Où regarder ensuite
+
+À ce stade, nous avons :
+
+- une carte claire  
+- un flux continu  
+- un point d’ancrage concret : **core.ts**
+
+🚀 Prochaine étape :
+
+👉 comprendre **en détail** comment `core.ts` :
+- crée le contexte  
+- distingue `publicProcedure` et `protectedProcedure`  
+- requalifie le type du contexte
+
+C’est là que le backend prend vraiment forme, et ce sera l’objet du chapitre 6.
+
+---
+
+👉 **Où nous en sommes :** nous avons redessiné la carte, et le backend a maintenant un point d’ancrage clair — `core.ts`, traversé à chaque requête par `fetchRequestHandler`. Mais cette carte reste encore géographique : elle montre où les choses se trouvent. Il nous manque la sémantique — ce que chaque pièce *est*, par opposition à ce que les autres sont.
+
+## À suivre
+
+Nous savons où naît le contexte et par où entre chaque requête. Il reste à comprendre ce que chaque pièce *est* : ce qui relève de l’environnement, ce qui relève de l’intention, et ce qu’est vraiment un « router ».
+
+<Callout type="tip">
+**Chapitre suivant : contexte et intention.** Les deux dimensions d’une requête, le routeur comme regroupement de procédures, et les trente domaines du projet assemblés dans `appRouter`.
+</Callout>

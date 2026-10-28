@@ -1,0 +1,224 @@
+---
+title: "Contexte et intention"
+description: "Les deux dimensions d’une requête que REST mélange et que tRPC sépare : le contexte (l’environnement) et la procédure (l’intention), le routeur comme regroupement de procédures, et l’assemblage des domaines du projet dans appRouter."
+section: "API"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le contexte est défini une fois dans `core.ts`, reconstruit à chaque requête par la route `/api/trpc`, et injecté dans chaque procédure. `superjson` garde les types intacts d’un bout à l’autre.
+
+Nous avons vu au chapitre précédent :
+
+- où le contexte est défini → `core.ts`  
+- quand il est créé → à chaque requête via `/api/trpc`  
+- qu’il est injecté automatiquement dans chaque procédure  
+
+Mais une ambiguïté importante reste à lever.
+
+Et cette ambiguïté touche à la façon même dont tRPC pense une requête.
+
+---
+
+## 🧠 Le point clé : une requête contient deux choses
+
+Une requête HTTP ne transporte pas seulement des données.
+
+Elle contient toujours :
+
+- un **environnement** (cookies, headers, IP, session…)  
+- une **intention** (ce que nous voulons faire)
+
+Cette distinction est facile à rater parce que dans REST, les deux sont mélangés. L’URL porte l’intention (`POST /users`), mais aussi parfois l’environnement (`/admin/users` change selon qui appelle). Les headers portent parfois de l’environnement (auth), parfois de l’intention (`X-Delete-After`). Le body porte principalement les données de l’intention. Tout est mélangé.
+
+Dans ce mélange, chaque route finit par devoir reconstruire les deux dimensions à la main. Chaque route devient un petit programme qui démêle l’environnement de l’intention avant de pouvoir agir.
+
+---
+
+👉 Et tRPC fait quelque chose de très important :
+
+💥 il **sépare ces deux dimensions**
+
+Cette séparation n’est pas cosmétique. Elle a des conséquences profondes sur la façon dont nous écrivons, testons et sécurisons notre backend.
+
+---
+
+## 🔥 Le vrai modèle tRPC
+
+👉 Ce n’est PAS :
+
+requête → traitement
+
+👉 C’est :
+
+requête → (contexte + procédure)
+
+Cette écriture est importante. Elle dit explicitement que le traitement a deux entrées distinctes, chacune ayant son rôle.
+
+---
+
+## 1) Le contexte = l’environnement
+
+Le contexte répond à :
+
+> “dans quel cadre cette action est exécutée ?”
+
+Il contient :
+
+- session  
+- utilisateur  
+- savoir s’il est administrateur  
+- accès Prisma  
+- informations liées à la requête  
+
+<CodeSnippet
+  language="ts"
+  title="Contexte (simplifié)"
+  kind="educational"
+  codeJson='"type Context = {\n  sessionClient: SessionClient | null\n  prisma: PrismaClient\n}"'
+/>
+
+---
+
+👉 Le contexte ne porte **aucune intention**
+
+Le contexte ne sait pas ce que nous allons faire. Il ne décide pas. Il est à la disposition de la procédure, comme un set d’outils posé sur la table. Si la procédure veut créer un utilisateur, elle utilisera `prisma`. Si elle veut vérifier les droits, elle utilisera `sessionClient`. Mais le contexte lui-même ne fait rien.
+
+Reprenons notre analogie du concierge. Le contexte est le sac à dos préparé avant la réunion. Il contient des outils. Les participants décideront lesquels utiliser selon ce qu’ils veulent accomplir.
+
+---
+
+## 2) La procédure = l’intention
+
+La procédure répond à :
+
+> “qu’est-ce que nous voulons faire ?”
+
+<CodeSnippet
+  language="ts"
+  title="Procédure = intention"
+  kind="educational"
+  codeJson='"trpc.user.create({ email, password })"'
+/>
+
+---
+
+Une procédure exprime une action précise, nommée, typée. Son nom indique exactement ce qu’elle fait. Elle n’a pas besoin de décoder un verbe HTTP ou une URL pour savoir qui elle est.
+
+`user.create` crée un utilisateur.  
+`user.getAll` récupère tous les utilisateurs.  
+`post.delete` supprime un post.
+
+Pas d’ambiguïté.
+
+---
+
+## ⚠️ Un mot qui peut piéger : “router”
+
+Le mot “router” dans tRPC peut induire en erreur. En REST ou en Express, un router est lié aux URL : il enregistre des handlers pour des chemins spécifiques.
+
+Dans tRPC, ce n’est pas ce que fait un router.
+
+👉 Un router tRPC est simplement :
+
+> un **regroupement de procédures liées à un même domaine métier**
+
+<CodeSnippet
+  language="ts"
+  title="Router tRPC (regroupement de procédures)"
+  kind="educational"
+  codeJson='"export const userRouter = router({\n  create: publicProcedure.mutation(...),\n  getAll: protectedProcedure.query(...),\n})"'
+/>
+
+---
+
+👉 Ici :
+
+- `userRouter` ≠ `/user`
+- `create` ≠ `POST /user`
+
+Le router est une structure de namespace, pas un système de routing HTTP. Il permet de dire : “toutes ces procédures concernent les utilisateurs, regroupons-les”.
+
+
+Ensuite, ces routers se composent entre eux. Chaque domaine du projet a son dossier dans `packages/backend/src/modules`, avec son routeur. Un routeur principal, `appRouter`, les assemble :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/index.ts"
+  filename="index.ts"
+  snippetRange="36-71"
+  snippetHighlight="1-34"
+  snippetTitle="appRouter : la composition des routeurs métier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce fichier révèle tout de suite la structure fonctionnelle du backend. Nous ne voyons pas une liste d’URL. Nous voyons une carte des domaines métier, une trentaine : l’authentification et les membres, les groupes et leurs documents, les disciplines, les cours, les stages et les événements, les médias, le stockage et la corbeille, les réglages du site, les demandes…
+
+C’est cette carte que le développeur utilise pour s’orienter dans le système. Et c’est aussi cette carte que TypeScript utilise pour l’autocomplétion côté client : le nom de la clé devient l’espace de noms. `trpc.discipline.*`, `trpc.storage.*`, `trpc.memberGroup.*` : taper le point suffit pour voir ce que chaque domaine sait faire.
+
+Deux lignes de ce fichier comptent plus que les autres. La dernière, `export type AppRouter = typeof appRouter`, est le **type** de toute l’API : c’est lui que le navigateur importe (`import type`, chapitre 2). Et l’ensemble du routeur est confié à une seule route HTTP, `/api/trpc/[trpc]`, qui reçoit le nom de la procédure dans l’adresse.
+
+Ajouter un domaine, c’est donc créer son dossier et son routeur, puis l’ajouter ici. Son API est aussitôt disponible, et typée, dans tout le front. Rien d’autre à déclarer : ni route, ni client, ni documentation d’API à régénérer.
+
+---
+
+## 🔥 REST vs tRPC
+
+<DocsTable
+  title="REST vs tRPC : où vivent les responsabilités"
+  columnsJson='["Concept","REST","tRPC"]'
+  rowsJson='[["Intention","URL + méthode HTTP","procédure"],["Organisation","routes","routers"],["Environnement","reconstruit dans chaque handler","contexte partagé"],["Typage","perdu via JSON","conservé via superjson"]]'
+/>
+
+---
+
+## 🧠 Relecture correcte du flux
+
+<ArchitectureDiagram
+  steps="Client | intention (procedure) | contexte (createContext) | exécution | Prisma"
+/>
+
+---
+
+<Callout type="info">
+Le backend traite :
+
+👉 une intention (procédure)  
+👉 dans un contexte (environnement)
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+- contexte = environnement  
+- procédure = intention  
+- router = organisation  
+
+👉 séparation claire, backend propre
+
+Et cette séparation prépare tout ce qui suit. Parce que maintenant que nous savons distinguer l’environnement de l’intention, nous allons pouvoir lire un vrai router métier sans nous perdre — en gardant en tête ce qui se passe à chaque étape.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Nous avons basculé de modèle mental. Trois idées en sont ressorties :
+
+- **La fracture n’est pas réseau, elle est structurelle.** Ce qui coûte, ce n’est pas l’appel HTTP — c’est la traduction d’une donnée typée en JSON, qui impose une reconstruction à l’arrivée. Dans un monorepo où frontend et backend parlent la même langue, cette traduction n’a plus de contrepartie.
+- **Le flux a désormais un point d’ancrage concret.** Le fichier `core.ts` porte la définition du contexte ; `fetchRequestHandler` le déclenche à chaque requête ; chaque procédure le reçoit sans avoir à le reconstruire. Le contexte n’est plus un concept abstrait, c’est un emplacement dans le code.
+- **Une requête se lit en deux dimensions.** L’environnement (contexte) dit *dans quel cadre* l’action s’exécute ; l’intention (procédure) dit *ce que nous voulons faire*. tRPC sépare ces deux dimensions proprement — là où REST les mélangeait dans l’URL, les headers et le body.
+
+Le Mouvement 2 va maintenant prendre ces couches séparées et les composer : ouvrir un vrai router, voir comment la logique se répartit entre procédure, service et guard, puis apprendre à fabriquer une procédure dans le bon ordre.
+
+## À suivre
+
+Le Mouvement 1 s’achève : nous lisons un appel tRPC comme une intention nommée, exécutée dans un contexte déjà prêt. Il faut maintenant ouvrir un vrai routeur, et voir comment la logique s’y répartit.
+
+<Callout type="tip">
+**Chapitre suivant : le routeur métier.** D’où vient `ctx`, le routeur d’authentification lu ligne à ligne, puis les services, les gardes, et ce que tRPC apporte vraiment.
+</Callout>

@@ -1,0 +1,347 @@
+---
+title: "Maîtriser la sortie"
+description: "Ce que le backend renvoie vraiment : une empreinte de mot de passe qui partait vers le navigateur, select et omit, le DTO comme contrat partagé, satisfies qui vérifie sans élargir, et où vit le mapping."
+section: "API"
+order: 9
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une erreur est levée avec un code, à l’endroit qui sait pourquoi elle se produit ; seuls les messages écrits pour l’utilisateur sortent tels quels.
+
+Nous avons construit quelque chose de solide.
+
+Entrée validée, contexte fiable, sécurité centralisée, erreurs structurées.
+
+Mais une dernière question reste ouverte.
+
+---
+
+## 🧠 Que renvoyons-nous réellement au client ?
+
+---
+
+Sans réflexion, le réflexe naturel est de faire ceci :
+
+<CodeSnippet
+  language="ts"
+  title="Retour direct du modèle Prisma (anti-pattern)"
+  kind="anti-pattern"
+  codeJson='"return ctx.prisma.user.findMany()"'
+/>
+
+---
+
+Cela fonctionne.
+
+Mais quelque chose pose un problème silencieux.
+
+Nous exposons directement :
+
+- tous les champs du modèle — y compris `password`  
+- des relations parfois non voulues  
+- une structure intimement liée à la base  
+
+---
+
+💥 Le client devient dépendant de la structure interne du backend.
+
+Et le jour où Prisma évolue — un champ renommé, une relation ajoutée — le frontend peut casser sans que le backend ait "changé" du point de vue métier.
+
+Plus grave : des données sensibles peuvent fuir. Le hash du mot de passe, des métadonnées d’audit, des identifiants internes — tout ce qui vit dans le modèle Prisma traverse silencieusement la frontière.
+
+Ce n’est pas un risque théorique. La suppression d’un membre (`user.delete`) se terminait ainsi :
+
+<CodeSnippet
+  language="ts"
+  title="Avant : la ligne complète renvoyée"
+  kind="anti-pattern"
+  codeJson='"return tx.user.delete({\n  where: { id: input.id },\n});"'
+/>
+
+`delete` renvoie la ligne supprimée, et la procédure la renvoyait au navigateur : à chaque suppression, l’empreinte bcrypt du mot de passe du membre partait vers l’écran de l’administrateur, visible dans l’onglet Réseau des outils du navigateur. Aucune page ne l’affichait ; l’API la donnait. L’écran, lui, n’utilisait même pas la réponse.
+
+La correction tient en une ligne : ne demander à Prisma que ce qui doit sortir.
+
+<CodeSnippet
+  language="ts"
+  title="Après : seul l’identifiant sort"
+  kind="pattern"
+  codeJson='"return tx.user.delete({\n  where: { id: input.id },\n  select: { id: true },\n});"'
+/>
+
+Une empreinte n’est pas un mot de passe, mais elle permet de le chercher hors ligne, sans limite d’essais. Elle n’a rien à faire hors du serveur, même chez un administrateur.
+
+---
+
+## 🔥 Le principe fondamental
+
+Le backend ne doit jamais exposer directement ses modèles internes.
+
+Il doit exposer :
+
+👉 une **forme contrôlée, stable, pensée pour le client**
+
+---
+
+## 1) La première forme de contrôle : `select`
+
+Avant même de parler de DTO explicite, il existe une façon très directe de contrôler la sortie : ne demander à Prisma que ce dont nous avons besoin.
+
+Le profil d’un membre est lu par deux procédures : le membre lui-même (`getCurrentUserProfile`), et un administrateur qui consulte une fiche (`getProfileById`). Les deux décrivaient la même liste de champs, recopiée ; elle est désormais nommée une fois :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="18-30"
+  snippetHighlight="1-13"
+  snippetTitle="userProfileSelect : la liste de ce qui peut sortir"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="269-285"
+  snippetHighlight="4-7,16"
+  snippetTitle="getCurrentUserProfile : sélection, existence, projection"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+`password`, les données légales (majorité, parent référent), l’adresse du club, les dates de création — rien de tout cela ne sort.
+
+Prisma ne les charge même pas.
+
+---
+
+👉 Ce n’est pas encore un DTO formel.  
+👉 Mais c’est déjà une décision d’exposition.
+
+Et cette décision a un double bénéfice : sécurité (les champs sensibles ne quittent jamais la base) et performance (Prisma génère des requêtes SQL plus ciblées, transférant moins de données).
+
+Le projet utilise aussi l’approche inverse, `omit`, par exemple dans la liste des membres de l’administration :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="46-60"
+  snippetHighlight="5-8"
+  snippetTitle="omit : tout, sauf l’empreinte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les deux ne protègent pas de la même chose. `omit` retire ce qu’on **sait** dangereux : tout le reste sort, y compris le champ qu’on ajoutera au modèle l’an prochain. `select` n’autorise que ce qu’on a **listé** : un nouveau champ ne sort pas tant que personne ne l’a ajouté. Pour une donnée exposée largement, `select` est le choix prudent ; `omit` convient à un écran d’administration qui a réellement besoin de presque tout.
+
+---
+
+## 2) Le DTO : une forme nommée, partageable
+
+Pour les données qui doivent être stables dans le temps — et partagées avec le frontend — nous allons plus loin.
+
+Dans ce projet, `UserProfile` est défini dans `packages/contracts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/users/user-profile.types.ts"
+  filename="user-profile.types.ts"
+  snippetRange="1-12"
+  snippetHighlight="1-12"
+  snippetTitle="UserProfile : un contrat entre backend et frontend"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+
+---
+
+Ce type ne ressemble pas au modèle Prisma.
+
+`birthDate` est une `string | null`, pas une `Date` : le formulaire de profil travaille avec la valeur d’un champ de date (« AAAA-MM-JJ »).  
+`password` n’existe pas.  
+Les données légales (majorité, parent référent) n’existent pas non plus : elles ne concernent pas le profil.
+
+---
+
+👉 Ce n’est pas un modèle de données.  
+👉 C’est une **représentation métier pensée pour le consommateur**.
+
+Il n’est pas parfait pour autant : `id` et `email` y sont déclarés `string | null`, alors qu’un membre a toujours les deux. Le contrat est plus large que la réalité. Nous allons voir que cela compte, et comment le projet s’en accommode.
+
+---
+
+## 🔭 Pour aller plus loin — le sens du sigle DTO
+
+DTO signifie *Data Transfer Object*. Le terme est ancien — il vient des architectures Java d’entreprise — mais l’idée est intemporelle.
+
+Un DTO est un objet conçu **uniquement pour le transport**. Il ne contient pas de logique. Il ne persiste pas. Il sert d’intermédiaire entre deux couches.
+
+Dans notre cas, le DTO est la forme que prend la donnée quand elle sort du backend vers le frontend. Il est distinct du modèle de base (ce que Prisma manipule) et de la vue (ce que React affiche). Il est la forme du contrat.
+
+Cette distinction porte un nom en architecture : le **pattern Boundary**. La donnée change de forme aux frontières du système, et chaque forme est adaptée à son contexte.
+
+---
+
+## 3) Le `satisfies` : relier le service au contrat
+
+Voyons maintenant comment ce contrat est utilisé. La projection vit à côté du routeur, dans une fonction partagée par les deux lectures :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="32-44"
+  snippetHighlight="8-13"
+  snippetTitle="toUserProfile : le contrat appliqué à la sortie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — anatomie d'un mapping contrôlé
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="18-44"
+  title="De la requête Prisma au DTO partagé"
+  stepsJson='[{"title": "select définit la surface exposée", "body": "La liste nommée userProfileSelect dit exactement quels champs peuvent sortir. Le mot de passe, les données légales, l’adresse du club ne seront pas chargés par Prisma : rien ne pourra fuiter. satisfies Prisma.UserSelect vérifie que chaque clé existe dans le modèle.", "scope": "18-30", "focus": "18-30"}, {"title": "Le type de la ligne se déduit de la sélection", "body": "Prisma.UserGetPayload calcule le type exact de ce que la requête renverra avec cette sélection. Aucun type écrit à la main : si un champ est ajouté à la sélection, le type suit.", "scope": "32-32", "focus": "32-32"}, {"title": "La projection transforme sans copier aveuglément", "body": "L’objet est construit avec ...user, puis birthDate est remplacé : la Date de Prisma devient une chaîne « AAAA-MM-JJ », parce que c’est ce que le contrat UserProfile promet au formulaire de profil.", "scope": "34-44", "focus": "39-42"}, {"title": "satisfies UserProfile, le filet de sécurité final", "body": "satisfies n’est pas un cast. TypeScript vérifie que l’objet respecte la forme de UserProfile, champ par champ. Si demain le contrat gagne un champ et que nous oublions de le fournir, la compilation casse. Et le type retourné reste le type exact de l’objet, pas celui, plus large, du contrat.", "scope": "34-44", "focus": "43-43"}]'
+/>
+
+---
+
+<Callout type="info">
+`satisfies` ne ment pas au compilateur.
+
+Il lui demande de vérifier que ce que nous produisons respecte ce que nous avons promis.
+
+C’est la différence entre un cast aveugle et un contrat honnête.
+</Callout>
+
+Le projet a vérifié cette différence à ses dépens, au moment même où cette fonction a été écrite. Sa première version annotait le type de retour : `function toUserProfile(…): UserProfile`. Tout compilait côté serveur. Mais deux écrans du front (la page de profil et la fiche d’un membre) ont aussitôt cessé de compiler : `id` y était devenu `string | null`, parce que le contrat `UserProfile`, plus large que la réalité, admet un identifiant nul. L’annotation avait **élargi** le type ; `satisfies` le vérifie sans y toucher, et le front a retrouvé `id: string`.
+
+---
+
+## 🔭 Pour aller plus loin — satisfies vs as vs type annotation
+
+TypeScript offre trois façons différentes de déclarer le type d’une valeur, et `satisfies` est le plus récent (TS 4.9).
+
+- `const x = value as Type` → **cast aveugle**. TypeScript fait confiance, ne vérifie pas. Dangereux.
+- `const x: Type = value` → **annotation**. TypeScript vérifie que `value` respecte `Type`, mais perd le type concret de `value` : `x` aura le type `Type`, pas la forme réelle de `value`.
+- `const x = value satisfies Type` → **vérification avec préservation**. TypeScript vérifie la conformité, et garde le type concret de `value`.
+
+Dans le cas du DTO, `satisfies` est le bon choix. Nous voulons vérifier que la projection respecte `UserProfile`, mais nous voulons aussi garder le type exact pour l’inférence côté client (tRPC remonte le type concret jusqu’au frontend).
+
+---
+
+## 4) Où vit le mapping ?
+
+Dans le projet :
+
+<DocsTable
+  title="Responsabilité du mapping selon le contexte"
+  columnsJson='["Approche","Où vit le mapping","Quand l’utiliser"]'
+  rowsJson='[["select (ou omit) Prisma","dans la requête","filtrage simple, sans transformation"],["transformation dans la procédure","dans la procédure","transformation légère, à un seul endroit (users.getAll ajoute isDemo et les groupes triés)"],["fonction de projection","à côté du routeur (toUserProfile)","dès que deux procédures renvoient la même forme"],["DTO partagé","dans packages/contracts","quand le front a besoin de nommer le type (UserProfile)"]]'
+/>
+
+C’est la même règle que pour les services : une forme utilisée à un seul endroit reste sur place ; dès qu’elle sert deux fois, elle reçoit un nom.
+
+---
+
+## 🔥 Le vrai bénéfice
+
+Avant :
+
+- le frontend lit directement la structure de la base  
+- chaque évolution du schéma Prisma peut casser l’interface  
+- des données sensibles peuvent fuir sans que personne le remarque  
+
+---
+
+Après :
+
+- le frontend consomme un contrat stable  
+- Prisma peut évoluer sans impacter le client si le DTO reste compatible  
+- la sortie est maîtrisée dès la procédure  
+
+---
+
+## 🔁 Le flux complet
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard | service | Prisma | select / mapping | DTO (satisfies) | réponse"
+/>
+
+---
+
+<Callout type="tip">
+Le backend ne renvoie pas "la donnée".
+
+Il renvoie une **version maîtrisée de la donnée** — filtrée, transformée, validée par un contrat.
+
+Et ce contrat peut être partagé avec le frontend.
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne renvoyons plus les modèles internes.
+
+Nous exposons des **contrats stables**, pensés pour le consommateur.
+
+---
+
+Nous avons maintenant un système complet :
+
+- entrée validée (Zod, inline ou partagé)  
+- contexte fiable (createTRPCContext)  
+- intention claire (procédure)  
+- sécurité dans la chaîne (`protectedProcedure`, `isAdmin`) et règles métier dans la procédure  
+- logique métier isolée (service)  
+- erreurs structurées (TRPCError)  
+- sortie maîtrisée (select, DTO, satisfies)  
+
+---
+
+👉 Le flux est désormais cohérent de bout en bout.
+
+Pas seulement dans sa mécanique — dans sa lisibilité.
+
+Chaque couche dit ce qu’elle fait.  
+Chaque erreur dit ce qui a échoué.  
+Chaque réponse dit exactement ce qu’elle promet.
+
+---
+
+🎯 C’est ce qui transforme un backend fonctionnel en backend **compréhensible**.
+
+---
+
+👉 **Où nous en sommes :** le DTO ferme le flux — la sortie est filtrée, structurée, ancrée à un contrat que le frontend peut consommer sans trembler. Chaque couche du backend a désormais sa propre façon d’être stricte. Reste à prendre du recul et à regarder le système dans son ensemble — parce qu’un backend ne se comprend vraiment qu’une fois que toutes ses couches fonctionnent ensemble.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 3
+
+Nous avons durci chaque articulation du flux. Quatre idées en sont ressorties :
+
+- **La sécurité est centralisée, pas dispersée.** `protectedProcedure` et `isAdmin` : les règles d’accès vivent dans des middlewares composables, déclarés dans la chaîne de chaque procédure. Les règles métier qui dépendent de l’entrée vivent dans la procédure, et jamais seulement dans l’interface. Le reste du code peut faire confiance aux types, parce que les vérifications ont déjà eu lieu — et TypeScript requalifie le contexte pour le prouver.
+- **Zod est la frontière du backend.** Toute donnée qui entre passe par un schéma explicite, dont la portée dépend de l’usage : local à la procédure, ou hissé dans `packages/contracts` pour être partagé avec le frontend. Entre la requête et la logique métier, il y a toujours ce seuil — et le service peut travailler sans défiance.
+- **`TRPCError` est un signal, pas un incident à cacher.** Chaque couche lève ce qu’elle sait lever, avec le bon code, et laisse tRPC transformer ce signal en réponse HTTP cohérente. Le *happy path* et le chemin d’erreur coexistent sans que la lisibilité du code en souffre.
+- **Le DTO contrôle ce qui sort.** `select` filtre à la source, le mapping transforme, `satisfies` relie le service à un contrat vérifiable. La sortie n’est plus le reflet brut du modèle Prisma — c’est une forme choisie, stable, et partageable.
+
+Le dernier chapitre va maintenant reprendre tout ce que nous avons construit — du premier appel client jusqu’à la réponse typée — pour le lire d’un seul trait.
+
+## À suivre
+
+Chaque couche a désormais sa façon d’être stricte, et le Mouvement 3 s’achève. Reste à prendre du recul, et à suivre une requête d’un bout à l’autre.
+
+<Callout type="tip">
+**Chapitre suivant : le circuit complet.** Une requête, du clic à la réponse, en onze étapes ; puis le navigateur : les deux clients, le regroupement des appels, le cache et l’invalidation.
+</Callout>

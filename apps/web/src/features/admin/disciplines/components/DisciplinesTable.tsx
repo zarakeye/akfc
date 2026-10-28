@@ -81,7 +81,6 @@ export default function DisciplinesTable(): JSX.Element {
         await remove.mutateAsync({ id: r.id });
         await Promise.all([
           utils.discipline.getAll.invalidate(),
-          utils.discipline.getAllPublished.invalidate(),
           utils.discipline.getAllForMenu.invalidate(),
         ]);
       },

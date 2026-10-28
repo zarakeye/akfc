@@ -1,0 +1,497 @@
+---
+title: "Le routeur métier, les services et les gardes"
+description: "D’où vient réellement ctx, le routeur d’authentification lu ligne à ligne, puis le passage à un backend réel : la logique dans des services, la sécurité dans des gardes, la règle du projet pour décider ce qui descend dans un service, et ce que tRPC apporte vraiment."
+section: "API"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une requête se lit en deux dimensions : le contexte (dans quel cadre) et la procédure (quelle intention). Le routeur regroupe les procédures d’un domaine, et `appRouter` assemble les domaines.
+
+## Mouvement 2 — Composer une procédure
+
+Savoir que l’environnement et l’intention sont deux choses distinctes, c’est un début. Mais dans un backend réel, une procédure n’est jamais seule : elle vit au milieu d’autres couches, chacune avec son rôle. Ce mouvement est celui de la composition — apprendre qui fait quoi, et dans quel ordre.
+
+Voici les deux étapes que nous allons traverser :
+
+- **Ce chapitre** — Nous ouvrons un vrai routeur métier et nous clarifions une ambiguïté qui piège beaucoup de débutants : d’où vient réellement `ctx` ? Puis nous sortons la logique de la procédure pour la placer dans un service, nous déplaçons la sécurité dans des gardes, et nous voyons ce que tRPC apporte vraiment — et ce qu’il n’apporte pas.
+- **Chapitre 5** — Nous apprenons à fabriquer une procédure concrète, dans le bon ordre, avec les bonnes contraintes, pour qu’elle se lise d’un seul regard.
+
+À la fin de ce mouvement, nous saurons non seulement *comprendre* une procédure existante, mais aussi en *écrire* une nouvelle, dans un backend réel, sans mélanger les responsabilités.
+
+---
+
+## Le router métier (là où l’intention devient action)
+
+Maintenant que le contexte est clarifié, nous pouvons enfin ouvrir un vrai router métier.
+
+Mais avant d’aller plus loin, un point doit être verrouillé.
+
+Parce que c’est le point où la plupart des développeurs débutants se perdent.
+
+---
+
+## 🧠 D’où vient réellement `ctx` ?
+
+En lisant une procédure pour la première fois, nous pourrions croire que `ctx` est créé ici.
+
+Ce n’est pas le cas.
+
+👉 `ctx` est produit **en amont** par `createTRPCContext`.
+
+Et surtout :
+
+👉 il n’est jamais appelé manuellement dans le router.
+
+Il serait même impossible de l’appeler manuellement : le router n’a pas accès à la requête HTTP. La requête vit à un niveau supérieur, dans la route App Router. Le router ne connaît que le résultat — l’objet `ctx` déjà construit, qui lui est remis.
+
+---
+
+## Le vrai flux
+
+<ArchitectureDiagram
+  steps="Client | /api/trpc | fetchRequestHandler | createTRPCContext(req) | ctx | procédure"
+/>
+
+---
+
+👉 Concrètement :
+
+- la requête arrive dans `/api/trpc`  
+- `fetchRequestHandler` prend la main  
+- `createTRPCContext(req)` est appelé  
+- un objet `ctx` est construit  
+- ce `ctx` est injecté dans la procédure  
+
+---
+
+<Callout type="info">
+Une procédure ne construit jamais le contexte.
+
+Nous recevons toujours un environnement déjà reconstruit.
+</Callout>
+
+---
+
+## Ce que nous venons réellement observer ici
+
+Nous n’ouvrons pas ce fichier pour voir “une route utilisateur”.
+
+Nous l’ouvrons pour observer comment tRPC articule :
+
+- une **intention** (procédure)  
+- un **contexte** déjà prêt (`ctx`)  
+- une **exécution** (Prisma)  
+
+---
+
+## Un vrai router métier
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="1-60"
+  snippetHighlight="28-52"
+  snippetTitle="Le routeur d’authentification, un cas réel"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## 🧠 Lecture guidée du router auth
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="1-60"
+  title="Anatomie d’un routeur métier"
+  stepsJson='[{"title": "Les imports disent déjà beaucoup", "body": "Le routeur importe publicProcedure et protectedProcedure depuis core, des services métier (loginService, la réinitialisation du mot de passe, l’envoi d’e-mails) et les schémas partagés de packages/contracts. Cette liste dessine déjà l’architecture : la sécurité vient d’en haut (core), la logique métier de côté (services), les règles d’entrée du contrat commun.", "scope": "1-21", "focus": "1-21"}, {"title": "authRouter est un objet, pas une liste de routes", "body": "router({...}) prend un objet dont les clés sont les noms des procédures. C’est exactement ainsi qu’on définit un espace de noms en TypeScript, et c’est ainsi que le client y accède : trpc.auth.login, trpc.auth.logout…", "scope": "23-60", "focus": "23-27"}, {"title": "login est une publicProcedure parce qu’un visiteur doit pouvoir l’appeler", "body": "Si login exigeait d’être déjà connecté, personne ne pourrait jamais se connecter. publicProcedure est donc nécessaire ici. Mais ce choix est explicite : c’est une décision, pas une omission.", "scope": "28-52", "focus": "28-28"}, {"title": ".input valide l’entrée avant toute exécution", "body": "loginSchema vient de packages/contracts : le formulaire de connexion valide avec le même schéma, et affiche le même message. Si l’entrée est invalide, tRPC lève BAD_REQUEST automatiquement : le code de .mutation n’est jamais exécuté.", "scope": "28-52", "focus": "29-30"}, {"title": ".mutation reçoit une entrée typée et délègue immédiatement", "body": "La procédure ne fait pas elle-même le travail. Elle appelle loginService, qui vit dans un fichier séparé : la logique métier est testable sans tRPC, réutilisable, et le routeur reste lisible.", "scope": "28-52", "focus": "31-39"}, {"title": "Un mauvais mot de passe est un résultat, le reste une erreur", "body": "INVALID_CREDENTIALS devient { success: false } : le formulaire sait quoi en faire. Toute autre erreur remonte telle quelle (throw error). Le chapitre 8 racontera pourquoi cette distinction a dû être rétablie.", "scope": "28-52", "focus": "40-51"}, {"title": "logout est une protectedProcedure", "body": "On ne peut pas se déconnecter si on n’est pas connecté. protectedProcedure garantit que ctx.sessionClient.user existe ; la procédure peut alors supprimer la session en toute confiance.", "scope": "54-60", "focus": "54-54"}]'
+/>
+
+Une dernière procédure de ce routeur mérite un regard, plus bas dans le fichier : `getSession`.
+
+```ts
+// packages/backend/src/modules/auth/router.ts (extrait)
+  getSession: publicProcedure.query(async ({ ctx }) => {
+    return ctx.sessionClient;
+  }),
+```
+
+Elle est publique — pas besoin d’être connecté pour l’appeler — et pourtant elle lit le contexte, où `sessionClient` peut être `null`. Le client obtient toujours une réponse : la session, ou rien. C’est la procédure que le front appelle pour savoir « qui suis-je, maintenant ? ». Elle tient en une ligne parce que tout le travail a été fait avant elle, par `createTRPCContext`.
+
+---
+
+## 1) L’intention vit dans la procédure
+
+👉 ici, nous ne définissons pas une route HTTP
+
+👉 nous exprimons une intention métier :
+
+- créer  
+- lire  
+- mettre à jour  
+- supprimer  
+
+<DocsTable
+  title="Où vit l’intention ?"
+  columnsJson='["Lecture","REST","tRPC"]'
+  rowsJson='[["Support principal","URL + méthode HTTP","nom de procédure"],["Exemple","POST /users","user.create(...)"],["Effet mental","il faut interpréter","l’intention est explicite"]]'
+/>
+
+---
+
+## 2) Le contexte est déjà prêt
+
+Quand la procédure s’exécute :
+
+👉 `ctx` est déjà disponible
+
+Donc nous pouvons directement :
+
+- accéder à Prisma via `ctx.prisma`  
+- lire l’utilisateur via `ctx.sessionClient.user`  
+- appliquer la logique métier  
+
+---
+
+👉 Nous ne faisons pas :
+
+- lire les cookies  
+- reconstruire la session  
+- deviner l’utilisateur  
+
+Toute cette plomberie a été faite en amont par le middleware et `createTRPCContext`. Si nous nous retrouvions à écrire `req.headers.get("cookie")` dans une procédure, ce serait le signe d’une fuite architecturale — quelque chose devrait vivre dans `core.ts`, pas ici.
+
+---
+
+## 3) Prisma termine le flux
+
+Prisma n’est pas le début.
+
+👉 c’est la fin logique du flux
+
+- contexte construit  
+- intention définie  
+- action exécutée  
+
+Dans notre architecture, Prisma est toujours le dernier maillon. Quand nous voyons `ctx.prisma.user.create(...)`, c’est que toutes les étapes précédentes ont réussi : authentification, validation, autorisation. Si l’une d’elles avait échoué, nous ne serions jamais arrivés ici.
+
+---
+
+## 🔥 Le circuit complet
+
+<ArchitectureDiagram
+  steps="Client | procédure (intention) | contexte (ctx) | router | Prisma | réponse"
+/>
+
+---
+
+## 🚀 Conclusion
+
+- `ctx` vient de `createTRPCContext`  
+- il est injecté automatiquement  
+- la procédure porte l’intention  
+- Prisma exécute  
+
+👉 séparation claire → backend lisible
+
+---
+
+🧠 À ce stade, nous appelons encore Prisma directement pour simplifier la lecture.
+
+Mais dans un backend réel, cette logique est généralement extraite dans des services et protégée par des guards.
+
+👉 C’est ce que nous allons introduire juste après.
+
+---
+
+👉 **Où nous en sommes :** nous avons ouvert un vrai router et dissipé l’ambiguïté sur `ctx` — il vient toujours d’en amont, jamais de la procédure elle-même. Mais dans cette première lecture, nous avons simplifié : la procédure parle directement à Prisma. Reste à voir ce qui se glisse entre les deux dans un backend réel — la séparation qui fait qu’un router reste lisible même quand la logique métier grossit.
+
+---
+
+Jusqu’ici, nous avons volontairement simplifié.
+
+Dans les exemples précédents, la procédure appelait directement Prisma.
+
+C’est utile pour comprendre le flux.
+
+Mais dans un backend réel, ce n’est pas ce que nous faisons.
+
+Et il y a une raison profonde à cela.
+
+---
+
+## 🧠 Le problème d’un router “trop intelligent”
+
+Si nous écrivons :
+
+<CodeSnippet
+  language="ts"
+  title="Logique métier directement dans la procédure"
+  kind="anti-pattern"
+  codeJson='"protectedProcedure.mutation(({ ctx, input }) => {\n  return ctx.prisma.user.create({ data: input })\n})"'
+/>
+
+👉 nous mélangeons plusieurs responsabilités :
+
+- intention (procédure)  
+- logique métier  
+- accès base de données  
+
+---
+
+💥 Résultat :
+
+- duplication quand plusieurs procédures font la même chose  
+- code difficile à tester parce que dépendant de tRPC  
+- logique dispersée dans les routers  
+
+Et surtout, un effet pernicieux : quand une règle métier change — disons, “nous devons désormais envoyer un e-mail de bienvenue lors de la création d’un membre” — nous devons la répliquer partout où un membre est créé. Y compris dans les scripts de seed, les tâches CRON, les tests. Et si nous en oublions un endroit, l’incohérence s’installe silencieusement.
+
+---
+
+## 🔥 La séparation des responsabilités
+
+Dans un backend propre, nous introduisons une séparation explicite :
+
+- **procédure** → intention  
+- **guard / middleware** → autorisation  
+- **service** → logique métier  
+- **Prisma** → accès aux données  
+
+Chaque couche a un rôle unique. Et chaque couche peut changer sans affecter les autres.
+
+---
+
+## 🧱 Nouvelle structure
+
+<ArchitectureDiagram
+  steps="Client | procédure | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+## 1) Le service : la vraie logique métier
+
+Nous extrayons la logique dans un fichier séparé :
+
+<CodeSnippet
+  language="ts"
+  title="Service métier"
+  kind="pattern"
+  codeJson='"export const userService = {\n  async createUser(ctx, input) {\n    return ctx.prisma.user.create({ data: input })\n  }\n}"'
+/>
+
+---
+
+👉 Le service :
+
+- contient la logique métier, isolée  
+- peut être testé sans tRPC  
+- peut être réutilisé par plusieurs procédures, des scripts, des jobs  
+
+Regardons un vrai service du projet, celui qui vérifie un identifiant et un mot de passe :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-32"
+  snippetHighlight="9-32"
+  snippetTitle="loginService : la logique métier extraite du routeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce service fait un travail précis : il cherche le membre par son adresse, compare le mot de passe saisi à l’empreinte enregistrée (bcrypt), puis crée la session — une ligne en base et un jeton signé dans un cookie, que la partie suivante ouvrira en détail. Aucune trace de requête HTTP, aucun cookie lu, aucune procédure : il reçoit deux chaînes et fait son travail.
+
+Une seule trace de tRPC subsiste : l’erreur qu’il lève est une `TRPCError`. Un service tout à fait indépendant lèverait sa propre erreur, que la procédure traduirait. Le projet accepte ce raccourci, parce que ses services ne servent que ses procédures ; il faut seulement savoir qu’il existe.
+
+C’est cette indépendance qui le rend testable, réutilisable, et maintenable.
+
+---
+
+## 2) La procédure devient simple
+
+<CodeSnippet
+  language="ts"
+  title="Procédure orchestratrice"
+  kind="pattern"
+  codeJson='"protectedProcedure.mutation(({ ctx, input }) => {\n  return userService.createUser(ctx, input)\n})"'
+/>
+
+---
+
+👉 Elle :
+
+- reçoit l’intention  
+- délègue au service approprié  
+- ne contient plus de logique lourde  
+
+Cette légèreté n’est pas une perte — c’est un gain. Quand nous lisons un router, nous devons pouvoir embrasser en un coup d’œil toutes les intentions qu’il expose. Si chaque procédure fait trente lignes de logique métier, la carte du système devient illisible.
+
+---
+
+## 3) Les guards : sécuriser le flux
+
+Avant, nous écrivions peut-être ceci :
+
+<CodeSnippet
+  language="ts"
+  title="Vérification manuelle"
+  kind="anti-pattern"
+  codeJson='"if (!ctx.session.user) {\n  throw new Error(\u0027Unauthorized\u0027)\n}"'
+/>
+
+---
+
+Dans chaque procédure. À chaque fois. Avec le risque d’oublier une fois sur cent.
+
+Avec tRPC :
+
+👉 cette logique est déplacée dans :
+
+- `protectedProcedure` (un middleware attaché globalement)  
+- ou un middleware spécialisé (`isAdmin`, réservé aux administrateurs)  
+
+---
+
+<Callout type="info">
+La sécurité ne doit pas être répétée dans chaque procédure.
+
+Elle doit être centralisée.
+</Callout>
+
+---
+
+## 🔥 Le rôle de protectedProcedure
+
+👉 `protectedProcedure` fait deux choses :
+
+- bloque l’accès si l’utilisateur n’est pas authentifié (jette `UNAUTHORIZED`)  
+- garantit que `ctx.sessionClient.user` existe (requalification TypeScript)  
+
+---
+
+💡 Donc dans le service appelé par une `protectedProcedure` :
+
+👉 nous pouvons supposer que l’utilisateur est présent, sans vérifier
+
+TypeScript le garantit. Le middleware `isAuthed` a requalifié `ctx.sessionClient` de `SessionClient | null` vers `AuthenticatedSessionClient`. Quand le service lit `ctx.sessionClient.user.id`, aucun `?` n’est nécessaire. La garantie est portée par les types.
+
+---
+
+## 🧠 Vue finale
+
+<DocsTable
+  title="Responsabilités dans le backend"
+  columnsJson='["Couche","Rôle"]'
+  rowsJson='[["procédure","porte l’intention"],["guard","sécurise l’accès"],["service","implémente la logique métier"],["Prisma","exécute sur la base de données"]]'
+/>
+
+---
+
+## 🚀 Le vrai flux final
+
+<ArchitectureDiagram
+  steps="Client | procédure (intention) | ctx | guard | service | Prisma | réponse"
+/>
+
+---
+
+---
+
+## 🧭 Ce que fait réellement le projet
+
+Il serait faux de dire que chaque procédure du projet délègue à un service. Beaucoup portent leur logique elles-mêmes, et ce n’est pas un défaut en soi. La règle suivie est plus simple : **une logique utilisée à un seul endroit reste dans sa procédure ; dès qu’elle sert à deux endroits, elle descend dans un service**.
+
+Les services vivent à côté du routeur de leur domaine, dans un dossier `services/` (`modules/media/services/syncPageMediaReferences.service.ts`, `modules/auth/services/auth.service.ts`…). Ils reçoivent ce dont ils ont besoin en paramètres — le client Prisma, ou la transaction en cours — plutôt que le contexte tRPC tout entier.
+
+Le routeur des disciplines en donne un exemple récent. La création et la modification d’une discipline vérifiaient chacune, ligne à ligne, que la catégorie, l’instructeur, la famille et l’origine existaient : une cinquantaine de lignes, écrites deux fois, déjà légèrement différentes (la catégorie, non modifiable, n’est vérifiée qu’à la création). Ces vérifications sont désormais un service :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/services/assertDisciplineReferences.service.ts"
+  filename="assertDisciplineReferences.service.ts"
+  snippetRange="1-48"
+  snippetHighlight="12-20"
+  snippetTitle="Un service partagé par deux procédures"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Et les deux procédures l’appellent, chacune avec ce qu’elle reçoit :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="243-253"
+  snippetHighlight="5-11"
+  snippetTitle="discipline.create : un appel au lieu de cinquante lignes"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’exemple inverse existe aussi. La création d’un membre (`user.create`) envoie elle-même l’e-mail de bienvenue, puis prévient la boîte du club. Tant qu’elle est le seul chemin par lequel un membre est créé, c’est acceptable. Le jour où un script devra créer des membres en masse, cette logique devra descendre dans un service ; sinon, les membres créés par le script ne recevraient rien, sans que personne s’en aperçoive.
+
+---
+
+## 💥 Ce que tRPC apporte vraiment
+
+Il faut être précis ici, parce qu’il y a souvent une incompréhension.
+
+👉 tRPC ne remplace pas le backend
+
+tRPC ne contient pas notre logique métier. Il ne gère pas nos règles d’autorisation complexes. Il ne persiste pas nos données.
+
+👉 Il organise :
+
+- le flux (comment une requête traverse le système)  
+- le typage (comment les types circulent sans rupture)  
+- l’injection du contexte (comment chaque procédure hérite d’un environnement)  
+
+tRPC est une couche d’**orchestration**. Comme un chef d’orchestre, il ne joue pas lui-même les instruments. Il s’assure que chaque musicien entre au bon moment, dans la bonne tonalité.
+
+---
+
+<Callout type="tip">
+tRPC est une couche d’orchestration.
+
+Le cœur métier reste dans les services.
+</Callout>
+
+---
+
+## 🎯 Conclusion
+
+Nous avons maintenant une vision complète :
+
+- requête → contexte  
+- intention → procédure  
+- sécurité → guard  
+- logique → service  
+- données → Prisma  
+
+👉 chaque responsabilité est à sa place
+
+---
+
+🚀 Nous obtenons une architecture backend claire, testable et scalable.
+
+Et surtout : lisible. Un développeur qui rejoint le projet peut ouvrir un router et comprendre, en quelques minutes, ce que fait chaque procédure, ce qui la protège, et où chercher la logique métier associée.
+
+---
+
+👉 **Où nous en sommes :** nous avons les quatre couches — procédure, guard, service, Prisma — et nous savons pourquoi chacune doit rester à sa place. Reste à apprendre comment les **composer** dans l’écriture concrète d’une procédure : dans quel ordre, avec quelles contraintes, et surtout, comment faire en sorte que cette composition se lise d’un seul regard.
+
+## À suivre
+
+Nous avons les quatre couches — procédure, garde, service, Prisma — et nous savons pourquoi chacune doit rester à sa place. Reste à apprendre à les composer dans l’écriture concrète d’une procédure.
+
+<Callout type="tip">
+**Chapitre suivant : fabriquer une procédure.** La forme canonique, l’ordre de construction, query ou mutation, puis trois exemples réels : une procédure publique, une procédure protégée, une écriture complète.
+</Callout>

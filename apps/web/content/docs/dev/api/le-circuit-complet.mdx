@@ -1,0 +1,305 @@
+---
+title: "Le circuit complet"
+description: "Une requête suivie de bout en bout, du client à la réponse typée, en onze étapes ; le navigateur (deux clients sur un seul lien, regroupement des appels, cache et invalidation) ; ce qui n’appelle pas tRPC ; et le récapitulatif de la partie."
+section: "API"
+order: 10
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La sortie est filtrée (`select`), projetée vers un contrat (`satisfies`), et jamais une ligne complète du modèle. Chaque couche du backend a sa façon d’être stricte.
+
+Nous avons avancé étape par étape.
+
+Nous avons isolé chaque pièce :
+
+- le contexte  
+- la procédure  
+- la validation  
+- la sécurité  
+- le service  
+- Prisma  
+- les erreurs  
+- le mapping DTO  
+
+Mais à ce stade, une dernière chose devient nécessaire.
+
+---
+
+## 🧠 Recomposer le système
+
+Jusqu’ici, nous avons zoomé.
+
+👉 Maintenant, nous devons **reprendre du recul**.
+
+---
+
+Parce qu’un backend ne se comprend vraiment que lorsque :
+
+> toutes ses couches fonctionnent **ensemble**
+
+Chaque couche prise isolément a son rôle, mais c’est leur articulation qui fait la qualité du système. Un contexte sans procédures ne sert à rien. Des procédures sans guards sont vulnérables. Des guards sans services deviennent des fourre-tout. Des services sans DTO exposent trop. Chaque pièce a besoin des autres pour exister pleinement.
+
+---
+
+## 🔥 Le circuit complet
+
+<ArchitectureDiagram
+  steps="Client | App Router (/api/trpc) | createTRPCContext | procédure (intention) | garde (isAuthed, isAdmin) | validation Zod | règle métier | service | Prisma | mapping DTO | réponse typée"
+ />
+
+---
+
+## 🧠 Lecture du flux (sans rupture)
+
+Nous pouvons maintenant suivre une requête du début à la fin.
+
+---
+
+### 1) Le client exprime une intention
+
+Le frontend n’envoie plus une requête HTTP brute.
+
+👉 Il appelle une capacité :
+
+- `trpc.user.create(...)`
+
+Cet appel est typé. L’autocomplétion fonctionne. Les erreurs de compilation arrivent avant même que le code ne tourne.
+
+---
+
+### 2) App Router reçoit la requête
+
+La route `/api/trpc/[trpc]` agit comme point d’entrée unique.
+
+👉 Elle ne contient pas de logique métier.
+
+👉 Elle délègue à `fetchRequestHandler`, qui à son tour parle au router tRPC.
+
+---
+
+### 3) Le contexte est reconstruit
+
+`createTRPCContext(req)` est appelé.
+
+👉 Le système reconstruit :
+
+- la session (via `getSessionFromRequest`)  
+- l’utilisateur (s’il existe)  
+- s’il est administrateur (via son appartenance au groupe Administrateurs)  
+- l’accès à Prisma  
+- l’IP et le user-agent de la requête  
+
+---
+
+### 4) La procédure est sélectionnée
+
+L’intention est identifiée à partir du chemin URL :
+
+- `/api/trpc/user.create` → procédure `create` du router `user`
+- `/api/trpc/auth.login` → procédure `login` du router `auth`
+
+👉 La procédure correspondante est exécutée.
+
+---
+
+### 5) L’entrée est validée
+
+Zod intervient immédiatement.
+
+👉 Si invalide → `BAD_REQUEST` automatique  
+👉 Sinon → `input` devient un type TypeScript garanti  
+
+---
+
+### 6) La sécurité est appliquée
+
+- `protectedProcedure` vérifie l’authentification  
+- `.use(isAdmin)` vérifie l’appartenance au groupe Administrateurs  
+
+👉 En cascade, jusqu’à ce que toutes les contraintes soient satisfaites — ou qu’une d’elles lève une erreur.
+
+---
+
+### 7) La règle métier filtre les cas limites
+
+Certaines contraintes ne sont pas de la sécurité — elles sont des règles du domaine.  
+Exemple : un administrateur ne peut pas supprimer son propre compte, ni se retirer lui-même du groupe Administrateurs.
+
+👉 Ces règles vivent dans la procédure elle-même, entre la sécurité et la délégation au service.
+
+---
+
+### 8) Le service exécute la logique
+
+👉 La procédure délègue au service métier.
+
+👉 Le service :
+
+- applique les règles métier  
+- orchestre les opérations  
+- interagit avec Prisma  
+
+---
+
+### 9) Prisma exécute
+
+👉 Accès base de données via le client typé.
+
+Requêtes optimisées grâce à `select`, relations chargées explicitement avec `include`.
+
+---
+
+### 10) Le mapping transforme la sortie
+
+👉 DTO :
+
+- filtre (via `select` ou mapping explicite)  
+- structure (via transformation)  
+- stabilise (via `satisfies` contre un contrat)  
+
+---
+
+### 11) La réponse remonte
+
+👉 Succès ou erreur.
+
+👉 Toujours cohérente, toujours typée, transportée fidèlement par `superjson`.
+
+---
+
+## 🖥️ Côté navigateur : deux clients
+
+Le circuit commence et se termine dans le navigateur. Le front dispose de deux clients, déclarés dans le même fichier, sur un seul lien :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/core/trpc/trpcClient.ts"
+  filename="trpcClient.ts"
+  snippetRange="1-25"
+  snippetHighlight="9-15"
+  snippetTitle="Un lien, deux clients"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<DocsTable columnsJson='["Client","Usage"]' rowsJson='[["trpc (hooks React)","Dans les composants : useQuery, useMutation, useUtils. Branché sur React Query par AppProviders (app/providers.tsx)."],["trpcClient (appels directs)","Hors des composants, ou là où un hook ne convient pas : adaptateurs du finder, formulaire de connexion."]]' />
+
+`httpBatchLink` **regroupe** les appels lancés au même moment en une seule requête HTTP : une page qui charge la liste des disciplines, des familles et des origines n’envoie qu’une requête (`/api/trpc/discipline.getAll,disciplineFamily.getAll,origin.getAll?batch=1`). L’adresse est relative : le navigateur appelle le même site que la page, et y joint donc le cookie de session sans réglage particulier. Et le lien déclare `superjson`, le même transformateur que le serveur (chapitre 2).
+
+Ce lien était écrit deux fois, une par client, à l’identique ; une différence introduite dans l’un seulement (un en-tête, un autre transformateur) n’aurait touché que la moitié des appels. Il est désormais déclaré une fois.
+
+### Lire, écrire, rafraîchir
+
+Une lecture passe par `useQuery`, qui met le résultat en cache sous une clé dérivée de la procédure et de son entrée. Une écriture passe par `useMutation`. Après une écriture, le composant **invalide** les lectures concernées :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/dashboard/disciplines/create/page.tsx"
+  filename="page.tsx"
+  snippetRange="14-24"
+  snippetHighlight="3-4,8-9"
+  snippetTitle="Créer, puis invalider la liste"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`invalidate()` marque la liste comme périmée : tout composant qui l’affiche la recharge de lui-même. Le composant qui crée n’a pas à savoir qui affiche la liste. C’est la règle que la partie « Formulaires » avait posée : après un enregistrement, on relit la vérité du serveur, on ne complète pas un état local à la main.
+
+Une invalidation oubliée ne casse rien de visible tout de suite : la liste reste simplement ancienne jusqu’au prochain chargement. Une invalidation de trop non plus. Le tableau des disciplines invalidait ainsi une lecture, `getAllPublished`, qu’aucun écran n’appelait plus ; la procédure elle-même, doublon exact de `getAllForMenu`, a été retirée.
+
+### Et côté serveur ?
+
+Les composants serveur n’appellent pas tRPC : ils lisent la base directement avec Prisma (partie « Fondations front »), ce qui évite une requête HTTP vers soi-même. Les server actions non plus (partie « Formulaires »). tRPC est l’API **du navigateur**.
+
+Un test qui doit passer par les procédures, avec leurs gardes et leurs validations, les appelle sans HTTP : `appRouter.createCaller(contexte)` rend un objet qui expose chaque procédure comme une fonction. C’est ainsi qu’ont été vérifiées les corrections racontées dans cette partie : un contexte d’administrateur, un appel à `user.delete` avec son propre identifiant, et la réponse `FORBIDDEN` attendue.
+
+---
+
+## 💥 Ce que nous avons réellement construit
+
+Ce n’est pas une API.
+
+---
+
+👉 C’est un **flux maîtrisé**.
+
+---
+
+Un système dans lequel :
+
+- la donnée entre proprement  
+- elle circule sans rupture  
+- elle est contrôlée à chaque étape  
+- elle sort sous une forme stable  
+
+---
+
+<Callout type="tip">
+Nous ne manipulons plus :
+
+→ des requêtes HTTP  
+
+Nous manipulons :
+
+→ un **pipeline de traitement typé et structuré**
+</Callout>
+
+---
+
+## 🧱 Lecture finale (résumé condensé)
+
+<DocsTable
+  title="Le pipeline complet"
+  columnsJson='["Étape","Responsabilité"]'
+  rowsJson='[["Client","exprime une intention"],["App Router","point d’entrée"],["Context","reconstruit l’environnement"],["Procédure","porte l’intention"],["Zod","valide l’entrée"],["isAuthed","authentifie"],["isAdmin, gardes d’espace","autorisent"],["Règle métier","filtre les cas limites"],["Service","exécute la logique"],["Prisma","accède aux données"],["DTO","contrôle la sortie"],["Réponse","renvoyée au client"]]'
+/>
+
+---
+
+## 🚀 Conclusion globale
+
+Nous avons complètement changé de modèle.
+
+---
+
+Avant :
+
+- JSON  
+- routes  
+- duplication  
+- incertitude  
+
+---
+
+Maintenant :
+
+- typage continu  
+- contexte centralisé  
+- responsabilités séparées  
+- flux lisible  
+
+---
+
+👉 Et surtout :
+
+> chaque étape du système a un rôle clair
+
+---
+
+🎯 C’est ce qui transforme un backend :
+
+de fonctionnel  
+→ en **robuste, maintenable et compréhensible**
+
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment le front connaît-il les types de l’API ?","import type { AppRouter } : les types sont inférés du backend, sans code embarqué."],["Où déclarer une nouvelle procédure ?","Dans le routeur de son domaine (modules/<domaine>/router.ts), assemblé dans modules/index.ts."],["D’où vient ctx ?","De createTRPCContext, appelé par la route /api/trpc à chaque requête ; jamais de la procédure."],["Comment protéger une procédure ?","Dans sa chaîne : publicProcedure, protectedProcedure, ou protectedProcedure.use(isAdmin)."],["Où vit une règle comme « pas soi-même » ?","Dans la procédure, qui connaît l’entrée ; jamais seulement dans l’interface."],["Où vit un schéma Zod ?","Dans le routeur, ou dans packages/contracts s’il est partagé avec un formulaire — et alors importé des deux côtés."],["Quand descendre une logique dans un service ?","Dès qu’elle sert à deux endroits (assertDisciplineReferences)."],["Résultat ou erreur ?","Un résultat si l’appelant sait quoi en faire (INVALID_CREDENTIALS), une TRPCError sinon."],["Que voit le navigateur d’une erreur interne ?","En production, un message neutre (errorFormatter) ; le détail est journalisé (onError)."],["Que renvoyer ?","Ce qui est listé (select), projeté vers un contrat (satisfies), jamais une ligne complète."],["Comment rafraîchir une liste après une écriture ?","utils.<domaine>.<lecture>.invalidate()."],["Pourquoi superjson ?","Pour que les dates (et autres types non JSON) arrivent intactes."]]' />
+
+## À suivre
+
+Chaque procédure s’appuie sur `ctx.sessionClient` pour savoir qui l’appelle, et sur `isAdmin` pour décider s’il a le droit. Ces deux informations, nous les avons utilisées sans les ouvrir.
+
+<Callout type="tip">
+**Partie suivante : l’authentification et les droits.** Ce que contient le cookie de session, pourquoi un jeton signé désigne une ligne en base, comment se passent la connexion et la réinitialisation du mot de passe, et comment les groupes décident de ce que chacun peut faire.
+</Callout>

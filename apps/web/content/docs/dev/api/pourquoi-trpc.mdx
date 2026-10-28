@@ -1,0 +1,476 @@
+---
+title: "Quand la donnée change de nature : pourquoi tRPC"
+description: "La fracture entre un front et un back typés qui se parlent en JSON écrit à la main, la bascule d’un modèle « URL + JSON » vers des capacités appelées comme des fonctions, et pourquoi tRPC est ici une conséquence plutôt qu’une mode."
+section: "API"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le schéma Prisma décrit les données du club, et les formulaires savent y faire entrer une mutation sans trahir le modèle. Mais une application lit, liste, synchronise et invalide bien plus qu’elle ne soumet, et le navigateur n’a pas accès à la base. Il lui faut une API.
+
+Nous sortons de **Prisma** avec une base enfin propre.  
+Pas seulement des tables, mais une structure : une donnée **claire**, **cohérente**, **partagée**.
+
+Puis viennent les **formulaires**.  
+Nous apprenons à capter une intention utilisateur, à la valider, à la transformer correctement pour l’intégrer dans le système.
+
+Tout semble alors s’aligner.
+
+**Prisma** donne une forme.  
+Les **formulaires** donnent une entrée.  
+La suite paraît évidente : *la donnée circule*.
+
+Et pourtant, c’est précisément ici que quelque chose se fissure.
+
+---
+
+Dans un flux classique, rien d’alarmant.
+
+Nous saisissons une donnée,  
+nous l’envoyons,  
+le serveur la reçoit,  
+la traite,  
+puis répond.
+
+Tout fonctionne.
+
+Mais si nous regardons **ce qui se passe entre le frontend et le backend**, une incohérence apparaît.
+
+---
+
+🧠 Nous avons construit une **donnée typée**.
+
+Et malgré cela, nous la faisons passer par ceci :
+
+<ArchitectureDiagram
+  steps="Frontend typé | JSON | API | Backend | Prisma"
+/>
+
+---
+
+💥 Ce passage crée une rupture.
+
+👉 Une donnée typée  
+👉 devient JSON  
+👉 puis est reconstruite  
+
+---
+
+Pour bien sentir cette rupture, imaginons une scène simple.
+
+Nous avons préparé un plat minutieux dans notre cuisine. Chaque ingrédient a sa place, chaque ustensile est à portée de main, chaque texture est contrôlée. Puis, pour servir ce plat à la table voisine — à deux mètres — nous le passons au mixeur.
+
+Le plat arrive. Il est encore nutritif. Il est même mangeable. Mais sa forme a disparu.
+
+C’est exactement ce qui se passe entre notre frontend typé et notre backend typé quand nous les faisons communiquer via JSON. Nous avons construit une structure riche côté client, nous la transmettons à deux mètres logiques, et pour ce trajet minuscule nous la mixons.
+
+---
+
+<Callout type="warning">
+⚠️ Le problème n’est pas l’appel réseau.
+
+Le problème, c’est la transformation d’une donnée typée en **JSON intermédiaire**, qui **brise sa continuité**.
+</Callout>
+
+---
+
+💡 Une question apparaît alors :
+
+> **pourquoi traduire en JSON une donnée que le système connaît déjà ?**
+
+---
+
+Dans ce projet, cette question devient centrale.
+
+Nous sommes dans **Next.js App Router** :
+
+- frontend et backend cohabitent  
+- ils partagent les mêmes types  
+- ils manipulent déjà la même donnée  
+
+---
+
+👉 Dans ce contexte, le JSON n’est plus une nécessité.
+
+Il devient une **habitude héritée** d’une époque où frontend et backend vivaient réellement sur des serveurs séparés, dans des langages différents, avec des équipes différentes.
+
+Nous n’avons plus aucune de ces frontières.  
+Et pourtant nous payons encore leur coût.
+
+---
+
+<Callout type="info">
+🧠 La vraie fracture n’est pas entre frontend et backend.
+
+Elle apparaît lorsque la donnée est **forcée de changer de nature** pour circuler.
+</Callout>
+
+---
+
+## 🎯 Ce que nous allons faire
+
+Nous n’allons pas simplement apprendre tRPC.
+
+Nous allons reconstruire, étape par étape, une compréhension fine de ce qui se passe entre le moment où l’utilisateur clique quelque part et le moment où la base de données répond.
+
+---
+
+👉 Nous allons comprendre :
+
+- comment une donnée entre dans le système  
+- comment elle circule  
+- comment elle est validée  
+- comment elle est sécurisée  
+- comment elle est transformée  
+- comment elle ressort  
+
+---
+
+👉 Et surtout :
+
+> **comment préserver sa continuité du début à la fin**
+
+---
+
+## 🚀 Le changement de modèle
+
+Nous ne verrons plus :
+
+- des requêtes  
+- des routes  
+- du JSON  
+
+---
+
+Nous verrons :
+
+👉 un **flux structuré**
+
+---
+
+Un système dans lequel :
+
+- la donnée reste typée  
+- le contexte est reconstruit  
+- l’intention est explicite  
+- chaque couche a un rôle clair  
+
+---
+
+Et c’est exactement ce que nous allons construire.
+
+---
+
+## 🗺️ Ce que nous allons traverser
+
+Nous n’allons pas simplement empiler des notions. Nous allons construire une compréhension progressive, en trois mouvements répartis sur dix chapitres, puis recomposer le tout à la fin.
+
+- **Mouvement 1 — Comprendre la fracture** (ce chapitre et les deux suivants). Nous regardons le modèle REST en face, nous identifions où et pourquoi il devient incohérent dans un monorepo TypeScript, et nous découvrons la forme que prend sa remplaçante : un flux structuré, où le contexte et l’intention sont séparés.
+- **Mouvement 2 — Composer une procédure** (chapitres 4 et 5). Nous ouvrons un vrai routeur métier, nous voyons comment la logique se répartit entre procédure, garde, service et Prisma, et nous apprenons à fabriquer une procédure dans le bon ordre.
+- **Mouvement 3 — Durcir chaque étape** (chapitres 6 à 9). Nous reprenons chaque couche pour la solidifier : protéger (la session, le groupe Administrateurs, les règles métier), valider l’entrée (Zod), gérer les erreurs (`TRPCError`), maîtriser la sortie (DTO).
+
+Le **chapitre 10** reprendra ensuite le flux complet, du clic dans le navigateur à la réponse, pour le lire d’un seul regard, avec ce qui se passe côté navigateur : les deux clients, le cache, l’invalidation.
+
+Le projet servira de terrain à chaque étape. Et il ne sera pas montré sous son meilleur jour seulement : en le relisant pour écrire ces chapitres, nous y avons trouvé une empreinte de mot de passe renvoyée au navigateur, des messages d’erreur internes exposés, une règle qui ne vivait que dans l’interface, une garde recopiée procédure par procédure. Tout cela a été corrigé, et chaque correction est racontée là où elle éclaire une notion.
+
+---
+
+## Mouvement 1 — Comprendre la fracture
+
+Avant d’écrire quoi que ce soit, nous devons comprendre pourquoi le modèle que nous connaissons tous — frontend, API, JSON, backend — commence à craquer dans notre stack. Et surtout : ce qui prend sa place, et sous quelle forme.
+
+Voici les trois étapes que nous allons traverser :
+
+- **Ce chapitre** — Nous reprenons le même projet, la même donnée, et nous posons la question qui change tout : *et si nous arrêtions de traduire la donnée ?*
+- **Chapitre 2** — Nous redessinons la carte du système pour y faire apparaître le vrai point d’ancrage — le fichier `core.ts` où naît le contexte.
+- **Chapitre 3** — Nous séparons proprement deux choses que REST mélange : l’environnement d’une requête (le contexte) et son intention (la procédure).
+
+À la fin de ce mouvement, nous saurons lire un appel tRPC non plus comme « une requête qui part et revient », mais comme une intention nommée, exécutée dans un contexte déjà prêt.
+
+---
+
+## Et si le problème venait du modèle lui-même ?
+
+Nous reprenons exactement le même point de départ.
+
+Même projet.  
+Même stack.  
+Même donnée.
+
+Rien n’a changé.
+
+Et pourtant… quelque chose a bougé.
+
+Pas dans le code.  
+🧠 Dans la manière de regarder le système.
+
+---
+
+Jusqu’ici, nous fonctionnions avec un réflexe presque automatique :
+
+> “frontend → API → backend → base de données”
+
+Un enchaînement logique. Familier. Rassurant.
+
+C’est ce que nous avons appris dans les tutoriels de REST. C’est ce que nous retrouvons dans la plupart des projets. C’est même ce que proposent les templates de démarrage.
+
+Mais maintenant que la fracture est visible…
+
+ce modèle commence à poser problème.
+
+---
+
+💥 Le point de friction n’est plus abstrait.
+
+Nous savons exactement où cela casse :
+
+👉 au moment où la donnée typée devient du **JSON**.
+
+---
+
+Donc la question change.
+
+Nous ne cherchons plus :
+
+> “comment faire une meilleure API ?”
+
+Nous commençons à nous demander :
+
+> **et si nous arrêtions de traduire la donnée ?**
+
+---
+
+Nous reprenons un cas simple : créer un utilisateur.
+
+Mais cette fois, nous imposons une contrainte :
+
+👉 la donnée ne doit **jamais perdre sa nature typée** pendant le trajet.
+
+---
+
+Dans ce cadre, écrire ceci devient immédiatement suspect :
+
+<CodeSnippet
+  language="ts"
+  title="Réflexe REST classique"
+  kind="anti-pattern"
+  codeJson='"await fetch(\"/api/user\", {\n  method: \"POST\",\n  headers: {\n    \"Content-Type\": \"application/json\",\n  },\n  body: JSON.stringify(data),\n})"'
+/>
+
+---
+
+Parce que cette ligne contient déjà le problème :
+
+👉 `JSON.stringify`
+
+Ce n’est pas une fonction neutre. C’est un sérialiseur — un appareil qui prend une structure riche et la traduit en une chaîne de caractères aplatie.
+
+Pendant cette traduction, plusieurs informations disparaissent :
+
+- une `Date` devient une string  
+- un `BigInt` ne survit même pas (il jette une erreur)  
+- une instance de classe perd son prototype  
+- un `Map` ou un `Set` deviennent un objet générique ou un tableau  
+- et surtout : **tous les types TypeScript s’évaporent**  
+
+Côté serveur, quand nous récupérons ce body, nous recevons un `unknown`. Nous devons parser, valider, reconstruire. Nous devons deviner.
+
+---
+
+💡 Nous tentons alors autre chose.
+
+Pas une implémentation complète.  
+Juste une idée.
+
+---
+
+Et si, au lieu d’envoyer une requête…
+
+nous appelions directement une capacité du backend ?
+
+---
+
+<CodeSnippet
+  language="ts"
+  title="Idée (pseudo-code)"
+  kind="educational"
+  codeJson='"await backend.user.create({\n  email,\n  password,\n})"'
+/>
+
+---
+
+Ce n’est pas encore une solution.
+
+Mais c’est suffisant pour provoquer un déclic.
+
+---
+
+🧠 Immédiatement, plusieurs choses changent :
+
+- plus de route à construire  
+- plus de JSON à fabriquer  
+- plus de contrat implicite à deviner  
+
+👉 et surtout, nous restons **dans le monde typé**
+
+Parce qu’une fonction, contrairement à une URL, porte son contrat dans sa signature. TypeScript sait ce qu’elle attend. TypeScript sait ce qu’elle retourne. Il n’y a plus rien à reconstruire.
+
+<Callout type="info">
+**Une précision, pour ne rien laisser de flou.** Sur le réseau, il y a toujours une requête HTTP, et son contenu est toujours du texte au format JSON : c’est ce que le web sait transporter. Ce qui disparaît, ce n’est pas le JSON comme format de transport, c’est le JSON comme **contrat écrit à la main**. Nous ne fabriquons plus la requête, nous ne relisons plus un `unknown` à l’arrivée, et les types que JSON ne connaît pas (une `Date`, par exemple) sont reconstruits de l’autre côté par un outil dédié, `superjson`, que le chapitre suivant présente.
+</Callout>
+
+
+---
+
+<Callout type="info">
+Ce que nous cherchons ici, ce n’est pas une nouvelle syntaxe.
+
+C’est une façon de laisser la donnée circuler **sans jamais quitter son contexte typé**.
+</Callout>
+
+---
+
+## La bascule mentale
+
+À ce stade, quelque chose se transforme.
+
+Nous cessons de penser :
+
+> “frontend → API → backend”
+
+Et nous commençons à penser :
+
+> **client → système**
+
+---
+
+Ce n’est pas un simple changement de mots.
+
+C’est un changement de modèle.
+
+---
+
+Dans une approche REST classique, nous aurions :
+
+<ArchitectureDiagram
+  steps="Client | JSON | API | Backend | Database"
+/>
+
+La frontière est forte.  
+Elle est assumée.
+
+Elle est même documentée : on écrit une spec OpenAPI, on génère des clients, on maintient les deux côtés synchronisés à la main.
+
+---
+
+Mais dans notre contexte **Next.js App Router**, cette frontière commence à devenir artificielle.
+
+En effet :
+
+- frontend et backend cohabitent  
+- ils partagent les mêmes types  
+- ils manipulent la même donnée  
+
+👉 Nous ne sommes pas face à deux systèmes éloignés.  
+Nous sommes face à **un seul système, fragmenté artificiellement**.
+
+---
+
+💥 Et c’est précisément ici que le modèle REST commence à montrer ses limites.
+
+Le coût qu’il fait payer — sérialisation, duplication de types, reconstruction des structures, validation manuelle — était justifié quand les deux côtés étaient réellement séparés. Ici, ce coût n’a plus de contrepartie.
+
+---
+
+## Ce qui commence à émerger
+
+Nous ne parlons pas encore de tRPC en détail, mais quelque chose devient visible.
+
+Nous voulons :
+
+- appeler une capacité backend sans passer par une route manuelle  
+- conserver le typage de bout en bout  
+- centraliser la validation  
+- éviter toute reconstruction  
+
+---
+
+👉 En une phrase :
+
+> **arrêter de traduire**
+
+---
+
+<Callout type="tip">
+Le problème n’est pas “comment mieux appeler une API”.
+
+Le problème est : pourquoi cette API existe encore comme frontière dans un système qui n’en a plus réellement besoin ?
+</Callout>
+
+---
+
+Et à ce stade, quelque chose devient évident.
+
+Pas brutalement.
+
+Mais progressivement.
+
+---
+
+💡 Ce que nous cherchons existe déjà.
+
+---
+
+Une couche qui :
+
+- remplace les endpoints  
+- transporte les appels  
+- conserve les types  
+- respecte la continuité  
+
+---
+
+Et c’est exactement ici que **tRPC** entre en jeu.
+
+Pas comme une nouveauté  
+👉 mais comme une conséquence logique.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi tRPC porte ce nom
+
+Le nom tRPC signifie *TypeScript Remote Procedure Call*. Ce n’est pas un hasard : RPC est un paradigme plus ancien que REST, dans lequel le client appelle directement des fonctions qui s’exécutent ailleurs, comme si elles étaient locales. REST a longtemps dominé parce que le web exigeait un découplage fort et des protocoles stables entre systèmes hétérogènes.
+
+tRPC ne réinvente rien. Il remet au goût du jour une idée éprouvée, en l’adaptant à une situation précise : celle où frontend et backend parlent déjà la même langue — TypeScript — et partagent déjà leur code.
+
+Dans ce contexte, le RPC redevient plus naturel que REST.
+
+
+<Callout type="info">
+tRPC convient ici parce que le front et le back vivent dans le même dépôt, en TypeScript, et sont déployés ensemble. Une API destinée à des clients tiers (une application d’un autre éditeur, un partenaire), ou écrite dans d’autres langages, appellerait plutôt REST ou GraphQL : leurs contrats se publient et se lisent sans partager le code. Le jour où le projet aurait besoin d’une telle API, elle s’ajouterait à côté de tRPC, sans le remplacer.
+</Callout>
+
+---
+
+Nous n’allons pas encore plonger dans son implémentation.
+
+Parce qu’il reste une chose à comprendre. Une chose essentielle :
+
+> 🧠 Si tRPC fonctionne aussi bien ici, ce n’est pas par magie.  
+C’est parce que l’architecture du projet le rend possible.
+
+Et c’est exactement ce que nous allons explorer maintenant.
+
+---
+
+👉 **Où nous en sommes :** nous avons vu que la fracture n’est pas un accident, mais la conséquence d’une frontière artificielle que notre stack a rendue inutile. tRPC n’est donc pas une nouveauté à apprendre — c’est la suite logique d’un système qui n’a plus besoin de traduire la donnée pour qu’elle circule. Reste à ouvrir la carte : voir où, concrètement, dans le code, cette continuité prend corps.
+
+## À suivre
+
+Nous savons ce que nous cherchons : une couche qui laisse circuler la donnée sans la retraduire. Reste à voir où, concrètement, dans le code, cette continuité prend corps.
+
+<Callout type="tip">
+**Chapitre suivant : la carte du système.** L’appel côté client, le contexte construit à chaque requête dans `core.ts`, le transformateur `superjson`, et la route unique par laquelle tout entre.
+</Callout>

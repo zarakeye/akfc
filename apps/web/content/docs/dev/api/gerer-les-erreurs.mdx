@@ -1,0 +1,309 @@
+---
+title: "Gérer les erreurs"
+description: "Une erreur est un signal, pas un incident à cacher : résultat attendu ou vraie erreur (la connexion), TRPCError et ses codes, l’unicité confiée à la base (P2002 → CONFLICT), une règle métier qui lève FORBIDDEN, et ce que le navigateur reçoit d’une erreur imprévue (errorFormatter, onError)."
+section: "API"
+order: 8
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Zod garde l’entrée : une donnée invalide est refusée avant toute logique, et le service travaille sur des données fiables.
+
+Nous avons maintenant un système propre.
+
+Une entrée validée, un contexte fiable, une sécurité centralisée, une logique déléguée.
+
+Mais ce système est encore décrit dans son "happy path".
+
+Et un backend réel ne vit pas uniquement dans le cas favorable.
+
+---
+
+## 🧠 La vraie question
+
+Que se passe-t-il quand quelque chose échoue ?
+
+---
+
+Sans cadre clair, les dérives sont prévisibles.
+
+Des `try/catch` apparaissent partout.  
+Des `return { success: false }` remplacent de vraies erreurs.  
+Chaque couche formate les messages à sa façon.  
+Le client reçoit des réponses incohérentes selon où l’erreur s’est produite.
+
+---
+
+💥 Le flux devient illisible.
+
+Pas parce que ça casse — parce que ça ne casse plus de façon prévisible. Une erreur identifiable est une ressource, pas un problème. Un échec silencieux, ou masqué, ou déformé, est bien pire : il se propage sans être remarqué, jusqu’à provoquer un effet inattendu loin de sa cause.
+
+---
+
+## 🔥 Le principe fondamental
+
+Une erreur doit être :
+
+- **lancée au bon endroit**, par la couche qui sait pourquoi elle échoue  
+- **expressive**, avec un code et un message exploitables  
+- **propagée sans être déformée**  
+
+---
+
+Et surtout : elle ne doit pas être transformée en pseudo-succès.
+
+---
+
+## 1) Ne pas transformer une erreur en résultat
+
+<CodeSnippet
+  language="ts"
+  title="Anti-pattern : masquer l'erreur"
+  kind="anti-pattern"
+  codeJson='"try {\n  const user = await service.createUser(ctx, input)\n  return { success: true, user }\n} catch (e) {\n  return { success: false, message: \"Une erreur est survenue\" }\n}"'
+/>
+
+---
+
+En retournant `{ success: false }`, nous perdons :
+
+- la cause réelle de l’erreur  
+- le code HTTP approprié  
+- la possibilité pour le client de distinguer une erreur métier d’une erreur réseau  
+
+---
+
+👉 Le client ne peut plus réagir intelligemment.  
+👉 Il sait juste que "ça a échoué".
+
+Et "ça a échoué" n’est pas une information exploitable. Le client ne peut pas distinguer "l’utilisateur n’a pas les droits" de "le serveur est tombé" de "les données sont invalides". Les trois méritent pourtant des réactions UX très différentes.
+
+---
+
+## 2) Le projet avait ce motif, à un endroit précis
+
+La connexion renvoie un résultat plutôt que de lever une erreur quand le mot de passe est faux : `{ success: false, error: "INVALID_CREDENTIALS" }`. C’est un choix délibéré, et il est juste. Un mauvais mot de passe n’est pas un incident : il fait partie du fonctionnement normal du formulaire, qui choisit le message à afficher selon le code reçu.
+
+Mais la première version allait plus loin. Toute autre erreur — la base injoignable, un bug dans le service — devenait elle aussi un résultat : `{ success: false, error: "LOGIN_FAILED" }`. Le formulaire affichait « Connexion impossible », le serveur ne journalisait rien, et la cause disparaissait. Exactement le contre-exemple ci-dessus, en plus discret.
+
+La procédure distingue désormais les deux cas :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="28-52"
+  snippetHighlight="13-23"
+  snippetTitle="auth.login : un résultat attendu, et rien d’autre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le résultat attendu reste un résultat. L’imprévu redevient une erreur : il remonte, la route `/api/trpc` le journalise (section 6), et le formulaire, qui intercepte déjà les exceptions, affiche son message générique. Rien n’a changé pour l’utilisateur ; tout a changé pour celui qui devra comprendre une panne.
+
+<Callout type="info">
+La frontière tient en une question : **le code qui appelle sait-il quoi faire de ce cas ?** Si oui (un mauvais mot de passe : afficher un message), c’est un résultat, et son type le décrit. Si non (la base ne répond pas), c’est une erreur, et elle doit rester visible.
+</Callout>
+
+---
+
+## 3) Laisser l’erreur exister — avec `TRPCError`
+
+Dans ce projet, les erreurs sont des signaux explicites.
+
+Voyons comment elles vivent dans un routeur réel, celui qui crée les membres :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="116-206"
+  snippetHighlight="29-53"
+  snippetTitle="TRPCError : une erreur métier claire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée — anatomie d'une erreur métier
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="116-206"
+  title="De l’écriture à l’erreur propagée"
+  stepsJson='[{"title": "Une référence vérifiée avant d’écrire", "body": "Les groupes demandés doivent tous exister. Un groupe inconnu (supprimé entre-temps dans un autre onglet) produit BAD_REQUEST avec un message qui dit quoi faire. Ce contrôle n’est pas une validation de forme : il faut consulter la base pour le savoir.", "scope": "116-206", "focus": "128-132"}, {"title": "Une règle que le schéma n’exprime pas", "body": "legalInfoInput accepte une majorité « inconnue », parce que la fiche d’un membre existant peut l’être encore. À la création, elle ne l’est pas : la procédure le refuse explicitement, avec un message qui dit quoi faire. Le schéma décrit la forme ; la procédure, la règle propre à cette intention.", "scope": "116-206", "focus": "139-142"}, {"title": "L’unicité, elle, n’est pas vérifiée avant", "body": "La première version cherchait d’abord un membre avec la même adresse, puis créait. Entre les deux, une autre requête pouvait créer ce membre : les deux passaient la vérification, et la seconde écriture échouait sur la contrainte @unique, avec une erreur 500. Désormais, la procédure écrit directement.", "scope": "116-206", "focus": "144-147"}, {"title": "P2002 devient CONFLICT", "body": "Si la base refuse l’écriture parce que l’adresse existe déjà (code Prisma P2002), la procédure lève CONFLICT, le code HTTP 409 : la requête est valide, l’administrateur a le droit d’agir, mais l’état actuel rend l’opération impossible.", "scope": "116-206", "focus": "163-166"}, {"title": "Toute autre erreur repart telle quelle", "body": "throw err : la procédure ne traduit que ce qu’elle comprend. Le reste devient une erreur interne, journalisée par la route (section 6).", "scope": "116-206", "focus": "167-168"}, {"title": "Après l’écriture, le flux continue sans if/else défensif", "body": "Une fois le membre créé, la procédure envoie l’e-mail de bienvenue et l’avis au club. Un échec d’envoi est journalisé sans annuler la création : c’est une conséquence secondaire, pas une condition.", "scope": "116-206", "focus": "170-205"}]'
+/>
+
+---
+
+<Callout type="info">
+Une erreur n’est pas un résultat alternatif.
+
+C’est un signal qui porte une sémantique précise.
+</Callout>
+
+---
+
+## 4) Les codes d’erreur tRPC ne sont pas arbitraires
+
+<DocsTable
+  title="Codes d’erreur et leur sémantique"
+  columnsJson='["Code","HTTP","Signification","Lancé par"]'
+  rowsJson='[["BAD_REQUEST","400","Entrée invalide, ou référence inexistante","Zod (automatiquement), la procédure, un service"],["UNAUTHORIZED","401","Aucune session","isAuthed (protectedProcedure), isAdmin"],["FORBIDDEN","403","Session valide, droit insuffisant","isAdmin, une garde d’espace, une règle métier"],["NOT_FOUND","404","L’élément visé n’existe pas (ou n’est pas visible)","la procédure"],["CONFLICT","409","Doublon, ou état incompatible","la procédure, souvent en traduisant P2002"],["INTERNAL_SERVER_ERROR","500","Tout ce qui n’est pas une TRPCError","tRPC lui-même, qui emballe l’erreur imprévue"]]'
+/>
+
+---
+
+Chaque couche a ses codes.
+
+Zod lève `BAD_REQUEST` automatiquement si `.input()` échoue.  
+`isAuthed` lève `UNAUTHORIZED`.  
+`isAdmin` lève `FORBIDDEN`.  
+La procédure, ou le service qu’elle appelle, lève `NOT_FOUND`, `CONFLICT` ou `BAD_REQUEST` selon la règle violée.  
+Et tout ce que personne n’a levé volontairement devient `INTERNAL_SERVER_ERROR`.
+
+---
+
+👉 Le flux d’erreur suit exactement le flux d’exécution.
+
+Le message accompagne l’erreur jusqu’au client, où le composant peut l’afficher. Les messages des erreurs voulues sont donc rédigés pour l’utilisateur, en français : « Un membre utilise déjà cette adresse e-mail. », « Action réservée aux administrateurs. ».
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ces codes sont des codes HTTP
+
+Les codes que tRPC utilise (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, etc.) correspondent à des codes HTTP standardisés. Ce n’est pas une coïncidence.
+
+tRPC transporte ses erreurs via HTTP. Quand le serveur lève `TRPCError({ code: "NOT_FOUND" })`, la réponse HTTP est bien un 404. Cela signifie que les outils standards du web — devtools, logs de proxy, outils de monitoring — voient les erreurs comme des codes HTTP conventionnels.
+
+C’est une bonne pratique : s’intégrer aux conventions existantes plutôt que réinventer un vocabulaire propriétaire. Un développeur qui connaît HTTP peut lire un log d’erreur tRPC sans formation supplémentaire.
+
+---
+
+## 5) Une règle métier peut produire une erreur inattendue
+
+Il existe un cas particulièrement instructif dans ce projet, rencontré au chapitre 6.
+
+`user.delete` est réservée aux administrateurs. L’administrateur qui l’appelle a donc le droit d’agir.
+
+Et pourtant :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="240-249"
+  snippetHighlight="5-10"
+  snippetTitle="FORBIDDEN levé par une règle métier, pas par une garde"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+`FORBIDDEN` est levé ici — non pas parce que l’utilisateur n’a pas le droit en général, mais parce qu’une règle métier l’empêche dans ce cas précis : on ne supprime pas son propre compte.
+
+---
+
+👉 Le code d’erreur est le même que celui de `isAdmin`.  
+👉 La cause est différente.
+
+C’est intentionnel.
+
+Le client ne voit pas « qui » a levé l’erreur.  
+Il voit « quelle erreur s’est produite », et un message qui l’explique.  
+Et c’est tout ce dont il a besoin pour réagir correctement.
+
+---
+
+## 6) Ce que le navigateur reçoit d’une erreur imprévue
+
+Reste un cas que rien de ce qui précède ne couvre : l’erreur que personne n’a levée volontairement. Une requête Prisma qui échoue, une colonne absente après une migration oubliée, un `undefined` lu par mégarde. tRPC l’emballe dans une `TRPCError` de code `INTERNAL_SERVER_ERROR`, et le message qui part vers le navigateur est… celui de l’erreur d’origine.
+
+Pour une erreur Prisma, ce message contient le nom de la méthode appelée, parfois des noms de tables et de colonnes, parfois un extrait de la requête. C’est ce que le projet envoyait, en production, à n’importe quel visiteur qui provoquait une erreur. Et dans le même temps, côté serveur, rien n’était écrit : la route `/api/trpc` ne journalisait pas les erreurs. Le visiteur en savait plus que l’administrateur.
+
+Deux réglages y répondent, un de chaque côté de la frontière. Le premier, dans `core.ts`, décide de ce qui sort :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="55-66"
+  snippetHighlight="6-11"
+  snippetTitle="errorFormatter : ce qui sort d’une erreur interne"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`errorFormatter` reçoit la forme que tRPC s’apprête à envoyer (`shape`) et l’erreur elle-même. Pour une erreur interne en production, il remplace le message par une phrase neutre ; les erreurs voulues (`FORBIDDEN`, `CONFLICT`…) gardent le leur, rédigé pour l’utilisateur. En développement, rien ne change : le développeur voit le vrai message, et la pile d’appels, que tRPC n’envoie qu’en dehors de la production.
+
+Le second, dans la route, garde la trace :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
+  filename="route.ts"
+  snippetRange="10-24"
+  snippetHighlight="7-13"
+  snippetTitle="onError : ce qui reste dans les journaux"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`onError` est appelé pour chaque erreur, sur le serveur. Seules les erreurs internes sont écrites : un refus est un fonctionnement normal, et journaliser chaque mot de passe erroné noierait les vraies pannes. L’entrée de la procédure n’est jamais écrite, parce qu’elle peut contenir un mot de passe. Les journaux du conteneur (`docker logs`) montrent désormais la procédure en cause et l’erreur complète.
+
+<Callout type="warning">
+Un message d’erreur est une donnée qui sort. Les messages écrits pour l’utilisateur (« Ce slug est déjà utilisé ») peuvent sortir ; les messages écrits par une bibliothèque pour un développeur ne le doivent pas. La règle se pose une fois, à l’endroit où toutes les erreurs passent — pas procédure par procédure.
+</Callout>
+
+---
+
+## 7) Le flux complet avec erreurs
+
+<ArchitectureDiagram
+  steps="Client | validation Zod | guard | procédure | règle métier | service | erreur ou succès | réponse"
+/>
+
+---
+
+Une erreur traverse le système comme une réussite.
+
+Elle suit le même chemin, remonte proprement, reste lisible.
+
+---
+
+<Callout type="tip">
+Un bon backend ne "gère" pas les erreurs partout.
+
+Il les laisse exister au bon endroit, avec le bon signal.
+
+tRPC les transporte ensuite sans les déformer.
+</Callout>
+
+---
+
+## 🚀 Conclusion
+
+Nous ne masquons plus les erreurs.  
+Nous ne les dispersons plus.
+
+---
+
+👉 Chaque couche lance ce qu’elle sait lancer.  
+👉 tRPC se charge du reste.
+
+---
+
+La dernière question reste entière.
+
+Le système produit des erreurs propres.  
+Mais que renvoie-t-il quand tout se passe bien ?
+
+---
+
+## À suivre
+
+Les erreurs ne sont plus des accidents à étouffer : elles sont levées avec un code, transportées par tRPC, et seules celles écrites pour l’utilisateur sortent telles quelles. Reste le dernier maillon : ce que le backend renvoie quand tout se passe bien.
+
+<Callout type="tip">
+**Chapitre suivant : maîtriser la sortie.** Ne jamais renvoyer une ligne complète, `select` et `omit`, le DTO partagé avec le front, et `satisfies`, qui vérifie sans élargir.
+</Callout>

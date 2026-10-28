@@ -8,7 +8,6 @@ import {
   RESET_TOKEN_TTL_MS,
 } from "@backend/modules/auth/services/passwordReset.service";
 import { sendPasswordResetEmail } from "@backend/email/services/sendPasswordResetEmail";
-import { prisma } from "@backend/prisma";
 
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
@@ -22,8 +21,8 @@ import {
 } from "@contracts/auth/auth.schema";
 
 /**
- * Router frontend-facing, permanently called by the client.
- * It answers to one question: "Who am I, now?"
+ * Connexion, déconnexion, session courante, mot de passe (changement, oubli, réinitialisation).
+ * `getSession` est appelée en permanence par le front : elle répond à « qui suis-je, maintenant ? ».
  */
 export const authRouter = router({
   login: publicProcedure
@@ -71,7 +70,7 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.sessionClient.user.id;
 
-      const user = await prisma.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
         select: { password: true },
       });
@@ -99,7 +98,7 @@ export const authRouter = router({
       const payload = verifyJwt(await getToken());
       const currentSessionId = payload?.sessionId ?? null;
 
-      await prisma.$transaction(async (tx) => {
+      await ctx.prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
           data: { password: hashed },
@@ -124,7 +123,7 @@ export const authRouter = router({
     .mutation(async ({ input, ctx }) => {
       const email = input.email.trim().toLowerCase();
 
-      const user = await prisma.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { email },
         select: { id: true, email: true },
       });
@@ -133,7 +132,7 @@ export const authRouter = router({
         return { ok: true as const };
       }
 
-      const lastToken = await prisma.passwordResetToken.findFirst({
+      const lastToken = await ctx.prisma.passwordResetToken.findFirst({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
         select: { createdAt: true },
@@ -149,7 +148,7 @@ export const authRouter = router({
       const { token, tokenHash } = createPasswordResetToken();
       const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
-      await prisma.passwordResetToken.create({
+      await ctx.prisma.passwordResetToken.create({
         data: {
           userId: user.id,
           tokenHash,
@@ -175,11 +174,11 @@ export const authRouter = router({
 
   resetPassword: publicProcedure
     .input(resetPasswordSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const token = input.token.trim();
       const tokenHash = hashResetToken(token);
 
-      const entry = await prisma.passwordResetToken.findUnique({
+      const entry = await ctx.prisma.passwordResetToken.findUnique({
         where: { tokenHash },
         select: {
           id: true,
@@ -203,7 +202,7 @@ export const authRouter = router({
 
       const hashedPassword = await bcrypt.hash(input.newPassword, 12);
 
-      await prisma.$transaction(async (tx) => {
+      await ctx.prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: entry.userId },
           // `isFirstLogin` n'est pas touché : un nouveau membre qui vient de choisir son

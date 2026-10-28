@@ -5,6 +5,7 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { assertDisciplineReferences } from "@backend/modules/disciplines/services/assertDisciplineReferences.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
 import slugify from "slugify";
 import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
@@ -190,18 +191,6 @@ export const disciplineRouter = router({
   }),
 
   /**
-   * Disciplines PUBLIÉES uniquement (publicationDate non null et passée).
-   * Alimente les consommateurs publics (menu « Nos activités »). L'admin
-   * utilise `getAll` (toutes, brouillons compris).
-   */
-  getAllPublished: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.discipline.findMany({
-      where: { publicationDate: { not: null, lte: new Date() } },
-      orderBy: [{ categoryId: "asc" }, { name: "asc" }],
-    });
-  }),
-
-  /**
    * Disciplines du menu « Nos disciplines » : les seules PUBLIÉES, pour TOUT LE MONDE, administrateurs
    * compris. Le menu est la navigation publique, et la page d'un brouillon répond 404 à tous : un
    * brouillon dans le menu serait un lien mort. Les brouillons se gèrent depuis le tableau de bord.
@@ -255,55 +244,13 @@ export const disciplineRouter = router({
     .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
-      // ─── Validations pré-transaction (lectures simples) ────────────────
-
-      const category = await ctx.prisma.category.findUnique({
-        where: { id: input.categoryId },
-        select: { id: true },
+      // Chaque référence doit exister : sinon, un message précis plutôt qu'une erreur de clé étrangère.
+      await assertDisciplineReferences(ctx.prisma, {
+        categoryId: input.categoryId,
+        instructorId: input.instructorId,
+        familyId: input.familyId,
+        originId: input.originId,
       });
-      if (!category) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Catégorie introuvable (id=${input.categoryId}).`,
-        });
-      }
-
-      const instructor = await ctx.prisma.user.findUnique({
-        where: { id: input.instructorId },
-        select: { id: true },
-      });
-      if (!instructor) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Instructeur introuvable (id=${input.instructorId}).`,
-        });
-      }
-
-      if (input.familyId !== null && input.familyId !== undefined) {
-        const family = await ctx.prisma.disciplineFamily.findUnique({
-          where: { id: input.familyId },
-          select: { id: true },
-        });
-        if (!family) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Famille de disciplines introuvable (id=${input.familyId}).`,
-          });
-        }
-      }
-
-      if (input.originId !== null && input.originId !== undefined) {
-        const origin = await ctx.prisma.origin.findUnique({
-          where: { id: input.originId },
-          select: { id: true },
-        });
-        if (!origin) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Origine introuvable (id=${input.originId}).`,
-          });
-        }
-      }
 
       // ─── Transaction : create discipline + sync references ─────────────
 
@@ -377,50 +324,13 @@ export const disciplineRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
 
-      // ─── Validations pré-transaction ───────────────────────────────────
-
-      if (rest.instructorId !== undefined) {
-        const instructor = await ctx.prisma.user.findUnique({
-          where: { id: rest.instructorId },
-          select: { id: true },
-        });
-        if (!instructor) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Instructeur introuvable (id=${rest.instructorId}).`,
-          });
-        }
-      }
-
-      // familyId : on valide seulement si fourni ET non-null
-      // (null = détachement explicite, autorisé).
-      if (rest.familyId !== undefined && rest.familyId !== null) {
-        const family = await ctx.prisma.disciplineFamily.findUnique({
-          where: { id: rest.familyId },
-          select: { id: true },
-        });
-        if (!family) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Famille de disciplines introuvable (id=${rest.familyId}).`,
-          });
-        }
-      }
-
-      // originId : on valide seulement si fourni ET non-null
-      // (null = détachement explicite, autorisé).
-      if (rest.originId !== undefined && rest.originId !== null) {
-        const origin = await ctx.prisma.origin.findUnique({
-          where: { id: rest.originId },
-          select: { id: true },
-        });
-        if (!origin) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Origine introuvable (id=${rest.originId}).`,
-          });
-        }
-      }
+      // Mêmes vérifications qu'à la création, pour les seules références fournies (la catégorie
+      // n'est pas modifiable ; null détache une famille ou une origine).
+      await assertDisciplineReferences(ctx.prisma, {
+        instructorId: rest.instructorId,
+        familyId: rest.familyId,
+        originId: rest.originId,
+      });
 
       // ─── Transaction : update + sync references si description fournie ─
 

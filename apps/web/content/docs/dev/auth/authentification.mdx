@@ -222,7 +222,7 @@ Le changement de mot de passe vérifie l'ancien, refuse un nouveau mot de passe 
 
 ```ts
 // packages/backend/src/modules/auth/router.ts (extrait)
-await prisma.$transaction(async (tx) => {
+await ctx.prisma.$transaction(async (tx) => {
   await tx.user.update({
     where: { id: userId },
     data: { password: hashed },
