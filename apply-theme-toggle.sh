@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# THÈME : interrupteur clair / sombre (soleil / lune).
+#   - header (barre et zone burger) et barre latérale de la doc ; clair par défaut ;
+#   - choix gardé dans un cookie « akfc-theme » lu par le layout racine : la page arrive
+#     directement dans le bon thème (pas de flash, pas de script d'amorçage) ;
+#   - styles/dark-legacy.css : en sombre, les couleurs écrites en dur (bg-white, text-gray-*…)
+#     suivent les variables du thème ; les composants récents basculent déjà seuls.
+# Usage (racine du repo) : bash apply-theme-toggle.sh
+set -euo pipefail
+cd "$(dirname "$0")"
+[ -f pnpm-workspace.yaml ] || { echo "À lancer à la racine du repo."; exit 1; }
+
+if grep -qF "akfc-theme" "apps/web/src/features/theme/theme.ts" 2>/dev/null; then echo "Déjà appliqué."; exit 0; fi
+MODIFIED=("apps/web/src/app/layout.tsx" "apps/web/src/features/app-shell/Header.tsx" "apps/web/src/features/docs/components/DocsSidebar.tsx")
+CREATED=("apps/web/src/features/theme/ThemeToggle.tsx" "apps/web/src/features/theme/index.ts" "apps/web/src/features/theme/theme.ts" "apps/web/src/styles/dark-legacy.css")
+restore(){ git checkout -q -- "${MODIFIED[@]}" 2>/dev/null || true; rm -f "${CREATED[@]}"; rmdir -p "apps/web/src/features/theme" 2>/dev/null || true; echo "  ↩ fichiers restaurés"; }
+trap 'restore' ERR
+
+mkdir -p "apps/web/src/features/theme"
+base64 -d > "apps/web/src/features/theme/ThemeToggle.tsx" <<'B64'
+InVzZSBjbGllbnQiOwoKaW1wb3J0IHsgSlNYLCB1c2VTeW5jRXh0ZXJuYWxTdG9yZSB9IGZyb20g
+InJlYWN0IjsKaW1wb3J0IHsgTW9vbiwgU3VuIH0gZnJvbSAibHVjaWRlLXJlYWN0IjsKCmltcG9y
+dCB7IGFwcGx5VGhlbWUsIHJlYWRUaGVtZSwgc3Vic2NyaWJlVGhlbWUsIHR5cGUgVGhlbWUgfSBm
+cm9tICIuL3RoZW1lIjsKCi8qKgogKiBJbnRlcnJ1cHRldXIgY2xhaXIgLyBzb21icmUuIElsIGxp
+dCBsJ8OpdGF0IGRpcmVjdGVtZW50IHN1ciA8aHRtbD4gKHN0b3JlIGV4dGVybmUpIDogbGUKICog
+c2VydmV1ciBuZSBjb25uYcOudCBwYXMgbGUgY2hvaXggZHUgdmlzaXRldXIgZXQgcmVuZCDCqyBj
+bGFpciDCuywgbGUgbmF2aWdhdGV1ciBjb3JyaWdlCiAqIGF1c3NpdMO0dCwgc2FucyDDqWNhcnQg
+ZCdoeWRyYXRhdGlvbiBuaSBlZmZldCBxdWkgcmVjb3BpZXJhaXQgbCfDqXRhdC4KICoKICogYHRv
+bmVgIDogwqsgb25EYXJrIMK7IHBvdXIgdW4gZm9uZCB0b3Vqb3VycyBub2lyIChoZWFkZXIpLCDC
+qyBhdXRvIMK7IGFpbGxldXJzLgogKi8KZXhwb3J0IGZ1bmN0aW9uIFRoZW1lVG9nZ2xlKHsgdG9u
+ZSA9ICJhdXRvIiB9OiB7IHRvbmU/OiAib25EYXJrIiB8ICJhdXRvIiB9KTogSlNYLkVsZW1lbnQg
+ewogIGNvbnN0IHRoZW1lID0gdXNlU3luY0V4dGVybmFsU3RvcmU8VGhlbWU+KHN1YnNjcmliZVRo
+ZW1lLCByZWFkVGhlbWUsICgpID0+ICJsaWdodCIpOwogIGNvbnN0IG5leHQ6IFRoZW1lID0gdGhl
+bWUgPT09ICJkYXJrIiA/ICJsaWdodCIgOiAiZGFyayI7CiAgY29uc3QgbGFiZWwgPSBuZXh0ID09
+PSAiZGFyayIgPyAiUGFzc2VyIGVuIG1vZGUgc29tYnJlIiA6ICJQYXNzZXIgZW4gbW9kZSBjbGFp
+ciI7CgogIHJldHVybiAoCiAgICA8YnV0dG9uCiAgICAgIHR5cGU9ImJ1dHRvbiIKICAgICAgb25D
+bGljaz17KCkgPT4gYXBwbHlUaGVtZShuZXh0KX0KICAgICAgYXJpYS1sYWJlbD17bGFiZWx9CiAg
+ICAgIHRpdGxlPXtsYWJlbH0KICAgICAgY2xhc3NOYW1lPXtgZmxleCBoLTkgdy05IHNocmluay0w
+IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciByb3VuZGVkLWZ1bGwgdHJhbnNpdGlvbi1jb2xv
+cnMgJHsKICAgICAgICB0b25lID09PSAib25EYXJrIgogICAgICAgICAgPyAidGV4dC13aGl0ZSBo
+b3ZlcjpiZy13aGl0ZS8xNSIKICAgICAgICAgIDogInRleHQtbXV0ZWQtZm9yZWdyb3VuZCBob3Zl
+cjpiZy1tdXRlZCBob3Zlcjp0ZXh0LWZvcmVncm91bmQiCiAgICAgIH1gfQogICAgPgogICAgICB7
+dGhlbWUgPT09ICJkYXJrIiA/IDxTdW4gY2xhc3NOYW1lPSJoLTUgdy01IiAvPiA6IDxNb29uIGNs
+YXNzTmFtZT0iaC01IHctNSIgLz59CiAgICA8L2J1dHRvbj4KICApOwp9Cg==
+B64
+mkdir -p "apps/web/src/features/theme"
+base64 -d > "apps/web/src/features/theme/index.ts" <<'B64'
+ZXhwb3J0IHsgVGhlbWVUb2dnbGUgfSBmcm9tICIuL1RoZW1lVG9nZ2xlIjsKZXhwb3J0IHsgVEhF
+TUVfQ09PS0lFLCBhcHBseVRoZW1lLCByZWFkVGhlbWUgfSBmcm9tICIuL3RoZW1lIjsKZXhwb3J0
+IHR5cGUgeyBUaGVtZSB9IGZyb20gIi4vdGhlbWUiOwo=
+B64
+mkdir -p "apps/web/src/features/theme"
+base64 -d > "apps/web/src/features/theme/theme.ts" <<'B64'
+LyoqCiAqIFRow6htZSBjbGFpciAvIHNvbWJyZS4KICoKICogTGUgdGjDqG1lIGVzdCB1bmUgY2xh
+c3NlIGBkYXJrYCBzdXIgPGh0bWw+IDogbGVzIHZhcmlhYmxlcyBkZSBjb3VsZXVyIGRlIGdsb2Jh
+bHMuY3NzCiAqIChgLS1iYWNrZ3JvdW5kYCwgYC0tZm9yZWdyb3VuZGAsIGAtLWNhcmRg4oCmKSBv
+bnQgdW5lIHZhbGV1ciBjbGFpcmUgcGFyIGTDqWZhdXQgZXQgdW5lIHZhbGV1cgogKiBzb21icmUg
+c291cyBgLmRhcmtgLiBQYXIgZMOpZmF1dCwgbGUgc2l0ZSByZXN0ZSBDTEFJUi4KICoKICogTGUg
+Y2hvaXggZHUgdmlzaXRldXIgZXN0IGdhcmTDqSBkYW5zIHVuIENPT0tJRSwgZXQgbm9uIGRhbnMg
+bG9jYWxTdG9yYWdlIDogbGUgbGF5b3V0IHJhY2luZSwKICogcmVuZHUgc3VyIGxlIHNlcnZldXIs
+IGxlIGxpdCBldCBwb3NlIGxhIGNsYXNzZSBkw6hzIGxlIEhUTUwgZW52b3nDqS4gTGEgcGFnZSBh
+cnJpdmUgZG9uYwogKiBkaXJlY3RlbWVudCBkYW5zIGxlIGJvbiB0aMOobWUg4oCUIHBhcyBkZSDC
+qyBmbGFzaCDCuyBjbGFpciBsZSB0ZW1wcyBxdWUgUmVhY3QgZMOpbWFycmUsIGV0IGF1Y3VuCiAq
+IHNjcmlwdCDDoCBleMOpY3V0ZXIgYXZhbnQgbCdoeWRyYXRhdGlvbi4KICovCmV4cG9ydCB0eXBl
+IFRoZW1lID0gImxpZ2h0IiB8ICJkYXJrIjsKCmV4cG9ydCBjb25zdCBUSEVNRV9DT09LSUUgPSAi
+YWtmYy10aGVtZSI7CgpleHBvcnQgZnVuY3Rpb24gcmVhZFRoZW1lKCk6IFRoZW1lIHsKICByZXR1
+cm4gZG9jdW1lbnQuZG9jdW1lbnRFbGVtZW50LmNsYXNzTGlzdC5jb250YWlucygiZGFyayIpID8g
+ImRhcmsiIDogImxpZ2h0IjsKfQoKZXhwb3J0IGZ1bmN0aW9uIGFwcGx5VGhlbWUodGhlbWU6IFRo
+ZW1lKTogdm9pZCB7CiAgZG9jdW1lbnQuZG9jdW1lbnRFbGVtZW50LmNsYXNzTGlzdC50b2dnbGUo
+ImRhcmsiLCB0aGVtZSA9PT0gImRhcmsiKTsKICAvLyBVbiBhbiA7IGxpc2libGUgcGFyIGxlIHNl
+cnZldXIgKHBhcyBIdHRwT25seSA6IGMnZXN0IHVuZSBwcsOpZsOpcmVuY2UgZCdhZmZpY2hhZ2Us
+IHBhcyB1biBzZWNyZXQpLgogIGRvY3VtZW50LmNvb2tpZSA9IGAke1RIRU1FX0NPT0tJRX09JHt0
+aGVtZX07IHBhdGg9LzsgbWF4LWFnZT0zMTUzNjAwMDsgc2FtZXNpdGU9bGF4YDsKfQoKLyoqIEFi
+b25uZW1lbnQgYXV4IGNoYW5nZW1lbnRzIGRlIGxhIGNsYXNzZSBkZSA8aHRtbD4gKGRldXggaW50
+ZXJydXB0ZXVycyByZXN0ZW50IGQnYWNjb3JkKS4gKi8KZXhwb3J0IGZ1bmN0aW9uIHN1YnNjcmli
+ZVRoZW1lKG9uQ2hhbmdlOiAoKSA9PiB2b2lkKTogKCkgPT4gdm9pZCB7CiAgY29uc3Qgb2JzZXJ2
+ZXIgPSBuZXcgTXV0YXRpb25PYnNlcnZlcihvbkNoYW5nZSk7CiAgb2JzZXJ2ZXIub2JzZXJ2ZShk
+b2N1bWVudC5kb2N1bWVudEVsZW1lbnQsIHsgYXR0cmlidXRlczogdHJ1ZSwgYXR0cmlidXRlRmls
+dGVyOiBbImNsYXNzIl0gfSk7CiAgcmV0dXJuICgpID0+IG9ic2VydmVyLmRpc2Nvbm5lY3QoKTsK
+fQo=
+B64
+mkdir -p "apps/web/src/styles"
+base64 -d > "apps/web/src/styles/dark-legacy.css" <<'B64'
+LyoKICogTW9kZSBzb21icmUgZGVzIGNvdWxldXJzIMKrIGVuIGR1ciDCuy4KICoKICogTGVzIGNv
+bXBvc2FudHMgcsOpY2VudHMgdXRpbGlzZW50IGxlcyBjb3VsZXVycyBkdSB0aMOobWUgKGJnLWJh
+Y2tncm91bmQsIHRleHQtZm9yZWdyb3VuZCwKICogYmctY2FyZCwgYm9yZGVyLWJvcmRlcuKApiks
+IHF1aSBiYXNjdWxlbnQgdG91dGVzIHNldWxlcyBzb3VzIGAuZGFya2AuIERlcyBjZW50YWluZXMg
+ZGUgY2xhc3NlcwogKiBwbHVzIGFuY2llbm5lcyBmaXhlbnQgZW5jb3JlIHVuZSBjb3VsZXVyIChi
+Zy13aGl0ZSwgdGV4dC1ncmF5LTcwMOKApikuIFBsdXTDtHQgcXVlIGRlIG1vZGlmaWVyCiAqIGNo
+YXF1ZSBjb21wb3NhbnQgZCd1biBjb3VwLCBjZXMgY2xhc3NlcyBzb250IHLDqW9yaWVudMOpZXMg
+aWNpIHZlcnMgbGVzIHZhcmlhYmxlcyBkdSB0aMOobWUsIGVuCiAqIG1vZGUgc29tYnJlIHNldWxl
+bWVudC4KICoKICogQ2UgZmljaGllciBlc3QgaW1wb3J0w6kgSE9SUyBkZSB0b3V0ZSBjb3VjaGUg
+Q1NTIChAbGF5ZXIpIDogZHUgQ1NTIHNhbnMgY291Y2hlIGwnZW1wb3J0ZSBzdXIKICogbGVzIHV0
+aWxpdGFpcmVzIFRhaWx3aW5kLCByYW5nw6lzIGRhbnMgYEBsYXllciB1dGlsaXRpZXNgLCBxdWVs
+bGUgcXVlIHNvaXQgbGEgc3DDqWNpZmljaXTDqS4KICogw4AgbWVzdXJlIHF1ZSBsZXMgY29tcG9z
+YW50cyBwYXNzZW50IGF1eCBjb3VsZXVycyBkdSB0aMOobWUsIGNlcyByw6hnbGVzIGRldmllbm5l
+bnQgaW51dGlsZXMuCiAqLwoKLmRhcmsgewogIGNvbG9yLXNjaGVtZTogZGFyazsKfQoKLyogRm9u
+ZHMgY2xhaXJzIOKGkiBzdXJmYWNlcyBkdSB0aMOobWUgKi8KLmRhcmsgLmJnLXdoaXRlIHsgYmFj
+a2dyb3VuZC1jb2xvcjogdmFyKC0tY2FyZCk7IH0KLmRhcmsgLmJnLWdyYXktNTAsCi5kYXJrIC5i
+Zy1ncmF5LTEwMCwKLmRhcmsgLmJnLXNsYXRlLTUwLAouZGFyayAuYmctc2xhdGUtMTAwIHsgYmFj
+a2dyb3VuZC1jb2xvcjogdmFyKC0tbXV0ZWQpOyB9Ci5kYXJrIC5iZy1ncmF5LTIwMCwKLmRhcmsg
+LmJnLWdyYXktMzAwIHsgYmFja2dyb3VuZC1jb2xvcjogb2tsY2goMC4zMiAwLjAzIDI1Nyk7IH0K
+Ci8qIFRleHRlcyBzb21icmVzIOKGkiB0ZXh0ZXMgZHUgdGjDqG1lICovCi5kYXJrIC50ZXh0LWdy
+YXktOTAwLAouZGFyayAudGV4dC1ncmF5LTgwMCwKLmRhcmsgLnRleHQtZ3JheS03MDAsCi5kYXJr
+IC50ZXh0LXNsYXRlLTkwMCwKLmRhcmsgLnRleHQtc2xhdGUtODAwLAouZGFyayAudGV4dC1zbGF0
+ZS03MDAgeyBjb2xvcjogdmFyKC0tZm9yZWdyb3VuZCk7IH0KLmRhcmsgLnRleHQtZ3JheS02MDAs
+Ci5kYXJrIC50ZXh0LWdyYXktNTAwLAouZGFyayAudGV4dC1zbGF0ZS02MDAsCi5kYXJrIC50ZXh0
+LXNsYXRlLTUwMCB7IGNvbG9yOiB2YXIoLS1tdXRlZC1mb3JlZ3JvdW5kKTsgfQouZGFyayAudGV4
+dC1ncmF5LTQwMCwKLmRhcmsgLnRleHQtc2xhdGUtNDAwIHsgY29sb3I6IG9rbGNoKDAuNiAwLjAy
+IDI2Mik7IH0KCi8qIEJvcmR1cmVzIGV0IHPDqXBhcmF0ZXVycyAqLwouZGFyayAuYm9yZGVyLWdy
+YXktMTAwLAouZGFyayAuYm9yZGVyLWdyYXktMjAwLAouZGFyayAuYm9yZGVyLWdyYXktMzAwLAou
+ZGFyayAuYm9yZGVyLXNsYXRlLTIwMCwKLmRhcmsgLmJvcmRlci1zbGF0ZS0zMDAsCi5kYXJrIC5k
+aXZpZGUtZ3JheS0xMDAgPiA6bm90KDpsYXN0LWNoaWxkKSB7IGJvcmRlci1jb2xvcjogdmFyKC0t
+Ym9yZGVyKTsgfQoKLyogU3Vydm9scyAqLwouZGFyayAuaG92ZXJcOmJnLXdoaXRlOmhvdmVyLAou
+ZGFyayAuaG92ZXJcOmJnLWdyYXktNTA6aG92ZXIsCi5kYXJrIC5ob3Zlclw6YmctZ3JheS0xMDA6
+aG92ZXIsCi5kYXJrIC5ob3Zlclw6Ymctc2xhdGUtMTAwOmhvdmVyIHsgYmFja2dyb3VuZC1jb2xv
+cjogdmFyKC0tYWNjZW50KTsgfQouZGFyayAuaG92ZXJcOmJnLWdyYXktMzAwOmhvdmVyIHsgYmFj
+a2dyb3VuZC1jb2xvcjogb2tsY2goMC4zNiAwLjAzIDI1Nyk7IH0KLmRhcmsgLmhvdmVyXDp0ZXh0
+LWdyYXktOTAwOmhvdmVyLAouZGFyayAuaG92ZXJcOnRleHQtZ3JheS04MDA6aG92ZXIsCi5kYXJr
+IC5ob3Zlclw6dGV4dC1ncmF5LTcwMDpob3ZlciB7IGNvbG9yOiB2YXIoLS1mb3JlZ3JvdW5kKTsg
+fQo=
+B64
+
+python3 - <<'PY'
+import base64
+spec_skip_done = False
+def sub(path, old, new):
+    old, new = base64.b64decode(old).decode(), base64.b64decode(new).decode()
+    s = open(path, encoding="utf-8").read()
+    if s.count(old) == 0 and s.count(new) == 1 and spec_skip_done: return  # déjà fait par un script précédent
+    assert s.count(old) == 1, (path, old[:80], s.count(old))
+    open(path, "w", encoding="utf-8").write(s.replace(old, new))
+sub('apps/web/src/app/layout.tsx', 'aW1wb3J0ICIuL2dsb2JhbHMuY3NzIjsKaW1wb3J0ICJAL3N0eWxlcy90aXB0YXAtdmFyaWFibGVzLmNzcyI7CmltcG9ydCB7IHByaXNtYSB9IGZyb20gIkBiYWNrZW5kL3ByaXNtYSIKaW1wb3J0IHsgQXBwUHJvdmlkZXJzIH0gZnJvbSAiQGFwcC9wcm92aWRlcnMiCg==',
+    'aW1wb3J0ICIuL2dsb2JhbHMuY3NzIjsKaW1wb3J0ICJAL3N0eWxlcy90aXB0YXAtdmFyaWFibGVzLmNzcyI7CmltcG9ydCAiQC9zdHlsZXMvZGFyay1sZWdhY3kuY3NzIjsKaW1wb3J0IHsgY29va2llcyB9IGZyb20gIm5leHQvaGVhZGVycyI7CmltcG9ydCB7IFRIRU1FX0NPT0tJRSB9IGZyb20gIkBmZWF0dXJlcy90aGVtZS90aGVtZSI7CmltcG9ydCB7IHByaXNtYSB9IGZyb20gIkBiYWNrZW5kL3ByaXNtYSIKaW1wb3J0IHsgQXBwUHJvdmlkZXJzIH0gZnJvbSAiQGFwcC9wcm92aWRlcnMiCg==')
+sub('apps/web/src/app/layout.tsx', 'ICAvLyBgdXBkYXRlZEF0YCBmYWl0IHVuZSBjbMOpIG5hdHVyZWxsZSA6IGxhIGNvbG9ubmUgZXhpc3RlIGTDqWrDoCBldCBjaGFuZ2UKICAvLyBleGFjdGVtZW50IHF1YW5kIGlsIGxlIGZhdXQuCiAgY29uc3Qgc3R5bGVLZXkgPSBzaXRlU3R5bGUKICAgID8gYGFrZmMtc2l0ZS1zdHlsZS0ke3NpdGVTdHlsZS51cGRhdGVkQXQuZ2V0VGltZSgpfWAK',
+    'ICAvLyBgdXBkYXRlZEF0YCBmYWl0IHVuZSBjbMOpIG5hdHVyZWxsZSA6IGxhIGNvbG9ubmUgZXhpc3RlIGTDqWrDoCBldCBjaGFuZ2UKICAvLyBleGFjdGVtZW50IHF1YW5kIGlsIGxlIGZhdXQuCiAgY29uc3QgaXNEYXJrID0gKGF3YWl0IGNvb2tpZXMoKSkuZ2V0KFRIRU1FX0NPT0tJRSk/LnZhbHVlID09PSAiZGFyayI7CgogIGNvbnN0IHN0eWxlS2V5ID0gc2l0ZVN0eWxlCiAgICA/IGBha2ZjLXNpdGUtc3R5bGUtJHtzaXRlU3R5bGUudXBkYXRlZEF0LmdldFRpbWUoKX1gCg==')
+sub('apps/web/src/app/layout.tsx', 'CiAgcmV0dXJuICgKICAgIDxodG1sIGxhbmc9ImZyIj4KICAgICAgPGJvZHkgY2xhc3NOYW1lPXtgJHtnZWlzdFNhbnMudmFyaWFibGV9ICR7Z2Vpc3RNb25vLnZhcmlhYmxlfSBhbnRpYWxpYXNlZGB9PgogICAgICAgIHsvKgo=',
+    'CiAgcmV0dXJuICgKICAgIC8vIFRow6htZSBsdSBkYW5zIGxlIGNvb2tpZSBkdSB2aXNpdGV1ciA6IGxhIGNsYXNzZSBgZGFya2AgZXN0IHBvc8OpZSBkw6hzIGxlIEhUTUwgc2VydmV1ci4KICAgIC8vIHN1cHByZXNzSHlkcmF0aW9uV2FybmluZyA6IGwnaW50ZXJydXB0ZXVyIGNoYW5nZSBlbnN1aXRlIGxhIGNsYXNzZSBjw7R0w6kgY2xpZW50LCBzYW5zCiAgICAvLyBub3V2ZWF1IHJlbmR1IHNlcnZldXIgOyBSZWFjdCBuZSBkb2l0IHBhcyBzJ2VuIHBsYWluZHJlLgogICAgPGh0bWwgbGFuZz0iZnIiIGNsYXNzTmFtZT17aXNEYXJrID8gImRhcmsiIDogdW5kZWZpbmVkfSBzdXBwcmVzc0h5ZHJhdGlvbldhcm5pbmc+CiAgICAgIDxib2R5IGNsYXNzTmFtZT17YCR7Z2Vpc3RTYW5zLnZhcmlhYmxlfSAke2dlaXN0TW9uby52YXJpYWJsZX0gYW50aWFsaWFzZWRgfT4KICAgICAgICB7LyoK')
+sub('apps/web/src/features/app-shell/Header.tsx', 'fSBmcm9tICJAZmVhdHVyZXMvYXBwLXNoZWxsL25hdkVudHJpZXMiOwppbXBvcnQgeyB0cnBjIH0gZnJvbSAiQHRycGMvdHJwY0NsaWVudCI7CgovKioK',
+    'fSBmcm9tICJAZmVhdHVyZXMvYXBwLXNoZWxsL25hdkVudHJpZXMiOwppbXBvcnQgeyB0cnBjIH0gZnJvbSAiQHRycGMvdHJwY0NsaWVudCI7CmltcG9ydCB7IFRoZW1lVG9nZ2xlIH0gZnJvbSAiQGZlYXR1cmVzL3RoZW1lIjsKCi8qKgo=')
+sub('apps/web/src/features/app-shell/Header.tsx', 'CiAgICAgIHsvKiDilIDilIAgQXV0aGVudGlmaWNhdGlvbiAo4omlIGxnKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAgKi99CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJoaWRkZW4gc2hyaW5rLTAgcHItNCB4bDpibG9jayB4bDpwci02Ij4KICAgICAgICA8U3VzcGVuc2UgZmFsbGJhY2s9ezxkaXY+Q2hhcmdlbWVudC4uLjwvZGl2Pn0+CiAgICAgICAgICB7dXNlcgo=',
+    'CiAgICAgIHsvKiDilIDilIAgQXV0aGVudGlmaWNhdGlvbiAo4omlIGxnKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAgKi99CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJoaWRkZW4gc2hyaW5rLTAgaXRlbXMtY2VudGVyIGdhcC0zIHByLTQgeGw6ZmxleCB4bDpwci02Ij4KICAgICAgICA8VGhlbWVUb2dnbGUgdG9uZT0ib25EYXJrIiAvPgogICAgICAgIDxTdXNwZW5zZSBmYWxsYmFjaz17PGRpdj5DaGFyZ2VtZW50Li4uPC9kaXY+fT4KICAgICAgICAgIHt1c2VyCg==')
+sub('apps/web/src/features/app-shell/Header.tsx', 'ICAgICAgICAgIDwvU3VzcGVuc2U+CiAgICAgICAgKX0KICAgICAgICA8YnV0dG9uCiAgICAgICAgICB0eXBlPSJidXR0b24iCg==',
+    'ICAgICAgICAgIDwvU3VzcGVuc2U+CiAgICAgICAgKX0KICAgICAgICA8VGhlbWVUb2dnbGUgdG9uZT0ib25EYXJrIiAvPgogICAgICAgIDxidXR0b24KICAgICAgICAgIHR5cGU9ImJ1dHRvbiIK')
+sub('apps/web/src/features/docs/components/DocsSidebar.tsx', 'CmltcG9ydCB0eXBlIHsgRG9jUGFnZSB9IGZyb20gIkBmZWF0dXJlcy9kb2NzL2xpYi9kb2NzLnR5cGVzIgoKdHlwZSBOYXZpZ2F0aW9uU2VjdGlvbiA9IHsK',
+    'CmltcG9ydCB0eXBlIHsgRG9jUGFnZSB9IGZyb20gIkBmZWF0dXJlcy9kb2NzL2xpYi9kb2NzLnR5cGVzIgppbXBvcnQgeyBUaGVtZVRvZ2dsZSB9IGZyb20gIkBmZWF0dXJlcy90aGVtZSIKCnR5cGUgTmF2aWdhdGlvblNlY3Rpb24gPSB7Cg==')
+sub('apps/web/src/features/docs/components/DocsSidebar.tsx', 'CiAgICAgICAge29wZW4gPyAoCiAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9InByLTIgdGV4dC1zbSBmb250LXNlbWlib2xkIHRleHQtZm9yZWdyb3VuZCI+CiAgICAgICAgICAgIERvY3VtZW50YXRpb24KICAgICAgICAgIDwvc3Bhbj4KICAgICAgICApIDogbnVsbH0K',
+    'CiAgICAgICAge29wZW4gPyAoCiAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImZsZXggaXRlbXMtY2VudGVyIGdhcC0xIHRleHQtc20gZm9udC1zZW1pYm9sZCB0ZXh0LWZvcmVncm91bmQiPgogICAgICAgICAgICBEb2N1bWVudGF0aW9uCiAgICAgICAgICAgIDxUaGVtZVRvZ2dsZSAvPgogICAgICAgICAgPC9zcGFuPgogICAgICAgICkgOiBudWxsfQo=')
+print("  édits ok (8 substitutions, 4 fichiers créés, 0 remplacés)")
+PY
+trap - ERR
+
+[ "${AKFC_APPLY_ONLY:-0}" = "1" ] && { echo "Appliqué (sans vérification ni commit)."; exit 0; }
+echo "== pnpm check =="
+if ! pnpm check > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ check ÉCHOUÉ :"
+  grep -nE "error TS|✗ tutos|ERR_|Error:|EACCES|Permission denied" /tmp/akfc_tc.log | head -12
+  echo "  … fin du journal :"; grep -v '^[[:space:]]*$' /tmp/akfc_tc.log | tail -8
+  restore; exit 1
+fi
+echo "  ✅ check OK"
+git add "${MODIFIED[@]}" "${CREATED[@]}"
+git commit -F - >/tmp/c.log 2>&1 <<'MSG' && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
+feat(theme): interrupteur clair / sombre
+
+Bouton soleil / lune dans le header (barre et zone burger) et dans la
+barre latérale de la documentation. Choix gardé dans un cookie lu par le
+layout racine : la classe dark est posée dès le HTML serveur, sans flash
+ni script d'amorçage. Clair par défaut. styles/dark-legacy.css réoriente
+en mode sombre les couleurs en dur (bg-white, text-gray-*, border-gray-*…)
+vers les variables du thème, en attendant leur migration.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014LCtjvXtxeMakFEsVHTLca
+MSG
+echo "Rappel : pnpm check vide .next ; relancer pnpm dev ensuite."

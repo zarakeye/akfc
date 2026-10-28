@@ -71,7 +71,7 @@ Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` dé
 Suivons ce qui se passe quand un administrateur publie une actualité. Ce trajet reviendra dans presque chaque partie.
 
 1. Le formulaire vit dans `apps/web`. À l'envoi, il appelle `trpc.post.create` : un appel de fonction typé, pas une URL écrite à la main.
-2. La requête arrive au routeur `post` de `packages/backend`. Le middleware `isAdmin` vérifie la session ; Zod valide le titre et le contenu.
+2. La requête arrive au routeur `post` de `packages/backend`. Le middleware `isAdmin` vérifie la session ; Zod valide le type du titre et du contenu.
 3. Prisma écrit l'article dans PostgreSQL, dans une transaction qui enregistre aussi les médias qu'il référence.
 4. Le front invalide son cache : la liste des actualités se recharge d'elle-même.
 

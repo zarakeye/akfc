@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# TUTOS INTERACTIFS — incrément 2/2 : le tuto PILOTE « Créer une actualité » (admin), 6 étapes.
+#   - definitions/admin.posts.create.ts : le tuto (l'article est créé en BROUILLON, rien n'est publié) ;
+#   - attributs data-tour sur la liste des posts et sur PostForm (titre, date, contenu, bouton) ;
+#   - scripts/check-tour-targets.mjs, branché sur pnpm check : refuse toute cible de tuto sans
+#     data-tour correspondant dans le code.
+# Prérequis : apply-tours-1-engine.sh. Usage (racine du repo) : bash apply-tours-2-pilot.sh
+# Essai : /dashboard/posts, connecté en admin → bouton « ? » en bas à gauche.
+set -euo pipefail
+cd "$(dirname "$0")"
+[ -f pnpm-workspace.yaml ] || { echo "À lancer à la racine du repo."; exit 1; }
+
+if grep -q "admin.posts.create" "apps/web/src/features/tours/definitions/admin.posts.create.ts" 2>/dev/null; then echo "Déjà appliqué."; exit 0; fi
+grep -q "akfc-tour-mask" "apps/web/src/features/tours/TourOverlay.tsx" 2>/dev/null || { echo "❌ lancer d'abord apply-tours-1-engine.sh"; exit 1; }
+MODIFIED=("apps/web/src/features/tours/tour.registry.ts" "package.json" "apps/web/src/app/(admin)/dashboard/posts/page.tsx" "apps/web/src/features/admin/posts/forms/PostForm.tsx")
+CREATED=("apps/web/src/features/tours/definitions/admin.posts.create.ts" "scripts/check-tour-targets.mjs")
+restore(){ git checkout -q -- "${MODIFIED[@]}" 2>/dev/null || true; rm -f "${CREATED[@]}"; rmdir -p "apps/web/src/features/tours/definitions" 2>/dev/null || true; echo "  ↩ fichiers restaurés"; }
+trap 'restore' ERR
+
+mkdir -p "apps/web/src/features/tours/definitions"
+base64 -d > "apps/web/src/features/tours/definitions/admin.posts.create.ts" <<'B64'
+aW1wb3J0IHR5cGUgeyBUb3VyIH0gZnJvbSAiLi4vdG91ci50eXBlcyI7CgovKioKICogVHV0byBw
+aWxvdGUg4oCUIGNyw6llciB1bmUgYWN0dWFsaXTDqSAoYWRtaW4pLgogKiBGaWNoZSBkZSBkb2Mg
+YXNzb2Npw6llIDogbcOqbWUgaWRlbnRpZmlhbnQsIMKrIGFkbWluLnBvc3RzLmNyZWF0ZSDCuy4K
+ICogTCdhcnRpY2xlIGVzdCBjcsOpw6kgZW4gQlJPVUlMTE9OIChkYXRlIGRlIHB1YmxpY2F0aW9u
+IHZpZGUpIDogcmllbiBuJ2VzdCBwdWJsacOpLgogKi8KZXhwb3J0IGNvbnN0IGFkbWluUG9zdHND
+cmVhdGU6IFRvdXIgPSB7CiAgaWQ6ICJhZG1pbi5wb3N0cy5jcmVhdGUiLAogIHRpdGxlOiAiQ3LD
+qWVyIHVuZSBhY3R1YWxpdMOpIiwKICBkZXNjcmlwdGlvbjogIlLDqWRpZ2VyIHVuIGFydGljbGUg
+ZXQgbCdlbnJlZ2lzdHJlciBlbiBicm91aWxsb24sIHNhbnMgbGUgcHVibGllci4iLAogIGF1ZGll
+bmNlOiAiYWRtaW4iLAogIHJvdXRlczogWyIvZGFzaGJvYXJkL3Bvc3RzIiwgIi9kYXNoYm9hcmQv
+cG9zdHMvY3JlYXRlIl0sCiAgc3RhcnRSb3V0ZTogIi9kYXNoYm9hcmQvcG9zdHMiLAogIHN0ZXBz
+OiBbCiAgICB7CiAgICAgIHRhcmdldDogInBvc3RzLmxpc3QuY3JlYXRlIiwKICAgICAgdGl0bGU6
+ICJPdXZyZXogbGUgZm9ybXVsYWlyZSIsCiAgICAgIGJvZHk6ICJUb3V0ZXMgbGVzIGFjdHVhbGl0
+w6lzIGR1IHNpdGUgc29udCBsaXN0w6llcyBpY2kuIENsaXF1ZXogc3VyIMKrIENyw6llciB1biBh
+cnRpY2xlIMK7IHBvdXIgZW4gcsOpZGlnZXIgdW5lIG5vdXZlbGxlLiIsCiAgICAgIGFkdmFuY2U6
+IHsga2luZDogImNsaWNrIiB9LAogICAgfSwKICAgIHsKICAgICAgdGFyZ2V0OiAicG9zdHMuZm9y
+bS50aXRsZSIsCiAgICAgIHRpdGxlOiAiRG9ubmV6IHVuIHRpdHJlIiwKICAgICAgYm9keTogIkxl
+IHRpdHJlIGVzdCBsZSBzZXVsIGNoYW1wIG9ibGlnYXRvaXJlLiBQb3VyIGNldCBlc3NhaSwgdGFw
+ZXogwqsgRXhlbXBsZSAodHV0bykgwrsgOiB2b3VzIHBvdXJyZXogc3VwcHJpbWVyIGwnYXJ0aWNs
+ZSBlbnN1aXRlLiIsCiAgICAgIGFkdmFuY2U6IHsga2luZDogImlucHV0IiwgdmFsaWRhdGU6ICh2
+KSA9PiB2LnRyaW0oKS5sZW5ndGggPiAwIH0sCiAgICB9LAogICAgewogICAgICB0YXJnZXQ6ICJw
+b3N0cy5mb3JtLnB1YmxpY2F0aW9uRGF0ZSIsCiAgICAgIHRpdGxlOiAiTGFpc3NleiBsYSBkYXRl
+IHZpZGUiLAogICAgICBib2R5OiAiU2FucyBkYXRlLCBsJ2FydGljbGUgcmVzdGUgdW4gYnJvdWls
+bG9uIGludmlzaWJsZSBkdSBwdWJsaWMuIFVuZSBkYXRlIHBhc3PDqWUgbGUgcHVibGllLCB1bmUg
+ZGF0ZSBmdXR1cmUgcHJvZ3JhbW1lIHNhIHB1YmxpY2F0aW9uLiIsCiAgICAgIGFkdmFuY2U6IHsg
+a2luZDogIm5leHQiIH0sCiAgICB9LAogICAgewogICAgICB0YXJnZXQ6ICJwb3N0cy5mb3JtLmNv
+bnRlbnQiLAogICAgICB0aXRsZTogIkxlIGNvbnRlbnUgZGUgbCdhcnRpY2xlIiwKICAgICAgYm9k
+eTogIkNlIGNvbnN0cnVjdGV1ciBhc3NlbWJsZSBsZSBjb3JwcyBkZSBsJ2FydGljbGUgOiB0ZXh0
+ZXMsIGltYWdlcywgZG9jdW1lbnRzLiBJbCBhIHNvbiBwcm9wcmUgdHV0byA7IGljaSwgdW4gYXJ0
+aWNsZSBzYW5zIGNvbnRlbnUgc3VmZml0LiIsCiAgICAgIGFkdmFuY2U6IHsga2luZDogIm5leHQi
+IH0sCiAgICB9LAogICAgewogICAgICB0YXJnZXQ6ICJwb3N0cy5mb3JtLnN1Ym1pdCIsCiAgICAg
+IHRpdGxlOiAiRW5yZWdpc3RyZXoiLAogICAgICBib2R5OiAiQ2xpcXVleiBzdXIgwqsgQ3LDqWVy
+IMK7LiBMJ2FydGljbGUgZXN0IGVucmVnaXN0csOpIGVuIGJyb3VpbGxvbiBldCBzYSBwYWdlIGRl
+IGTDqXRhaWwgcydvdXZyZS4iLAogICAgICBhZHZhbmNlOiB7IGtpbmQ6ICJyb3V0ZSIsIG1hdGNo
+OiAvXlwvZGFzaGJvYXJkXC9wb3N0c1wvXGQrJC8gfSwKICAgIH0sCiAgICB7CiAgICAgIHRpdGxl
+OiAiQydlc3QgZmFpdCIsCiAgICAgIGJvZHk6ICJWb3RyZSBhcnRpY2xlIGV4aXN0ZSBlbiBicm91
+aWxsb24uIFBvdXIgbGUgcHVibGllciwgbW9kaWZpZXotbGUgZXQgZG9ubmV6LWx1aSB1bmUgZGF0
+ZSBkZSBwdWJsaWNhdGlvbi4gUydpbCBuZSBzZXJ2YWl0IHF1J8OgIGwnZXNzYWksIHN1cHByaW1l
+ei1sZSBkZXB1aXMgbGEgbGlzdGUuIiwKICAgICAgYWR2YW5jZTogeyBraW5kOiAibmV4dCIgfSwK
+ICAgIH0sCiAgXSwKfTsK
+B64
+mkdir -p "scripts"
+base64 -d > "scripts/check-tour-targets.mjs" <<'B64'
+IyEvdXNyL2Jpbi9lbnYgbm9kZQovLyBHYXJkZSBkZXMgdHV0b3MgaW50ZXJhY3RpZnMgKGxhbmPD
+qWUgcGFyIGBwbnBtIGNoZWNrYCkuCi8vIENoYXF1ZSDDqXRhcGUgdmlzZSB1biDDqWzDqW1lbnQg
+cGFyIGB0YXJnZXQ6ICLigKYiYCA7IGwnw6lsw6ltZW50IGRvaXQgcG9ydGVyIGBkYXRhLXRvdXI9
+IuKApiJgIHF1ZWxxdWUKLy8gcGFydCBkYW5zIGFwcHMvd2ViL3NyYy4gVW5lIGNpYmxlIG9ycGhl
+bGluZSAoY29tcG9zYW50IHJlbm9tbcOpLCBhdHRyaWJ1dCBzdXBwcmltw6kpIGZlcmFpdAovLyDD
+qWNob3VlciBsZSB0dXRvIGNoZXogbCd1dGlsaXNhdGV1ciA6IG9uIGxhIHJlZnVzZSBpY2ksIGF2
+YW50IGxlIGNvbW1pdC4KaW1wb3J0IHsgcmVhZGRpclN5bmMsIHJlYWRGaWxlU3luYywgc3RhdFN5
+bmMgfSBmcm9tICJub2RlOmZzIjsKaW1wb3J0IHsgam9pbiwgcmVsYXRpdmUgfSBmcm9tICJub2Rl
+OnBhdGgiOwoKY29uc3QgU1JDID0gImFwcHMvd2ViL3NyYyI7CmNvbnN0IERFRlMgPSBqb2luKFNS
+QywgImZlYXR1cmVzL3RvdXJzL2RlZmluaXRpb25zIik7CgpmdW5jdGlvbiB3YWxrKGRpciwgb3V0
+ID0gW10pIHsKICBmb3IgKGNvbnN0IG5hbWUgb2YgcmVhZGRpclN5bmMoZGlyKSkgewogICAgaWYg
+KG5hbWUgPT09ICJub2RlX21vZHVsZXMiIHx8IG5hbWUuc3RhcnRzV2l0aCgiLiIpKSBjb250aW51
+ZTsKICAgIGNvbnN0IHAgPSBqb2luKGRpciwgbmFtZSk7CiAgICBpZiAoc3RhdFN5bmMocCkuaXNE
+aXJlY3RvcnkoKSkgd2FsayhwLCBvdXQpOwogICAgZWxzZSBpZiAoL1wuKHRzeD98anN4P3xtZHgp
+JC8udGVzdChuYW1lKSkgb3V0LnB1c2gocCk7CiAgfQogIHJldHVybiBvdXQ7Cn0KCmNvbnN0IGFu
+Y2hvcnMgPSBuZXcgU2V0KCk7CmZvciAoY29uc3QgZiBvZiB3YWxrKFNSQykpIHsKICBmb3IgKGNv
+bnN0IG0gb2YgcmVhZEZpbGVTeW5jKGYsICJ1dGY4IikubWF0Y2hBbGwoL2RhdGEtdG91cj1bIid7
+YF0rKFtcdy46LV0rKVsiJ2B9XS9nKSkgYW5jaG9ycy5hZGQobVsxXSk7Cn0KCmNvbnN0IGVycm9y
+cyA9IFtdOwpjb25zdCBpZHMgPSBuZXcgTWFwKCk7CmxldCBzdGVwcyA9IDA7CmZvciAoY29uc3Qg
+ZiBvZiB3YWxrKERFRlMpKSB7CiAgY29uc3QgcyA9IHJlYWRGaWxlU3luYyhmLCAidXRmOCIpOwog
+IGZvciAoY29uc3QgbSBvZiBzLm1hdGNoQWxsKC9eXHMqaWQ6XHMqIihbXiJdKykiL2dtKSkgewog
+ICAgaWYgKGlkcy5oYXMobVsxXSkpIGVycm9ycy5wdXNoKGBpZGVudGlmaWFudCBkZSB0dXRvIGVu
+IGRvdWJsZSDCqyAke21bMV19IMK7ICgke3JlbGF0aXZlKCIuIiwgZil9IGV0ICR7aWRzLmdldCht
+WzFdKX0pYCk7CiAgICBpZHMuc2V0KG1bMV0sIHJlbGF0aXZlKCIuIiwgZikpOwogIH0KICBmb3Ig
+KGNvbnN0IG0gb2Ygcy5tYXRjaEFsbCgvdGFyZ2V0OlxzKiIoW14iXSspIi9nKSkgewogICAgc3Rl
+cHMrKzsKICAgIGlmICghYW5jaG9ycy5oYXMobVsxXSkpIGVycm9ycy5wdXNoKGAke3JlbGF0aXZl
+KCIuIiwgZil9IDogY2libGUgwqsgJHttWzFdfSDCuyBpbnRyb3V2YWJsZSAoYXVjdW4gZGF0YS10
+b3VyPSIke21bMV19IiBkYW5zICR7U1JDfSlgKTsKICB9Cn0KCmlmIChlcnJvcnMubGVuZ3RoKSB7
+CiAgZm9yIChjb25zdCBlIG9mIGVycm9ycykgY29uc29sZS5lcnJvcihg4pyXIHR1dG9zIDogJHtl
+fWApOwogIHByb2Nlc3MuZXhpdCgxKTsKfQpjb25zb2xlLmxvZyhg4pyTIHR1dG9zIDogJHtpZHMu
+c2l6ZX0gdHV0byhzKSwgJHtzdGVwc30gY2libGUocyksIHRvdXRlcyBwcsOpc2VudGVzIGRhbnMg
+bGUgY29kZWApOwo=
+B64
+
+python3 - <<'PY'
+import base64
+spec_skip_done = False
+def sub(path, old, new):
+    old, new = base64.b64decode(old).decode(), base64.b64decode(new).decode()
+    s = open(path, encoding="utf-8").read()
+    if s.count(old) == 0 and s.count(new) == 1 and spec_skip_done: return  # déjà fait par un script précédent
+    assert s.count(old) == 1, (path, old[:80], s.count(old))
+    open(path, "w", encoding="utf-8").write(s.replace(old, new))
+sub('apps/web/src/features/tours/tour.registry.ts', 'aW1wb3J0IHR5cGUgeyBUb3VyLCBUb3VyQXVkaWVuY2UgfSBmcm9tICIuL3RvdXIudHlwZXMiOwoKLyoqCg==',
+    'aW1wb3J0IHR5cGUgeyBUb3VyLCBUb3VyQXVkaWVuY2UgfSBmcm9tICIuL3RvdXIudHlwZXMiOwppbXBvcnQgeyBhZG1pblBvc3RzQ3JlYXRlIH0gZnJvbSAiLi9kZWZpbml0aW9ucy9hZG1pbi5wb3N0cy5jcmVhdGUiOwoKLyoqCg==')
+sub('apps/web/src/features/tours/tour.registry.ts', 'ICogbCdham91dGVyIMOgIGNldHRlIGxpc3RlLgogKi8KZXhwb3J0IGNvbnN0IFRPVVJTOiBUb3VyW10gPSBbXTsKCmV4cG9ydCBmdW5jdGlvbiBnZXRUb3VyKGlkOiBzdHJpbmcpOiBUb3VyIHwgdW5kZWZpbmVkIHsK',
+    'ICogbCdham91dGVyIMOgIGNldHRlIGxpc3RlLgogKi8KZXhwb3J0IGNvbnN0IFRPVVJTOiBUb3VyW10gPSBbYWRtaW5Qb3N0c0NyZWF0ZV07CgpleHBvcnQgZnVuY3Rpb24gZ2V0VG91cihpZDogc3RyaW5nKTogVG91ciB8IHVuZGVmaW5lZCB7Cg==')
+sub('package.json', 'ICAgICJsaW50IjogInBucG0gLS1maWx0ZXIgd2ViIGxpbnQiLAogICAgInBvc3RpbnN0YWxsIjogInBucG0gcHJpc21hIGdlbmVyYXRlIiwKICAgICJjaGVjayI6ICJub2RlIHNjcmlwdHMvY2hlY2stbmV4dC1jb252ZW50aW9ucy5tanMgJiYgcG5wbSBjbGVhbiAmJiBwbnBtIC0tZmlsdGVyIGJhY2tlbmQgdHlwZWNoZWNrICYmIHBucG0gdHlwZWNoZWNrIgogIH0sCiAgInByaXNtYSI6IHsK',
+    'ICAgICJsaW50IjogInBucG0gLS1maWx0ZXIgd2ViIGxpbnQiLAogICAgInBvc3RpbnN0YWxsIjogInBucG0gcHJpc21hIGdlbmVyYXRlIiwKICAgICJjaGVjayI6ICJub2RlIHNjcmlwdHMvY2hlY2stbmV4dC1jb252ZW50aW9ucy5tanMgJiYgbm9kZSBzY3JpcHRzL2NoZWNrLXRvdXItdGFyZ2V0cy5tanMgJiYgcG5wbSBjbGVhbiAmJiBwbnBtIC0tZmlsdGVyIGJhY2tlbmQgdHlwZWNoZWNrICYmIHBucG0gdHlwZWNoZWNrIgogIH0sCiAgInByaXNtYSI6IHsK')
+sub('apps/web/src/app/(admin)/dashboard/posts/page.tsx', 'ICAgICAgICA8TGluawogICAgICAgICAgaHJlZj0iL2Rhc2hib2FyZC9wb3N0cy9jcmVhdGUiCiAgICAgICAgICBjbGFzc05hbWU9ImlubGluZS1mbGV4IGl0ZW1zLWNlbnRlciBnYXAtMiByb3VuZGVkLW1kIGJnLXByaW1hcnkgcHgtMyBweS0yIHRleHQtc20gZm9udC1tZWRpdW0gdGV4dC1wcmltYXJ5LWZvcmVncm91bmQgdHJhbnNpdGlvbi1jb2xvcnMgaG92ZXI6YmctcHJpbWFyeS85MCIKICAgICAgICA+Cg==',
+    'ICAgICAgICA8TGluawogICAgICAgICAgaHJlZj0iL2Rhc2hib2FyZC9wb3N0cy9jcmVhdGUiCiAgICAgICAgICBkYXRhLXRvdXI9InBvc3RzLmxpc3QuY3JlYXRlIgogICAgICAgICAgY2xhc3NOYW1lPSJpbmxpbmUtZmxleCBpdGVtcy1jZW50ZXIgZ2FwLTIgcm91bmRlZC1tZCBiZy1wcmltYXJ5IHB4LTMgcHktMiB0ZXh0LXNtIGZvbnQtbWVkaXVtIHRleHQtcHJpbWFyeS1mb3JlZ3JvdW5kIHRyYW5zaXRpb24tY29sb3JzIGhvdmVyOmJnLXByaW1hcnkvOTAiCiAgICAgICAgPgo=')
+sub('apps/web/src/features/admin/posts/forms/PostForm.tsx', 'ICAgICAgICAgICAgdmFsdWU9e3RpdGxlfQogICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHNldFRpdGxlKGUudGFyZ2V0LnZhbHVlKX0KICAgICAgICAgICAgcGxhY2Vob2xkZXI9IlJlcHJpc2UgZGVzIGNvdXJzLCBSw6lzdWx0YXRzIGRlIGxhIGNvbXDDqXRpdGlvbuKApiIKICAgICAgICAgICAgY2xhc3NOYW1lPSJyb3VuZGVkIGJvcmRlciBib3JkZXItaW5wdXQgYmctYmFja2dyb3VuZCBweC0yIHB5LTEiCg==',
+    'ICAgICAgICAgICAgdmFsdWU9e3RpdGxlfQogICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHNldFRpdGxlKGUudGFyZ2V0LnZhbHVlKX0KICAgICAgICAgICAgZGF0YS10b3VyPSJwb3N0cy5mb3JtLnRpdGxlIgogICAgICAgICAgICBwbGFjZWhvbGRlcj0iUmVwcmlzZSBkZXMgY291cnMsIFLDqXN1bHRhdHMgZGUgbGEgY29tcMOpdGl0aW9u4oCmIgogICAgICAgICAgICBjbGFzc05hbWU9InJvdW5kZWQgYm9yZGVyIGJvcmRlci1pbnB1dCBiZy1iYWNrZ3JvdW5kIHB4LTIgcHktMSIK')
+sub('apps/web/src/features/admin/posts/forms/PostForm.tsx', 'ICAgICAgICA8L2xhYmVsPgoKICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPSJmbGV4IGZsZXgtY29sIGdhcC0xIHRleHQtc20iPgogICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJmb250LW1lZGl1bSI+RGF0ZSBkZSBwdWJsaWNhdGlvbjwvc3Bhbj4KICAgICAgICAgIDxpbnB1dAo=',
+    'ICAgICAgICA8L2xhYmVsPgoKICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPSJmbGV4IGZsZXgtY29sIGdhcC0xIHRleHQtc20iIGRhdGEtdG91cj0icG9zdHMuZm9ybS5wdWJsaWNhdGlvbkRhdGUiPgogICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJmb250LW1lZGl1bSI+RGF0ZSBkZSBwdWJsaWNhdGlvbjwvc3Bhbj4KICAgICAgICAgIDxpbnB1dAo=')
+sub('apps/web/src/features/admin/posts/forms/PostForm.tsx', 'CiAgICAgIHsvKiDilIDilIAgQ29udGVudSAoUGFnZUJ1aWxkZXIpIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgCAqL30KICAgICAgPGZpZWxkc2V0IGNsYXNzTmFtZT0icm91bmRlZC1sZyBib3JkZXIgYm9yZGVyLWJvcmRlciBwLTQiPgogICAgICAgIDxsZWdlbmQgY2xhc3NOYW1lPSJweC0yIHRleHQtc20gZm9udC1tZWRpdW0iPgogICAgICAgICAgQ29udGVudSAoUGFnZUJ1aWxkZXIpCg==',
+    'CiAgICAgIHsvKiDilIDilIAgQ29udGVudSAoUGFnZUJ1aWxkZXIpIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgCAqL30KICAgICAgPGZpZWxkc2V0IGNsYXNzTmFtZT0icm91bmRlZC1sZyBib3JkZXIgYm9yZGVyLWJvcmRlciBwLTQiIGRhdGEtdG91cj0icG9zdHMuZm9ybS5jb250ZW50Ij4KICAgICAgICA8bGVnZW5kIGNsYXNzTmFtZT0icHgtMiB0ZXh0LXNtIGZvbnQtbWVkaXVtIj4KICAgICAgICAgIENvbnRlbnUgKFBhZ2VCdWlsZGVyKQo=')
+sub('apps/web/src/features/admin/posts/forms/PostForm.tsx', 'ICAgICAgICAgIG9uQ2xpY2s9e2hhbmRsZVN1Ym1pdH0KICAgICAgICAgIGRpc2FibGVkPXtpc1N1Ym1pdHRpbmd9CiAgICAgICAgICBjbGFzc05hbWU9InJvdW5kZWQtbWQgYmctcHJpbWFyeSBweC00IHB5LTIgdGV4dC1zbSBmb250LW1lZGl1bSB0ZXh0LXByaW1hcnktZm9yZWdyb3VuZCB0cmFuc2l0aW9uLWNvbG9ycyBob3ZlcjpiZy1wcmltYXJ5LzkwIGRpc2FibGVkOm9wYWNpdHktNTAiCiAgICAgICAgPgo=',
+    'ICAgICAgICAgIG9uQ2xpY2s9e2hhbmRsZVN1Ym1pdH0KICAgICAgICAgIGRpc2FibGVkPXtpc1N1Ym1pdHRpbmd9CiAgICAgICAgICBkYXRhLXRvdXI9InBvc3RzLmZvcm0uc3VibWl0IgogICAgICAgICAgY2xhc3NOYW1lPSJyb3VuZGVkLW1kIGJnLXByaW1hcnkgcHgtNCBweS0yIHRleHQtc20gZm9udC1tZWRpdW0gdGV4dC1wcmltYXJ5LWZvcmVncm91bmQgdHJhbnNpdGlvbi1jb2xvcnMgaG92ZXI6YmctcHJpbWFyeS85MCBkaXNhYmxlZDpvcGFjaXR5LTUwIgogICAgICAgID4K')
+print("  édits ok (8 substitutions, 2 fichiers créés, 0 remplacés)")
+PY
+trap - ERR
+
+[ "${AKFC_APPLY_ONLY:-0}" = "1" ] && { echo "Appliqué (sans vérification ni commit)."; exit 0; }
+echo "== pnpm check =="
+if ! pnpm check > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ check ÉCHOUÉ :"
+  grep -nE "error TS|✗ tutos|ERR_|Error:|EACCES|Permission denied" /tmp/akfc_tc.log | head -12
+  echo "  … fin du journal :"; grep -v '^[[:space:]]*$' /tmp/akfc_tc.log | tail -8
+  restore; exit 1
+fi
+echo "  ✅ check OK"
+grep -h "tutos :" /tmp/akfc_tc.log | head -1 | sed "s/^/  /"
+git add "${MODIFIED[@]}" "${CREATED[@]}"
+git commit -F - >/tmp/c.log 2>&1 <<'MSG' && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
+feat(tours): tuto pilote « Créer une actualité » + garde des cibles
+
+Six étapes, de la liste des posts à la page de l'article créé en
+brouillon. Attributs data-tour sur la liste et sur PostForm.
+scripts/check-tour-targets.mjs (dans pnpm check) refuse une cible de
+tuto sans data-tour correspondant.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014LCtjvXtxeMakFEsVHTLca
+MSG
+echo "Rappel : pnpm check vide .next ; relancer pnpm dev ensuite."

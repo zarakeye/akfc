@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Documents des membres :
+#   - un éditeur de groupe ne peut plus diffuser à son groupe un fichier situé hors de l'espace du groupe ;
+#   - une seule règle « ce document concerne ce membre », partagée par la liste et la livraison du fichier ;
+#   - commentaire de la route de livraison à jour ; chapitre de doc à jour.
+# Prérequis : apply-docs-documents-membres.sh.
+# Usage (racine du repo) : bash apply-fix-documents-membres.sh
+set -euo pipefail
+cd "$(dirname "$0")"
+[ -f pnpm-workspace.yaml ] || { echo "À lancer à la racine du repo."; exit 1; }
+
+if git show HEAD:"packages/backend/src/modules/memberDocuments/router.ts" 2>/dev/null | grep -qF "memberDocumentVisibleTo"; then echo "Déjà appliqué (commité)."; exit 0; fi
+grep -qF "title: \"Les documents des membres\"" "apps/web/content/docs/dev/membres/documents-des-membres.mdx" 2>/dev/null || { echo "❌ lancer d'abord apply-docs-documents-membres.sh"; exit 1; }
+MODIFIED=("apps/web/content/docs/dev/membres/documents-des-membres.mdx" "apps/web/src/app/api/media/member-document/[id]/route.ts" "packages/backend/src/modules/memberDocuments/router.ts")
+CREATED=("packages/backend/src/modules/memberDocuments/visibleTo.ts")
+restore(){ git checkout -q -- "${MODIFIED[@]}" 2>/dev/null || true; rm -f "${CREATED[@]}"; echo "  ↩ fichiers restaurés"; }
+if grep -qF "memberDocumentVisibleTo" "packages/backend/src/modules/memberDocuments/router.ts" 2>/dev/null; then echo "  restes d'un essai précédent non commité → nettoyage"; restore; fi
+trap 'restore' ERR
+
+mkdir -p "packages/backend/src/modules/memberDocuments"
+base64 -d > "packages/backend/src/modules/memberDocuments/visibleTo.ts" <<'B64'
+LyoqCiAqIENvbmRpdGlvbiBQcmlzbWEgwqsgY2UgZG9jdW1lbnQgZGVzIG1lbWJyZXMgY29uY2Vy
+bmUgY2V0IHV0aWxpc2F0ZXVyIMK7LgogKgogKiBQYXJ0YWfDqWUgcGFyIGxlIHJvdXRldXIgKGxp
+c3RlLCBjb21wdGV1cnMsIG1hcnF1YWdlIGx1IC8gbm9uIGx1KSBldCBwYXIgbGEgcm91dGUgZGUK
+ICogbGl2cmFpc29uIGR1IGZpY2hpZXIgKGAvYXBpL21lZGlhL21lbWJlci1kb2N1bWVudC9baWRd
+YCkgOiB1bmUgc2V1bGUgcsOoZ2xlLCBwb3VyIHF1ZSBjZQogKiBxdSd1biBtZW1icmUgdm9pdCBk
+YW5zIGxhIGxpc3RlIGV0IGNlIHF1J2lsIHBldXQgb3V2cmlyIG5lIGRpdmVyZ2VudCBqYW1haXMu
+CiAqCiAqICAgLSBBTExfTUVNQkVSUyA6IHRvdXMgbGVzIG1lbWJyZXMgOwogKiAgIC0gU1BFQ0lG
+SUMgOiBkZXN0aW5hdGFpcmUgZMOpc2lnbsOpIE9VIG1lbWJyZSBkJ3VuIGdyb3VwZSB2aXPDqS4g
+TCdhcHBhcnRlbmFuY2UgZXN0IHLDqXNvbHVlCiAqICAgICDDoCBjaGFxdWUgbGVjdHVyZSA6IHVu
+IG1lbWJyZSBham91dMOpIMOgIHVuIGdyb3VwZSByZcOnb2l0IGxlcyBkb2N1bWVudHMgZMOpasOg
+IGFkcmVzc8OpcyBhdQogKiAgICAgZ3JvdXBlLCB1biBtZW1icmUgcXVpIGVuIHNvcnQgbmUgbGVz
+IHZvaXQgcGx1cy4KICovCmV4cG9ydCBmdW5jdGlvbiBtZW1iZXJEb2N1bWVudFZpc2libGVUbyh1
+c2VySWQ6IHN0cmluZykgewogIHJldHVybiB7CiAgICBPUjogWwogICAgICB7IGF1ZGllbmNlOiAi
+QUxMX01FTUJFUlMiIGFzIGNvbnN0IH0sCiAgICAgIHsKICAgICAgICBhdWRpZW5jZTogIlNQRUNJ
+RklDIiBhcyBjb25zdCwKICAgICAgICBPUjogWwogICAgICAgICAgeyByZWNpcGllbnRzOiB7IHNv
+bWU6IHsgdXNlcklkIH0gfSB9LAogICAgICAgICAgewogICAgICAgICAgICBncm91cHM6IHsgc29t
+ZTogeyBncm91cDogeyBtZW1iZXJzaGlwczogeyBzb21lOiB7IHVzZXJJZCB9IH0gfSB9IH0sCiAg
+ICAgICAgICB9LAogICAgICAgIF0sCiAgICAgIH0sCiAgICBdLAogIH07Cn0K
+B64
+
+python3 - <<'PY'
+import base64
+spec_skip_done = False
+def sub(path, old, new):
+    old, new = base64.b64decode(old).decode(), base64.b64decode(new).decode()
+    s = open(path, encoding="utf-8").read()
+    if s.count(old) == 0 and s.count(new) == 1 and spec_skip_done: return  # déjà fait par un script précédent
+    assert s.count(old) == 1, (path, old[:80], s.count(old))
+    open(path, "w", encoding="utf-8").write(s.replace(old, new))
+sub('apps/web/content/docs/dev/membres/documents-des-membres.mdx', 'CmBgYHRzCi8vIHBhY2thZ2VzL2JhY2tlbmQvc3JjL21vZHVsZXMvbWVtYmVyRG9jdW1lbnRzL3JvdXRlci50cyAoZXh0cmFpdCkKZnVuY3Rpb24gdmlzaWJsZVRvVXNlcih1c2VySWQ6IHN0cmluZykgewogIHJldHVybiB7CiAgICBPUjogWwo=',
+    'CmBgYHRzCi8vIHBhY2thZ2VzL2JhY2tlbmQvc3JjL21vZHVsZXMvbWVtYmVyRG9jdW1lbnRzL3Zpc2libGVUby50cyAoZXh0cmFpdCkKZXhwb3J0IGZ1bmN0aW9uIG1lbWJlckRvY3VtZW50VmlzaWJsZVRvKHVzZXJJZDogc3RyaW5nKSB7CiAgcmV0dXJuIHsKICAgIE9SOiBbCg==')
+sub('apps/web/content/docs/dev/membres/documents-des-membres.mdx', 'ICAgICAgewogICAgICAgIGF1ZGllbmNlOiAiU1BFQ0lGSUMiIGFzIGNvbnN0LAogICAgICAgIC8vIENpYmzDqSA6IGRlc3RpbmF0YWlyZSBhZCBob2MgT1UgbWVtYnJlIGQndW4gZ3JvdXBlIHZpc8OpIChhcHBhcnRlbmFuY2UKICAgICAgICAvLyByw6lzb2x1ZSBkeW5hbWlxdWVtZW50IOKGkiB1biBtZW1icmUgYWpvdXTDqSBhdSBncm91cGUgaMOpcml0ZSBkZXMgZG9jcwogICAgICAgIC8vIGTDqWrDoCBwb3PDqXMpLgogICAgICAgIE9SOiBbCiAgICAgICAgICB7IHJlY2lwaWVudHM6IHsgc29tZTogeyB1c2VySWQgfSB9IH0sCg==',
+    'ICAgICAgewogICAgICAgIGF1ZGllbmNlOiAiU1BFQ0lGSUMiIGFzIGNvbnN0LAogICAgICAgIE9SOiBbCiAgICAgICAgICB7IHJlY2lwaWVudHM6IHsgc29tZTogeyB1c2VySWQgfSB9IH0sCg==')
+sub('apps/web/content/docs/dev/membres/documents-des-membres.mdx', 'VW4gZ3JvdXBlIGVzdCBhaW5zaSB1bmUgbGlzdGUgZGUgZGlmZnVzaW9uICoqdml2YW50ZSoqIDogdW4gbWVtYnJlIGFqb3V0w6kgYXUgZ3JvdXBlIMKrIEJ1cmVhdSDCuyByZcOnb2l0IGxlcyBkb2N1bWVudHMgZMOpasOgIGFkcmVzc8OpcyBhdSBidXJlYXUsIGV0IHVuIG1lbWJyZSBxdWkgZW4gc29ydCBuZSBsZXMgdm9pdCBwbHVzLiBBdWN1bmUgdMOiY2hlIGRlIHN5bmNocm9uaXNhdGlvbiBuJ2VzdCBuw6ljZXNzYWlyZSwgcHVpc3F1J2lsIG4neSBhIHJpZW4gw6Agc3luY2hyb25pc2VyLgoKVG91dGVzIGxlcyBwcm9jw6lkdXJlcyBkdSBtZW1icmUgKGxpc3RlciwgbWFycXVlciBsdSwgbWFycXVlciBub24gbHUpIHBhc3NlbnQgcGFyIGNldHRlIGNvbmRpdGlvbi4gVW4gbWVtYnJlIHF1aSBkZW1hbmRlIMOgIG1hcnF1ZXIgY29tbWUgbHUgdW4gZG9jdW1lbnQgcXVpIG5lIGxlIGNvbmNlcm5lIHBhcyByZcOnb2l0IMKrIERvY3VtZW50IGludHJvdXZhYmxlIMK7LCBleGFjdGVtZW50IGNvbW1lIHNpIGxlIGRvY3VtZW50IG4nZXhpc3RhaXQgcGFzLgoKIyMgUHVibGllciBkZXB1aXMgbGUgZmluZGVyCg==',
+    'VW4gZ3JvdXBlIGVzdCBhaW5zaSB1bmUgbGlzdGUgZGUgZGlmZnVzaW9uICoqdml2YW50ZSoqIDogdW4gbWVtYnJlIGFqb3V0w6kgYXUgZ3JvdXBlIMKrIEJ1cmVhdSDCuyByZcOnb2l0IGxlcyBkb2N1bWVudHMgZMOpasOgIGFkcmVzc8OpcyBhdSBidXJlYXUsIGV0IHVuIG1lbWJyZSBxdWkgZW4gc29ydCBuZSBsZXMgdm9pdCBwbHVzLiBBdWN1bmUgdMOiY2hlIGRlIHN5bmNocm9uaXNhdGlvbiBuJ2VzdCBuw6ljZXNzYWlyZSwgcHVpc3F1J2lsIG4neSBhIHJpZW4gw6Agc3luY2hyb25pc2VyLgoKVG91dGVzIGxlcyBwcm9jw6lkdXJlcyBkdSBtZW1icmUgKGxpc3RlciwgY29tcHRlciwgbWFycXVlciBsdSwgbWFycXVlciBub24gbHUpIHBhc3NlbnQgcGFyIGNldHRlIGNvbmRpdGlvbiwgZXQgbGEgcm91dGUgcXVpIGxpdnJlIGxlIGZpY2hpZXIgbCdpbXBvcnRlIGF1c3NpIDogY2UgcXVlIGxlIG1lbWJyZSB2b2l0IGRhbnMgc2EgbGlzdGUgZXQgY2UgcXUnaWwgcGV1dCBvdXZyaXIgbmUgcGV1dmVudCBwYXMgZGl2ZXJnZXIuIFVuIG1lbWJyZSBxdWkgZGVtYW5kZSDDoCBtYXJxdWVyIGNvbW1lIGx1IHVuIGRvY3VtZW50IHF1aSBuZSBsZSBjb25jZXJuZSBwYXMgcmXDp29pdCDCqyBEb2N1bWVudCBpbnRyb3V2YWJsZSDCuywgZXhhY3RlbWVudCBjb21tZSBzaSBsZSBkb2N1bWVudCBuJ2V4aXN0YWl0IHBhcy4KCiMjIFB1YmxpZXIgZGVwdWlzIGxlIGZpbmRlcgo=')
+sub('apps/web/src/app/api/media/member-document/[id]/route.ts', 'aW1wb3J0IHsgcHJpc21hIH0gZnJvbSAiQGJhY2tlbmQvcHJpc21hIjsKaW1wb3J0IHsgZ2V0U2Vzc2lvbkZyb21SZXF1ZXN0IH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9hdXRoL2dldFNlc3Npb25Gcm9tUmVxdWVzdCI7CmltcG9ydCB7CiAgZ2V0UjJCdWNrZXQsCg==',
+    'aW1wb3J0IHsgcHJpc21hIH0gZnJvbSAiQGJhY2tlbmQvcHJpc21hIjsKaW1wb3J0IHsgZ2V0U2Vzc2lvbkZyb21SZXF1ZXN0IH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9hdXRoL2dldFNlc3Npb25Gcm9tUmVxdWVzdCI7CmltcG9ydCB7IG1lbWJlckRvY3VtZW50VmlzaWJsZVRvIH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9tZW1iZXJEb2N1bWVudHMvdmlzaWJsZVRvIjsKaW1wb3J0IHsKICBnZXRSMkJ1Y2tldCwK')
+sub('apps/web/src/app/api/media/member-document/[id]/route.ts', 'ICogQW5hbG9ndWUgbWVtYnJlIGRlIGxhIGdhcmRlIHB1YmxpcXVlIChgcHVibGljL3IyYCkgOgogKiAgIC0gc2Vzc2lvbiBhdXRoZW50aWZpw6llIHJlcXVpc2UgKDQwMSBzaW5vbikgOwogKiAgIC0gbGUgTWVtYmVyRG9jdW1lbnQgZG9pdCBDT05DRVJORVIgbGUgbWVtYnJlIDogYXVkaWVuY2UgQUxMX01FTUJFUlMsIG91CiAqICAgICBTUEVDSUZJQyBhdmVjIGNlIG1lbWJyZSBlbiBkZXN0aW5hdGFpcmUuIFNpbm9uIDQwNCDigJQgb24gbmUgcsOpdsOobGUgcGFzCiAqICAgICBsJ2V4aXN0ZW5jZSBkJ3VuIGRvY3VtZW50IHF1aSBuZSBsZSBjb25jZXJuZSBwYXMuCiAqCiAqIExlIGZpY2hpZXIgZXN0IHN0cmVhbcOpIGRlcHVpcyBSMiwgYXZlYyBDb250ZW50LVR5cGUgLyBEaXNwb3NpdGlvbiBmb3Jjw6lzIGVuCiAqIGBhcHBsaWNhdGlvbi9wZGZgIGlubGluZSBwb3VyIGwnYXBlcsOndSBlbiBpZnJhbWUsIHF1ZWwgcXVlIHNvaXQgbGUKICogY29udGVudC10eXBlIHN0b2Nrw6kuCiAqLwoK',
+    'ICogQW5hbG9ndWUgbWVtYnJlIGRlIGxhIGdhcmRlIHB1YmxpcXVlIChgcHVibGljL3IyYCkgOgogKiAgIC0gc2Vzc2lvbiBhdXRoZW50aWZpw6llIHJlcXVpc2UgKDQwMSBzaW5vbikgOwogKiAgIC0gbGUgTWVtYmVyRG9jdW1lbnQgZG9pdCBDT05DRVJORVIgbGUgbWVtYnJlIChgbWVtYmVyRG9jdW1lbnRWaXNpYmxlVG9gLCBsYSBtw6ptZQogKiAgICAgY29uZGl0aW9uIHF1ZSBsYSBsaXN0ZSBldCBsZXMgY29tcHRldXJzKS4gU2lub24gNDA0IOKAlCBvbiBuZSByw6l2w6hsZSBwYXMKICogICAgIGwnZXhpc3RlbmNlIGQndW4gZG9jdW1lbnQgcXVpIG5lIGxlIGNvbmNlcm5lIHBhcy4KICoKICogTGUgZmljaGllciBlc3Qgc3RyZWFtw6kgZGVwdWlzIFIyIGF2ZWMgc29uIHR5cGUgZW5yZWdpc3Ryw6kgKGBtaW1lVHlwZWAsIFBERiBwYXIKICogZMOpZmF1dCkgOiBhZmZpY2jDqSBkYW5zIGxlIG5hdmlnYXRldXIsIG91IGVuIHBpw6hjZSBqb2ludGUgYXZlYyBgP2Rvd25sb2FkPTFgLgogKi8KCg==')
+sub('apps/web/src/app/api/media/member-document/[id]/route.ts', 'ICAvLyDilIDilIDilIAgR2FyZGUgOiBsZSBkb2N1bWVudCBjb25jZXJuZSBjZSBtZW1icmUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACiAgY29uc3QgZG9jID0gYXdhaXQgcHJpc21hLm1lbWJlckRvY3VtZW50LmZpbmRGaXJzdCh7CiAgICB3aGVyZTogewogICAgICBpZCwKICAgICAgT1I6IFsKICAgICAgICB7IGF1ZGllbmNlOiAiQUxMX01FTUJFUlMiIH0sCiAgICAgICAgewogICAgICAgICAgYXVkaWVuY2U6ICJTUEVDSUZJQyIsCiAgICAgICAgICBPUjogWwogICAgICAgICAgICB7IHJlY2lwaWVudHM6IHsgc29tZTogeyB1c2VySWQgfSB9IH0sCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICBncm91cHM6IHsKICAgICAgICAgICAgICAgIHNvbWU6IHsgZ3JvdXA6IHsgbWVtYmVyc2hpcHM6IHsgc29tZTogeyB1c2VySWQgfSB9IH0gfSwKICAgICAgICAgICAgICB9LAogICAgICAgICAgICB9LAogICAgICAgICAgXSwKICAgICAgICB9LAogICAgICBdLAogICAgfSwKICAgIHNlbGVjdDogewogICAgICB0aXRsZTogdHJ1ZSwK',
+    'ICAvLyDilIDilIDilIAgR2FyZGUgOiBsZSBkb2N1bWVudCBjb25jZXJuZSBjZSBtZW1icmUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACiAgY29uc3QgZG9jID0gYXdhaXQgcHJpc21hLm1lbWJlckRvY3VtZW50LmZpbmRGaXJzdCh7CiAgICB3aGVyZTogeyBpZCwgLi4ubWVtYmVyRG9jdW1lbnRWaXNpYmxlVG8odXNlcklkKSB9LAogICAgc2VsZWN0OiB7CiAgICAgIHRpdGxlOiB0cnVlLAo=')
+sub('packages/backend/src/modules/memberDocuments/router.ts', 'aW1wb3J0IHsgY29sbGFib3JhdGl2ZUVudHJpZXNGb3JNZW1iZXIgfSBmcm9tICJAYmFja2VuZC9tb2R1bGVzL21lbWJlckdyb3Vwcy9jb2xsYWJvcmF0aXZlRW50cmllc0Zvck1lbWJlci5zZXJ2aWNlIjsKaW1wb3J0IHsgYXNzZXJ0Q2FuV3JpdGVHcm91cFNwYWNlIH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9tZW1iZXJHcm91cHMvYXNzZXJ0Q2FuV3JpdGVHcm91cFNwYWNlLnNlcnZpY2UiOwoKLyoqCg==',
+    'aW1wb3J0IHsgY29sbGFib3JhdGl2ZUVudHJpZXNGb3JNZW1iZXIgfSBmcm9tICJAYmFja2VuZC9tb2R1bGVzL21lbWJlckdyb3Vwcy9jb2xsYWJvcmF0aXZlRW50cmllc0Zvck1lbWJlci5zZXJ2aWNlIjsKaW1wb3J0IHsgYXNzZXJ0Q2FuV3JpdGVHcm91cFNwYWNlIH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9tZW1iZXJHcm91cHMvYXNzZXJ0Q2FuV3JpdGVHcm91cFNwYWNlLnNlcnZpY2UiOwppbXBvcnQgeyBncm91cElkRnJvbUxvZ2ljYWxQYXRoIH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9tZW1iZXJHcm91cHMvYXNzZXJ0Q2FuVHJhc2hQYXRocy5zZXJ2aWNlIjsKaW1wb3J0IHsgbWVtYmVyRG9jdW1lbnRWaXNpYmxlVG8gfSBmcm9tICJAYmFja2VuZC9tb2R1bGVzL21lbWJlckRvY3VtZW50cy92aXNpYmxlVG8iOwoKLyoqCg==')
+sub('packages/backend/src/modules/memberDocuments/router.ts', 'Y29uc3QgYWRtaW5Qcm9jZWR1cmUgPSBwcm90ZWN0ZWRQcm9jZWR1cmUudXNlKGlzQWRtaW4pOwoKLyoqIENvbmRpdGlvbiBQcmlzbWEgwqsgY2UgZG9jdW1lbnQgY29uY2VybmUgbCd1dGlsaXNhdGV1ciDCuy4gKi8KZnVuY3Rpb24gdmlzaWJsZVRvVXNlcih1c2VySWQ6IHN0cmluZykgewogIHJldHVybiB7CiAgICBPUjogWwogICAgICB7IGF1ZGllbmNlOiAiQUxMX01FTUJFUlMiIGFzIGNvbnN0IH0sCiAgICAgIHsKICAgICAgICBhdWRpZW5jZTogIlNQRUNJRklDIiBhcyBjb25zdCwKICAgICAgICAvLyBDaWJsw6kgOiBkZXN0aW5hdGFpcmUgYWQgaG9jIE9VIG1lbWJyZSBkJ3VuIGdyb3VwZSB2aXPDqSAoYXBwYXJ0ZW5hbmNlCiAgICAgICAgLy8gcsOpc29sdWUgZHluYW1pcXVlbWVudCDihpIgdW4gbWVtYnJlIGFqb3V0w6kgYXUgZ3JvdXBlIGjDqXJpdGUgZGVzIGRvY3MKICAgICAgICAvLyBkw6lqw6AgcG9zw6lzKS4KICAgICAgICBPUjogWwogICAgICAgICAgeyByZWNpcGllbnRzOiB7IHNvbWU6IHsgdXNlcklkIH0gfSB9LAogICAgICAgICAgewogICAgICAgICAgICBncm91cHM6IHsgc29tZTogeyBncm91cDogeyBtZW1iZXJzaGlwczogeyBzb21lOiB7IHVzZXJJZCB9IH0gfSB9IH0sCiAgICAgICAgICB9LAogICAgICAgIF0sCiAgICAgIH0sCiAgICBdLAogIH07Cn0KCmV4cG9ydCBjb25zdCBtZW1iZXJEb2N1bWVudFJvdXRlciA9IHJvdXRlcih7Cg==',
+    'Y29uc3QgYWRtaW5Qcm9jZWR1cmUgPSBwcm90ZWN0ZWRQcm9jZWR1cmUudXNlKGlzQWRtaW4pOwoKLyoqIENvbmRpdGlvbiDCqyBjZSBkb2N1bWVudCBjb25jZXJuZSBsJ3V0aWxpc2F0ZXVyIMK7IChwYXJ0YWfDqWUgYXZlYyBsYSByb3V0ZSBkZSBsaXZyYWlzb24pLiAqLwpjb25zdCB2aXNpYmxlVG9Vc2VyID0gbWVtYmVyRG9jdW1lbnRWaXNpYmxlVG87CgpleHBvcnQgY29uc3QgbWVtYmVyRG9jdW1lbnRSb3V0ZXIgPSByb3V0ZXIoewo=')
+sub('packages/backend/src/modules/memberDocuments/router.ts', 'ICAgICAgICBncm91cElkOiBpbnB1dC5ncm91cElkLAogICAgICB9KTsKCiAgICAgIGNvbnN0IGFzc2V0ID0gYXdhaXQgY3R4LnByaXNtYS5tZWRpYUFzc2V0LmZpbmRGaXJzdCh7Cg==',
+    'ICAgICAgICBncm91cElkOiBpbnB1dC5ncm91cElkLAogICAgICB9KTsKICAgICAgLy8gTGUgZmljaGllciBkb2l0IHNlIHRyb3V2ZXIgREFOUyBsJ2VzcGFjZSBkZSBjZSBncm91cGUgOiDDqnRyZSDDqWRpdGV1ciBkJ3VuIGdyb3VwZSBuZQogICAgICAvLyBwZXJtZXQgcGFzIGQneSBkaWZmdXNlciB1biBmaWNoaWVyIHByaXMgYWlsbGV1cnMgKGRvY3VtZW50IHBlcnNvbm5lbCBkJ3VuIGF1dHJlCiAgICAgIC8vIG1lbWJyZSwgZXNwYWNlIGQndW4gYXV0cmUgZ3JvdXBl4oCmKSwgcXVlIHNlcyBtZW1icmVzIHBvdXJyYWllbnQgYWxvcnMgb3V2cmlyLgogICAgICBpZiAoaW5wdXQucGF0aC5pbmNsdWRlcygiLi4iKSB8fCBncm91cElkRnJvbUxvZ2ljYWxQYXRoKGlucHV0LnBhdGgpICE9PSBpbnB1dC5ncm91cElkKSB7CiAgICAgICAgdGhyb3cgbmV3IFRSUENFcnJvcih7CiAgICAgICAgICBjb2RlOiAiRk9SQklEREVOIiwKICAgICAgICAgIG1lc3NhZ2U6ICJDZSBmaWNoaWVyIG4nZXN0IHBhcyBkYW5zIGwnZXNwYWNlIGRlIGNlIGdyb3VwZS4iLAogICAgICAgIH0pOwogICAgICB9CgogICAgICBjb25zdCBhc3NldCA9IGF3YWl0IGN0eC5wcmlzbWEubWVkaWFBc3NldC5maW5kRmlyc3Qoewo=')
+print("  édits ok (9 substitutions, 1 fichiers créés, 0 remplacés)")
+PY
+trap - ERR
+
+[ "${AKFC_APPLY_ONLY:-0}" = "1" ] && { echo "Appliqué (sans vérification ni commit)."; exit 0; }
+echo "== pnpm check =="
+if pgrep -f "next dev" >/dev/null 2>&1; then
+  echo "  (pnpm dev tourne : vérification sans effacer .next)"
+  CHECK="node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && pnpm --filter backend typecheck && pnpm typecheck"
+else
+  CHECK="pnpm check"
+fi
+if ! bash -c "$CHECK" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ check ÉCHOUÉ :"
+  grep -nE "error TS|✗ tutos|ERR_|Error:|EACCES|Permission denied" /tmp/akfc_tc.log | head -12
+  echo "  … fin du journal :"; grep -v '^[[:space:]]*$' /tmp/akfc_tc.log | tail -15
+  restore; exit 1
+fi
+echo "  ✅ check OK"
+git add "${MODIFIED[@]}" "${CREATED[@]}"
+git commit -F - >/tmp/c.log 2>&1 <<'MSG' && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
+documents des membres : dépôt limité à l'espace du groupe ; règle de visibilité partagée
+
+- depositToGroupSpace : le chemin doit être dans l'espace du groupe visé
+  (groupIdFromLogicalPath), sans « .. » — un éditeur ne peut plus diffuser à
+  son groupe un fichier pris ailleurs.
+- memberDocumentVisibleTo (visibleTo.ts) : une seule condition, importée par
+  le routeur et par la route de livraison (qui en avait une copie).
+- Route de livraison : commentaire d'en-tête à jour (plus de PDF forcé).
+- Doc : chapitre « Les documents des membres » à jour.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014LCtjvXtxeMakFEsVHTLca
+MSG
