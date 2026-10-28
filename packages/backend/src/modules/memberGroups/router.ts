@@ -241,10 +241,26 @@ export const memberGroupRouter = router({
       return { success: true };
     }),
 
-  /** Retire un membre d'un groupe. */
+  /**
+   * Retire un membre d'un groupe. Un administrateur ne peut pas se retirer lui-même du groupe
+   * Administrateurs : il perdrait l'accès au panneau, et le club pourrait n'avoir plus aucun
+   * administrateur. Un autre administrateur peut le faire.
+   */
   removeMember: adminProcedure
     .input(z.object({ groupId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      if (input.userId === ctx.sessionClient.user.id) {
+        const group = await ctx.prisma.memberGroup.findUnique({
+          where: { id: input.groupId },
+          select: { isAdminGroup: true },
+        });
+        if (group?.isAdminGroup) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Vous ne pouvez pas vous retirer vous-même du groupe Administrateurs.",
+          });
+        }
+      }
       await ctx.prisma.memberGroupMembership.deleteMany({
         where: { groupId: input.groupId, userId: input.userId },
       });

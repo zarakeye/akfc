@@ -1,4 +1,3 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -122,7 +121,7 @@ export const storageRouter = router({
     });
     for (const g of groups) map[g.id] = g.name;
 
-    if (await isAdminByGroup(ctx.prisma, ctx.user.id)) {
+    if (ctx.sessionClient.user.isAdmin) {
       const users = await ctx.prisma.user.findMany({
         select: {
           id: true,
@@ -166,7 +165,7 @@ export const storageRouter = router({
       countPersoImages({
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
       }),
     ]);
     return {
@@ -209,7 +208,7 @@ export const storageRouter = router({
       } else if (path.startsWith(`${persosRoot}/`)) {
         // Personnel de l'utilisateur courant uniquement : le dossier porte
         // son id. Ceux des autres restent des dossiers ordinaires.
-        kind = path.includes(ctx.user.id) ? "perso" : "folder";
+        kind = path.includes(ctx.sessionClient.user.id) ? "perso" : "folder";
       }
       // Nom lisible : pour le dossier personnel d'un AUTRE utilisateur, le
       // dernier segment vaut « photos » et n'apprend rien — on prend le
@@ -229,13 +228,13 @@ export const storageRouter = router({
 
   /**
    * Statut du quota d'images de l'espace perso de l'admin courant (lecture
-   * seule). Le dossier perso est dérivé de `ctx.user.id`, jamais d'un input.
+   * seule). Le dossier perso est dérivé de `ctx.sessionClient.user.id`, jamais d'un input.
    */
   getPersoPhotoQuota: protectedProcedure.query(async ({ ctx }) => {
     const counts = await countPersoImages({
       prisma: ctx.prisma,
       appRoot: ctx.appRoot,
-      userId: ctx.user.id,
+      userId: ctx.sessionClient.user.id,
     });
     const remaining = Math.max(0, PERSO_PHOTO_QUOTA - counts.total);
     return {
@@ -260,12 +259,12 @@ export const storageRouter = router({
     return listMyCommonRepositoryContainers({
       prisma: ctx.prisma,
       appRoot: ctx.appRoot,
-      userId: ctx.user.id,
+      userId: ctx.sessionClient.user.id,
     });
   }),
 
   // Pose le libellé humain d'un conteneur de dépôt (appelé par le front après
-  // un dépôt réussi). Le path est dérivé de ctx.user.id → un membre ne peut
+  // un dépôt réussi). Le path est dérivé de ctx.sessionClient.user.id → un membre ne peut
   // labelliser QUE ses propres conteneurs.
   setCommonRepositoryLabel: protectedProcedure
     .input(z.object({ subject: z.string().trim().min(1).max(120), label: z.string().trim().min(1).max(200) }))
@@ -273,7 +272,7 @@ export const storageRouter = router({
       const path = await commonRepositoryContainerPath({
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         subject: input.subject,
       });
       await ctx.prisma.folderLabel.upsert({
@@ -290,7 +289,7 @@ export const storageRouter = router({
    * restent inchangés). Réservé aux admins.
    */
   groupSpaceHierarchy: protectedProcedure.query(async ({ ctx }) => {
-    if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) return [];
+    if (!ctx.sessionClient.user.isAdmin) return [];
 
     const groups = await ctx.prisma.memberGroup.findMany({
       where: { isCollaborative: true },
@@ -319,7 +318,7 @@ export const storageRouter = router({
    * appartenance manuelle.
    */
   myCollaborativeSpaces: protectedProcedure.query(async ({ ctx }) => {
-    const isAdmin = await isAdminByGroup(ctx.prisma, ctx.user.id);
+    const isAdmin = ctx.sessionClient.user.isAdmin;
 
     const entries: {
       groupId: string;
@@ -333,7 +332,7 @@ export const storageRouter = router({
             select: { id: true, name: true, parentGroupId: true },
           })
         ).map((g) => ({ groupId: g.id, name: g.name, access: "EDITOR" as const, parentGroupId: g.parentGroupId }))
-      : await collaborativeEntriesForMember(ctx.prisma, ctx.user.id);
+      : await collaborativeEntriesForMember(ctx.prisma, ctx.sessionClient.user.id);
 
     return Promise.all(
       entries.map(async (e) => ({
@@ -392,7 +391,7 @@ export const storageRouter = router({
     .query(async ({ ctx, input }) => {
       await assertCanReadPath({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         path: input.path,
       });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
@@ -417,7 +416,7 @@ export const storageRouter = router({
           result,
           prisma: ctx.prisma,
           appRoot: ctx.appRoot,
-          userId: ctx.user.id,
+          userId: ctx.sessionClient.user.id,
         });
         return {
           ...merged,
@@ -457,7 +456,7 @@ export const storageRouter = router({
     .query(async ({ ctx, input }) => {
       await assertCanReadPath({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         path: input.path,
       });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
@@ -478,7 +477,7 @@ export const storageRouter = router({
           readPath = await resolvePersoBaseFolder({
             prisma: ctx.prisma,
             appRoot: ctx.appRoot,
-            userId: ctx.user.id,
+            userId: ctx.sessionClient.user.id,
           });
         } catch {
           readPath = input.path;
@@ -496,7 +495,7 @@ export const storageRouter = router({
         root: result.root,
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
       });
       // Racines principales visibles même vides (courses/seminars/events/
       // personal-space/collaborative-group-spaces/common-repository).
@@ -516,7 +515,7 @@ export const storageRouter = router({
         result.root = scopePersoSpaceInTree(
           result.root,
           ctx.appRoot,
-          ctx.user.id,
+          ctx.sessionClient.user.id,
         );
       }
       // Nom EXACT des dossiers d'espace de groupe (accents) — c'est getTree
@@ -573,7 +572,7 @@ export const storageRouter = router({
     .query(async ({ ctx, input }) => {
       await assertCanReadPath({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         path: input.path,
       });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
@@ -603,7 +602,7 @@ export const storageRouter = router({
     .query(async ({ ctx, input }) => {
       await assertCanReadPath({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         path: input.path,
       });
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
@@ -880,12 +879,12 @@ export const storageRouter = router({
   checkR2Conflicts: protectedProcedure
     .input(z.object({ destination: uploadDestinationSchema, fileNames: z.array(z.string().min(1).max(255)).max(100) }))
     .query(async ({ ctx, input }) => {
-      await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.user.id, destination: input.destination });
+      await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, destination: input.destination });
       const folder = await resolvePendingUploadFolder({
         prisma: ctx.prisma,
         destination: input.destination,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
       });
       const byPath = new Map(input.fileNames.map((n) => [`${folder}/${buildUploadFileName(n)}`, n]));
       const found = await ctx.prisma.mediaAsset.findMany({ where: { fullPath: { in: [...byPath.keys()] } }, select: { fullPath: true } });
@@ -897,7 +896,7 @@ export const storageRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertUploadDestinationAllowed({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         destination: input.destination,
       });
       // Le chemin se calcule ICI, une seule fois (jamais côté client).
@@ -905,7 +904,7 @@ export const storageRouter = router({
         prisma: ctx.prisma,
         destination: input.destination,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
       });
       const fileName = buildUploadFileName(input.originalFileName);
       const path = `${folder}/${fileName}`;
@@ -927,7 +926,7 @@ export const storageRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });
       }
       if (input.destination.kind === "perso" && !existing) {
-        const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.user.id });
+        const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
         if (total + 1 > PERSO_PHOTO_QUOTA) {
           throw new TRPCError({ code: "BAD_REQUEST", message: `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}).` });
         }
@@ -957,7 +956,7 @@ export const storageRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertUploadDestinationAllowed({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         destination: input.destination,
       });
       // Le chemin enregistré doit être celui que createR2Upload a autorisé pour cette destination.
@@ -965,7 +964,7 @@ export const storageRouter = router({
         prisma: ctx.prisma,
         destination: input.destination,
         appRoot: ctx.appRoot,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
       });
       const rest = input.path.slice(expectedFolder.length + 1);
       if (!input.path.startsWith(`${expectedFolder}/`) || rest === "" || rest.includes("/") || rest.includes("..")) {
@@ -977,7 +976,7 @@ export const storageRouter = router({
       });
       return adapter.registerUploadedAsset({
         path: input.path,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         expectedBytes: input.expectedBytes,
         expectedMimeType: input.expectedMimeType,
         destination: input.destination,

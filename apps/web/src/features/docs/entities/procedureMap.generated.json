@@ -69,7 +69,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 40,
+   "line": 26,
    "effects": [
     {
      "model": "MediaAsset",
@@ -79,7 +79,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/siteSettings/router.ts:55"
+        "packages/backend/src/modules/siteSettings/router.ts:41"
        ]
       ]
      ]
@@ -92,7 +92,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/siteSettings/router.ts:41"
+        "packages/backend/src/modules/siteSettings/router.ts:27"
        ]
       ]
      ]
@@ -104,50 +104,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 65,
+   "line": 51,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SiteSettings",
      "op": "create",
@@ -164,7 +122,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:91"
+        "packages/backend/src/modules/siteSettings/router.ts:77"
        ]
       ]
      ]
@@ -185,7 +143,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:91"
+        "packages/backend/src/modules/siteSettings/router.ts:77"
        ]
       ]
      ]
@@ -197,50 +155,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 102,
+   "line": 88,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SiteSettings",
      "op": "create",
@@ -254,7 +170,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:109"
+        "packages/backend/src/modules/siteSettings/router.ts:94"
        ]
       ]
      ]
@@ -272,7 +188,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:109"
+        "packages/backend/src/modules/siteSettings/router.ts:94"
        ]
       ]
      ]
@@ -284,50 +200,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 121,
+   "line": 106,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SiteSettings",
      "op": "create",
@@ -356,7 +230,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:144"
+        "packages/backend/src/modules/siteSettings/router.ts:128"
        ]
       ]
      ]
@@ -389,7 +263,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:144"
+        "packages/backend/src/modules/siteSettings/router.ts:128"
        ]
       ]
      ]
@@ -401,50 +275,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 157,
+   "line": 141,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SiteSettings",
      "op": "create",
@@ -456,7 +288,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:177"
+        "packages/backend/src/modules/siteSettings/router.ts:161"
        ]
       ]
      ]
@@ -472,7 +304,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:177"
+        "packages/backend/src/modules/siteSettings/router.ts:161"
        ]
       ]
      ]
@@ -484,50 +316,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 190,
+   "line": 174,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/siteSettings/router.ts:18"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SiteSettings",
      "op": "create",
@@ -539,7 +329,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:192"
+        "packages/backend/src/modules/siteSettings/router.ts:175"
        ]
       ]
      ]
@@ -555,7 +345,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:192"
+        "packages/backend/src/modules/siteSettings/router.ts:175"
        ]
       ]
      ]
@@ -567,7 +357,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
-   "line": 26,
+   "line": 14,
    "effects": [
     {
      "model": "PageVisibility",
@@ -577,7 +367,7 @@
       [
        [
         "ctx.prisma.pageVisibility.findMany",
-        "packages/backend/src/modules/pageVisibility/router.ts:27"
+        "packages/backend/src/modules/pageVisibility/router.ts:15"
        ]
       ]
      ]
@@ -589,50 +379,8 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
-   "line": 34,
+   "line": 22,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "PageVisibility",
      "op": "read",
@@ -641,7 +389,7 @@
       [
        [
         "ctx.prisma.pageVisibility.findMany",
-        "packages/backend/src/modules/pageVisibility/router.ts:36"
+        "packages/backend/src/modules/pageVisibility/router.ts:23"
        ]
       ]
      ]
@@ -653,50 +401,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
-   "line": 41,
+   "line": 28,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "PageVisibility",
      "op": "create",
@@ -708,7 +414,7 @@
       [
        [
         "ctx.prisma.pageVisibility.upsert",
-        "packages/backend/src/modules/pageVisibility/router.ts:45"
+        "packages/backend/src/modules/pageVisibility/router.ts:32"
        ]
       ]
      ]
@@ -724,7 +430,7 @@
       [
        [
         "ctx.prisma.pageVisibility.upsert",
-        "packages/backend/src/modules/pageVisibility/router.ts:45"
+        "packages/backend/src/modules/pageVisibility/router.ts:32"
        ]
       ]
      ]
@@ -736,50 +442,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
-   "line": 52,
+   "line": 39,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "PageVisibility",
      "op": "create",
@@ -791,7 +455,7 @@
       [
        [
         "ctx.prisma.pageVisibility.upsert",
-        "packages/backend/src/modules/pageVisibility/router.ts:58"
+        "packages/backend/src/modules/pageVisibility/router.ts:45"
        ]
       ]
      ]
@@ -807,7 +471,7 @@
       [
        [
         "ctx.prisma.pageVisibility.upsert",
-        "packages/backend/src/modules/pageVisibility/router.ts:58"
+        "packages/backend/src/modules/pageVisibility/router.ts:45"
        ]
       ]
      ]
@@ -819,7 +483,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/pageVisibility/router.ts",
-   "line": 72,
+   "line": 59,
    "effects": [
     {
      "model": "Discipline",
@@ -829,7 +493,7 @@
       [
        [
         "ctx.prisma.discipline.count",
-        "packages/backend/src/modules/pageVisibility/router.ts:75"
+        "packages/backend/src/modules/pageVisibility/router.ts:61"
        ]
       ]
      ]
@@ -842,49 +506,7 @@
       [
        [
         "ctx.prisma.event.count",
-        "packages/backend/src/modules/pageVisibility/router.ts:76"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/pageVisibility/router.ts:9"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+        "packages/backend/src/modules/pageVisibility/router.ts:62"
        ]
       ]
      ]
@@ -897,7 +519,7 @@
       [
        [
         "ctx.prisma.seminar.count",
-        "packages/backend/src/modules/pageVisibility/router.ts:77"
+        "packages/backend/src/modules/pageVisibility/router.ts:63"
        ]
       ]
      ]
@@ -2790,7 +2412,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 33,
+   "line": 26,
    "effects": [
     {
      "model": "SitePartner",
@@ -2800,7 +2422,7 @@
       [
        [
         "ctx.prisma.sitePartner.findMany",
-        "packages/backend/src/modules/sitePartners/router.ts:34"
+        "packages/backend/src/modules/sitePartners/router.ts:27"
        ]
       ]
      ]
@@ -2812,50 +2434,8 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 46,
+   "line": 39,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "read",
@@ -2864,7 +2444,7 @@
       [
        [
         "ctx.prisma.sitePartner.findMany",
-        "packages/backend/src/modules/sitePartners/router.ts:48"
+        "packages/backend/src/modules/sitePartners/router.ts:40"
        ]
       ]
      ]
@@ -2876,50 +2456,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 60,
+   "line": 52,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "create",
@@ -2936,7 +2474,7 @@
       [
        [
         "ctx.prisma.sitePartner.create",
-        "packages/backend/src/modules/sitePartners/router.ts:91"
+        "packages/backend/src/modules/sitePartners/router.ts:83"
        ]
       ]
      ]
@@ -2949,13 +2487,13 @@
       [
        [
         "ctx.prisma.sitePartner.findUnique",
-        "packages/backend/src/modules/sitePartners/router.ts:86"
+        "packages/backend/src/modules/sitePartners/router.ts:78"
        ]
       ],
       [
        [
         "ctx.prisma.sitePartner.aggregate",
-        "packages/backend/src/modules/sitePartners/router.ts:90"
+        "packages/backend/src/modules/sitePartners/router.ts:82"
        ]
       ]
      ]
@@ -2975,7 +2513,7 @@
       [
        [
         "ctx.prisma.sitePartner.update",
-        "packages/backend/src/modules/sitePartners/router.ts:88"
+        "packages/backend/src/modules/sitePartners/router.ts:80"
        ]
       ]
      ]
@@ -2987,50 +2525,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 95,
+   "line": 87,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "update",
@@ -3043,7 +2539,7 @@
       [
        [
         "ctx.prisma.sitePartner.updateMany",
-        "packages/backend/src/modules/sitePartners/router.ts:101"
+        "packages/backend/src/modules/sitePartners/router.ts:93"
        ]
       ]
      ]
@@ -3055,50 +2551,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 109,
+   "line": 101,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "update",
@@ -3111,7 +2565,7 @@
       [
        [
         "ctx.prisma.sitePartner.updateMany",
-        "packages/backend/src/modules/sitePartners/router.ts:111"
+        "packages/backend/src/modules/sitePartners/router.ts:102"
        ]
       ]
      ]
@@ -3123,50 +2577,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 118,
+   "line": 109,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "delete",
@@ -3175,7 +2587,7 @@
       [
        [
         "ctx.prisma.sitePartner.deleteMany",
-        "packages/backend/src/modules/sitePartners/router.ts:120"
+        "packages/backend/src/modules/sitePartners/router.ts:110"
        ]
       ]
      ]
@@ -3187,50 +2599,8 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/sitePartners/router.ts",
-   "line": 125,
+   "line": 115,
    "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertAdmin",
-        "packages/backend/src/modules/sitePartners/router.ts:15"
-       ],
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
     {
      "model": "SitePartner",
      "op": "update",
@@ -3241,7 +2611,7 @@
       [
        [
         "ctx.prisma.sitePartner.updateMany",
-        "packages/backend/src/modules/sitePartners/router.ts:128"
+        "packages/backend/src/modules/sitePartners/router.ts:117"
        ]
       ]
      ]
@@ -3596,7 +2966,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 56,
+   "line": 55,
    "effects": [
     {
      "model": "Session",
@@ -3622,7 +2992,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 70,
+   "line": 69,
    "effects": [
     {
      "model": "Session",
@@ -3632,7 +3002,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:108"
+        "packages/backend/src/modules/auth/router.ts:107"
        ]
       ]
      ]
@@ -3645,7 +3015,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:75"
+        "packages/backend/src/modules/auth/router.ts:74"
        ]
       ]
      ]
@@ -3660,7 +3030,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:104"
+        "packages/backend/src/modules/auth/router.ts:103"
        ]
       ]
      ]
@@ -3672,7 +3042,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 119,
+   "line": 118,
    "effects": [],
    "emails": []
   },
@@ -3680,7 +3050,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 123,
+   "line": 122,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3696,7 +3066,7 @@
       [
        [
         "prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/router.ts:153"
+        "packages/backend/src/modules/auth/router.ts:152"
        ]
       ]
      ]
@@ -3709,7 +3079,7 @@
       [
        [
         "prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/router.ts:137"
+        "packages/backend/src/modules/auth/router.ts:136"
        ]
       ]
      ]
@@ -3739,7 +3109,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:128"
+        "packages/backend/src/modules/auth/router.ts:127"
        ]
       ]
      ]
@@ -3753,7 +3123,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 177,
+   "line": 176,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3763,7 +3133,7 @@
       [
        [
         "prisma.passwordResetToken.findUnique",
-        "packages/backend/src/modules/auth/router.ts:183"
+        "packages/backend/src/modules/auth/router.ts:182"
        ]
       ]
      ]
@@ -3778,7 +3148,7 @@
       [
        [
         "tx.passwordResetToken.update",
-        "packages/backend/src/modules/auth/router.ts:215"
+        "packages/backend/src/modules/auth/router.ts:214"
        ]
       ]
      ]
@@ -3791,7 +3161,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:220"
+        "packages/backend/src/modules/auth/router.ts:219"
        ]
       ]
      ]
@@ -3806,7 +3176,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:208"
+        "packages/backend/src/modules/auth/router.ts:207"
        ]
       ]
      ]
@@ -3818,7 +3188,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 19,
+   "line": 47,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -3828,7 +3198,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:23"
+        "packages/backend/src/modules/users/router.ts:51"
        ]
       ]
      ]
@@ -3841,7 +3211,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:23"
+        "packages/backend/src/modules/users/router.ts:51"
        ]
       ]
      ]
@@ -3854,7 +3224,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:23"
+        "packages/backend/src/modules/users/router.ts:51"
        ]
       ]
      ]
@@ -3867,7 +3237,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:23"
+        "packages/backend/src/modules/users/router.ts:51"
        ]
       ]
      ]
@@ -3880,7 +3250,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:23"
+        "packages/backend/src/modules/users/router.ts:51"
        ]
       ]
      ]
@@ -3892,7 +3262,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 50,
+   "line": 78,
    "effects": [
     {
      "model": "User",
@@ -3902,7 +3272,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:54"
+        "packages/backend/src/modules/users/router.ts:82"
        ]
       ]
      ]
@@ -3914,7 +3284,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 69,
+   "line": 97,
    "effects": [
     {
      "model": "User",
@@ -3924,7 +3294,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:73"
+        "packages/backend/src/modules/users/router.ts:101"
        ]
       ]
      ]
@@ -3936,7 +3306,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 88,
+   "line": 116,
    "effects": [
     {
      "model": "MemberGroup",
@@ -3946,13 +3316,13 @@
       [
        [
         "ctx.prisma.memberGroup.count",
-        "packages/backend/src/modules/users/router.ts:101"
+        "packages/backend/src/modules/users/router.ts:129"
        ]
       ],
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/users/router.ts:154"
+        "packages/backend/src/modules/users/router.ts:182"
        ]
       ]
      ]
@@ -3965,7 +3335,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:127"
+        "packages/backend/src/modules/users/router.ts:149"
        ]
       ]
      ]
@@ -4017,7 +3387,7 @@
       [
        [
         "ctx.prisma.user.create",
-        "packages/backend/src/modules/users/router.ts:127"
+        "packages/backend/src/modules/users/router.ts:149"
        ]
       ]
      ]
@@ -4030,13 +3400,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:105"
-       ]
-      ],
-      [
-       [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:155"
+        "packages/backend/src/modules/users/router.ts:183"
        ]
       ]
      ]
@@ -4051,7 +3415,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 185,
+   "line": 213,
    "effects": [
     {
      "model": "User",
@@ -4061,7 +3425,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:189"
+        "packages/backend/src/modules/users/router.ts:217"
        ]
       ]
      ]
@@ -4080,7 +3444,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:191"
+        "packages/backend/src/modules/users/router.ts:219"
        ]
       ]
      ]
@@ -4092,7 +3456,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 200,
+   "line": 228,
    "effects": [
     {
      "model": "User",
@@ -4105,7 +3469,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:204"
+        "packages/backend/src/modules/users/router.ts:232"
        ]
       ]
      ]
@@ -4117,7 +3481,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 212,
+   "line": 240,
    "effects": [
     {
      "model": "AuditLog",
@@ -4131,7 +3495,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -4141,7 +3505,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
@@ -4159,7 +3523,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
@@ -4180,13 +3544,13 @@
       [
        [
         "tx.imageConsentForm.updateMany",
-        "packages/backend/src/modules/users/router.ts:218"
+        "packages/backend/src/modules/users/router.ts:252"
        ]
       ],
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -4196,7 +3560,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
@@ -4214,7 +3578,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
@@ -4251,7 +3615,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
@@ -4269,7 +3633,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
@@ -4287,7 +3651,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
@@ -4366,7 +3730,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
@@ -4384,7 +3748,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: Cascade (Session → User)",
@@ -4405,7 +3769,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4415,7 +3779,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (Ticket → User)",
@@ -4436,7 +3800,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4446,7 +3810,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
@@ -4466,7 +3830,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
@@ -4483,7 +3847,7 @@
       [
        [
         "tx.user.delete",
-        "packages/backend/src/modules/users/router.ts:226"
+        "packages/backend/src/modules/users/router.ts:262"
        ]
       ]
      ]
@@ -4495,29 +3859,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 232,
-   "effects": [
-    {
-     "model": "User",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:235"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "user.getProfileById": {
-   "kind": "query",
-   "access": "admin",
-   "file": "packages/backend/src/modules/users/router.ts",
-   "line": 268,
+   "line": 269,
    "effects": [
     {
      "model": "User",
@@ -4535,11 +3877,11 @@
    ],
    "emails": []
   },
-  "user.getMyInstructorState": {
+  "user.getProfileById": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 339,
+   "line": 287,
    "effects": [
     {
      "model": "User",
@@ -4549,7 +3891,29 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/users/router.ts:341"
+        "packages/backend/src/modules/users/router.ts:291"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "user.getMyInstructorState": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/users/router.ts",
+   "line": 313,
+   "effects": [
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findUnique",
+        "packages/backend/src/modules/users/router.ts:315"
        ]
       ]
      ]
@@ -4561,7 +3925,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 373,
+   "line": 357,
    "effects": [
     {
      "model": "MediaAsset",
@@ -4652,7 +4016,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/users/router.ts:383"
+        "packages/backend/src/modules/users/router.ts:369"
        ]
       ]
      ]
@@ -4664,7 +4028,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 414,
+   "line": 400,
    "effects": [
     {
      "model": "Course",
@@ -4674,7 +4038,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:415"
+        "packages/backend/src/modules/users/router.ts:401"
        ]
       ]
      ]
@@ -4687,7 +4051,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:415"
+        "packages/backend/src/modules/users/router.ts:401"
        ]
       ]
      ]
@@ -4700,7 +4064,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:415"
+        "packages/backend/src/modules/users/router.ts:401"
        ]
       ]
      ]
@@ -4713,7 +4077,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:415"
+        "packages/backend/src/modules/users/router.ts:401"
        ]
       ]
      ]
@@ -4725,7 +4089,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 453,
+   "line": 439,
    "effects": [
     {
      "model": "Course",
@@ -4735,7 +4099,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4748,7 +4112,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4761,7 +4125,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4774,7 +4138,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4787,7 +4151,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4800,7 +4164,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:454"
+        "packages/backend/src/modules/users/router.ts:440"
        ]
       ]
      ]
@@ -4812,7 +4176,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 475,
+   "line": 478,
    "effects": [
     {
      "model": "Course",
@@ -4822,7 +4186,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:476"
+        "packages/backend/src/modules/users/router.ts:479"
        ]
       ]
      ]
@@ -4835,7 +4199,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:476"
+        "packages/backend/src/modules/users/router.ts:479"
        ]
       ]
      ]
@@ -4848,7 +4212,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:476"
+        "packages/backend/src/modules/users/router.ts:479"
        ]
       ]
      ]
@@ -4861,7 +4225,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:476"
+        "packages/backend/src/modules/users/router.ts:479"
        ]
       ]
      ]
@@ -4873,7 +4237,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 509,
+   "line": 504,
    "effects": [
     {
      "model": "SiteSettings",
@@ -4883,7 +4247,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/users/router.ts:518"
+        "packages/backend/src/modules/users/router.ts:513"
        ]
       ]
      ]
@@ -4898,7 +4262,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:524"
+        "packages/backend/src/modules/users/router.ts:519"
        ]
       ]
      ]
@@ -4910,7 +4274,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 528,
+   "line": 531,
    "effects": [
     {
      "model": "MemberGroup",
@@ -4920,7 +4284,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:529"
+        "packages/backend/src/modules/users/router.ts:532"
        ]
       ]
      ]
@@ -4933,7 +4297,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:529"
+        "packages/backend/src/modules/users/router.ts:532"
        ]
       ]
      ]
@@ -4946,7 +4310,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:529"
+        "packages/backend/src/modules/users/router.ts:532"
        ]
       ]
      ]
@@ -10303,7 +9667,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 117,
+   "line": 116,
    "effects": [
     {
      "model": "MemberGroup",
@@ -10313,34 +9677,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:120"
-       ]
-      ],
-      [
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+        "packages/backend/src/modules/storage/router.ts:119"
        ]
       ]
      ]
@@ -10353,7 +9690,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/storage/router.ts:126"
+        "packages/backend/src/modules/storage/router.ts:125"
        ]
       ]
      ]
@@ -10365,7 +9702,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 155,
+   "line": 154,
    "effects": [
     {
      "model": "MediaAsset",
@@ -10375,13 +9712,13 @@
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:157"
+        "packages/backend/src/modules/storage/router.ts:156"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:159"
+        "packages/backend/src/modules/storage/router.ts:158"
        ]
       ],
       [
@@ -10404,7 +9741,7 @@
       [
        [
         "ctx.prisma.trashEntry.count",
-        "packages/backend/src/modules/storage/router.ts:158"
+        "packages/backend/src/modules/storage/router.ts:157"
        ]
       ]
      ]
@@ -10416,7 +9753,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 187,
+   "line": 186,
    "effects": [
     {
      "model": "MediaAsset",
@@ -10426,7 +9763,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:188"
+        "packages/backend/src/modules/storage/router.ts:187"
        ]
       ]
      ]
@@ -10438,7 +9775,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 234,
+   "line": 233,
    "effects": [
     {
      "model": "MediaAsset",
@@ -10464,7 +9801,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 254,
+   "line": 253,
    "effects": [
     {
      "model": "MediaAsset",
@@ -10490,7 +9827,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 259,
+   "line": 258,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10554,7 +9891,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 270,
+   "line": 269,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10567,7 +9904,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:279"
+        "packages/backend/src/modules/storage/router.ts:278"
        ]
       ]
      ]
@@ -10583,7 +9920,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:279"
+        "packages/backend/src/modules/storage/router.ts:278"
        ]
       ]
      ]
@@ -10612,7 +9949,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 292,
+   "line": 291,
    "effects": [
     {
      "model": "Folder",
@@ -10638,18 +9975,67 @@
      "trails": [
       [
        [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+        "ctx.prisma.memberGroup.findMany",
+        "packages/backend/src/modules/storage/router.ts:294"
        ]
       ],
       [
        [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "storage.myCollaborativeSpaces": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/storage/router.ts",
+   "line": 320,
+   "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resolveGroupBaseFolder",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+       ],
+       [
+        "prisma.folder.findMany",
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:295"
+        "packages/backend/src/modules/storage/router.ts:330"
+       ]
+      ],
+      [
+       [
+        "collaborativeEntriesForMember",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
+       ],
+       [
+        "prisma.memberGroup.findMany",
+        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
        ]
       ],
       [
@@ -10671,92 +10057,6 @@
      "trails": [
       [
        [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "storage.myCollaborativeSpaces": {
-   "kind": "query",
-   "access": "membre",
-   "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 321,
-   "effects": [
-    {
-     "model": "Folder",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
-       ],
-       [
-        "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ],
-      [
-       [
-        "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:331"
-       ]
-      ],
-      [
-       [
-        "collaborativeEntriesForMember",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
-       ],
-       [
-        "prisma.memberGroup.findMany",
-        "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:19"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MemberGroupMembership",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "isAdminByGroup",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
-       ],
-       [
-        "prisma.memberGroupMembership.findFirst",
-        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
-       ]
-      ],
-      [
-       [
         "collaborativeEntriesForMember",
         "packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts:12"
        ],
@@ -10774,7 +10074,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 382,
+   "line": 381,
    "effects": [
     {
      "model": "Category",
@@ -11002,7 +10302,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 448,
+   "line": 447,
    "effects": [
     {
      "model": "Category",
@@ -11248,7 +10548,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 531,
+   "line": 530,
    "effects": [
     {
      "model": "FolderLabel",
@@ -11258,7 +10558,7 @@
       [
        [
         "ctx.prisma.folderLabel.findMany",
-        "packages/backend/src/modules/storage/router.ts:532"
+        "packages/backend/src/modules/storage/router.ts:531"
        ]
       ]
      ]
@@ -11270,7 +10570,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 539,
+   "line": 538,
    "effects": [
     {
      "model": "Category",
@@ -11296,7 +10596,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 543,
+   "line": 542,
    "effects": [
     {
      "model": "FolderLabel",
@@ -11309,7 +10609,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:557"
+        "packages/backend/src/modules/storage/router.ts:556"
        ]
       ]
      ]
@@ -11322,7 +10622,7 @@
       [
        [
         "ctx.prisma.folderLabel.deleteMany",
-        "packages/backend/src/modules/storage/router.ts:554"
+        "packages/backend/src/modules/storage/router.ts:553"
        ]
       ]
      ]
@@ -11338,7 +10638,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:557"
+        "packages/backend/src/modules/storage/router.ts:556"
        ]
       ]
      ]
@@ -11350,7 +10650,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 565,
+   "line": 564,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11429,7 +10729,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 595,
+   "line": 594,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11508,7 +10808,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 633,
+   "line": 632,
    "effects": [
     {
      "model": "Category",
@@ -11538,7 +10838,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/router.ts:702"
+        "packages/backend/src/modules/storage/router.ts:701"
        ]
       ],
       [
@@ -11570,7 +10870,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 773,
+   "line": 772,
    "effects": [
     {
      "model": "Folder",
@@ -11699,7 +10999,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 880,
+   "line": 879,
    "effects": [
     {
      "model": "Category",
@@ -11781,7 +11081,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:891"
+        "packages/backend/src/modules/storage/router.ts:890"
        ]
       ]
      ]
@@ -11945,7 +11245,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 895,
+   "line": 894,
    "effects": [
     {
      "model": "Category",
@@ -12027,7 +11327,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:925"
+        "packages/backend/src/modules/storage/router.ts:924"
        ]
       ],
       [
@@ -12201,7 +11501,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 955,
+   "line": 954,
    "effects": [
     {
      "model": "Category",
@@ -15652,8 +14952,21 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 245,
+   "line": 249,
    "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/router.ts:253"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroupMembership",
      "op": "delete",
@@ -15662,7 +14975,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.deleteMany",
-        "packages/backend/src/modules/memberGroups/router.ts:248"
+        "packages/backend/src/modules/memberGroups/router.ts:264"
        ]
       ]
      ]
@@ -15674,7 +14987,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberGroups/router.ts",
-   "line": 255,
+   "line": 271,
    "effects": [
     {
      "model": "MemberGroupMembership",
@@ -15686,7 +14999,7 @@
       [
        [
         "ctx.prisma.memberGroupMembership.update",
-        "packages/backend/src/modules/memberGroups/router.ts:264"
+        "packages/backend/src/modules/memberGroups/router.ts:280"
        ]
       ]
      ]
@@ -23291,7 +22604,7 @@
   },
   "createTRPCContext": {
    "file": "packages/backend/src/trpc/core.ts",
-   "line": 42,
+   "line": 39,
    "effects": [
     {
      "model": "MemberGroup",
@@ -23393,7 +22706,7 @@
       [
        [
         "createTRPCContext",
-        "packages/backend/src/trpc/core.ts:42"
+        "packages/backend/src/trpc/core.ts:39"
        ],
        [
         "getSessionFromRequest",
@@ -23414,7 +22727,7 @@
       [
        [
         "createTRPCContext",
-        "packages/backend/src/trpc/core.ts:42"
+        "packages/backend/src/trpc/core.ts:39"
        ],
        [
         "getSessionFromRequest",
@@ -23435,7 +22748,7 @@
       [
        [
         "createTRPCContext",
-        "packages/backend/src/trpc/core.ts:42"
+        "packages/backend/src/trpc/core.ts:39"
        ],
        [
         "getSessionFromRequest",
@@ -23456,7 +22769,7 @@
       [
        [
         "createTRPCContext",
-        "packages/backend/src/trpc/core.ts:42"
+        "packages/backend/src/trpc/core.ts:39"
        ],
        [
         "getSessionFromRequest",
@@ -23477,7 +22790,7 @@
       [
        [
         "createTRPCContext",
-        "packages/backend/src/trpc/core.ts:42"
+        "packages/backend/src/trpc/core.ts:39"
        ],
        [
         "getSessionFromRequest",

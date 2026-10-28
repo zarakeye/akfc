@@ -121,7 +121,7 @@ La procédure `storage.getTree` ne se contente pas de relayer le stockage. Elle 
 
 ```ts
 // packages/backend/src/modules/storage/router.ts (extrait, simplifié)
-await assertCanReadPath({ prisma: ctx.prisma, userId: ctx.user.id, path: input.path });
+await assertCanReadPath({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, path: input.path });
 
 const result = await reader.getTree({ path: readPath, depth: input.depth });
 stripBinSubtree(result.root, `${ctx.appRoot}/bin`);
@@ -129,7 +129,7 @@ await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
 result.root = await mergeGroupSpaceFoldersIntoTree({ root: result.root, /* … */ });
 if (input.path === ctx.appRoot) {
   result.root = await ensureContentRootsInTree(result.root, ctx.prisma, ctx.appRoot);
-  result.root = scopePersoSpaceInTree(result.root, ctx.appRoot, ctx.user.id);
+  result.root = scopePersoSpaceInTree(result.root, ctx.appRoot, ctx.sessionClient.user.id);
 }
 return { ...result, root: await applyGroupSpaceNamesToTree(result.root, ctx.prisma) };
 ```

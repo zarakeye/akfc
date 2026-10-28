@@ -9,6 +9,7 @@ import { Input } from "@components/ui/Input";
 import { Button } from "@components/ui/Button";
 import { trpc } from "@trpc/trpcClient";
 import { DemoAccountsToggle, MemberLabel } from "@features/admin/common/DemoAccounts";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /** Fiche d'un groupe — `/(admin)/dashboard/groups/[id]`. */
 export default function GroupDetailPage(): JSX.Element {
@@ -16,6 +17,7 @@ export default function GroupDetailPage(): JSX.Element {
   const groupId = params.id;
   const utils = trpc.useUtils();
   const [showDemo, setShowDemo] = useState(false);
+  const me = useSessionStore((s) => s.session?.user?.id);
 
   const groupsQuery = trpc.memberGroup.list.useQuery();
   const group = (groupsQuery.data ?? []).find((g) => g.id === groupId) ?? null;
@@ -175,19 +177,31 @@ export default function GroupDetailPage(): JSX.Element {
                         {m.access === "EDITOR" ? "éditeur" : "lecteur"}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeMember.mutate({ groupId: group.id, userId: m.id })
-                      }
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Retirer
-                    </button>
+                    {group.isAdminGroup && m.id === me ? (
+                      <span
+                        className="text-xs text-muted-foreground"
+                        title="Un autre administrateur peut vous retirer de ce groupe."
+                      >
+                        vous
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeMember.mutate({ groupId: group.id, userId: m.id })
+                        }
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        Retirer
+                      </button>
+                    )}
                   </span>
                 </li>
               ))}
             </ul>
+          )}
+          {removeMember.error && (
+            <p className="mt-2 text-xs text-red-600">{removeMember.error.message}</p>
           )}
         </div>
 

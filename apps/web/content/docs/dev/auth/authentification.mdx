@@ -191,15 +191,19 @@ Le contexte de chaque requête tRPC contient la session :
 
 ```ts
 // packages/backend/src/trpc/core.ts (extrait)
-export async function createTRPCContext({ req }: { req: Request | NextRequest }): Promise<TRPCContext> {
+export async function createTRPCContext({
+  req,
+}: {
+  req: Request | NextRequest;
+}): Promise<TRPCContext> {
   const sessionClient = await getSessionFromRequest(req);
+
   return {
     sessionClient,
     prisma,
     requestIp: getIpFromRequest(req),
     userAgent: req.headers.get("user-agent"),
-    appRoot: APP_ROOT!,
-    user: { id: sessionClient?.user?.id ?? "anonymous" },
+    appRoot: APP_ROOT,
   };
 }
 ```

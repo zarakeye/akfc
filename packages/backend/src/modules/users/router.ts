@@ -12,8 +12,36 @@ import { TRPCError } from "@trpc/server";
 import type { UserProfile } from "@contracts/users/user-profile.types";
 import type { ImageConsentProofValue } from "@contracts/legal/imageConsent";
 import { legalInfoInput, legalInfoData } from "@backend/modules/users/legalInfo";
-import { parsePageContentV1 } from "@contracts/page";
+import { pageContentSchemaV1 } from "@contracts/page";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+
+/** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
+const userProfileSelect = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  pseudo: true,
+  avatar: true,
+  aboutMe: true,
+  phone: true,
+  birthDate: true,
+  isFirstLogin: true,
+} satisfies Prisma.UserSelect;
+
+type UserProfileRow = Prisma.UserGetPayload<{ select: typeof userProfileSelect }>;
+
+/**
+ * Du membre lu en base au contrat partagé avec le front : la date devient « AAAA-MM-JJ ».
+ * `satisfies` vérifie la conformité à UserProfile sans élargir le type : le front garde
+ * `id: string` (sûr), là où le contrat, plus large, admettrait `null`.
+ */
+function toUserProfile(user: UserProfileRow) {
+  return {
+    ...user,
+    birthDate: user.birthDate ? user.birthDate.toISOString().split("T")[0] : null,
+  } satisfies UserProfile;
+}
 
 export const userRouter = router({
   getAll: protectedProcedure
@@ -102,17 +130,6 @@ export const userRouter = router({
       if (found !== groupIds.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Groupe inconnu : rechargez la page." });
       }
-      const exists = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
-      });
-
-      if (exists) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Un membre utilise déjà cette adresse e-mail.",
-        });
-      }
-
       // Mot de passe généré côté serveur (jamais saisi par l'admin), robuste par
       // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
       // isFirstLogin=true (défaut Prisma) : le site lui propose de compléter son profil.
@@ -124,20 +141,31 @@ export const userRouter = router({
       }
       const legal = legalInfoData(input.legal, input.email, { requireComplete: true });
 
-      const user = await ctx.prisma.user.create({
-        data: {
-          email: input.email,
-          password: hash,
-          ...legal,
-          memberGroupMemberships: {
-            create: groupIds.map((id) => ({
-              group: { connect: { id } },
-              access: "EDITOR" as const,
-            })),
+      // L'adresse est unique en base (@unique). Plutôt que de vérifier avant d'écrire (deux
+      // créations simultanées passeraient toutes les deux la vérification), on écrit, et on
+      // traduit le refus de la base.
+      let user;
+      try {
+        user = await ctx.prisma.user.create({
+          data: {
+            email: input.email,
+            password: hash,
+            ...legal,
+            memberGroupMemberships: {
+              create: groupIds.map((id) => ({
+                group: { connect: { id } },
+                access: "EDITOR" as const,
+              })),
+            },
           },
-        },
-        omit: { password: true },
-      });
+          omit: { password: true },
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+          throw new TRPCError({ code: "CONFLICT", message: "Un membre utilise déjà cette adresse e-mail." });
+        }
+        throw err;
+      }
 
       // E-mail de bienvenue au membre, puis avis SANS mot de passe à la boîte du club.
       // Un échec d'envoi n'annule pas la création : il est journalisé et signalé au club.
@@ -213,6 +241,12 @@ export const userRouter = router({
     .use(isAdmin)
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Règle métier, pas question de droit : l'administrateur a le droit de supprimer un compte,
+      // mais pas le sien (il perdrait l'accès, et le club pourrait se retrouver sans administrateur).
+      // L'interface désactive déjà le bouton ; c'est ici que la règle est garantie.
+      if (input.id === ctx.sessionClient.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez pas supprimer votre propre compte." });
+      }
       return ctx.prisma.$transaction(async (tx) => {
         // Formulaires de droit à l'image signés : gardés 5 ans comme preuve (purge nocturne).
         await tx.imageConsentForm.updateMany({ where: { userId: input.id }, data: { detachedAt: new Date() } });
@@ -223,8 +257,11 @@ export const userRouter = router({
           pageId: input.id,
           newContent: null,
         });
+        // Seul l'identifiant repart vers le navigateur : la ligne complète contient l'empreinte
+        // du mot de passe.
         return tx.user.delete({
           where: { id: input.id },
+          select: { id: true },
         });
       });
     }),
@@ -234,18 +271,7 @@ export const userRouter = router({
 
     const user = await ctx.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        pseudo: true,
-        avatar: true,
-        aboutMe: true,
-        phone: true,
-        birthDate: true,
-        isFirstLogin: true,
-      },
+      select: userProfileSelect,
     });
 
     if (!user) {
@@ -255,14 +281,7 @@ export const userRouter = router({
       });
     }
 
-    const userProfile = {
-      ...user,
-      birthDate: user.birthDate
-        ? user.birthDate.toISOString().split("T")[0]
-        : null,
-    };
-
-    return userProfile satisfies UserProfile;
+    return toUserProfile(user);
   }),
 
   getProfileById: protectedProcedure
@@ -271,18 +290,7 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          pseudo: true,
-          avatar: true,
-          aboutMe: true,
-          phone: true,
-          birthDate: true,
-          isFirstLogin: true,
-        },
+        select: userProfileSelect,
       });
 
       if (!user) {
@@ -292,43 +300,9 @@ export const userRouter = router({
         });
       }
 
-      const userProfile = {
-        ...user,
-        birthDate: user.birthDate
-          ? user.birthDate.toISOString().split("T")[0]
-          : null,
-      };
-
-      return userProfile satisfies UserProfile;
+      return toUserProfile(user);
     }),
 
-  /**
-   * Liste tous les users qui sont **factuellement** instructeurs — c'est-à-dire
-   * qui ont au moins une relation d'animation dans le club : ils animent
-   * une discipline, un cours, ou un stage (en tant qu'animateur principal
-   * ou secondaire).
-   *
-   * Le club n'a pas de rôle "instructor" nominal en schéma ; cette
-   * définition factuelle permet de peupler les sélecteurs des forms admin
-   * (Course, Stage, etc.) sans dépendre d'un signal qui n'existe pas.
-   *
-   * Si un jour tu veux désigner un nouvel instructeur qui n'anime encore
-   * rien, il faudra introduire un autre signal (rôle dédié ou flag
-   * `isInstructor` sur User) — auquel cas cette query devra évoluer.
-   *
-   * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
-   * Tri par lastName puis firstName pour l'UX du select.
-   */
-  /**
-   * Un instructeur enregistre SA PROPRE présentation.
-   *
-   * La cible est toujours `ctx.sessionClient.user.id`, jamais un id reçu en
-   * entrée : la garde « c'est mon profil » est structurelle. Aucune
-   * permission d'administration n'entre en jeu — on n'édite que soi.
-   *
-   * `bio` accepte n'importe quel JSON (le document de builder) ou `null`
-   * pour retirer sa présentation. L'ordre est optionnel.
-   */
   /**
    * L'utilisateur courant est-il titulaire, et quelle est sa bio ?
    *
@@ -370,10 +344,22 @@ export const userRouter = router({
     };
   }),
 
+  /**
+   * Un instructeur enregistre SA PROPRE présentation.
+   *
+   * La cible est toujours `ctx.sessionClient.user.id`, jamais un id reçu en
+   * entrée : la garde « c'est mon profil » est structurelle. Aucune
+   * permission d'administration n'entre en jeu — on n'édite que soi.
+   *
+   * `bio` est un document du constructeur de pages (validé par son schéma), ou `null`
+   * pour retirer sa présentation. L'ordre est optionnel.
+   */
   saveMyInstructorBio: protectedProcedure
     .input(
       z.object({
-        bio: z.any().nullable(),
+        // Le même contrat que tout contenu du constructeur de pages : un document invalide est
+        // refusé à l'entrée, au lieu d'être enregistré tel quel.
+        bio: pageContentSchemaV1.nullable(),
         order: z.number().int().nullable().optional(),
       }),
     )
@@ -383,7 +369,7 @@ export const userRouter = router({
         await tx.user.update({
           where: { id: userId },
           data: {
-            instructorBio: input.bio ?? Prisma.DbNull,
+            instructorBio: input.bio === null ? Prisma.DbNull : (input.bio as Prisma.InputJsonValue),
             ...(input.order !== undefined
               ? { instructorOrder: input.order }
               : {}),
@@ -394,7 +380,7 @@ export const userRouter = router({
         await syncPageMediaReferences(tx, {
           pageType: "INSTRUCTOR_BIO",
           pageId: userId,
-          newContent: input.bio ? parsePageContentV1(input.bio) : null,
+          newContent: input.bio,
         });
       });
       return { success: true };
@@ -472,6 +458,23 @@ export const userRouter = router({
     });
   }),
 
+  /**
+   * Liste tous les users qui sont **factuellement** instructeurs — c'est-à-dire
+   * qui ont au moins une relation d'animation dans le club : ils animent
+   * une discipline, un cours, ou un stage (en tant qu'animateur principal
+   * ou secondaire).
+   *
+   * Le club n'a pas de rôle "instructor" nominal en schéma ; cette
+   * définition factuelle permet de peupler les sélecteurs des forms admin
+   * (Course, Stage, etc.) sans dépendre d'un signal qui n'existe pas.
+   *
+   * Si un jour tu veux désigner un nouvel instructeur qui n'anime encore
+   * rien, il faudra introduire un autre signal (rôle dédié ou flag
+   * `isInstructor` sur User) — auquel cas cette query devra évoluer.
+   *
+   * Sélection minimale (id + nom) suffisante pour l'affichage en dropdown.
+   * Tri par lastName puis firstName pour l'UX du select.
+   */
   getInstructors: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {
@@ -493,14 +496,6 @@ export const userRouter = router({
     });
   }),
 
-  /**
-   * Liste tous les administrateurs (rôle ADMIN) avec leur avatar courant,
-   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
-   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
-   * affichera un placeholder. `avatar` est la clé de stockage brute ;
-   * l'URL d'affichage est construite côté client comme pour l'avatar du
-   * header.
-   */
   /**
    * Adresse du club d'un membre (alias @<domaine du club>), saisie par un administrateur.
    * Le domaine est celui de l'adresse de contact des Réglages du site (contact@akfc.fr par
@@ -525,6 +520,14 @@ export const userRouter = router({
       return { clubEmail: value || null };
     }),
 
+  /**
+   * Liste les administrateurs (membres du groupe Administrateurs) avec leur avatar courant,
+   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
+   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
+   * affichera un placeholder. `avatar` est la clé de stockage brute ;
+   * l'URL d'affichage est construite côté client comme pour l'avatar du
+   * header.
+   */
   listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({
       where: {

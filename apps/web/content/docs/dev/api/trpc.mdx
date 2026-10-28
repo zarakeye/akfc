@@ -208,24 +208,27 @@ Le front dispose de deux clients, déclarés dans le même fichier :
 
 ```ts
 // apps/web/src/core/trpc/trpcClient.ts (extrait)
+const links = [
+  httpBatchLink({
+    url: "/api/trpc",
+    transformer: superjson,
+  }),
+]
+
+/** Hooks React (useQuery, useMutation, useUtils), branchés par AppProviders. */
 export const trpc = createTRPCReact<AppRouter>()
 
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      fetch(url, options) {
-        return fetch(url, { ...options, credentials: "include" })
-      },
-    }),
-  ],
-})
+export function getTrpcClient() {
+  return trpc.createClient({ links })
+}
+
+/** Appels directs, hors des composants (adaptateurs du finder, formulaire de connexion). */
+export const trpcClient = createTRPCClient<AppRouter>({ links })
 ```
 
 <DocsTable columnsJson='["Client","Usage"]' rowsJson='[["trpc (hooks React)","Dans les composants : useQuery, useMutation, useUtils. Branché sur React Query par AppProviders (app/providers.tsx)."],["trpcClient (appels directs)","Hors des composants, ou là où un hook ne convient pas : adaptateurs du Finder, formulaire de connexion."]]' />
 
-`httpBatchLink` **regroupe** les appels lancés au même moment en une seule requête HTTP : une page qui charge la liste des disciplines, des familles et des origines n'envoie qu'une requête. `credentials: "include"` joint le cookie de session.
+`httpBatchLink` **regroupe** les appels lancés au même moment en une seule requête HTTP : une page qui charge la liste des disciplines, des familles et des origines n'envoie qu'une requête. L'adresse est relative : le navigateur appelle le même site que la page, et y joint donc le cookie de session sans réglage particulier.
 
 ### Lire, écrire, rafraîchir
 
@@ -247,7 +250,7 @@ const handleSubmit = async (input: DisciplineFormInput): Promise<void> => {
 
 ### Et côté serveur ?
 
-Les composants serveur n'appellent pas tRPC : ils lisent la base directement avec Prisma (chapitre sur le routage), ce qui évite une requête HTTP vers soi-même. tRPC est l'API **du navigateur**. Pour un script ou un test qui doit passer par les procédures, `createTRPCCaller` (`packages/backend/src/trpc/trpcCaller.ts`) construit un appelant à partir d'une requête.
+Les composants serveur n'appellent pas tRPC : ils lisent la base directement avec Prisma (chapitre sur le routage), ce qui évite une requête HTTP vers soi-même. tRPC est l'API **du navigateur**. Un test qui doit passer par les procédures, avec leurs gardes et leurs validations, les appelle sans HTTP : `appRouter.createCaller(contexte)` rend un objet qui expose chaque procédure comme une fonction.
 
 ## Récapitulatif
 

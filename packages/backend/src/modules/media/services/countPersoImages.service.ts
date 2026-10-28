@@ -10,7 +10,7 @@ export type PersoImageCounts = {
  * Compte les images de l'espace perso d'un admin, ventilées par statut.
  *
  * Un asset perso est identifié par la conjonction :
- *   - `uploaderUserId = userId` : le dossier perso est dérivé de `ctx.user.id`
+ *   - `uploaderUserId = userId` : le dossier perso est dérivé de `ctx.sessionClient.user.id`
  *     à l'upload, donc l'uploader est toujours le propriétaire du dossier ;
  *   - `fullPath` contient `/persos/` : distingue le perso du `general` et des
  *     disciplines. Le segment survit au move pending→published (qui ne change

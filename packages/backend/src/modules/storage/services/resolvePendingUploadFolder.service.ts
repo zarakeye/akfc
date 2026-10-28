@@ -61,7 +61,7 @@ export async function resolvePendingUploadFolder(params: {
   destination: UploadDestination;
   appRoot: string;
   /**
-   * Identité de l'admin qui uploade (issue de `ctx.user.id`). Requise pour la
+   * Identité de l'admin qui uploade (issue de `ctx.sessionClient.user.id`). Requise pour la
    * destination `perso` (dossier dérivé de cet id). Ignorée pour les autres.
    */
   userId: string;

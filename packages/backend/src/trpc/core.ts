@@ -12,9 +12,6 @@ export type TRPCContext = {
   requestIp: string | null;
   userAgent: string | null;
   appRoot: string;
-  user: {
-    id: string;
-  };
 };
 
 type SessionClient = NonNullable<TRPCContext["sessionClient"]>;
@@ -51,15 +48,21 @@ export async function createTRPCContext({
     prisma,
     requestIp: getIpFromRequest(req),
     userAgent: req.headers.get("user-agent"),
-    appRoot: APP_ROOT!,
-    user: {
-      id: sessionClient?.user?.id ?? "anonymous",
-    }
+    appRoot: APP_ROOT,
   };
 }
 
 export const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
+  // Une erreur non prévue (Prisma, réseau, bug) porte un message technique : nom de table,
+  // texte de la requête… En production, le navigateur reçoit un message neutre ; le détail
+  // reste dans les journaux du serveur (onError de la route /api/trpc).
+  errorFormatter({ shape, error }) {
+    if (error.code === "INTERNAL_SERVER_ERROR" && process.env.NODE_ENV === "production") {
+      return { ...shape, message: "Erreur interne du serveur. Réessayez dans un instant." };
+    }
+    return shape;
+  },
 });
 
 export const router = t.router;
@@ -69,7 +72,7 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   const sessionClient = ctx.sessionClient;
 
   if (!sessionClient?.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Connexion requise." });
   }
 
   return next({

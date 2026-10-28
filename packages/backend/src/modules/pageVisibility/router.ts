@@ -1,19 +1,7 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-
-/** Réserve l'action aux administrateurs (appartenance au groupe Administrateurs). */
-async function assertAdmin(ctx: {
-  prisma: PrismaClient;
-  user: { id: string };
-}): Promise<void> {
-  if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Réservé aux administrateurs." });
-  }
-}
+import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * Publication par page (mode « En construction »).
@@ -31,17 +19,16 @@ export const pageVisibilityRouter = router({
     return rows.map((r) => r.key);
   }),
 
-  all: protectedProcedure.query(async ({ ctx }) => {
-    await assertAdmin(ctx);
+  all: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.pageVisibility.findMany({
       select: { key: true, published: true },
     });
   }),
 
   setPublished: protectedProcedure
+    .use(isAdmin)
     .input(z.object({ key: z.string().min(1), published: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       return ctx.prisma.pageVisibility.upsert({
         where: { key: input.key },
         create: { key: input.key, published: input.published },
@@ -50,9 +37,9 @@ export const pageVisibilityRouter = router({
     }),
 
   setAll: protectedProcedure
+    .use(isAdmin)
     .input(z.object({ keys: z.array(z.string().min(1)), published: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       await ctx.prisma.$transaction(
         input.keys.map((key) =>
           ctx.prisma.pageVisibility.upsert({
@@ -69,8 +56,7 @@ export const pageVisibilityRouter = router({
    * Nombre d'entités en BROUILLON (publicationDate null) — disciplines,
    * events, stages. Pour le compteur/tooltip de la cloche admin.
    */
-  entityDraftCounts: protectedProcedure.query(async ({ ctx }) => {
-    await assertAdmin(ctx);
+  entityDraftCounts: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const [disciplines, events, stages] = await Promise.all([
       ctx.prisma.discipline.count({ where: { publicationDate: null } }),
       ctx.prisma.event.count({ where: { publicationDate: null } }),

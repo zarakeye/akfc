@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
+import { isAdmin } from "@backend/trpc/middleware";
 import {
   isSafeHttpUrl,
   LOGO_MIME_TYPES,
@@ -11,12 +10,6 @@ import {
   parseLinks,
   validateLogo,
 } from "@backend/modules/sitePartners/sitePartners.service";
-
-async function assertAdmin(ctx: { prisma: PrismaClient; user: { id: string } }): Promise<void> {
-  if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Réservé aux administrateurs." });
-  }
-}
 
 const httpUrl = z.string().trim().max(500).refine(isSafeHttpUrl, "Adresse web invalide (http:// ou https://).");
 
@@ -43,8 +36,7 @@ export const sitePartnerRouter = router({
     }));
   }),
 
-  listAdmin: protectedProcedure.query(async ({ ctx }) => {
-    await assertAdmin(ctx);
+  listAdmin: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const rows = await ctx.prisma.sitePartner.findMany({
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: partnerSelect,
@@ -58,6 +50,7 @@ export const sitePartnerRouter = router({
 
   /** Crée (sans id) ou modifie un partenaire. Le logo se gère à part (setLogo / clearLogo). */
   save: protectedProcedure
+    .use(isAdmin)
     .input(
       z.object({
         id: z.string().min(1).optional(),
@@ -73,7 +66,6 @@ export const sitePartnerRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       const data = {
         name: input.name,
         role: input.role,
@@ -93,9 +85,9 @@ export const sitePartnerRouter = router({
 
   /** Logo envoyé en base64 (SVG, PNG, WebP ou JPEG ≤ 512 Ko ; SVG sans contenu actif). */
   setLogo: protectedProcedure
+    .use(isAdmin)
     .input(z.object({ id: z.string().min(1), dataBase64: z.string().min(1), mimeType: z.enum(LOGO_MIME_TYPES) }))
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       const buf = Buffer.from(input.dataBase64, "base64");
       validateLogo(buf, input.mimeType);
       const updated = await ctx.prisma.sitePartner.updateMany({
@@ -106,8 +98,7 @@ export const sitePartnerRouter = router({
       return { success: true };
     }),
 
-  clearLogo: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
-    await assertAdmin(ctx);
+  clearLogo: protectedProcedure.use(isAdmin).input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
     await ctx.prisma.sitePartner.updateMany({
       where: { id: input.id },
       data: { logoData: null, logoMime: null, logoUpdatedAt: null },
@@ -115,15 +106,13 @@ export const sitePartnerRouter = router({
     return { success: true };
   }),
 
-  delete: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
-    await assertAdmin(ctx);
+  delete: protectedProcedure.use(isAdmin).input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
     await ctx.prisma.sitePartner.deleteMany({ where: { id: input.id } });
     return { success: true };
   }),
 
   /** Nouvel ordre d'affichage : liste complète des identifiants, dans l'ordre voulu. */
-  reorder: protectedProcedure.input(z.object({ ids: z.array(z.string().min(1)).min(1) })).mutation(async ({ ctx, input }) => {
-    await assertAdmin(ctx);
+  reorder: protectedProcedure.use(isAdmin).input(z.object({ ids: z.array(z.string().min(1)).min(1) })).mutation(async ({ ctx, input }) => {
     await ctx.prisma.$transaction(
       input.ids.map((id, position) => ctx.prisma.sitePartner.updateMany({ where: { id }, data: { position } })),
     );

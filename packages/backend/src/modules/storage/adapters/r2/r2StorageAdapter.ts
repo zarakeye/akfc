@@ -334,7 +334,7 @@ export function createR2StorageAdapter(
      *      - originalFileName = input.originalFileName
      *      - mimeType, bytes = depuis HeadObject (source de vérité serveur)
      *      - categoryId/disciplineId/proposedDisciplineName = depuis destination
-     *      - uploaderUserId = input.userId (depuis ctx.user.id côté router)
+     *      - uploaderUserId = input.userId (depuis ctx.sessionClient.user.id côté router)
      *      - status = 'pending' (les uploads atterrissent toujours en pending)
      */
     async registerUploadedAsset(

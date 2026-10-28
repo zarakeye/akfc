@@ -1,9 +1,8 @@
-import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@prisma/client";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { isAdmin } from "@backend/trpc/middleware";
 import { saveSiteContactSchema } from "@contracts/siteContact/siteContact.schema";
 import { compactId, saveLegalSettingsSchema } from "@contracts/legal/legalSettings.schema";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
@@ -14,23 +13,10 @@ import {
 
 const SETTINGS_ID = "site";
 
-/** Réserve l'action aux administrateurs (appartenance au groupe Administrateurs). */
-async function assertAdmin(ctx: {
-  prisma: PrismaClient;
-  user: { id: string };
-}): Promise<void> {
-  if (!(await isAdminByGroup(ctx.prisma, ctx.user.id))) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Réservé aux administrateurs.",
-    });
-  }
-}
-
 /**
  * Réglages d'identité du site (singleton). Lecture PUBLIQUE (le header, l'onglet
  * et les e-mails les consomment, y compris pour les visiteurs anonymes) ;
- * écriture réservée aux administrateurs (`assertAdmin`).
+ * écriture réservée aux administrateurs (`.use(isAdmin)`).
  *
  * `shortTitle` est un LIBELLÉ, sans rapport avec `APP_SHORT_NAME` (racine de
  * stockage, qui reste dans le .env). `logoAssetId` référence un MediaAsset ;
@@ -63,6 +49,7 @@ export const siteSettingsRouter = router({
   }),
 
   save: protectedProcedure
+    .use(isAdmin)
     .input(
       z.object({
         shortTitle: z.string().trim().min(1).max(60),
@@ -77,7 +64,6 @@ export const siteSettingsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       const clean = (v: string | null | undefined): string | null =>
         v && v.trim() !== "" ? v.trim() : null;
       const data = {
@@ -99,8 +85,7 @@ export const siteSettingsRouter = router({
    * Coordonnées publiques du club (admin) : e-mail, téléphones (appel / WhatsApp), adresse.
    * Affichées à tous sur « Nous contacter ». Champ vide → non affiché.
    */
-  saveContact: protectedProcedure.input(saveSiteContactSchema).mutation(async ({ ctx, input }) => {
-    await assertAdmin(ctx);
+  saveContact: protectedProcedure.use(isAdmin).input(saveSiteContactSchema).mutation(async ({ ctx, input }) => {
     const data = {
       contactEmail: input.contactEmail.trim().toLowerCase() || null,
       contactPhones: input.contactPhones,
@@ -118,8 +103,7 @@ export const siteSettingsRouter = router({
    * Informations légales (admin) : éditeur, directeur de la publication, hébergeur, durées de
    * conservation. Alimentent les pages légales générées et le registre des traitements.
    */
-  saveLegal: protectedProcedure.input(saveLegalSettingsSchema).mutation(async ({ ctx, input }) => {
-    await assertAdmin(ctx);
+  saveLegal: protectedProcedure.use(isAdmin).input(saveLegalSettingsSchema).mutation(async ({ ctx, input }) => {
     const opt = (v: string): string | null => (v.trim() === "" ? null : v.trim());
     const data = {
       legalName: opt(input.legalName),
@@ -155,6 +139,7 @@ export const siteSettingsRouter = router({
    * mémorise logoKey. Le logo n'est JAMAIS un MediaAsset.
    */
   uploadLogo: protectedProcedure
+    .use(isAdmin)
     .input(
       z.object({
         dataBase64: z.string().min(1),
@@ -162,7 +147,6 @@ export const siteSettingsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertAdmin(ctx);
       const buf = Buffer.from(input.dataBase64, "base64");
       if (buf.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier vide." });
@@ -187,8 +171,7 @@ export const siteSettingsRouter = router({
    * mais n'est plus référencé — écrasé au prochain upload). Le consommateur
    * retombe alors sur le SVG embarqué.
    */
-  clearLogo: protectedProcedure.mutation(async ({ ctx }) => {
-    await assertAdmin(ctx);
+  clearLogo: protectedProcedure.use(isAdmin).mutation(async ({ ctx }) => {
     await ctx.prisma.siteSettings.upsert({
       where: { id: SETTINGS_ID },
       create: { id: SETTINGS_ID },

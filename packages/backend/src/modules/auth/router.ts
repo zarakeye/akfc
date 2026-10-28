@@ -39,17 +39,16 @@ export const authRouter = router({
           success: true as const,
         };
       } catch (error) {
+        // Un mauvais identifiant fait partie du fonctionnement normal du formulaire : c'est un
+        // résultat. Tout le reste (base injoignable, bug) est une vraie erreur : elle remonte,
+        // est journalisée par la route /api/trpc, et le formulaire affiche son message générique.
         if (error instanceof TRPCError && error.message === "INVALID_CREDENTIALS") {
           return {
             success: false as const,
             error: "INVALID_CREDENTIALS" as const,
           };
         }
-
-        return {
-          success: false as const,
-          error: "LOGIN_FAILED" as const,
-        };
+        throw error;
       }
     }),
 

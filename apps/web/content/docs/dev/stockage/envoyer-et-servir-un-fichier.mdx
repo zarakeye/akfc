@@ -147,7 +147,7 @@ return `${safeBase}${ext}`;
 
 `Salut final (2025).JPG` devient `salut-final-2025.jpg`. La clé ne contient ni espace, ni parenthèse, ni second point : elle se lit dans une URL sans encodage hasardeux. Le nom d'origine n'est pas perdu : il est conservé dans `MediaAsset.originalFileName`, et c'est lui (ou un `displayName` choisi plus tard) que l'interface affiche.
 
-**Une identité qui ne se falsifie pas.** La destination `perso` ne transporte aucun identifiant : le dossier est dérivé de `ctx.user.id`, c'est-à-dire de la session. Un utilisateur ne peut écrire que dans son propre espace personnel, quoi qu'il envoie.
+**Une identité qui ne se falsifie pas.** La destination `perso` ne transporte aucun identifiant : le dossier est dérivé de `ctx.sessionClient.user.id`, c'est-à-dire de la session. Un utilisateur ne peut écrire que dans son propre espace personnel, quoi qu'il envoie.
 
 **Un ajout de destination vérifié par le compilateur.** Les services qui traitent une destination se terminent par un `switch` exhaustif (`input.destination satisfies never`). Ajouter un `kind` au contrat fait échouer la compilation partout où il n'est pas encore traité.
 
@@ -161,8 +161,8 @@ Le client décrit **ce qu'il veut faire** ; le serveur décide **où cela va**. 
 
 ```ts
 // packages/backend/src/modules/storage/router.ts (extrait)
-await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.user.id, destination: input.destination });
-const folder = await resolvePendingUploadFolder({ prisma: ctx.prisma, destination: input.destination, appRoot: ctx.appRoot, userId: ctx.user.id });
+await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, destination: input.destination });
+const folder = await resolvePendingUploadFolder({ prisma: ctx.prisma, destination: input.destination, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
 const fileName = buildUploadFileName(input.originalFileName);
 const path = `${folder}/${fileName}`;
 
@@ -179,7 +179,7 @@ if (existing && !input.allowOverwrite) {
   throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });
 }
 if (input.destination.kind === "perso" && !existing) {
-  const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.user.id });
+  const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
   if (total + 1 > PERSO_PHOTO_QUOTA) {
     throw new TRPCError({ code: "BAD_REQUEST", message: `Quota d'images perso atteint (max ${PERSO_PHOTO_QUOTA}).` });
   }

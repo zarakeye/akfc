@@ -164,7 +164,7 @@ export const trashRouter = router({
       // (`groups/…`) dont l'utilisateur est EDITOR. Purge/restore restent admin.
       await assertCanTrashPaths({
         prisma: ctx.prisma,
-        userId: ctx.user.id,
+        userId: ctx.sessionClient.user.id,
         paths: input.sources.flatMap((source) =>
           source.kind === "selection" ? source.roots : [source.fullPath],
         ),

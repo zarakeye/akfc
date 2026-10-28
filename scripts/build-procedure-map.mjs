@@ -583,13 +583,11 @@ ts.forEachChild(files.get(indexFile), function find(n) {
 function procedureShape(file, node) {
   let kind = "autre";
   const uses = [];
-  let resolver = null;
   let cur = node;
   while (ts.isCallExpression(cur) && ts.isPropertyAccessExpression(cur.expression)) {
     const method = cur.expression.name.text;
     if (method === "query" || method === "mutation" || method === "subscription") {
       kind = kind === "autre" ? method : kind;
-      resolver = cur.arguments[0] ?? null;
     }
     if (method === "use") uses.push(...cur.arguments.map((a) => a.getText()));
     cur = cur.expression.expression;
@@ -599,26 +597,12 @@ function procedureShape(file, node) {
   if (local) base = local;
   const chain = `${base} ${uses.join(" ")}`;
   const access =
-    /isAdmin\b|adminProcedure/.test(chain) || guardsAdmin(resolver)
+    /isAdmin\b|adminProcedure/.test(chain)
       ? "admin"
       : /protectedProcedure/.test(chain)
         ? "membre"
         : "public";
   return { kind, access };
-}
-
-/**
- * Garde d'administrateur posée en tête du corps (`await assertAdmin(ctx)`), et non dans une
- * condition : elle s'applique à tout appel de la procédure.
- */
-function guardsAdmin(resolver) {
-  if (!resolver || !(ts.isArrowFunction(resolver) || ts.isFunctionExpression(resolver)) || !ts.isBlock(resolver.body)) return false;
-  return resolver.body.statements.some((st) => {
-    if (!ts.isExpressionStatement(st)) return false;
-    let e = st.expression;
-    if (ts.isAwaitExpression(e)) e = e.expression;
-    return ts.isCallExpression(e) && ts.isIdentifier(e.expression) && /^assert(Is)?Admin$/.test(e.expression.text);
-  });
 }
 
 /** Constantes du fichier (texte de leur valeur) : bases de procédure définies localement. */

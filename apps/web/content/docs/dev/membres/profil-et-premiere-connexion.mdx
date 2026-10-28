@@ -64,10 +64,11 @@ Le site n'a pas d'inscription libre. Un membre s'inscrit au club auprès de la M
 const password = generateStrongPassword();
 const hash = await bcrypt.hash(password, 12);
 
-const user = await ctx.prisma.user.create({
+user = await ctx.prisma.user.create({
   data: {
     email: input.email,
     password: hash,
+    ...legal,
     memberGroupMemberships: {
       create: groupIds.map((id) => ({
         group: { connect: { id } },

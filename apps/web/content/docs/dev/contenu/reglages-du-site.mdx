@@ -80,7 +80,7 @@ await ctx.prisma.siteSettings.upsert({
 });
 ```
 
-La lecture (`siteSettings.get`) est **publique** : le header, l'onglet et les e-mails en ont besoin, y compris pour un visiteur anonyme. Toutes les écritures commencent par `assertAdmin`, qui vérifie l'appartenance au groupe Administrateurs.
+La lecture (`siteSettings.get`) est **publique** : le header, l'onglet et les e-mails en ont besoin, y compris pour un visiteur anonyme. Toutes les écritures sont déclarées `protectedProcedure.use(isAdmin)` : la garde fait partie de leur définition, avant même la lecture de l'entrée.
 
 ## Ce qui va en base, ce qui reste dans l'environnement
 
@@ -188,7 +188,7 @@ Le header est un composant client, mais il reçoit l'URL du logo et le titre cou
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où vivent les réglages ?","Dans SiteSettings, une ligne unique d’identifiant « site », créée par le premier upsert."],["Qui peut les modifier ?","Les administrateurs (assertAdmin) ; la lecture est publique."],["Qu’est-ce qui reste dans le .env ?","Ce qui peut casser l’application : racine du stockage, base, SMTP, clés, URL du site, variables de build."],["Que se passe-t-il sans réglage ?","Chaque lecteur a une valeur de repli ; une erreur de base ne fait tomber aucune page."],["D’où viennent les coordonnées du pied de page ?","Des mêmes colonnes que la page « Nous contacter »."],["Comment le logo est-il servi ?","Sous une clé réservée hors finder, par une route de même origine, mise en cache par version et protégée contre l’exécution de script."]]' />
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Où vivent les réglages ?","Dans SiteSettings, une ligne unique d’identifiant « site », créée par le premier upsert."],["Qui peut les modifier ?","Les administrateurs (.use(isAdmin)) ; la lecture est publique."],["Qu’est-ce qui reste dans le .env ?","Ce qui peut casser l’application : racine du stockage, base, SMTP, clés, URL du site, variables de build."],["Que se passe-t-il sans réglage ?","Chaque lecteur a une valeur de repli ; une erreur de base ne fait tomber aucune page."],["D’où viennent les coordonnées du pied de page ?","Des mêmes colonnes que la page « Nous contacter »."],["Comment le logo est-il servi ?","Sous une clé réservée hors finder, par une route de même origine, mise en cache par version et protégée contre l’exécution de script."]]' />
 
 ## À suivre
 
