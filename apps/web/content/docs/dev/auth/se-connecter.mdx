@@ -1,0 +1,274 @@
+---
+title: "Se connecter"
+description: "Le parcours d’une connexion : les règles partagées des identifiants (adresse en minuscules), le service de connexion — même message et même temps pour une adresse inconnue et un mauvais mot de passe, limite d’essais par adresse —, puis la création de la session : une ligne en base, un jeton signé, un cookie et ses options."
+section: "Authentification et droits"
+order: 3
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isAdminGroup]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une session est une ligne `Session` en base, reliée au membre ; aucun droit n’y est recopié. Ce qui part vers le navigateur est borné par le contrat `SessionClient`.
+
+## La validation des identifiants
+
+Entrons dans le flux de connexion.
+
+Tout commence par une frontière simple : valider la forme des identifiants envoyés par le navigateur.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetRange="11-37"
+  snippetHighlight="8-13"
+  snippetTitle="Les règles de connexion, partagées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce schéma impose deux contraintes, chacune avec son message :
+
+- une adresse e-mail, nettoyée de ses espaces, **mise en minuscules**, non vide, au format valide ;
+- un mot de passe non vide, puis d’au moins `PASSWORD_MIN_LENGTH` caractères — douze.
+
+---
+
+## Pourquoi 12 caractères ?
+
+Ce nombre n’est pas arbitraire.
+
+Les recommandations actuelles (ANSSI, NIST) considèrent qu’un mot de passe de 8 caractères se casse en quelques heures avec du matériel grand public, dès que son empreinte a fuité. À partir de 12 caractères, l’effort devient considérable ; à partir de 16, prohibitif. Le projet se place au minimum raisonnable pour un site moderne — et les mots de passe qu’il génère lui-même, à la création d’un compte, font 12 caractères variés.
+
+---
+
+## Pourquoi le schéma vit dans `packages/contracts` ?
+
+C’est le motif vu dans la partie « API » : un schéma utilisé à la fois par le formulaire (retour immédiat) et par la procédure (validation qui fait foi) doit vivre dans le paquet partagé, et être **importé des deux côtés**.
+
+Le projet en a fait l’expérience. La règle des douze caractères et celle de l’adresse étaient réécrites dans six fichiers — le formulaire, trois procédures, deux pages —, chacun à sa façon, alors qu’un schéma « partagé » existait déjà sans être importé nulle part. Aujourd’hui, `auth.login` déclare `.input(loginSchema)`, et le formulaire appelle `loginSchema.safeParse(…)` : si la règle passe un jour à 16 caractères, une seule ligne change, et les deux côtés suivent.
+
+---
+
+## Pourquoi en minuscules ?
+
+Une adresse e-mail ne distingue pas, en pratique, les majuscules des minuscules : `Jean.Dupont@club.fr` et `jean.dupont@club.fr` arrivent dans la même boîte. La base, elle, les distingue : pour PostgreSQL, ce sont deux chaînes différentes.
+
+Le projet en a subi la conséquence. La création d’un compte enregistrait l’adresse telle que l’administrateur l’avait tapée. « Mot de passe oublié » la cherchait en minuscules, et la connexion telle que le membre la saisissait. Un membre créé avec une majuscule ne pouvait donc **jamais** réinitialiser son mot de passe — la recherche ne trouvait pas son compte, et la réponse, volontairement identique, ne le lui disait pas —, et devait respecter la casse exacte pour se connecter.
+
+La règle vit désormais dans `emailSchema` : toute adresse qui entre est mise en minuscules, à la création d’un compte comme à la connexion et à la réinitialisation. Une migration a mis au même format les adresses déjà enregistrées ; si deux comptes ne différaient que par la casse, elle s’arrête avec un message explicite plutôt que de choisir à notre place.
+
+<Callout type="warning">
+Une donnée qui sert de clé de recherche se **normalise à l’entrée**, une fois, au même endroit pour tous les chemins qui l’écrivent ou la cherchent. Normaliser à la lecture seulement, ou sur un seul des chemins, crée exactement ce défaut : deux formes de la même valeur, qui ne se retrouvent plus.
+</Callout>
+
+---
+
+<Callout type="info">
+La validation est la première frontière du système.
+
+Elle ne résout aucun problème métier — mais elle empêche tous les problèmes en aval qui surviendraient sur des données malformées.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** la forme des identifiants est garantie. Le backend peut maintenant entrer dans la vraie vérification — celle qui consulte la base pour savoir si ce compte existe, et si le mot de passe est le bon.
+
+---
+
+## Le service de connexion : la vraie logique
+
+C’est ici que se joue l’authentification proprement dite.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-43"
+  snippetHighlight="24-43"
+  snippetTitle="loginService : de l’adresse à la session"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du service de connexion
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  filename="auth.service.ts"
+  snippetRange="1-43"
+  title="Anatomie du service de connexion"
+  stepsJson='[{"title": "Une limite d’essais par adresse", "body": "loginThrottle accorde dix échecs par quart d’heure à chaque adresse. La clé est l’adresse, pas l’adresse IP : l’IP vient d’un en-tête qu’un client peut écrire lui-même, et tout un club derrière la même box partage la même.", "scope": "8-13", "focus": "8-13"}, {"title": "Le commentaire de tête annonce la règle", "body": "Même erreur, et même temps, qu’une adresse soit inconnue ou que le mot de passe soit faux. Tout le reste du fichier sert cette phrase.", "scope": "15-23", "focus": "15-23"}, {"title": "Trop d’essais : refus immédiat", "body": "Si l’adresse a déjà dix échecs dans le quart d’heure, le service refuse sans chercher le compte ni comparer. Le refus est le même pour toute adresse, qu’elle ait un compte ou non : il ne révèle rien.", "scope": "24-43", "focus": "25-28"}, {"title": "Une recherche limitée à ce qui sert", "body": "Le service ne demande que l’identifiant et l’empreinte du mot de passe. Il n’a besoin de rien d’autre, et ne charge rien d’autre.", "scope": "24-43", "focus": "30-33"}, {"title": "Toujours une comparaison", "body": "Si l’adresse est inconnue, la comparaison se fait quand même, contre UNKNOWN_ACCOUNT_HASH. bcrypt prend alors le même temps que pour un vrai compte, et la durée de la réponse ne dit rien.", "scope": "24-43", "focus": "35-35"}, {"title": "Un échec compte, une réussite efface", "body": "Chaque échec est enregistré pour l’adresse, puis la même erreur INVALID_CREDENTIALS est levée pour les deux causes. Une connexion réussie efface les échecs de l’adresse.", "scope": "24-43", "focus": "36-41"}, {"title": "La session est déléguée", "body": "Le service ne crée ni le jeton ni le cookie : il passe l’identifiant à createSessionJWT. La connexion se teste ainsi indépendamment de la mécanique de session, et inversement.", "scope": "24-43", "focus": "42-42"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi le même message pour deux erreurs ?
+
+Quand l’adresse n’existe pas en base, et quand le mot de passe est faux, le service renvoie **exactement la même erreur** : `INVALID_CREDENTIALS`.
+
+À première vue, cela semble peu utile pour le membre. Pourquoi ne pas dire « cette adresse n’a pas de compte » ? Ce serait plus pédagogique.
+
+C’est précisément pour cela que c’est une mauvaise idée.
+
+Si le message diffère, un attaquant peut **énumérer les comptes** en essayant des adresses :
+
+- « cette adresse n’a pas de compte » → elle n’est pas dans la base ;
+- « mot de passe incorrect » → elle y est.
+
+Il construit ainsi la liste des adresses des membres, qu’il peut ensuite viser par hameçonnage, ou en essayant des mots de passe fuités ailleurs. Pour un club, cette liste est déjà une donnée personnelle qui ne doit pas sortir.
+
+Renvoyer le même message dans les deux cas empêche cette énumération. C’est un compromis assumé : un peu moins d’ergonomie, beaucoup plus de sécurité.
+
+---
+
+## 🔭 Pour aller plus loin — le même message, mais pas le même temps
+
+Le message identique ne suffit pas, et le projet l’a appris en relisant son propre code.
+
+La première version du service s’arrêtait dès que l’adresse était inconnue :
+
+<CodeSnippet
+  language="ts"
+  title="Avant : une réponse plus rapide pour une adresse inconnue"
+  kind="anti-pattern"
+  codeJson='"const user = await prisma.user.findUnique({ where: { email } });\n\nif (!user) {\n  throw new TRPCError({ code: \"UNAUTHORIZED\", message: \"INVALID_CREDENTIALS\" });\n}\n\nconst valid = await bcrypt.compare(password, user.password); // ~250 ms, seulement ici\nif (!valid) {\n  throw new TRPCError({ code: \"UNAUTHORIZED\", message: \"INVALID_CREDENTIALS\" });\n}"'
+/>
+
+Pour une adresse inconnue, la réponse partait aussitôt. Pour une adresse connue, elle attendait la comparaison bcrypt — environ 250 ms, puisque bcrypt est lent exprès. Le message était le même ; la **durée** ne l’était pas. Un script qui chronomètre ses tentatives distingue sans peine 5 ms de 250 ms, et retrouve l’énumération que le message identique devait empêcher. C’est ce qu’on appelle une attaque **par canal auxiliaire** : l’information ne fuit pas par ce que le serveur dit, mais par la façon dont il le dit.
+
+La correction tient en une ligne : quand l’adresse est inconnue, le mot de passe est **quand même comparé**, à une empreinte que personne ne peut satisfaire (`UNKNOWN_ACCOUNT_HASH`, calculée au même coût que les vraies). Mesurée sur le service : 285 ms pour une adresse inconnue, 293 ms pour un mauvais mot de passe, 262 ms pour le bon. Les écarts restants sont du bruit, de l’ordre de ce qui varie d’un essai à l’autre.
+
+<Callout type="warning">
+Une protection contre l’énumération se vérifie sur **tout** ce que le serveur renvoie : le message, le code HTTP, et la durée. Le chapitre 7 montrera que « Mot de passe oublié » avait le même défaut, en plus visible.
+</Callout>
+
+---
+
+## Limiter les essais
+
+bcrypt freine chaque essai, mais ne les compte pas. Rien n’empêchait un script d’essayer des milliers de mots de passe sur une même adresse, quatre par seconde, jour et nuit. Le service limite désormais les **échecs** : dix par quart d’heure et par adresse. Au-delà, il refuse sans même chercher le compte (`TOO_MANY_ATTEMPTS`), jusqu’à ce que la fenêtre glisse ; une connexion réussie efface les échecs de l’adresse.
+
+Trois choix méritent d’être expliqués.
+
+**La clé est l’adresse, pas l’adresse IP.** L’IP du visiteur arrive dans un en-tête (`x-forwarded-for`) qu’un client peut écrire lui-même : un attaquant changerait d’« adresse » à chaque essai. Et une limite par IP bloquerait tout un club derrière la même box. L’adresse e-mail, elle, est exactement ce qu’on veut protéger.
+
+**La limite vaut pour toute adresse, qu’elle ait un compte ou non.** Sinon, l’arrivée du message « trop d’essais » trahirait qu’une adresse existe — l’énumération, encore.
+
+**Le prix est assumé.** Un tiers peut, en se trompant exprès dix fois, empêcher un membre de se connecter pendant un quart d’heure. C’est le compromis de toute limite : le formulaire le dit au membre, et lui propose « Mot de passe oublié », qui n’est pas limité de la même façon.
+
+Le limiteur lui-même est un petit module partagé, `lib/security/throttle.ts`. Il existait déjà, enfermé dans le formulaire de contact ; il a été sorti pour servir aux deux. Il vit en mémoire : remis à zéro au redémarrage, et valable pour un seul serveur — c’est le cas du site.
+
+---
+
+👉 **Où nous en sommes :** le membre est identifié — ou freiné, s’il insiste. Il ne reste plus qu’à transformer cette identification en une session qui survivra aux prochaines requêtes. C’est l’étape finale du premier mouvement.
+
+---
+
+## `createSessionJWT` : la naissance de la session
+
+Une fois le membre identifié, il faut **lui poser un tampon** sur la main.
+
+C’est le rôle de `createSessionJWT`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="1-58"
+  snippetHighlight="22-58"
+  snippetTitle="createSessionJWT : une ligne, un jeton, un cookie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la création de session
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="1-58"
+  title="Du membre identifié au cookie posé dans le navigateur"
+  stepsJson='[{"title": "Un seul algorithme accepté", "body": "JWT_ALGORITHM fixe HS256, à la signature comme à la vérification. Un jeton signé avec un autre algorithme est refusé, ce qui ferme la porte à une famille d’attaques où l’attaquant choisit lui-même l’algorithme.", "scope": "8-11", "focus": "10-11"}, {"title": "La date d’expiration", "body": "SESSION_DURATION_MS vaut sept jours, dans packages/contracts. La même constante sert à la ligne, au jeton et au cookie.", "scope": "22-58", "focus": "23-23"}, {"title": "La dernière connexion, en SQL direct", "body": "lastLoginAt est mis à jour par une requête SQL directe : passer par Prisma mettrait aussi à jour updatedAt, qui signifie « dernière modification du profil ». Un échec est journalisé, sans empêcher la connexion.", "scope": "22-58", "focus": "25-28"}, {"title": "La ligne Session en base", "body": "C’est ici que la session devient persistante. C’est cette ligne qui rendra la révocation possible : il suffira de la supprimer.", "scope": "22-58", "focus": "30-35"}, {"title": "Un jeton minimal", "body": "Le jeton ne contient que l’identifiant de la session. Pas d’adresse, pas de droit : tout ce qui peut changer est relu en base, parce qu’un jeton déjà émis ne se corrige pas.", "scope": "22-58", "focus": "37-39"}, {"title": "La signature", "body": "jwt.sign produit le jeton signé avec JWT_SECRET. Sans ce secret, impossible de fabriquer un jeton valide. La durée, en secondes, vient de la même constante.", "scope": "22-58", "focus": "41-44"}, {"title": "Le cookie, avec ses options de sécurité", "body": "httpOnly, secure en production, sameSite lax, expires aligné sur la session, path / : chacune est détaillée ci-dessous.", "scope": "22-58", "focus": "46-53"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — anatomie des options du cookie
+
+Chaque option du cookie joue un rôle de sécurité précis. Les oublier, c’est ouvrir des failles.
+
+**`httpOnly: true`**  
+Le cookie est invisible pour le JavaScript de la page : `document.cookie` ne le voit pas. Si un attaquant parvient à injecter un script dans une page (une faille XSS), il ne pourra pas emporter la session.
+
+**`secure: process.env.NODE_ENV === "production"`**  
+Le cookie ne circule que sur des connexions HTTPS. En développement local (HTTP), la contrainte est levée, sinon le cookie ne serait jamais transmis. En production, elle est non négociable.
+
+**`sameSite: "lax"`**  
+C’est la protection contre la falsification de requête (CSRF). Avec `lax`, le cookie n’accompagne pas les requêtes qu’un autre site déclenche en arrière-plan (un formulaire envoyé en POST, un `fetch`). Il reste envoyé quand on suit un lien vers le site. C’est le bon compromis entre sécurité et confort.
+
+**`expires: expiresAt`**  
+Aligne la durée de vie du cookie sur celle de la session en base. Quand la session expire, le navigateur oublie le cookie de lui-même.
+
+**`path: "/"`**  
+Le cookie est envoyé pour toutes les adresses du site. Sans cela, il ne le serait que pour le chemin de la requête qui l’a posé (`/api/trpc`).
+
+Oublier l’une de ces options — surtout `httpOnly` ou `sameSite` — est une faille classique.
+
+---
+
+<Callout type="info">
+La création de session est triple :
+
+👉 une ligne en base  
+👉 un jeton signé contenant son identifiant  
+👉 un cookie sécurisé qui transporte le jeton
+
+Chacune de ces trois opérations est nécessaire. Aucune n’est suffisante seule.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le membre a maintenant un cookie de session dans son navigateur, et le backend possède une trace persistante de sa session. Le premier mouvement est complet.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 1
+
+Voilà le chemin parcouru depuis l'email tapé dans le formulaire jusqu'au cookie posé :
+
+<ArchitectureDiagram
+  steps="Adresse + mot de passe | Validation Zod | Comparaison bcrypt (en temps constant) | Ligne Session | Jeton signé | Cookie posé"
+/>
+
+Chaque étape résout un problème spécifique :
+
+- **Zod** a garanti que les données avaient la bonne forme
+- **la comparaison bcrypt** a vérifié le mot de passe sans jamais le stocker en clair, et sans trahir par sa durée qu’une adresse existe
+- **la création Session DB** a produit un identifiant unique, révocable, avec une date d'expiration
+- **la signature JWT** a transformé cet identifiant en un jeton infalsifiable
+- **le cookie** a posé ce jeton dans le navigateur avec tous les flags de sécurité
+
+Mais ce cookie seul ne sert à rien.
+
+Ce qui rend le système vivant, c'est ce qui va se passer **à la requête suivante** : comment le backend va-t-il lire ce cookie, vérifier le JWT, relire la session en base, et injecter cette identité dans le contexte de chaque procédure tRPC ?
+
+C'est tout l'objet du **Mouvement 2**.
+
+## À suivre
+
+Un cookie seul ne sert à rien. Ce qui rend le système vivant, c’est ce qui se passe à la requête suivante.
+
+<Callout type="tip">
+**Chapitre suivant : lire la session.** Le routeur d’authentification, puis `getSessionFromRequest`, qui reconstruit l’identité à chaque requête : jeton, base, expiration, projection — en une requête SQL.
+</Callout>

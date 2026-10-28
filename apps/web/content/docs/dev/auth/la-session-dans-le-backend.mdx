@@ -1,0 +1,144 @@
+---
+title: "La session dans le backend"
+description: "Comment createTRPCContext injecte la session dans chaque procédure, qui d’autre lit la session (layouts serveur, pages), et comment protectedProcedure en fait des garanties : un membre toujours présent, un identifiant qui vient de la session, jamais de l’entrée."
+section: "Authentification et droits"
+order: 5
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** `getSessionFromRequest` vérifie le jeton, relit la session et le membre en base, contrôle l’expiration, et renvoie un `SessionClient` — ou `null`.
+
+## L’injection : `createTRPCContext` reprend le relais
+
+Nous avons construit `getSessionFromRequest`. Mais cette fonction est inerte tant que personne ne l’appelle.
+
+Qui l’appelle ? `createTRPCContext`, exactement comme nous l’avons vu dans la partie « API ».
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="39-53"
+  snippetHighlight="6,9"
+  snippetTitle="Le pont entre la session et le contexte tRPC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+À chaque requête tRPC :
+
+- la route `/api/trpc` reçoit la requête  
+- `fetchRequestHandler` appelle `createContext`  
+- `createContext` appelle `createTRPCContext({ req })`  
+- `createTRPCContext` appelle `getSessionFromRequest(req)`  
+- le résultat (`SessionClient | null`) est placé dans `ctx.sessionClient`  
+
+---
+
+## Le flux d’authentification dans le contexte de tRPC
+
+<ArchitectureDiagram
+  steps="Cookie | readAuthToken | verifyJwt | prisma.session.findUnique (une requête) | mapSessionDBToSessionClient | ctx.sessionClient | procédure"
+/>
+
+---
+
+À partir de là, **toutes les procédures** du backend ont accès à `ctx.sessionClient`. Une procédure publique reçoit `null` si personne n’est connecté. Une procédure protégée bénéficie du contexte resserré, et lit `ctx.sessionClient.user.id` sans vérification.
+
+tRPC n’est pas le seul client de `getSessionFromRequest`. Les pages rendues par le serveur l’appellent aussi, sans requête à lui passer : la fonction lit alors le cookie avec `cookies()` de Next. C’est le cas du layout racine (chapitre 8), du layout qui garde le tableau de bord, et des pages éditoriales encore en construction (chapitre 9).
+
+C’est ce que nous avons construit dans la partie « API », mais maintenant nous savons précisément **d’où vient cette session** et **comment elle est reconstruite**.
+
+---
+
+👉 **Où nous en sommes :** la session est injectée partout où le backend en a besoin. Il nous reste à voir comment le code métier exploite cette injection — et pourquoi cela change radicalement sa lisibilité.
+
+---
+
+## Comment `protectedProcedure` exploite cette session
+
+Pour boucler la boucle, regardons comment `protectedProcedure` utilise la session reconstruite.
+
+Rappel, depuis `core.ts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/core.ts"
+  filename="core.ts"
+  snippetRange="71-86"
+  snippetHighlight="4-13"
+  snippetTitle="isAuthed et le resserrement du contexte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Ce middleware fait deux choses :
+
+**1) Il bloque les requêtes anonymes.**  
+Si `ctx.sessionClient?.user` est absent, il lève `UNAUTHORIZED` (« Connexion requise. »). La procédure ne s’exécute jamais.
+
+**2) Il resserre le type du contexte.**  
+Le `as AuthenticatedSessionClient` n’est pas un cast aveugle : il est justifié par la vérification qui le précède. À partir de ce point, `ctx.sessionClient.user` n’est plus nullable, et TypeScript le sait.
+
+---
+
+## L’usage concret dans le code métier
+
+Regardons comment cela se traduit dans une procédure réelle, celle par laquelle un instructeur enregistre sa présentation :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="357-387"
+  snippetHighlight="11"
+  snippetTitle="ctx.sessionClient.user.id, sans vérification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+<CodeSnippet
+  language="ts"
+  title="La confiance justifiée"
+  kind="pattern"
+  codeJson='"const userId = ctx.sessionClient.user.id;"'
+/>
+
+Pas de `?`. Pas de vérification. Pas de `TRPCError` défensive.
+
+Tout cela est **garanti par la chaîne** :
+
+- `getSessionFromRequest` a vérifié la signature du jeton, l’existence de la session en base et son expiration ;
+- `createTRPCContext` a injecté le résultat dans `ctx.sessionClient` ;
+- `protectedProcedure` a vérifié que `user` est présent, et a resserré le type.
+
+Le proxy, lui, n’est pas dans cette chaîne : il ne s’exécute que devant les pages du tableau de bord et du profil, jamais devant `/api/trpc` (chapitre 8). Une procédure ne doit donc jamais compter sur lui.
+
+Quand la procédure écrit `ctx.sessionClient.user.id`, elle s’appuie sur **toute cette chaîne**. Et l’identifiant vient de la session, jamais de l’entrée : un membre ne peut pas enregistrer la présentation de quelqu’un d’autre en envoyant un autre identifiant.
+
+C’est ce qu’on appelle écrire du code « confiant » — non pas naïf, mais reposant sur des garanties architecturales explicites.
+
+---
+
+<Callout type="tip">
+Une procédure métier n’a aucune logique d’authentification.
+
+Elle exploite les garanties construites en amont : `protectedProcedure` → contexte resserré → membre toujours présent.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** la chaîne de lecture est bouclée. Le cookie arrive, le backend le transforme en identité, et les procédures métier s’en servent sans effort. Reste maintenant à construire le chemin inverse : casser cette chaîne.
+
+## À suivre
+
+La lecture est bouclée. Il faut maintenant regarder l’autre bout de la vie d’une session : comment elle meurt.
+
+<Callout type="tip">
+**Chapitre suivant : fermer une session.** La déconnexion et ses deux suppressions, la purge des sessions abandonnées, et le changement de mot de passe qui ferme les autres appareils.
+</Callout>

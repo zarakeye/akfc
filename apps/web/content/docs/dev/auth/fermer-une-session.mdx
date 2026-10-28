@@ -1,0 +1,176 @@
+---
+title: "Fermer une session"
+description: "Comment une session meurt : la déconnexion (la ligne en base, puis le cookie), la purge quotidienne des sessions abandonnées, les limites d’une minuterie dans le serveur, et le changement de mot de passe qui ferme les autres appareils."
+section: "Authentification et droits"
+order: 6
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isAdminGroup]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Chaque procédure reçoit la session dans `ctx.sessionClient`, et `protectedProcedure` garantit qu’un membre est présent. Le code métier lit son identifiant sans vérification.
+
+## La déconnexion : casser le lien
+
+Nous savons construire une session. Voyons maintenant comment la détruire proprement.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="60-74"
+  snippetHighlight="1-15"
+  snippetTitle="deleteSessionFromCookie : la ligne, puis le cookie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la déconnexion
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="60-89"
+  title="Pourquoi une déconnexion fait deux opérations"
+  stepsJson='[{"title": "Lire et vérifier le jeton", "body": "Le cookie est lu, puis vérifié par verifyJwt (signature, algorithme, date). Un jeton illisible ne désigne aucune session : il n’y a rien à supprimer en base.", "scope": "1-15", "focus": "3-4"}, {"title": "Supprimer la ligne Session", "body": "C’est la révocation. Le jeton serait encore bien signé, mais il ne désigne plus rien. deleteMany plutôt que delete : si la ligne a déjà disparu (expirée, purgée), ce n’est pas une erreur.", "scope": "1-15", "focus": "6-12"}, {"title": "Une base injoignable n’empêche pas de sortir", "body": "Une erreur de la base est journalisée, et la déconnexion continue : le membre qui veut partir est déconnecté de son navigateur quoi qu’il arrive, et la ligne expirera d’elle-même.", "scope": "1-15", "focus": "9-11"}, {"title": "Supprimer le cookie", "body": "cookieStore.delete demande au navigateur d’oublier le cookie. Sans cela, il continuerait à présenter à chaque requête un jeton devenu inutile.", "scope": "1-15", "focus": "14-14"}, {"title": "verifyJwt, partagé", "body": "La même fonction sert à la déconnexion, au changement de mot de passe (pour retrouver la session en cours) et à getSessionFromRequest. Une seule façon de lire un jeton.", "scope": "22-30", "focus": "22-30"}]'
+/>
+
+---
+
+## Pourquoi les deux opérations sont nécessaires
+
+Imaginons que nous supprimions seulement le cookie, sans toucher à la base. Le navigateur du membre est déconnecté — mais la session, elle, reste valide en base pendant sept jours. Si le jeton avait été copié (un ordinateur partagé, une extension de navigateur malveillante), il resterait utilisable tout ce temps. La déconnexion n’aurait rien révoqué : elle aurait seulement fait oublier le jeton à **un** navigateur.
+
+Inversement, si nous supprimions seulement la ligne en base : le membre est bien déconnecté, puisque son jeton ne désigne plus rien (chapitre 4). Mais son navigateur continue d’envoyer, à chaque requête, un cookie devenu inutile, que le serveur vérifie, cherche en base, et rejette, encore et encore. Et l’interface, qui ne voit plus de session, a besoin de savoir que l’absence est voulue.
+
+**Les deux suppressions sont complémentaires.** La ligne en base fait la révocation ; le cookie supprimé fait le ménage côté navigateur.
+
+---
+
+<Callout type="warning">
+Une déconnexion qui ne supprime que le cookie ne révoque rien : elle cache le jeton à un navigateur, sans l’invalider.
+
+C’est la suppression de la ligne `Session` qui déconnecte vraiment.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** la déconnexion est propre. Mais toutes les sessions ne meurent pas par une déconnexion : beaucoup sont simplement abandonnées. Sans nettoyage, la table `Session` grossirait indéfiniment.
+
+---
+
+## Le cycle de vie : la purge des sessions expirées
+
+Nous avons vu deux façons dont une session disparaît :
+
+- **au passage**, dans `getSessionFromRequest` : une session expirée présentée par un navigateur est supprimée ;
+- **explicitement**, à la déconnexion.
+
+Mais il manque un cas : les sessions abandonnées. Le membre ferme son navigateur et ne revient pas, ou revient depuis un autre appareil. Sa session expire, mais personne ne la présente plus pour déclencher la suppression au passage.
+
+La première version du projet confiait ce cas à un `setInterval` qui purgeait les sessions toutes les dix minutes. Il a été remplacé par une purge plus générale, celle des **durées de conservation** du RGPD, qui s’occupe aussi des sessions :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/retention.service.ts"
+  filename="retention.service.ts"
+  snippetRange="31-48"
+  snippetHighlight="7-8"
+  snippetTitle="purgeExpiredData : les sessions et les liens expirés, parmi d’autres durées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la purge
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/retention.service.ts"
+  filename="retention.service.ts"
+  snippetRange="31-109"
+  title="La purge, de la requête à la minuterie"
+  stepsJson='[{"title": "Deux deleteMany", "body": "Toutes les sessions dont expiresAt est passée, et tous les liens de réinitialisation périmés : deux requêtes, chacune atomique.", "scope": "1-19", "focus": "7-8"}, {"title": "Au milieu d’autres durées de conservation", "body": "Les demandes closes depuis longtemps, les vignettes orphelines, les formulaires de droit à l’image d’un compte supprimé : la même purge applique toutes les durées promises par la politique de confidentialité.", "scope": "1-19", "focus": "1-18"}, {"title": "Un journal seulement s’il y a eu du travail", "body": "La ligne [rgpd/purge] n’est écrite que si quelque chose a été supprimé. Une purge soudainement massive serait un signal à regarder.", "scope": "52-79", "focus": "62-68"}, {"title": "Une passe au démarrage, puis chaque nuit à 3 h", "body": "run(new Date()) au lancement, puis une minuterie qui vérifie chaque minute s’il est 3 h à Paris et si la purge du jour n’a pas déjà eu lieu. RETENTION_PURGE_DISABLED=1 la coupe.", "scope": "52-79", "focus": "71-77"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — les limites d’une minuterie dans le serveur
+
+Cette purge vit dans le processus Node du site. Cela fonctionne parce que le projet tourne sur **un seul** serveur, dans un conteneur Docker qui reste allumé.
+
+Deux situations la mettraient en défaut :
+
+**1) Un hébergement « serverless ».**  
+Sur ce type de plateforme, le code ne tourne qu’à la demande et s’arrête aussitôt : aucune minuterie ne survit entre deux requêtes.
+
+**2) Plusieurs instances du site.**  
+Chaque instance lancerait sa propre purge à 3 h. Pour un `deleteMany`, ce n’est pas grave, mais c’est inutile.
+
+Les alternatives existent : une tâche planifiée par le système (`cron`) qui appelle une route dédiée, la planification de l’hébergeur, ou une tâche planifiée par PostgreSQL lui-même (extension `pg_cron`). Pour le site du club, la minuterie suffit ; il faut seulement savoir qu’elle dépend de l’hébergement.
+
+---
+
+## La triple défense contre les sessions fantômes
+
+Au total, le projet élimine les sessions mortes par **trois mécanismes complémentaires** :
+
+<DocsTable
+  title="Les trois façons dont une session disparaît"
+  columnsJson='["Mécanisme","Quand","Ce qu’il couvre"]'
+  rowsJson='[["Suppression au passage (getSessionFromRequest)","Quand une session expirée est présentée","Les sessions expirées de membres qui reviennent"],["Suppression explicite (déconnexion, changement de mot de passe)","À la demande du membre","Les sessions volontairement fermées"],["Purge quotidienne (purgeExpiredData)","Chaque nuit à 3 h, et au démarrage","Les sessions abandonnées"]]'
+/>
+
+Chaque mécanisme couvre un cas que les autres ne couvrent pas. Ensemble, ils garantissent que la table `Session` ne grossit jamais indéfiniment.
+
+---
+
+## Changer de mot de passe : fermer les autres appareils
+
+Le changement de mot de passe est une autre façon, plus ciblée, de faire mourir des sessions. Un membre connecté vérifie son mot de passe actuel, en choisit un nouveau, et toutes ses **autres** sessions sont fermées :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="68-123"
+  snippetHighlight="42-53"
+  snippetTitle="auth.changePassword"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du changement de mot de passe
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="68-123"
+  title="Changer de mot de passe, et fermer les autres appareils"
+  stepsJson='[{"title": "Une procédure protégée", "body": "Seul un membre connecté change son mot de passe ; l’identifiant vient de la session.", "scope": "1-56", "focus": "7-10"}, {"title": "Vérifier le mot de passe actuel", "body": "Une saisie fausse lève BAD_REQUEST. Pas UNAUTHORIZED : le membre est bien connecté, et un 401 pourrait être pris pour une session perdue. C’était le cas jusqu’à récemment.", "scope": "1-56", "focus": "20-28"}, {"title": "Refuser un mot de passe identique", "body": "Changer pour le même mot de passe ne protège de rien ; la procédure le dit plutôt que de faire semblant.", "scope": "1-56", "focus": "30-36"}, {"title": "Retrouver la session en cours", "body": "verifyJwt lit le jeton du cookie pour connaître l’identifiant de la session courante, celle qu’il ne faut pas fermer.", "scope": "1-56", "focus": "38-40"}, {"title": "Une transaction : la nouvelle empreinte, et les autres sessions supprimées", "body": "Les deux écritures réussissent ensemble ou pas du tout. NOT: { id: currentSessionId } épargne l’appareil utilisé.", "scope": "1-56", "focus": "42-53"}]'
+/>
+
+---
+
+Quelqu’un qui change son mot de passe parce qu’il le croit compromis déconnecte ainsi tous les autres appareils — y compris celui d’un éventuel intrus —, tout en restant connecté sur celui qu’il utilise.
+
+---
+
+👉 **Où nous en sommes :** toute la mécanique normale de vie et de mort d’une session est en place. Reste le cas le plus sensible, celui qui concentre le plus de pièges : le mot de passe oublié.
+
+## À suivre
+
+Les sessions naissent, vivent et meurent proprement. Reste le seul chemin qui permet d’ouvrir une session sans connaître le mot de passe.
+
+<Callout type="tip">
+**Chapitre suivant : le mot de passe oublié.** Le jeton brut et son empreinte, la demande qui ne trahit pas les comptes, et la réinitialisation, dont le lien ne peut servir qu’une fois.
+</Callout>

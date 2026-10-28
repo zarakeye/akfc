@@ -1,0 +1,303 @@
+---
+title: "La vue d’ensemble, et les pièges"
+description: "L’authentification recomposée : le parcours complet d’un clic, la cartographie des responsabilités, la défense en profondeur, les quatre parcours rejoués sur la carte des entités, dix pièges — évités ou corrigés —, ce qui reste à faire, et le récapitulatif de la partie."
+section: "Authentification et droits"
+order: 10
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  PasswordResetToken: [tokenHash, expiresAt, usedAt, requestIp, userAgent]
+  MemberGroup: [name, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+  PageVisibility: [key, published]
+stories:
+  - title: Un membre se connecte, puis navigue
+    actor: Membre
+    steps:
+      - label: Il se connecte ; une session est créée en base, un jeton signé la désigne dans un cookie
+        call: auth.login
+        section: Se connecter, puis naviguer
+      - label: À chaque requête, le serveur relit la session, le membre et son appartenance aux Administrateurs (et supprime la session si elle a expiré)
+        call: getSessionFromRequest
+        section: Se connecter, puis naviguer
+      - label: Chaque appel tRPC reçoit cette session dans son contexte
+        call: createTRPCContext
+        section: Se connecter, puis naviguer
+  - title: Le membre a oublié son mot de passe
+    actor: Visiteur
+    steps:
+      - label: Il demande un lien ; seule l'empreinte du jeton est gardée en base
+        call: auth.requestPasswordReset
+        section: Retrouver un mot de passe oublié
+      - label: Il choisit un nouveau mot de passe ; le lien est consommé et ses sessions fermées
+        call: auth.resetPassword
+        section: Retrouver un mot de passe oublié
+  - title: Le membre change de mot de passe, puis se déconnecte
+    actor: Membre connecté
+    steps:
+      - label: Il change son mot de passe ; ses autres sessions sont fermées
+        call: auth.changePassword
+        section: Changer de mot de passe, se déconnecter
+      - label: Il se déconnecte ; sa session est supprimée
+        call: auth.logout
+        section: Changer de mot de passe, se déconnecter
+  - title: Un administrateur ouvre le tableau de bord
+    actor: Administrateur
+    steps:
+      - label: Le gabarit du tableau de bord vérifie l'appartenance au groupe Administrateurs
+        call: layout /(admin)
+        section: Ouvrir le tableau de bord en administrateur
+      - label: Il publie une page restée en construction
+        call: pageVisibility.setPublished
+        section: Ouvrir le tableau de bord en administrateur
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** L’autorisation repose sur les groupes : être administrateur, c’est appartenir au groupe Administrateurs ; l’accès à un espace s’hérite par la hiérarchie des groupes.
+
+Mettons maintenant toutes les pièces côte à côte, pour voir ce qui se passe, concrètement, quand un membre utilise le site.
+
+## Le parcours complet d’un clic
+
+Imaginons un administrateur, déjà connecté, qui ouvre `/dashboard/users`. Voici ce que le système traverse :
+
+<ArchitectureDiagram
+  steps="Clic | Navigateur | Cookie __session | proxy.ts (présence, signature) | Layout racine : getSessionFromRequest | Layout du tableau de bord : administrateur ? | Page (composant client) | Appel tRPC user.getAll | createTRPCContext : getSessionFromRequest | protectedProcedure | isAdmin | Procédure | Prisma | Réponse sans empreinte | Rendu React"
+/>
+
+---
+
+Cette chaîne n’est pas théorique. Chaque étape correspond à un fichier réel, à une fonction que nous avons lue ensemble. On y remarque que la session est lue **plusieurs fois** pour une seule page : par le layout racine, par le layout du tableau de bord, puis par chaque requête tRPC. Chaque lecture est une requête SQL ; c’est le prix de la révocation immédiate, et il reste faible.
+
+---
+
+## Qui fait quoi dans le pipeline
+
+<DocsTable
+  title="Cartographie des responsabilités"
+  columnsJson='["Pièce","Rôle","Chapitre"]'
+  rowsJson='[["auth.schema.ts (Zod)","Règles des adresses et des mots de passe, partagées par les formulaires et les procédures","3"],["lib/auth/password.ts","Empreintes bcrypt : calcul, vérification, coût, empreinte factice","1, 3"],["loginService","Limite d’essais, vérification de l’adresse et du mot de passe, en temps constant","3"],["lib/security/throttle.ts","Limiteur de tentatives en mémoire (connexion, formulaire de contact)","3"],["createSessionJWT","Ligne Session + jeton signé + cookie","3"],["Cookie __session","Transport du jeton, httpOnly, secure, sameSite","3"],["getSessionFromRequest","Reconstruction de la session à chaque requête, en une requête SQL","4"],["SessionClient (contrat)","Ce qui sort vers le navigateur, champ par champ","2, 4"],["createTRPCContext","Injection de la session dans ctx","5"],["protectedProcedure","Refus des anonymes, type resserré","5"],["deleteSessionFromCookie","Déconnexion : ligne et cookie","6"],["purgeExpiredData","Purge quotidienne des sessions et liens expirés","6"],["passwordReset.service + resetPassword","Jeton brut, empreinte SHA-256, consommation atomique","7"],["Layout racine + SessionLoader","La session dès le premier affichage","8"],["useSessionStore, useCurrentUser","État de session côté navigateur","8"],["proxy.ts","Pré-filtre des pages protégées : présence et signature du jeton","8"],["isAdmin, resolveGroupAccessForUser, gardes","Autorisation : groupe Administrateurs, accès aux espaces","9"]]'
+/>
+
+---
+
+## Le principe de défense en profondeur
+
+Une idée traverse toute cette architecture : **aucune couche ne fait confiance à celle qui la précède**. Chaque étape vérifie ce qu’elle doit vérifier, même si une étape antérieure a déjà vérifié quelque chose de semblable.
+
+Exemple concret : l’expiration de la session. Elle est vérifiée à trois niveaux :
+
+- le **jeton** porte sa propre date d’expiration (`expiresIn`, tirée de `SESSION_DURATION_MS`) ;
+- la **ligne `Session`** a son `expiresAt`, calculé avec la même constante ;
+- le **cookie** a la même date (`expires`), et le navigateur l’oublie de lui-même.
+
+Si le jeton expire le premier, sa vérification échoue. Si c’est la ligne, `getSessionFromRequest` la refuse et la supprime. Si le cookie disparaît, plus rien n’est présenté. Cette redondance n’est pas de la méfiance gratuite : c’est la garantie qu’en cas de désynchronisation — une horloge décalée, une ligne modifiée à la main —, le système se comporte de façon **sûre par défaut**.
+
+La même constante sert aux trois. Ce n’était pas le cas : le jeton avait sa durée écrite en dur (`"7d"`) à côté de la constante. Elles étaient égales ; elles ne l’auraient pas forcément été le jour où l’on aurait raccourci les sessions.
+
+---
+
+<Callout type="tip">
+La défense en profondeur consiste à superposer des couches qui se protègent mutuellement.
+
+Une couche tombe ? Les autres continuent. Le proxy du projet l’a démontré malgré lui.
+</Callout>
+
+---
+
+## Les parcours, d’un bout à l’autre
+
+Quatre cas d’utilisation traversent toute cette partie. Chaque onglet ci-dessous en déroule les étapes et ce qu’elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son résumé plus bas, ou à la carte des entités, rejouée à cette étape.
+
+<Parcours />
+
+### Se connecter, puis naviguer
+
+Le formulaire valide l’adresse et le mot de passe avec `loginSchema`, puis appelle `auth.login` (chapitre 3). Le service vérifie la limite d’essais de l’adresse, compare le mot de passe à l’empreinte — ou à l’empreinte factice —, puis `createSessionJWT` crée la ligne `Session`, signe un jeton qui la désigne, et le pose dans un cookie. Le formulaire relit la session avec `getSession` et remplit le store.
+
+À chaque requête suivante, `getSessionFromRequest` vérifie le jeton, relit la session, le membre et son appartenance aux Administrateurs en une requête, supprime la session si elle a expiré (chapitre 4). `createTRPCContext` place le résultat dans `ctx.sessionClient` (chapitre 5), et le layout racine le transmet aux pages dès le HTML (chapitre 8).
+
+### Retrouver un mot de passe oublié
+
+`auth.requestPasswordReset` répond toujours de la même façon, dans le même temps ; pour une adresse connue, et hors du délai de deux minutes, il enregistre l’empreinte d’un jeton et envoie le lien sans attendre la fin de l’envoi. `auth.resetPassword` vérifie le lien, puis, dans une transaction, enregistre le nouveau mot de passe, consomme le lien (une seule fois, même en cas d’envois simultanés) et ferme toutes les sessions (chapitre 7).
+
+### Changer de mot de passe, se déconnecter
+
+`auth.changePassword` vérifie le mot de passe actuel — une saisie fausse est une `BAD_REQUEST`, pas une absence de session —, puis enregistre la nouvelle empreinte et ferme toutes les **autres** sessions, dans une transaction. `auth.logout` supprime la ligne `Session`, puis le cookie (chapitre 6).
+
+### Ouvrir le tableau de bord en administrateur
+
+Le proxy vérifie la présence et la signature du jeton (chapitre 8). Le layout serveur du tableau de bord relit la session et vérifie l’appartenance au groupe Administrateurs. Chaque écran charge ses données par des procédures `protectedProcedure.use(isAdmin)` — par exemple pour publier une page restée en construction (chapitre 9).
+
+---
+
+## Les pièges — évités, ou corrigés
+
+Nous avons lu beaucoup de code. Certaines décisions ne se voient pas dans ce qui est écrit, mais dans **ce qui n’y est pas**. D’autres, au contraire, manquaient — et l’écriture de cette partie les a fait apparaître. Les deux sont utiles à connaître.
+
+---
+
+## Piège 1 — Recopier un droit dans la session
+
+**L’erreur** : ajouter un champ `role` (ou `isAdmin`) à la table `Session`, pour éviter une jointure à chaque requête.
+
+**Ce que ça casse** : quand un membre est retiré des Administrateurs, toutes ses sessions ouvertes gardent l’ancien droit jusqu’à leur expiration — sept jours. Le changement n’a aucun effet immédiat, ce qui est exactement l’inverse de ce qu’on attend.
+
+**Dans le projet** : évité. Le champ a existé, et une migration l’a retiré. Le droit est relu à chaque requête, dans la même requête que la session (chapitre 2).
+
+---
+
+## Piège 2 — Laisser sortir l’empreinte d’un mot de passe
+
+**L’erreur** : renvoyer une ligne `User` entière, ou un `findUnique` sans `select`. L’empreinte bcrypt part alors vers le navigateur.
+
+**Ce que ça casse** : une empreinte n’est pas un mot de passe, mais elle permet de le chercher hors ligne, sans limite d’essais. Les mots de passe faibles finissent toujours par tomber.
+
+**Dans le projet** : évité pour la session — `sessionSelect` ne demande que les champs utiles, et le contrat `SessionClient` n’a pas de champ `password` (chapitres 2 et 4). Mais pas partout : la suppression d’un membre renvoyait la ligne supprimée entière, empreinte comprise, à l’écran de l’administrateur. Elle ne renvoie plus que l’identifiant (partie « API », chapitre 9).
+
+---
+
+## Piège 3 — Distinguer « adresse inconnue » et « mot de passe incorrect »
+
+**L’erreur** : répondre différemment selon que l’adresse existe ou non.
+
+**Ce que ça casse** : un attaquant **énumère les comptes** en essayant des adresses, et obtient la liste des membres du club.
+
+**Dans le projet** : évité pour le message (`INVALID_CREDENTIALS` dans les deux cas), mais pas pour le **temps de réponse**, ni à la connexion, ni dans « Mot de passe oublié ». Une adresse inconnue répondait en quelques millisecondes ; une adresse connue, en 250 ms (bcrypt) ou plusieurs secondes (l’envoi de l’e-mail). Corrigé par une comparaison à une empreinte factice, et par un envoi qui n’est plus attendu (chapitres 3 et 7).
+
+---
+
+## Piège 4 — Stocker le jeton de réinitialisation en clair
+
+**L’erreur** : enregistrer en base la valeur envoyée dans l’e-mail.
+
+**Ce que ça casse** : une copie de la base donne tous les liens en attente, utilisables tels quels.
+
+**Dans le projet** : évité. Seule l’empreinte SHA-256 est enregistrée (chapitre 7).
+
+---
+
+## Piège 5 — Oublier de fermer les sessions au changement de mot de passe
+
+**L’erreur** : changer le mot de passe, et s’arrêter là.
+
+**Ce que ça casse** : si le membre change son mot de passe parce qu’il le croit compromis, la session ouverte par l’intrus reste valide. Le nouveau mot de passe ne sert à rien tant que l’intrus garde son cookie.
+
+**Dans le projet** : évité. La réinitialisation ferme toutes les sessions ; le changement de mot de passe, toutes sauf celle en cours (chapitres 6 et 7).
+
+---
+
+## Piège 6 — Vérifier par une lecture ce qu’une écriture doit garantir
+
+**L’erreur** : lire « ce lien a-t-il déjà servi ? », puis écrire — même dans une transaction.
+
+**Ce que ça casse** : deux requêtes simultanées lisent toutes deux « pas encore », et écrivent toutes deux. Un lien à usage unique sert deux fois.
+
+**Dans le projet** : corrigé. La réinitialisation enveloppait bien ses trois écritures dans une transaction, mais marquait le lien par un simple `update`. Elle le consomme désormais par `updateMany` conditionnel, et seule la requête qui l’a réellement consommé va au bout (chapitre 7).
+
+---
+
+## Piège 7 — Faire confiance au proxy pour la sécurité
+
+**L’erreur** : mettre l’authentification dans `proxy.ts` (ou `middleware.ts`), en considérant qu’une requête qui atteint la page est déjà vérifiée.
+
+**Ce que ça casse** : la CVE-2025-29927 a permis de contourner le middleware de Next par un simple en-tête. Et une configuration fausse peut le désactiver sans bruit.
+
+**Dans le projet** : évité dans le principe, démontré dans les faits. Le proxy ne vérifie que la présence et la signature du jeton ; la vérification qui fait foi vit dans `getSessionFromRequest`, `protectedProcedure`, `isAdmin` et les layouts serveur. Et pendant que son `matcher` visait un groupe de routes qui n’apparaît dans aucune adresse, le proxy ne tournait pas du tout — sans que la sécurité des données en dépende (chapitre 8).
+
+---
+
+## Piège 8 — Laisser une clé de recherche sous deux formes
+
+**L’erreur** : enregistrer une adresse e-mail telle qu’elle est tapée, et la chercher sous une autre forme.
+
+**Ce que ça casse** : `Jean.Dupont@…` enregistrée, `jean.dupont@…` cherchée : le compte n’est pas trouvé. Et comme « Mot de passe oublié » répond pareil que le compte existe ou non, le membre n’en sait rien.
+
+**Dans le projet** : corrigé. Toute adresse est mise en minuscules à l’entrée, par `emailSchema`, et une migration a aligné les adresses existantes (chapitre 3).
+
+---
+
+## Piège 9 — Ne pas limiter les essais
+
+**L’erreur** : compter sur la lenteur de bcrypt pour freiner les essais de mot de passe.
+
+**Ce que ça casse** : 250 ms par essai, c’est encore quatorze mille essais par heure, sur une seule adresse, sans que rien ne s’y oppose.
+
+**Dans le projet** : corrigé. Dix échecs par quart d’heure et par adresse, quelle que soit l’adresse (chapitre 3).
+
+---
+
+## Piège 10 — Coder une saisie fausse comme une absence de session
+
+**L’erreur** : répondre `UNAUTHORIZED` à un mot de passe actuel incorrect, au changement de mot de passe ou à la signature en ligne du droit à l’image.
+
+**Ce que ça casse** : `UNAUTHORIZED` (401) signifie « aucune session ». Un client qui traite le 401 comme une déconnexion — c’est un réflexe courant, et le projet pourrait l’adopter — déconnecterait un membre qui s’est simplement trompé de mot de passe.
+
+**Dans le projet** : corrigé. Une saisie fausse d’un membre connecté est une `BAD_REQUEST`.
+
+---
+
+<Callout type="info">
+Ces pièges ne se voient pas dans le code qui fonctionne.
+
+Ils se voient dans **l’absence** de code — et dans ce que le serveur révèle sans le dire : une durée, un code HTTP, un champ de trop. C’est ce qu’on appelle une architecture mature : pas seulement faire les bonnes choses, mais savoir chercher les mauvaises, y compris dans son propre code.
+</Callout>
+
+---
+
+## Ce qui reste à faire
+
+Un système d’authentification n’est jamais terminé. Deux points sont connus, et décrits ici plutôt que tus.
+
+**Un limiteur qui survive au redémarrage.** La limite d’essais de connexion (chapitre 3) vit en mémoire : un redémarrage du site la remet à zéro, et elle ne tiendrait pas avec plusieurs serveurs. Pour le site du club, c’est suffisant ; le jour où ce ne le serait plus, les tentatives iraient en base.
+
+**L’adresse IP du demandeur.** `requestIp`, enregistré avec chaque demande de réinitialisation, est lu dans l’en-tête `x-forwarded-for`, qu’un client peut écrire lui-même. Il sert à la traçabilité, jamais à décider d’un droit — et il ne doit pas devenir la clé d’un limiteur sans qu’on sache exactement quelle adresse le proxy du serveur y inscrit.
+
+---
+
+## Ce que nous avons appris
+
+Nous avons parcouru un chemin considérable.
+
+Partis d’une question silencieuse — *« qui parle au backend en ce moment ? »* —, nous avons suivi, couche par couche, un système d’authentification complet, et la façon dont il s’articule avec le reste du projet.
+
+Trois idées maîtresses le traversent :
+
+**1. L’authentification est une chaîne de responsabilités.**  
+Aucun fichier ne la porte à lui seul. Elle vit dans le schéma partagé, le service de connexion, la création de la session, le cookie, `getSessionFromRequest`, le contexte tRPC, `protectedProcedure`, le layout racine, le proxy, la purge, la réinitialisation, et les groupes. C’est leur articulation qui fait la qualité du système.
+
+**2. La sécurité se vérifie sur tout ce qui sort.**  
+Le message, le code HTTP, la durée de la réponse, les champs renvoyés : chacun peut trahir ce que les autres cachent. Les corrections de cette partie sont presque toutes de cette nature — une fuite par le temps, un champ de trop, un code mal choisi.
+
+**3. Un bon backend est un backend « confiant ».**  
+Une fois les garanties posées en amont, le code métier s’écrit sans défenses répétées : `ctx.sessionClient.user.id` sans `?`, pas de `if (!user) throw`. Parce que la chaîne a déjà fait son travail — et qu’on sait exactement laquelle.
+
+---
+
+## La boucle est bouclée
+
+La partie « API » construisait un backend typé, avec un contexte injecté dans chaque procédure. Nous ne savions pas encore d’où venait ce contexte.
+
+Nous le savons maintenant.
+
+Et nous savons pourquoi il est **fiable** — pas parce que TypeScript le garantit (il ne le peut pas), mais parce qu’une chaîne de vérifications, de sélections, de transactions et de gardes s’en assure, à chaque requête.
+
+<Callout type="tip">
+L’authentification n’est pas une fonctionnalité.
+
+C’est une infrastructure silencieuse, qui fait son travail en arrière-plan pour que tout le reste du code puisse être simple. Un système d’authentification réussi, c’est un système qu’on ne remarque plus.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Que contient le cookie ?","Un jeton signé (HS256) qui ne porte que l’identifiant d’une ligne Session."],["Comment révoquer une session ?","Supprimer la ligne Session ; le jeton devient inutile."],["Que fait la connexion pour une adresse inconnue ?","La même chose, dans le même temps : une comparaison à une empreinte factice, puis INVALID_CREDENTIALS."],["Combien d’essais de mot de passe ?","Dix échecs par quart d’heure et par adresse, quelle que soit l’adresse."],["Sous quelle forme les adresses sont-elles enregistrées ?","En minuscules, par emailSchema, à l’entrée de tous les chemins."],["Qu’est-ce qui part vers le navigateur ?","Un SessionClient aux champs choisis par la sélection, jamais la ligne User."],["Combien de requêtes pour lire une session ?","Une : session, membre et appartenance aux Administrateurs ensemble."],["Qu’est-ce qu’un administrateur ?","Un membre du groupe isAdminGroup."],["Comment se calcule l’accès à un espace de groupe ?","Meilleur niveau entre l’appartenance au groupe et à ses ancêtres."],["Qui supprime les sessions mortes ?","getSessionFromRequest au passage, la déconnexion, et la purge de chaque nuit."],["Qu’est-ce qui garantit qu’un lien de réinitialisation ne sert qu’une fois ?","Son marquage par updateMany conditionnel, dans la transaction."],["Le proxy protège-t-il ?","Il filtre les pages protégées ; la protection qui fait foi vit plus bas."]]' />
+
+## À suivre
+
+Nous savons qui fait chaque requête et ce qu’il a le droit de faire. Ces règles prennent tout leur poids sur les fichiers : un espace de groupe ne doit s’ouvrir qu’à ses membres, une photo personnelle qu’à son propriétaire, et un fichier ne devient public que par un geste délibéré.
+
+<Callout type="tip">
+**Partie suivante : le stockage et les médias.** Comment un fichier part du navigateur vers le stockage sans passer par notre serveur, comment il est vérifié, et comment les règles de cette partie décident de qui peut le lire.
+</Callout>

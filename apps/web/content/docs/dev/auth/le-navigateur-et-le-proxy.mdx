@@ -1,0 +1,268 @@
+---
+title: "Le navigateur et le proxy"
+description: "Autour de la session : le layout racine qui lit la session côté serveur, SessionLoader, le contexte et le store (et pourquoi les deux), le formulaire de connexion, puis le proxy des pages protégées, un matcher qui ne correspondait à aucune adresse, et la division du travail entre les couches."
+section: "Authentification et droits"
+order: 8
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le côté serveur de la session est complet : naissance, lecture à chaque requête, mort, et réinitialisation du mot de passe.
+
+## Mouvement 3 — Autour de la session
+
+Nous avons construit la naissance d’une session (Mouvement 1), puis sa vie complète à travers tout le backend (Mouvement 2).
+
+Mais l’authentification n’est jamais purement backend. Elle touche au navigateur, qui doit savoir « qui suis-je » pour afficher la bonne interface. Elle touche à l’entrée du site, où un premier filtre peut écarter une requête sans jeton avant même qu’une page ne soit rendue. Et elle débouche sur l’autre question du début : une fois qu’on sait qui parle, a-t-il le droit ?
+
+- **Ce chapitre** — Le navigateur : comment la session arrive dès le premier affichage (le layout racine, `SessionLoader`, `useCurrentUser`), puis le formulaire de connexion ; et le proxy, le pré-filtre à l’entrée des pages protégées, avec une erreur de configuration qui l’a longtemps rendu inopérant.
+- **Chapitre 9** — L’autorisation : les groupes, les niveaux d’accès, l’héritage, le groupe Administrateurs, et les gardes qui s’appuient sur eux.
+- **Chapitre 10** — La vue d’ensemble, les parcours complets, et les pièges — évités, ou corrigés.
+
+---
+
+## Le navigateur : la session dès le premier affichage
+
+Côté navigateur, la question « qui est connecté ? » se pose dès le premier affichage. Le header doit montrer, tout de suite, soit le bouton « Se connecter », soit l’avatar du membre. Une réponse qui arrive après coup se voit : le header affiche « visiteur », puis bascule sur « connecté » une fraction de seconde plus tard.
+
+La première version du projet avait exactement ce défaut. Un composant, `SessionLoader`, appelait `getSession` après le montage de l’application, et le header attendait la réponse. Le projet lit désormais la session **côté serveur**, dans le layout racine, et la transmet au navigateur avec la page :
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+  // Session lue ici, côté serveur : le header s'affiche d'emblée connecté ou non (voir
+  // SessionLoader / useCurrentUser). Base indisponible → visiteur anonyme, pas d'erreur.
+  const initialSession = await getSessionFromRequest().catch(() => null);
+```
+
+```tsx
+// apps/web/src/app/layout.tsx (extrait)
+        <AppProviders>
+          <SessionLoader initialSession={initialSession}>{children}</SessionLoader>
+        </AppProviders>
+```
+
+`getSessionFromRequest`, sans requête en argument, lit le cookie avec `cookies()` de Next (chapitre 5). Le `.catch(() => null)` dit ce qui se passe si la base ne répond pas : le visiteur est traité comme anonyme, et le site s’affiche quand même.
+
+La session lue part ensuite dans `SessionLoader`, qui alimente deux endroits à la fois :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/SessionLoader.tsx"
+  filename="SessionLoader.tsx"
+  snippetRange="1-46"
+  snippetHighlight="25-30,45"
+  snippetTitle="SessionLoader : le store et le contexte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du SessionLoader
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/auth/SessionLoader.tsx"
+  filename="SessionLoader.tsx"
+  snippetRange="1-46"
+  title="Comment le navigateur sait « qui suis-je » dès le départ"
+  stepsJson='[{"title": "Un composant client", "body": "SessionLoader utilise useEffect : il ne tourne que dans le navigateur. Il est placé dans le layout racine, autour de toute l’application.", "scope": "1-46", "focus": "1-1"}, {"title": "La session vient du serveur", "body": "initialSession est la session lue par le layout racine, transmise avec la page : null pour un visiteur, undefined seulement si aucune valeur n’a été passée.", "scope": "1-46", "focus": "18-24"}, {"title": "Le store est rempli sans requête", "body": "Avec une valeur du serveur, hydrate remplit le store immédiatement. Aucun appel à getSession, aucun délai.", "scope": "1-46", "focus": "25-30"}, {"title": "Le repli : demander à l’API", "body": "Sans valeur du serveur, le composant appelle getSession, comme dans la première version. cancelled évite d’écrire dans le store si le composant a disparu entre-temps.", "scope": "1-46", "focus": "31-43"}, {"title": "Le contexte pour le premier rendu", "body": "InitialSessionProvider porte la même session, pour les composants qui s’affichent avant que l’effet n’ait rempli le store.", "scope": "1-46", "focus": "45-45"}]'
+/>
+
+---
+
+## Pourquoi deux endroits : un contexte et un store
+
+`SessionLoader` range la session dans un **store Zustand** (`useSessionStore`), et la confie aussi à un **contexte React** (`InitialSessionProvider`). Ce doublon apparent répond à une contrainte précise du rendu serveur :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/InitialSession.tsx"
+  filename="InitialSession.tsx"
+  snippetRange="1-38"
+  snippetHighlight="8-16,31-37"
+  snippetTitle="InitialSession : la session du rendu, propre à chaque requête"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Le commentaire de tête le dit : un store Zustand est un **module**. Sur le serveur, ce module est partagé par toutes les requêtes de tous les visiteurs. Y ranger la session d’un membre pendant le rendu serveur, ce serait risquer de l’afficher à quelqu’un d’autre. Le store reste donc vide pendant le rendu serveur, et n’est rempli qu’une fois dans le navigateur, par l’effet de `SessionLoader`.
+
+Un contexte React, lui, est propre à **chaque rendu** : il peut porter la session du visiteur dès le HTML, sans risque de mélange. `useCurrentUser` combine les deux : la valeur du contexte tant que le store n’est pas initialisé (statut `idle`), puis celle du store, qui suit ensuite les connexions et les déconnexions.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi Zustand plutôt qu’un contexte pour la suite ?
+
+Si le contexte peut porter la session, pourquoi ne pas s’en servir partout ?
+
+Le contexte React a une limite : **chaque changement de sa valeur fait se réafficher tous ses consommateurs**, même ceux que le changement ne concerne pas. Zustand permet des **sélecteurs fins** : un composant s’abonne à la seule partie qu’il lit (`useSessionStore((s) => s.session?.user?.avatar)`). Quand l’avatar change, seuls les composants qui lisent l’avatar se réaffichent.
+
+La session est lue par une trentaine de composants — header, menus, cloches de notification, finder, formulaires. Pour la valeur vivante, le store est le bon outil ; pour la valeur initiale, propre à la requête, le contexte. Chacun fait ce qu’il sait faire.
+
+Le store a d’ailleurs été allégé pendant l’écriture de cette partie. Il portait un indicateur `loading`, une fonction `resetStatus` et deux états d’animation (`justLoggedIn`, `justLoggedOut`) remis à zéro par des minuteries de trois secondes — rien de tout cela n’était lu par aucun composant. Il reste trois états (`idle`, `guest`, `authenticated`) et les actions réellement utilisées.
+
+---
+
+## Le formulaire de connexion : le cœur de la soumission
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filename="LoginForm.tsx"
+  snippetRange="37-74"
+  snippetHighlight="13-30"
+  snippetTitle="Le handler de soumission du formulaire de connexion"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du handler
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/auth/components/LoginForm.tsx"
+  filename="LoginForm.tsx"
+  snippetRange="37-74"
+  title="Du clic au tableau de bord"
+  stepsJson='[{"title": "preventDefault et validation", "body": "Le handler empêche l’envoi HTML classique, et refuse d’appeler le serveur si le schéma partagé signale un problème : le message affiché est celui du schéma.", "scope": "1-38", "focus": "2-7"}, {"title": "L’appel tRPC", "body": "trpcClient.auth.login.mutate, typé de bout en bout. L’adresse est envoyée sans ses espaces.", "scope": "1-38", "focus": "12-16"}, {"title": "Un échec attendu", "body": "Si success est faux, TypeScript sait que error existe. AUTH_ERRORS traduit INVALID_CREDENTIALS et TOO_MANY_ATTEMPTS en messages pour le membre.", "scope": "1-38", "focus": "18-21"}, {"title": "Relire la session", "body": "La connexion ne renvoie pas la session : le formulaire la demande à getSession, voir l’encart ci-dessous.", "scope": "1-38", "focus": "23-28"}, {"title": "Remplir le store, puis partir", "body": "loginSuccess range la session dans le store, puis le routeur mène à l’accueil.", "scope": "1-38", "focus": "30-31"}, {"title": "Une erreur imprévue", "body": "Toute autre erreur — réseau, serveur — atterrit ici, avec un message générique. Le détail est dans la console du navigateur et, côté serveur, dans les journaux.", "scope": "1-38", "focus": "32-37"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ne pas renvoyer la session directement depuis login ?
+
+Cette séparation pourrait sembler redondante à première vue.
+
+`login` pourrait renvoyer le `SessionClient` directement dans sa réponse. Cela économiserait un aller-retour réseau. Alors pourquoi ne pas le faire ?
+
+Parce que cela mélangerait **deux responsabilités distinctes** :
+
+- `login` répond à : *« est-ce que ça a marché ? »* (succès, ou la raison de l’échec)
+- `getSession` répond à : *« qui es-tu ? »* (le `SessionClient` complet)
+
+En les séparant :
+
+- `getSession` reste **réutilisable indépendamment** de la connexion : après une modification du profil (`fetchSession`), ou chaque fois que le front a besoin de relire la vérité du serveur ;
+- `login` reste **focalisé sur sa seule responsabilité** — authentifier, pas projeter ;
+- le contrat de retour de `login` reste **minimal et stable** : si `SessionClient` évolue, la signature de `login` ne change pas.
+
+Le coût d’un aller-retour supplémentaire est négligeable, une fois par connexion, à côté de la clarté gagnée.
+
+---
+
+<Callout type="tip">
+Le navigateur reflète la discipline du backend.
+
+Deux appels, deux responsabilités. Le coût est imperceptible pour le membre ; la clarté pour le développeur est réelle.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le navigateur sait dès le premier affichage qui est connecté, et sait ouvrir une session. Mais il existe une couche encore plus en amont des pages protégées, qui s’exécute avant même qu’elles ne soient rendues : le proxy.
+
+---
+
+## Le proxy : pré-filtre à l’entrée des pages protégées
+
+Avant que le tableau de bord ou le profil ne soient rendus, la requête passe par `proxy.ts`.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/proxy.ts"
+  filename="proxy.ts"
+  snippetRange="1-59"
+  snippetHighlight="32-42"
+  snippetTitle="proxy.ts : le pré-filtre des pages protégées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du proxy
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/proxy.ts"
+  filename="proxy.ts"
+  snippetRange="1-59"
+  title="Le portier, à l’entrée des pages protégées"
+  stepsJson='[{"title": "Les bancs d’essai", "body": "Des pages de développement (test-finder, test-picker, simpleEditor) passent aussi par ici : en production, elles répondent 404, quel que soit le visiteur.", "scope": "1-59", "focus": "20-30"}, {"title": "Pas de cookie : retour à l’accueil", "body": "Sans cookie (ou sans secret configuré), redirection immédiate. Aucune requête en base : c’est un rejet rapide.", "scope": "1-59", "focus": "32-35"}, {"title": "La signature, et rien d’autre", "body": "jwt.verify, avec HS256 imposé. Un jeton bien signé passe, même si sa session a été révoquée : la page vérifiera.", "scope": "1-59", "focus": "37-42"}, {"title": "Le matcher, et son histoire", "body": "Le proxy ne s’exécute que pour /dashboard, /profil et les bancs d’essai. Le commentaire garde la trace de l’ancien matcher, qui visait un groupe de routes et ne correspondait à aucune adresse.", "scope": "1-59", "focus": "45-59"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — un proxy qui ne tournait jamais
+
+Le commentaire du `matcher` raconte une erreur instructive. Les pages du tableau de bord vivent dans `app/(admin)/dashboard/…`. Le dossier `(admin)` est un **groupe de routes** : ses parenthèses disent à Next de l’ignorer dans les adresses. La page est servie à `/dashboard/…`, pas à `/(admin)/dashboard/…`.
+
+L’ancien `matcher` visait pourtant `"/(admin)/:path*"`. Aucune adresse ne commençant par `/(admin)`, le proxy ne s’exécutait **jamais**. Rien ne le signalait : aucune erreur, aucune page cassée. Un visiteur sans jeton qui ouvrait `/dashboard` n’était pas renvoyé à l’accueil par le proxy — il passait.
+
+Ce qui a évité le pire, c’est que le proxy n’était pas seul : chaque procédure d’administration exige `isAdmin`. Le visiteur voyait au mieux le squelette du tableau de bord, dont aucune donnée ne se chargeait. Depuis, le `matcher` vise les vraies adresses, et un layout serveur garde aussi l’interface du tableau de bord (chapitre 9).
+
+C’est la meilleure démonstration du principe de la section suivante : la protection qui compte vit **plus bas**, là où elle ne dépend pas d’une configuration qu’on ne voit pas fonctionner.
+
+---
+
+## 🔭 Pour aller plus loin — proxy.ts en Next.js 16
+
+Next.js 16 a renommé l’ancienne convention `middleware.ts` en `proxy.ts`. Le renommage n’est pas cosmétique.
+
+Le terme « middleware » prêtait à confusion avec Express, où un middleware porte volontiers de la logique applicative. Dans Next, ce fichier vit à la **frontière** — entre le navigateur et l’application — et n’est pas fait pour porter la logique métier. Le nom « proxy » rend cette intention explicite.
+
+Le changement fait aussi écho à un incident réel : en mars 2025, une vulnérabilité critique (**CVE-2025-29927**) permettait de contourner entièrement le middleware de Next, en ajoutant à la requête un en-tête HTTP `x-middleware-subrequest`. Elle touchait les versions 11.1.4 à 15.2.2. Toute application qui faisait reposer ses autorisations sur le middleware seul était ouverte.
+
+L’enseignement est central : **un proxy ne doit jamais être la seule couche de sécurité**. Il filtre, il écarte tôt, il évite de rendre une page pour rien — mais la vérification qui fait foi vit plus bas.
+
+---
+
+## Le rôle exact du proxy dans la chaîne
+
+`proxy.ts` fait deux choses, pas plus :
+
+- il vérifie la **présence** du cookie de session ;
+- il vérifie la **signature** du jeton (et son algorithme, et sa date).
+
+Il ne fait pas :
+
+- de recherche en base (la session a pu être révoquée depuis) ;
+- de lecture des droits (ce n’est pas son rôle) ;
+- de chargement du membre (c’est la responsabilité du backend).
+
+Et il ne s’exécute **que** devant les pages listées dans son `matcher` : `/dashboard`, `/profil` et les bancs d’essai. Il ne voit jamais `/api/trpc`, ni les routes de fichiers.
+
+---
+
+👉 **En cas d’échec**, le proxy renvoie à l’accueil. Pas d’erreur, pas de page d’explication : comme le portier d’un club, il ne discute pas.
+
+👉 **En cas de succès**, il laisse passer. Mais ce succès n’est qu’un feu vert préliminaire : un jeton bien signé peut désigner une session supprimée.
+
+---
+
+## La division du travail
+
+<DocsTable
+  title="Qui vérifie quoi ?"
+  columnsJson='["Couche","Ce qu’elle vérifie","Ce qu’elle ne fait pas"]'
+  rowsJson='[["proxy.ts (pages /dashboard, /profil)","Présence du cookie, signature du jeton","Recherche en base, droits, membre"],["getSessionFromRequest","Signature + existence en base + expiration + projection","Autorisation"],["Layout serveur du tableau de bord","Session + administrateur (ou traitant de demandes)","Données : chaque procédure se protège elle-même"],["protectedProcedure","Session présente, type resserré","Règles métier de la procédure"],["isAdmin, gardes d’espace","Droit précis : groupe Administrateurs, niveau sur un espace","Validation de l’entrée, exécution"]]'
+/>
+
+Chaque couche ajoute quelque chose que les précédentes n’ont pas fait. Et surtout : **si une couche tombe**, les autres continuent de protéger — le proxy l’a démontré malgré lui. C’est la définition de la défense en profondeur.
+
+---
+
+<Callout type="warning">
+Un proxy qui porte seul la sécurité est une bombe à retardement.
+
+La CVE-2025-29927 l’a montré à grande échelle, et le `matcher` du projet à petite échelle : la seule protection fiable vit plus bas, là où elle ne peut pas être contournée ni mal configurée en silence.
+</Callout>
+
+## À suivre
+
+Nous savons qui parle à chaque requête, côté serveur comme côté navigateur. Reste la seconde question du premier chapitre : a-t-il le droit ?
+
+<Callout type="tip">
+**Chapitre suivant : les droits par les groupes.** Groupes, niveaux d’accès, héritage, le groupe Administrateurs et ses deux protections, les gardes, le tableau de bord et les pages en construction.
+</Callout>

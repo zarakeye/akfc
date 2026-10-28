@@ -1,0 +1,143 @@
+---
+title: "Les droits par les groupes"
+description: "L’autorisation dans le projet : des groupes plutôt que des rôles, les niveaux VIEWER et EDITOR, l’héritage par la hiérarchie, le groupe Administrateurs et ses deux protections, les gardes qui s’appuient sur une seule source pour chaque règle, le layout du tableau de bord et les pages en construction."
+section: "Authentification et droits"
+order: 9
+entities:
+  User: [email]
+  MemberGroup: [name, isCollaborative, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+  PageVisibility: [key, published]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le navigateur reçoit la session dès le premier affichage ; le proxy filtre l’entrée des pages protégées, sans jamais être la protection qui fait foi.
+
+Nous savons, à chaque requête, **qui** parle. Reste la seconde question du premier chapitre : **a-t-il le droit ?**
+
+## Les droits : des groupes, pas des rôles
+
+Les droits ne reposent pas sur un rôle attaché au membre, mais sur ses **groupes**. Un membre peut appartenir à plusieurs groupes, et chaque appartenance a un niveau :
+
+<DocsTable columnsJson='["Notion","Modèle","Signification"]' rowsJson='[["Groupe","MemberGroup","Un ensemble de membres. S’il est collaboratif (isCollaborative), il a un espace de fichiers."],["Appartenance","MemberGroupMembership","Un membre dans un groupe, avec un niveau d’accès : VIEWER (consulter) ou EDITOR (consulter et déposer)."],["Hiérarchie","MemberGroup.parentGroupId","Un groupe peut avoir un groupe parent ; les membres du parent ont accès aux espaces des descendants."],["Administrateurs","MemberGroup.isAdminGroup","Un groupe unique, créé au démarrage s’il n’existe pas (ensureAdminGroup). Ses membres sont les administrateurs."]]' />
+
+Ce modèle répond aux besoins du club sans nouvelle notion : un groupe « Bureau » qui reçoit certains documents, un groupe par cours avec son espace partagé, des encadrants qui voient les espaces de tous les cours d’une discipline par l’héritage. La partie « Données » a raconté comment il a remplacé les rôles et les permissions du début du projet.
+
+---
+
+## Être administrateur
+
+**Être administrateur, c’est appartenir au groupe Administrateurs.** Aucun champ de `User` ne le dit. `getSessionFromRequest` le lit avec la session, en une requête (chapitre 4), et le pose dans `SessionClient.user.isAdmin`. Les services qui n’ont pas la session sous la main — une garde appelée depuis une route de fichiers, par exemple — appliquent la même règle :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts"
+  filename="isAdminByGroup.service.ts"
+  snippetRange="1-17"
+  snippetHighlight="8-16"
+  snippetTitle="isAdminByGroup : la même règle, sans la session"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le groupe lui-même est garanti au démarrage du site, par `instrumentation.ts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts"
+  filename="ensureAdminGroup.service.ts"
+  snippetRange="1-39"
+  snippetHighlight="20-34"
+  snippetTitle="ensureAdminGroup : un groupe unique, garanti au démarrage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux règles protègent ce groupe contre une fausse manœuvre, toutes deux dans les procédures (partie « API ») : il ne peut pas être supprimé, et un administrateur ne peut pas s’en retirer lui-même. Sans la seconde, le dernier administrateur pouvait se retirer et laisser le club sans personne pour gérer le site.
+
+---
+
+## L’accès à l’espace d’un groupe : l’héritage
+
+L’accès à l’espace d’un groupe se calcule en remontant la hiérarchie : on lit l’appartenance au groupe visé, puis à son parent, et ainsi de suite, et l’on garde le meilleur niveau.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts"
+  filename="resolveGroupAccessForUser.service.ts"
+  snippetRange="1-43"
+  snippetHighlight="20-40"
+  snippetTitle="resolveGroupAccessForUser : l’héritage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du calcul d’accès
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts"
+  filename="resolveGroupAccessForUser.service.ts"
+  snippetRange="1-43"
+  title="Remonter la hiérarchie, garder le meilleur niveau"
+  stepsJson='[{"title": "Trois niveaux", "body": "NONE, VIEWER, EDITOR : l’accès effectif d’un membre à l’espace d’un groupe.", "scope": "1-14", "focus": "3-3"}, {"title": "Le commentaire dit ce qu’il ne traite pas", "body": "L’administrateur n’est pas traité ici : les gardes le vérifient avant d’appeler cette fonction. Une fonction, une règle.", "scope": "1-14", "focus": "13-13"}, {"title": "Partir du groupe visé", "body": "cursor commence au groupe demandé ; best garde le meilleur niveau trouvé.", "scope": "15-43", "focus": "20-22"}, {"title": "L’appartenance à ce niveau de la hiérarchie", "body": "Une recherche par la clé composée groupId_userId (chapitre « Les relations » de la partie « Données »). EDITOR est le maximum : inutile de remonter plus haut.", "scope": "15-43", "focus": "27-32"}, {"title": "Monter au parent", "body": "On lit le parent du groupe, et l’on recommence. Les membres d’un groupe parent ont ainsi accès aux espaces de tous ses descendants.", "scope": "15-43", "focus": "34-39"}, {"title": "Une protection contre les boucles", "body": "seen garde les groupes déjà visités. Un groupe qui serait par erreur son propre ancêtre ne bloque pas la requête : la boucle s’arrête.", "scope": "15-43", "focus": "24-25"}]'
+/>
+
+---
+
+## Les gardes
+
+Les gardes du projet s’appuient toutes sur ces deux règles — administrateur, accès à un espace :
+
+<DocsTable columnsJson='["Garde","Règle"]' rowsJson='[["assertCanReadPath","Lire un dossier du finder : administrateur, ou accès à l’espace du groupe visé."],["assertCanWriteGroupSpace","Déposer dans l’espace d’un groupe : administrateur, ou EDITOR."],["canReadStorageKey","Obtenir un fichier privé : administrateur, accès à l’espace du groupe, ou propriétaire de l’espace personnel."],["assertCanTrashPaths","Jeter : administrateur partout, EDITOR dans l’espace de son groupe."],["Layout serveur (admin)","Ouvrir le tableau de bord : administrateur, ou traitant d’au moins une catégorie de demandes."]]' />
+
+<Callout type="info">
+Une seule source pour chaque règle : « administrateur » se lit toujours dans le groupe Administrateurs, « accès à un espace » toujours par `resolveGroupAccessForUser`. Aucune garde ne réécrit sa propre version de la règle.
+</Callout>
+
+Les gardes d’espace ne peuvent pas vivre dans la chaîne d’une procédure, comme `isAdmin` : pour savoir si un membre peut écrire dans un dossier, il faut connaître le dossier, c’est-à-dire l’entrée. Elles sont donc appelées en tête de la procédure, avec le chemin visé ; la partie « Stockage et médias » les détaille.
+
+---
+
+## Le tableau de bord : une garde pour l’interface
+
+Les procédures d’administration se protègent elles-mêmes. Mais l’**interface** du tableau de bord mérite aussi sa garde : sans elle, un membre qui ouvre `/dashboard` verrait le squelette des écrans, avec des listes vides et des erreurs. Un layout serveur, placé au-dessus de tout le tableau de bord, s’exécute avant le moindre rendu :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/layout.tsx"
+  filename="layout.tsx"
+  snippetRange="1-33"
+  snippetHighlight="21-33"
+  snippetTitle="Le layout serveur du tableau de bord"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le commentaire de tête dit l’essentiel : ce n’est **pas** la seule protection. Le layout garde l’interface ; les données restent gardées par leurs procédures. Retirer ce layout dégraderait l’expérience, pas la sécurité.
+
+---
+
+## Les pages en construction
+
+Une dernière forme d’autorisation concerne les pages éditoriales (accueil, association, contacts). Tant qu’un administrateur ne les a pas publiées, elles affichent « Page en construction » aux visiteurs, et leur vrai contenu aux administrateurs, qui peuvent ainsi les préparer et les relire en conditions réelles :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/editorial/editorialGate.tsx"
+  filename="editorialGate.tsx"
+  snippetRange="15-22"
+  snippetHighlight="1-8"
+  snippetTitle="isEditorialPageGated : afficher, ou « en construction »"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La même règle — administrateur ou non — sert ici à choisir **quoi afficher**, et non à refuser une action. Elle passe par la même source : la session et son `isAdmin`.
+
+## À suivre
+
+Toutes les pièces sont sur la table : qui parle, et ce qu’il a le droit de faire. Il reste à les voir ensemble, d’un bout à l’autre.
+
+<Callout type="tip">
+**Chapitre suivant : la vue d’ensemble.** Le parcours complet d’un clic, les quatre parcours de la partie, la défense en profondeur, et les pièges — évités, ou corrigés.
+</Callout>

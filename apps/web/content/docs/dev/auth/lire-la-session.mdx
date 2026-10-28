@@ -1,0 +1,210 @@
+---
+title: "Lire la session à chaque requête"
+description: "Le routeur d’authentification et ses six procédures, puis getSessionFromRequest : la lecture du jeton, sa vérification, la session relue en base avec le membre et son groupe Administrateurs en une requête, l’expiration, la double vérification jeton + base, et la projection vers SessionClient."
+section: "Authentification et droits"
+order: 4
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isAdminGroup]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une connexion réussie laisse une ligne `Session` en base et un cookie qui porte un jeton signé ne contenant que son identifiant.
+
+## Mouvement 2 — La vie d’une session
+
+Nous avons construit la naissance d’une session.
+
+Mais une session qui naît et qui ne sait pas vivre est inutile.
+
+Comment, à la **prochaine requête** du membre, le backend va-t-il reconstruire son identité ? Comment cette identité sera-t-elle exploitée par les procédures ? Comment la détruire à la déconnexion, la nettoyer quand elle expire, la révoquer quand le mot de passe change ? Et comment reprendre la main sur un compte dont on a oublié le mot de passe ?
+
+C’est tout cela que nous allons construire dans ce second mouvement.
+
+- **Ce chapitre** — Le routeur d’authentification dans son ensemble, puis le cœur battant du système : `getSessionFromRequest`, qui reconstruit l’identité à chaque requête, du cookie jusqu’au `SessionClient`.
+- **Chapitre 5** — Comment `createTRPCContext` injecte cette session dans le contexte de chaque procédure, et comment `protectedProcedure` l’exploite.
+- **Chapitre 6** — Comment une session meurt : la déconnexion, la purge des sessions expirées, et le changement de mot de passe qui ferme les autres appareils.
+- **Chapitre 7** — Le cas le plus sensible : le mot de passe oublié, avec son jeton dont seule l’empreinte est gardée, sa durée courte, son délai entre deux demandes, et sa consommation atomique.
+
+À la fin de ce mouvement, nous saurons comment une session vit, comment elle est exploitée partout dans le backend, et comment elle meurt — volontairement, passivement, ou par sécurité.
+
+---
+
+## Le routeur auth : l’orchestration des intentions
+
+Nous avons vu le service. Voyons maintenant comment il est exposé par tRPC.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="22-127"
+  snippetHighlight="6,39,53,104"
+  snippetTitle="Vue d’ensemble du routeur d’authentification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+Le routeur `auth` expose **six procédures** :
+
+- `login` (publique)
+- `logout` (protégée)
+- `changePassword` (protégée)
+- `getSession` (publique)
+- `requestPasswordReset` (publique)
+- `resetPassword` (publique)
+
+---
+
+## Pourquoi `login` est publique mais `logout` est protégée
+
+C’est une règle de bon sens, mais qui mérite d’être explicitée.
+
+`login` doit être appelable par un visiteur **non connecté** — sinon personne ne pourrait jamais se connecter. Donc `publicProcedure`.
+
+`logout` et `changePassword` concernent la session en cours : un anonyme qui les appelle n’a rien à déconnecter ni à changer. Donc `protectedProcedure`.
+
+Ces choix sont explicites dans le code, pas implicites.
+
+---
+
+## Pourquoi `getSession` est publique
+
+Cette procédure est `publicProcedure` parce que **le front doit pouvoir l’appeler à tout moment, même quand personne n’est connecté**.
+
+Quand le front ne sait pas encore si quelqu’un est connecté, il appelle `getSession` pour le découvrir. Si la réponse est `null`, il affiche l’interface d’un visiteur. Si elle contient un membre, il remplit son état.
+
+Si `getSession` était protégée, l’application ne pourrait jamais apprendre qu’un visiteur est anonyme : elle recevrait une erreur d’authentification, sans pouvoir distinguer « personne n’est connecté » de « quelque chose est cassé ».
+
+---
+
+## Lecture guidée de la procédure login
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="27-58"
+  title="login : du formulaire au résultat exploitable"
+  stepsJson='[{"title": "publicProcedure : un choix explicite", "body": "La connexion DOIT être publique. Avec protectedProcedure, personne ne pourrait jamais se connecter.", "scope": "1-32", "focus": "1-1"}, {"title": "Le schéma partagé", "body": "loginSchema vient de packages/contracts : le formulaire valide avec le même schéma, et affiche le même message. La première version du tutoriel notait ici un schéma redéfini dans le routeur, « à améliorer » : c’est fait.", "scope": "1-32", "focus": "2-3"}, {"title": "Délégation immédiate à loginService", "body": "La procédure ne fait aucun travail métier. Elle reçoit une entrée typée et la passe au service : le routeur reste lisible en quelques lignes.", "scope": "1-32", "focus": "4-8"}, {"title": "Une union discriminée", "body": "Le retour est { success: true } ou { success: false, error }. Le as const transforme les valeurs en types littéraux : côté front, if (!res.success) restreint le type, et TypeScript sait que error existe.", "scope": "1-32", "focus": "10-18"}, {"title": "Des résultats attendus, et rien d’autre", "body": "INVALID_CREDENTIALS et TOO_MANY_ATTEMPTS deviennent des résultats : ce sont des retours métier, qui méritent un message à l’écran. Toute autre erreur est relancée et journalisée (partie « API », chapitre 8).", "scope": "1-32", "focus": "13-30"}]'
+/>
+
+---
+
+<Callout type="tip">
+Le routeur auth orchestre. Il ne fait pas la logique métier : il la délègue.
+
+Six procédures, et derrière elles un service de connexion, un module de session, un service de réinitialisation et un service d’envoi d’e-mails. Le routeur reste lisible parce qu’il porte les intentions, pas les implémentations.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le routeur est cartographié. Nous savons quelles procédures existent, et pourquoi chacune est publique ou protégée. Mais les procédures protégées reposent toutes sur une condition préalable : que `ctx.sessionClient` soit déjà reconstruit. Comment se produit cette reconstruction ? C’est la prochaine étape.
+
+---
+
+## Le retour : reconstruire la session à chaque requête
+
+Voici le cœur battant du système.
+
+À chaque requête entrante — un appel tRPC, une page rendue par le serveur, une route de fichiers — le backend doit répondre à la même question : « qui parle, maintenant ? »
+
+C’est le rôle de `getSessionFromRequest`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="86-106"
+  snippetHighlight="1-21"
+  snippetTitle="getSessionFromRequest : du cookie au SessionClient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du retour de session
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="72-106"
+  title="Le voyage du cookie au SessionClient"
+  stepsJson='[{"title": "readAuthToken : deux sources possibles", "body": "Le jeton est lu dans l’en-tête Cookie de la requête quand elle est fournie (tRPC, routes de fichiers), sinon avec cookies() de Next (pages rendues par le serveur). La fonction sert ainsi partout.", "scope": "1-13", "focus": "1-13"}, {"title": "verifyJwt : signature, algorithme, date", "body": "Pas de jeton, une signature fausse, un autre algorithme que HS256, une date dépassée : verifyJwt renvoie null. Ce n’est pas une erreur : le visiteur est simplement anonyme, et les procédures publiques fonctionnent normalement.", "scope": "15-35", "focus": "16-17"}, {"title": "Une seule requête", "body": "La session est cherchée par son identifiant, avec sessionSelect : la session, les champs utiles du membre et son éventuelle adhésion au groupe Administrateurs. Avec relationJoins, Prisma lit le tout en une requête SQL.", "scope": "15-35", "focus": "19-22"}, {"title": "Révocation : la ligne n’existe plus", "body": "Si la session n’est pas trouvée, null. C’est ce qui rend la révocation possible : après une déconnexion ou un changement de mot de passe, le jeton est toujours bien signé, mais il ne désigne plus rien.", "scope": "15-35", "focus": "24-24"}, {"title": "Expiration, et suppression au passage", "body": "Si expiresAt est dépassée, la session est supprimée et null est renvoyé. C’est un nettoyage opportuniste, que complète la purge de chaque nuit (chapitre 6).", "scope": "15-35", "focus": "26-32"}, {"title": "La projection vers le contrat", "body": "mapSessionDBToSessionClient construit le SessionClient. C’est lui qui sera placé dans ctx.sessionClient, et transmis au navigateur.", "scope": "15-35", "focus": "34-34"}]'
+/>
+
+## 🔭 Pour aller plus loin — la double vérification (jeton + base)
+
+Pourquoi vérifier à la fois la signature du jeton **et** l’existence de la session en base ? À première vue, c’est redondant. Si le jeton est bien signé, pourquoi ne pas lui faire confiance ?
+
+Trois scénarios concrets justifient la double vérification.
+
+**Scénario 1 — La déconnexion.**  
+Un membre se déconnecte. Le backend supprime la ligne `Session`, le navigateur supprime le cookie. Mais imaginons qu’un intrus ait copié le jeton quelques secondes avant. Sans vérification en base, ce jeton resterait utilisable jusqu’à son expiration, sept jours plus tard. Avec elle, la recherche échoue dès la déconnexion : le jeton ne désigne plus rien.
+
+**Scénario 2 — Le changement de mot de passe.**  
+Un membre change son mot de passe parce qu’il soupçonne qu’on l’a deviné. Le backend supprime toutes ses autres sessions (chapitre 6). À la requête suivante, l’intrus présente un jeton à la signature parfaite — mais la session qu’il désigne n’existe plus. Accès refusé.
+
+**Scénario 3 — La réinitialisation.**  
+Même mécanisme quand le mot de passe est réinitialisé par « Mot de passe oublié » (chapitre 7) : toutes les sessions sont supprimées, sur tous les appareils.
+
+Sans la double vérification, aucun de ces trois scénarios ne serait possible. Le jeton seul ne donne aucune révocabilité.
+
+---
+
+👉 **Où nous en sommes :** le jeton est vérifié, la session est retrouvée en base, l’expiration est contrôlée. Reste une dernière étape avant d’exposer cette session au reste du backend : la transformer en `SessionClient`.
+
+---
+
+## La sélection et la projection : de la base au `SessionClient`
+
+Nous avons vu le contrat `SessionClient`. Voyons maintenant comment la donnée de Prisma est projetée vers ce contrat.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="9-50"
+  snippetHighlight="6-25,31-42"
+  snippetTitle="sessionSelect et mapSessionDBToSessionClient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la sélection et de la projection
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="9-50"
+  title="De la sélection au contrat partagé"
+  stepsJson='[{"title": "Une sélection nommée", "body": "sessionSelect dit exactement ce que la lecture ramène. satisfies Prisma.SessionSelect vérifie chaque clé contre le modèle, sans élargir le type.", "scope": "1-25", "focus": "6-8"}, {"title": "Les champs du membre, et eux seuls", "body": "Sept champs, ceux du contrat. L’empreinte du mot de passe, la date de naissance, les données légales ne sont pas demandées à la base : elles ne peuvent donc pas sortir.", "scope": "1-25", "focus": "9-17"}, {"title": "L’adhésion aux Administrateurs, dans la même requête", "body": "Les adhésions du membre, filtrées sur les groupes isAdminGroup, une au plus. La première version faisait ici une seconde requête, à chaque requête du site ; elle est maintenant jointe à la première.", "scope": "1-25", "focus": "18-22"}, {"title": "Le type se déduit de la sélection", "body": "Prisma.SessionGetPayload produit le type exact du résultat. La requête et le type partagent la même constante : ils ne peuvent pas diverger.", "scope": "27-28", "focus": "27-28"}, {"title": "La projection", "body": "Les adhésions sont mises de côté, le reste du membre est recopié — il ne contient que ce qui a été sélectionné —, et isAdmin devient un booléen : une adhésion trouvée, ou aucune.", "scope": "30-42", "focus": "31-41"}]'
+/>
+
+---
+
+<Callout type="info">
+La sélection n’est pas une formalité technique.
+
+C’est la **garantie active** que le backend ne laisse jamais sortir d’information par accident : ce qui n’est pas demandé à la base ne peut pas partir vers le navigateur.
+</Callout>
+
+---
+
+👉 **Où nous en sommes :** le `SessionClient` est prêt, construit à partir de la base et projeté contre le contrat partagé. Il ne reste plus qu’à le placer à la disposition du reste du backend — dans le contexte tRPC.
+
+## À suivre
+
+Le `SessionClient` est prêt. Reste à le mettre à la disposition de chaque procédure, et à voir ce que cela change pour le code métier.
+
+<Callout type="tip">
+**Chapitre suivant : la session dans le backend.** `createTRPCContext`, `protectedProcedure`, et le code « confiant » qu’ils rendent possible.
+</Callout>

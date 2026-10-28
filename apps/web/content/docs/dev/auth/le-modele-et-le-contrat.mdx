@@ -1,0 +1,143 @@
+---
+title: "Le modèle de session et son contrat"
+description: "La table Session lue champ par champ, pourquoi aucun droit n’y est recopié, la chaîne Session → membre → groupe Administrateurs, et le contrat SessionClient qui décide de ce qui part vers le navigateur."
+section: "Authentification et droits"
+order: 2
+entities:
+  User: [email, password, lastLoginAt]
+  Session: [userId, expiresAt]
+  MemberGroup: [name, isAdminGroup]
+  MemberGroupMembership: [groupId, userId, access]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Toute authentification résout deux problèmes : identifier le membre, puis le reconnaître à chaque requête. Le projet combine bcrypt, un jeton signé et une session en base.
+
+## Le modèle de données : Session, User et les groupes
+
+Avant d’écrire la moindre ligne de code d’authentification, regardons ce que la base de données nous offre.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="227-239"
+  snippetHighlight="1-13"
+  snippetTitle="Le modèle Session"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du modèle Session
+
+<CodeWalkthrough
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="227-239"
+  title="Anatomie d’une session persistée"
+  stepsJson='[{"title": "id : un CUID pour chaque session", "body": "Le CUID est un identifiant compact et impossible à deviner. C’est lui que le jeton du cookie embarque, et par lui que la session est retrouvée en base à chaque requête.", "scope": "1-13", "focus": "2-3"}, {"title": "userId : la relation vers le membre", "body": "Une session appartient toujours à un membre. C’est par ce lien que le serveur remonte, à chaque requête, au membre et à ses groupes.", "scope": "1-13", "focus": "4-5"}, {"title": "createdAt : l’ouverture", "body": "La date de connexion. Elle ne sert à aucune décision, mais dit, en cas de doute, quand un appareil a été connecté.", "scope": "1-13", "focus": "6-7"}, {"title": "expiresAt : la durée de vie côté serveur", "body": "Posée à la création, sept jours plus tard (SESSION_DURATION_MS). À chaque requête, le serveur vérifie qu’elle n’est pas dépassée ; sinon, la session est refusée et supprimée, même si le jeton est encore valide.", "scope": "1-13", "focus": "8-10"}, {"title": "onDelete: Cascade : la cohérence référentielle", "body": "Si un membre est supprimé, toutes ses sessions le sont avec lui. La règle est posée dans la base, pas dans le code : aucune session ne peut survivre à son membre.", "scope": "1-13", "focus": "11-12"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi aucun droit dans Session ?
+
+Une décision du projet mérite d’être regardée pour elle-même : la table `Session` n’embarque **aucune information sur les droits**. Elle ne fait que pointer vers le `User`.
+
+Ce n’a pas toujours été le cas. Au temps des rôles, la session portait un champ `role`, recopié depuis le membre à la connexion. Une migration l’a retiré ; la première version de ce tutoriel la montrait (l’historique des migrations a depuis été consolidé dans `0_init`).
+
+Pourquoi cette suppression ?
+
+Parce que **recopier un droit dans la session crée un problème de cohérence**. Si un administrateur retire un membre du groupe Administrateurs, toutes les sessions ouvertes de ce membre continueraient à porter l’ancien droit jusqu’à leur expiration — sept jours. Le changement n’aurait aucun effet immédiat, et c’est précisément le genre de changement qu’on veut immédiat.
+
+Sans copie, **le droit est relu à chaque requête**, à partir des relations du membre. C’est une jointure de plus, mais c’est cohérent : un changement de groupe est appliqué tout de suite, sur toutes les sessions ouvertes.
+
+C’est exactement le principe vu dans la partie « Données » : l’autorité du système réside dans la base, pas dans des copies dispersées.
+
+---
+
+## La chaîne Session → User → groupe Administrateurs
+
+`Session` pointe vers `User`. Ce qui nous intéresse vraiment, c’est ce que `User` permet de retrouver, en cascade :
+
+<ArchitectureDiagram
+  steps="Session | User | adhésions (MemberGroupMembership) | groupe marqué isAdminGroup"
+/>
+
+À chaque requête authentifiée, le projet remonte cette chaîne, en une seule requête SQL, pour obtenir tout ce dont le backend a besoin : qui est le membre, et s’il est administrateur. Les droits plus fins — l’accès à l’espace d’un groupe — se calculent à la demande, quand une procédure en a besoin (chapitre 9).
+
+C’est cette chaîne qui rend possible l’écriture, dans n’importe quelle procédure, de :
+
+<CodeSnippet
+  language="ts"
+  title="L’aboutissement de la chaîne, dans une procédure"
+  kind="educational"
+  codeJson='"ctx.sessionClient.user.isAdmin"'
+/>
+
+Mais avant d’arriver là, nous devons d’abord décider de ce que cette structure laissera sortir vers le navigateur.
+
+---
+
+👉 **Où nous en sommes :** la base est posée, normalisée, cohérente. La session pointe vers le membre, et le membre, par ses adhésions, dit s’il est administrateur. Reste à décider ce que cette structure laissera sortir vers le client — c’est le rôle du contrat que nous allons ouvrir.
+
+---
+
+## Le contrat partagé : `SessionClient`
+
+Avant de manipuler la session, posons une frontière : que recevra exactement le navigateur ?
+
+Le projet définit cette frontière dans `packages/contracts`, partagé entre frontend et backend.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/session.types.ts"
+  filename="session.types.ts"
+  snippetRange="1-13"
+  snippetHighlight="1-13"
+  snippetTitle="Le contrat SessionClient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du contrat
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/auth/session.types.ts"
+  filename="session.types.ts"
+  snippetRange="1-13"
+  title="Ce qui sort du backend, et ce qui n’en sort jamais"
+  stepsJson='[{"title": "Aucune trace du mot de passe", "body": "C’est la première chose à remarquer. L’empreinte bcrypt vit dans la table User, mais n’apparaît nulle part dans SessionClient : aucun mot de passe, même sous forme d’empreinte, ne franchit la frontière vers le navigateur.", "scope": "1-13", "focus": "3-12"}, {"title": "Aucune trace de la structure de la base", "body": "Pas de createdAt, pas de date de naissance, pas de données légales, pas de liste de groupes. Ces champs existent en base ; le navigateur n’en a pas besoin pour savoir qui est connecté.", "scope": "1-13", "focus": "4-10"}, {"title": "isAdmin, un booléen", "body": "En base, être administrateur, c’est avoir une adhésion à un groupe marqué. Côté navigateur, c’est un booléen. Le front peut écrire if (user.isAdmin) sans rien savoir des groupes — et sans pouvoir s’en servir pour autre chose que l’affichage : chaque procédure revérifie.", "scope": "1-13", "focus": "11-11"}, {"title": "user est nullable", "body": "getSession peut être appelée sans être connecté : user vaut alors null. Cette nullabilité est écrite dans le type, ce qui oblige le front à traiter le cas du visiteur.", "scope": "1-13", "focus": "3-12"}]'
+/>
+
+---
+
+<Callout type="tip">
+`SessionClient` est un contrat, pas une projection.
+
+Il décrit ce que le système promet d’exposer, et garantit qu’aucune information sensible ne fuit accidentellement.
+</Callout>
+
+---
+
+Cette définition gouverne tout ce qui suit. Quand nous lirons `getSessionFromRequest` (chapitre 4), la construction du `SessionClient` sera vérifiée par TypeScript contre ce contrat.
+
+Si demain quelqu’un ajoute un champ sensible à `User` dans Prisma, ce champ ne sortira pas tant qu’il n’aura pas été explicitement ajouté au contrat **et** à la sélection qui lit la session. C’est une protection passive, qui ne demande aucune vigilance répétée, parce qu’elle est portée par les types.
+
+---
+
+👉 **Où nous en sommes :** la frontière de sortie est définie, le contrat est clair. Nous pouvons maintenant nous placer à l’autre extrémité du flux — l’entrée — et regarder ce qui arrive du navigateur quand le membre soumet le formulaire de connexion.
+
+## À suivre
+
+Le modèle est posé, la sortie est bornée. Il reste à suivre ce qui entre : une adresse et un mot de passe, tapés dans un formulaire.
+
+<Callout type="tip">
+**Chapitre suivant : se connecter.** La validation des identifiants, le service de connexion — le même message, et le même temps, pour deux erreurs —, et la création de la session avec son cookie.
+</Callout>

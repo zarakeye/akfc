@@ -1,0 +1,185 @@
+---
+title: "Le mot de passe oublié"
+description: "Le seul chemin vers un compte sans son mot de passe : le jeton brut et son empreinte SHA-256, une demande qui ne trahit pas les comptes (ni par son message, ni par sa durée), et une réinitialisation en transaction, dont le lien est consommé une seule fois, même en cas d’envois simultanés."
+section: "Authentification et droits"
+order: 7
+entities:
+  User: [email, password]
+  Session: [userId, expiresAt]
+  PasswordResetToken: [tokenHash, expiresAt, usedAt, requestIp, userAgent]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une session meurt par la déconnexion, par expiration (supprimée au passage ou par la purge de la nuit), ou parce que le mot de passe change.
+
+## Le mot de passe oublié : un sous-flux complet et sensible
+
+La réinitialisation est un mécanisme à part. Elle mérite une attention particulière parce qu’elle est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C’est donc une cible privilégiée.
+
+Le projet l’implémente en deux procédures : `requestPasswordReset` (le membre demande un lien par e-mail) et `resetPassword` (il suit le lien et choisit un nouveau mot de passe).
+
+Voyons d’abord le service qui les soutient.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetRange="1-22"
+  snippetHighlight="11-22"
+  snippetTitle="Le service de réinitialisation : un jeton et son empreinte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée du service de réinitialisation
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/services/passwordReset.service.ts"
+  filename="passwordReset.service.ts"
+  snippetRange="1-22"
+  title="Deux constantes, deux fonctions"
+  stepsJson='[{"title": "Une durée courte — 30 minutes", "body": "Trente minutes laissent largement le temps de suivre le lien de l’e-mail, et réduisent la fenêtre d’attaque si l’e-mail est intercepté.", "scope": "1-22", "focus": "11-11"}, {"title": "Un délai entre deux demandes — 2 minutes", "body": "Entre deux demandes pour le même compte, il faut attendre deux minutes. Personne ne peut remplir la boîte d’un membre de liens de réinitialisation.", "scope": "1-22", "focus": "12-12"}, {"title": "createPasswordResetToken : 256 bits de hasard", "body": "crypto.randomBytes(32) produit 32 octets aléatoires, écrits en hexadécimal : 64 caractères imprévisibles. Les deviner par essais successifs est hors de portée.", "scope": "1-22", "focus": "14-18"}, {"title": "hashResetToken : SHA-256", "body": "Le jeton est réduit à son empreinte avant d’être stocké. Pourquoi pas bcrypt ? bcrypt est fait pour des secrets faibles, choisis par des humains. Ce jeton a déjà 256 bits d’entropie : SHA-256, rapide, suffit.", "scope": "1-22", "focus": "20-22"}]'
+/>
+
+---
+
+## Le motif jeton brut + empreinte
+
+C’est un motif de sécurité classique, souvent mal compris.
+
+Le service génère **un seul jeton**, puis en garde deux représentations :
+
+- **le jeton brut** part dans l’e-mail. C’est lui qui apparaît dans le lien `…?token=…` ;
+- **son empreinte** est enregistrée en base, dans `PasswordResetToken.tokenHash`.
+
+Quand le membre suit le lien, le backend reçoit le jeton brut, en calcule l’empreinte à son tour, et cherche cette empreinte en base.
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi ne pas stocker le jeton brut ?
+
+Imaginons que nous enregistrions le jeton brut en base.
+
+Si la base fuitait (une sauvegarde mal rangée, une copie de la base), tous les liens en attente deviendraient aussitôt utilisables : il suffirait de construire l’adresse pour changer le mot de passe d’un membre.
+
+En n’enregistrant **que l’empreinte**, une copie de la base ne donne rien d’utilisable : SHA-256 ne se renverse pas. Pour utiliser un lien, il faudrait la valeur d’origine, qui n’a jamais été enregistrée et n’existe que dans l’e-mail du membre.
+
+C’est le même principe que pour les mots de passe : on garde l’empreinte, jamais la valeur. Avec une différence, déjà notée dans la lecture guidée : le jeton est aléatoire et long, là où un mot de passe est choisi par un humain. SHA-256, rapide, suffit pour le premier ; il faut bcrypt, lent exprès, pour le second.
+
+---
+
+## La demande de lien
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="129-179"
+  snippetHighlight="40-48"
+  snippetTitle="auth.requestPasswordReset"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la demande
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="129-179"
+  title="La demande de lien, sans rien révéler"
+  stepsJson='[{"title": "Une adresse déjà normalisée", "body": "emailSchema a nettoyé l’adresse et l’a mise en minuscules, comme toutes les adresses enregistrées : elle est cherchée telle quelle.", "scope": "1-51", "focus": "4-6"}, {"title": "Pas de compte : la même réponse", "body": "Sans compte, la procédure répond { ok: true } — exactement ce qu’elle répond quand un lien part.", "scope": "1-51", "focus": "10-12"}, {"title": "Le délai entre deux demandes", "body": "Si un lien a été demandé il y a moins de deux minutes, rien ne repart, et la réponse est toujours la même.", "scope": "1-51", "focus": "14-25"}, {"title": "Le jeton : l’empreinte en base, le brut dans l’e-mail", "body": "createPasswordResetToken fabrique les deux. L’empreinte est enregistrée avec sa date d’expiration, l’adresse IP et le navigateur de la demande, pour la traçabilité.", "scope": "1-51", "focus": "27-38"}, {"title": "L’envoi n’est pas attendu", "body": "void … .catch(…) : l’e-mail part en arrière-plan. La réponse ne dépend plus de la lenteur du serveur de messagerie, et ne trahit donc pas qu’un compte existe. Un échec est journalisé, sans le jeton.", "scope": "1-51", "focus": "40-48"}]'
+/>
+
+---
+
+Cette procédure a eu le même défaut que la connexion (chapitre 3), en plus visible. Elle attendait la fin de l’envoi de l’e-mail avant de répondre : plusieurs secondes, le temps de joindre le serveur de messagerie. Pour une adresse sans compte, elle répondait aussitôt. Le texte affiché était identique — « Si un compte existe pour cet email, un lien a été envoyé. » —, mais un simple chronomètre disait qui était membre du club. L’envoi part désormais sans être attendu.
+
+---
+
+## La réinitialisation et sa transaction
+
+C’est ici que le motif se révèle dans toute sa rigueur.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="181-236"
+  snippetHighlight="31-53"
+  snippetTitle="auth.resetPassword : trois écritures atomiques"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+---
+
+## Lecture guidée de la réinitialisation
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/auth/router.ts"
+  filename="router.ts"
+  snippetRange="181-236"
+  title="La réinitialisation, en une transaction"
+  stepsJson='[{"title": "Retrouver le lien par son empreinte", "body": "Le jeton reçu est réduit à son empreinte, qui est cherchée en base. Le jeton brut n’est jamais comparé ni enregistré.", "scope": "1-56", "focus": "4-15"}, {"title": "Trois vérifications, trois messages", "body": "Le lien existe, n’a pas servi, n’a pas expiré. Chaque échec a son message, qui dit quoi faire ensuite.", "scope": "1-56", "focus": "17-27"}, {"title": "La nouvelle empreinte", "body": "hashPassword, avec le coût commun. Le calcul est fait avant la transaction, pour qu’elle reste courte.", "scope": "1-56", "focus": "29-29"}, {"title": "Dans la transaction : le mot de passe", "body": "Le membre reçoit sa nouvelle empreinte. isFirstLogin n’est pas touché : choisir un mot de passe ne complète pas un profil.", "scope": "1-56", "focus": "31-37"}, {"title": "Consommer le lien, une seule fois", "body": "updateMany ne marque le lien que si usedAt est encore vide. Si une autre requête l’a consommé entre-temps, count vaut 0, la procédure lève une erreur, et toute la transaction est annulée.", "scope": "1-56", "focus": "39-48"}, {"title": "Fermer toutes les sessions", "body": "Si le membre réinitialise parce qu’il soupçonne une intrusion, toute session ouverte par l’intrus disparaît avec cette instruction.", "scope": "1-56", "focus": "50-52"}]'
+/>
+
+---
+
+## 🔭 Pour aller plus loin — pourquoi une transaction, et pourquoi `updateMany` ?
+
+Sans transaction, imaginons que les opérations s’exécutent l’une après l’autre et qu’une erreur survienne au milieu.
+
+**Le scénario à éviter** : le mot de passe est changé, puis le serveur s’arrête juste avant que le lien soit marqué comme utilisé. Le lien reste valable, et celui qui le détient — peut-être pas le membre — peut changer le mot de passe à nouveau.
+
+Avec `ctx.prisma.$transaction`, soit **les trois opérations réussissent ensemble**, soit **aucune n’est appliquée**. Cette atomicité est garantie par PostgreSQL : la transaction est un mécanisme du moteur, pas une convention du code.
+
+Mais la transaction ne règle pas tout. Les vérifications (le lien existe, n’a pas servi, n’a pas expiré) sont faites **avant** elle. Si le même lien est envoyé deux fois au même instant — un double clic, ou un intrus qui a intercepté l’e-mail et agit en même temps que le membre —, les deux requêtes passent toutes les deux les vérifications, puis entrent chacune dans sa transaction. La première version marquait le lien avec un simple `update`, qui réussissait les deux fois : deux mots de passe étaient enregistrés l’un après l’autre, et le dernier gagnait.
+
+La correction est la même idée que l’erreur P2002 de la partie « Données » : confier la règle à la base. `updateMany` avec `usedAt: null` dans sa condition ne marque la ligne **que si elle ne l’était pas encore**. PostgreSQL verrouille la ligne le temps de l’écriture : des deux requêtes, une seule obtient `count === 1` ; l’autre lève une erreur, et sa transaction est annulée, nouveau mot de passe compris.
+
+---
+
+<Callout type="warning">
+Quand plusieurs opérations doivent réussir ou échouer ensemble, la transaction n’est pas un bonus : c’est une obligation.
+
+Et quand une ressource ne doit servir qu’une fois, la vérification « déjà utilisée ? » doit être faite **par l’écriture elle-même**, pas par une lecture qui la précède.
+</Callout>
+
+---
+
+## Les règles, une par une
+
+<DocsTable columnsJson='["Règle","Ce qu’elle protège"]' rowsJson='[["Seule l’empreinte SHA-256 du jeton est stockée","Une copie de la base ne donne aucun lien utilisable."],["Lien valable 30 minutes","Un e-mail ancien n’ouvre plus rien."],["Lien consommé une seule fois, par l’écriture elle-même (usedAt)","Un lien déjà utilisé, ou utilisé deux fois en même temps, ne change le mot de passe qu’une fois."],["Une demande toutes les 2 minutes au plus par compte","Personne ne peut bombarder la boîte d’un membre."],["Même réponse, dans le même temps, que l’adresse existe ou non","Le formulaire ne révèle pas qui a un compte, ni par son message, ni par sa lenteur."],["Le jeton n’apparaît jamais dans les journaux","Un accès aux journaux ne suffit pas à prendre un compte."],["La réinitialisation supprime toutes les sessions","Un éventuel intrus est déconnecté partout."]]' />
+
+---
+
+👉 **Où nous en sommes :** toutes les façons dont une session peut naître, vivre, être lue, détruite, nettoyée ou révoquée sont désormais couvertes. Le second mouvement est complet.
+
+---
+
+## Ce que nous venons de construire dans le Mouvement 2
+
+À la fin de ce deuxième mouvement, voici ce qui se passe à chaque requête d’un membre déjà connecté :
+
+<ArchitectureDiagram
+  steps="Cookie reçu | Jeton vérifié (signature, algorithme, date) | Session relue en base, avec le membre et son groupe Administrateurs | expiresAt validé | SessionClient | ctx.sessionClient | procédure exécutée"
+/>
+
+Et quand le membre se déconnecte, change ou réinitialise son mot de passe, ou que sa session expire, le système sait exactement comment nettoyer — en base, dans le cookie, ou en masse chaque nuit.
+
+Le **Mouvement 3** va maintenant regarder autour de la session : le navigateur, qui doit savoir dès le premier affichage qui est connecté ; le proxy, à l’entrée du site ; et l’autorisation, avec les groupes.
+
+## À suivre
+
+Le Mouvement 2 s’achève. La session est complète, côté serveur. Il reste à regarder ce qui l’entoure : le navigateur, et l’entrée du site.
+
+<Callout type="tip">
+**Chapitre suivant : le navigateur et le proxy.** La session dès le premier affichage, le formulaire de connexion, et le proxy — avec un `matcher` qui ne correspondait à aucune adresse.
+</Callout>
