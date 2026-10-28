@@ -10,8 +10,7 @@ import {
 import { sendPasswordResetEmail } from "@backend/email/services/sendPasswordResetEmail";
 
 import { TRPCError } from "@trpc/server";
-import bcrypt from "bcryptjs";
-import { verifyPassword } from "@backend/lib/auth/password";
+import { hashPassword, verifyPassword } from "@backend/lib/auth/password";
 import { getToken, verifyJwt } from "@backend/lib/session/session.server";
 import {
   changePasswordSchema,
@@ -47,6 +46,13 @@ export const authRouter = router({
             error: "INVALID_CREDENTIALS" as const,
           };
         }
+        // Trop d'échecs pour cette adresse : un résultat aussi, que le formulaire explique.
+        if (error instanceof TRPCError && error.message === "TOO_MANY_ATTEMPTS") {
+          return {
+            success: false as const,
+            error: "TOO_MANY_ATTEMPTS" as const,
+          };
+        }
         throw error;
       }
     }),
@@ -75,14 +81,16 @@ export const authRouter = router({
         select: { password: true },
       });
       if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Utilisateur introuvable" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable." });
       }
 
       const ok = await verifyPassword(input.currentPassword, user.password);
       if (!ok) {
+        // BAD_REQUEST, pas UNAUTHORIZED : le membre EST connecté ; c'est la saisie qui est fausse.
+        // UNAUTHORIZED signifie « aucune session », et un client pourrait le traiter comme une déconnexion.
         throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Mot de passe actuel incorrect",
+          code: "BAD_REQUEST",
+          message: "Mot de passe actuel incorrect.",
         });
       }
 
@@ -90,11 +98,11 @@ export const authRouter = router({
       if (same) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Le nouveau mot de passe doit être différent de l'actuel",
+          message: "Le nouveau mot de passe doit être différent de l'actuel.",
         });
       }
 
-      const hashed = await bcrypt.hash(input.newPassword, 12);
+      const hashed = await hashPassword(input.newPassword);
       const payload = verifyJwt(await getToken());
       const currentSessionId = payload?.sessionId ?? null;
 
@@ -121,10 +129,9 @@ export const authRouter = router({
   requestPasswordReset: publicProcedure
     .input(requestPasswordResetSchema)
     .mutation(async ({ input, ctx }) => {
-      const email = input.email.trim().toLowerCase();
-
+      // Déjà nettoyée et mise en minuscules par emailSchema, comme toutes les adresses enregistrées.
       const user = await ctx.prisma.user.findUnique({
-        where: { email },
+        where: { email: input.email },
         select: { id: true, email: true },
       });
 
@@ -158,16 +165,15 @@ export const authRouter = router({
         },
       });
 
-      try {
-        await sendPasswordResetEmail({ toEmail: user.email, token });
-      } catch (err) {
-        // Jamais le jeton dans les journaux. Réponse identique en cas d'échec : sinon, une
-        // erreur trahirait qu'un compte existe pour l'adresse saisie.
+      // L'envoi n'est PAS attendu : il prend plusieurs secondes, et une réponse lente pour une
+      // adresse connue, rapide pour une inconnue, trahirait qui a un compte. Jamais le jeton dans
+      // les journaux ; un échec d'envoi est journalisé, la réponse reste la même.
+      void sendPasswordResetEmail({ toEmail: user.email, token }).catch((err: unknown) => {
         console.error(
           "[auth] e-mail de réinitialisation non envoyé :",
           err instanceof Error ? err.message : err,
         );
-      }
+      });
 
       return { ok: true as const };
     }),
@@ -200,20 +206,26 @@ export const authRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a expiré. Demandez-en un nouveau avec « Mot de passe oublié »." });
       }
 
-      const hashedPassword = await bcrypt.hash(input.newPassword, 12);
+      const hashedPassword = await hashPassword(input.newPassword);
 
       await ctx.prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: entry.userId },
-          // `isFirstLogin` n'est pas touché : un nouveau membre qui vient de choisir son
-          // mot de passe par le lien de bienvenue complète ensuite son profil.
+          // `isFirstLogin` n'est pas touché : choisir un mot de passe ne complète pas le profil.
+          // Un nouveau membre qui passe par « Mot de passe oublié » y reste invité.
           data: { password: hashedPassword },
         });
 
-        await tx.passwordResetToken.update({
-          where: { id: entry.id },
+        // Consommation atomique : la ligne n'est marquée que si elle ne l'était pas encore. Deux
+        // envois simultanés du même lien passent tous deux les vérifications ci-dessus ; un seul
+        // obtient ici count === 1, l'autre annule sa transaction.
+        const consumed = await tx.passwordResetToken.updateMany({
+          where: { id: entry.id, usedAt: null },
           data: { usedAt: new Date() },
         });
+        if (consumed.count !== 1) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ce lien a déjà servi. Connectez-vous, ou demandez-en un nouveau avec « Mot de passe oublié »." });
+        }
 
         await tx.session.deleteMany({
           where: { userId: entry.userId },

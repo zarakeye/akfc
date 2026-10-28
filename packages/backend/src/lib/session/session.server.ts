@@ -2,27 +2,34 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { prisma } from "@backend/prisma";
 import { COOKIE_NAME, SESSION_DURATION_MS } from "@contracts/auth/constants";
-import { UserEnhancedStrict } from "@backend/types/prisma-extended.types";
-import { Session } from "@prisma/client";
+import type { Session, User } from "@prisma/client";
 import type { SessionJwtPayload } from "@backend/lib/session/session.types";
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+/** Seul algorithme accepté à la vérification : un jeton signé autrement est refusé. */
+export const JWT_ALGORITHM = "HS256" as const;
 
 type CreateSessionResult = {
   sessionId: Session["id"];
 };
 
-export async function createSessionJWT(user: UserEnhancedStrict): Promise<CreateSessionResult> {
+/**
+ * Ouvre une session pour un membre : une ligne Session en base, un jeton signé qui ne contient
+ * que l'identifiant de cette ligne, et un cookie qui transporte le jeton. Le jeton, la ligne et
+ * le cookie expirent ensemble (SESSION_DURATION_MS).
+ */
+export async function createSessionJWT(userId: User["id"]): Promise<CreateSessionResult> {
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
   // Dernière connexion, en SQL direct pour ne pas modifier updatedAt (dernière modification du profil).
-  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${user.id}`.catch((err: unknown) => {
+  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${userId}`.catch((err: unknown) => {
     console.error("[session] lastLoginAt non mis à jour :", err instanceof Error ? err.message : err);
   });
 
   const session = await prisma.session.create({
     data: {
-      userId: user.id,
+      userId,
       expiresAt,
     },
   });
@@ -32,7 +39,8 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
   };
 
   const token = jwt.sign(payload, JWT_SECRET!, {
-    expiresIn: "7d",
+    algorithm: JWT_ALGORITHM,
+    expiresIn: Math.floor(SESSION_DURATION_MS / 1000),
   });
 
   const cookieStore = await cookies();
@@ -49,20 +57,17 @@ export async function createSessionJWT(user: UserEnhancedStrict): Promise<Create
   };
 }
 
+/** Déconnexion : supprime la ligne Session désignée par le cookie, puis le cookie. */
 export async function deleteSessionFromCookie(): Promise<void> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const payload = verifyJwt(cookieStore.get(COOKIE_NAME)?.value ?? null);
 
-  if (!token) return;
-
-  try {
-    const payload = jwt.verify(token, JWT_SECRET!) as SessionJwtPayload;
-
-    await prisma.session.deleteMany({
-      where: { id: payload.sessionId },
+  if (payload) {
+    // Une base injoignable ne doit pas empêcher de retirer le cookie : le navigateur est
+    // déconnecté quoi qu'il arrive, et la ligne expirera d'elle-même.
+    await prisma.session.deleteMany({ where: { id: payload.sessionId } }).catch((err: unknown) => {
+      console.error("[session] suppression à la déconnexion :", err instanceof Error ? err.message : err);
     });
-  } catch (err) {
-    console.error("deleteSession error:", err);
   }
 
   cookieStore.delete(COOKIE_NAME);
@@ -73,10 +78,11 @@ export async function getToken(): Promise<string | null> {
   return cookieStore.get(COOKIE_NAME)?.value ?? null;
 }
 
+/** Le contenu du jeton si sa signature et sa date sont valides, sinon null. */
 export function verifyJwt(token: string | null): SessionJwtPayload | null {
+  if (!token || !JWT_SECRET) return null;
   try {
-    if (!token) return null;
-    return jwt.verify(token, JWT_SECRET!) as SessionJwtPayload;
+    return jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] }) as SessionJwtPayload;
   } catch {
     return null;
   }

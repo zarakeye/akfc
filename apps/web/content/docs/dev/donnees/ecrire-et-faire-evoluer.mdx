@@ -131,7 +131,7 @@ Ce bloc montre aussi que le SQL brut demande plus d’attention que l’API. Dan
 // packages/backend/src/lib/session/session.server.ts (extrait)
 
   // Dernière connexion, en SQL direct pour ne pas modifier updatedAt (dernière modification du profil).
-  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${user.id}`.catch((err: unknown) => {
+  await prisma.$executeRaw`UPDATE "User" SET "lastLoginAt" = NOW() WHERE "id" = ${userId}`.catch((err: unknown) => {
     console.error("[session] lastLoginAt non mis à jour :", err instanceof Error ? err.message : err);
 ```
 

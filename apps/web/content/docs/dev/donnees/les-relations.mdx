@@ -96,13 +96,20 @@ Dans notre modèle, ce choix n’a pas été retenu. Il existe bien un `isAdmin`
 
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-  // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
-  // Aucun champ de User ne le dit : le droit se lit dans les relations.
-  const isAdmin =
-    (await prisma.memberGroupMembership.findFirst({
-      where: { userId: sessionDB.user.id, group: { isAdminGroup: true } },
-      select: { id: true },
-    })) !== null;
+      memberGroupMemberships: {
+        where: { group: { isAdminGroup: true } },
+        select: { id: true },
+        take: 1,
+      },
+```
+
+La lecture de la session demande, avec le membre, ses adhésions… à un groupe marqué `isAdminGroup`, une au plus. Il n’en reste plus qu’à compter :
+
+```ts
+// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
+      // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
+      // Aucun champ de User ne le dit : le droit se lit dans les relations.
+      isAdmin: memberGroupMemberships.length > 0,
 ```
 
 Être administrateur, c’est avoir une adhésion à un groupe dont `isAdminGroup` est vrai. Rien d’autre.

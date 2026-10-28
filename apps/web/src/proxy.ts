@@ -35,7 +35,7 @@ export async function proxy(req: NextRequest) {
   }
 
   try {
-    jwt.verify(token, JWT_SECRET);
+    jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     return NextResponse.next();
   } catch {
     return NextResponse.redirect(new URL("/", origin));

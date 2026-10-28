@@ -11,10 +11,14 @@ import { z } from "zod";
 /** Longueur minimale d'un mot de passe. Les textes d'aide l'affichent à partir de cette valeur. */
 export const PASSWORD_MIN_LENGTH = 12;
 
-/** Une adresse e-mail saisie par le membre (connexion, mot de passe oublié). */
+/**
+ * Une adresse e-mail (connexion, mot de passe oublié, création d'un compte). Toujours en minuscules :
+ * les adresses sont enregistrées ainsi, et une adresse tapée avec une majuscule retrouve son compte.
+ */
 export const emailSchema = z
   .string()
   .trim()
+  .toLowerCase()
   .min(1, "Saisissez votre adresse e-mail.")
   .email("Adresse e-mail invalide.");
 
@@ -37,7 +41,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 /** Demande d'un lien de réinitialisation (« Mot de passe oublié »). */
 export const requestPasswordResetSchema = z.object({ email: emailSchema });
 
-/** Réinitialisation (lien reçu par e-mail, ou premier mot de passe d'un nouveau membre). */
+/** Réinitialisation (lien reçu par e-mail après « Mot de passe oublié »). */
 export const resetPasswordSchema = z.object({
   token: z.string().min(10),
   newPassword: passwordSchema,

@@ -17,7 +17,7 @@ import {
   transferTicket,
 } from "@backend/modules/tickets/tickets.service";
 import { getTicketDetail, listHandlers, listInbox, ticketAccess } from "@backend/modules/tickets/ticketQueries.service";
-import { isThrottled } from "@backend/modules/tickets/submitThrottle";
+import { submitThrottle } from "@backend/modules/tickets/submitThrottle";
 
 /**
  * Demandes adressées au club (formulaire de contact).
@@ -63,7 +63,7 @@ export const ticketRouter = router({
       });
     }
 
-    if (isThrottled([ctx.requestIp ? `ip:${ctx.requestIp}` : null, `mail:${requester.email.toLowerCase()}`])) {
+    if (submitThrottle.hit([ctx.requestIp ? `ip:${ctx.requestIp}` : null, `mail:${requester.email.toLowerCase()}`])) {
       throw new TRPCError({
         code: "TOO_MANY_REQUESTS",
         message: "Vous avez envoyé plusieurs messages en peu de temps. Réessayez dans une heure.",

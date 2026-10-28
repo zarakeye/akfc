@@ -29,7 +29,6 @@ export function SessionLoader({
       return;
     }
     let cancelled = false;
-    store.setLoading(true);
     trpcClient.auth.getSession
       .query()
       .then((session) => {

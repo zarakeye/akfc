@@ -137,8 +137,8 @@ Les règles de connexion et de mot de passe sont définies dans `packages/contra
   language="ts"
   filepath="packages/contracts/src/auth/auth.schema.ts"
   filename="auth.schema.ts"
-  snippetRange="1-59"
-  snippetHighlight="11-33"
+  snippetRange="1-63"
+  snippetHighlight="12-37"
   snippetTitle="Les règles d’authentification, partagées par le front et le back"
   fullFileTitle="Voir le fichier complet"
 />
@@ -151,9 +151,9 @@ Les règles de connexion et de mot de passe sont définies dans `packages/contra
   language="ts"
   filepath="packages/contracts/src/auth/auth.schema.ts"
   filename="auth.schema.ts"
-  snippetRange="1-59"
+  snippetRange="1-63"
   title="Un contrat qui traverse la frontière frontend / backend"
-  stepsJson='[{"title": "Le fichier dit d’emblée qu’il est la source unique", "body": "Le commentaire de tête nomme les deux côtés qui l’importent : les procédures, qui font foi, et les formulaires, qui affichent la même règle avant l’envoi. En plaçant ces schémas dans packages/contracts, nous disons qu’ils appartiennent au système, pas à une couche.", "scope": "1-9", "focus": "3-9"}, {"title": "Une constante plutôt qu’un nombre répété", "body": "PASSWORD_MIN_LENGTH sert à la règle et aux textes d’aide des formulaires. Changer la longueur minimale, c’est changer une ligne : la règle et le texte qui l’annonce ne peuvent plus diverger.", "scope": "11-12", "focus": "11-12"}, {"title": "Des règles composées, avec leurs messages", "body": "emailSchema nettoie les espaces, exige une saisie, puis une adresse valide, chaque étape avec son message en français. Les messages sont écrits ici, une seule fois, et remontent tels quels à l’utilisateur, que l’erreur soit détectée par le formulaire ou par la procédure.", "scope": "14-24", "focus": "15-19"}, {"title": "pipe : un message pour le vide, puis la règle commune", "body": "Pour la connexion, un mot de passe vide reçoit « Saisissez votre mot de passe. » avant la règle de longueur. Zod renvoie les problèmes dans l’ordre des vérifications, et le formulaire affiche le premier.", "scope": "26-33", "focus": "30-33"}, {"title": "Les types sont inférés, pas dupliqués", "body": "z.infer produit le type TypeScript correspondant à chaque schéma. Aucun type n’est écrit à la main : le schéma de validation et le type sont indissociables par construction.", "scope": "35-59", "focus": "35-35"}]'
+  stepsJson='[{"title": "Le fichier dit d’emblée qu’il est la source unique", "body": "Le commentaire de tête nomme les deux côtés qui l’importent : les procédures, qui font foi, et les formulaires, qui affichent la même règle avant l’envoi. En plaçant ces schémas dans packages/contracts, nous disons qu’ils appartiennent au système, pas à une couche.", "scope": "1-9", "focus": "3-9"}, {"title": "Une constante plutôt qu’un nombre répété", "body": "PASSWORD_MIN_LENGTH sert à la règle et aux textes d’aide des formulaires. Changer la longueur minimale, c’est changer une ligne : la règle et le texte qui l’annonce ne peuvent plus diverger.", "scope": "11-12", "focus": "11-12"}, {"title": "Des règles composées, avec leurs messages", "body": "emailSchema nettoie les espaces, met l’adresse en minuscules — c’est ainsi que les adresses sont enregistrées —, exige une saisie, puis une adresse valide, chaque étape avec son message en français. Les messages sont écrits ici, une seule fois, et remontent tels quels à l’utilisateur, que l’erreur soit détectée par le formulaire ou par la procédure.", "scope": "14-28", "focus": "14-23"}, {"title": "pipe : un message pour le vide, puis la règle commune", "body": "Pour la connexion, un mot de passe vide reçoit « Saisissez votre mot de passe. » avant la règle de longueur. Zod renvoie les problèmes dans l’ordre des vérifications, et le formulaire affiche le premier.", "scope": "30-37", "focus": "34-37"}, {"title": "Les types sont inférés, pas dupliqués", "body": "z.infer produit le type TypeScript correspondant à chaque schéma. Aucun type n’est écrit à la main : le schéma de validation et le type sont indissociables par construction.", "scope": "39-63", "focus": "39-39"}]'
 />
 
 ---

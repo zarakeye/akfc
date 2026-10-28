@@ -1,35 +1,50 @@
-import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 import { prisma } from "@backend/prisma";
 import { COOKIE_NAME } from "@contracts/auth/constants";
-import type { Prisma, Session } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { SessionClient } from "@contracts/auth/session.types";
+import { verifyJwt } from "@backend/lib/session/session.server";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+/**
+ * Ce que la lecture d'une session ramène, et rien d'autre : la session, les champs du membre qui
+ * partent vers le navigateur, et son appartenance au groupe Administrateurs (au plus une ligne).
+ * Avec relationJoins (schema.prisma), Prisma lit le tout en UNE requête SQL.
+ */
+const sessionSelect = {
+  id: true,
+  expiresAt: true,
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      pseudo: true,
+      avatar: true,
+      isFirstLogin: true,
+      memberGroupMemberships: {
+        where: { group: { isAdminGroup: true } },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  },
+} satisfies Prisma.SessionSelect;
 
-type SessionJwtPayload = {
-  sessionId: Session["id"];
-};
+/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la sélection elle-même. */
+type SessionDB = Prisma.SessionGetPayload<{ select: typeof sessionSelect }>;
 
-/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la requête elle-même. */
-type SessionDB = Prisma.SessionGetPayload<{ include: { user: true } }>;
-
-function mapSessionDBToSessionClient(
-  session: SessionDB,
-  isAdmin: boolean,
-): SessionClient {
+/** De la ligne lue en base au contrat partagé avec le front : champ par champ, jamais la ligne entière. */
+function mapSessionDBToSessionClient(session: SessionDB): SessionClient {
+  const { memberGroupMemberships, ...user } = session.user;
   return {
     expiresAt: session.expiresAt,
     user: {
-      id: session.user.id,
-      email: session.user.email,
-      firstName: session.user.firstName,
-      lastName: session.user.lastName,
-      pseudo: session.user.pseudo,
-      avatar: session.user.avatar,
-      isFirstLogin: session.user.isFirstLogin,
-      isAdmin,
+      ...user,
+      // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
+      // Aucun champ de User ne le dit : le droit se lit dans les relations.
+      isAdmin: memberGroupMemberships.length > 0,
     },
   };
 }
@@ -69,25 +84,12 @@ async function readAuthToken(req?: Request): Promise<string | null> {
 }
 
 export async function getSessionFromRequest(req?: Request): Promise<SessionClient | null> {
-  const token = await readAuthToken(req);
-
-  if (!token) return null;
-  if (!JWT_SECRET) return null;
-
-  let payload: SessionJwtPayload;
-
-  try {
-    payload = jwt.verify(token, JWT_SECRET) as SessionJwtPayload;
-  } catch {
-    return null;
-  }
+  const payload = verifyJwt(await readAuthToken(req));
+  if (!payload) return null;
 
   const sessionDB = await prisma.session.findUnique({
     where: { id: payload.sessionId },
-    // 🚀 Force Prisma à produire un JOIN SQL au lieu de N SELECT séquentiels.
-    include: {
-      user: true,
-    },
+    select: sessionSelect,
   });
 
   if (!sessionDB) return null;
@@ -100,13 +102,5 @@ export async function getSessionFromRequest(req?: Request): Promise<SessionClien
     return null;
   }
 
-  // Source de vérité « admin » : l'appartenance au groupe Administrateurs (isAdminGroup).
-  // Aucun champ de User ne le dit : le droit se lit dans les relations.
-  const isAdmin =
-    (await prisma.memberGroupMembership.findFirst({
-      where: { userId: sessionDB.user.id, group: { isAdminGroup: true } },
-      select: { id: true },
-    })) !== null;
-
-  return mapSessionDBToSessionClient(sessionDB, isAdmin);
+  return mapSessionDBToSessionClient(sessionDB);
 }

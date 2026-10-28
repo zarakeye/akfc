@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { verifyPassword } from "@backend/lib/auth/password";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
@@ -126,8 +126,8 @@ export async function confirmMemberConsent(params: {
   if (!name) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Renseignez d'abord vos nom et prénom dans votre profil." });
   }
-  if (!(await bcrypt.compare(params.password, m.password))) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Mot de passe incorrect." });
+  if (!(await verifyPassword(params.password, m.password))) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Mot de passe incorrect." });
   }
 
   const usages = normalizeUsages(params.usages);

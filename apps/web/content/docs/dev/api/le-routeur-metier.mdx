@@ -93,8 +93,8 @@ Nous l’ouvrons pour observer comment tRPC articule :
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="1-60"
-  snippetHighlight="28-52"
+  snippetRange="1-66"
+  snippetHighlight="27-58"
   snippetTitle="Le routeur d’authentification, un cas réel"
   fullFileTitle="Voir le fichier complet"
 />
@@ -107,9 +107,9 @@ Nous l’ouvrons pour observer comment tRPC articule :
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="1-60"
+  snippetRange="1-66"
   title="Anatomie d’un routeur métier"
-  stepsJson='[{"title": "Les imports disent déjà beaucoup", "body": "Le routeur importe publicProcedure et protectedProcedure depuis core, des services métier (loginService, la réinitialisation du mot de passe, l’envoi d’e-mails) et les schémas partagés de packages/contracts. Cette liste dessine déjà l’architecture : la sécurité vient d’en haut (core), la logique métier de côté (services), les règles d’entrée du contrat commun.", "scope": "1-21", "focus": "1-21"}, {"title": "authRouter est un objet, pas une liste de routes", "body": "router({...}) prend un objet dont les clés sont les noms des procédures. C’est exactement ainsi qu’on définit un espace de noms en TypeScript, et c’est ainsi que le client y accède : trpc.auth.login, trpc.auth.logout…", "scope": "23-60", "focus": "23-27"}, {"title": "login est une publicProcedure parce qu’un visiteur doit pouvoir l’appeler", "body": "Si login exigeait d’être déjà connecté, personne ne pourrait jamais se connecter. publicProcedure est donc nécessaire ici. Mais ce choix est explicite : c’est une décision, pas une omission.", "scope": "28-52", "focus": "28-28"}, {"title": ".input valide l’entrée avant toute exécution", "body": "loginSchema vient de packages/contracts : le formulaire de connexion valide avec le même schéma, et affiche le même message. Si l’entrée est invalide, tRPC lève BAD_REQUEST automatiquement : le code de .mutation n’est jamais exécuté.", "scope": "28-52", "focus": "29-30"}, {"title": ".mutation reçoit une entrée typée et délègue immédiatement", "body": "La procédure ne fait pas elle-même le travail. Elle appelle loginService, qui vit dans un fichier séparé : la logique métier est testable sans tRPC, réutilisable, et le routeur reste lisible.", "scope": "28-52", "focus": "31-39"}, {"title": "Un mauvais mot de passe est un résultat, le reste une erreur", "body": "INVALID_CREDENTIALS devient { success: false } : le formulaire sait quoi en faire. Toute autre erreur remonte telle quelle (throw error). Le chapitre 8 racontera pourquoi cette distinction a dû être rétablie.", "scope": "28-52", "focus": "40-51"}, {"title": "logout est une protectedProcedure", "body": "On ne peut pas se déconnecter si on n’est pas connecté. protectedProcedure garantit que ctx.sessionClient.user existe ; la procédure peut alors supprimer la session en toute confiance.", "scope": "54-60", "focus": "54-54"}]'
+  stepsJson='[{"title": "Les imports disent déjà beaucoup", "body": "Le routeur importe publicProcedure et protectedProcedure depuis core, des services métier (loginService, la réinitialisation du mot de passe, l’envoi d’e-mails) et les schémas partagés de packages/contracts. Cette liste dessine déjà l’architecture : la sécurité vient d’en haut (core), la logique métier de côté (services), les règles d’entrée du contrat commun.", "scope": "1-20", "focus": "1-20"}, {"title": "authRouter est un objet, pas une liste de routes", "body": "router({...}) prend un objet dont les clés sont les noms des procédures. C’est exactement ainsi qu’on définit un espace de noms en TypeScript, et c’est ainsi que le client y accède : trpc.auth.login, trpc.auth.logout…", "scope": "22-66", "focus": "22-26"}, {"title": "login est une publicProcedure parce qu’un visiteur doit pouvoir l’appeler", "body": "Si login exigeait d’être déjà connecté, personne ne pourrait jamais se connecter. publicProcedure est donc nécessaire ici. Mais ce choix est explicite : c’est une décision, pas une omission.", "scope": "27-58", "focus": "27-27"}, {"title": ".input valide l’entrée avant toute exécution", "body": "loginSchema vient de packages/contracts : le formulaire de connexion valide avec le même schéma, et affiche le même message. Si l’entrée est invalide, tRPC lève BAD_REQUEST automatiquement : le code de .mutation n’est jamais exécuté.", "scope": "27-58", "focus": "28-29"}, {"title": ".mutation reçoit une entrée typée et délègue immédiatement", "body": "La procédure ne fait pas elle-même le travail. Elle appelle loginService, qui vit dans un fichier séparé : la logique métier est testable sans tRPC, réutilisable, et le routeur reste lisible.", "scope": "27-58", "focus": "30-38"}, {"title": "Les échecs attendus sont des résultats, le reste une erreur", "body": "INVALID_CREDENTIALS (mauvais identifiants) et TOO_MANY_ATTEMPTS (trop d’essais) deviennent { success: false } : le formulaire sait quoi en faire. Toute autre erreur remonte telle quelle (throw error). Le chapitre 8 racontera pourquoi cette distinction a dû être rétablie.", "scope": "27-58", "focus": "39-56"}, {"title": "logout est une protectedProcedure", "body": "On ne peut pas se déconnecter si on n’est pas connecté. protectedProcedure garantit que ctx.sessionClient.user existe ; la procédure peut alors supprimer la session en toute confiance.", "scope": "60-66", "focus": "60-60"}]'
 />
 
 Une dernière procédure de ce routeur mérite un regard, plus bas dans le fichier : `getSession`.
@@ -300,15 +300,15 @@ Regardons un vrai service du projet, celui qui vérifie un identifiant et un mot
   language="ts"
   filepath="packages/backend/src/modules/auth/services/auth.service.ts"
   filename="auth.service.ts"
-  snippetRange="1-32"
-  snippetHighlight="9-32"
+  snippetRange="1-43"
+  snippetHighlight="24-43"
   snippetTitle="loginService : la logique métier extraite du routeur"
   fullFileTitle="Voir le fichier complet"
 />
 
 ---
 
-Ce service fait un travail précis : il cherche le membre par son adresse, compare le mot de passe saisi à l’empreinte enregistrée (bcrypt), puis crée la session — une ligne en base et un jeton signé dans un cookie, que la partie suivante ouvrira en détail. Aucune trace de requête HTTP, aucun cookie lu, aucune procédure : il reçoit deux chaînes et fait son travail.
+Ce service fait un travail précis : il cherche le membre par son adresse, compare le mot de passe saisi à l’empreinte enregistrée (bcrypt) — à une empreinte factice si l’adresse n’a pas de compte, pour que la réponse prenne le même temps —, puis crée la session — une ligne en base et un jeton signé dans un cookie, que la partie suivante ouvrira en détail. Aucune trace de requête HTTP, aucun cookie lu, aucune procédure : il reçoit deux chaînes et fait son travail.
 
 Une seule trace de tRPC subsiste : l’erreur qu’il lève est une `TRPCError`. Un service tout à fait indépendant lèverait sa propre erreur, que la procédure traduirait. Le projet accepte ce raccourci, parce que ses services ne servent que ses procédures ; il faut seulement savoir qu’il existe.
 

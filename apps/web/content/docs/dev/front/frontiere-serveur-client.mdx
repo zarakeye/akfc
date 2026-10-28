@@ -114,20 +114,19 @@ Tout objet passé à un composant client finit dans la page. Tout ce que renvoie
 
 La règle du projet est donc de **choisir chaque champ** de ce qui sort du serveur, avec un `select` explicite, et de décrire ce qui sort par un type de projection plutôt que par le type complet de la table.
 
-La session en est l'exemple central : elle va dans toutes les pages, et `getSessionFromRequest` n'en garde que les champs utiles, sans jamais recopier la ligne `User`, qui contient l'empreinte du mot de passe :
+La session en est l'exemple central : elle va dans toutes les pages, et `getSessionFromRequest` ne demande à la base que les champs utiles, sans jamais lire la ligne `User` entière, qui contient l'empreinte du mot de passe :
 
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-user: {
-  id: session.user!.id,
-  email: session.user!.email,
-  firstName: session.user!.firstName,
-  lastName: session.user!.lastName,
-  pseudo: session.user!.pseudo,
-  avatar: session.user!.avatar,
-  isFirstLogin: session.user!.isFirstLogin,
-  isAdmin,
-},
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      pseudo: true,
+      avatar: true,
+      isFirstLogin: true,
 ```
 
 Les données publiques sur les membres (auteur d'un commentaire, membre qui a réagi, instructeur présenté sur le site) suivent la même règle, plus stricte encore : **pas d'adresse e-mail**. Le type d'affichage la rend facultative, et les `select` publics ne la demandent pas :

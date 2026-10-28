@@ -3,8 +3,8 @@ import { Prisma } from "@prisma/client";
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
+import { hashPassword } from "@backend/lib/auth/password";
 import { sendWelcomeEmail, sendWelcomeNotice } from "@backend/email/templates/welcomeEmailWithPassword";
 import { isDemoEmail } from "@backend/lib/demoAccounts";
 import { TRPCError } from "@trpc/server";
@@ -13,6 +13,7 @@ import type { UserProfile } from "@contracts/users/user-profile.types";
 import type { ImageConsentProofValue } from "@contracts/legal/imageConsent";
 import { legalInfoInput, legalInfoData } from "@backend/modules/users/legalInfo";
 import { pageContentSchemaV1 } from "@contracts/page";
+import { emailSchema } from "@contracts/auth/auth.schema";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
@@ -96,7 +97,7 @@ export const userRouter = router({
 
   getByEmail: protectedProcedure
     .use(isAdmin)
-    .input(z.object({ email: z.string().email() }))
+    .input(z.object({ email: emailSchema }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { email: input.email },
@@ -117,7 +118,9 @@ export const userRouter = router({
     .use(isAdmin)
     .input(
       z.object({
-        email: z.string().email("Adresse e-mail invalide."),
+        // Même règle que la connexion : nettoyée, en minuscules (sinon le membre ne retrouverait
+        // pas son compte en tapant son adresse autrement).
+        email: emailSchema,
         /** Un ou plusieurs groupes (au moins un). */
         groupIds: z.array(z.string().min(1)).min(1, "Choisissez au moins un groupe."),
         /** Majorité et, pour un mineur, date de naissance et parent référent (tous obligatoires). */
@@ -134,7 +137,7 @@ export const userRouter = router({
       // construction, puis envoyé au SEUL membre (voir welcomeEmailWithPassword.ts).
       // isFirstLogin=true (défaut Prisma) : le site lui propose de compléter son profil.
       const password = generateStrongPassword();
-      const hash = await bcrypt.hash(password, 12);
+      const hash = await hashPassword(password);
 
       if (input.legal.legalAge === "UNKNOWN") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Indiquez si le membre est majeur ou mineur." });

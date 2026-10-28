@@ -150,14 +150,37 @@ Regardons cette requête, celle que le serveur exécute à chaque requête d’u
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
   const sessionDB = await prisma.session.findUnique({
     where: { id: payload.sessionId },
-    // 🚀 Force Prisma à produire un JOIN SQL au lieu de N SELECT séquentiels.
-    include: {
-      user: true,
-    },
+    select: sessionSelect,
   });
 ```
 
-`include: { user: true }` demande la session **avec** son membre. Le commentaire rappelle le réglage vu au chapitre 2 : avec `relationJoins`, Prisma lit les deux en une seule requête SQL, par une jointure.
+`sessionSelect`, déclarée en tête du fichier, demande la session **avec** son membre — certains de ses champs seulement — et son éventuelle adhésion au groupe Administrateurs :
+
+```ts
+// packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
+const sessionSelect = {
+  id: true,
+  expiresAt: true,
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      pseudo: true,
+      avatar: true,
+      isFirstLogin: true,
+      memberGroupMemberships: {
+        where: { group: { isAdminGroup: true } },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  },
+} satisfies Prisma.SessionSelect;
+```
+
+Avec le réglage `relationJoins` vu au chapitre 2, Prisma lit le tout en une seule requête SQL, par des jointures. (Une première version faisait une seconde requête, à chaque requête du site, pour savoir si le membre était administrateur ; l’adhésion demandée ici la remplace.)
 
 Ce code n’est pas qu’une requête.
 
@@ -233,11 +256,11 @@ Le type est maintenant **déduit de la requête elle-même** :
 
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la requête elle-même. */
-type SessionDB = Prisma.SessionGetPayload<{ include: { user: true } }>;
+/** Une session lue avec son membre : type GÉNÉRÉ par Prisma à partir de la sélection elle-même. */
+type SessionDB = Prisma.SessionGetPayload<{ select: typeof sessionSelect }>;
 ```
 
-`Prisma.SessionGetPayload<…>` reçoit la même forme que l’`include` de la requête, et produit exactement le type de son résultat : une session, avec un `user` qui n’est pas `null`. Les `!` ont disparu, et la vérification inutile aussi. Si un jour la requête demandait autre chose, il suffirait de changer les deux ensemble, et TypeScript signalerait tout écart.
+`Prisma.SessionGetPayload<…>` reçoit la sélection de la requête, et produit exactement le type de son résultat : une session, avec un `user` qui n’est pas `null` et qui n’a que les champs demandés. Les `!` ont disparu, et la vérification inutile aussi. Et comme la requête et le type partagent la même constante, `sessionSelect`, ils ne peuvent plus diverger : ajouter un champ à la sélection l’ajoute au type.
 
 Le client généré fournit ainsi bien plus que des types de modèles :
 

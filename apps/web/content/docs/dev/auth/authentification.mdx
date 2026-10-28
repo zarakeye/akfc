@@ -81,11 +81,20 @@ Le projet combine les deux. Le cookie contient un JWT signé, et ce JWT ne conti
 ```ts
 // packages/backend/src/lib/session/session.server.ts (extrait)
 const session = await prisma.session.create({
-  data: { userId: user.id, expiresAt },
+  data: {
+    userId,
+    expiresAt,
+  },
 });
 
-const payload: SessionJwtPayload = { sessionId: session.id };
-const token = jwt.sign(payload, JWT_SECRET!, { expiresIn: "7d" });
+const payload: SessionJwtPayload = {
+  sessionId: session.id,
+};
+
+const token = jwt.sign(payload, JWT_SECRET!, {
+  algorithm: JWT_ALGORITHM,
+  expiresIn: Math.floor(SESSION_DURATION_MS / 1000),
+});
 
 const cookieStore = await cookies();
 cookieStore.set(COOKIE_NAME, token, {
@@ -114,18 +123,20 @@ La procédure `auth.login` compare le mot de passe à son empreinte bcrypt, puis
 
 ```ts
 // packages/backend/src/modules/auth/services/auth.service.ts (extrait)
-const user = await prisma.user.findUnique({ where: { email } });
-if (!user) {
+const user = await prisma.user.findUnique({
+  where: { email },
+  select: { id: true, password: true },
+});
+
+const valid = await verifyPassword(password, user?.password ?? UNKNOWN_ACCOUNT_HASH);
+if (!user || !valid) {
   throw new TRPCError({ code: "UNAUTHORIZED", message: "INVALID_CREDENTIALS" });
 }
-const valid = await bcrypt.compare(password, user.password);
-if (!valid) {
-  throw new TRPCError({ code: "UNAUTHORIZED", message: "INVALID_CREDENTIALS" });
-}
-await createSessionJWT(user);
+
+await createSessionJWT(user.id);
 ```
 
-Une adresse inconnue et un mauvais mot de passe produisent **la même erreur**. Un visiteur ne peut donc pas utiliser le formulaire de connexion pour savoir si une adresse a un compte au club.
+Une adresse inconnue et un mauvais mot de passe produisent **la même erreur, dans le même temps** : sans compte, le mot de passe est quand même comparé, à une empreinte factice (`UNKNOWN_ACCOUNT_HASH`). Un visiteur ne peut donc utiliser ni le message ni la durée de la réponse pour savoir si une adresse a un compte au club.
 
 À la connexion, `createSessionJWT` enregistre aussi la date de dernière connexion, par une requête SQL directe : passer par Prisma mettrait à jour `updatedAt`, qui signifie « dernière modification du profil ».
 
@@ -137,44 +148,40 @@ Tout ce qui a besoin de connaître le visiteur appelle `getSessionFromRequest` :
 
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-const token = await readAuthToken(req);
-if (!token) return null;
-
-let payload: SessionJwtPayload;
-try {
-  payload = jwt.verify(token, JWT_SECRET) as SessionJwtPayload;
-} catch {
-  return null;
-}
+const payload = verifyJwt(await readAuthToken(req));
+if (!payload) return null;
 
 const sessionDB = await prisma.session.findUnique({
   where: { id: payload.sessionId },
-  include: { user: true },
+  select: sessionSelect,
 });
+
 if (!sessionDB) return null;
 
 if (sessionDB.expiresAt < new Date()) {
-  await prisma.session.deleteMany({ where: { id: sessionDB.id } });
+  await prisma.session.deleteMany({
+    where: { id: sessionDB.id },
+  });
+
   return null;
 }
 ```
 
-Le jeton est lu dans l'en-tête de la requête quand elle est fournie (routes API, tRPC), sinon dans `cookies()` (composants serveur). La session et l'utilisateur arrivent en une seule requête (`include`). Une session expirée est supprimée au passage.
+Le jeton est lu dans l'en-tête de la requête quand elle est fournie (routes API, tRPC), sinon dans `cookies()` (composants serveur). La session, les champs utiles du membre et son éventuelle adhésion au groupe Administrateurs arrivent en une seule requête (`sessionSelect`). Une session expirée est supprimée au passage.
 
 La fonction renvoie un `SessionClient`, et non la ligne `User` complète :
 
 ```ts
 // packages/backend/src/modules/auth/getSessionFromRequest.ts (extrait)
-user: {
-  id: session.user.id,
-  email: session.user.email,
-  firstName: session.user.firstName,
-  lastName: session.user.lastName,
-  pseudo: session.user.pseudo,
-  avatar: session.user.avatar,
-  isFirstLogin: session.user.isFirstLogin,
-  isAdmin,
-},
+  user: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      pseudo: true,
+      avatar: true,
+      isFirstLogin: true,
 ```
 
 Cette liste explicite de champs est essentielle. La session est transmise au navigateur, et la ligne `User` contient l'empreinte du mot de passe : la recopier entière l'enverrait dans chaque page.
@@ -248,7 +255,7 @@ export const RESET_TOKEN_TTL_MS = 1000 * 60 * 30; // 30 min
 export const RESET_TOKEN_COOLDOWN_MS = 1000 * 60 * 2; // 2 min
 
 export function createPasswordResetToken(): { token: string; tokenHash: string } {
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = crypto.randomBytes(32).toString("hex"); // 64 chars
   const tokenHash = hashResetToken(token);
   return { token, tokenHash };
 }
@@ -256,7 +263,7 @@ export function createPasswordResetToken(): { token: string; tokenHash: string }
 
 Chaque règle a sa raison :
 
-<DocsTable columnsJson='["Règle","Ce qu’elle protège"]' rowsJson='[["Seule l’empreinte SHA-256 du jeton est stockée","Une fuite de la base ne donne aucun lien de réinitialisation utilisable."],["Jeton valable 30 minutes, utilisable une fois (usedAt)","Un e-mail ancien ou déjà utilisé n’ouvre plus rien."],["Une demande toutes les 2 minutes au plus par compte","Personne ne peut bombarder une boîte d’e-mails."],["Même réponse que l’adresse existe ou non, et même en cas d’échec d’envoi","Le formulaire ne révèle pas qui a un compte."],["Le jeton n’apparaît jamais dans les journaux","Un accès aux journaux ne suffit pas à prendre un compte."],["La réinitialisation supprime toutes les sessions","Un éventuel intrus est déconnecté partout."]]' />
+<DocsTable columnsJson='["Règle","Ce qu’elle protège"]' rowsJson='[["Seule l’empreinte SHA-256 du jeton est stockée","Une fuite de la base ne donne aucun lien de réinitialisation utilisable."],["Jeton valable 30 minutes, utilisable une fois (usedAt)","Un e-mail ancien ou déjà utilisé n’ouvre plus rien."],["Une demande toutes les 2 minutes au plus par compte","Personne ne peut bombarder une boîte d’e-mails."],["Même réponse, dans le même temps, que l’adresse existe ou non : l’envoi de l’e-mail n’est pas attendu","Le formulaire ne révèle pas qui a un compte, ni par son message, ni par sa lenteur."],["Le jeton n’apparaît jamais dans les journaux","Un accès aux journaux ne suffit pas à prendre un compte."],["La réinitialisation supprime toutes les sessions","Un éventuel intrus est déconnecté partout."]]' />
 
 La réinitialisation enregistre le nouveau mot de passe, marque le jeton comme utilisé et supprime les sessions dans une même transaction.
 
