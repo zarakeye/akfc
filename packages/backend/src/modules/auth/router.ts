@@ -18,6 +18,7 @@ import {
   requestPasswordResetSchema,
   resetPasswordSchema,
 } from "@contracts/auth/auth.schema";
+import { assertPasswordOfConnectedUser } from "@backend/lib/security/passwordCheck";
 
 /**
  * Connexion, déconnexion, session courante, mot de passe (changement, oubli, réinitialisation).
@@ -84,15 +85,15 @@ export const authRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable." });
       }
 
-      const ok = await verifyPassword(input.currentPassword, user.password);
-      if (!ok) {
-        // BAD_REQUEST, pas UNAUTHORIZED : le membre EST connecté ; c'est la saisie qui est fausse.
-        // UNAUTHORIZED signifie « aucune session », et un client pourrait le traiter comme une déconnexion.
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Mot de passe actuel incorrect.",
-        });
-      }
+      // BAD_REQUEST, pas UNAUTHORIZED : le membre EST connecté ; c'est la saisie qui est fausse.
+      // UNAUTHORIZED signifie « aucune session », et un client pourrait le traiter comme une déconnexion.
+      // Essais limités : une session volée ne permet pas d'essayer des mots de passe sans fin.
+      await assertPasswordOfConnectedUser({
+        userId,
+        password: input.currentPassword,
+        hash: user.password,
+        wrongMessage: "Mot de passe actuel incorrect.",
+      });
 
       const same = await verifyPassword(input.newPassword, user.password);
       if (same) {

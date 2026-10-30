@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -41,9 +42,9 @@ async function removeObject(key: string): Promise<void> {
 /** URL signée (PUT, 5 min) pour envoyer le formulaire d'un membre, et la clé à renvoyer à `register`. */
 export async function createImageConsentFormUpload(params: { userId: string; mimeType: string; bytes: number }) {
   const ext = IMAGE_CONSENT_FORM_MIME_EXT[params.mimeType];
-  if (!ext) throw new Error("Format non accepté : PDF, JPEG, PNG ou WebP.");
+  if (!ext) throw new TRPCError({ code: "BAD_REQUEST", message: "Format non accepté : PDF, JPEG, PNG ou WebP." });
   if (params.bytes <= 0 || params.bytes > IMAGE_CONSENT_FORM_MAX_BYTES) {
-    throw new Error("Fichier trop volumineux (15 Mo au plus).");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier trop volumineux (15 Mo au plus)." });
   }
   const path = `${formFolder(params.userId)}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
   const uploadUrl = await getSignedUrl(
@@ -69,16 +70,16 @@ export async function registerImageConsentForm(params: {
   const ext = path.split(".").pop() ?? "";
   const mimeType = Object.keys(IMAGE_CONSENT_FORM_MIME_EXT).find((m) => IMAGE_CONSENT_FORM_MIME_EXT[m] === ext);
   if (!path.startsWith(`${formFolder(userId)}/`) || path.includes("..") || !mimeType) {
-    throw new Error("Chemin hors de l'espace du membre.");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Chemin hors de l'espace du membre." });
   }
   const head = await getR2Client()
     .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
     .catch(() => null);
-  if (!head) throw new Error("Fichier introuvable : l'envoi n'a pas abouti.");
+  if (!head) throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier introuvable : l'envoi n'a pas abouti." });
   const size = head.ContentLength ?? 0;
   if (size <= 0 || size > IMAGE_CONSENT_FORM_MAX_BYTES || head.ContentType !== mimeType) {
     await removeObject(path);
-    throw new Error("Fichier refusé.");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier refusé." });
   }
 
   const usages = [...new Set(params.usages)];
@@ -88,7 +89,7 @@ export async function registerImageConsentForm(params: {
   });
   if (!member) {
     await removeObject(path);
-    throw new Error("Membre introuvable.");
+    throw new TRPCError({ code: "NOT_FOUND", message: "Membre introuvable." });
   }
   const memberName =
     [member.firstName, member.lastName].filter(Boolean).join(" ").trim() || member.pseudo || member.email;
@@ -133,8 +134,15 @@ export async function registerImageConsentForm(params: {
 export async function deleteImageConsentForm(prisma: PrismaClient, id: string): Promise<void> {
   const form = await prisma.imageConsentForm.findUnique({ where: { id }, select: { storageKey: true } });
   if (!form) return;
+  // Le fichier d'abord : s'il ne part pas, la fiche reste et l'administrateur peut réessayer.
+  // L'inverse laisserait un document signé dans le stockage sans plus aucune ligne pour le désigner.
+  try {
+    await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: form.storageKey }));
+  } catch (err) {
+    console.error(`[droit à l'image] formulaire ${id} : fichier non supprimé :`, err instanceof Error ? err.message : err);
+    throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "Le fichier n'a pas pu être supprimé. Réessayez dans un instant." });
+  }
   await prisma.imageConsentForm.delete({ where: { id } });
-  await removeObject(form.storageKey);
 }
 
 /** Durée de conservation d'un formulaire après la suppression du compte (preuve du consentement). */
@@ -148,11 +156,22 @@ export async function purgeDetachedImageConsentForms(prisma: PrismaClient, now =
     where: { userId: null, detachedAt: { lt: cutoff } },
     select: { id: true, storageKey: true },
   });
+  let purged = 0;
   for (const f of old) {
-    await removeObject(f.storageKey);
+    // Le fichier d'abord, la fiche ensuite, et la fiche SEULEMENT si le fichier est parti : un échec
+    // laisse la fiche, et la purge suivante réessaiera. Dans l'autre ordre (ou en ignorant l'échec),
+    // un document signé resterait dans le stockage sans plus aucune ligne pour le désigner.
+    // (Supprimer une clé déjà absente réussit : un fichier déjà parti n'empêche rien.)
+    try {
+      await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: f.storageKey }));
+    } catch (err) {
+      console.error(`[droit à l'image] formulaire ${f.id} non purgé (fichier) :`, err instanceof Error ? err.message : err);
+      continue;
+    }
     await prisma.imageConsentForm.delete({ where: { id: f.id } });
+    purged += 1;
   }
-  return old.length;
+  return purged;
 }
 
 /** Champs exposés d'un formulaire (jamais la clé R2). */

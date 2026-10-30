@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { verifyPassword } from "@backend/lib/auth/password";
+import { assertPasswordOfConnectedUser } from "@backend/lib/security/passwordCheck";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
@@ -126,9 +126,13 @@ export async function confirmMemberConsent(params: {
   if (!name) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Renseignez d'abord vos nom et prénom dans votre profil." });
   }
-  if (!(await verifyPassword(params.password, m.password))) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Mot de passe incorrect." });
-  }
+  // Le mot de passe vaut signature ; ses essais sont limités comme ceux de la connexion.
+  await assertPasswordOfConnectedUser({
+    userId,
+    password: params.password,
+    hash: m.password,
+    wrongMessage: "Mot de passe incorrect.",
+  });
 
   const usages = normalizeUsages(params.usages);
   const confirmedAt = new Date();

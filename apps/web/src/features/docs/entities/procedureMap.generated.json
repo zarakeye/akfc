@@ -2892,7 +2892,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 27,
+   "line": 28,
    "effects": [
     {
      "model": "Session",
@@ -2966,7 +2966,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 60,
+   "line": 61,
    "effects": [
     {
      "model": "Session",
@@ -2992,7 +2992,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 74,
+   "line": 75,
    "effects": [
     {
      "model": "Session",
@@ -3002,7 +3002,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:114"
+        "packages/backend/src/modules/auth/router.ts:115"
        ]
       ]
      ]
@@ -3015,7 +3015,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:79"
+        "packages/backend/src/modules/auth/router.ts:80"
        ]
       ]
      ]
@@ -3030,7 +3030,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:110"
+        "packages/backend/src/modules/auth/router.ts:111"
        ]
       ]
      ]
@@ -3042,7 +3042,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 125,
+   "line": 126,
    "effects": [],
    "emails": []
   },
@@ -3050,7 +3050,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 129,
+   "line": 130,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3066,7 +3066,7 @@
       [
        [
         "ctx.prisma.passwordResetToken.create",
-        "packages/backend/src/modules/auth/router.ts:158"
+        "packages/backend/src/modules/auth/router.ts:159"
        ]
       ]
      ]
@@ -3079,7 +3079,7 @@
       [
        [
         "ctx.prisma.passwordResetToken.findFirst",
-        "packages/backend/src/modules/auth/router.ts:142"
+        "packages/backend/src/modules/auth/router.ts:143"
        ]
       ]
      ]
@@ -3109,7 +3109,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/auth/router.ts:133"
+        "packages/backend/src/modules/auth/router.ts:134"
        ]
       ]
      ]
@@ -3123,7 +3123,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/auth/router.ts",
-   "line": 181,
+   "line": 182,
    "effects": [
     {
      "model": "PasswordResetToken",
@@ -3133,7 +3133,7 @@
       [
        [
         "ctx.prisma.passwordResetToken.findUnique",
-        "packages/backend/src/modules/auth/router.ts:187"
+        "packages/backend/src/modules/auth/router.ts:188"
        ]
       ]
      ]
@@ -3148,7 +3148,7 @@
       [
        [
         "tx.passwordResetToken.updateMany",
-        "packages/backend/src/modules/auth/router.ts:222"
+        "packages/backend/src/modules/auth/router.ts:223"
        ]
       ]
      ]
@@ -3161,7 +3161,7 @@
       [
        [
         "tx.session.deleteMany",
-        "packages/backend/src/modules/auth/router.ts:230"
+        "packages/backend/src/modules/auth/router.ts:231"
        ]
       ]
      ]
@@ -3176,7 +3176,7 @@
       [
        [
         "tx.user.update",
-        "packages/backend/src/modules/auth/router.ts:212"
+        "packages/backend/src/modules/auth/router.ts:213"
        ]
       ]
      ]
@@ -4556,11 +4556,11 @@
       [
        [
         "registerImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:58"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:59"
        ],
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:101"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:102"
        ]
       ]
      ]
@@ -4573,11 +4573,11 @@
       [
        [
         "registerImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:58"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:59"
        ],
        [
         "prisma.imageConsentForm.findFirst",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:95"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:96"
        ]
       ]
      ]
@@ -4590,11 +4590,11 @@
       [
        [
         "registerImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:58"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:59"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:85"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:86"
        ]
       ]
      ]
@@ -4610,11 +4610,11 @@
       [
        [
         "registerImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:58"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:59"
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:116"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:117"
        ]
       ]
      ]
@@ -4673,11 +4673,11 @@
       [
        [
         "deleteImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:133"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:134"
        ],
        [
         "prisma.imageConsentForm.delete",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:136"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:145"
        ]
       ]
      ]
@@ -4690,11 +4690,11 @@
       [
        [
         "deleteImageConsentForm",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:133"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:134"
        ],
        [
         "prisma.imageConsentForm.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:134"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:135"
        ]
       ]
      ]
@@ -4760,7 +4760,7 @@
        ],
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:151"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:155"
        ]
       ]
      ]
@@ -4818,7 +4818,7 @@
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:169"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:173"
        ]
       ]
      ]
@@ -16765,7 +16765,7 @@
   },
   "registerImageConsentForm": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
-   "line": 58,
+   "line": 59,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -16786,7 +16786,7 @@
       [
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:101"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:102"
        ]
       ]
      ]
@@ -16799,7 +16799,7 @@
       [
        [
         "prisma.imageConsentForm.findFirst",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:95"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:96"
        ]
       ]
      ]
@@ -16812,7 +16812,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:85"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:86"
        ]
       ]
      ]
@@ -16828,7 +16828,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:116"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:117"
        ]
       ]
      ]
@@ -16840,7 +16840,7 @@
   },
   "deleteImageConsentForm": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
-   "line": 133,
+   "line": 134,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -16850,7 +16850,7 @@
       [
        [
         "prisma.imageConsentForm.delete",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:136"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:145"
        ]
       ]
      ]
@@ -16863,7 +16863,7 @@
       [
        [
         "prisma.imageConsentForm.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:134"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:135"
        ]
       ]
      ]
@@ -16873,7 +16873,7 @@
   },
   "purgeDetachedImageConsentForms": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts",
-   "line": 144,
+   "line": 152,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -16883,7 +16883,7 @@
       [
        [
         "prisma.imageConsentForm.delete",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:153"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:171"
        ]
       ]
      ]
@@ -16896,7 +16896,7 @@
       [
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:147"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:155"
        ]
       ]
      ]
@@ -16950,7 +16950,7 @@
       [
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:151"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:155"
        ]
       ]
      ]
@@ -16996,7 +16996,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:169"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:173"
        ]
       ]
      ]
@@ -18954,11 +18954,11 @@
       [
        [
         "purgeDetachedImageConsentForms",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:144"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:152"
        ],
        [
         "prisma.imageConsentForm.delete",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:153"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:171"
        ]
       ]
      ]
@@ -18971,11 +18971,11 @@
       [
        [
         "purgeDetachedImageConsentForms",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:144"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:152"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:147"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:155"
        ]
       ]
      ]
@@ -19141,11 +19141,11 @@
        ],
        [
         "purgeDetachedImageConsentForms",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:144"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:152"
        ],
        [
         "prisma.imageConsentForm.delete",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:153"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:171"
        ]
       ]
      ]
@@ -19162,11 +19162,11 @@
        ],
        [
         "purgeDetachedImageConsentForms",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:144"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:152"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:147"
+        "packages/backend/src/modules/imageConsent/imageConsentForm.service.ts:155"
        ]
       ]
      ]
