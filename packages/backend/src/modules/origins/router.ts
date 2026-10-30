@@ -231,7 +231,7 @@ export const originRouter = router({
       const deps: string[] = [];
       if (disciplineCount > 0) deps.push(`${disciplineCount} discipline(s)`);
       if (stageCount > 0) deps.push(`${stageCount} stage(s)`);
-      if (eventCount > 0) deps.push(`${eventCount} event(s)`);
+      if (eventCount > 0) deps.push(`${eventCount} événement(s)`);
 
       if (deps.length > 0) {
         throw new TRPCError({

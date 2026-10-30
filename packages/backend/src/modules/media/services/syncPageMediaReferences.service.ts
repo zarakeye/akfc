@@ -124,12 +124,15 @@ export async function syncPageMediaReferences(
   }
 
   if (toAdd.length > 0) {
+    // `skipDuplicates` : deux enregistrements simultanés de la même page calculent le même diff ;
+    // le second ne doit pas échouer sur la contrainte d'unicité pour une ligne déjà écrite.
     await tx.pageMediaReference.createMany({
       data: toAdd.map((mediaAssetId) => ({
         mediaAssetId,
         pageType,
         pageId,
       })),
+      skipDuplicates: true,
     });
   }
 

@@ -448,6 +448,9 @@ export const userRouter = router({
           { coursesAsInstructor: { some: {} } },
           { seminarsAsPrimaryAnimator: { some: {} } },
           { seminarsAsAnimator: { some: {} } },
+          // Organisateur d'un évènement : sans cette ligne, un organisateur qui n'est ni admin ni
+          // instructeur disparaît du sélecteur, et le formulaire d'édition affiche « — Choisir — ».
+          { eventsAsOrganizer: { some: {} } },
         ],
       },
       select: {

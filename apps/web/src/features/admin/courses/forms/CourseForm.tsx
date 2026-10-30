@@ -199,7 +199,11 @@ export function CourseForm({
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Instructeur</span>
-          <InstructorSelect value={instructorId} onChange={setInstructorId} />
+          <InstructorSelect
+            value={instructorId}
+            onChange={setInstructorId}
+            emptyLabel="— Celui de la discipline —"
+          />
         </label>
 
         <label className="col-span-full flex flex-col gap-1 text-sm">

@@ -71,7 +71,7 @@ export default async function PublicStagePage({
     where: { slug },
     include: {
       discipline: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, publicationDate: true },
       },
       origin: {
         select: { id: true, name: true, slug: true, flag: true, region: true },
@@ -81,7 +81,6 @@ export default async function PublicStagePage({
           firstName: true,
           lastName: true,
           pseudo: true,
-          email: true,
         },
       },
       animators: {
@@ -90,7 +89,6 @@ export default async function PublicStagePage({
           firstName: true,
           lastName: true,
           pseudo: true,
-          email: true,
         },
       },
       sessions: {
@@ -105,6 +103,13 @@ export default async function PublicStagePage({
   if (!stage.publicationDate || stage.publicationDate > new Date()) {
     notFound();
   }
+
+  // Discipline affichée seulement si elle est publiée : le nom d'un brouillon n'a pas à sortir.
+  const now = new Date();
+  const discipline =
+    stage.discipline?.publicationDate && stage.discipline.publicationDate <= now
+      ? stage.discipline
+      : null;
 
   const description = parsePageContentV1(stage.description);
   const program = parsePageContentV1(stage.program);
@@ -133,10 +138,10 @@ export default async function PublicStagePage({
         <h1 className="text-3xl font-bold">{stage.label}</h1>
 
         <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          {stage.discipline && (
+          {discipline && (
             <div>
               <dt className="font-medium text-muted-foreground">Discipline</dt>
-              <dd>{stage.discipline.name}</dd>
+              <dd>{discipline.name}</dd>
             </div>
           )}
           {stage.externalDisciplineLabel && (

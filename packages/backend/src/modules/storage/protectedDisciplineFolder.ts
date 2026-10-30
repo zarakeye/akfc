@@ -1,27 +1,21 @@
 import type { PrismaClient } from "@prisma/client";
-import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
+
+import { categorySegment, disciplineSegment } from "@backend/modules/storage/storageSegments";
 
 /**
  * Protège les dossiers adossés aux DISCIPLINES / CATÉGORIES. Contrairement aux
  * espaces de groupe/perso/avatars (préfixe fixe → regex), le chemin d'une
- * discipline dépend de slugs DYNAMIQUES :
+ * discipline dépend de segments enregistrés en base :
  *
- *   - conteneur de catégorie : `${appRoot}/<slug(category.type)>`
- *   - conteneur des nouvelles : `${appRoot}/<slug(category.type)>/new`
- *   - dossier de discipline   : `${appRoot}/<slug(category.type)>/<slug(name)>`
+ *   - conteneur de catégorie : `${appRoot}/<segment de catégorie>`
+ *   - conteneur des nouvelles : `${appRoot}/<segment de catégorie>/new`
+ *   - dossier de discipline   : `${appRoot}/<segment de catégorie>/<segment de discipline>`
  *
- * La détection interroge donc la base. Un chemin PLUS PROFOND (contenu d'un
- * dossier de discipline) n'est PAS protégé — les fichiers restent supprimables.
- *
- * Doit rester aligné avec `resolvePendingUploadFolder` (même slugify + fallback
- * `disc-<id>` quand le nom slugifie en chaîne vide).
+ * Les segments sont figés à la création (`storageSegment`, cf. storageSegments.ts) :
+ * un renommage ne fait pas sortir un dossier de la protection. La détection
+ * interroge donc la base. Un chemin PLUS PROFOND (contenu d'un dossier de
+ * discipline) n'est PAS protégé — les fichiers restent supprimables.
  */
-const SLUG_OPTIONS = { lower: true, strict: true } as const;
-function slug(input: string): string {
-  return slugify(input, SLUG_OPTIONS);
-}
-
 export async function isProtectedDisciplineFolderPath(
   prisma: PrismaClient,
   appRoot: string,
@@ -31,25 +25,25 @@ export async function isProtectedDisciplineFolderPath(
   if (!path.startsWith(prefix)) return false;
   const segs = path.slice(prefix.length).split("/");
 
-  // Conteneur de catégorie : `${appRoot}/<slug(type)>`
+  // Conteneur de catégorie : `${appRoot}/<segment>`
   if (segs.length === 1) {
-    const cats = await prisma.category.findMany({ select: { type: true } });
-    return cats.some((c) => categoryStorageSegment(c.type) === segs[0]);
+    const cats = await prisma.category.findMany({ select: { type: true, storageSegment: true } });
+    return cats.some((c) => categorySegment(c) === segs[0]);
   }
 
   // `${appRoot}/<cat>/<disc>` : dossier de discipline ou conteneur `new`
   if (segs.length === 2) {
     const [catSeg, second] = segs;
     const cat = (
-      await prisma.category.findMany({ select: { id: true, type: true } })
-    ).find((c) => categoryStorageSegment(c.type) === catSeg);
+      await prisma.category.findMany({ select: { id: true, type: true, storageSegment: true } })
+    ).find((c) => categorySegment(c) === catSeg);
     if (!cat) return false;
     if (second === "new") return true;
     const discs = await prisma.discipline.findMany({
       where: { categoryId: cat.id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, storageSegment: true },
     });
-    return discs.some((d) => (slug(d.name) || `disc-${d.id}`) === second);
+    return discs.some((d) => disciplineSegment(d) === second);
   }
 
   // Plus profond = contenu d'un dossier de discipline → supprimable.

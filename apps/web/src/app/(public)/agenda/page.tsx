@@ -5,6 +5,7 @@ import { parsePageContentV1 } from "@contracts/page";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
+import { startOfClubDay } from "@lib/time/clubDay";
 import {
   SummaryCards,
   type SummaryCardData,
@@ -29,6 +30,10 @@ import type { Metadata } from "next";
  * Une session à venir ET un résumé non vide. Un stage commencé mais non
  * terminé y figure donc, avec sa prochaine date : on peut rejoindre un stage
  * en cours.
+ *
+ * « À venir » se compte en JOURS : une séance est stockée à midi UTC de son
+ * jour, et celle d'aujourd'hui reste à l'agenda toute la journée, quelle que
+ * soit son heure (voir `startOfClubDay`).
  */
 
 function formatDate(date: Date): string {
@@ -44,12 +49,13 @@ export const metadata: Metadata = { title: "Agenda" };
 
 export default async function AgendaPage(): Promise<JSX.Element> {
   const now = new Date();
+  const today = startOfClubDay(now);
 
   // Filtre de publication repris tel quel des pages /seminars et /events :
   // inventer une seconde règle créerait deux vérités sur ce qui est public.
   const publicFilter = { publicationDate: { not: null, lte: now } };
   const nextSession = {
-    where: { date: { gte: now } },
+    where: { date: { gte: today } },
     orderBy: { date: "asc" as const },
     take: 1,
     select: { date: true },
@@ -57,7 +63,7 @@ export default async function AgendaPage(): Promise<JSX.Element> {
 
   const [seminars, events] = await Promise.all([
     prisma.seminar.findMany({
-      where: { ...publicFilter, sessions: { some: { date: { gte: now } } } },
+      where: { ...publicFilter, sessions: { some: { date: { gte: today } } } },
       select: {
         id: true,
         label: true,
@@ -68,7 +74,7 @@ export default async function AgendaPage(): Promise<JSX.Element> {
       },
     }),
     prisma.event.findMany({
-      where: { ...publicFilter, sessions: { some: { date: { gte: now } } } },
+      where: { ...publicFilter, sessions: { some: { date: { gte: today } } } },
       select: {
         id: true,
         label: true,

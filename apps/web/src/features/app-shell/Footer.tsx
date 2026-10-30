@@ -48,7 +48,11 @@ export default async function Footer(): Promise<JSX.Element> {
           discipline: { select: { id: true, name: true, slug: true } },
         },
       })
-      .catch(() => []),
+      // Repli, mais pas en silence : une base injoignable doit laisser une trace.
+      .catch((err) => {
+        console.error("[footer] horaires indisponibles", err);
+        return [];
+      }),
   );
   const settings = await prisma.siteSettings
     .findUnique({
@@ -65,7 +69,10 @@ export default async function Footer(): Promise<JSX.Element> {
         legalSiret: true,
       },
     })
-    .catch(() => null);
+    .catch((err) => {
+      console.error("[footer] réglages du site indisponibles", err);
+      return null;
+    });
   const tagline = settings?.tagline?.trim() ?? "";
   const address = (settings?.contactAddress ?? "")
     .split("\n")

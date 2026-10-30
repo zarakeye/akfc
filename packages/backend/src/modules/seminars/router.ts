@@ -10,11 +10,11 @@ import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
- * stages/router.ts
+ * seminars/router.ts
  *
- * CRUD Stage — un événement ponctuel. Un Stage n'a pas de date/heure
- * directes : ses dates concrètes sont portées par `StageSession`
- * (cf. router `stageSession`).
+ * CRUD Seminar (un « stage » dans l'interface) — un rendez-vous ponctuel. Un
+ * stage n'a pas de date/heure directes : ses dates concrètes sont portées par
+ * `SeminarSession` (cf. router `seminarSession`).
  *
  * Animateurs (ambiguïté 1-β validée) : `primaryAnimator` FAIT PARTIE de
  * `animators`. L'API expose deux champs distincts au create/update :
@@ -51,18 +51,17 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  * `description` et `program` — qui ont donc deux syncs distinctes,
  * avec leurs `pageType` respectifs : `SEMINAR_DESCRIPTION` et `SEMINAR_PROGRAM`.
  *
- * ─── Garde métier sur la catégorie de discipline ────────────────────────
+ * ─── Pas de garde sur la catégorie de la discipline ─────────────────────
  *
- * Conservée mais désormais **conditionnelle** : si `disciplineId` est
- * fourni, on vérifie que la discipline appartient à la catégorie « Stage ».
- * Si null (stage externe), pas de vérification — la catégorie n'a pas
- * de sens dans ce cas.
+ * Un stage peut porter sur n'importe quelle discipline du club, comme un
+ * évènement : la catégorie sert au rangement (médias, listes), pas à
+ * restreindre les rattachements (cf. `assertDisciplineExists`).
  *
  * ─── Évolution navigation (socle slugs) ───────────────────────────────────
  *
  * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
  * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
- * d'un `getBySlug` public pour la page détail `/stages/[slug]`. Le slug
+ * d'un `getBySlug` public pour la page détail `/seminars/[slug]`. Le slug
  * étant une 2ᵉ contrainte d'unicité (en plus de `(disciplineId, label)`),
  * les `catch` P2002 distinguent le conflit de slug du conflit de label
  * via `err.meta.target`.
@@ -336,7 +335,7 @@ export const seminarRouter = router({
 
   /**
    * Lookup admin par id — brouillons/programmés inclus.
-   * Alimente la page d'édition `/dashboard/stages/[id]/edit`.
+   * Alimente la page d'édition `/dashboard/seminars/[id]/edit`.
    */
   getByIdAdmin: protectedProcedure
     .use(isAdmin)
@@ -357,7 +356,7 @@ export const seminarRouter = router({
     }),
 
   /**
-   * Lookup public par slug — alimente `/stages/[slug]`.
+   * Lookup public par slug — alimente `/seminars/[slug]`.
    * Seuls les stages PUBLIÉS sont visibles ; un brouillon/programmé
    * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
    */
@@ -689,7 +688,7 @@ export const seminarRouter = router({
     .use(isAdmin)
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      // Les StageSession liées seront supprimées en cascade
+      // Les SeminarSession liées seront supprimées en cascade
       // (onDelete: Cascade dans le schéma). Mais les `PageMediaReference`
       // n'ont pas de FK DB côté `pageId` — il faut les nettoyer
       // explicitement avant le delete.

@@ -4,6 +4,8 @@ import { z } from "zod";
 
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
+import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
+import { sessionDateSchema } from "@contracts/time/sessionDate.schema";
 
 /**
  * eventSessions/router.ts
@@ -12,16 +14,14 @@ import { isAdmin } from "@backend/trpc/middleware";
  * comporter plusieurs sessions si son programme s'étale sur plusieurs
  * journées (conférence en deux soirées, week-end culturel, etc.).
  *
- * Cloné fidèlement sur `stageSession` :
- *   - Mêmes conventions d'unicité `(eventId, date, beginTime)`
- *   - `beginTime`/`endTime` en minutes depuis minuit (0-1439 / 0-1440),
- *     pas en HHMM — cohérent avec courses et stageSession
- *   - `onDelete: Cascade` côté schéma : supprimer un Event supprime ses
- *     sessions
+ * Même structure que `seminarSession` :
+ *   - unicité `(eventId, date, beginTime)` ;
+ *   - `beginTime`/`endTime` au format HHMM (1830 = 18h30), comme les créneaux ;
+ *   - `onDelete: Cascade` côté schéma : supprimer un Event supprime ses séances.
  *
  * Conventions :
- *   - Lectures   : `publicProcedure` (les sessions d'un event public
- *                  doivent être visibles).
+ *   - Lectures   : `publicProcedure`, filtrées par `visibleTo` : les séances d'un
+ *                  évènement publié pour tous, toutes pour un administrateur.
  *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *                  Réutilise la permission du domaine Event — une session
  *                  n'est rien sans son event parent.
@@ -31,41 +31,28 @@ import { isAdmin } from "@backend/trpc/middleware";
 /*                           SHARED VALIDATION SCHEMAS                        */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Même logique que les routers `course` et `stageSession` :
- * `beginTime` / `endTime` au format **HHMM** (1830 = 18h30, 905 = 9h05).
- * La `.refine()` rejette les minutes invalides (≥ 60).
- */
-const hhmmSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(2359)
-  .refine((v) => v % 100 < 60, {
-    message: "Les minutes doivent être comprises entre 00 et 59 (1860 n’est pas une heure valide).",
-  });
-
+// Format HHMM (1830 = 18h30) : schéma partagé avec les créneaux, dans packages/contracts.
 const beginTimeSchema = hhmmSchema;
 const endTimeSchema = hhmmSchema;
 
 const createInput = z
   .object({
     eventId: z.number().int().positive(),
-    date: z.coerce.date(),
+    date: sessionDateSchema, // jour pur, ramené à midi UTC
     beginTime: beginTimeSchema,
     endTime: endTimeSchema,
     location: z.string().trim().min(1).max(255).nullable().optional(),
     notes: z.string().trim().min(1).max(2000).nullable().optional(),
   })
   .refine((data) => data.endTime > data.beginTime, {
-    message: "L’heure de fin doit être postérieure à l’heure de début.",
+    message: END_AFTER_BEGIN_MESSAGE,
     path: ["endTime"],
   });
 
 const updateInput = z
   .object({
     id: z.number().int().positive(),
-    date: z.coerce.date().optional(),
+    date: sessionDateSchema.optional(),
     beginTime: beginTimeSchema.optional(),
     endTime: endTimeSchema.optional(),
     location: z.string().trim().min(1).max(255).nullable().optional(),
@@ -80,7 +67,7 @@ const updateInput = z
       data.endTime === undefined ||
       data.endTime > data.beginTime,
     {
-      message: "L’heure de fin doit être postérieure à l’heure de début.",
+      message: END_AFTER_BEGIN_MESSAGE,
       path: ["endTime"],
     },
   );
@@ -88,6 +75,16 @@ const updateInput = z
 /* -------------------------------------------------------------------------- */
 /*                                  ROUTER                                    */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Séances visibles par l'appelant : toutes pour un administrateur ; sinon celles d'un évènement publié
+ * (date de publication renseignée et passée), la même règle que la fiche du évènement. Les dates et
+ * lieux d'un brouillon ne sortent pas plus que le brouillon lui-même.
+ */
+function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null } | null }): Prisma.EventSessionWhereInput {
+  if (ctx.sessionClient?.user?.isAdmin) return {};
+  return { event: { publicationDate: { not: null, lte: new Date() } } };
+}
 
 export const eventSessionRouter = router({
   /**
@@ -97,7 +94,7 @@ export const eventSessionRouter = router({
     .input(z.object({ eventId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.eventSession.findMany({
-        where: { eventId: input.eventId },
+        where: { eventId: input.eventId, ...visibleTo(ctx) },
         orderBy: [{ date: "asc" }, { beginTime: "asc" }],
       });
     }),
@@ -105,8 +102,8 @@ export const eventSessionRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const session = await ctx.prisma.eventSession.findUnique({
-        where: { id: input.id },
+      const session = await ctx.prisma.eventSession.findFirst({
+        where: { id: input.id, ...visibleTo(ctx) },
       });
 
       if (!session) {
@@ -166,6 +163,21 @@ export const eventSessionRouter = router({
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
+
+      // « Fin après début » porte sur le résultat : si une seule des deux heures change, l'autre est
+      // en base, et c'est la combinaison enregistrée qu'il faut vérifier.
+      if ((rest.beginTime === undefined) !== (rest.endTime === undefined)) {
+        const current = await ctx.prisma.eventSession.findUnique({
+          where: { id },
+          select: { beginTime: true, endTime: true },
+        });
+        if (!current) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Séance introuvable." });
+        }
+        if ((rest.endTime ?? current.endTime) <= (rest.beginTime ?? current.beginTime)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: END_AFTER_BEGIN_MESSAGE });
+        }
+      }
 
       try {
         return await ctx.prisma.eventSession.update({

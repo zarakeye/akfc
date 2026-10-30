@@ -43,12 +43,13 @@ export type UserNameParts = {
   firstName: string | null;
   lastName: string | null;
   pseudo: string | null;
-  email: string;
 };
 
 /**
- * Nom affichable d'un utilisateur : « Prénom Nom » si disponible, sinon
- * le pseudo, sinon l'email. `null` si l'utilisateur est absent.
+ * Nom affichable d'un utilisateur : « Prénom Nom » si disponible, sinon le
+ * pseudo. `null` si l'utilisateur est absent ou n'a ni nom ni pseudo : ces
+ * helpers servent des pages PUBLIQUES, où l'adresse e-mail d'un membre n'a
+ * jamais à apparaître, même en dernier recours.
  */
 export function formatUserName(user: UserNameParts | null): string | null {
   if (!user) return null;
@@ -56,19 +57,15 @@ export function formatUserName(user: UserNameParts | null): string | null {
     .filter((p): p is string => Boolean(p?.trim()))
     .join(" ")
     .trim();
-  return parts || user.pseudo || user.email;
+  return parts || user.pseudo?.trim() || null;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Dates et heures                                                        */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-/** Heure au format HHMM (1830) → « 18h30 ». */
-export function formatTime(hhmm: number): string {
-  const h = Math.floor(hhmm / 100);
-  const m = hhmm % 100;
-  return `${h}h${String(m).padStart(2, "0")}`;
-}
+/** Heure au format HHMM (1830) → « 18h30 ». Une seule implémentation, dans lib/time. */
+export { formatHHMM as formatTime } from "@lib/time/formatHHMM";
 
 const SESSION_DATE_FMT = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",

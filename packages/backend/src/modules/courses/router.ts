@@ -7,6 +7,8 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 
 import { pageContentSchemaV1 } from "@contracts/page";
+import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
+import { COURSES_SEGMENT, categorySegment } from "@backend/modules/storage/storageSegments";
 
 /**
  * courses/router.ts
@@ -24,7 +26,9 @@ import { pageContentSchemaV1 } from "@contracts/page";
  * remplacements ponctuels ou des co-enseignements.
  *
  * Conventions :
- *   - Lectures   : `publicProcedure` (les cours alimentent le site public).
+ *   - Lectures   : `publicProcedure` (les cours alimentent le site public). Un créneau n'est
+ *                  public que si sa discipline l'est (`visibleTo`) : les créneaux d'une
+ *                  discipline en brouillon ne sortent que pour un administrateur.
  *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *
  * ─── Composite de page et intégrité référentielle ────────────────────────
@@ -66,27 +70,7 @@ const audienceEnum = z.enum([
   "ALL_AGES",
 ]);
 
-/**
- * `beginTime` / `endTime` au format **HHMM** — entier compact où les
- * deux derniers digits sont les minutes, les autres les heures.
- *   - 0    = 00:00
- *   - 905  = 09:05
- *   - 1830 = 18:30
- *   - 2359 = 23:59
- *
- * La `.refine()` rejette les valeurs structurellement invalides comme
- * `1860` (60 minutes inexistantes) que `max(2359)` laisserait passer.
- * Pas de timezone — heure locale du club.
- */
-const hhmmSchema = z
-  .number()
-  .int()
-  .min(0)
-  .max(2359)
-  .refine((v) => v % 100 < 60, {
-    message: "Les minutes doivent être comprises entre 00 et 59 (1860 n’est pas une heure valide).",
-  });
-
+// Format HHMM (1830 = 18h30) : schéma partagé avec les séances, dans packages/contracts.
 const beginTimeSchema = hhmmSchema;
 const endTimeSchema = hhmmSchema;
 
@@ -102,7 +86,7 @@ const createInput = z
     content: pageContentSchemaV1,
   })
   .refine((data) => data.endTime > data.beginTime, {
-    message: "L’heure de fin doit être postérieure à l’heure de début.",
+    message: END_AFTER_BEGIN_MESSAGE,
     path: ["endTime"],
   });
 
@@ -126,10 +110,19 @@ const updateInput = z
       data.endTime === undefined ||
       data.endTime > data.beginTime,
     {
-      message: "L’heure de fin doit être postérieure à l’heure de début.",
+      message: END_AFTER_BEGIN_MESSAGE,
       path: ["endTime"],
     }
   );
+
+/**
+ * Créneaux visibles par l'appelant : tous pour un administrateur ; sinon ceux dont la discipline
+ * est publiée (date renseignée et passée), la même règle que `discipline.*`.
+ */
+function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null } | null }): Prisma.CourseWhereInput {
+  if (ctx.sessionClient?.user?.isAdmin) return {};
+  return { discipline: { publicationDate: { not: null, lte: new Date() } } };
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  ROUTER                                    */
@@ -141,6 +134,7 @@ export const courseRouter = router({
    */
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.course.findMany({
+      where: visibleTo(ctx),
       orderBy: [
         { disciplineId: "asc" },
         { day: "asc" },
@@ -157,7 +151,7 @@ export const courseRouter = router({
     .input(z.object({ disciplineId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.course.findMany({
-        where: { disciplineId: input.disciplineId },
+        where: { disciplineId: input.disciplineId, ...visibleTo(ctx) },
         orderBy: [{ day: "asc" }, { beginTime: "asc" }],
       });
     }),
@@ -165,8 +159,8 @@ export const courseRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const course = await ctx.prisma.course.findUnique({
-        where: { id: input.id },
+      const course = await ctx.prisma.course.findFirst({
+        where: { id: input.id, ...visibleTo(ctx) },
       });
 
       if (!course) {
@@ -193,7 +187,7 @@ export const courseRouter = router({
         where: { id: input.disciplineId },
         select: {
           id: true,
-          category: { select: { type: true } },
+          category: { select: { type: true, storageSegment: true } },
         },
       });
       if (!discipline) {
@@ -202,10 +196,12 @@ export const courseRouter = router({
           message: `Discipline introuvable (id=${input.disciplineId}).`,
         });
       }
-      if (discipline.category.type !== "Cours") {
+      // La catégorie des cours se reconnaît à son segment de dossier, figé (`courses`), et non à
+      // son libellé, que l'on peut renommer.
+      if (categorySegment(discipline.category) !== COURSES_SEGMENT) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Discipline ${input.disciplineId} is not in the "Cours" category.`,
+          message: `La discipline ${input.disciplineId} n’est pas dans la catégorie des cours.`,
         });
       }
 
@@ -268,6 +264,25 @@ export const courseRouter = router({
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
+
+      // ─── Horaires : la règle « fin après début » porte sur le résultat ──
+      //
+      // Le schéma ne la vérifie que si les deux heures sont fournies. Si une seule change, l'autre
+      // est en base : on relit, et l'on vérifie la combinaison qui sera réellement enregistrée.
+      if ((rest.beginTime === undefined) !== (rest.endTime === undefined)) {
+        const current = await ctx.prisma.course.findUnique({
+          where: { id },
+          select: { beginTime: true, endTime: true },
+        });
+        if (!current) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Créneau introuvable." });
+        }
+        const begin = rest.beginTime ?? current.beginTime;
+        const end = rest.endTime ?? current.endTime;
+        if (end <= begin) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: END_AFTER_BEGIN_MESSAGE });
+        }
+      }
 
       // ─── Validation pré-transaction (instructeur) ──────────────────────
 

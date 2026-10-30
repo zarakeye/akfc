@@ -3,7 +3,7 @@
  *
  * Hook officiel Next.js (App Router) appelé une fois au démarrage de chaque
  * runtime Node. Utilisé ici pour garantir la cohérence de données
- * structurantes : dossiers racines et libellés (`Folder`, `FolderLabel`),
+ * structurantes : segments de stockage, dossiers racines et libellés (`Folder`, `FolderLabel`),
  * espaces de groupe, groupes système, catégories de tickets, pages par défaut.
  *
  * Sécurité : ce hook s'exécute uniquement côté serveur Node, jamais côté
@@ -26,14 +26,35 @@ export async function register() {
   const { ensureTicketCategories } = await import(
     "@backend/modules/tickets/ensureTicketCategories.service"
   );
-  const { ensureCategoryFolderLabels } = await import(
-    "@backend/modules/storage/services/ensureCategoryFolderLabels.service"
+  const { ensureDomainFolderLabels } = await import(
+    "@backend/modules/storage/services/ensureDomainFolderLabels.service"
+  );
+  const { ensureStorageSegments } = await import(
+    "@backend/modules/storage/storageSegments"
   );
   const { ensureInstructorBioMediaReferences } = await import(
     "@backend/modules/media/services/ensureInstructorBioMediaReferences.service"
   );
 
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
+
+  // En premier : les dossiers racines et les libellés lisent les segments de stockage.
+  try {
+    const { filled, conflicts } = await ensureStorageSegments(prisma);
+    console.log(
+      `[instrumentation] ensureStorageSegments: ${filled} segment(s) de stockage complété(s)`
+    );
+    if (conflicts.length > 0) {
+      console.warn(
+        `[instrumentation] ensureStorageSegments: dossier partagé, segment laissé vide pour : ${conflicts.join(", ")}`
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[instrumentation] ensureStorageSegments failed — app will still start",
+      err
+    );
+  }
 
   try {
     const result = await ensureRootFolders(prisma, APP_ROOT);
@@ -172,13 +193,13 @@ export async function register() {
   }
 
   try {
-    const { ensured } = await ensureCategoryFolderLabels(prisma, APP_ROOT);
+    const { ensured } = await ensureDomainFolderLabels(prisma, APP_ROOT);
     console.log(
-      `[instrumentation] ensureCategoryFolderLabels: ${ensured} libellé(s) de catégorie garanti(s) pour appRoot="${APP_ROOT}"`
+      `[instrumentation] ensureDomainFolderLabels: ${ensured} libellé(s) de catégorie ou de discipline garanti(s) pour appRoot="${APP_ROOT}"`
     );
   } catch (err) {
     console.error(
-      "[instrumentation] ensureCategoryFolderLabels failed — app will still start",
+      "[instrumentation] ensureDomainFolderLabels failed — app will still start",
       err
     );
   }

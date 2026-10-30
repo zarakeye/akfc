@@ -3,6 +3,7 @@
 import { JSX, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
+import { AUDIENCE_LABELS, DAY_LABELS, formatTime } from '@lib/format';
 import { Table, type Column } from 'react-ts-tab-lib';
 
 /**
@@ -14,27 +15,6 @@ import { Table, type Column } from 'react-ts-tab-lib';
  * `discipline.getAll`), jour/public en libellés FR, horaires formatés.
  * Clic sur une ligne → page d'édition `/(admin)/dashboard/courses/[id]`.
  */
-
-const DAY_LABELS: Record<string, string> = {
-  MONDAY: 'Lundi',
-  TUESDAY: 'Mardi',
-  WEDNESDAY: 'Mercredi',
-  THURSDAY: 'Jeudi',
-  FRIDAY: 'Vendredi',
-  SATURDAY: 'Samedi',
-  SUNDAY: 'Dimanche',
-};
-
-const AUDIENCE_LABELS: Record<string, string> = {
-  KIDS: 'Enfants',
-  TEENAGERS: 'Ados',
-  ADULTS: 'Adultes',
-  ALL_AGES: 'Tous âges',
-};
-
-/** HHMM (1830) → "18h30", (905) → "9h05". */
-const fmtHHMM = (t: number): string =>
-  `${Math.floor(t / 100)}h${String(t % 100).padStart(2, '0')}`;
 
 type CourseRow = {
   id: number;
@@ -62,7 +42,7 @@ export default function CoursesTable(): JSX.Element {
     id: c.id,
     discipline: disciplineNameById.get(c.disciplineId) ?? `#${c.disciplineId}`,
     jour: DAY_LABELS[c.day] ?? c.day,
-    horaires: `${fmtHHMM(c.beginTime)} – ${fmtHHMM(c.endTime)}`,
+    horaires: `${formatTime(c.beginTime)} – ${formatTime(c.endTime)}`,
     public: AUDIENCE_LABELS[c.audience] ?? c.audience,
   }));
 

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
+import { categorySegment, disciplineSegment } from "@backend/modules/storage/storageSegments";
 
 import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
@@ -26,7 +26,9 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
  *
  * ─── Destinations couplées à une discipline (historique) ─────────────────
  *   - existing-discipline :
- *       `${appRoot}/${slug(category.type)}/${slug(discipline.name)}`
+ *       `${appRoot}/<segment de catégorie>/<segment de discipline>` — segments FIGÉS
+ *       à la création (`storageSegment`, cf. storageSegments.ts) : renommer une
+ *       discipline ne change pas son dossier.
  *   - new-discipline :
  *       `${appRoot}/${slug(category.type)}/new/${slug(proposedName)}`
  *     Les assets restent isolés dans `new/` jusqu'à validation admin.
@@ -42,13 +44,11 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
  *       `personSlug` = slug(firstName lastName), sinon slug(pseudo), sinon
  *       `user-${userId}` (les trois champs de nom sont nullable en DB).
  *
- * ─── ⚠️ Pourquoi slug du nom et pas l'ID numérique (disciplines) ──────────
+ * ─── Pourquoi un segment lisible plutôt que l'id numérique (disciplines) ───
  *
- * Historiquement le path utilisait `discipline.id`, ce qui divergeait de
- * `buildR2Path` (UI, en slug) et du finder/TreeView (navigation en slug) :
- * les assets sous `cours/3/` devenaient invisibles dans le finder qui
- * cherchait sous `cours/tchoy-lee-fut/`. On aligne donc le stockage sur la
- * convention slug, la seule cohérente avec la navigation UI.
+ * Historiquement le path utilisait `discipline.id`, ce qui divergeait de la
+ * navigation du finder (en slugs). Le segment est donc un slug — mais calculé
+ * UNE FOIS, à la création, et conservé dans `Discipline.storageSegment`.
  */
 const SLUG_OPTIONS = { lower: true, strict: true } as const;
 
@@ -128,19 +128,19 @@ export async function resolvePendingUploadFolder(params: {
   /* ── Destinations couplées à une discipline (historique) ── */
   const category = await prisma.category.findUnique({
     where: { id: destination.categoryId },
-    select: { id: true, type: true },
+    select: { id: true, type: true, storageSegment: true },
   });
 
   if (!category) {
     throw new Error(`Category not found (id=${destination.categoryId})`);
   }
 
-  const categorySegment = categoryStorageSegment(category.type);
+  const categorySeg = categorySegment(category);
 
   if (destination.kind === "existing-discipline") {
     const discipline = await prisma.discipline.findUnique({
       where: { id: destination.disciplineId },
-      select: { id: true, categoryId: true, name: true },
+      select: { id: true, categoryId: true, name: true, storageSegment: true },
     });
 
     if (!discipline) {
@@ -153,11 +153,7 @@ export async function resolvePendingUploadFolder(params: {
       );
     }
 
-    // Fallback `disc-${id}` si le nom slugifie en chaîne vide (cas très rare
-    // de nom uniquement composé de caractères non transliterables).
-    const disciplineSlug = slug(discipline.name) || `disc-${discipline.id}`;
-
-    return `${appRoot}/${categorySegment}/${disciplineSlug}`;
+    return `${appRoot}/${categorySeg}/${disciplineSegment(discipline)}`;
   }
 
   // kind === "new-discipline"
@@ -169,5 +165,5 @@ export async function resolvePendingUploadFolder(params: {
     );
   }
 
-  return `${appRoot}/${categorySegment}/new/${proposedSlug}`;
+  return `${appRoot}/${categorySeg}/new/${proposedSlug}`;
 }

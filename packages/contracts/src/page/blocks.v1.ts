@@ -6,12 +6,14 @@ import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
  * Contrat versionné de contenu de page — v1.
  *
  * Une page est composée d'une liste ordonnée de blocs discriminés par
- * un champ `type`. Quatre types de blocs sont définis en v1 :
+ * un champ `type`. Six types de blocs sont définis en v1 :
  *
  *   - `tiptap`           : texte riche (ProseMirror JSON)
  *   - `image-gallery`    : galerie d'images
  *   - `audio-collection` : collection de pistes audio
  *   - `document-list`    : liste de documents téléchargeables
+ *   - `media-text`       : un média et un texte côte à côte
+ *   - `float-text`       : un texte qui enrobe une image
  *
  * Voir README.md pour la philosophie (référence stable par mediaId,
  * versioning, frontière contrat / builder / renderer).

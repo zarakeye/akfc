@@ -6,24 +6,8 @@ import { Plus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
 import { formatHHMM } from "@lib/time/formatHHMM";
+import { AUDIENCE_LABELS, DAY_LABELS } from "@lib/format";
 import { DeleteRowButton } from "@features/admin/common/delete";
-
-const AUDIENCE_LABELS: Record<string, string> = {
-  KIDS: "Enfants",
-  TEENAGERS: "Ados",
-  ADULTS: "Adultes",
-  ALL_AGES: "Tous publics",
-};
-
-const DAY_LABELS: Record<string, string> = {
-  MONDAY: "Lundi",
-  TUESDAY: "Mardi",
-  WEDNESDAY: "Mercredi",
-  THURSDAY: "Jeudi",
-  FRIDAY: "Vendredi",
-  SATURDAY: "Samedi",
-  SUNDAY: "Dimanche",
-};
 
 export default function CoursesListPage(): JSX.Element {
   const { data: courses, isLoading, isError } = trpc.course.getAll.useQuery();

@@ -5,44 +5,7 @@ import { prisma } from "@backend/prisma";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
-
-const DAY_LABELS: Record<string, string> = {
-  MONDAY: "Lundi",
-  TUESDAY: "Mardi",
-  WEDNESDAY: "Mercredi",
-  THURSDAY: "Jeudi",
-  FRIDAY: "Vendredi",
-  SATURDAY: "Samedi",
-  SUNDAY: "Dimanche",
-};
-
-const AUDIENCE_LABELS: Record<string, string> = {
-  KIDS: "Enfants",
-  TEENAGERS: "Ados",
-  ADULTS: "Adultes",
-  ALL_AGES: "Tous publics",
-};
-
-/** HHMM (1830) → "18h30". Fonction pure inline — évite le `formatHHMM` du
- *  module `'use client'` TimeInput, inappelable depuis un Server Component. */
-const fmtHHMM = (t: number): string =>
-  `${Math.floor(t / 100)}h${String(t % 100).padStart(2, "0")}`;
-
-function formatInstructorName(
-  instructor: {
-    firstName: string | null;
-    lastName: string | null;
-    pseudo: string | null;
-    email: string;
-  } | null,
-): string | null {
-  if (!instructor) return null;
-  const parts = [instructor.firstName, instructor.lastName]
-    .filter((p): p is string => Boolean(p?.trim()))
-    .join(" ")
-    .trim();
-  return parts || instructor.pseudo || instructor.email;
-}
+import { AUDIENCE_LABELS, DAY_LABELS, formatTime, formatUserName } from "@lib/format";
 
 /**
  * Présentation admin d'un cours — `/(admin)/dashboard/courses/[id]`.
@@ -59,16 +22,20 @@ export default async function CoursePresentationPage({
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
-      discipline: { select: { name: true } },
-      instructor: {
-        select: { firstName: true, lastName: true, pseudo: true, email: true },
+      discipline: {
+        select: {
+          name: true,
+          instructor: { select: { firstName: true, lastName: true, pseudo: true } },
+        },
       },
+      instructor: { select: { firstName: true, lastName: true, pseudo: true } },
     },
   });
   if (!course) notFound();
 
   const content = parsePageContentV1(course.content);
-  const instructorName = formatInstructorName(course.instructor);
+  // Sans instructeur attitré, le créneau est animé par l'instructeur principal de la discipline.
+  const instructorName = formatUserName(course.instructor ?? course.discipline.instructor);
 
   return (
     <PresentationShell
@@ -77,8 +44,8 @@ export default async function CoursePresentationPage({
       editHref={`/dashboard/courses/${course.id}/edit`}
     >
       <p className="mb-4 text-sm text-muted-foreground">
-        {DAY_LABELS[course.day] ?? course.day} • {fmtHHMM(course.beginTime)}–
-        {fmtHHMM(course.endTime)} •{" "}
+        {DAY_LABELS[course.day] ?? course.day} • {formatTime(course.beginTime)}–
+        {formatTime(course.endTime)} •{" "}
         {AUDIENCE_LABELS[course.audience] ?? course.audience}
         {instructorName && <> • Animé par {instructorName}</>}
       </p>

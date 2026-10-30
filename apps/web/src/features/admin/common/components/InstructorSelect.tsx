@@ -15,6 +15,12 @@ export interface InstructorSelectProps {
   id?: string;
   /** Optionnel : classes Tailwind supplémentaires. */
   className?: string;
+  /**
+   * Libellé de l'option vide (valeur `null`). Par défaut « — Choisir — » : pour une
+   * discipline, un stage ou un évènement, la personne est obligatoire. Le formulaire
+   * d'un créneau passe « — Celui de la discipline — », car `null` y signifie « par défaut ».
+   */
+  emptyLabel?: string;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -22,30 +28,25 @@ export interface InstructorSelectProps {
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Sélecteur d'instructeur branché sur `user.getInstructors` — une
- * nouvelle procédure tRPC qui ramène tout user ayant **au moins une
- * relation d'instruction** (`disciplinesAsInstructor`,
- * `coursesAsInstructor`, `seminarsAsPrimaryAnimator`, `seminarsAsAnimator`).
- *
- * C'est une définition **factuelle** de l'instructeur : qui anime
- * déjà quelque chose dans le club. Volontaire pour éviter de dépendre
- * d'un rôle nominal (« instructor ») qui n'existe pas en schéma. Si tu
- * veux désigner un nouvel instructeur qui n'anime encore rien, il faudra
- * un autre signal (rôle dédié ou flag) à introduire plus tard.
+ * Sélecteur d'instructeur branché sur `user.getAssignableInstructors` (réservée aux
+ * administrateurs) : les membres du groupe Administrateurs, plus tous ceux qui ont déjà
+ * une responsabilité (instructeur d'une discipline ou d'un créneau, animateur d'un stage,
+ * organisateur d'un évènement). Il n'existe pas de rôle « instructeur » en base :
+ * l'instructeur se définit par ce qu'il anime.
  *
  * Affichage du nom : `firstName lastName` si dispo, sinon `pseudo`,
  * sinon `email` en dernier recours. Aucun fallback ne masque l'identité.
  *
- * `value === null` est représenté par une option « Aucun » en tête —
- * le `Course.instructorId` est nullable, donc « pas d'instructeur
- * spécifique pour ce créneau » est une valeur sémantiquement valide
- * (l'instructeur de la discipline par défaut s'applique alors).
+ * `value === null` est représenté par l'option vide en tête (`emptyLabel`). Pour un
+ * créneau, `Course.instructorId` null est une valeur valide : l'instructeur principal de
+ * la discipline s'applique alors.
  */
 export function InstructorSelect({
   value,
   onChange,
   id,
   className,
+  emptyLabel = "— Choisir —",
 }: InstructorSelectProps) {
   const { data: instructors, isLoading } = trpc.user.getAssignableInstructors.useQuery();
 
@@ -60,7 +61,7 @@ export function InstructorSelect({
       }
     >
       <option value="">
-        {isLoading ? "Chargement…" : "— Aucun —"}
+        {isLoading ? "Chargement…" : emptyLabel}
       </option>
       {instructors?.map((u) => (
         <option key={u.id} value={u.id}>

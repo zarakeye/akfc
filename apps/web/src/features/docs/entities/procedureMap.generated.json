@@ -2802,7 +2802,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -3527,7 +3527,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
-        "prisma/schema.prisma:1734"
+        "prisma/schema.prisma:1747"
        ]
       ]
      ]
@@ -3554,7 +3554,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2216"
+        "prisma/schema.prisma:2229"
        ]
       ],
       [
@@ -3564,7 +3564,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2251"
+        "prisma/schema.prisma:2264"
        ]
       ]
      ]
@@ -3582,7 +3582,7 @@
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
-        "prisma/schema.prisma:2269"
+        "prisma/schema.prisma:2282"
        ]
       ]
      ]
@@ -3619,7 +3619,7 @@
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
-        "prisma/schema.prisma:1689"
+        "prisma/schema.prisma:1702"
        ]
       ]
      ]
@@ -3637,7 +3637,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
-        "prisma/schema.prisma:1714"
+        "prisma/schema.prisma:1727"
        ]
       ]
      ]
@@ -3655,7 +3655,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
-        "prisma/schema.prisma:1825"
+        "prisma/schema.prisma:1838"
        ]
       ]
      ]
@@ -3672,7 +3672,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -3773,7 +3773,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2065"
+        "prisma/schema.prisma:2078"
        ]
       ],
       [
@@ -3783,7 +3783,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2074"
+        "prisma/schema.prisma:2087"
        ]
       ]
      ]
@@ -3804,7 +3804,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2140"
+        "prisma/schema.prisma:2153"
        ]
       ],
       [
@@ -3814,7 +3814,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2144"
+        "prisma/schema.prisma:2157"
        ]
       ]
      ]
@@ -3834,7 +3834,7 @@
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
-        "prisma/schema.prisma:2110"
+        "prisma/schema.prisma:2123"
        ]
       ]
      ]
@@ -3956,7 +3956,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -4118,6 +4118,19 @@
      ]
     },
     {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.user.findMany",
+        "packages/backend/src/modules/users/router.ts:443"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroup",
      "op": "read",
      "fields": [],
@@ -4176,7 +4189,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 481,
+   "line": 484,
    "effects": [
     {
      "model": "Course",
@@ -4186,7 +4199,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:482"
+        "packages/backend/src/modules/users/router.ts:485"
        ]
       ]
      ]
@@ -4199,7 +4212,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:482"
+        "packages/backend/src/modules/users/router.ts:485"
        ]
       ]
      ]
@@ -4212,7 +4225,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:482"
+        "packages/backend/src/modules/users/router.ts:485"
        ]
       ]
      ]
@@ -4225,7 +4238,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:482"
+        "packages/backend/src/modules/users/router.ts:485"
        ]
       ]
      ]
@@ -4237,7 +4250,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 507,
+   "line": 510,
    "effects": [
     {
      "model": "SiteSettings",
@@ -4247,7 +4260,7 @@
       [
        [
         "ctx.prisma.siteSettings.findUnique",
-        "packages/backend/src/modules/users/router.ts:516"
+        "packages/backend/src/modules/users/router.ts:519"
        ]
       ]
      ]
@@ -4262,7 +4275,7 @@
       [
        [
         "ctx.prisma.user.update",
-        "packages/backend/src/modules/users/router.ts:522"
+        "packages/backend/src/modules/users/router.ts:525"
        ]
       ]
      ]
@@ -4274,7 +4287,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/users/router.ts",
-   "line": 534,
+   "line": 537,
    "effects": [
     {
      "model": "MemberGroup",
@@ -4284,7 +4297,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:535"
+        "packages/backend/src/modules/users/router.ts:538"
        ]
       ]
      ]
@@ -4297,7 +4310,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:535"
+        "packages/backend/src/modules/users/router.ts:538"
        ]
       ]
      ]
@@ -4310,7 +4323,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/users/router.ts:535"
+        "packages/backend/src/modules/users/router.ts:538"
        ]
       ]
      ]
@@ -4907,11 +4920,11 @@
        ],
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:36"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:30"
        ]
       ],
       [
@@ -4921,11 +4934,11 @@
        ],
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:44"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:38"
        ]
       ]
      ]
@@ -4942,11 +4955,11 @@
        ],
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:48"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:42"
        ]
       ]
      ]
@@ -5412,11 +5425,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -5442,7 +5455,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1546"
+        "prisma/schema.prisma:1559"
        ]
       ]
      ]
@@ -5510,7 +5523,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ]
       ]
      ]
@@ -5536,11 +5549,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -5566,11 +5579,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -5663,11 +5676,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -5714,7 +5727,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1546"
+        "prisma/schema.prisma:1559"
        ]
       ]
      ]
@@ -5782,7 +5795,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ]
       ]
      ]
@@ -5808,11 +5821,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -5838,11 +5851,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -6100,7 +6113,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 142,
+   "line": 135,
    "effects": [
     {
      "model": "Course",
@@ -6110,7 +6123,7 @@
       [
        [
         "ctx.prisma.course.findMany",
-        "packages/backend/src/modules/courses/router.ts:143"
+        "packages/backend/src/modules/courses/router.ts:136"
        ]
       ]
      ]
@@ -6122,7 +6135,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 156,
+   "line": 150,
    "effects": [
     {
      "model": "Course",
@@ -6132,7 +6145,7 @@
       [
        [
         "ctx.prisma.course.findMany",
-        "packages/backend/src/modules/courses/router.ts:159"
+        "packages/backend/src/modules/courses/router.ts:153"
        ]
       ]
      ]
@@ -6144,7 +6157,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 165,
+   "line": 159,
    "effects": [
     {
      "model": "Course",
@@ -6153,8 +6166,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.course.findUnique",
-        "packages/backend/src/modules/courses/router.ts:168"
+        "ctx.prisma.course.findFirst",
+        "packages/backend/src/modules/courses/router.ts:162"
        ]
       ]
      ]
@@ -6166,7 +6179,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 182,
+   "line": 176,
    "effects": [
     {
      "model": "Category",
@@ -6176,7 +6189,7 @@
       [
        [
         "ctx.prisma.discipline.findUnique",
-        "packages/backend/src/modules/courses/router.ts:192"
+        "packages/backend/src/modules/courses/router.ts:186"
        ]
       ]
      ]
@@ -6198,7 +6211,7 @@
       [
        [
         "tx.course.create",
-        "packages/backend/src/modules/courses/router.ts:230"
+        "packages/backend/src/modules/courses/router.ts:226"
        ]
       ]
      ]
@@ -6211,7 +6224,7 @@
       [
        [
         "ctx.prisma.discipline.findUnique",
-        "packages/backend/src/modules/courses/router.ts:192"
+        "packages/backend/src/modules/courses/router.ts:186"
        ]
       ]
      ]
@@ -6245,7 +6258,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -6302,7 +6315,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/courses/router.ts:213"
+        "packages/backend/src/modules/courses/router.ts:209"
        ]
       ]
      ]
@@ -6314,8 +6327,21 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 266,
+   "line": 262,
    "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.course.findUnique",
+        "packages/backend/src/modules/courses/router.ts:273"
+       ]
+      ]
+     ]
+    },
     {
      "model": "Course",
      "op": "update",
@@ -6332,7 +6358,7 @@
       [
        [
         "tx.course.update",
-        "packages/backend/src/modules/courses/router.ts:305"
+        "packages/backend/src/modules/courses/router.ts:320"
        ]
       ]
      ]
@@ -6366,7 +6392,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -6423,7 +6449,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/courses/router.ts:275"
+        "packages/backend/src/modules/courses/router.ts:290"
        ]
       ]
      ]
@@ -6435,7 +6461,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/courses/router.ts",
-   "line": 343,
+   "line": 358,
    "effects": [
     {
      "model": "Course",
@@ -6445,7 +6471,7 @@
       [
        [
         "tx.course.delete",
-        "packages/backend/src/modules/courses/router.ts:359"
+        "packages/backend/src/modules/courses/router.ts:374"
        ]
       ]
      ]
@@ -6479,7 +6505,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -6535,7 +6561,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 172,
+   "line": 178,
    "effects": [
     {
      "model": "Discipline",
@@ -6545,7 +6571,7 @@
       [
        [
         "ctx.prisma.discipline.findMany",
-        "packages/backend/src/modules/disciplines/router.ts:175"
+        "packages/backend/src/modules/disciplines/router.ts:181"
        ]
       ]
      ]
@@ -6557,7 +6583,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 186,
+   "line": 192,
    "effects": [
     {
      "model": "Discipline",
@@ -6567,7 +6593,7 @@
       [
        [
         "ctx.prisma.discipline.findMany",
-        "packages/backend/src/modules/disciplines/router.ts:187"
+        "packages/backend/src/modules/disciplines/router.ts:193"
        ]
       ]
      ]
@@ -6579,7 +6605,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 198,
+   "line": 204,
    "effects": [
     {
      "model": "Discipline",
@@ -6589,7 +6615,7 @@
       [
        [
         "ctx.prisma.discipline.findMany",
-        "packages/backend/src/modules/disciplines/router.ts:199"
+        "packages/backend/src/modules/disciplines/router.ts:205"
        ]
       ]
      ]
@@ -6601,7 +6627,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 205,
+   "line": 211,
    "effects": [
     {
      "model": "Discipline",
@@ -6611,7 +6637,7 @@
       [
        [
         "ctx.prisma.discipline.findFirst",
-        "packages/backend/src/modules/disciplines/router.ts:209"
+        "packages/backend/src/modules/disciplines/router.ts:215"
        ]
       ]
      ]
@@ -6623,7 +6649,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 226,
+   "line": 232,
    "effects": [
     {
      "model": "Discipline",
@@ -6633,7 +6659,7 @@
       [
        [
         "ctx.prisma.discipline.findFirst",
-        "packages/backend/src/modules/disciplines/router.ts:229"
+        "packages/backend/src/modules/disciplines/router.ts:235"
        ]
       ]
      ]
@@ -6645,7 +6671,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 243,
+   "line": 249,
    "effects": [
     {
      "model": "Category",
@@ -6660,6 +6686,12 @@
        [
         "prisma.category.findUnique",
         "packages/backend/src/modules/disciplines/services/assertDisciplineReferences.service.ts:22"
+       ]
+      ],
+      [
+       [
+        "tx.category.findUniqueOrThrow",
+        "packages/backend/src/modules/disciplines/router.ts:328"
        ]
       ]
      ]
@@ -6678,6 +6710,7 @@
       "publicationDate",
       "school",
       "slug",
+      "storageSegment",
       "summary",
       "summaryMediaId",
       "type"
@@ -6686,7 +6719,24 @@
       [
        [
         "tx.discipline.create",
-        "packages/backend/src/modules/disciplines/router.ts:260"
+        "packages/backend/src/modules/disciplines/router.ts:269"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "newDisciplineSegment",
+        "packages/backend/src/modules/storage/storageSegments.ts:64"
+       ],
+       [
+        "db.discipline.findMany",
+        "packages/backend/src/modules/storage/storageSegments.ts:68"
        ]
       ]
      ]
@@ -6704,6 +6754,46 @@
        [
         "prisma.disciplineFamily.findUnique",
         "packages/backend/src/modules/disciplines/services/assertDisciplineReferences.service.ts:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
        ]
       ]
      ]
@@ -6754,7 +6844,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -6827,7 +6917,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 321,
+   "line": 338,
    "effects": [
     {
      "model": "Category",
@@ -6843,6 +6933,12 @@
         "prisma.category.findUnique",
         "packages/backend/src/modules/disciplines/services/assertDisciplineReferences.service.ts:22"
        ]
+      ],
+      [
+       [
+        "tx.category.findUniqueOrThrow",
+        "packages/backend/src/modules/disciplines/router.ts:446"
+       ]
       ]
      ]
     },
@@ -6854,7 +6950,7 @@
       [
        [
         "tx.discipline.findUnique",
-        "packages/backend/src/modules/disciplines/router.ts:404"
+        "packages/backend/src/modules/disciplines/router.ts:421"
        ]
       ]
      ]
@@ -6880,7 +6976,7 @@
       [
        [
         "tx.discipline.update",
-        "packages/backend/src/modules/disciplines/router.ts:361"
+        "packages/backend/src/modules/disciplines/router.ts:378"
        ]
       ]
      ]
@@ -6898,6 +6994,46 @@
        [
         "prisma.disciplineFamily.findUnique",
         "packages/backend/src/modules/disciplines/services/assertDisciplineReferences.service.ts:36"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
        ]
       ]
      ]
@@ -6948,7 +7084,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -7021,7 +7157,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/disciplines/router.ts",
-   "line": 431,
+   "line": 457,
    "effects": [
     {
      "model": "Category",
@@ -7030,8 +7166,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.category.findUnique",
-        "packages/backend/src/modules/disciplines/router.ts:467"
+        "ctx.prisma.discipline.findUnique",
+        "packages/backend/src/modules/disciplines/router.ts:487"
        ]
       ]
      ]
@@ -7044,7 +7180,7 @@
       [
        [
         "ctx.prisma.course.count",
-        "packages/backend/src/modules/disciplines/router.ts:440"
+        "packages/backend/src/modules/disciplines/router.ts:466"
        ]
       ]
      ]
@@ -7057,7 +7193,7 @@
       [
        [
         "tx.discipline.delete",
-        "packages/backend/src/modules/disciplines/router.ts:512"
+        "packages/backend/src/modules/disciplines/router.ts:535"
        ]
       ]
      ]
@@ -7070,7 +7206,7 @@
       [
        [
         "ctx.prisma.discipline.findUnique",
-        "packages/backend/src/modules/disciplines/router.ts:460"
+        "packages/backend/src/modules/disciplines/router.ts:487"
        ]
       ]
      ]
@@ -7084,11 +7220,11 @@
       [
        [
         "tx.discipline.delete",
-        "packages/backend/src/modules/disciplines/router.ts:512"
+        "packages/backend/src/modules/disciplines/router.ts:535"
        ],
        [
         "onDelete: Cascade (EventDiscipline → Discipline)",
-        "prisma/schema.prisma:1603"
+        "prisma/schema.prisma:1616"
        ]
       ]
      ]
@@ -7101,7 +7237,7 @@
       [
        [
         "ctx.prisma.eventDiscipline.count",
-        "packages/backend/src/modules/disciplines/router.ts:442"
+        "packages/backend/src/modules/disciplines/router.ts:468"
        ]
       ]
      ]
@@ -7114,7 +7250,7 @@
       [
        [
         "tx.folder.deleteMany",
-        "packages/backend/src/modules/disciplines/router.ts:506"
+        "packages/backend/src/modules/disciplines/router.ts:529"
        ]
       ]
      ]
@@ -7132,6 +7268,19 @@
        [
         "prisma.folder.findFirst",
         "packages/backend/src/modules/storage/isSpaceEmpty.service.ts:29"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "tx.folderLabel.deleteMany",
+        "packages/backend/src/modules/disciplines/router.ts:532"
        ]
       ]
      ]
@@ -7163,7 +7312,7 @@
       [
        [
         "tx.mediaAsset.updateMany",
-        "packages/backend/src/modules/disciplines/router.ts:500"
+        "packages/backend/src/modules/disciplines/router.ts:524"
        ]
       ]
      ]
@@ -7180,7 +7329,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -7237,7 +7386,7 @@
       [
        [
         "ctx.prisma.seminar.count",
-        "packages/backend/src/modules/disciplines/router.ts:441"
+        "packages/backend/src/modules/disciplines/router.ts:467"
        ]
       ]
      ]
@@ -7429,7 +7578,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 285,
+   "line": 284,
    "effects": [
     {
      "model": "Seminar",
@@ -7439,7 +7588,7 @@
       [
        [
         "ctx.prisma.seminar.findMany",
-        "packages/backend/src/modules/seminars/router.ts:286"
+        "packages/backend/src/modules/seminars/router.ts:285"
        ]
       ]
      ]
@@ -7451,7 +7600,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 297,
+   "line": 296,
    "effects": [
     {
      "model": "Seminar",
@@ -7461,7 +7610,7 @@
       [
        [
         "ctx.prisma.seminar.findMany",
-        "packages/backend/src/modules/seminars/router.ts:298"
+        "packages/backend/src/modules/seminars/router.ts:297"
        ]
       ]
      ]
@@ -7473,7 +7622,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 311,
+   "line": 310,
    "effects": [
     {
      "model": "Seminar",
@@ -7483,7 +7632,7 @@
       [
        [
         "ctx.prisma.seminar.findMany",
-        "packages/backend/src/modules/seminars/router.ts:314"
+        "packages/backend/src/modules/seminars/router.ts:313"
        ]
       ]
      ]
@@ -7495,7 +7644,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 325,
+   "line": 324,
    "effects": [
     {
      "model": "Seminar",
@@ -7505,7 +7654,7 @@
       [
        [
         "ctx.prisma.seminar.findMany",
-        "packages/backend/src/modules/seminars/router.ts:328"
+        "packages/backend/src/modules/seminars/router.ts:327"
        ]
       ]
      ]
@@ -7517,7 +7666,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 341,
+   "line": 340,
    "effects": [
     {
      "model": "Seminar",
@@ -7527,7 +7676,7 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:345"
+        "packages/backend/src/modules/seminars/router.ts:344"
        ]
       ]
      ]
@@ -7540,7 +7689,7 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:345"
+        "packages/backend/src/modules/seminars/router.ts:344"
        ]
       ]
      ]
@@ -7553,7 +7702,7 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:345"
+        "packages/backend/src/modules/seminars/router.ts:344"
        ]
       ]
      ]
@@ -7565,7 +7714,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 364,
+   "line": 363,
    "effects": [
     {
      "model": "Seminar",
@@ -7575,7 +7724,7 @@
       [
        [
         "ctx.prisma.seminar.findFirst",
-        "packages/backend/src/modules/seminars/router.ts:367"
+        "packages/backend/src/modules/seminars/router.ts:366"
        ]
       ]
      ]
@@ -7588,7 +7737,7 @@
       [
        [
         "ctx.prisma.seminar.findFirst",
-        "packages/backend/src/modules/seminars/router.ts:367"
+        "packages/backend/src/modules/seminars/router.ts:366"
        ]
       ]
      ]
@@ -7601,7 +7750,7 @@
       [
        [
         "ctx.prisma.seminar.findFirst",
-        "packages/backend/src/modules/seminars/router.ts:367"
+        "packages/backend/src/modules/seminars/router.ts:366"
        ]
       ]
      ]
@@ -7613,7 +7762,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 384,
+   "line": 383,
    "effects": [
     {
      "model": "Discipline",
@@ -7623,11 +7772,11 @@
       [
        [
         "assertDisciplineExists",
-        "packages/backend/src/modules/seminars/router.ts:241"
+        "packages/backend/src/modules/seminars/router.ts:240"
        ],
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:247"
+        "packages/backend/src/modules/seminars/router.ts:246"
        ]
       ]
      ]
@@ -7657,11 +7806,11 @@
       [
        [
         "assertOriginExists",
-        "packages/backend/src/modules/seminars/router.ts:259"
+        "packages/backend/src/modules/seminars/router.ts:258"
        ],
        [
         "prisma.origin.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:264"
+        "packages/backend/src/modules/seminars/router.ts:263"
        ]
       ]
      ]
@@ -7678,7 +7827,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -7750,7 +7899,7 @@
       [
        [
         "tx.seminar.create",
-        "packages/backend/src/modules/seminars/router.ts:404"
+        "packages/backend/src/modules/seminars/router.ts:403"
        ]
       ]
      ]
@@ -7763,17 +7912,17 @@
       [
        [
         "assertUsersExist",
-        "packages/backend/src/modules/seminars/router.ts:210"
+        "packages/backend/src/modules/seminars/router.ts:209"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/seminars/router.ts:216"
+        "packages/backend/src/modules/seminars/router.ts:215"
        ]
       ],
       [
        [
         "tx.seminar.create",
-        "packages/backend/src/modules/seminars/router.ts:404"
+        "packages/backend/src/modules/seminars/router.ts:403"
        ]
       ]
      ]
@@ -7785,7 +7934,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 480,
+   "line": 479,
    "effects": [
     {
      "model": "Discipline",
@@ -7795,11 +7944,11 @@
       [
        [
         "assertDisciplineExists",
-        "packages/backend/src/modules/seminars/router.ts:241"
+        "packages/backend/src/modules/seminars/router.ts:240"
        ],
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:247"
+        "packages/backend/src/modules/seminars/router.ts:246"
        ]
       ]
      ]
@@ -7829,11 +7978,11 @@
       [
        [
         "assertOriginExists",
-        "packages/backend/src/modules/seminars/router.ts:259"
+        "packages/backend/src/modules/seminars/router.ts:258"
        ],
        [
         "prisma.origin.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:264"
+        "packages/backend/src/modules/seminars/router.ts:263"
        ]
       ]
      ]
@@ -7850,7 +7999,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -7907,13 +8056,13 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:502"
+        "packages/backend/src/modules/seminars/router.ts:501"
        ]
       ],
       [
        [
         "tx.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:672"
+        "packages/backend/src/modules/seminars/router.ts:671"
        ]
       ]
      ]
@@ -7941,7 +8090,7 @@
       [
        [
         "tx.seminar.update",
-        "packages/backend/src/modules/seminars/router.ts:619"
+        "packages/backend/src/modules/seminars/router.ts:618"
        ]
       ]
      ]
@@ -7954,23 +8103,23 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminars/router.ts:502"
+        "packages/backend/src/modules/seminars/router.ts:501"
        ]
       ],
       [
        [
         "assertUsersExist",
-        "packages/backend/src/modules/seminars/router.ts:210"
+        "packages/backend/src/modules/seminars/router.ts:209"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/seminars/router.ts:216"
+        "packages/backend/src/modules/seminars/router.ts:215"
        ]
       ],
       [
        [
         "tx.seminar.update",
-        "packages/backend/src/modules/seminars/router.ts:619"
+        "packages/backend/src/modules/seminars/router.ts:618"
        ]
       ]
      ]
@@ -7982,7 +8131,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminars/router.ts",
-   "line": 688,
+   "line": 687,
    "effects": [
     {
      "model": "MediaAsset",
@@ -8013,7 +8162,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -8070,7 +8219,7 @@
       [
        [
         "tx.seminar.delete",
-        "packages/backend/src/modules/seminars/router.ts:716"
+        "packages/backend/src/modules/seminars/router.ts:715"
        ]
       ]
      ]
@@ -8084,11 +8233,11 @@
       [
        [
         "tx.seminar.delete",
-        "packages/backend/src/modules/seminars/router.ts:716"
+        "packages/backend/src/modules/seminars/router.ts:715"
        ],
        [
         "onDelete: Cascade (SeminarSession → Seminar)",
-        "prisma/schema.prisma:841"
+        "prisma/schema.prisma:854"
        ]
       ]
      ]
@@ -8100,7 +8249,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/seminarSessions/router.ts",
-   "line": 95,
+   "line": 94,
    "effects": [
     {
      "model": "SeminarSession",
@@ -8110,7 +8259,7 @@
       [
        [
         "ctx.prisma.seminarSession.findMany",
-        "packages/backend/src/modules/seminarSessions/router.ts:98"
+        "packages/backend/src/modules/seminarSessions/router.ts:97"
        ]
       ]
      ]
@@ -8122,7 +8271,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/seminarSessions/router.ts",
-   "line": 104,
+   "line": 103,
    "effects": [
     {
      "model": "SeminarSession",
@@ -8131,8 +8280,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.seminarSession.findUnique",
-        "packages/backend/src/modules/seminarSessions/router.ts:107"
+        "ctx.prisma.seminarSession.findFirst",
+        "packages/backend/src/modules/seminarSessions/router.ts:106"
        ]
       ]
      ]
@@ -8144,7 +8293,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminarSessions/router.ts",
-   "line": 121,
+   "line": 120,
    "effects": [
     {
      "model": "Seminar",
@@ -8154,7 +8303,7 @@
       [
        [
         "ctx.prisma.seminar.findUnique",
-        "packages/backend/src/modules/seminarSessions/router.ts:126"
+        "packages/backend/src/modules/seminarSessions/router.ts:125"
        ]
       ]
      ]
@@ -8174,7 +8323,7 @@
       [
        [
         "ctx.prisma.seminarSession.create",
-        "packages/backend/src/modules/seminarSessions/router.ts:138"
+        "packages/backend/src/modules/seminarSessions/router.ts:137"
        ]
       ]
      ]
@@ -8186,8 +8335,21 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminarSessions/router.ts",
-   "line": 163,
+   "line": 162,
    "effects": [
+    {
+     "model": "SeminarSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.seminarSession.findUnique",
+        "packages/backend/src/modules/seminarSessions/router.ts:171"
+       ]
+      ]
+     ]
+    },
     {
      "model": "SeminarSession",
      "op": "update",
@@ -8196,7 +8358,7 @@
       [
        [
         "ctx.prisma.seminarSession.update",
-        "packages/backend/src/modules/seminarSessions/router.ts:170"
+        "packages/backend/src/modules/seminarSessions/router.ts:184"
        ]
       ]
      ]
@@ -8208,7 +8370,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/seminarSessions/router.ts",
-   "line": 194,
+   "line": 208,
    "effects": [
     {
      "model": "SeminarSession",
@@ -8218,7 +8380,7 @@
       [
        [
         "ctx.prisma.seminarSession.delete",
-        "packages/backend/src/modules/seminarSessions/router.ts:199"
+        "packages/backend/src/modules/seminarSessions/router.ts:213"
        ]
       ]
      ]
@@ -8230,7 +8392,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 197,
+   "line": 196,
    "effects": [
     {
      "model": "Event",
@@ -8240,7 +8402,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:198"
+        "packages/backend/src/modules/events/router.ts:197"
        ]
       ]
      ]
@@ -8252,7 +8414,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 210,
+   "line": 209,
    "effects": [
     {
      "model": "Discipline",
@@ -8262,7 +8424,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:213"
+        "packages/backend/src/modules/events/router.ts:212"
        ]
       ]
      ]
@@ -8275,7 +8437,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:213"
+        "packages/backend/src/modules/events/router.ts:212"
        ]
       ]
      ]
@@ -8288,7 +8450,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:213"
+        "packages/backend/src/modules/events/router.ts:212"
        ]
       ]
      ]
@@ -8300,7 +8462,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 234,
+   "line": 233,
    "effects": [
     {
      "model": "Event",
@@ -8310,7 +8472,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:235"
+        "packages/backend/src/modules/events/router.ts:234"
        ]
       ]
      ]
@@ -8322,7 +8484,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 244,
+   "line": 243,
    "effects": [
     {
      "model": "Event",
@@ -8332,7 +8494,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:249"
+        "packages/backend/src/modules/events/router.ts:248"
        ]
       ]
      ]
@@ -8345,7 +8507,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:249"
+        "packages/backend/src/modules/events/router.ts:248"
        ]
       ]
      ]
@@ -8357,7 +8519,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 258,
+   "line": 257,
    "effects": [
     {
      "model": "Event",
@@ -8367,7 +8529,7 @@
       [
        [
         "ctx.prisma.event.findMany",
-        "packages/backend/src/modules/events/router.ts:261"
+        "packages/backend/src/modules/events/router.ts:260"
        ]
       ]
      ]
@@ -8379,7 +8541,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 274,
+   "line": 273,
    "effects": [
     {
      "model": "Discipline",
@@ -8389,7 +8551,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:278"
+        "packages/backend/src/modules/events/router.ts:277"
        ]
       ]
      ]
@@ -8402,7 +8564,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:278"
+        "packages/backend/src/modules/events/router.ts:277"
        ]
       ]
      ]
@@ -8415,7 +8577,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:278"
+        "packages/backend/src/modules/events/router.ts:277"
        ]
       ]
      ]
@@ -8428,7 +8590,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:278"
+        "packages/backend/src/modules/events/router.ts:277"
        ]
       ]
      ]
@@ -8440,7 +8602,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 300,
+   "line": 299,
    "effects": [
     {
      "model": "Discipline",
@@ -8450,7 +8612,7 @@
       [
        [
         "ctx.prisma.event.findFirst",
-        "packages/backend/src/modules/events/router.ts:303"
+        "packages/backend/src/modules/events/router.ts:302"
        ]
       ]
      ]
@@ -8463,7 +8625,7 @@
       [
        [
         "ctx.prisma.event.findFirst",
-        "packages/backend/src/modules/events/router.ts:303"
+        "packages/backend/src/modules/events/router.ts:302"
        ]
       ]
      ]
@@ -8476,7 +8638,7 @@
       [
        [
         "ctx.prisma.event.findFirst",
-        "packages/backend/src/modules/events/router.ts:303"
+        "packages/backend/src/modules/events/router.ts:302"
        ]
       ]
      ]
@@ -8489,7 +8651,7 @@
       [
        [
         "ctx.prisma.event.findFirst",
-        "packages/backend/src/modules/events/router.ts:303"
+        "packages/backend/src/modules/events/router.ts:302"
        ]
       ]
      ]
@@ -8501,7 +8663,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 326,
+   "line": 327,
    "effects": [
     {
      "model": "Discipline",
@@ -8511,11 +8673,11 @@
       [
        [
         "assertDisciplinesExist",
-        "packages/backend/src/modules/events/router.ts:135"
+        "packages/backend/src/modules/events/router.ts:134"
        ],
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/events/router.ts:141"
+        "packages/backend/src/modules/events/router.ts:140"
        ]
       ]
      ]
@@ -8540,7 +8702,7 @@
       [
        [
         "tx.event.create",
-        "packages/backend/src/modules/events/router.ts:344"
+        "packages/backend/src/modules/events/router.ts:345"
        ]
       ]
      ]
@@ -8553,7 +8715,7 @@
       [
        [
         "tx.event.create",
-        "packages/backend/src/modules/events/router.ts:344"
+        "packages/backend/src/modules/events/router.ts:345"
        ]
       ]
      ]
@@ -8583,11 +8745,11 @@
       [
        [
         "assertOriginExists",
-        "packages/backend/src/modules/events/router.ts:155"
+        "packages/backend/src/modules/events/router.ts:154"
        ],
        [
         "prisma.origin.findUnique",
-        "packages/backend/src/modules/events/router.ts:160"
+        "packages/backend/src/modules/events/router.ts:159"
        ]
       ]
      ]
@@ -8604,7 +8766,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -8661,11 +8823,11 @@
       [
        [
         "assertUserExists",
-        "packages/backend/src/modules/events/router.ts:172"
+        "packages/backend/src/modules/events/router.ts:171"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/events/router.ts:176"
+        "packages/backend/src/modules/events/router.ts:175"
        ]
       ]
      ]
@@ -8677,7 +8839,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 404,
+   "line": 405,
    "effects": [
     {
      "model": "Discipline",
@@ -8687,11 +8849,11 @@
       [
        [
         "assertDisciplinesExist",
-        "packages/backend/src/modules/events/router.ts:135"
+        "packages/backend/src/modules/events/router.ts:134"
        ],
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/events/router.ts:141"
+        "packages/backend/src/modules/events/router.ts:140"
        ]
       ]
      ]
@@ -8704,13 +8866,13 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:412"
+        "packages/backend/src/modules/events/router.ts:413"
        ]
       ],
       [
        [
         "tx.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:541"
+        "packages/backend/src/modules/events/router.ts:542"
        ]
       ]
      ]
@@ -8734,7 +8896,7 @@
       [
        [
         "tx.event.update",
-        "packages/backend/src/modules/events/router.ts:491"
+        "packages/backend/src/modules/events/router.ts:492"
        ]
       ]
      ]
@@ -8747,7 +8909,7 @@
       [
        [
         "tx.eventDiscipline.createMany",
-        "packages/backend/src/modules/events/router.ts:523"
+        "packages/backend/src/modules/events/router.ts:524"
        ]
       ]
      ]
@@ -8760,7 +8922,7 @@
       [
        [
         "tx.eventDiscipline.deleteMany",
-        "packages/backend/src/modules/events/router.ts:521"
+        "packages/backend/src/modules/events/router.ts:522"
        ]
       ]
      ]
@@ -8773,7 +8935,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/events/router.ts:412"
+        "packages/backend/src/modules/events/router.ts:413"
        ]
       ]
      ]
@@ -8803,11 +8965,11 @@
       [
        [
         "assertOriginExists",
-        "packages/backend/src/modules/events/router.ts:155"
+        "packages/backend/src/modules/events/router.ts:154"
        ],
        [
         "prisma.origin.findUnique",
-        "packages/backend/src/modules/events/router.ts:160"
+        "packages/backend/src/modules/events/router.ts:159"
        ]
       ]
      ]
@@ -8824,7 +8986,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -8881,11 +9043,11 @@
       [
        [
         "assertUserExists",
-        "packages/backend/src/modules/events/router.ts:172"
+        "packages/backend/src/modules/events/router.ts:171"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/events/router.ts:176"
+        "packages/backend/src/modules/events/router.ts:175"
        ]
       ]
      ]
@@ -8897,7 +9059,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/events/router.ts",
-   "line": 557,
+   "line": 558,
    "effects": [
     {
      "model": "Event",
@@ -8907,7 +9069,7 @@
       [
        [
         "tx.event.delete",
-        "packages/backend/src/modules/events/router.ts:578"
+        "packages/backend/src/modules/events/router.ts:579"
        ]
       ]
      ]
@@ -8921,11 +9083,11 @@
       [
        [
         "tx.event.delete",
-        "packages/backend/src/modules/events/router.ts:578"
+        "packages/backend/src/modules/events/router.ts:579"
        ],
        [
         "onDelete: Cascade (EventDiscipline → Event)",
-        "prisma/schema.prisma:1601"
+        "prisma/schema.prisma:1614"
        ]
       ]
      ]
@@ -8939,11 +9101,11 @@
       [
        [
         "tx.event.delete",
-        "packages/backend/src/modules/events/router.ts:578"
+        "packages/backend/src/modules/events/router.ts:579"
        ],
        [
         "onDelete: Cascade (EventSession → Event)",
-        "prisma/schema.prisma:969"
+        "prisma/schema.prisma:982"
        ]
       ]
      ]
@@ -8977,7 +9139,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -9033,7 +9195,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/eventSessions/router.ts",
-   "line": 96,
+   "line": 93,
    "effects": [
     {
      "model": "EventSession",
@@ -9043,7 +9205,7 @@
       [
        [
         "ctx.prisma.eventSession.findMany",
-        "packages/backend/src/modules/eventSessions/router.ts:99"
+        "packages/backend/src/modules/eventSessions/router.ts:96"
        ]
       ]
      ]
@@ -9055,7 +9217,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/eventSessions/router.ts",
-   "line": 105,
+   "line": 102,
    "effects": [
     {
      "model": "EventSession",
@@ -9064,8 +9226,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.eventSession.findUnique",
-        "packages/backend/src/modules/eventSessions/router.ts:108"
+        "ctx.prisma.eventSession.findFirst",
+        "packages/backend/src/modules/eventSessions/router.ts:105"
        ]
       ]
      ]
@@ -9077,7 +9239,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/eventSessions/router.ts",
-   "line": 122,
+   "line": 119,
    "effects": [
     {
      "model": "Event",
@@ -9087,7 +9249,7 @@
       [
        [
         "ctx.prisma.event.findUnique",
-        "packages/backend/src/modules/eventSessions/router.ts:127"
+        "packages/backend/src/modules/eventSessions/router.ts:124"
        ]
       ]
      ]
@@ -9107,7 +9269,7 @@
       [
        [
         "ctx.prisma.eventSession.create",
-        "packages/backend/src/modules/eventSessions/router.ts:139"
+        "packages/backend/src/modules/eventSessions/router.ts:136"
        ]
       ]
      ]
@@ -9119,8 +9281,21 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/eventSessions/router.ts",
-   "line": 164,
+   "line": 161,
    "effects": [
+    {
+     "model": "EventSession",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.eventSession.findUnique",
+        "packages/backend/src/modules/eventSessions/router.ts:170"
+       ]
+      ]
+     ]
+    },
     {
      "model": "EventSession",
      "op": "update",
@@ -9129,7 +9304,7 @@
       [
        [
         "ctx.prisma.eventSession.update",
-        "packages/backend/src/modules/eventSessions/router.ts:171"
+        "packages/backend/src/modules/eventSessions/router.ts:183"
        ]
       ]
      ]
@@ -9141,7 +9316,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/eventSessions/router.ts",
-   "line": 195,
+   "line": 207,
    "effects": [
     {
      "model": "EventSession",
@@ -9151,7 +9326,7 @@
       [
        [
         "ctx.prisma.eventSession.delete",
-        "packages/backend/src/modules/eventSessions/router.ts:200"
+        "packages/backend/src/modules/eventSessions/router.ts:212"
        ]
       ]
      ]
@@ -9282,7 +9457,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -9387,7 +9562,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -9475,7 +9650,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1282"
+        "prisma/schema.prisma:1295"
        ]
       ],
       [
@@ -9485,11 +9660,11 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1282"
+        "prisma/schema.prisma:1295"
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1284"
+        "prisma/schema.prisma:1297"
        ]
       ]
      ]
@@ -9536,7 +9711,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -9598,7 +9773,7 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1346"
+        "prisma/schema.prisma:1359"
        ]
       ]
      ]
@@ -9616,11 +9791,11 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1346"
+        "prisma/schema.prisma:1359"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1363"
+        "prisma/schema.prisma:1376"
        ]
       ]
      ]
@@ -9638,15 +9813,15 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1346"
+        "prisma/schema.prisma:1359"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1363"
+        "prisma/schema.prisma:1376"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1386"
+        "prisma/schema.prisma:1399"
        ]
       ]
      ]
@@ -12394,7 +12569,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1284"
+        "prisma/schema.prisma:1297"
        ]
       ]
      ]
@@ -12778,7 +12953,7 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1363"
+        "prisma/schema.prisma:1376"
        ]
       ]
      ]
@@ -12796,11 +12971,11 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1363"
+        "prisma/schema.prisma:1376"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1386"
+        "prisma/schema.prisma:1399"
        ]
       ]
      ]
@@ -13251,7 +13426,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
-        "prisma/schema.prisma:1541"
+        "prisma/schema.prisma:1554"
        ]
       ]
      ]
@@ -14256,7 +14431,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -14287,7 +14462,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -14305,7 +14480,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -14739,7 +14914,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1848"
+        "prisma/schema.prisma:1861"
        ]
       ]
      ]
@@ -14820,7 +14995,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1797"
+        "prisma/schema.prisma:1810"
        ]
       ]
      ]
@@ -14842,7 +15017,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1821"
+        "prisma/schema.prisma:1834"
        ]
       ]
      ]
@@ -15930,7 +16105,7 @@
        ],
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -16067,7 +16242,7 @@
   },
   "parsePathToDestination": {
    "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 59,
+   "line": 52,
    "effects": [
     {
      "model": "Category",
@@ -16077,11 +16252,11 @@
       [
        [
         "buildCategoryCache",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:142"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:135"
        ],
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:145"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:138"
        ]
       ]
      ]
@@ -16094,11 +16269,11 @@
       [
        [
         "buildDisciplineCache",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:154"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:148"
        ],
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:157"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:151"
        ]
       ]
      ]
@@ -16108,7 +16283,7 @@
   },
   "buildCategoryCache": {
    "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 142,
+   "line": 135,
    "effects": [
     {
      "model": "Category",
@@ -16118,7 +16293,7 @@
       [
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:145"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:138"
        ]
       ]
      ]
@@ -16128,7 +16303,7 @@
   },
   "buildDisciplineCache": {
    "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 154,
+   "line": 148,
    "effects": [
     {
      "model": "Discipline",
@@ -16138,7 +16313,7 @@
       [
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:157"
+        "packages/backend/src/modules/media/services/parsePathToDestination.ts:151"
        ]
       ]
      ]
@@ -16264,7 +16439,7 @@
       [
        [
         "tx.pageMediaReference.createMany",
-        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:127"
+        "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:129"
        ]
       ]
      ]
@@ -16583,7 +16758,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1848"
+        "prisma/schema.prisma:1861"
        ]
       ]
      ]
@@ -16644,7 +16819,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1797"
+        "prisma/schema.prisma:1810"
        ]
       ]
      ]
@@ -16662,7 +16837,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1821"
+        "prisma/schema.prisma:1834"
        ]
       ]
      ]
@@ -17389,7 +17564,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2133"
+        "prisma/schema.prisma:2146"
        ]
       ]
      ]
@@ -17407,7 +17582,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2103"
+        "prisma/schema.prisma:2116"
        ]
       ]
      ]
@@ -17600,7 +17775,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2133"
+        "prisma/schema.prisma:2146"
        ]
       ]
      ]
@@ -17622,7 +17797,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2103"
+        "prisma/schema.prisma:2116"
        ]
       ]
      ]
@@ -18325,7 +18500,7 @@
   },
   "isProtectedDisciplineFolderPath": {
    "file": "packages/backend/src/modules/storage/protectedDisciplineFolder.ts",
-   "line": 25,
+   "line": 19,
    "effects": [
     {
      "model": "Category",
@@ -18335,13 +18510,13 @@
       [
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:36"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:30"
        ]
       ],
       [
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:44"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:38"
        ]
       ]
      ]
@@ -18354,7 +18529,7 @@
       [
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:48"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:42"
        ]
       ]
      ]
@@ -18589,9 +18764,9 @@
    ],
    "emails": []
   },
-  "ensureCategoryFolderLabels": {
-   "file": "packages/backend/src/modules/storage/services/ensureCategoryFolderLabels.service.ts",
-   "line": 17,
+  "ensureDomainFolderLabels": {
+   "file": "packages/backend/src/modules/storage/services/ensureDomainFolderLabels.service.ts",
+   "line": 13,
    "effects": [
     {
      "model": "Category",
@@ -18601,7 +18776,20 @@
       [
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/services/ensureCategoryFolderLabels.service.ts:21"
+        "packages/backend/src/modules/storage/services/ensureDomainFolderLabels.service.ts:17"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.category.findMany",
+        "packages/backend/src/modules/storage/services/ensureDomainFolderLabels.service.ts:17"
        ]
       ]
      ]
@@ -18616,8 +18804,12 @@
      "trails": [
       [
        [
-        "prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/services/ensureCategoryFolderLabels.service.ts:24"
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
        ]
       ]
      ]
@@ -18632,8 +18824,12 @@
      "trails": [
       [
        [
-        "prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/services/ensureCategoryFolderLabels.service.ts:24"
+        "setFolderLabel",
+        "packages/backend/src/modules/storage/storageSegments.ts:151"
+       ],
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
        ]
       ]
      ]
@@ -18867,6 +19063,160 @@
        [
         "prisma.user.findUnique",
         "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "newCategorySegment": {
+   "file": "packages/backend/src/modules/storage/storageSegments.ts",
+   "line": 52,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.category.findMany",
+        "packages/backend/src/modules/storage/storageSegments.ts:55"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "newDisciplineSegment": {
+   "file": "packages/backend/src/modules/storage/storageSegments.ts",
+   "line": 64,
+   "effects": [
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.discipline.findMany",
+        "packages/backend/src/modules/storage/storageSegments.ts:68"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "ensureStorageSegments": {
+   "file": "packages/backend/src/modules/storage/storageSegments.ts",
+   "line": 92,
+   "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.category.findMany",
+        "packages/backend/src/modules/storage/storageSegments.ts:96"
+       ]
+      ],
+      [
+       [
+        "prisma.category.findFirst",
+        "packages/backend/src/modules/storage/storageSegments.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Category",
+     "op": "update",
+     "fields": [
+      "storageSegment"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.category.update",
+        "packages/backend/src/modules/storage/storageSegments.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.discipline.findMany",
+        "packages/backend/src/modules/storage/storageSegments.ts:111"
+       ]
+      ],
+      [
+       [
+        "prisma.discipline.findFirst",
+        "packages/backend/src/modules/storage/storageSegments.ts:118"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "update",
+     "fields": [
+      "storageSegment"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.discipline.update",
+        "packages/backend/src/modules/storage/storageSegments.ts:126"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "setFolderLabel": {
+   "file": "packages/backend/src/modules/storage/storageSegments.ts",
+   "line": 151,
+   "effects": [
+    {
+     "model": "FolderLabel",
+     "op": "create",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "displayName",
+      "path"
+     ],
+     "trails": [
+      [
+       [
+        "db.folderLabel.upsert",
+        "packages/backend/src/modules/storage/storageSegments.ts:152"
        ]
       ]
      ]
@@ -21649,11 +21999,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -21675,7 +22025,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1546"
+        "prisma/schema.prisma:1559"
        ]
       ]
      ]
@@ -21731,7 +22081,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ]
       ]
      ]
@@ -21753,11 +22103,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -21779,11 +22129,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -21878,11 +22228,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -21921,7 +22271,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1546"
+        "prisma/schema.prisma:1559"
        ]
       ]
      ]
@@ -21977,7 +22327,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ]
       ]
      ]
@@ -21999,11 +22349,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -22025,11 +22375,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -22232,21 +22582,21 @@
       [
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:36"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:30"
        ]
       ],
       [
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.category.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:44"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:38"
        ]
       ]
      ]
@@ -22259,11 +22609,11 @@
       [
        [
         "isProtectedDisciplineFolderPath",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:25"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:19"
        ],
        [
         "prisma.discipline.findMany",
-        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:48"
+        "packages/backend/src/modules/storage/protectedDisciplineFolder.ts:42"
        ]
       ]
      ]
@@ -22514,11 +22864,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1730"
+        "prisma/schema.prisma:1743"
        ]
       ]
      ]
@@ -22536,7 +22886,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1546"
+        "prisma/schema.prisma:1559"
        ]
       ]
      ]
@@ -22580,7 +22930,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ]
       ]
      ]
@@ -22598,11 +22948,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1844"
+        "prisma/schema.prisma:1857"
        ]
       ]
      ]
@@ -22620,11 +22970,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1674"
+        "prisma/schema.prisma:1687"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1710"
+        "prisma/schema.prisma:1723"
        ]
       ]
      ]
@@ -22833,7 +23183,7 @@
   "page /dashboard/courses/[id]": {
    "kind": "page",
    "file": "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx",
-   "line": 50,
+   "line": 13,
    "effects": [
     {
      "model": "Course",
@@ -22843,7 +23193,7 @@
       [
        [
         "prisma.course.findUnique",
-        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:22"
        ]
       ]
      ]
@@ -22856,7 +23206,7 @@
       [
        [
         "prisma.course.findUnique",
-        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:22"
        ]
       ]
      ]
@@ -22907,7 +23257,7 @@
       [
        [
         "prisma.course.findUnique",
-        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:59"
+        "apps/web/src/app/(admin)/dashboard/courses/[id]/page.tsx:22"
        ]
       ],
       [
@@ -24173,7 +24523,7 @@
   "page /agenda": {
    "kind": "page",
    "file": "apps/web/src/app/(public)/agenda/page.tsx",
-   "line": 45,
+   "line": 50,
    "effects": [
     {
      "model": "Event",
@@ -24183,7 +24533,7 @@
       [
        [
         "prisma.event.findMany",
-        "apps/web/src/app/(public)/agenda/page.tsx:70"
+        "apps/web/src/app/(public)/agenda/page.tsx:76"
        ]
       ]
      ]
@@ -24196,7 +24546,7 @@
       [
        [
         "prisma.event.findMany",
-        "apps/web/src/app/(public)/agenda/page.tsx:70"
+        "apps/web/src/app/(public)/agenda/page.tsx:76"
        ]
       ]
      ]
@@ -24226,7 +24576,7 @@
       [
        [
         "prisma.seminar.findMany",
-        "apps/web/src/app/(public)/agenda/page.tsx:59"
+        "apps/web/src/app/(public)/agenda/page.tsx:65"
        ]
       ]
      ]
@@ -24239,7 +24589,7 @@
       [
        [
         "prisma.seminar.findMany",
-        "apps/web/src/app/(public)/agenda/page.tsx:59"
+        "apps/web/src/app/(public)/agenda/page.tsx:65"
        ]
       ]
      ]
@@ -24269,7 +24619,7 @@
       [
        [
         "prisma.siteStyle.findUnique",
-        "apps/web/src/app/(public)/agenda/page.tsx:121"
+        "apps/web/src/app/(public)/agenda/page.tsx:127"
        ]
       ]
      ]
@@ -24446,7 +24796,7 @@
   "page /course/[id]": {
    "kind": "page",
    "file": "apps/web/src/app/(public)/course/[id]/page.tsx",
-   "line": 57,
+   "line": 27,
    "effects": [
     {
      "model": "Course",
@@ -24455,8 +24805,8 @@
      "trails": [
       [
        [
-        "prisma.course.findUnique",
-        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+        "prisma.course.findFirst",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:39"
        ]
       ]
      ]
@@ -24468,8 +24818,8 @@
      "trails": [
       [
        [
-        "prisma.course.findUnique",
-        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+        "prisma.course.findFirst",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:39"
        ]
       ]
      ]
@@ -24519,8 +24869,8 @@
      "trails": [
       [
        [
-        "prisma.course.findUnique",
-        "apps/web/src/app/(public)/course/[id]/page.tsx:66"
+        "prisma.course.findFirst",
+        "apps/web/src/app/(public)/course/[id]/page.tsx:39"
        ]
       ],
       [
@@ -25301,7 +25651,7 @@
        ],
        [
         "prisma.siteSettings .findUnique",
-        "apps/web/src/features/app-shell/Footer.tsx:53"
+        "apps/web/src/features/app-shell/Footer.tsx:57"
        ]
       ]
      ]

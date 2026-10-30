@@ -495,8 +495,14 @@ model Category {
   id Int @id @default(autoincrement())
 
   /// Libellé de la catégorie, unique (ex. « Cours »). Nommé `type` pour des
-  /// raisons historiques. Détermine le segment de son dossier physique.
+  /// raisons historiques. Affichage seulement : le dossier suit `storageSegment`.
   type String @unique
+
+  /// Segment du dossier de la catégorie (`${appRoot}/<segment>`, ex. `courses`),
+  /// FIGÉ à la création : renommer la catégorie ne déplace aucun fichier. null
+  /// seulement pour une ligne antérieure à la colonne, complétée au démarrage
+  /// (ensureStorageSegments) avec le segment qu'elle avait.
+  storageSegment String? @unique
 
   /// Disciplines de la catégorie (1–N, Discipline.category). Bloquent la
   /// suppression de la catégorie (RESTRICT).
@@ -597,6 +603,12 @@ model Discipline {
   /// Catégorie (obligatoire).
   categoryId Int
 
+  /// Segment du dossier de la discipline, sous celui de sa catégorie
+  /// (`${appRoot}/courses/<segment>`), FIGÉ à la création : renommer la
+  /// discipline ne déplace aucun fichier. Unique dans la catégorie. null
+  /// seulement pour une ligne antérieure à la colonne, complétée au démarrage.
+  storageSegment String?
+
   /// Instructeur principal, responsable pédagogique de la discipline
   /// (obligatoire). Un créneau peut avoir son propre instructeur
   /// (Course.instructorId).
@@ -640,6 +652,7 @@ model Discipline {
   eventLinks EventDiscipline[]
 
   @@unique([categoryId, name])
+  @@unique([categoryId, storageSegment])
   @@index([categoryId])
   @@index([instructorId])
   @@index([originId])

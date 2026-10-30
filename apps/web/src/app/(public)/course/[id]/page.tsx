@@ -4,37 +4,7 @@ import type { JSX } from "react";
 import { prisma } from "@backend/prisma";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  Helpers                                                                */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-const DAY_LABELS: Record<string, string> = {
-  MONDAY: "Lundi",
-  TUESDAY: "Mardi",
-  WEDNESDAY: "Mercredi",
-  THURSDAY: "Jeudi",
-  FRIDAY: "Vendredi",
-  SATURDAY: "Samedi",
-  SUNDAY: "Dimanche",
-};
-
-function formatTime(hhmm: number): string {
-  const h = Math.floor(hhmm / 100);
-  const m = hhmm % 100;
-  return `${h}h${String(m).padStart(2, "0")}`;
-}
-
-function formatInstructorName(
-  instructor: { firstName: string | null; lastName: string | null; pseudo: string | null; email: string } | null,
-): string | null {
-  if (!instructor) return null;
-  const parts = [instructor.firstName, instructor.lastName]
-    .filter((p): p is string => Boolean(p?.trim()))
-    .join(" ")
-    .trim();
-  return parts || instructor.pseudo || instructor.email;
-}
+import { DAY_LABELS, formatTime, formatUserName } from "@lib/format";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Page                                                                   */
@@ -63,25 +33,28 @@ export default async function PublicCoursePage({
   const courseId = Number(id);
   if (!Number.isFinite(courseId)) notFound();
 
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
+  // Un créneau n'est public que si sa discipline l'est : celui d'un brouillon répond 404, comme la
+  // page de la discipline elle-même.
+  const now = new Date();
+  const course = await prisma.course.findFirst({
+    where: { id: courseId, discipline: { publicationDate: { not: null, lte: now } } },
     include: {
-      discipline: { select: { name: true } },
-      instructor: {
+      discipline: {
         select: {
-          firstName: true,
-          lastName: true,
-          pseudo: true,
-          email: true,
+          name: true,
+          // Instructeur principal : celui du créneau quand le créneau n'en a pas.
+          instructor: { select: { firstName: true, lastName: true, pseudo: true } },
         },
       },
+      instructor: { select: { firstName: true, lastName: true, pseudo: true } },
     },
   });
 
   if (!course) notFound();
 
   const content = parsePageContentV1(course.content);
-  const instructorName = formatInstructorName(course.instructor);
+  // Hiérarchie des instructeurs : `Course.instructorId` null veut dire « celui de la discipline ».
+  const instructorName = formatUserName(course.instructor ?? course.discipline.instructor);
 
   return (
     <article className="akfc-page py-12">

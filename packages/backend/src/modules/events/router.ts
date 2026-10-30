@@ -17,9 +17,10 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  * Repas, conférence, journée portes ouvertes, atelier culturel, etc.
  * Ce qui distingue Event de Stage :
  *
- *   - **Pas obligatoirement rattaché** à une discipline (`disciplineId`
- *     nullable, comme Stage en v2) — un événement culturel large peut
- *     ne pas être rattaché à une discipline enseignée
+ *   - **Plusieurs disciplines ou aucune** : 0..N disciplines du club (table
+ *     `EventDiscipline`) et 0..N disciplines extérieures en texte libre
+ *     (`externalDisciplineLabels`) — un forum présente plusieurs disciplines,
+ *     un repas aucune
  *   - **Un seul composite** Json (`content`) — pas la dichotomie
  *     description/program de Stage. Plus léger en structure
  *   - **`publicationDate?`** pour gérer brouillons (cohérent Post)
@@ -27,13 +28,11 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *     distinction primary/secondary, pas de relation many-to-many
  *
  * La date n'est pas portée par Event lui-même mais par ses
- * `EventSession[]` — comme Stage, un Event est un container temporel.
+ * `EventSession[]` — comme un stage (Seminar), un Event est un container temporel.
  *
  * Conventions :
  *   - Lectures   : `publicProcedure` (les events alimentent le site public).
  *   - Écritures  : `protectedProcedure.use(isAdmin)`.
- *                  Permission dédiée — si elle n'existe pas encore dans
- *                  ton seed, à ajouter (cf. NOTES.md de cette livraison).
  *
  * ─── Sync transactionnelle des références médias ────────────────────────
  *
@@ -45,16 +44,16 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *
  * ─── Validation « au moins un des trois » ───────────────────────────────
  *
- * Cohérent avec Stage v2 : au moins un de `disciplineId`,
- * `externalDisciplineLabel`, `originId` doit être renseigné pour qu'un
- * Event ait du contexte. Vérifié en Zod au create, en router après
- * merge à l'update.
+ * Comme pour les stages : au moins une discipline du club (`disciplineIds`),
+ * une discipline extérieure (`externalDisciplineLabels`) ou une origine
+ * (`originId`) doit être renseignée pour qu'un Event ait du contexte.
+ * Vérifié en Zod au create, en router après merge à l'update.
  *
  * ─── Évolution navigation (socle slugs) ───────────────────────────────────
  *
  * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
  * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
- * d'un `getBySlug` public pour la page détail `/evenements/[slug]`.
+ * d'un `getBySlug` public pour la page détail `/events/[slug]`.
  * Particularité : le slug est la **première** contrainte d'unicité d'Event
  * (il n'en avait aucune). Les mutations gagnent donc une gestion P2002
  * qu'elles n'avaient pas — au create (où il n'y avait aucun `catch`) et à
@@ -205,7 +204,7 @@ export const eventRouter = router({
 
   /**
    * Liste tous les events sans filtre — incluant brouillons et programmés.
-   * Réservé à l'admin (requirePermission).
+   * Réservé aux administrateurs.
    */
   getAllAdmin: protectedProcedure
     .use(isAdmin)
@@ -227,7 +226,7 @@ export const eventRouter = router({
 
   /**
    * Liste légère des événements pour le picker de l'uploader.
-   * `protectedProcedure` SANS `manage_events` : tout membre authentifié peut
+   * `protectedProcedure` sans garde d'administration : tout membre authentifié peut
    * déposer des photos sur un événement, même s'il ne peut pas l'éditer.
    * Brouillons inclus — un événement peut être préparé avant sa publication.
    */
@@ -293,7 +292,7 @@ export const eventRouter = router({
     }),
 
   /**
-   * Lookup public par slug — alimente `/evenements/[slug]`.
+   * Lookup public par slug — alimente `/events/[slug]`.
    * Seuls les events PUBLIÉS sont visibles ; un brouillon/programmé
    * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
    */
@@ -308,8 +307,10 @@ export const eventRouter = router({
         relationLoadStrategy: "join",
         include: {
           sessions: { orderBy: { date: "asc" } },
-          // Disciplines enseignées (0..N) — pour l'affichage public.
+          // Disciplines enseignées (0..N) — pour l'affichage public : les seules
+          // PUBLIÉES, le nom d'une discipline en brouillon n'a pas à sortir.
           disciplineLinks: {
+            where: { discipline: { publicationDate: { not: null, lte: new Date() } } },
             select: {
               disciplineId: true,
               discipline: { select: { name: true, slug: true } },

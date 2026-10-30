@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { StorageFolderNode } from "@contracts/storage";
-import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
+import { categoryFolderPath } from "@backend/modules/storage/storageSegments";
 
 /**
  * Racines principales du finder — celles qui REÇOIVENT le contenu — qui doivent
@@ -12,9 +12,9 @@ export async function requiredRootPaths(
   prisma: PrismaClient,
   appRoot: string,
 ): Promise<string[]> {
-  const categories = await prisma.category.findMany({ select: { type: true } });
+  const categories = await prisma.category.findMany({ select: { type: true, storageSegment: true } });
   return [
-    ...categories.map((c) => `${appRoot}/${categoryStorageSegment(c.type)}`),
+    ...categories.map((c) => categoryFolderPath(appRoot, c)),
     `${appRoot}/seminars`,
     `${appRoot}/events`,
     `${appRoot}/personal-space`,

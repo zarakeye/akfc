@@ -7,8 +7,11 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 import { assertDisciplineReferences } from "@backend/modules/disciplines/services/assertDisciplineReferences.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
-import slugify from "slugify";
-import { categoryStorageSegment } from "@backend/modules/storage/categoryStorageSegment";
+import {
+  disciplineFolderPath,
+  newDisciplineSegment,
+  setFolderLabel,
+} from "@backend/modules/storage/storageSegments";
 
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
@@ -24,9 +27,12 @@ import { slugSchema } from "@contracts/slug/slug.schema";
  *   - Écritures  : `protectedProcedure.use(isAdmin)`.
  *
  * Règles métier :
- *   - `categoryId` N'EST PAS modifiable via `update`. Déplacer une discipline
- *     de catégorie briserait la cohérence des chemins de stockage existants
- *     (qui encodent `category.type` slugifié dans leurs segments).
+ *   - `categoryId` N'EST PAS modifiable via `update`. Le dossier d'une
+ *     discipline est rangé sous celui de sa catégorie : la déplacer couperait
+ *     le lien avec ses fichiers.
+ *   - Le dossier suit `storageSegment`, FIGÉ à la création (slug du nom,
+ *     suffixé s'il est pris). Renommer la discipline ne change que son
+ *     libellé dans le finder (FolderLabel), jamais son dossier.
  *   - `delete` est un hard delete : avant de supprimer, on vérifie qu'aucune
  *     dépendance ne subsiste (Course, Stage, Event, MediaAsset). Si oui,
  *     CONFLICT.
@@ -255,12 +261,16 @@ export const disciplineRouter = router({
       // ─── Transaction : create discipline + sync references ─────────────
 
       return await ctx.prisma.$transaction(async (tx) => {
+        // Segment du dossier, figé ici une fois pour toutes (voir storageSegments.ts).
+        const storageSegment = await newDisciplineSegment(tx, input.categoryId, input.name);
+
         let created;
         try {
           created = await tx.discipline.create({
             data: {
               name: input.name,
               slug: input.slug,
+              storageSegment,
               type: input.type,
               familyId: input.familyId ?? null,
               school: input.school ?? null,
@@ -313,6 +323,13 @@ export const disciplineRouter = router({
           // échapperait au recensement et passerait pour orpheline.
           extraMediaIds: input.summaryMediaId ? [input.summaryMediaId] : [],
         });
+
+        // Libellé du dossier dans le finder : le nom de la discipline.
+        const category = await tx.category.findUniqueOrThrow({
+          where: { id: created.categoryId },
+          select: { type: true, storageSegment: true },
+        });
+        await setFolderLabel(tx, disciplineFolderPath(ctx.appRoot, category, created), created.name);
 
         return created;
       });
@@ -424,6 +441,15 @@ export const disciplineRouter = router({
           });
         }
 
+        // Renommage : seul le libellé du dossier suit, le dossier lui-même ne bouge pas.
+        if (rest.name !== undefined) {
+          const category = await tx.category.findUniqueOrThrow({
+            where: { id: updated.categoryId },
+            select: { type: true, storageSegment: true },
+          });
+          await setFolderLabel(tx, disciplineFolderPath(ctx.appRoot, category, updated), updated.name);
+        }
+
         return updated;
       });
     }),
@@ -455,27 +481,25 @@ export const disciplineRouter = router({
         });
       }
 
-      // Résout le dossier : `${appRoot}/<slug(cat.type)>/<slug(name)>`
-      // (aligné sur resolvePendingUploadFolder / protectedDisciplineFolder).
+      // Résout le dossier par ses segments enregistrés (les mêmes que
+      // resolvePendingUploadFolder / protectedDisciplineFolder) : un renommage
+      // passé ne fait pas vérifier un autre dossier que le vrai.
       const disc = await ctx.prisma.discipline.findUnique({
         where: { id: input.id },
-        select: { id: true, name: true, categoryId: true },
+        select: {
+          id: true,
+          name: true,
+          storageSegment: true,
+          category: { select: { type: true, storageSegment: true } },
+        },
       });
       if (!disc) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Discipline introuvable." });
       }
-      const cat = await ctx.prisma.category.findUnique({
-        where: { id: disc.categoryId },
-        select: { type: true },
-      });
-      const slug = (v: string) => slugify(v, { lower: true, strict: true });
-      const folderPath = cat
-        ? `${ctx.appRoot}/${categoryStorageSegment(cat.type)}/${slug(disc.name) || `disc-${disc.id}`}`
-        : null;
+      const folderPath = disciplineFolderPath(ctx.appRoot, disc.category, disc);
 
       // Le dossier doit être VIDE (contrôle physique, cf. finder).
       if (
-        folderPath &&
         !(await isSpaceEmpty({
           prisma: ctx.prisma,
           appRoot: ctx.appRoot,
@@ -502,11 +526,10 @@ export const disciplineRouter = router({
           data: { disciplineId: null },
         });
 
-        if (folderPath) {
-          await tx.folder.deleteMany({
-            where: { appRoot: ctx.appRoot, fullPath: folderPath },
-          });
-        }
+        await tx.folder.deleteMany({
+          where: { appRoot: ctx.appRoot, fullPath: folderPath },
+        });
+        await tx.folderLabel.deleteMany({ where: { path: folderPath } });
 
         try {
           return await tx.discipline.delete({ where: { id: input.id } });

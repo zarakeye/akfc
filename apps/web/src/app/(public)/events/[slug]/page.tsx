@@ -67,12 +67,14 @@ export default async function PublicEventPage({
     where: { slug },
     include: {
       // Disciplines enseignées (0..N) présentées lors de l'événement.
+      // Les seules disciplines PUBLIÉES : le nom d'un brouillon n'a pas à sortir.
       disciplineLinks: {
+        where: { discipline: { publicationDate: { not: null, lte: new Date() } } },
         select: { discipline: { select: { name: true, slug: true } } },
       },
       origin: { select: { name: true, slug: true, flag: true } },
       organizer: {
-        select: { firstName: true, lastName: true, pseudo: true, email: true },
+        select: { firstName: true, lastName: true, pseudo: true },
       },
       sessions: { orderBy: { date: "asc" } },
     },

@@ -1,5 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
+import { categorySegment, disciplineSegment } from '@backend/modules/storage/storageSegments';
+
 /**
  * 🧭 parsePathToDestination — parse un chemin de stockage et résout
  * la destination métier associée (categoryId, disciplineId).
@@ -39,15 +41,6 @@ export type ParsedDestination = {
 export type ParseResult =
   | { ok: true; destination: ParsedDestination }
   | { ok: false; reason: string };
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 /**
  * Parse un path AKFC et résout la destination métier.
@@ -137,15 +130,16 @@ export async function parsePathToDestination(
 }
 
 /**
- * Pré-charge le cache Category (slugifié → id) pour batch processing.
+ * Pré-charge le cache Category (segment de dossier → id) pour batch processing.
  */
 export async function buildCategoryCache(
   prisma: PrismaClient,
 ): Promise<Map<string, number>> {
   const allCategories = await prisma.category.findMany({
-    select: { id: true, type: true },
+    select: { id: true, type: true, storageSegment: true },
   });
-  return new Map(allCategories.map((c) => [slugify(c.type), c.id]));
+  // Le segment du DOSSIER (figé à la création), celui que portent les chemins.
+  return new Map(allCategories.map((c) => [categorySegment(c), c.id]));
 }
 
 /**
@@ -155,11 +149,12 @@ export async function buildDisciplineCache(
   prisma: PrismaClient,
 ): Promise<Map<string, number>> {
   const allDisciplines = await prisma.discipline.findMany({
-    select: { id: true, name: true, categoryId: true },
+    select: { id: true, name: true, categoryId: true, storageSegment: true },
   });
   const map = new Map<string, number>();
   for (const d of allDisciplines) {
-    map.set(`${d.categoryId}:${slugify(d.name)}`, d.id);
+    // Le segment du DOSSIER (figé à la création), celui que portent les chemins.
+    map.set(`${d.categoryId}:${disciplineSegment(d)}`, d.id);
   }
   return map;
 }
