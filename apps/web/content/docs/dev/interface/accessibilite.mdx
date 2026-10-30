@@ -2,7 +2,7 @@
 title: "L'accessibilité"
 description: "Un site utilisable au clavier et avec un lecteur d'écran : la langue de la page, des menus qui s'ouvrent autrement qu'au survol, un lien d'évitement, des noms pour ce qui n'a pas de texte, des animations qui s'effacent sur demande, et ce qui reste à faire."
 section: "Interface transverse"
-order: 4
+order: 3
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -16,7 +16,7 @@ Tout le monde ne navigue pas à la souris. Une personne malvoyante utilise un le
 
 Rendre un site accessible revient à se poser quatre questions, élément par élément :
 
-<DocsTable columnsJson='["Question","Exemple dans le projet"]' rowsJson='[["Peut-on l’atteindre et l’utiliser au clavier ?","Les menus du header, le panneau mobile (Échap pour fermer)."],["A-t-il un nom, pour qui ne le voit pas ?","Le bouton burger « Ouvrir le menu », les flèches du carrousel « Précédent » et « Suivant »."],["Annonce-t-il son état ?","aria-expanded sur les boutons qui déroulent un menu, aria-current sur le lien de la page en cours."],["Bouge-t-il sans qu’on l’ait demandé ?","Les cloches et le ruban d’actualités, arrêtés si le système demande moins d’animations."]]' />
+<DocsTable columnsJson='["Question","Exemple dans le projet"]' rowsJson='[["Peut-on l’atteindre et l’utiliser au clavier ?","Les menus du header, le panneau mobile (Échap pour fermer)."],["A-t-il un nom, pour qui ne le voit pas ?","Le bouton burger « Ouvrir le menu », les flèches du carrousel « Précédent » et « Suivant »."],["Annonce-t-il son état ?","aria-expanded sur les boutons qui déroulent un menu, aria-current=\"page\" sur le lien de la page en cours — premier niveau compris, qui l’oubliait."],["Bouge-t-il sans qu’on l’ait demandé ?","Les cloches et le ruban d’actualités, arrêtés si le système demande moins d’animations."]]' />
 
 La première information donnée à un lecteur d'écran est la langue de la page : elle choisit la voix et la prononciation. Le layout racine la déclare une fois pour tout le site (`<html lang="fr">`).
 
@@ -26,32 +26,20 @@ Au clavier, la touche Tab passe d'un élément **interactif** à l'autre : liens
 
 La correction suit le modèle de **menu de navigation à volets** (« disclosure ») des pratiques WAI-ARIA : le titre devient un vrai bouton, qui ouvre et ferme son menu. La logique est écrite une fois, dans un hook partagé par les trois menus :
 
-```ts
-// apps/web/src/features/app-shell/useDisclosure.ts (extrait)
-onKeyDown: (e: KeyboardEvent): void => {
-  if (e.key === "Escape" && open) {
-    e.stopPropagation();
-    setOpen(false);
-    buttonRef.current?.focus();
-  }
-},
-onBlur: (e: FocusEvent): void => {
-  // Le curseur clavier sort du menu (vers un élément extérieur, ou nulle part).
-  if (!rootRef.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
-},
-```
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/app-shell/useDisclosure.ts"
+  filename="useDisclosure.ts"
+  snippetRange="19-70"
+  title="useDisclosure — un menu à volets, souris et clavier"
+  stepsJson='[{"title": "Un état, deux références, un identifiant", "body": "Ouvert ou fermé ; la racine (bouton + menu) et le bouton ; un identifiant stable qui relie le bouton à son menu (`aria-controls`).", "scope": "2-5", "focus": "5-5"}, {"title": "Un clic ailleurs ferme", "body": "Un effet, à sa place : il synchronise React avec un système extérieur (les évènements du document), et seulement tant que le menu est ouvert.", "scope": "9-16", "focus": "12-12"}, {"title": "Échap ferme, et rend le curseur", "body": "Le curseur revient sur le titre : l’utilisateur ne perd pas sa place dans la page.", "scope": "26-32", "focus": "27-30"}, {"title": "Sortir au clavier ferme", "body": "Tab après le dernier lien : le curseur quitte la racine, le menu se ferme.", "scope": "33-35", "focus": "35-35"}, {"title": "Un vrai bouton, qui annonce son état", "body": "`type=\"button\"`, `aria-expanded`, `aria-controls` : un lecteur d’écran annonce « Nos disciplines, bouton, réduit ».", "scope": "39-43", "focus": "42-43"}, {"title": "Le clavier bascule, la souris ouvre", "body": "Le survol a déjà ouvert le menu : un clic de souris qui l’inverserait le refermerait sous le pointeur. Seul un « clic » produit par le clavier (Entrée, Espace : `detail === 0`) bascule.", "scope": "44-46", "focus": "45-46"}]'
+/>
 
 <DocsTable columnsJson='["Geste","Effet"]' rowsJson='[["Tab jusqu’au titre, puis Entrée ou Espace","Ouvre ou ferme le menu ; le bouton annonce son état (aria-expanded)."],["Tab dans le menu ouvert","Parcourt ses liens ; les liens d’un menu fermé sont masqués, donc sautés."],["Échap","Ferme le menu et remet le curseur sur son titre, pour ne pas perdre sa place."],["Tab après le dernier lien","Ferme le menu en sortant."],["Survol, clic ailleurs","Comme avant pour la souris : ouvre au survol, ferme en sortant ou en cliquant ailleurs."]]' />
 
 Un détail évite un conflit entre souris et clavier. À la souris, le survol a déjà ouvert le menu : un clic sur le titre qui l'inverserait le refermerait sous le pointeur. Le bouton ne bascule donc que pour un « clic » produit par le clavier, que le navigateur signale par `detail === 0` :
 
-```ts
-// apps/web/src/features/app-shell/useDisclosure.ts (extrait)
-onClick: (e: MouseEvent): void => {
-  if (e.detail === 0) setOpen((o) => !o);
-  else setOpen(true);
-},
-```
+Le dernier pas du parcours ci-dessus évite un conflit entre souris et clavier.
 
 Le curseur clavier doit aussi rester **visible**. Les nouveaux boutons portent un contour émeraude quand ils le reçoivent au clavier (`focus-visible:outline-emerald-400`), et pas au clic de souris, où il serait inutile.
 
@@ -59,10 +47,15 @@ Le curseur clavier doit aussi rester **visible**. Les nouveaux boutons portent u
 
 Les cloches et l'entrée « Mes documents » montrent au survol une infobulle détaillée, avec des liens. Une classe Tailwind de plus les affiche aussi quand l'élément reçoit le curseur clavier :
 
-```tsx
-// apps/web/src/features/app-shell/NotificationBell.tsx (extrait)
-className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-focus-within:block"
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/app-shell/NotificationBell.tsx"
+  filename="NotificationBell.tsx"
+  snippetRange="196-202"
+  snippetHighlight="6"
+  snippetTitle="Une infobulle ouverte au survol ET au clavier"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 `group-focus-within` s'applique quand un élément du groupe, la cloche puis chacun des liens, a le curseur : l'infobulle reste ouverte pendant qu'on parcourt ses liens.
 
@@ -70,15 +63,15 @@ className="absolute right-0 top-full z-50 hidden pt-1 group-hover:block group-fo
 
 Au clavier, chaque page commence par le header : logo, sept entrées de menu, thème, cloches, compte. Les traverser à chaque page pour atteindre le contenu est épuisant. Le premier arrêt de la touche Tab est donc un lien « Aller au contenu », invisible jusqu'à ce qu'il reçoive le curseur (`sr-only focus:not-sr-only`). Il pose le curseur sur l'élément `<main>` de la page :
 
-```tsx
-// apps/web/src/features/app-shell/SkipLink.tsx (extrait)
-onClick={(e) => {
-  const target = document.getElementById(targetId);
-  if (!target) return;
-  e.preventDefault();
-  target.focus({ preventScroll: true });
-}}
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/app-shell/SkipLink.tsx"
+  filename="SkipLink.tsx"
+  snippetRange="13-28"
+  snippetHighlight="9,11"
+  snippetTitle="Le lien d’évitement"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le saut d'ancre classique (`href="#contenu"`) ferait défiler la page jusqu'au contenu, dont le haut glisserait sous le header collant. Le lien pose donc le curseur sans défiler (`preventScroll`) ; l'ancre reste en place pour un navigateur sans JavaScript. `<main>` porte `tabIndex={-1}` : il peut recevoir le curseur sans devenir lui-même un arrêt de la touche Tab, et le Tab suivant part du contenu.
 
@@ -92,24 +85,39 @@ Un bouton fait d'une seule icône n'a rien à lire pour un lecteur d'écran, qui
 
 Les systèmes d'exploitation proposent un réglage « réduire les animations ». Le navigateur le transmet par la requête média `prefers-reduced-motion`. Le ruban d'actualités sous le header défile en continu ; avec ce réglage, il devient une liste fixe qu'on fait défiler soi-même :
 
-```tsx
-// apps/web/src/features/breaking-news/BreakingNewsTicker.tsx (extrait)
-@media (prefers-reduced-motion: reduce) {
-  .akfc-ticker-track { animation: none; }
-  .akfc-ticker { overflow-x: auto; }
-}
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/breaking-news/BreakingNewsTicker.tsx"
+  filename="BreakingNewsTicker.tsx"
+  snippetRange="71-78"
+  snippetHighlight="2,6"
+  snippetTitle="Le ruban : arrêté au survol, au clavier, et sur demande"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le ruban s'arrête aussi au survol et quand un de ses titres reçoit le curseur clavier (`:focus-within`) : on ne lit pas un bouton qui file. Les cloches qui s'agitent et les transitions de la visionneuse de la galerie suivent la même règle.
 
 Le carrousel de l'accueil défile automatiquement, avec un bouton de pause : tout contenu qui bouge plus de cinq secondes doit pouvoir être arrêté. Pour qui a demandé moins d'animations, il démarre arrêté. Le réglage est lu comme une source extérieure à React, avec `useSyncExternalStore` : `false` pendant le rendu serveur, qui ne le connaît pas, puis la vraie valeur dès l'hydratation, et le carrousel suit si le réglage change. Le choix du visiteur, une fois qu'il a appuyé sur Lecture ou Pause, l'emporte :
 
-```ts
-// apps/web/src/features/app-shell/HomeCarousel.tsx (extrait)
-const reduceMotion = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, () => false);
-const [playChoice, setPlayChoice] = useState<boolean | null>(null);
-const playing = playChoice ?? !reduceMotion;
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/app-shell/HomeCarousel.tsx"
+  filename="HomeCarousel.tsx"
+  snippetRange="33-43"
+  snippetHighlight="8"
+  snippetTitle="Le réglage système, une source extérieure à React"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/app-shell/HomeCarousel.tsx"
+  filename="HomeCarousel.tsx"
+  snippetRange="98-103"
+  snippetHighlight="4,6"
+  snippetTitle="Le carrousel : le réglage, puis le choix du visiteur"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ## Ce qui reste à faire
 
