@@ -137,7 +137,8 @@ export default function Header({
           if (entry.kind === "link") {
             const linkClass = `${NAV_GLOW} whitespace-nowrap text-lg font-bold 2xl:text-[20px] ${isActive(entry) ? NAV_ACTIVE : ""}`;
             return (
-              <Link key={entry.href} href={entry.href} className={linkClass}>
+              // aria-current : l'état actif se VOIT (gras, souligné) ; il doit aussi s'ENTENDRE.
+              <Link key={entry.href} href={entry.href} className={linkClass} aria-current={isActive(entry) ? "page" : undefined}>
                 {entry.label}
               </Link>
             );
@@ -239,7 +240,7 @@ export default function Header({
                 if (entry.kind === "link") {
                   const linkClass = `block py-3 text-lg text-white ${isActive(entry) ? NAV_ACTIVE : ""}`;
                   return (
-                    <Link key={entry.href} href={entry.href} className={linkClass}>
+                    <Link key={entry.href} href={entry.href} className={linkClass} aria-current={isActive(entry) ? "page" : undefined}>
                       {entry.label}
                     </Link>
                   );

@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@backend/prisma";
 
 import { SITE_URL } from "@/config/siteUrl";
+import { PAGE_REGISTRY } from "@/config/pageRegistry";
 
 /**
  * sitemap.xml généré par Next.
@@ -23,23 +24,24 @@ import { SITE_URL } from "@/config/siteUrl";
  */
 export const dynamic = "force-dynamic";
 
-type Editorial = { key: string; path: string };
-
-const EDITORIAL: readonly Editorial[] = [
-  { key: "home", path: "/" },
-  { key: "association", path: "/about" },
-  { key: "contacts", path: "/contacts" },
-  { key: "inscription", path: "/inscription" },
-] as const;
+/** Les pages éditoriales : le registre partagé avec le centre de contrôle et la route des fichiers. */
+const EDITORIAL = PAGE_REGISTRY;
 
 const abs = (path: string): string =>
   path === "/" ? `${SITE_URL}/` : `${SITE_URL}${path}`;
 
-/** Sélection commune : publié = slug + publicationDate (passée). */
-const publishedWhere = {
-  slug: { not: null },
-  publicationDate: { not: null, lte: new Date() },
-} as const;
+/**
+ * Sélection commune : publié = slug + publicationDate (passée).
+ *
+ * Calculée à CHAQUE requête : une constante de module figerait « maintenant » au démarrage du
+ * serveur, et un contenu programmé n'entrerait jamais dans le plan du site avant le redémarrage.
+ */
+function publishedWhere(now: Date) {
+  return {
+    slug: { not: null },
+    publicationDate: { not: null, lte: now },
+  } as const;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -68,15 +70,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Contenus dynamiques publiés (séminaires, disciplines, events).
   const [seminars, disciplines, events] = await Promise.all([
     prisma.seminar.findMany({
-      where: publishedWhere,
+      where: publishedWhere(now),
       select: { slug: true, publicationDate: true },
     }),
     prisma.discipline.findMany({
-      where: publishedWhere,
+      where: publishedWhere(now),
       select: { slug: true, publicationDate: true },
     }),
     prisma.event.findMany({
-      where: publishedWhere,
+      where: publishedWhere(now),
       select: { slug: true, publicationDate: true },
     }),
   ]);
