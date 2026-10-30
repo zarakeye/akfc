@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { isSpaceEmpty } from "@backend/modules/storage/isSpaceEmpty.service";
+import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 
 /**
  * Supprime un groupe et son espace, en cascade SÛRE (décisions A→E) :
@@ -49,7 +50,11 @@ export async function deleteGroupWithSpace(params: {
     select: { fullPath: true },
   });
   const spacePaths = new Set<string>(
-    registered.map((r) => r.fullPath).filter((fp) => fp.includes("/collaborative-group-spaces/")),
+    // L'espace lui-même, lu par position : `<racine>/collaborative-group-spaces/<slug>-<groupId>`
+    // (trois segments). Un dossier homonyme rangé ailleurs, ou un sous-dossier, n'en est pas un.
+    registered
+      .map((r) => r.fullPath)
+      .filter((fp) => groupIdFromLogicalPath(fp) === groupId && fp.split("/").filter(Boolean).length === 3),
   );
   if (spacePaths.size === 0 && group.isCollaborative) {
     try {
@@ -69,19 +74,19 @@ export async function deleteGroupWithSpace(params: {
     }
   }
 
-  // Re-parente les enfants vers le parent (AVANT le delete).
-  await prisma.memberGroup.updateMany({
-    where: { parentGroupId: groupId },
-    data: { parentGroupId: group.parentGroupId },
-  });
-
-  // Supprime les lignes de registre de l'espace (vide).
-  if (spacePaths.size > 0) {
-    await prisma.folder.deleteMany({
+  // Les trois écritures ensemble : des enfants re-parentés vers un groupe qui n'aurait finalement
+  // pas été supprimé, ou un groupe supprimé avec ses enfants rattachés à rien, ne doivent pas exister.
+  await prisma.$transaction([
+    // Re-parente les enfants vers le parent (AVANT le delete).
+    prisma.memberGroup.updateMany({
+      where: { parentGroupId: groupId },
+      data: { parentGroupId: group.parentGroupId },
+    }),
+    // Supprime les lignes de registre de l'espace (vide).
+    prisma.folder.deleteMany({
       where: { appRoot, fullPath: { in: [...spacePaths] } },
-    });
-  }
-
-  // Supprime le groupe (cascade DB : memberships + liens documents).
-  await prisma.memberGroup.delete({ where: { id: groupId } });
+    }),
+    // Supprime le groupe (cascade DB : memberships + liens documents).
+    prisma.memberGroup.delete({ where: { id: groupId } }),
+  ]);
 }

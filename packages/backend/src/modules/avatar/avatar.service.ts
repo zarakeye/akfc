@@ -71,7 +71,7 @@ export async function createAvatarUpload(params: { appRoot: string; userId: stri
 }
 
 /** Supprime un fichier d'avatar et ses vignettes (meilleur effort, jamais bloquant). */
-async function removeAvatarFile(value: string): Promise<void> {
+export async function removeAvatarFile(value: string): Promise<void> {
   try {
     await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: value }));
     await deleteDerivatives(value);

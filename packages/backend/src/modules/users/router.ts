@@ -16,6 +16,7 @@ import { emailSchema } from "@contracts/auth/auth.schema";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
 import { pageContentSchemaV1 } from "@contracts/page";
 import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/instructorBio.service";
+import { removeAvatarFile } from "@backend/modules/avatar/avatar.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
 
@@ -253,7 +254,8 @@ export const userRouter = router({
       if (input.id === ctx.sessionClient.user.id) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Vous ne pouvez pas supprimer votre propre compte." });
       }
-      return ctx.prisma.$transaction(async (tx) => {
+      const avatar = (await ctx.prisma.user.findUnique({ where: { id: input.id }, select: { avatar: true } }))?.avatar;
+      const deleted = await ctx.prisma.$transaction(async (tx) => {
         // Formulaires de droit à l'image signés : gardés 5 ans comme preuve (purge nocturne).
         await tx.imageConsentForm.updateMany({ where: { userId: input.id }, data: { detachedAt: new Date() } });
         // `pageId` n'a pas de clé étrangère : sans ce nettoyage, les liens de
@@ -270,6 +272,11 @@ export const userRouter = router({
           select: { id: true },
         });
       });
+      // Son portrait part avec le compte : un avatar n'est rattaché qu'à lui (aucune ligne
+      // MediaAsset ne le retient), il resterait sinon dans le stockage sans que rien ne l'atteigne.
+      // Après la transaction : un fichier ne se restaure pas si la base annule.
+      if (avatar) await removeAvatarFile(avatar);
+      return deleted;
     }),
 
   getCurrentUserProfile: protectedProcedure.query(async ({ ctx }) => {

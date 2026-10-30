@@ -325,14 +325,24 @@ export const memberDocumentRouter = router({
         });
       }
 
+      // Destinataires et groupes vérifiés en base : un identifiant inconnu (un membre supprimé
+      // pendant que la boîte de dialogue était ouverte) donne un message, pas une erreur interne.
+      const [knownUsers, knownGroups] = await Promise.all([
+        ctx.prisma.user.count({ where: { id: { in: recipientIds } } }),
+        ctx.prisma.memberGroup.count({ where: { id: { in: groupIds } } }),
+      ]);
+      if (knownUsers !== new Set(recipientIds).size || knownGroups !== new Set(groupIds).size) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Destinataire ou groupe inconnu : rechargez la page." });
+      }
+
       const doc = await ctx.prisma.memberDocument.create({
         data: {
           mediaAssetId: asset.id,
           title: input.title,
           audience: input.audience,
           publishedById: ctx.sessionClient.user.id,
-          recipients: { create: recipientIds.map((id) => ({ userId: id })) },
-          groups: { create: groupIds.map((id) => ({ groupId: id })) },
+          recipients: { create: [...new Set(recipientIds)].map((id) => ({ userId: id })) },
+          groups: { create: [...new Set(groupIds)].map((id) => ({ groupId: id })) },
         },
         select: { id: true },
       });
