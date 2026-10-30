@@ -1,0 +1,238 @@
+---
+title: "Servir un fichier"
+description: "Le cycle de vie d’un média (valider sans déplacer, ne pas dépublier ce qui est affiché), la route privée et sa règle de lecture par position, la route publique et ses deux gestes délibérés, les déclinaisons fabriquées à la demande, et les en-têtes qui empêchent un fichier de s’exécuter."
+section: "Stockage et médias"
+order: 4
+entities:
+  MediaAsset: [fullPath, status]
+  PageMediaReference: [mediaAssetId, pageType, pageId]
+  GalleryItem: [mediaAssetId, galleryId]
+  Gallery: [visibility, title]
+stories:
+  - title: Valider un fichier
+    actor: Administrateur, ou éditeur d’un espace de groupe
+    steps:
+      - label: Il valide le fichier, ou le remet en attente ; seule la colonne change, et rien de ce qu’une page ou une galerie affiche n’est dépublié
+        call: media.setStatus
+        section: Valider, c’est changer une colonne
+  - title: Afficher un fichier
+    actor: Membre connecté, ou visiteur
+    steps:
+      - label: Dans le site, un fichier privé passe par une route qui vérifie la session et le droit de lecture
+        call: canReadStorageKey
+        section: Servir un fichier privé
+      - label: Sur une page publique, un média n’est servi que s’il est validé et placé
+        call: GET /api/media/public/r2/[...path]
+        section: Servir un fichier public
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un fichier est au stockage, sous une clé stable, et sa ligne `MediaAsset` est en base, en attente. Chaque champ de cette ligne vient du serveur, du stockage ou de la session.
+
+## Les parcours du chapitre
+
+Deux parcours traversent ce chapitre : valider un fichier, et l’afficher. Chaque onglet en déroule les étapes et ce qu’elles lisent en base ; chaque étape mène à son explication plus bas.
+
+<Parcours />
+
+## Le cycle de vie d’un média
+
+`MediaAsset.status` porte l’état d’un fichier :
+
+<DocsTable columnsJson='["Statut", "Affiché", "Signification"]' rowsJson='[["pending", "En attente", "Valeur de tout nouvel envoi. Le fichier n’est sélectionnable dans aucun contenu et n’est servi à aucun visiteur."], ["published", "Validé", "Un administrateur l’a validé : il peut être posé dans une page ou une galerie."]]' />
+
+La corbeille n’est pas un troisième statut : y entrer est une opération à part (`trash.trashToBin`), avec sa propre quarantaine, que le chapitre consacré au finder détaille.
+
+## Valider, c’est changer une colonne
+
+Au temps de Cloudinary, valider une photo la **déplaçait** : de `AKFC/pending/…` vers `AKFC/published/…`. Le statut était écrit dans le chemin. Chaque validation renommait donc l’objet chez le fournisseur, changeait son URL, et devait mettre à jour toutes les références — avec, entre les deux, des états où la base et le stockage ne disaient plus la même chose.
+
+Aujourd’hui, valider est un `UPDATE` :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/media/router.ts"
+  filename="router.ts"
+  snippetRange="600-693"
+  title="media.setStatus — un UPDATE, pas un déplacement"
+  stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "21-25", "focus": "21-25"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "31-37", "focus": "31-31"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse.", "scope": "41-52", "focus": "50-50"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "59-72", "focus": "67-67"}]'
+/>
+
+Le statut a cessé d’être un **cache dérivé du chemin** pour devenir la **source de vérité**. Valider est atomique, sans aller-retour avec le stockage, sans binaire qui bouge.
+
+<Callout type="info">
+Vous croiserez encore dans le code des traces de l’époque où le statut vivait dans le chemin : le paramètre `logical`, `physicalCandidates`, des « strates » `pending/` et `published/`. Elles servent aux fichiers anciens qui n’auraient pas été remis à plat, et disparaîtront avec eux.
+</Callout>
+
+### Ne pas dépublier ce qui est affiché
+
+La garde cherche, pour les fichiers publiés qui seraient remis en attente, ce qui les affiche — les pages **et** les galeries :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts"
+  filename="assertStatusChangeDoesntUnpublishReferencedAssets.service.ts"
+  snippetRange="96-131"
+  snippetHighlight="4,8,31"
+  snippetTitle="Les usages d’un fichier, nommés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une galerie n’affiche que les fichiers publiés : dépublier une photo l’en retirerait en silence. La garde la traite donc comme une page.
+
+Le refus est un `CONFLICT`, pas une `Error`. La différence n’est pas de style : une `Error` sortant d’une procédure devient une erreur interne, dont le message est remplacé en production par un message neutre. L’administrateur lirait « une erreur est survenue », sans savoir quelles pages retirer. `CONFLICT` dit exactement ce qui se passe — l’opération heurte l’état actuel des données — et laisse passer le message.
+
+### Une racine qui n’est pas un choix du client
+
+Plusieurs procédures du stockage reçoivent encore `appRoot` dans leur entrée, un héritage. Or les gardes s’en servent pour protéger la racine ou la corbeille (`${appRoot}/bin/.trash/…`). Une racine inventée par le client fausserait ces calculs. Un middleware l’aligne sur celle du serveur :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/trpc/middleware.ts"
+  filename="middleware.ts"
+  snippetRange="23-35"
+  snippetHighlight="9"
+  snippetTitle="sameAppRoot"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le middleware lit l’entrée **brute** (`getRawInput`), avant validation : il s’applique à toutes les procédures des routeurs `media` et `trash`, et reste sans effet pour celles dont l’entrée ne porte pas de racine.
+
+## Servir un fichier privé
+
+Le bucket est entièrement privé : aucun objet n’a d’URL publique permanente. Pour afficher un fichier, l’interface pointe vers une route de l’application, `/api/media/r2/<clé>`, qui décide, puis délègue.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/media/r2/[...path]/route.ts"
+  filename="route.ts"
+  snippetRange="56-116"
+  title="La route privée — décider ici, livrer ailleurs"
+  stepsJson='[{"title": "Une session", "body": "Sans session, 401 : la route ne sert rien à un visiteur anonyme.", "scope": "6-9", "focus": "6-9"}, {"title": "Une clé sous la racine", "body": "Next.js rend les segments de l’URL décodés ; on les rejoint par « / ». La clé doit commencer par la racine de l’application — les déclinaisons, rangées sous _derived/, ne sont jamais servies par leur clé — et ne contenir aucun « .. ».", "scope": "17-26", "focus": "21-24"}, {"title": "Le droit de lire", "body": "canReadStorageKey décide. Un refus répond 404, pas 403 : un visiteur ne peut pas distinguer un fichier inexistant d’un fichier qui ne lui est pas destiné.", "scope": "27-30", "focus": "28-29"}, {"title": "Une déclinaison, en flux", "body": "Si une déclinaison est demandée (?variant=…), elle est fabriquée au besoin et servie EN FLUX par la route, avec un cache privé d’une heure.", "scope": "35-38", "focus": "38-38"}, {"title": "L’original, par redirection", "body": "Pour l’original, la route signe une URL de lecture valable 30 minutes et redirige le navigateur (302). Les octets vont directement du stockage au navigateur, sans charger notre serveur. La redirection elle-même n’est jamais mise en cache : chaque signature est différente.", "scope": "39-61", "focus": "56-61"}]'
+/>
+
+La symétrie avec l’envoi est complète. À l’aller, le serveur signe un PUT et le fichier ne le traverse pas ; au retour, il signe un GET et le fichier ne le traverse pas davantage. Dans les deux sens, le serveur **décide**, et le stockage **transporte**.
+
+### La règle de lecture, par position
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/canReadStorageKey.service.ts"
+  filename="canReadStorageKey.service.ts"
+  snippetRange="21-47"
+  snippetHighlight="8,13,19,23"
+  snippetTitle="canReadStorageKey"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un administrateur lit tout. Un membre lit son propre espace personnel, et l’espace des groupes collaboratifs dont il fait partie, lecteur ou éditeur. Tout le reste est refusé — y compris les fichiers qu’il a lui-même déposés ailleurs, en attente : déposer n’est pas publier, et publier n’est pas montrer.
+
+Le chemin est analysé **par position** : le segment qui suit la racine désigne l’espace, le suivant son propriétaire, dont l’identifiant est la fin du segment, après le dernier tiret. Chercher simplement un segment `personal-space` n’importe où serait une faille : un dossier nommé ainsi au fond de `courses/…` ouvrirait son contenu. Un dossier, rappelons-le, n’est qu’un préfixe ; la seule frontière fiable est une **position** dans ce préfixe.
+
+## Servir un fichier public
+
+Les pages publiques affichent des images à des visiteurs anonymes. Elles passent par une autre route, `/api/media/public/r2/<clé>`, sans session, mais avec une garde stricte :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/public/r2/[...path]/route.ts"
+  filename="route.ts"
+  snippetRange="77-92"
+  snippetHighlight="5,7-8"
+  snippetTitle="La garde de la route publique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un fichier n’est servi publiquement qu’après **deux gestes délibérés** d’un administrateur : il l’a validé, **et** il l’a placé dans une page ou dans une galerie publique. Le statut seul ne suffit pas : une photo personnelle validée n’est pas exposée tant qu’elle n’est posée nulle part, et une galerie réservée aux membres n’ouvre rien au public.
+
+<Callout type="warning">
+Une limite connue : la garde vérifie qu’une page **référence** le fichier, pas que cette page soit elle-même publiée. Un fichier validé, posé dans le brouillon d’une actualité, est donc servi à qui connaît sa clé. Le fichier a été validé, et sa clé ne se devine pas ; mais serrer la règle demanderait de vérifier la publication de chaque type de contenu (cours, stage, actualité), que `PageMediaReference` désigne de façon polymorphe.
+</Callout>
+
+## Les déclinaisons
+
+Une photo d’appareil pèse plusieurs mégaoctets ; une vignette de finder n’en a besoin que de quelques kilo-octets. Les deux routes acceptent un paramètre `?variant=` :
+
+<DocsTable columnsJson='["Déclinaison", "Taille", "Usage"]' rowsJson='[["thumb", "150 × 150, recadrée", "vignettes du finder et des listes"], ["small", "300 px de large", "cartes, petites colonnes"], ["medium", "600 px", "contenu courant"], ["large", "1 200 px", "grandes images, plein écran"]]' />
+
+Cloudinary les fabriquait en lisant l’URL (`/upload/w_400,f_auto/…`). Le projet les fabrique lui-même, **à la première demande** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/mediaDerivatives.service.ts"
+  filename="mediaDerivatives.service.ts"
+  snippetRange="188-205"
+  snippetHighlight="6-8,16"
+  snippetTitle="ensureImageVariant"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois décisions se lisent dans ces lignes.
+
+- **Rangées hors de la racine.** Les déclinaisons vivent sous `_derived/`, pas sous `AKFC/` : le finder ne les voit jamais, et aucune route ne les sert par leur clé.
+- **Nommées par l’ETag de l’original.** L’ETag est l’empreinte que le stockage donne à un objet ; il change quand le fichier est remplacé ou recadré. La clé de la déclinaison change avec lui, et une nouvelle vignette se fabrique d’elle-même — sans invalidation à écrire, sans risque de servir l’ancienne. Les déclinaisons orphelines sont balayées chaque jour.
+- **Bornées.** Au-delà de 60 Mio, on sert l’original plutôt que de charger le serveur. Les photos HEIC des iPhone sont d’abord décodées. Pour une vidéo, `?as=poster` renvoie une image d’affiche extraite par `ffmpeg`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/mediaDerivatives.service.ts"
+  filename="mediaDerivatives.service.ts"
+  snippetRange="285-295"
+  snippetHighlight="6,9"
+  snippetTitle="resolveDeliveryKey"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Si la fabrication échoue (outil absent, fichier trop gros, image illisible), la route sert l’original : une déclinaison est une **optimisation**, jamais une condition d’affichage.
+
+Contrairement aux originaux, une déclinaison n’est pas servie par redirection mais **en flux**, avec un en-tête de cache d’une heure. L’adresse `…?variant=thumb` étant stable, le navigateur la garde en cache ; une redirection vers une URL signée, qui change à chaque requête, ne le permettrait pas. Un navigateur qui n’accepte pas l’AVIF reçoit à la volée une version WebP, et la réponse le signale par `Vary: Accept` pour que les caches ne mélangent pas les deux.
+
+<Callout type="tip">
+Pour afficher un média, on demande toujours la plus petite déclinaison suffisante : `thumb` dans une grille, `medium` dans un contenu. Le premier affichage la fabrique ; les suivants la servent directement.
+</Callout>
+
+## Un fichier qui ne s’exécute pas
+
+Un fichier servi par **notre** origine — un document de membre, le logo du site — est lu dans le même contexte que nos pages, avec nos cookies. S’il était interprété comme une page HTML, un script qu’il contiendrait s’exécuterait chez nous. Les originaux redirigés vers le stockage n’ont pas ce risque : ils sont lus sur l’origine du stockage, qui n’a accès à rien de notre site.
+
+La route des documents de membres sert donc en ligne les seuls types sans danger, et tout le reste en pièce jointe :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/member-document/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="68-77"
+  snippetHighlight="4,9"
+  snippetTitle="Afficher, ou télécharger"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/member-document/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="95-107"
+  snippetHighlight="7,12"
+  snippetTitle="Les en-têtes de la réponse"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`nosniff` interdit au navigateur de **deviner** un autre type que celui annoncé ; la politique `sandbox` interdit à la réponse d’exécuter quoi que ce soit. Un PDF en est exempté, parce que le lecteur intégré des navigateurs refuse de s’afficher dans un document « sandboxé » — et un lecteur PDF de navigateur n’exécute rien dans le contexte de nos pages. Les envois sont déjà limités aux formats autorisés : ces en-têtes couvrent les fichiers plus anciens, et tout oubli futur. Le logo du site, seul SVG accepté, est servi de la même façon : affiché dans une balise `<img>`, un SVG n’exécute jamais ses scripts ; ouvert directement, `sandbox` et `nosniff` l’en empêchent.
+
+<Callout type="warning">
+Une liste blanche à l’envoi **et** des en-têtes défensifs à la livraison : deux couches pour un même risque, parce qu’aucune ne couvre les fichiers que l’autre a laissé passer.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait une validation ?", "Elle change MediaAsset.status ; le binaire, sa clé et les références ne bougent pas."], ["Peut-on dépublier un fichier affiché ?", "Non : la garde refuse (CONFLICT) et nomme les pages et galeries qui l’affichent."], ["Qui peut lire un fichier privé ?", "Un administrateur ; un membre pour l’espace de ses groupes et son espace personnel (canReadStorageKey, par position)."], ["Quand un fichier est-il public ?", "Quand il est validé ET placé dans une page ou une galerie publique."], ["Par où passent les octets ?", "Originaux : redirection vers une URL signée, depuis le stockage. Déclinaisons : en flux, cachables."], ["Comment une déclinaison se renouvelle-t-elle ?", "Sa clé contient l’ETag de l’original : un fichier remplacé produit de nouvelles déclinaisons."], ["Qu’est-ce qui empêche un fichier de s’exécuter ?", "Une liste blanche de formats à l’envoi ; nosniff, sandbox et pièce jointe pour ce que sert notre origine."]]' />
+
+## À suivre
+
+Les fichiers sont désormais rangés sous des clés plates, `AKFC/courses/tchoy-lee-fut/salut-final.jpg`, dans un stockage qui ne connaît pas les dossiers. Pourtant, les administrateurs naviguent dans une arborescence, renomment des dossiers, déplacent des fichiers, voient « Espace personnel » au lieu de `personal-space`, et ne voient que les espaces auxquels ils ont droit.
+
+<Callout type="tip">
+**Chapitre suivant : le Finder.** Comment une liste de clés devient un arbre navigable, comment la base et le stockage se répartissent les rôles, et comment un déplacement reste cohérent des deux côtés.
+</Callout>

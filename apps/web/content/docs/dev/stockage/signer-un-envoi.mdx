@@ -1,0 +1,283 @@
+---
+title: "Signer un envoi"
+description: "Qui décide où va un fichier : une destination au lieu d’un chemin, un dossier que le serveur déduit seul de la base et de la session, les contrôles avant de signer (format, droit, écrasement, quota), et ce que l’URL signée couvre — ou ne couvre pas."
+section: "Stockage et médias"
+order: 2
+entities:
+  MediaAsset: [fullPath, status, uploaderUserId]
+  Discipline: [storageSegment, categoryId]
+  Category: [storageSegment]
+stories:
+  - title: Demander à envoyer des fichiers
+    actor: Membre connecté (éditeur pour un espace de groupe)
+    steps:
+      - label: Avant d’envoyer, le formulaire demande quels noms existent déjà à cet endroit, ou se percutent dans le lot
+        call: storage.checkR2Conflicts
+        section: Pas d’écrasement silencieux
+      - label: Pour chaque fichier, le navigateur décrit une destination ; le serveur vérifie, calcule la clé et signe une URL d’envoi
+        call: storage.createR2Upload
+        section: La procédure qui signe
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un fichier ne passe pas par notre serveur : le navigateur l’envoie directement au stockage, avec une URL présignée que le backend fabrique sans jamais révéler son secret. Reste à savoir ce que l’on signe.
+
+## Les parcours du chapitre
+
+Un seul parcours traverse ce chapitre : un membre choisit des fichiers et une destination, et obtient pour chacun une autorisation d’envoi. L’onglet en déroule les étapes, relevées dans le code ; chacune mène à son explication plus bas.
+
+<Parcours />
+
+## Qui décide de la destination ?
+
+Avant même de parler de signature, il faut regarder une question qu’on oublie souvent parce qu’elle semble triviale : **qui décide de l’endroit où va un fichier ?**
+
+Dans un système naïf, c’est le client. Il envoie « je veux déposer ce fichier sous `AKFC/courses/tchoy-lee-fut/` », et le backend signe ce qu’on lui demande. Il suffit alors d’ouvrir les outils du navigateur pour remplacer le chemin par `AKFC/personal-space/quelquun-d-autre-c…/photos/` ou par la clé d’une photo déjà publiée sur la page d’accueil — et le backend la signerait.
+
+<CodeSnippet
+  language="ts"
+  title="Signer le chemin que le client demande"
+  kind="anti-pattern"
+  codeJson='"createUpload: protectedProcedure\n  .input(z.object({ path: z.string(), mimeType: z.string() }))\n  .mutation(({ input }) =>\n    // Le serveur signe ce qu’on lui donne : n’importe quelle clé du bucket.\n    getSignedUrl(s3, new PutObjectCommand({ Bucket, Key: input.path, ContentType: input.mimeType }), { expiresIn: 300 }),\n  ),"'
+/>
+
+On pourrait valider ce chemin : vérifier un préfixe, interdire `..`, consulter une liste de dossiers permis. Mais chaque règle oubliée devient une brèche, et la logique de nommage se retrouve **dupliquée** entre le navigateur, qui calcule le chemin, et le serveur, qui le vérifie. Dans un système sérieux, c’est l’inverse : le client ne fournit jamais de chemin.
+
+## Ce que le client a le droit de demander
+
+Le contrat d’entrée de `createR2Upload` ne contient pas de chemin. Il contient une **destination** : une intention métier, exprimée par une union discriminée partagée entre le navigateur et le serveur.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/storage/upload-destination.schema.ts"
+  filename="upload-destination.schema.ts"
+  snippetRange="17-66"
+  snippetHighlight="3,26,47"
+  snippetTitle="La destination d’un envoi"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Prenons une seconde pour regarder ce que ce schéma **interdit** aussi clairement que ce qu’il permet. Un membre peut dire « je dépose pour cette discipline », « pour ce stage », « pour cet événement », « dans mon espace », « dans l’espace de ce groupe ». Il ne peut pas dire « dans le dossier `AKFC/personal-space/…` ». Il ne peut même pas dire « dans mon espace personnel, celui de l’utilisateur 42 » : la variante `perso` ne transporte **aucun identifiant**. Le mot « dossier » n’existe pas dans son vocabulaire.
+
+Cette distinction est fondamentale. Une validation sur un champ `path` rejetterait les mauvaises valeurs, à condition de n’en oublier aucune. Un contrat sans champ `path` rend les mauvaises valeurs **impossibles à exprimer**.
+
+<Callout type="tip">
+Un bon contrat zod ne se contente pas de valider des formats : il encode les décisions métier dans le type, et rend les demandes illégitimes impossibles à formuler.
+</Callout>
+
+L’union discriminée apporte un second bénéfice, cette fois au compilateur. Chaque service qui traite une destination se termine par un `switch` exhaustif (`input.destination satisfies never`) : ajouter une variante au contrat fait échouer la compilation partout où elle n’est pas encore traitée. C’est ainsi que les destinations `event`, `seminar` et `group` ont pu s’ajouter aux disciplines d’origine sans qu’un cas soit oublié.
+
+<DocsTable columnsJson='["Destination","Pour qui","Ce qu’elle désigne"]' rowsJson='[["existing-discipline","tout membre connecté","une discipline existante, avec sa catégorie"],["new-discipline","tout membre connecté","une discipline proposée, que l’administrateur créera s’il l’accepte"],["seminar, event","tout membre connecté","un stage, un événement ; seul un administrateur peut y rattacher des disciplines"],["common_repository","tout membre connecté","le dépôt commun, avec un sujet facultatif"],["perso","tout membre connecté","son propre espace, images seulement, dans la limite d’un quota"],["group","éditeur du groupe, ou administrateur","l’espace d’un groupe collaboratif"]]' />
+
+Déposer est un droit de membre ; **publier** est un pouvoir d’administrateur. Tout envoi naît **en attente** (`pending`) : il n’apparaît dans aucun contenu tant qu’un administrateur ne l’a pas validé. C’est ce qui permet d’ouvrir le dépôt à tous sans ouvrir la publication — le chapitre 3 y revient.
+
+## Du besoin métier au chemin réel
+
+Une fois l’intention exprimée, le backend la traduit en dossier. Cette traduction est entièrement sous la responsabilité du serveur : le client n’y a aucune voix, ni directe, ni indirecte.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts"
+  filename="resolvePendingUploadFolder.service.ts"
+  snippetRange="41-147"
+  title="resolvePendingUploadFolder — de la destination au dossier"
+  stepsJson='[{"title": "Le stage et l’événement : relus en base", "body": "L’identifiant reçu n’est qu’une référence : le service relit l’entité, et c’est son slug, lu en base, qui compose le dossier. Un identifiant inexistant est une erreur de la requête (NOT_FOUND), dont le message arrive au formulaire — pas une panne du serveur.", "scope": "25-53", "focus": "26-31"}, {"title": "L’espace personnel : dérivé de la session", "body": "Le paramètre userId vient de ctx.sessionClient.user.id : le routeur le lit dans la session, jamais dans l’entrée. Quoi qu’envoie le navigateur, un membre n’écrit que dans son propre espace.", "scope": "57-61", "focus": "58-58"}, {"title": "L’espace d’un groupe", "body": "resolveGroupBaseFolder vérifie que le groupe existe et qu’il est collaboratif, puis rend son espace. Le DROIT d’y écrire n’est pas vérifié ici : c’est le rôle d’assertUploadDestinationAllowed, appelé avant.", "scope": "65-67", "focus": "67-67"}, {"title": "La discipline doit appartenir à la catégorie", "body": "Le client envoie categoryId ET disciplineId. Le service vérifie que la discipline appartient bien à cette catégorie : sans cette ligne, un client pourrait ranger une discipline sous n’importe quelle catégorie, et créer des dossiers que rien d’autre ne produit.", "scope": "82-96", "focus": "92-94"}, {"title": "Des segments figés, pas des noms", "body": "Le dossier d’une discipline n’est pas le slug de son nom actuel : c’est son storageSegment, calculé une fois à la création (chapitre « Domaine du club »). Renommer « Tchoy Lee Fut » ne déplace aucun fichier.", "scope": "96-96", "focus": "96-96"}, {"title": "La discipline proposée", "body": "Une discipline qui n’existe pas encore range ses fichiers sous new/<slug du nom proposé>, à part. Un nom sans aucune lettre ni chiffre produirait un slug vide, donc un dossier « new/ » sans nom : il est refusé.", "scope": "100-106", "focus": "102-104"}]'
+/>
+
+Dans tous les cas, le chemin ne vient pas du client : il est **dérivé** de la base et de la session, après relecture. Le client peut envoyer n’importe quel `disciplineId` ; s’il n’existe pas, ou n’appartient pas à la catégorie annoncée, la procédure échoue avant d’avoir signé quoi que ce soit.
+
+<Callout type="info">
+Le nom `resolvePendingUploadFolder` est historique. Au temps de Cloudinary, tout envoi atterrissait sous un dossier `pending/`, et la validation **déplaçait** le fichier vers `published/`. Aujourd’hui, le statut vit dans une colonne (`MediaAsset.status`) et le dossier rendu ici est l’emplacement définitif du fichier : valider ne déplace plus rien.
+</Callout>
+
+### Un espace personnel qui survit à un changement de nom
+
+Le dossier personnel porte le nom de son propriétaire, pour rester lisible dans le finder : `AKFC/personal-space/stephane-bazze-c…/photos`. Le suffixe `-<userId>` le rend unique. Mais un nom change : un membre corrige son prénom dans son profil. Si le dossier était recalculé à chaque envoi, ce membre se verrait ouvrir un **second espace vide**, et ses photos déjà déposées disparaîtraient de sa vue.
+
+Le résolveur réutilise donc un espace existant avant d’en nommer un nouveau :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts"
+  filename="resolvePersoBaseFolder.service.ts"
+  snippetRange="31-51"
+  snippetHighlight="6,9,16"
+  snippetTitle="Réutiliser l’espace déjà ouvert"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est la même règle que pour les disciplines, sous une autre forme : **un nom d’affichage ne doit jamais être une clé.** Le slug du nom ne sert qu’une fois, à la création ; ensuite, c’est l’identifiant, stable, qui retrouve l’espace.
+
+## Un nom de fichier sûr
+
+Le nom du fichier, lui, vient bien du client : c’est le nom d’origine, celui que le membre a choisi sur son disque. Il passe par une seule fonction, côté serveur :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/services/buildUploadFileName.service.ts"
+  filename="buildUploadFileName.service.ts"
+  snippetRange="19-35"
+  snippetHighlight="8,13"
+  snippetTitle="buildUploadFileName"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`Salut final (2025).JPG` devient `salut-final-2025.jpg`. La clé ne contient ni espace, ni parenthèse, ni accent : elle se lit dans une URL sans encodage hasardeux. Le nom d’origine n’est pas perdu : il est conservé dans `MediaAsset.originalFileName`, et c’est lui (ou un nom d’affichage choisi plus tard) que l’interface montre.
+
+Cette fonction vivait autrefois dans le navigateur, avec un `slugify` maison. Il divergeait du paquet npm sur `&` et `%` : une discipline « Arts & Combat » produisait deux dossiers, l’un pour ses photos (chemin calculé par le serveur), l’autre pour ses PDF (chemin calculé par le client). Une seule fonction, côté serveur, c’est zéro écart possible.
+
+## Les contrôles avant de signer
+
+Nous savons maintenant **où** le fichier ira. Avant de signer, la procédure vérifie encore que cet envoi-là est permis.
+
+### Le droit de déposer
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts"
+  filename="assertUploadDestinationAllowed.service.ts"
+  snippetRange="25-45"
+  snippetHighlight="8,18"
+  snippetTitle="assertUploadDestinationAllowed"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux règles seulement, parce que la troisième — personne ne publie sans un administrateur — est portée par le statut `pending` :
+
+- **l’espace d’un groupe** exige le droit d’écriture sur ce groupe (rôle `EDITOR`, hiérarchie comprise ; un administrateur passe). C’est la seule destination où un fichier est **lu par d’autres** sans validation : les membres du groupe le voient dès son arrivée ;
+- **rattacher des disciplines à un événement** modifie la fiche publique de l’événement, sans validation. C’est réservé aux administrateurs, et vérifié **dès la signature** : refusé plus tard, à l’enregistrement, le fichier serait déjà parti au stockage pour rien.
+
+### Le format
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/storage/allowedUploadTypes.ts"
+  filename="allowedUploadTypes.ts"
+  snippetRange="62-74"
+  snippetHighlight="4,9"
+  snippetTitle="uploadTypeError"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une liste de formats **autorisés** (images, vidéos, audio, documents bureautiques, PDF, texte, archives zip et rar), et non d’interdits : un format imprévu est refusé par défaut. Aucun format qu’un navigateur pourrait exécuter ou afficher comme une page — HTML, SVG, XML, scripts — n’y figure. L’extension du nom **et** le type annoncé doivent concorder : un « planning.pdf » annoncé `text/html` est refusé.
+
+Une exception : le type `application/octet-stream`, « suite d’octets sans type connu ». Certains navigateurs l’emploient (ou ne donnent aucun type) pour des formats qu’ils ne reconnaissent pas, comme `.rar`. Il est accepté pour une extension autorisée : un fichier servi avec ce type est **téléchargé**, jamais interprété, ce qui ne laisse aucune prise à un contenu actif.
+
+### Pas d’écrasement silencieux
+
+Deux fichiers de même nom dans la même destination donnent la même clé. Envoyer le second **remplacerait** le premier dans le stockage. La procédure refuse donc par défaut (`CONFLICT`), et n’écrase que sur confirmation explicite (`allowOverwrite`).
+
+Mais confirmer ne suffit pas. Écraser, c’est remplacer le contenu d’un fichier **sans repasser par la validation** : la ligne garde son statut. Dans une destination ouverte à tous, un membre pourrait sinon remplacer une photo **publiée**, posée sur la page d’accueil, par n’importe quelle image de son choix. D’où une seconde règle, lue dans la procédure ci-dessous : n’écrase qu’un administrateur, un éditeur dans l’espace de son groupe, ou l’auteur d’un fichier encore en attente.
+
+<Callout type="warning">
+Remplacer, c’est publier sans validation. Toute procédure qui écrase un contenu doit vérifier le droit sur **ce qui est écrasé**, pas seulement sur l’endroit où l’on écrit.
+</Callout>
+
+Pour poser la question une seule fois pour tout un lot, le formulaire appelle d’abord `storage.checkR2Conflicts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="887-912"
+  snippetHighlight="18,23"
+  snippetTitle="checkR2Conflicts"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La procédure répond deux choses. Les noms **déjà présents** à cet endroit, pour demander s’il faut les remplacer. Et les fichiers du lot qui **se percutent entre eux** : « Photo 1.JPG » et « photo-1.jpg » donnent la même clé ; envoyés en parallèle, le second écraserait le premier sans que personne ne l’ait demandé, et aucun des deux n’existait encore en base pour le signaler. Ils sont repérés par leur **position** dans le lot, puisque deux noms identiques ne se distinguent pas autrement.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/admin/library/forms/DragNDropForm.tsx"
+  filename="DragNDropForm.tsx"
+  snippetRange="561-588"
+  snippetHighlight="16,24,27"
+  snippetTitle="Le formulaire demande, puis envoie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+### Le quota de l’espace personnel
+
+L’espace personnel n’accepte que des images, dans la limite d’un quota compté en base (`countPersoImages`). Un remplacement ne compte pas : il ne crée pas de fichier.
+
+## La procédure qui signe
+
+Voici `createR2Upload` en entier ; tout ce qui précède s’y lit dans l’ordre.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="914-979"
+  title="createR2Upload — vérifier, nommer, signer"
+  stepsJson='[{"title": "Une protectedProcedure", "body": "Tout membre connecté peut demander à déposer : ce n’est pas une adminProcedure. Le contrôle fin, par destination, vient juste après.", "scope": "1-3", "focus": "1-2"}, {"title": "Le droit, puis le dossier", "body": "Le droit de déposer est vérifié AVANT de calculer le dossier : un refus ne coûte aucune lecture inutile. Les deux reçoivent l’identité de la session.", "scope": "4-18", "focus": "11-18"}, {"title": "Le format", "body": "Extension et type annoncé doivent concorder et figurer dans la liste blanche. Le refus est un BAD_REQUEST : une saisie à corriger, dont le message arrive à l’utilisateur.", "scope": "23-26", "focus": "23-26"}, {"title": "Pas d’écrasement silencieux…", "body": "Une clé déjà connue en base répond CONFLICT, sauf confirmation explicite. Le formulaire, prévenu par checkR2Conflicts, a déjà posé la question.", "scope": "32-38", "focus": "36-38"}, {"title": "… et pas d’écrasement par n’importe qui", "body": "Confirmer ne suffit pas : remplacer un fichier publié, ou déposé par un autre, est réservé à un administrateur (ou à un éditeur dans son groupe) — la règle mayReplace, définie en tête du routeur. FORBIDDEN : l’appelant est identifié, mais n’a pas ce droit.", "scope": "40-45", "focus": "40-40"}, {"title": "Signer, et rendre le chemin", "body": "L’adaptateur fabrique l’URL. La procédure renvoie aussi le chemin calculé : le navigateur le retransmettra tel quel à l’enregistrement, sans jamais le recalculer.", "scope": "53-65", "focus": "65-65"}]'
+/>
+
+## Sceller l’autorisation
+
+Il ne reste qu’à signer. L’adaptateur R2 revérifie la clé — une ceinture sous les bretelles : elle a été calculée par le serveur, mais une régression dans un résolveur ne doit pas pouvoir signer hors de la racine — puis fabrique l’URL :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="300-326"
+  snippetHighlight="4,9,15"
+  snippetTitle="createUploadAuthorization"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`assertUploadPathSafe` refuse une clé vide, absolue, finissant par `/`, contenant `..` ou `//`, ou hors de la racine `AKFC/`. Ce sont des erreurs internes (`Error`), et c’est voulu : aucune saisie ne peut les provoquer, puisque le chemin vient du serveur. Si l’une se déclenche, c’est un bug, qui doit apparaître comme tel dans les journaux.
+
+### Ce que la signature couvre, ce qu’elle ne couvre pas
+
+Une signature n’est pas une autorisation générale. Elle est définie par ce qu’elle inclut, et tout ce qui reste hors de sa portée doit être traité ailleurs.
+
+<DocsTable columnsJson='["Élément", "Couvert ?", "Conséquence"]' rowsJson='[["La méthode (PUT)", "✅ oui", "L’URL ne permet ni de lire, ni de supprimer, ni de lister."], ["La clé", "✅ oui", "Le fichier ne peut aller ailleurs que dans le dossier résolu par le serveur, sous le nom calculé par lui."], ["Le Content-Type", "✅ oui", "Un envoi avec un autre type est refusé par le stockage : le fichier stocké a forcément le type vérifié par uploadTypeError."], ["L’expiration (5 minutes)", "✅ oui", "Une URL interceptée ou retrouvée dans un historique ne vaut plus rien peu après."], ["La taille", "❌ non", "Une URL PUT présignée ne borne pas la taille : elle est vérifiée sur l’objet réel, à l’enregistrement."], ["Le contenu", "❌ non", "Le stockage accepte les octets qu’on lui envoie : un « .jpg » peut contenir autre chose qu’une image."], ["Le nombre d’envois", "❌ non", "Pendant cinq minutes, l’URL peut servir plusieurs fois, sur la même clé."]]' />
+
+La lecture de ce tableau dessine le chapitre suivant. Ce que la signature couvre, c’est **l’emplacement, l’opération et le type** du dépôt. Ce qu’elle ne couvre pas, c’est **ce qui a réellement été déposé**. Le serveur devra donc le constater lui-même, après coup.
+
+### Pourquoi cinq minutes
+
+Sans expiration, une URL signée resterait valable éternellement. Quiconque la retrouverait — dans un journal mal anonymisé, dans l’historique d’un navigateur partagé — pourrait déposer des mois plus tard n’importe quel contenu sous cette clé, c’est-à-dire **remplacer** un fichier qui, entre-temps, aurait été validé et publié.
+
+Cinq minutes suffisent largement : l’URL est utilisée dans la seconde qui suit sa création. Un fichier volumineux sur une connexion lente ne pose pas de problème, car l’expiration est vérifiée **au début** de la requête PUT, pas à sa fin.
+
+<Callout type="warning">
+L’expiration n’est pas un confort, c’est une borne. Sans elle, une autorisation donnée une fois vaudrait pour toujours.
+</Callout>
+
+Il reste une fenêtre, et il faut la connaître. La règle d’écrasement est vérifiée **au moment de signer**. Si, pendant ces cinq minutes, l’administrateur valide le fichier en attente qu’un membre s’apprête à remplacer, le PUT du membre remplacera quand même le binaire : le stockage ne connaît que la signature. La fenêtre est courte, et le scénario suppose les deux gestes à la même minute ; la fermer tout à fait demanderait de déposer sous une clé temporaire, puis de la renommer à l’enregistrement.
+
+## Le navigateur : trois temps, une fonction
+
+Côté navigateur, la séquence est écrite une seule fois, et tous les formulaires d’envoi l’utilisent (bibliothèque, espace personnel, dépôt commun, espaces de groupe) :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/media/uploadToR2.ts"
+  filename="uploadToR2.ts"
+  snippetRange="14-64"
+  snippetHighlight="23,34,45"
+  snippetTitle="uploadToR2"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois détails comptent. Le **même** type sert à la demande, au `Content-Type` du PUT et à l’enregistrement : le stockage refuserait un PUT dont le type diffère de celui signé, et cette fonction rend l’écart impossible. Le **chemin** renvoyé par le serveur est retransmis tel quel. Et une erreur du stockage est traduite en message lisible, sans recopier le corps XML de sa réponse.
+
+Le formulaire de la bibliothèque envoie ses fichiers **en parallèle** (`Promise.all`), et chaque envoi rend son propre résultat, succès ou erreur : un fichier refusé n’empêche pas les autres d’aboutir, et l’erreur s’affiche sur la vignette concernée. Celui de l’espace personnel les envoie **un par un**, parce que le quota se vérifie à chaque demande.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fournit le client ?", "Une destination (union discriminée) et un nom d’origine. Jamais un chemin."], ["Qui calcule le dossier ?", "Le serveur, en relisant la base et la session (resolvePendingUploadFolder). Les segments de discipline et d’espace personnel sont stables malgré un renommage."], ["Qui calcule le nom ?", "Le serveur (buildUploadFileName) ; le nom d’origine est conservé à part."], ["Qui peut déposer ?", "Tout membre connecté, sauf l’espace d’un groupe (éditeur) ; rattacher des disciplines à un événement est réservé aux administrateurs."], ["Et écraser ?", "Sur confirmation, et seulement un administrateur, un éditeur dans son groupe, ou l’auteur d’un fichier en attente."], ["Que couvre la signature ?", "Méthode, clé, type, expiration. Ni la taille, ni le contenu."]]' />
+
+## À suivre
+
+Le navigateur a envoyé son fichier, et revient dire « c’est fait, voici ce que j’ai déposé ». C’est la phrase la plus dangereuse qu’un backend puisse croire sans vérifier.
+
+<Callout type="tip">
+**Chapitre suivant : enregistrer ce qui est arrivé.** Le trou entre « signé » et « en base », la relecture chez le stockage, et pourquoi chaque champ de la ligne MediaAsset vient du serveur ou du stockage, jamais du navigateur.
+</Callout>

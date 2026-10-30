@@ -1,0 +1,187 @@
+---
+title: "Un stockage objet"
+description: "Où vivent les fichiers du club et pourquoi : le stockage local qui s’effondre en production, les familles de services, le passage de Cloudinary à un stockage compatible S3 (R2, MinIO), un stockage sans dossiers, le fichier qui ne passe pas par notre serveur, et le secret qui ne voyage jamais."
+section: "Stockage et médias"
+order: 1
+entities:
+  MediaAsset: [fullPath, appRoot, status, mimeType, bytes, originalFileName, uploaderUserId]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les données passent par tRPC et Prisma, et chaque procédure connaît l’utilisateur grâce à sa session. Tout ce que tRPC transporte tient en quelques kilo-octets : des identifiants, des textes, des dates.
+
+## Quand le fichier est plus lourd que l’API
+
+Jusqu’ici, le système manipule des **données** : des identifiants, des chaînes de caractères, des dates, des relations. Tout ce que tRPC transporte tient dans quelques kilo-octets.
+
+Puis un membre veut envoyer la photo de son passage de grade, la vidéo d’un enchaînement, l’affiche d’un stage en haute résolution. L’architecture change alors de nature. Un fichier n’est pas une donnée parmi d’autres : c’est un **poids** — quelques mégaoctets, parfois des centaines — qui doit traverser le réseau, être stocké, servi, retrouvé. Notre backend n’a pas été pensé pour ça : il a été pensé pour prendre des décisions, pas pour transporter des binaires.
+
+La question est donc simple à poser : **comment faire passer ce fichier du navigateur à un stockage durable, sans étouffer notre API ni trahir nos secrets ?** Ce chapitre et les trois suivants y répondent. La réponse n’est pas un `POST` avec un fichier attaché, mais une chorégraphie en plusieurs temps, où le backend ne fait jamais confiance à ce qu’il voit — pas même au client qu’il vient lui-même d’autoriser.
+
+<DocsTable columnsJson='["Chapitre","La question"]' rowsJson='[["1. Un stockage objet","Où vivent les fichiers, et pourquoi le serveur n’est pas sur leur route"],["2. Signer un envoi","Qui décide où va un fichier, et que vaut l’autorisation donnée au navigateur"],["3. Enregistrer ce qui est arrivé","Comment le serveur reconstruit la vérité de ce qui a été déposé"],["4. Servir un fichier","Qui peut voir quoi, et sous quelle forme"]]' />
+
+## Le premier réflexe : garder les fichiers chez soi
+
+Quand on débute, la tentation est forte de garder la maîtrise de tout. Une photo envoyée ? On l’écrit dans `public/uploads/`. Un PDF ? Dans un dossier `storage/`. Le reste du projet y accède comme à n’importe quel fichier statique.
+
+<CodeSnippet
+  language="ts"
+  title="Écrire les envois sur le disque du serveur"
+  kind="anti-pattern"
+  codeJson='"import { writeFile } from \"fs/promises\";\nimport path from \"path\";\n\nexport async function saveUpload(file: File) {\n  const buffer = Buffer.from(await file.arrayBuffer());\n  const target = path.join(process.cwd(), \"public\", \"uploads\", file.name);\n  await writeFile(target, buffer);\n  return `/uploads/${file.name}`;\n}"'
+/>
+
+C’est la solution la plus simple : pas de dépendance, pas de compte à créer, pas de variable d’environnement. Tant que nous restons sur notre machine, elle fonctionne parfaitement. Puis nous déployons.
+
+## Pourquoi ce réflexe s’effondre en production
+
+Le site du club tourne dans un **conteneur Docker**, sur un serveur. Un conteneur est jetable par construction : à chaque mise à jour, l’image est reconstruite et le conteneur recréé. Tout ce qui a été écrit dans son système de fichiers disparaît avec lui. Sur une plateforme *serverless* (Vercel, AWS Lambda), c’est pire encore : le système de fichiers ne survit même pas d’une requête à l’autre.
+
+On peut contourner le problème avec un volume monté hors du conteneur. Mais d’autres difficultés arrivent aussitôt :
+
+- **les sauvegardes** deviennent une affaire manuelle : penser à exporter, stocker ailleurs, tester la restauration ;
+- **la bande passante** de chaque consultation sort de notre serveur, qui paie deux fois : pour stocker, et pour servir ;
+- **plusieurs instances** du site, derrière un répartiteur, auraient chacune leur disque : un fichier reçu par l’une serait invisible pour l’autre ;
+- **les déclinaisons** (vignettes, formats légers) sont à fabriquer et à ranger soi-même ;
+- **le droit d’accès** à chaque fichier est à vérifier soi-même, puisque `public/` est public par nature — les photos des membres y seraient lisibles par tous.
+
+<Callout type="warning">
+Stocker les médias dans son propre projet n’est pas « garder le contrôle » : c’est s’engager à maintenir soi-même un service de stockage, de sauvegarde, de diffusion et de contrôle d’accès que d’autres font déjà mieux.
+</Callout>
+
+## Trois familles de services
+
+L’industrie a résolu ce problème plusieurs fois, et trois philosophies coexistent.
+
+**Le stockage objet brut** — Amazon S3, Cloudflare R2, MinIO. Un stockage très bon marché, très disponible, sans intelligence particulière autour des médias : pour des vignettes, des URL temporaires, une diffusion rapide, il faut construire par-dessus. C’est la solution la plus flexible, et la plus technique.
+
+**Les services d’envoi tout-en-un** — Uploadthing, Uploadcare. Ils enveloppent un stockage objet derrière une API simple, souvent très bien intégrée à Next.js. En contrepartie, on perd la main sur le nommage, les transformations et les modes d’accès fins.
+
+**Les services de gestion de médias** — Cloudinary en est un pionnier. Ils comprennent ce qu’est une image ou une vidéo : transformations à la volée dans l’URL, réseau de diffusion mondial, modes d’accès protégés, envois signés.
+
+Le choix dépend du projet, et celui du club a connu les deux derniers temps de cette histoire.
+
+## De Cloudinary à un stockage S3
+
+Le projet a d’abord utilisé **Cloudinary**. Pour une association dont la vitrine vit d’images, c’était un choix naturel : des vignettes obtenues en paramétrant l’URL (`/upload/w_400,f_auto/…`), un mode `authenticated` pour les photos des membres, des envois signés directement depuis le navigateur.
+
+Il l’a ensuite quitté pour un **stockage objet compatible S3** : Cloudflare R2 en production, MinIO sur la machine du développeur et dans la sandbox. La migration s’est faite fichier par fichier ; les colonnes propres à Cloudinary ont ensuite été retirées de `MediaAsset` (il n’en reste que `legacyCloudinaryPublicId`, une trace). Ce que Cloudinary faisait, le projet le fait désormais lui-même, et chacun des chapitres suivants en montre une partie : les envois signés (chapitre 2), le contrôle d’accès et les déclinaisons d’images fabriquées par le serveur (chapitre 4).
+
+Ce que ce choix apporte se voit dans le code. Le protocole S3 est un **standard de fait** : le projet parle à R2 et à MinIO avec le même SDK, `@aws-sdk/client-s3`, et seule la configuration change. Le développement local et la sandbox reproduisent donc exactement la production, sans compte externe ni clé partagée. R2, de son côté, ne facture pas la bande passante sortante, ce qui compte pour un site qui sert surtout des images.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/client.ts"
+  filename="client.ts"
+  snippetRange="30-63"
+  snippetHighlight="19-20,22,25"
+  snippetTitle="Le client S3, configuré pour R2 ou MinIO"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois réglages méritent une explication. `region: "auto"` est la valeur qu’attend R2, qui n’a pas de régions au sens d’AWS ; une vraie région serait incluse dans la signature des requêtes, et R2 les refuserait. `forcePathStyle` place le nom du bucket dans le chemin de l’URL plutôt que dans le nom de domaine, ce qu’exige MinIO. Et le client est un **singleton** : il garde ses connexions ouvertes d’une requête à l’autre, au lieu de refaire la poignée de main TLS à chaque appel.
+
+Un second client sert uniquement à fabriquer des URL destinées au **navigateur** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/client.ts"
+  filename="client.ts"
+  snippetRange="65-89"
+  snippetHighlight="13,18"
+  snippetTitle="Le client des URL signées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans la sandbox, le serveur joint MinIO par son nom de service Docker (`minio:9000`), que le navigateur ne connaît pas : les URL qui lui sont destinées doivent viser une autre adresse (`R2_PUBLIC_ENDPOINT`). Le calcul automatique de somme de contrôle est désactivé, car MinIO refuserait une somme calculée sur un corps vide au moment de signer.
+
+## Un stockage sans dossiers
+
+Avant d’écrire la moindre autorisation, il faut lever un malentendu qui rendrait incompréhensibles plusieurs décisions de la suite.
+
+Sur un disque, un dossier est une **structure physique** : il existe en tant que tel, on peut le créer vide, le déplacer avec tout ce qu’il contient, lister son contenu comme une vérité portée par le système de fichiers. Un stockage objet ne fonctionne pas ainsi. C’est un **grand sac plat d’objets**, chacun rangé sous une **clé** unique — et c’est tout.
+
+<CodeSnippet
+  language="txt"
+  title="Ce que nous imaginons, ce que le stockage contient"
+  codeJson='"# Ce que nous voyons mentalement : une arborescence\nAKFC/\n├── courses/\n│   └── tchoy-lee-fut/\n│       ├── salut-final.jpg\n│       └── programme.pdf\n└── events/\n    └── forum-2026-12/\n        └── affiche.png\n\n# Ce que le stockage contient : un sac plat de clés\nAKFC/courses/tchoy-lee-fut/salut-final.jpg\nAKFC/courses/tchoy-lee-fut/programme.pdf\nAKFC/events/forum-2026-12/affiche.png"'
+/>
+
+Ce que nous appelons un dossier n’est qu’un **préfixe partagé** par plusieurs clés. `AKFC/courses/tchoy-lee-fut/salut-final.jpg` et `…/programme.pdf` ne sont pas « dans le même dossier » : leurs clés commencent par les mêmes caractères. Le `/` n’est qu’une convention qui nous aide à les lire comme des chemins ; le stockage sait seulement, quand on lui demande une liste, regrouper les clés par préfixe jusqu’au prochain `/`.
+
+Deux conséquences traversent toute la partie :
+
+- **un dossier vide n’existe pas.** Si aucune clé ne commence par `AKFC/courses/kali/`, ce dossier n’a jamais existé pour le stockage. Pour qu’un espace de groupe tout neuf apparaisse quand même dans le finder, la base doit le connaître (table `Folder`) — c’est un sujet du finder ;
+- **la seule frontière possible est un préfixe.** Vérifier qu’un fichier « est dans » un espace, c’est vérifier que sa clé commence par le bon préfixe. `startsWith` n’est pas une vérification parmi d’autres : c’est la seule forme de frontière dont dispose un stockage sans topologie, et c’est ce qui oblige à refuser les segments `..`, qui feraient croire à une clé qu’elle est ailleurs que là où elle est.
+
+<Callout type="tip">
+Dans un stockage objet, un dossier n’est pas une entité : c’est un préfixe. `AKFC/courses/tchoy-lee-fut/` n’est pas un conteneur, c’est la chaîne que partagent les clés des fichiers que nous voulons voir ensemble. Toute la logique de chemins du projet découle de là.
+</Callout>
+
+## Pourquoi le fichier ne passe pas par notre serveur
+
+Une fois le stockage choisi, une seconde tentation apparaît. Notre backend sait parler au stockage : il a les clés d’accès et le SDK. Pourquoi ne serait-il pas le passeur ? Le navigateur envoie le fichier au backend, qui l’envoie au stockage. C’est symétrique, et c’est ce que nous faisons pour toutes les autres données.
+
+<CodeSnippet
+  language="ts"
+  title="Le backend en tuyau pour les binaires"
+  kind="anti-pattern"
+  codeJson='"export async function POST(request: Request) {\n  const formData = await request.formData();\n  const file = formData.get(\"file\") as File;\n  const body = Buffer.from(await file.arrayBuffer()); // tout le fichier en mémoire\n\n  await s3.send(new PutObjectCommand({ Bucket, Key: `AKFC/${file.name}`, Body: body }));\n  return Response.json({ ok: true });\n}"'
+/>
+
+Ça fonctionne. Mais chaque octet du fichier traverse notre serveur **deux fois** : à la montée, du navigateur vers nous ; à la descente, de nous vers le stockage. Pour la galerie d’un stage — des dizaines de photos en haute résolution, envoyées en même temps —, le coût devient concret : bande passante doublée, mémoire occupée par des fichiers que nous ne regardons même pas, délais d’attente HTTP à surveiller, et une limite de taille de requête à repousser (un fichier peut peser jusqu’à 500 Mio).
+
+Il y a surtout un coût d’architecture : ce point d’entrée mélange deux responsabilités, **autoriser** un envoi et **transporter** un envoi. Tant qu’elles sont mélangées, on ne peut faire évoluer l’une sans toucher à l’autre.
+
+La bonne architecture inverse le flux. Le fichier va **directement** du navigateur au stockage, et le backend ne transporte plus rien : il **autorise**.
+
+<ArchitectureDiagram steps="Navigateur | Backend (autorise) | Navigateur | Stockage (reçoit)" />
+
+Ce schéma paraît pauvre ; il cache une séparation réelle : **la décision est séparée du transport**. Le backend décide qui a le droit d’envoyer, où, sous quel nom, et pour combien de temps. Il ne touche pas aux octets.
+
+<Callout type="info">
+Relayer un fichier par son backend n’est pas une erreur de code : c’est une erreur de répartition des responsabilités. Le stockage sait recevoir des octets ; le backend sait décider.
+</Callout>
+
+## Le secret qui ne voyage jamais
+
+Seulement voilà : en retirant le backend du flux, nous venons d’ouvrir la question que le relais cachait. Le stockage ne connaît ni nos membres, ni nos groupes, ni notre base. Il ne connaît qu’une paire d’identifiants : `R2_ACCESS_KEY_ID`, qui dit **qui** parle, et `R2_SECRET_ACCESS_KEY`, qui **prouve** que c’est bien nous.
+
+Ce secret est d’une tout autre nature que le reste de la configuration. Qui le possède peut **déposer, lire, remplacer et supprimer** n’importe quel objet du bucket, sans condition. S’il était envoyé au navigateur — dans une variable `NEXT_PUBLIC_`, par exemple —, il suffirait d’ouvrir les outils de développement pour le trouver, et à partir de cet instant n’importe qui pourrait vider le bucket ou le remplir jusqu’à la facture, sans jamais passer par notre application.
+
+<Callout type="warning">
+Un secret qui voyage n’est plus un secret. Les clés du stockage restent dans l’environnement du serveur (fiche « Configuration et secrets ») ; le navigateur n’en reçoit jamais une.
+</Callout>
+
+Le paradoxe semble insoluble : le navigateur a besoin d’une autorisation, le secret ne peut pas voyager, et le fichier doit partir directement au stockage. La réponse tient en un concept : **l’URL présignée**.
+
+Le serveur prend une opération précise — `PUT` de l’objet `AKFC/courses/tchoy-lee-fut/salut-final.jpg`, de type `image/jpeg`, valable cinq minutes —, et la **signe** avec son secret (protocole AWS Signature V4). La signature est une empreinte : elle est produite par le secret, mais ne le contient pas. Elle est ajoutée à l’URL, avec les paramètres qu’elle couvre.
+
+<CodeSnippet
+  language="txt"
+  title="Une URL présignée, en une intuition"
+  kind="pattern"
+  codeJson='"PUT https://<compte>.r2.cloudflarestorage.com/akfc/AKFC/courses/tchoy-lee-fut/salut-final.jpg\n  ?X-Amz-Algorithm=AWS4-HMAC-SHA256\n  &X-Amz-Credential=<clé d’accès>/<date>/auto/s3/aws4_request\n  &X-Amz-Date=20261030T081500Z\n  &X-Amz-Expires=300                  ← cinq minutes\n  &X-Amz-SignedHeaders=content-type;host\n  &X-Amz-Signature=3f9a…                ← HMAC-SHA256(secret, méthode + clé + en-têtes + date)"'
+/>
+
+Cette URL peut partir dans le navigateur sans risque. Elle ne permet pas d’en fabriquer une autre : changer la clé, la méthode, le type ou la date invalide la signature, et le stockage, qui détient lui aussi le secret, la recalcule et refuse. Elle prouve seulement que **cette** opération-là a été autorisée par le détenteur du secret.
+
+Le glissement est essentiel. Avec le secret, nous donnerions **un accès** : général, durable, sans cible. Avec une URL présignée, nous donnons **une autorisation** : une opération, un objet, un type, cinq minutes. Le navigateur ne peut ni l’étendre, ni la réutiliser ailleurs, ni la faire durer.
+
+<Callout type="tip">
+Une URL présignée n’est pas un accès, c’est une autorisation bornée : « tu peux faire cet envoi-là, et rien d’autre ». Elle est scellée par le secret, mais ne le contient pas. C’est cette asymétrie qui rend l’envoi direct possible.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vivent les fichiers ?", "Dans un stockage objet compatible S3 : R2 en production, MinIO en développement et en sandbox, avec le même SDK."], ["Pourquoi pas le disque du serveur ?", "Un conteneur est jetable ; sauvegardes, bande passante, déclinaisons et contrôle d’accès seraient à refaire soi-même."], ["Qu’est-ce qu’un dossier ?", "Un préfixe de clé. Un dossier vide n’existe pas pour le stockage ; la seule frontière est un startsWith, d’où le refus des segments « .. »."], ["Par où passent les octets ?", "Directement du navigateur au stockage. Le backend autorise, il ne transporte pas."], ["Comment le navigateur est-il autorisé ?", "Par une URL présignée : une opération, une clé, un type, cinq minutes. Le secret ne quitte jamais le serveur."]]' />
+
+## À suivre
+
+Nous savons qu’il faut signer. Nous ne savons pas encore ce que nous signons, ni qui décide de la clé. La règle du chapitre suivant est simple et radicale : à aucun moment le backend ne signe ce que le navigateur lui demande.
+
+<Callout type="tip">
+**Chapitre suivant : signer un envoi.** La destination décrite par le navigateur, le chemin que le serveur en déduit seul, les contrôles avant de signer, et ce que la signature couvre — ou ne couvre pas.
+</Callout>

@@ -1,0 +1,214 @@
+---
+title: "Enregistrer ce qui est arrivé"
+description: "Le trou entre « signé » et « en base » : ce que le navigateur peut glisser dans l’intervalle, la procédure qui revérifie tout, la relecture de l’objet chez le stockage, d’où vient chaque champ de MediaAsset, et pourquoi un envoi naît en attente."
+section: "Stockage et médias"
+order: 3
+entities:
+  MediaAsset: [fullPath, appRoot, status, mimeType, bytes, width, height, duration, format, originalFileName, uploaderUserId, categoryId, disciplineId, proposedDisciplineName, eventId]
+stories:
+  - title: Faire enregistrer un envoi
+    actor: Membre connecté (éditeur pour un espace de groupe)
+    steps:
+      - label: Le fichier parti au stockage, le navigateur revient avec le chemin et ce qu’il a annoncé ; le serveur revérifie le droit et la destination
+        call: storage.registerR2Upload
+        section: La procédure d’admission
+      - label: L’adaptateur relit l’objet chez le stockage, refuse et supprime ce qui ne correspond pas, puis écrit la ligne, en attente
+        call: storage.registerR2Upload
+        section: Relire chez le stockage
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le serveur a signé une URL qui fixe la méthode, la clé, le type et une expiration de cinq minutes. Ni la taille, ni le contenu. Le navigateur s’en est servi, et revient.
+
+## Les parcours du chapitre
+
+Le parcours reprend là où le chapitre précédent s’est arrêté : le fichier est au stockage, et le navigateur demande qu’on l’enregistre. L’onglet en déroule les deux temps, et la carte des entités montre la ligne `MediaAsset` qui en sort.
+
+<Parcours />
+
+## Le retour du navigateur : « c’est fait »
+
+Le navigateur a présenté son URL signée au stockage, qui a accepté le fichier. Il revient maintenant vers le serveur avec ce qu’il sait : le chemin que la signature lui avait donné, la taille et le type qu’il avait annoncés, la destination et le nom d’origine. Il demande qu’on enregistre une ligne `MediaAsset`.
+
+Dans une version naïve, on prend ce qui arrive et on l’écrit :
+
+<CodeSnippet
+  language="ts"
+  title="Croire le navigateur sur ce qu’il a déposé"
+  kind="anti-pattern"
+  codeJson='"registerUpload: protectedProcedure\n  .input(z.object({ path: z.string(), bytes: z.number(), mimeType: z.string(), uploaderUserId: z.string() }))\n  .mutation(({ ctx, input }) =>\n    ctx.prisma.mediaAsset.create({\n      data: { ...input, appRoot: \"AKFC\", status: \"pending\" },\n    }),\n  ),"'
+/>
+
+Tout a l’air raisonnable. Le membre est connecté ; il vient d’envoyer ; il décrit ce qu’il a envoyé. Pourquoi ne pas le croire ? Parce qu’entre la signature et ce retour, **le serveur n’a rien vu**, et tout a pu se passer.
+
+## Ce qui peut se glisser dans l’intervalle
+
+Listons honnêtement les scénarios, du plus anodin au plus hostile.
+
+- **Une erreur.** Un bug dans le formulaire, un envoi interrompu, une réponse mal lue : le navigateur annonce un fichier qui n’est jamais arrivé, ou pas en entier.
+- **Un écart.** Le navigateur avait annoncé 2 Mo pour obtenir l’autorisation, puis a envoyé 400 Mo : l’URL signée ne fixe pas la taille.
+- **Un détournement.** Le navigateur renvoie un autre chemin que celui qu’on lui a signé : celui d’un fichier déposé par quelqu’un d’autre, pour se l’attribuer. Ou il ajoute à sa demande un `uploaderUserId` qui n’est pas le sien, ou des disciplines à rattacher à un événement.
+- **Une requête fabriquée.** Rien n’oblige à passer par notre formulaire : n’importe qui de connecté peut appeler `storage.registerR2Upload` directement, avec les valeurs de son choix.
+
+Dans tous ces cas, si nous écrivons ce qui arrive, la base contient un mensonge : une ligne qui pointe vers un objet absent, une taille fausse qui fausse les quotas, un fichier attribué à la mauvaise personne. Et une fois écrit, plus rien ne permet de le distinguer du vrai.
+
+<Callout type="warning">
+Ce que le stockage a accepté ne suffit pas à ce que la base l’accepte. Nous n’enregistrons pas « ce que le navigateur dit avoir déposé » : nous enregistrons ce que le serveur peut **constater**.
+</Callout>
+
+## Deux procédures indépendantes
+
+Avant de regarder les garde-fous, situons-nous dans la chorégraphie complète.
+
+<ArchitectureDiagram steps="createR2Upload (vérifie, signe) | PUT direct au stockage | registerR2Upload (revérifie) | HeadObject (relit l’objet) | Ligne MediaAsset, en attente" />
+
+Le point architectural important : entre `createR2Upload` et `registerR2Upload`, le serveur **n’a rien mémorisé**. Pas d’« envoi en cours » en base, pas de jeton à présenter au retour. S’il ne revient jamais — l’onglet est fermé, la connexion tombe —, il n’y a rien à défaire en base.
+
+Cette indépendance évite de maintenir un état intermédiaire fragile. Elle a un prix : à l’arrivée du second appel, le serveur doit **tout reconstruire** depuis zéro, comme s’il voyait ce navigateur pour la première fois. C’est exactement ce que fait la procédure.
+
+<Callout type="info">
+Un envoi abandonné après le PUT laisse un objet dans le stockage, sans ligne en base : il n’apparaît nulle part dans le site, puisque tout ce qui s’affiche passe par `MediaAsset`. C’est le prix de l’indépendance, et il n’est pas encore remboursé : aucune passe ne retire aujourd’hui les objets restés sans ligne. Ils sont rares (il faut abandonner entre le PUT et l’enregistrement), mais un nettoyage périodique, sur le modèle de celui des déclinaisons orphelines, serait la suite logique.
+</Callout>
+
+## La procédure d’admission
+
+`registerR2Upload` n’est pas un `prisma.mediaAsset.create`. C’est une **fonction d’admission** : une frontière que seules les informations vérifiables traversent.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="985-1030"
+  title="registerR2Upload — reconstruire avant d’admettre"
+  stepsJson='[{"title": "Le droit, à nouveau", "body": "Le droit de déposer a été vérifié à la signature. Il l’est encore : le serveur n’a rien retenu, et rien n’oblige le navigateur à être passé par createR2Upload. La même fonction rend la même décision, y compris le refus de rattacher des disciplines à un événement pour un non-administrateur.", "scope": "4-9", "focus": "4-9"}, {"title": "Recalculer le dossier", "body": "Le serveur ne compare pas le chemin reçu à celui qu’il a signé — il ne l’a pas gardé. Il recalcule le dossier que CETTE destination autorise pour CET utilisateur, avec la même fonction qu’à la signature.", "scope": "11-16", "focus": "11-16"}, {"title": "Le chemin doit en faire partie", "body": "Directement dans ce dossier : ni le dossier lui-même, ni un sous-dossier, ni un segment « .. ». Un startsWith seul ne suffirait pas : « AKFC/courses/kali-2/x.jpg » commence par « AKFC/courses/kali ». D’où le « / » ajouté au préfixe, et le reste examiné.", "scope": "17-20", "focus": "18-18"}, {"title": "Remplacer, c’est encore publier", "body": "Si une ligne existe déjà à ce chemin, l’enregistrement va la mettre à jour, auteur compris. Sans cette vérification, un membre pourrait « adopter » le fichier en attente d’un autre, en devenir l’auteur, puis le remplacer. La règle est celle de la signature (mayReplace).", "scope": "24-33", "focus": "28-28"}, {"title": "L’identité vient de la session", "body": "userId est lu dans ctx.sessionClient : le contrat d’entrée ne contient même pas de champ pour un identifiant d’utilisateur. Le navigateur ne peut pas enregistrer un fichier au nom d’un autre.", "scope": "38-45", "focus": "40-40"}]'
+/>
+
+La règle de remplacement, partagée par les deux procédures :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="98-117"
+  snippetHighlight="16-18"
+  snippetTitle="mayReplace"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Relire chez le stockage
+
+Le chemin est légitime. Reste à savoir **ce qu’il y a derrière**. Le navigateur affirme avoir déposé un fichier de telle taille et de tel type ; le serveur va le demander au seul témoin qui ne peut pas mentir : le stockage lui-même.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="348-364"
+  snippetHighlight="3,9,16"
+  snippetTitle="HeadObject : l’objet existe-t-il, et que contient-il ?"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`HeadObject` lit les métadonnées d’un objet sans en télécharger le contenu : sa taille réelle (`ContentLength`) et son type (`ContentType`, celui que la signature a imposé au PUT). Si l’objet n’existe pas, l’envoi n’a pas abouti, et la procédure répond `BAD_REQUEST` avec un message qui dit quoi faire.
+
+Pourquoi pas une simple `Error` ? Parce qu’une `Error` qui sort d’une procédure tRPC devient une erreur **interne** (`INTERNAL_SERVER_ERROR`), dont le message est remplacé en production par un message neutre — c’est voulu, pour ne pas exposer de détails techniques. Un fichier absent n’est pas une panne du serveur : c’est une situation que l’utilisateur peut corriger, et il doit lire pourquoi.
+
+<Callout type="tip">
+Un code d’erreur dit **à qui** est le problème. `BAD_REQUEST` : à la requête, que l’utilisateur peut corriger, et dont le message lui parvient. `FORBIDDEN` : à l’appelant, identifié mais sans ce droit. Une `Error` nue : au serveur — c’est un bug, et son message reste dans les journaux.
+</Callout>
+
+Puis les valeurs réelles sont confrontées à l’annonce :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="366-396"
+  snippetHighlight="5,7,17,20"
+  snippetTitle="Refuser, et ne rien laisser derrière"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois contrôles, et une règle de nettoyage.
+
+- **La taille réelle** est bornée à 500 Mio. C’est le seul endroit où cette limite est vraiment tenue : l’URL signée ne la fixait pas, et le `maxBytes` vérifié à la signature n’était qu’une annonce.
+- **La taille et le type** doivent être ceux annoncés. Un écart signale une erreur, ou une tentative ; dans les deux cas, on ne garde pas un fichier que personne n’a décrit honnêtement.
+- **Un refus supprime l’objet.** Il n’est référencé par aucune ligne : le laisser serait créer un orphelin invisible, qui occupe le stockage pour rien. Sauf s’il **remplaçait** un fichier connu : la ligne existante pointe toujours vers cette clé, et supprimer l’objet la rendrait orpheline à son tour.
+
+`reject` renvoie `Promise<never>` : TypeScript sait qu’après `await reject(…)`, l’exécution ne continue pas. C’est ce qui permet d’écrire les contrôles à la suite, sans `else`.
+
+### Les dimensions, au meilleur effort
+
+Pour une image ou une vidéo, l’adaptateur mesure largeur, hauteur et durée, utiles pour réserver la place d’une image avant son chargement. Cette mesure ne bloque jamais l’envoi : si elle échoue, les colonnes restent vides.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/mediaDerivatives.service.ts"
+  filename="mediaDerivatives.service.ts"
+  snippetRange="330-343"
+  snippetHighlight="14"
+  snippetTitle="probeMediaDimensions"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une image doit être chargée **en mémoire** pour être mesurée. Sans borne, un membre pourrait annoncer « image/jpeg » pour un fichier de 500 Mio, et chaque enregistrement chargerait 500 Mio dans la mémoire du serveur. Au-delà de 60 Mio — la même borne que pour les déclinaisons —, on renonce à mesurer. Une vidéo, elle, est lue en flux par `ffprobe`, à travers une URL signée de lecture.
+
+## Écrire la ligne
+
+Tout a été vérifié ; la ligne peut s’écrire.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="468-498"
+  snippetHighlight="9,12,14,18"
+  snippetTitle="L’upsert de MediaAsset"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un `upsert` sur `fullPath`, qui est unique : un remplacement confirmé **met à jour** la ligne existante au lieu d’échouer sur la contrainte d’unicité. La mise à jour ne touche pas au statut : un fichier publié remplacé reste publié — c’est précisément pourquoi le droit de remplacer est restreint.
+
+### D’où vient chaque champ
+
+Pour fixer les idées, voici, pour chaque colonne écrite, la source qui la justifie. C’est probablement la meilleure synthèse du chapitre.
+
+<DocsTable columnsJson='["Champ", "Source", "Mécanisme"]' rowsJson='[["fullPath", "Serveur", "Recalculé depuis la destination ; le chemin reçu doit être directement dans ce dossier."], ["appRoot", "Serveur", "Configuration (APP_ROOT), jamais l’entrée."], ["bytes", "Stockage", "ContentLength relu par HeadObject, comparé à l’annonce."], ["mimeType", "Stockage", "ContentType relu, égal au type signé, lui-même vérifié par uploadTypeError."], ["width, height, duration", "Stockage", "Mesurés sur l’objet réel, au meilleur effort."], ["format", "Serveur", "Extension de la clé, calculée par buildUploadFileName."], ["categoryId, disciplineId, eventId", "Base", "Destination relue et vérifiée par resolvePendingUploadFolder (la discipline appartient à la catégorie)."], ["proposedDisciplineName", "Navigateur, borné", "Texte proposé, validé par zod (1 à 120 caractères) ; il ne décide de rien tant qu’un administrateur ne l’a pas retenu."], ["originalFileName", "Navigateur, borné", "Purement descriptif ; validé par zod (255 caractères au plus)."], ["uploaderUserId", "Session", "ctx.sessionClient.user.id ; aucun champ d’entrée ne le porte."], ["status", "Serveur", "« pending », valeur littérale, non négociable."]]' />
+
+Lisons ce tableau comme un principe plutôt que comme une liste. Il dit, pour chaque donnée qui finit en base, **pourquoi nous avons le droit de la croire**. Trois sources seulement sont dignes de confiance : notre base, relue ; le stockage, interrogé ; la session, authentifiée. Le navigateur seul n’alimente que des champs descriptifs, qui ne portent aucune décision — et encore, bornés par zod.
+
+<Callout type="tip">
+Les couches ne sont pas redondantes : chacune attrape ce que les autres ne voient pas. Zod attrape les formes invalides ; la destination recalculée, les chemins détournés ; `mayReplace`, l’appropriation d’un fichier ; `HeadObject`, les fichiers fantômes et les tailles mensongères. Retirer l’une laisse une catégorie entière sans réponse.
+</Callout>
+
+### Un fichier, une admission
+
+Le tutoriel Cloudinary enregistrait un lot entier dans une transaction : tout ou rien. Le projet a fait le choix inverse, et il faut dire pourquoi. Chaque fichier a sa propre URL, son propre PUT, son propre enregistrement : quinze photos, ce sont quinze admissions indépendantes. Si la douzième est refusée (trop lourde, type incohérent), les onze premières sont déjà au stockage **et** en base, toutes deux cohérentes ; annuler leur enregistrement laisserait au contraire onze objets sans ligne. Le formulaire affiche le refus sur la seule vignette concernée, et l’utilisateur peut relancer ce fichier-là.
+
+L’atomicité reste exigée **à l’échelle d’un fichier** : une ligne n’est écrite que si l’objet existe et correspond à l’annonce, et un objet refusé est retiré.
+
+## En attente : une promesse faite à l’administrateur
+
+Un détail, rencontré à chaque étape, prend maintenant tout son sens : la ligne naît avec `status: "pending"`, et cette valeur n’est ni négociable, ni configurable.
+
+Pourquoi ? Parce que tout ce que nous avons vérifié est la **légitimité technique** d’un envoi : le bon dossier, le bon nom, le bon auteur, le bon fichier. Aucune de ces couches ne juge sa **légitimité éditoriale** : si la photo convient à la page de la discipline, si la discipline proposée a un sens, si le moment capturé mérite d’être montré. Cette décision appartient à un humain, et tant qu’il n’a pas tranché, le fichier reste en attente : il n’est sélectionnable dans aucun contenu, et n’est servi à aucun visiteur.
+
+<Callout type="tip">
+L’envoi vérifie la légitimité technique ; la validation reste humaine. Le statut `pending` matérialise cette frontière — sans déplacer le moindre fichier.
+</Callout>
+
+C’est ce qui permet d’ouvrir le **dépôt** à tous les membres sans ouvrir la **publication**. Et c’est pourquoi l’espace d’un groupe, où les membres voient les fichiers dès leur arrivée, est la seule destination qui exige un droit d’écriture.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que croit le serveur du navigateur ?", "Rien de ce qui décide : il revérifie le droit, recalcule le dossier, relit l’objet."], ["Que garde-t-il entre signature et enregistrement ?", "Rien. Les deux procédures sont indépendantes ; la seconde reconstruit tout."], ["Que vérifie HeadObject ?", "Que l’objet existe, sa taille réelle (500 Mio au plus) et son type, comparés à l’annonce."], ["Que devient un objet refusé ?", "Il est supprimé du stockage, sauf s’il remplaçait un fichier déjà connu."], ["Qui est l’auteur ?", "L’utilisateur de la session ; remplacer un fichier existant suit la même règle qu’à la signature."], ["Dans quel état naît un fichier ?", "En attente, jusqu’à validation par un administrateur."]]' />
+
+## À suivre
+
+Les fichiers sont en base, rangés sous des clés stables, en attente. Il reste à les montrer : à un administrateur qui valide, à un membre dans l’espace de son groupe, à un visiteur sur une page publique — chacun selon ses droits, et sous une forme adaptée.
+
+<Callout type="tip">
+**Chapitre suivant : servir un fichier.** Le cycle de vie d’un média, la route privée et sa règle de lecture, la route publique et ses deux gestes délibérés, et les déclinaisons fabriquées à la demande.
+</Callout>
