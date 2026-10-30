@@ -192,6 +192,8 @@ L'enregistrement ne croit pas le navigateur sur parole. Le chemin reçu doit se 
 
 Un avatar est **public** : il s'affiche à côté d'un nom, y compris sur des pages que tout le monde peut lire (la page des instructeurs, par exemple). Il est servi par une route dédiée, `/api/media/public/avatar/[userId]`, qui prend un identifiant d'utilisateur et non un chemin de fichier. Elle ne peut donc servir rien d'autre qu'un avatar, alors qu'une route acceptant un chemin pourrait être détournée vers n'importe quel fichier.
 
+Un avatar représente son titulaire ; personne d'autre ne le **pose** dans un contenu, administrateurs compris (partie « Contenu éditorial »). Et ce n'est pas un média de la bibliothèque : ni ligne `MediaAsset`, ni statut, ni rangement. Son dossier, `AKFC/avatars/`, n'apparaît donc pas dans le Finder, et aucune opération de la bibliothèque n'y entre (`assertOutsideAvatars` : lecture, renommage, déplacement, libellé, corbeille). `User.avatar` garde la clé exacte du fichier : un déplacement depuis le Finder l'aurait rendue fausse, et l'avatar aurait disparu sans explication.
+
 ## Le nom affiché
 
 Partout où un membre apparaît (commentaires, réactions, demandes, fichiers des espaces de groupe), son nom passe par une même fonction :

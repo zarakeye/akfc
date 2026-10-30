@@ -181,7 +181,7 @@ Pour poser la question une seule fois pour tout un lot, le formulaire appelle d�
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="843-868"
+  snippetRange="859-884"
   snippetHighlight="18,23"
   snippetTitle="checkR2Conflicts"
   fullFileTitle="Voir le fichier complet"
@@ -211,7 +211,7 @@ Voici `createR2Upload` en entier ; tout ce qui précède s’y lit dans l’ordr
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="870-935"
+  snippetRange="886-951"
   title="createR2Upload — vérifier, nommer, signer"
   stepsJson='[{"title": "Une protectedProcedure", "body": "Tout membre connecté peut demander à déposer : ce n’est pas une adminProcedure. Le contrôle fin, par destination, vient juste après.", "scope": "1-3", "focus": "1-2"}, {"title": "Le droit, puis le dossier", "body": "Le droit de déposer est vérifié AVANT de calculer le dossier : un refus ne coûte aucune lecture inutile. Les deux reçoivent l’identité de la session.", "scope": "4-18", "focus": "11-18"}, {"title": "Le format", "body": "Extension et type annoncé doivent concorder et figurer dans la liste blanche. Le refus est un BAD_REQUEST : une saisie à corriger, dont le message arrive à l’utilisateur.", "scope": "23-26", "focus": "23-26"}, {"title": "Pas d’écrasement silencieux…", "body": "Une clé déjà connue en base répond CONFLICT, sauf confirmation explicite. Le formulaire, prévenu par checkR2Conflicts, a déjà posé la question.", "scope": "32-38", "focus": "36-38"}, {"title": "… et pas d’écrasement par n’importe qui", "body": "Confirmer ne suffit pas : remplacer un fichier publié, ou déposé par un autre, est réservé à un administrateur (ou à un éditeur dans son groupe) — la règle mayReplace, définie en tête du routeur. FORBIDDEN : l’appelant est identifié, mais n’a pas ce droit.", "scope": "40-45", "focus": "40-40"}, {"title": "Signer, et rendre le chemin", "body": "L’adaptateur fabrique l’URL. La procédure renvoie aussi le chemin calculé : le navigateur le retransmettra tel quel à l’enregistrement, sans jamais le recalculer.", "scope": "53-65", "focus": "65-65"}]'
 />
