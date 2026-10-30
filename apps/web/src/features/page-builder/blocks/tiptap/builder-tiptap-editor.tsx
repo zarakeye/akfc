@@ -107,7 +107,7 @@ export function BuilderTipTapEditor({
   content,
   onChange,
 }: BuilderTipTapEditorProps) {
-  const { adapter, appRoot } = usePageBuilderContext();
+  const { adapter, appRoot, mediaRoot } = usePageBuilderContext();
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerResolveRef = useRef<((id: string | null) => void) | null>(null);
 
@@ -312,7 +312,7 @@ export function BuilderTipTapEditor({
         <MediaPicker
           open
           adapter={adapter}
-          rootPath={appRoot}
+          rootPath={mediaRoot}
           onClose={handlePickerClose}
           onSubmit={(paths) => {
             void handlePickerSubmit(paths);

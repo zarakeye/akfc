@@ -67,8 +67,8 @@ export function useResolvedPreviewMedia(m: PreviewMediaRef): {
     if (m.kind === "avatar") {
       void trpcClient.user.listAvatarCandidates
         .query()
-        .then((admins) => {
-          const user = admins.find((a) => a.id === m.userId);
+        .then((candidates) => {
+          const user = candidates.find((a) => a.id === m.userId);
           // Même URL que la page publique : un aperçu qui emprunte un autre chemin que le rendu
           // final n'est pas un aperçu.
           if (user?.avatar) done({ url: avatarUrlFor(user.id), kind: "image", posterUrl: null }, "ready");

@@ -244,7 +244,7 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
         <MediaPicker
           open
           adapter={ctx.adapter}
-          rootPath={ctx.appRoot}
+          rootPath={ctx.mediaRoot}
           onClose={() => setPickerOpen(false)}
           onSubmit={(paths) => {
             // Le picker rend une Promise via son onSubmit ?

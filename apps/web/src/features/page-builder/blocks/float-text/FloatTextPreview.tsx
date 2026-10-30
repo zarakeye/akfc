@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type JSX } from "react";
-import { generateHTML } from "@tiptap/html";
-import type { JSONContent } from "@tiptap/core";
-import { StarterKit } from "@tiptap/starter-kit";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Typography } from "@tiptap/extension-typography";
-import { Highlight } from "@tiptap/extension-highlight";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
+import { hasRichText, richTextHtml } from "../../richTextHtml";
 
 import type { FloatTextBlockV1 } from "@contracts/page";
 import { useResolvedPreviewMedia } from "@features/page-builder/components/useResolvedPreviewMedia";
@@ -22,9 +14,8 @@ import { useResolvedPreviewMedia } from "@features/page-builder/components/useRe
  * le patron du MediaTextPreview — les deux blocs partagent le modèle de
  * média, il n'y avait aucune raison d'en inventer un autre.
  *
- * Le nœud `library-image` inline n'est pas résolu ici (pas de résolution
- * serveur côté client) : les images insérées DANS le texte n'apparaissent
- * donc pas dans l'aperçu, ce qui est acceptable.
+ * Le texte passe par `richTextHtml`, sans résolution de médias : une image
+ * insérée DANS le texte n'apparaît pas dans l'aperçu, ce qui est acceptable.
  */
 
 export function FloatTextPreview({
@@ -40,23 +31,9 @@ export function FloatTextPreview({
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const imageFailed = media !== null && failedUrl === media.url;
 
-  const hasText =
-    block.content !== undefined &&
-    block.content !== null &&
-    Object.keys(block.content).length > 0;
+  const hasText = hasRichText(block.content);
 
-  const textHtml = hasText
-    ? generateHTML(block.content as JSONContent, [
-        StarterKit.configure({ horizontalRule: false }),
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Highlight.configure({ multicolor: true }),
-        Typography,
-        Subscript,
-        Superscript,
-      ])
-    : null;
+  const textHtml = hasText ? richTextHtml(block.content) : null;
 
   // Rien à montrer : on dit LAQUELLE des situations c'est, plutôt que de
   // rendre du vide indistinct.

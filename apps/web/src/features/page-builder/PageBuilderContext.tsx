@@ -27,9 +27,17 @@ export interface PageBuilderContextValue {
 
   /**
    * Racine de l'arborescence des médias (typiquement la valeur
-   * d'`APP_ROOT` côté config). Passée au MediaPicker comme `rootPath`.
+   * d'`APP_ROOT` côté config). Envoyée au backend avec chaque requête média
+   * (`resolveByPaths`), qui la compare à la sienne.
    */
   appRoot: string;
+
+  /**
+   * Dossier où le MediaPicker s'ouvre (`rootPath`). Égal à `appRoot` pour un
+   * administrateur ; l'espace personnel pour un membre qui rédige sa propre
+   * présentation — le seul dossier dont il puisse publier les fichiers.
+   */
+  mediaRoot: string;
 }
 
 const PageBuilderContext = createContext<PageBuilderContextValue | null>(null);

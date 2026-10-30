@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
+import { richTextContentSchema } from "@contracts/page/richText";
 
 /**
  * Contrat versionné de contenu de page — v1.
@@ -23,9 +23,10 @@ import { proseMirrorContentSchema } from "@contracts/shared/prosemirror";
 /*  Contenu ProseMirror                                                       */
 /* -------------------------------------------------------------------------- */
 
-// Le schéma vit désormais dans shared/prosemirror.ts : il ne concerne plus
-// seulement le PageBuilder (Comment.content le réutilise côté backend).
-// La doc complète (opacité, raisons, consommateurs) est là-bas.
+// Le texte riche des blocs est validé par `richTextContentSchema` (richText.ts) : une liste
+// blanche de nœuds, de marques et d'attributs, parce qu'il est rendu en HTML. Le schéma OPAQUE
+// de shared/prosemirror.ts reste celui des commentaires, que `CommentContent` rend lui-même
+// sans HTML brut.
 
 /* -------------------------------------------------------------------------- */
 /*  Base commune                                                              */
@@ -51,7 +52,7 @@ const blockBaseSchema = z.object({
 
 const tiptapBlockSchema = blockBaseSchema.extend({
   type: z.literal("tiptap"),
-  content: proseMirrorContentSchema,
+  content: richTextContentSchema,
 });
 
 export type TipTapBlockV1 = z.infer<typeof tiptapBlockSchema>;
@@ -183,7 +184,7 @@ const mediaTextItemSchema = z.discriminatedUnion("kind", [
 const mediaTextBlockSchema = blockBaseSchema.extend({
   type: z.literal("media-text"),
   /** Texte riche optionnel (ProseMirror). Absent/vide → côté texte masqué. */
-  content: proseMirrorContentSchema.optional(),
+  content: richTextContentSchema.optional(),
   /**
    * UN SEUL média optionnel : média de bibliothèque OU référence avatar.
    * Absent → côté médias masqué.
@@ -224,7 +225,7 @@ export type MediaTextBlockV1 = z.infer<typeof mediaTextBlockSchema>;
  */
 const floatTextBlockSchema = blockBaseSchema.extend({
   type: z.literal("float-text"),
-  content: proseMirrorContentSchema.optional(),
+  content: richTextContentSchema.optional(),
   side: z.enum(["left", "right"]).default("left"),
   media: z.preprocess((val) => {
     let v = val;

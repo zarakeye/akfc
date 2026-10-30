@@ -1,6 +1,8 @@
 import {
   emptyPageContentV1,
+  pageBlockSchemaV1,
   pageContentSchemaV1,
+  type PageBlockV1,
   type PageContentV1,
 } from '@contracts/page/blocks.v1';
 
@@ -42,12 +44,32 @@ import {
  * Dans tous ces cas, `emptyPageContentV1()` rend `{ version: 1, blocks: [] }`,
  * qui est sain et rendu en « page vide » par le `PageRenderer`.
  *
- * Pas de log par défaut — si tu veux tracer les fallbacks (utile pour
- * détecter des contenus pré-v1 qui n'ont pas été migrés), pose un
- * monitoring autour des appels (sentry breadcrumb par exemple) ; on
- * évite d'imposer ici un sink de logging au contrat.
+ * ─── Un bloc fautif ne vide pas la page ───────────────────────────────
+ *
+ * Une enveloppe v1 dont UN bloc est invalide garde ses autres blocs : seul le
+ * fautif est écarté. Rendre la page entière vide aurait un effet pire qu'à
+ * l'affichage — l'éditeur s'ouvrirait sur une page vide, et l'enregistrer
+ * effacerait tout le reste.
+ *
+ * Chaque écart est signalé par `console.warn` (serveur ou navigateur) : un
+ * contenu qui disparaît sans trace ne se diagnostique pas.
  */
 export function parsePageContentV1(raw: unknown): PageContentV1 {
   const result = pageContentSchemaV1.safeParse(raw);
-  return result.success ? result.data : emptyPageContentV1();
+  if (result.success) return result.data;
+  if (raw === null || raw === undefined) return emptyPageContentV1();
+
+  const envelope = raw as { version?: unknown; blocks?: unknown };
+  if (envelope.version !== 1 || !Array.isArray(envelope.blocks)) {
+    console.warn('[parsePageContentV1] contenu illisible, page vide rendue', result.error.issues.slice(0, 3));
+    return emptyPageContentV1();
+  }
+
+  const blocks: PageBlockV1[] = [];
+  envelope.blocks.forEach((rawBlock, index) => {
+    const block = pageBlockSchemaV1.safeParse(rawBlock);
+    if (block.success) blocks.push(block.data);
+    else console.warn(`[parsePageContentV1] bloc #${index} écarté`, block.error.issues.slice(0, 3));
+  });
+  return { version: 1, blocks };
 }

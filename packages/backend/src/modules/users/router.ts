@@ -12,9 +12,11 @@ import { TRPCError } from "@trpc/server";
 import type { UserProfile } from "@contracts/users/user-profile.types";
 import type { ImageConsentProofValue } from "@contracts/legal/imageConsent";
 import { legalInfoInput, legalInfoData } from "@backend/modules/users/legalInfo";
-import { pageContentSchemaV1 } from "@contracts/page";
 import { emailSchema } from "@contracts/auth/auth.schema";
 import { syncPageMediaReferences } from "@backend/modules/media/services/syncPageMediaReferences.service";
+import { pageContentSchemaV1 } from "@contracts/page";
+import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/instructorBio.service";
+import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
 const userProfileSelect = {
@@ -315,35 +317,23 @@ export const userRouter = router({
    */
   getMyInstructorState: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.sessionClient.user.id;
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        instructorBio: true,
-        instructorOrder: true,
-        _count: {
-          select: {
-            disciplinesAsInstructor: true,
-            coursesAsInstructor: true,
-            seminarsAsPrimaryAnimator: true,
-            seminarsAsAnimator: true,
-          },
-        },
-      },
-    });
-
-    const c = user?._count;
-    const isInstructor = Boolean(
-      c &&
-        (c.disciplinesAsInstructor > 0 ||
-          c.coursesAsInstructor > 0 ||
-          c.seminarsAsPrimaryAnimator > 0 ||
-          c.seminarsAsAnimator > 0),
-    );
+    const [user, isInstructor] = await Promise.all([
+      ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { instructorBio: true, instructorOrder: true },
+      }),
+      isInstructorUser(ctx.prisma, userId),
+    ]);
 
     return {
       isInstructor,
       bio: user?.instructorBio ?? null,
       order: user?.instructorOrder ?? null,
+      // Où le sélecteur de médias s'ouvre : toute la bibliothèque pour un administrateur, son
+      // espace personnel pour un autre membre (le seul dont il puisse poser les fichiers).
+      mediaRoot: ctx.sessionClient.user.isAdmin
+        ? ctx.appRoot
+        : await resolvePersoBaseFolder({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId }),
     };
   }),
 
@@ -368,6 +358,19 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.sessionClient.user.id;
+      // Seul un titulaire a une présentation publique. Un autre membre pourrait sinon référencer des
+      // fichiers, et les rendre servis au public, sans qu'aucune page ne les montre.
+      if (!(await isInstructorUser(ctx.prisma, userId))) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "La présentation est réservée aux instructeurs." });
+      }
+      if (!ctx.sessionClient.user.isAdmin) {
+        // L'ordre de la page publique est une décision du club : un instructeur ne s'y place pas
+        // lui-même en tête.
+        if (input.order !== undefined) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "L'ordre d'affichage est fixé par un administrateur." });
+        }
+        if (input.bio !== null) await assertBioMediaAllowed(ctx.prisma, userId, input.bio);
+      }
       await ctx.prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
@@ -527,20 +530,20 @@ export const userRouter = router({
     }),
 
   /**
-   * Liste les administrateurs (membres du groupe Administrateurs) avec leur avatar courant,
-   * pour peupler le sélecteur d'avatar du bloc media-text (« utiliser
-   * l'avatar de X »). Inclut les admins SANS avatar (avatar `null`) — l'UI
-   * affichera un placeholder. `avatar` est la clé de stockage brute ;
-   * l'URL d'affichage est construite côté client comme pour l'avatar du
-   * header.
+   * Les avatars qu'un bloc media-text ou float-text peut montrer (« utiliser l'avatar de X »).
+   *
+   * Un administrateur choisit parmi les administrateurs, et lui-même ; un autre membre (un
+   * instructeur qui rédige sa présentation) ne peut montrer que SON avatar — c'est aussi ce que
+   * `saveMyInstructorBio` vérifie. Inclut les membres SANS avatar (avatar `null`) : l'UI affiche
+   * un placeholder. `avatar` est la clé de stockage brute ; l'URL d'affichage est construite côté
+   * client comme pour l'avatar du header.
    */
   listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
+    const self = ctx.sessionClient.user.id;
     return ctx.prisma.user.findMany({
-      where: {
-        memberGroupMemberships: {
-          some: { group: { isAdminGroup: true } },
-        },
-      },
+      where: ctx.sessionClient.user.isAdmin
+        ? { OR: [{ id: self }, { memberGroupMemberships: { some: { group: { isAdminGroup: true } } } }] }
+        : { id: self },
       select: {
         id: true,
         firstName: true,

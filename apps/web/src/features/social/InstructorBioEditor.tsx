@@ -111,6 +111,9 @@ export function InstructorBioEditor(): JSX.Element | null {
         onChange={setContent}
         adapter={finderStorageAdapter}
         appRoot={APP_ROOT}
+        // Un membre n'ouvre que SON espace : le backend refuse tout autre fichier
+        // dans une présentation publique (`saveMyInstructorBio`).
+        mediaRoot={state.data.mediaRoot}
         allowedBlocks={INSTRUCTOR_BIO_BLOCKS}
       />
 

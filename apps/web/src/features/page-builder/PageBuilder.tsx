@@ -26,6 +26,8 @@ export interface PageBuilderProps {
   adapter: FileAdapter;
   /** Racine de l'arborescence média (valeur d'`APP_ROOT`). */
   appRoot: string;
+  /** Dossier où s'ouvre le sélecteur de médias. ABSENT = `appRoot`. */
+  mediaRoot?: string;
   /**
    * Types de blocs que cet hôte autorise. ABSENT = tous.
    *
@@ -73,6 +75,7 @@ export function PageBuilder({
   onChange,
   adapter,
   appRoot,
+  mediaRoot,
   allowedBlocks,
 }: PageBuilderProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -111,7 +114,7 @@ export function PageBuilder({
   /* ── Rendu ── */
 
   return (
-    <PageBuilderProvider value={{ adapter, appRoot }}>
+    <PageBuilderProvider value={{ adapter, appRoot, mediaRoot: mediaRoot ?? appRoot }}>
       <div className="flex flex-col gap-3">
         {value.blocks.length === 0 && (
           <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">

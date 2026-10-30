@@ -61,6 +61,11 @@ export interface PageRendererProps {
  * et documenté, comme côté `BlockShell` pour l'édition.
  */
 export async function PageRenderer({ content }: PageRendererProps) {
+  // Page vide : rien à résoudre, aucune requête.
+  if (content.blocks.length === 0) {
+    return null;
+  }
+
   // 1. Extraction de tous les mediaIds référencés sur la page.
   const mediaIds = extractMediaIdsFromContent(content);
 
@@ -108,10 +113,6 @@ export async function PageRenderer({ content }: PageRendererProps) {
     height: null,
     duration: null,
   };
-
-  if (content.blocks.length === 0) {
-    return null;
-  }
 
   // Alternance media-text SANS mutation pendant le rendu (React Compiler) :
   // le côté dérive du rang du bloc dans la liste des seuls blocs media-text.

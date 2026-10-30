@@ -1,15 +1,7 @@
 "use client";
 
 import { type CSSProperties, type JSX } from "react";
-import { generateHTML } from "@tiptap/html";
-import type { JSONContent } from "@tiptap/core";
-import { StarterKit } from "@tiptap/starter-kit";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Typography } from "@tiptap/extension-typography";
-import { Highlight } from "@tiptap/extension-highlight";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
+import { hasRichText, richTextHtml } from "../../richTextHtml";
 
 import type { MediaTextBlockV1 } from "@contracts/page";
 import {
@@ -27,10 +19,9 @@ import {
  * mêmes règles de disposition (1 média = pleine largeur ; plusieurs = grille ;
  * une seule partie = centré, gouttière nette entre colonnes).
  *
- * Le rendu du texte réutilise generateHTML avec les mêmes extensions que la
- * vue publique (sans le nœud library-image, dont la résolution serveur n'est
- * pas disponible ici — les images insérées dans le texte n'apparaissent donc
- * pas dans la preview, ce qui est acceptable pour un aperçu).
+ * Le texte passe par `richTextHtml`, le même rendu que la vue publique, mais
+ * sans résolution de médias : une image insérée DANS le texte n'apparaît pas
+ * dans l'aperçu, ce qui est acceptable pour un aperçu.
  */
 
 export function MediaTextPreview({
@@ -42,10 +33,7 @@ export function MediaTextPreview({
 }): JSX.Element | null {
   const { media, resolution } = useResolvedPreviewMedia(block.media ?? null);
 
-  const hasText =
-    block.content !== undefined &&
-    block.content !== null &&
-    Object.keys(block.content).length > 0;
+  const hasText = hasRichText(block.content);
   // « Il y a une colonne média » n'est PAS « le média est résolu ». Un média
   // choisi mais non résolu garde sa colonne — sans quoi la mise en page
   // basculerait en une seule colonne et l'admin croirait n'avoir rien
@@ -60,18 +48,7 @@ export function MediaTextPreview({
     );
   }
 
-  const textHtml = hasText
-    ? generateHTML(block.content as JSONContent, [
-        StarterKit.configure({ horizontalRule: false }),
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Highlight.configure({ multicolor: true }),
-        Typography,
-        Subscript,
-        Superscript,
-      ])
-    : null;
+  const textHtml = hasText ? richTextHtml(block.content) : null;
 
   const MediaColumn = media ? (
     <PreviewFigure media={media} />

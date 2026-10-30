@@ -63,7 +63,7 @@ export function getBlockDefinition<K extends PageBlockKindV1>(
 
 /**
  * Type d'une définition prise au hasard dans le registry — union des
- * quatre variantes typées.
+ * variantes typées.
  *
  * **Pourquoi pas `BlockDefinition<PageBlockV1>` ?** Parce que `TBlock`
  * apparaît en position contravariante dans `onChange: (next: TBlock) => void` —

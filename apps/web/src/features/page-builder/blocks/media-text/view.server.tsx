@@ -1,64 +1,10 @@
-import { Node } from "@tiptap/core";
-import type { JSONContent } from "@tiptap/core";
 import type { CSSProperties } from "react";
-import { generateHTML } from "@tiptap/html";
-import { StarterKit } from "@tiptap/starter-kit";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Typography } from "@tiptap/extension-typography";
-import { Highlight } from "@tiptap/extension-highlight";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
-import { HorizontalRule } from "@/features/editor-tiptap/node/horizontal-rule-node/horizontal-rule-node-extension";
 
 import type { MediaTextBlockV1, ResolvedMedia } from "@contracts/page";
 
 import type { BlockViewProps } from "../../BlockDefinition.types";
+import { hasRichText, richTextHtml } from "../../richTextHtml";
 import { SiteLogoImage } from "../../components/SiteLogoImage";
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*  Nœud image server-only (identique à la View tiptap)                     */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-interface ServerLibraryImageOptions {
-  resolveMedia: (mediaId: string) => ResolvedMedia | null;
-}
-
-const ServerLibraryImageNode = Node.create<ServerLibraryImageOptions>({
-  name: "library-image",
-  group: "block",
-  atom: true,
-  addOptions() {
-    return { resolveMedia: () => null };
-  },
-  addAttributes() {
-    return { mediaId: { default: null }, caption: { default: null } };
-  },
-  renderHTML({ node }) {
-    const mediaId = node.attrs.mediaId as string | null;
-    const caption = node.attrs.caption as string | null;
-    if (!mediaId) return ["span", { class: "hidden", "aria-hidden": "true" }];
-    const media = this.options.resolveMedia(mediaId);
-    if (!media) return ["span", { class: "hidden", "aria-hidden": "true" }];
-    const imgAttrs: Record<string, unknown> = {
-      src: media.url,
-      alt: caption ?? "",
-      loading: "lazy",
-      decoding: "async",
-    };
-    if (media.width !== null) imgAttrs.width = media.width;
-    if (media.height !== null) imgAttrs.height = media.height;
-    if (caption) {
-      return [
-        "figure",
-        { class: "tiptap-library-image" },
-        ["img", imgAttrs],
-        ["figcaption", {}, caption],
-      ];
-    }
-    return ["figure", { class: "tiptap-library-image" }, ["img", imgAttrs]];
-  },
-});
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  View                                                                   */
@@ -94,30 +40,14 @@ export function MediaTextView({
   const mediaCaption = block.media?.caption;
 
   // Texte : présent uniquement si content non vide.
-  const hasText =
-    block.content !== undefined &&
-    block.content !== null &&
-    Object.keys(block.content).length > 0;
+  const hasText = hasRichText(block.content);
 
   const hasMedia = resolvedMedia !== null;
 
   // Bloc vide (ni texte ni média résolu) → rien.
   if (!hasText && !hasMedia) return null;
 
-  const textHtml = hasText
-    ? generateHTML(block.content as JSONContent, [
-        StarterKit.configure({ horizontalRule: false }),
-        HorizontalRule,
-        TextAlign.configure({ types: ["heading", "paragraph"] }),
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Highlight.configure({ multicolor: true }),
-        Typography,
-        Subscript,
-        Superscript,
-        ServerLibraryImageNode.configure({ resolveMedia }),
-      ])
-    : null;
+  const textHtml = hasText ? richTextHtml(block.content, resolveMedia) : null;
 
   const MediaColumn =
     hasMedia && resolvedMedia ? (

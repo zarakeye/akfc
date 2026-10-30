@@ -78,11 +78,13 @@ export async function resolveMediaByIds(
     const isAudio = !isVideo && asset.mimeType.startsWith('audio/');
     const isImage = !isVideo && !isAudio && asset.mimeType.startsWith('image/');
 
-    const baseUrl = buildMediaProxyUrl(asset);
+    // L'affiche d'une vidéo suit la MÊME audience que la vidéo : construite sur la route admin, elle
+    // répondait 401 à tout visiteur d'une page publique.
+    const url = buildMediaProxyUrl(asset, audience);
     byId[asset.id] = {
-      url: buildMediaProxyUrl(asset, audience),
+      url,
       kind: isVideo ? 'video' : isAudio ? 'audio' : isImage ? 'image' : 'document',
-      posterUrl: isVideo ? `${baseUrl}&as=poster` : null,
+      posterUrl: isVideo ? `${url}&as=poster` : null,
       mimeType: asset.mimeType,
       fileName: lastSegment(asset.fullPath),
       width: asset.width,

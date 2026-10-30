@@ -12,6 +12,7 @@
 import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 import { outsideBin } from '@backend/modules/storage/mediaPaths';
 import { assertCanReadPaths } from "@backend/modules/memberGroups/assertCanReadPaths.service";
+import { canReadStorageKey } from "@backend/modules/media/services/canReadStorageKey.service";
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure } from '@backend/trpc';
@@ -174,6 +175,13 @@ export const mediaRouter = router({
    *
    * Retourne un Record indexé par mediaId. Les ids absents de la DB
    * ou non-published rendent `null`.
+   *
+   * ─── Ce que l'appelant peut lire ───────────────────────────────────
+   *
+   * Un administrateur résout tout. Un autre membre (un instructeur qui rédige sa présentation)
+   * ne résout que les fichiers qu'il peut LIRE (`canReadStorageKey` : son espace, ses groupes) ;
+   * les autres rendent `null`, comme un fichier introuvable. Sans ce filtre, un identifiant
+   * suffisait à apprendre le chemin et le nom d'origine de n'importe quel fichier validé.
    */
   resolveByIds: storageProcedure
     .input(
@@ -186,10 +194,12 @@ export const mediaRouter = router({
         return {} as Record<string, ResolvedMedia | null>;
       }
 
-      const assets = await ctx.prisma.mediaAsset.findMany({
+      const found = await ctx.prisma.mediaAsset.findMany({
         where: {
           id: { in: input.mediaIds },
           status: 'published',
+          // Un fichier jeté (sa ligne a suivi l'objet dans la corbeille) ne se résout plus.
+          ...outsideBin(ctx.appRoot),
         },
         select: {
           id: true,
@@ -202,6 +212,17 @@ export const mediaRouter = router({
           duration: true,
         },
       });
+      const assets = ctx.sessionClient.user.isAdmin
+        ? found
+        : (
+            await Promise.all(
+              found.map(async (asset) =>
+                (await canReadStorageKey({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, key: asset.fullPath }))
+                  ? asset
+                  : null,
+              ),
+            )
+          ).filter((asset) => asset !== null);
 
       const byId: Record<string, ResolvedMedia | null> = {};
       for (const id of input.mediaIds) byId[id] = null;
