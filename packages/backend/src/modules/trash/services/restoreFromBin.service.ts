@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
 import type {
@@ -182,7 +183,11 @@ export async function restoreFromBin(params: {
   if (entries.length !== input.ids.length) {
     const found = new Set(entries.map((e) => e.id));
     const missing = input.ids.filter((id) => !found.has(id));
-    throw new Error(`restoreFromBin: missing TrashEntry ids: ${missing.join(", ")}`);
+    // Deux administrateurs sur la même corbeille : l'autre a déjà restauré ou supprimé.
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: `${missing.length} élément(s) déjà restauré(s) ou supprimé(s). Actualisez la corbeille.`,
+    });
   }
 
   const restored: RestoreResultItem[] = [];

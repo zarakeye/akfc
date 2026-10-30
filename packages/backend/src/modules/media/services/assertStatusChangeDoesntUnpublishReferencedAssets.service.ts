@@ -1,40 +1,14 @@
 import { TRPCError } from '@trpc/server';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
-import { physicalCandidates } from '@backend/modules/storage/logicalPath';
-
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  assertStatusChangeDoesntUnpublishReferencedAssets                      */
 /* ─────────────────────────────────────────────────────────────────────── */
 
 /**
- * Garde de cohérence à la sortie de `published` — version STATUT.
- *
- * ─── Pourquoi une sœur et pas un appel à l'existante ─────────────────────
- *
- * `assertOperationsDontUnpublishReferencedAssets` fait le même travail, mais
- * sa DÉTECTION est un déplacement : elle repère la sortie de `published` en
- * testant `op.source.path.startsWith(appRoot + '/published/')`. Elle a besoin
- * d'une opération, d'une source, d'une cible.
- *
- * Or dépublier cesse d'être un déplacement. Il ne reste aucune op à lui
- * donner. La brancher de force reviendrait à lui fabriquer de fausses
- * opérations pour qu'elle reconnaisse quelque chose qui n'arrive plus — un
- * chemin recopié à côté de sa source, très exactement la maladie qu'on soigne.
- *
- * Donc on réexprime la détection. Et sa nouvelle forme est plus juste que
- * l'ancienne : « être publié » n'est plus *vivre sous un préfixe*, c'est
- * `status = 'published'` en base. C'est l'inversion que tout le chantier vise,
- * appliquée à la garde elle-même.
- *
- * Les étapes 3 à 5 de l'originale (collecte des références, diagnostic, throw)
- * sont identiques : elles ne parlaient déjà que d'`id`.
- *
- * ─── Les deux gardes coexistent, et c'est voulu ──────────────────────────
- *
- * Tant que le move sait encore franchir les strates (jusqu'à l'étape 5),
- * l'originale doit rester en place : un DnD peut toujours sortir un asset de
- * `published/` par le chemin. Elle se supprimera avec la strate, à l'étape 6.
+ * Garde de cohérence à la sortie de `published` : remettre en attente un fichier qu'une page ou une
+ * galerie affiche le ferait disparaître sans un mot. « Être publié », c'est `status = 'published'`
+ * en base ; la garde lit cette colonne, jamais le chemin.
  *
  * Portée : les pages (`pageMediaReference`) ET les galeries (`galleryItems`).
  * Une galerie n'affiche que les fichiers publiés : dépublier une photo l'en
@@ -56,7 +30,6 @@ export async function assertStatusChangeDoesntUnpublishReferencedAssets(
   sources: readonly StatusChangeSource[],
   nextStatus: 'pending' | 'published',
   appRoot: string,
-  logical?: boolean,
 ): Promise<void> {
   // On ne garde que la SORTIE de published. Y entrer n'a jamais cassé de page.
   if (nextStatus !== 'pending') return;
@@ -64,23 +37,11 @@ export async function assertStatusChangeDoesntUnpublishReferencedAssets(
   // 1) Le même matching que `media.setStatus`, à la lettre — si les deux
   //    divergeaient, la garde protégerait un ensemble et l'UPDATE en
   //    toucherait un autre.
-  const orClauses: Prisma.MediaAssetWhereInput[] = [];
-
-  for (const source of sources) {
-    if (source.kind === 'file') {
-      orClauses.push({ fullPath: source.path });
-      orClauses.push({ fullPath: { startsWith: `${source.path}.` } });
-      continue;
-    }
-
-    const prefixes = logical
-      ? physicalCandidates(source.path, appRoot)
-      : [source.path];
-
-    for (const prefix of prefixes) {
-      orClauses.push({ fullPath: { startsWith: `${prefix}/` } });
-    }
-  }
+  const orClauses: Prisma.MediaAssetWhereInput[] = sources.map((source) =>
+    source.kind === 'file'
+      ? { fullPath: source.path }
+      : { fullPath: { startsWith: `${source.path}/` } },
+  );
 
   if (orClauses.length === 0) return;
 

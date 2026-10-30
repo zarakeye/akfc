@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { normalizePath } from "@backend/modules/trash/utils";
@@ -23,7 +24,7 @@ function assetsWhere(appRoot: string, sources: readonly TrashSource[]): Prisma.M
   for (const source of sources) {
     const p = normalizePath(source.fullPath);
     if (source.kind === "file") {
-      or.push({ fullPath: p }, { fullPath: { startsWith: `${p}.` } });
+      or.push({ fullPath: p });
     } else {
       // Le `/` final évite qu'un dossier `cours` emporte `cours-avance`.
       or.push({ fullPath: { startsWith: `${p}/` } });
@@ -79,11 +80,15 @@ export async function assertTrashDoesntRemoveUsedAssets(
     return `  - ${name} → utilisé par : ${uses.join(", ")}`;
   });
 
-  throw new Error(
-    `Mise à la corbeille impossible : ${used.length} fichier(s) encore utilisé(s).\n` +
+  // CONFLICT : l'opération heurte l'état actuel (des contenus affichent ces fichiers). Une Error
+  // nue deviendrait une erreur interne, au message masqué en production.
+  throw new TRPCError({
+    code: "CONFLICT",
+    message:
+      `Mise à la corbeille impossible : ${used.length} fichier(s) encore utilisé(s).\n` +
       `Retire-les d'abord des contenus qui les affichent, puis réessaie.\n` +
       lines.join("\n"),
-  );
+  });
 }
 
 /**

@@ -9,7 +9,6 @@ import { APP_ROOT } from '@config/app';
 
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import type { LifecycleStatus } from '@features/finder-core/utils/statusFolders';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 /**
  * Hook de changement de statut d'une sélection de FinderNodes.
@@ -24,16 +23,9 @@ import { storagePathOf } from '@features/finder-core/utils/storagePath';
  *     (useNodeActions.deleteNodes) — on ne le duplique pas, on le réutilise.
  *
  *   - `pending` ↔ `published` → `media.setStatus`. **Un UPDATE, pas un
- *     déplacement.** Le binaire ne bouge plus : `MediaAsset.status` est
- *     devenu la vérité, le segment de statut du chemin n'est plus qu'un
- *     décor que les étapes 4-5 effaceront.
- *
- *     Ce qu'on passe au backend n'est pas symétrique, et c'est voulu :
- *       - un FICHIER porte son localisateur → `storagePathOf(node)`, le
- *         chemin PHYSIQUE, seul à matcher `MediaAsset.fullPath` ;
- *       - un DOSSIER n'en a pas (il vit dans 1..N strates) → on envoie le
- *         chemin LOGIQUE et `logical: true`, le backend résout via
- *         `physicalCandidates`. Même forme que `trash.trashToBin`.
+ *     déplacement.** Le binaire ne bouge pas : `MediaAsset.status` est la
+ *     vérité. Un fichier envoie son chemin (= `MediaAsset.fullPath`), un
+ *     dossier le sien : le backend met à jour tout ce qu'il contient.
  *
  *   - depuis `bin`          → hors scope ici : la restauration a son flux
  *     dédié (TrashEntry + previousPath). Le radio est masqué dans le bin
@@ -45,9 +37,10 @@ import { storagePathOf } from '@features/finder-core/utils/storagePath';
  * invalide en plus `trash.listBin` quand `bin` est impliqué (vue plate).
  *
  * ─── Garde published ──────────────────────────────────────────────────────
- * Si une sélection contient un asset publié encore référencé, le backend
- * (`assertOperationsDontUnpublishReferencedAssets`) rejette la sortie de
- * `published`. L'erreur remonte ici et est exposée via `error`.
+ * Si une sélection contient un fichier publié encore affiché par une page ou une
+ * galerie, le backend (`assertStatusChangeDoesntUnpublishReferencedAssets`)
+ * refuse la sortie de `published`, en nommant les contenus. L'erreur remonte
+ * ici et est exposée via `error`.
  */
 export function useStatusChange(): {
   setStatus: (nodes: FinderNode[], target: LifecycleStatus) => Promise<void>;
@@ -76,12 +69,8 @@ export function useStatusChange(): {
             sources: nodes.map((n) => ({
               kind:
                 n.type === 'folder' ? ('folder' as const) : ('file' as const),
-              fullPath: storagePathOf(n),
+              fullPath: n.path,
             })),
-            // Un DOSSIER n'a pas de localisateur unique (il vit dans 1..N
-            // strates) : c'est le backend qui résout, contre le registre
-            // `Folder`. Jeter `AKFC/cours/x` jette les deux copies.
-            logical: true,
           });
           utils.trash.listBin.invalidate();
           utils.storage.getAttentionCounts.invalidate();
@@ -89,15 +78,11 @@ export function useStatusChange(): {
           setIsMoving(true);
           await setStatusMutation.mutateAsync({
             appRoot: APP_ROOT,
-            sources: nodes.map((node) =>
-              node.type === 'folder'
-                ? { kind: 'folder' as const, path: node.path }
-                : { kind: 'file' as const, path: storagePathOf(node) },
-            ),
+            sources: nodes.map((node) => ({
+              kind: node.type === 'folder' ? ('folder' as const) : ('file' as const),
+              path: node.path,
+            })),
             status: target,
-            // Ne concerne que les `folder.path` ci-dessus : le backend les
-            // résout contre les strates. Les fichiers passent déjà physiques.
-            logical: true,
           });
           // Publier ou dépublier change le décompte `pending`. La cloche est
           // dans le cache depuis sa migration `useQuery` : un invalidate suffit.

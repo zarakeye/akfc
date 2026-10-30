@@ -1,52 +1,36 @@
+import { TRPCError } from "@trpc/server";
+
 import type {
   StorageAdapter,
   StorageMoveIntent,
   StorageMoveOperation,
   StorageMoveSource,
-  StorageMoveTarget,
+  StorageNode,
 } from "@contracts/storage";
 
 /**
  * resolveMoveIntent.service.ts
  *
- * Couche 2 du pipeline de move : résout une intention riche en N opérations
- * atomiques, et les exécute via l'adapter de stockage.
+ * Couche 2 du pipeline de move : résout une intention riche en N opérations atomiques, puis les
+ * exécute via l'adapter de stockage.
  *
- *   Couche 3 — INTENTION              StorageMoveIntent (entrée de ce service)
+ *   Couche 3 — INTENTION              StorageMoveIntent (entrée)
  *   Couche 2 — RÉSOLUTION             ce service
  *   Couche 1 — OPÉRATION              StorageMoveOperation (sortie)
  *
- * ─── Ce que ce service fait, et ce qu'il ne fait pas ──────────────────────
+ * Deux phases séparées, pour que le router puisse filtrer ou garder entre les deux :
+ * `planMoveOperations` (lit et calcule, n'écrit rien), puis `executeMoveOperations`.
  *
- * Il fait :
- *   - expanse une `selection` (roots + excluded) en N items concrets en
- *     interrogeant l'adapter (`list` ou `getTree`)
- *   - traduit une cible `status-folder` (lifecycle status applicatif) en
- *     path concret en respectant la convention `${appRoot}/${status}/...`
- *   - produit N `StorageMoveOperation` atomiques
- *   - les exécute séquentiellement via `adapter.move()`
+ * ─── La structure se déplace avec ce qu'on déplace ────────────────────────
  *
- * Il ne fait pas :
- *   - aucun appel direct à un provider. Tout passe
- *     par l'interface `StorageAdapter` reçue en paramètre.
- *   - aucune validation Zod (l'input est supposé déjà validé en amont,
- *     typiquement par `storageMoveIntentSchema` au niveau du router).
- *   - aucune logique de DB (l'adapter ou le service métier qui l'appelle
- *     se charge de propager les changements en DB si nécessaire).
+ * La cible d'un élément est `<dossier cible>/<chemin de l'élément relatif au PARENT de sa racine>`.
+ * Déplacer le dossier `AKFC/events/forum` dans `AKFC/courses/kali` produit
+ * `AKFC/courses/kali/forum/…`, sous-dossiers compris. Une sélection qui contient un dossier
+ * le déplace ENTIER (une seule opération dossier) ; on ne descend aux fichiers que si une
+ * exclusion vise l'intérieur de ce dossier, et chacun garde alors son chemin relatif.
  *
- * ─── Note importante sur la convention de path ────────────────────────────
- *
- * La traduction d'un `status-folder` en path concret repose sur la
- * convention `${appRoot}/${status}/...`. Cette convention est applicative
- * (imposée par le projet à tous ses stockages) et est documentée dans le
- * contrat `move.intent.ts`. Si demain le projet change cette convention,
- * c'est ici qu'il faudra la refléter.
- *
- * Le suffixe préservé d'un asset déplacé par `status-folder` correspond à
- * tout ce qui suit le `<status>` actuel dans son path. Exemple :
- *   source : `AKFC/pending/cours/12/photo.jpg`
- *   target : `{ type: 'status-folder', status: 'published' }`
- *   → path concret : `AKFC/published/cours/12/photo.jpg`
+ * Il ne fait pas : d'appel direct au stockage (tout passe par l'adapter), de validation zod (faite
+ * par le router), ni de logique de base (l'adapter réaligne les lignes `MediaAsset`).
  */
 
 export type ResolveMoveIntentParams = {
@@ -55,74 +39,48 @@ export type ResolveMoveIntentParams = {
   intent: StorageMoveIntent;
 };
 
-/**
- * Résout et exécute une intention de move.
- *
- * Renvoie le tableau des opérations atomiques effectivement exécutées —
- * utile pour les caller qui veulent logger, auditer, ou rejouer.
- *
- * Wrapper rétrocompatible équivalent à `planMoveOperations` suivi de
- * `executeMoveOperations`. Si tu as besoin d'insérer une garde ou un
- * audit entre les deux phases (ex: le router `storage.move` qui refuse
- * de sortir un asset référencé de published — sous-chantier 7), utilise
- * les deux fonctions séparément plutôt que ce wrapper.
- */
-export async function resolveMoveIntent(
-  params: ResolveMoveIntentParams
-): Promise<StorageMoveOperation[]> {
-  const operations = await planMoveOperations(params);
-  await executeMoveOperations(params.adapter, operations);
-  return operations;
-}
-
-/**
- * Phase 1 du pipeline : résout l'intention en N opérations atomiques,
- * **sans rien exécuter**. Ne fait que lire (via l'adapter) et calculer.
- *
- * Permet d'insérer des gardes sur les opérations planifiées avant
- * exécution. Utilisé par le router `storage.move` pour faire passer
- * les opérations à `assertOperationsDontUnpublishReferencedAssets`
- * avant l'appel à `executeMoveOperations`.
- */
+/** Phase 1 : l'intention en opérations atomiques, sans rien exécuter. */
 export async function planMoveOperations(
   params: ResolveMoveIntentParams
 ): Promise<StorageMoveOperation[]> {
-  const { adapter, appRoot, intent } = params;
+  const { adapter, intent } = params;
 
   if (!adapter.move) {
-    throw new Error(
-      "Adapter does not support move(). " +
-        "Cannot resolve a StorageMoveIntent on a read-only adapter."
-    );
+    throw new Error("Adapter does not support move().");
   }
 
-  // 1) Résoudre la SOURCE en items concrets (file ou folder).
+  const targetFolder = trimSlashes(intent.target.path);
   const items = await resolveSource(intent.source, adapter);
 
-  // 2) Pour chaque item, traduire la TARGET en path concret et produire
-  //    une opération atomique.
-  return items.map((item) => ({
-    source: item,
-    target: { path: resolveTargetPath(item, intent.target, appRoot) },
-  }));
+  return items.map((item) => {
+    // Un dossier ne se dépose ni dans lui-même, ni dans l'un de ses descendants : la boucle
+    // déplacerait ses propres objets sous un préfixe qu'elle est en train de vider.
+    if (
+      item.type === "folder" &&
+      (targetFolder === item.path || targetFolder.startsWith(`${item.path}/`))
+    ) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Un dossier ne peut pas être déplacé dans lui-même.",
+      });
+    }
+    return {
+      source: { type: item.type, path: item.path },
+      target: { path: `${targetFolder}/${item.relative}` },
+    };
+  });
 }
 
 /**
- * Phase 2 du pipeline : exécute des opérations atomiques pré-planifiées
- * via l'adapter.
- *
- * Séquentiel et non parallèle : des opérations concurrentes sur des
- * préfixes voisins pourraient se marcher dessus.
+ * Phase 2 : exécution des opérations planifiées. Séquentielle : des opérations concurrentes sur
+ * des préfixes voisins pourraient se marcher dessus.
  */
 export async function executeMoveOperations(
   adapter: StorageAdapter,
   operations: readonly StorageMoveOperation[]
 ): Promise<void> {
   if (!adapter.move) {
-    throw new Error(
-      "Adapter does not support move(). " +
-        "Cannot execute move operations on a read-only adapter."
-    );
+    throw new Error("Adapter does not support move().");
   }
   for (const operation of operations) {
     await adapter.move(operation);
@@ -133,159 +91,73 @@ export async function executeMoveOperations(
 /*  Résolution de la source                                                   */
 /* -------------------------------------------------------------------------- */
 
-type ResolvedItem = StorageMoveOperation["source"];
+type ResolvedItem = {
+  type: "file" | "folder";
+  path: string;
+  /** Chemin à recréer sous le dossier cible : relatif au parent de la racine sélectionnée. */
+  relative: string;
+};
 
-/**
- * Expanse la source d'une intention en une liste d'items concrets.
- *
- * - `file` ou `folder` : un seul item, retourné tel quel.
- * - `selection`        : on liste sous chaque root et on filtre les excluded.
- *                        On préserve les types (file/folder) découverts pour
- *                        que `adapter.move()` puisse traiter chaque cas.
- */
 async function resolveSource(
   source: StorageMoveSource,
   adapter: StorageAdapter
 ): Promise<ResolvedItem[]> {
   if (source.type === "file" || source.type === "folder") {
-    return [{ type: source.type, path: source.path }];
+    const path = trimSlashes(source.path);
+    return [{ type: source.type, path, relative: lastSegment(path) }];
   }
 
-  // source.type === 'selection'
-  const excluded = new Set(source.excluded ?? []);
-
-  // Exclusion par préfixe : un asset `cours/12/draft/x.jpg` est exclu si
-  // `cours/12/draft` est dans excluded.
-  const isExcluded = (path: string): boolean => {
-    if (excluded.has(path)) return true;
-    for (const ex of excluded) {
-      if (path.startsWith(`${ex}/`)) return true;
-    }
-    return false;
-  };
+  const excluded = (source.excluded ?? []).map(trimSlashes);
+  const isExcluded = (path: string): boolean =>
+    excluded.some((ex) => path === ex || path.startsWith(`${ex}/`));
 
   const out: ResolvedItem[] = [];
   const seen = new Set<string>();
+  const push = (item: ResolvedItem): void => {
+    if (seen.has(item.path)) return;
+    seen.add(item.path);
+    out.push(item);
+  };
 
-  for (const rootPath of source.roots) {
-    if (isExcluded(rootPath)) continue;
+  for (const root of source.roots.map(trimSlashes)) {
+    if (isExcluded(root)) continue;
+    const name = lastSegment(root);
 
-    // 1) Le root est-il un fichier ?
-    //    Stratégie : tenter getNode pour discriminer file/folder.
-    //    Si l'adapter n'a pas getNode, on assume folder et on liste.
-    const rootNode = adapter.getNode
-      ? await adapter.getNode(rootPath)
-      : null;
-
+    const rootNode = adapter.getNode ? await adapter.getNode(root) : null;
     if (rootNode?.type === "file") {
-      if (!seen.has(rootPath)) {
-        out.push({ type: "file", path: rootPath });
-        seen.add(rootPath);
-      }
+      push({ type: "file", path: root, relative: name });
       continue;
     }
 
-    // 2) Sinon, c'est un dossier : on liste son contenu récursif via getTree
-    //    pour récupérer tous les descendants.
-    if (!adapter.getTree) {
-      throw new Error(
-        "Adapter does not support getTree(). " +
-          "Cannot resolve a 'selection' source without recursive listing."
-      );
+    // Dossier sans exclusion à l'intérieur : déplacé d'un bloc.
+    if (!excluded.some((ex) => ex.startsWith(`${root}/`))) {
+      push({ type: "folder", path: root, relative: name });
+      continue;
     }
 
-    const subtree = await adapter.getTree({ path: rootPath, depth: Infinity });
-
-    // Parcourir le sous-arbre en profondeur, ramasser tous les files non exclus.
+    // Dossier avec exclusions : fichier par fichier, chacun gardant son chemin relatif.
+    if (!adapter.getTree) {
+      throw new Error("Adapter does not support getTree().");
+    }
+    const subtree = await adapter.getTree({ path: root, depth: Infinity });
     walkTree(subtree.root, (node) => {
-      if (node.type === "file" && !isExcluded(node.path) && !seen.has(node.path)) {
-        out.push({ type: "file", path: node.path });
-        seen.add(node.path);
-      }
+      if (node.type !== "file" || isExcluded(node.path)) return;
+      push({ type: "file", path: node.path, relative: `${name}/${node.path.slice(root.length + 1)}` });
     });
   }
 
   return out;
 }
 
-/**
- * Visite récursive d'un arbre de StorageNode.
- */
-function walkTree(
-  node: import("@contracts/storage").StorageNode,
-  visit: (node: import("@contracts/storage").StorageNode) => void
-): void {
+function walkTree(node: StorageNode, visit: (node: StorageNode) => void): void {
   visit(node);
   if (node.type === "folder" && node.children) {
-    for (const child of node.children) {
-      walkTree(child, visit);
-    }
+    for (const child of node.children) walkTree(child, visit);
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Résolution de la target                                                   */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Calcule le path concret d'arrivée pour un item donné.
- *
- * Pour une target de type `folder`, le path concret est `<targetFolder>/<sourceTail>`
- * où `sourceTail` est le dernier segment du path source (le nom du fichier
- * ou du dossier).
- *
- * Pour une target de type `status-folder`, on remplace le segment de statut
- * dans le path source. Convention : le statut est le SECOND segment du path
- * (juste après l'appRoot). Exemple : `AKFC/pending/cours/12/photo.jpg`
- *   → segment[0] = `AKFC` (appRoot)
- *   → segment[1] = `pending` (statut courant)
- *   → segments[2..] = `cours/12/photo.jpg` (suffixe à préserver)
- */
-function resolveTargetPath(
-  item: ResolvedItem,
-  target: StorageMoveTarget,
-  appRoot: string
-): string {
-  if (target.type === "folder") {
-    const tail = lastSegment(item.path);
-    return `${target.path}/${tail}`;
-  }
-
-  // target.type === 'status-folder'
-  // On remplace le segment de statut dans le path source.
-  const parts = item.path.split("/").filter(Boolean);
-
-  // Invariant 1 : le path doit commencer par appRoot.
-  // Toute source bien gérée par le système est sous appRoot.
-  if (parts[0] !== appRoot) {
-    throw new Error(
-      `Cannot resolve status-folder target: source path does not start with appRoot. ` +
-        `path="${item.path}" appRoot="${appRoot}"`
-    );
-  }
-
-  // Invariant 2 : le segment de statut (parts[1]) doit être un statut connu.
-  // Cet invariant traduit la règle applicative : un asset géré par le système
-  // ne peut vivre que sous un status-folder ('pending' | 'published' | 'bin').
-  // Si parts[1] est inconnu, c'est qu'on tente un move sur un asset qui
-  // n'a pas été produit par le pipeline d'upload du système — bug en amont
-  // qui mérite d'échouer fort plutôt que d'être bricolé silencieusement.
-  const currentStatus = parts[1];
-  if (
-    currentStatus !== "pending" &&
-    currentStatus !== "published" &&
-    currentStatus !== "bin"
-  ) {
-    throw new Error(
-      `Cannot resolve status-folder target: source path is not under a known ` +
-        `lifecycle status segment. Expected segment[1] in {'pending', 'published', 'bin'}, ` +
-        `got "${currentStatus ?? "<missing>"}". path="${item.path}"`
-    );
-  }
-
-  // [appRoot, <oldStatus>, ...rest] → [appRoot, newStatus, ...rest]
-  parts[1] = target.status;
-  return parts.join("/");
+function trimSlashes(path: string): string {
+  return path.replace(/^\/+|\/+$/g, "");
 }
 
 function lastSegment(path: string): string {

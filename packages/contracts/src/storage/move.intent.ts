@@ -6,78 +6,25 @@ import { z } from 'zod';
  * ─── Le pipeline en trois couches ──────────────────────────────────────────
  *
  *   Couche 3 — INTENTION (ce fichier)
- *     "déplace cette sélection vers le dossier de statut `published`"
- *     Concepts riches : selection, status-folder, lifecycle status
+ *     « déplace cette sélection dans le dossier `AKFC/courses/kali` »
+ *     Concepts riches : un fichier, un dossier, ou une sélection (racines + exclusions).
  *
- *   Couche 2 — RÉSOLUTION (service `resolveMoveIntent`, côté backend)
- *     Expanse la sélection en N items concrets, traduit le status-folder en
- *     path concret, produit N `StorageMoveOperation` atomiques.
+ *   Couche 2 — RÉSOLUTION (service `planMoveOperations`, côté backend)
+ *     Développe la sélection en N éléments concrets et calcule la cible de chacun :
+ *     `<dossier cible>/<dernier segment de la source>`.
  *
  *   Couche 1 — OPÉRATION (`StorageMoveOperation`, cf. storage.types.ts)
- *     "rename `appRoot/pending/cours/12/photo.jpg`
- *      vers `appRoot/published/cours/12/photo.jpg`"
- *     Exécuté par l'adapter de stockage approprié (R2 aujourd'hui).
+ *     « renomme `AKFC/events/forum/affiche.png` en `AKFC/courses/kali/affiche.png` »
+ *     Exécutée par l'adapter de stockage (R2 aujourd'hui).
  *
- * ─── Pourquoi cette intention vit dans le contrat agnostique ───────────────
+ * ─── Ce que l'intention ne porte plus ─────────────────────────────────────
  *
- * À première vue, les concepts de "sélection" et de "statut applicatif"
- * pourraient sembler appartenir à la UI ou à un domaine métier au-dessus
- * du stockage. C'est faux dans ce projet, et la raison est importante :
- *
- *   - Le cycle de vie `pending → published → bin` est une philosophie
- *     applicative que le projet impose à TOUS ses stockages, présents
- *     et futurs. Ce n'est pas une convention d'un fournisseur — c'est une
- *     décision d'architecture.
- *
- *   - La multi-sélection avec roots+excluded est une primitive
- *     d'expression d'intention dont l'orchestration métier a besoin,
- *     pas un détail UI. On veut pouvoir dire "déplace tout sous ces
- *     racines sauf ces exclusions" depuis n'importe quel point du
- *     système — y compris des futurs scripts, jobs, ou APIs.
- *
- * Ces concepts sont donc agnostiques par construction : ils n'ont rien
- * de provider-spécifique, et c'est précisément ce que ce contrat garantit.
- *
- * ─── Note importante sur `status-folder` ──────────────────────────────────
- *
- * Le discriminator `status-folder` désigne un dossier identifié par son
- * statut applicatif (`pending`/`published`/`bin`), par opposition à
- * `folder` qui désigne un dossier identifié par un path concret.
- *
- * `status-folder` n'a rien à voir avec la notion de "dossier virtuel au
- * sens stockage" :
- *   - Avec un provider qui a des dossiers réels (FS local, R2 avec
- *     convention de prefix, etc.), `pending/`, `published/`, `bin/` sont
- *     des dossiers concrets en stockage. La virtualité de la cible est
- *     purement intentionnelle (on identifie le dossier par son rôle
- *     applicatif au lieu d'un path complet).
- *   - Avec un provider sans dossiers physiques (R2), ces mêmes
- *     dossiers sont aussi virtuels au sens stockage — mais c'est un
- *     détail d'implémentation provider, pas une propriété du contrat.
- *
- * Le contrat agnostique ne se prononce QUE sur la signification
- * intentionnelle. C'est aux adapters de gérer la matérialisation.
+ * Au temps de Cloudinary, le statut d'un fichier était un segment de son chemin
+ * (`AKFC/pending/…`, `AKFC/published/…`) et publier était un DÉPLACEMENT : une cible
+ * `status-folder` existait pour cela. Le statut vit désormais dans `MediaAsset.status`
+ * (`media.setStatus`), et la corbeille a son propre circuit (`trash.trashToBin`) : un
+ * déplacement ne vise plus qu'un dossier.
  */
-
-/* -------------------------------------------------------------------------- */
-/*  Statuts applicatifs                                                       */
-/* -------------------------------------------------------------------------- */
-
-export const lifecycleStatusSchema = z.enum(['pending', 'published', 'bin']);
-
-/**
- * Les trois étapes du cycle de vie d'un asset dans le projet.
- *
- *   - `pending`   : asset uploadé, en attente de validation admin.
- *   - `published` : asset validé, visible publiquement.
- *   - `bin`       : asset envoyé à la corbeille, restaurable ou
- *                   définitivement supprimable.
- *
- * Cette palette est volontairement fermée : enrichir le cycle de vie
- * (ajouter un statut `archived` par exemple) doit rester un acte
- * délibéré qui passe par une mise à jour explicite de ce schema.
- */
-export type LifecycleStatus = z.infer<typeof lifecycleStatusSchema>;
 
 /* -------------------------------------------------------------------------- */
 /*  Sources possibles d'un move                                               */
@@ -85,13 +32,11 @@ export type LifecycleStatus = z.infer<typeof lifecycleStatusSchema>;
 
 const fileSourceSchema = z.object({
   type: z.literal('file'),
-  /** Path concret du fichier source. */
   path: z.string().min(1),
 });
 
 const folderSourceSchema = z.object({
   type: z.literal('folder'),
-  /** Path concret du dossier source. */
   path: z.string().min(1),
 });
 
@@ -99,12 +44,11 @@ const folderSourceSchema = z.object({
  * Sélection multi-items.
  *
  * `roots` désigne les paths inclus dans la sélection (au moins un).
- * `excluded` permet d'exclure des sous-paths spécifiques d'une racine
- * englobante — par exemple "tout sous `cours/12/` sauf `cours/12/draft/`".
+ * `excluded` permet d'exclure des sous-paths d'une racine englobante — par exemple
+ * « tout sous `courses/kali/` sauf `courses/kali/brouillons/` ».
  *
- * La résolution (couche 2) expanse cette sélection en N opérations
- * atomiques en s'appuyant sur l'adapter pour lister les enfants des
- * roots et filtrer les exclus.
+ * La résolution (couche 2) développe cette sélection en N opérations atomiques en
+ * s'appuyant sur l'adapter pour lister les enfants des racines et filtrer les exclus.
  */
 const selectionSourceSchema = z.object({
   type: z.literal('selection'),
@@ -121,40 +65,20 @@ const moveSourceSchema = z.discriminatedUnion('type', [
 export type StorageMoveSource = z.infer<typeof moveSourceSchema>;
 
 /* -------------------------------------------------------------------------- */
-/*  Cibles possibles d'un move                                                */
+/*  Cible d'un move                                                           */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Cible exprimée par un path concret.
- * Exemple : `target: { type: 'folder', path: 'AKFC/published/cours/12' }`.
+ * Cible exprimée par un dossier concret.
+ * Exemple : `target: { type: 'folder', path: 'AKFC/courses/kali' }`.
+ *
+ * Le discriminant `type` est conservé : il garde le contrat extensible sans changer la
+ * forme envoyée par le front.
  */
-const concreteFolderTargetSchema = z.object({
+const moveTargetSchema = z.object({
   type: z.literal('folder'),
   path: z.string().min(1),
 });
-
-/**
- * Cible exprimée par un statut applicatif.
- * Le path concret est calculé par la résolution (couche 2) en respectant
- * la convention `${appRoot}/${status}/${suffixePréservéDeLaSource}`.
- *
- * Exemple : `target: { type: 'status-folder', status: 'published' }`
- *   appliqué à une source `AKFC/pending/cours/12/photo.jpg`
- *   produit l'opération `target: { path: 'AKFC/published/cours/12/photo.jpg' }`.
- *
- * Voir le commentaire en tête de fichier pour la nuance importante entre
- * `status-folder` (cible logique par statut) et "dossier virtuel" (notion
- * provider-spécifique sans rapport).
- */
-const statusFolderTargetSchema = z.object({
-  type: z.literal('status-folder'),
-  status: lifecycleStatusSchema,
-});
-
-const moveTargetSchema = z.discriminatedUnion('type', [
-  concreteFolderTargetSchema,
-  statusFolderTargetSchema,
-]);
 
 export type StorageMoveTarget = z.infer<typeof moveTargetSchema>;
 
@@ -167,12 +91,4 @@ export const storageMoveIntentSchema = z.object({
   target: moveTargetSchema,
 });
 
-/**
- * Intention de move, agnostique au provider.
- *
- * Forme à privilégier dans tout l'arbre d'appels qui touche au move :
- * APIs publiques (procédures tRPC), commandes CLI, jobs, etc. La
- * conversion vers les `StorageMoveOperation` bas-niveau est faite par
- * `resolveMoveIntent` une fois et une seule, au plus près de l'adapter.
- */
 export type StorageMoveIntent = z.infer<typeof storageMoveIntentSchema>;

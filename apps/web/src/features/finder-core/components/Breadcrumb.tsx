@@ -85,6 +85,7 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
   const currentPath = useFinderStore((s) => s.currentPath);
   const setPath = useFinderStore((s) => s.setPath);
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
+  const setActionError = useFinderStore((s) => s.setActionError);
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
 
   // Mutation tRPC pour les drops vers le bin (cf. FinderTreeFolder).
@@ -229,18 +230,14 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
             appRoot: APP_ROOT,
             sources: items.map((it) => ({
               kind: it.type === 'folder' ? ('folder' as const) : ('file' as const),
-              // Le LOCALISATEUR, pas le chemin logique : `trash.trashToBin`
-              // met en quarantaine un binaire, pas une vue. Un dossier n'en
-              // porte pas (il vit dans 1..N strates) — c'est le backend qui
-              // résout, cf. `resolvePhysicalLocations`.
-              fullPath: it.storagePath ?? it.path,
+              fullPath: it.path,
             })),
-            logical: true,
           });
+          setActionError(null);
           reloadFolderContent();
           exitMultiSelect();
         } catch (err) {
-          console.error('[Breadcrumb] trashToBin failed', err);
+          setActionError(err instanceof Error ? err.message : 'La mise à la corbeille a échoué.');
         }
         return;
       }
@@ -256,10 +253,11 @@ export default function Breadcrumb({ adapter, rootPath }: Props): JSX.Element {
           items,
           target: { type: 'folder', path: targetPath },
         });
+        setActionError(null);
         reloadFolderContent();
         exitMultiSelect();
       } catch (err) {
-        console.error('[Breadcrumb] drop failed', err);
+        setActionError(err instanceof Error ? err.message : 'Le déplacement a échoué.');
       }
     }
 

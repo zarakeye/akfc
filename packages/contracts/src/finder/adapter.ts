@@ -134,10 +134,8 @@ export interface FileAdapter {
    * Finder, qu'il porte une sélection unique ou multiple, passe toujours
    * par cette méthode.
    *
-   * La cible peut être exprimée :
-   *   - par un path concret (`target: { type: 'folder', path }`)
-   *   - par un statut applicatif (`target: { type: 'status-folder', status }`)
-   * Voir `MoveTarget` pour la sémantique exacte.
+   * La cible est un dossier concret (`target: { type: 'folder', path }`). Changer le statut d'un
+   * fichier n'est pas un déplacement : c'est `media.setStatus`.
    *
    * Optionnel : un adapter en lecture seule peut ne pas l'implémenter.
    */
@@ -169,52 +167,13 @@ export interface MoveItem {
   id: string;
   path: string;
   type: 'file' | 'folder';
-
-  /**
-   * Où vit réellement le binaire, quand ça diffère de `path`.
-   *
-   * `path` est le chemin LOGIQUE — celui par lequel l'admin navigue. Depuis
-   * le chantier « arbre sans strate de statut », il ne porte plus le segment
-   * `pending`/`published`, alors que le binaire, lui, vit encore dessous chez
-   * le provider. Un move a besoin du second : on ne renomme pas un chemin
-   * logique.
-   *
-   * Les DOSSIERS n'en portent pas, et c'est normal : un dossier logique
-   * recouvre plusieurs dossiers physiques (un par strate), il n'a pas
-   * d'emplacement unique à désigner. C'est `toPhysicalMoveIntents`, côté
-   * backend, qui résout ses strates contre le registre `Folder`.
-   *
-   * ⚠️ Ce champ doit rester en phase avec son jumeau `DragItem.storagePath`
-   * (`finder-core/dnd/payload.ts`). Les deux types sont structurellement
-   * identiques et déclarés séparément — l'un est le contrat de l'adapter,
-   * l'autre le payload éphémère du DnD, et `dragItemFromNode` produit le
-   * second là où le premier est attendu. L'assignation étant structurelle,
-   * un champ ajouté d'un seul côté ne se voit qu'à la lecture.
-   *
-   * Transitoire : à l'étape 5 du chantier, `storagePath === path` pour tout
-   * le monde et le champ se supprime.
-   */
-  storagePath?: string;
 }
 
 /**
- * Cible d'un move, discriminée par `type`.
- *
- * - `folder`        : cible exprimée par un path concret (déplacement
- *                     classique vers un dossier connu).
- * - `status-folder` : cible exprimée par un statut applicatif
- *                     (`pending` / `published` / `bin`). C'est l'adapter
- *                     qui calcule le path concret en respectant la
- *                     convention applicative (typiquement : préserver
- *                     la structure post-statut de la source).
- *
- * La cohérence avec `StorageMoveTarget` côté backend est volontaire :
- * ce contrat frontend exprime les mêmes intentions que le contrat
- * agnostique, en vocabulaire UI.
+ * Cible d'un move : un dossier concret. Même forme que `StorageMoveTarget` côté backend.
+ * (L'époque où le statut était un segment du chemin avait aussi une cible `status-folder`.)
  */
-export type MoveTarget =
-  | { type: 'folder'; path: string }
-  | { type: 'status-folder'; status: 'pending' | 'published' | 'bin' };
+export type MoveTarget = { type: 'folder'; path: string };
 
 export interface MoveOptions {
   items: MoveItem[];

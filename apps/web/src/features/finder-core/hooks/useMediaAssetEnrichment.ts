@@ -5,7 +5,6 @@ import { trpc } from '@trpc/trpcClient';
 import { useFinderStore } from '@features/finder-core/state/useFinderStore';
 import type { FinderNode } from '@contracts/finder';
 import { APP_ROOT } from '@config/app';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 /**
  * 🪝 useMediaAssetEnrichment — enrichit les FinderNodes avec les metadata DB
@@ -63,7 +62,7 @@ export function useMediaAssetEnrichment(): void {
   // associée (le model ne track que les assets fichiers).
   // Stringifier pour stabilité de la dépendance React (sinon ré-render
   // à chaque ref change même quand contenu identique).
-  const filePaths = files.map(storagePathOf);
+  const filePaths = files.map((n) => n.path);
   const filePathsKey = filePaths.join('|');
 
   // tRPC query. `enabled: filePaths.length > 0` évite un fetch inutile
@@ -84,7 +83,7 @@ export function useMediaAssetEnrichment(): void {
     // (éviterait un ré-render gratuit). On compare les paths qui ont reçu
     // de la metadata vs ceux qui ont déjà la metadata posée.
     const hasNewData = files.some((f) => {
-      const meta = data[storagePathOf(f)];
+      const meta = data[f.path];
       if (!meta) return false;
       // `createdAt` ne bouge jamais après l'upload : le comparer seul
       // laisserait passer un changement de STATUT (publication), et le
@@ -98,7 +97,7 @@ export function useMediaAssetEnrichment(): void {
     // Merge : pour chaque file, si on a des meta DB, on les fusionne au
     // meta existant (qui contient déjà url/format/kind depuis l'adapter).
     const enrichedFiles: FinderNode[] = files.map((f) => {
-      const meta = data[storagePathOf(f)];
+      const meta = data[f.path];
       if (!meta) return f;
       return {
         ...f,

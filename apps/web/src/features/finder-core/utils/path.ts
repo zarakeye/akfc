@@ -20,7 +20,7 @@ export function buildPathSegments(path: string): PartSegment[] {
 /**
  * Retourne le path parent d'un path donné.
  *
- *   `'AKFC/pending/foo.jpg'` → `'AKFC/pending'`
+ *   `'AKFC/courses/foo.jpg'` → `'AKFC/courses'`
  *   `'AKFC'`                 → `''`
  *   `''`                     → `''`
  *

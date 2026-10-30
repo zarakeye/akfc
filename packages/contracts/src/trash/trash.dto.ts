@@ -23,7 +23,7 @@ export type TrashEntryDTO = {
   /** Nom affiché (ex: "cours1", "image.png") */
   displayName: string;
 
-  /** Chemin complet d'origine (tooltip) : "AKFC/pending/cours/cours1" */
+  /** Chemin complet d'origine (tooltip) : "AKFC/courses/kali" */
   previousPath: string;
 
   /**

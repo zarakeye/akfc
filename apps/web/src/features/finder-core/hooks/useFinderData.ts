@@ -81,7 +81,7 @@ export function useFinderData(adapter: FileAdapter): UseFinderDataResult {
       } catch (err) {
         if (cancelled) return;
         console.error("[useFinderData]", err);
-        setError(err instanceof Error ? err.message : "Failed to load data");
+        setError(err instanceof Error ? err.message : "Le dossier n’a pas pu être chargé.");
       } finally {
         if (!cancelled) setLoading(false);
       }

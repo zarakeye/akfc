@@ -22,17 +22,8 @@ import type { FinderNode } from "@contracts/finder";
  *
  * `items` est une `Map<path, FinderNode>` keyée par `node.path`.
  *
- * ⚠️ `node.path` est un chemin LOGIQUE, et cette clé n'est PAS un
- * localisateur. Le chantier « arbre sans strate de statut » a séparé les deux :
- * `node.path` est ce par quoi l'admin navigue, `node.meta.storagePath` est où
- * vit le binaire. La clé du panier convient au panier — les ghosts de la
- * grille interrogent `isInCart(node.path)`, clé et lecture sont cohérentes —
- * mais tout ce qui parle à la DB doit passer par `storagePathOf(node)`.
- *
- * (Cette ligne disait autrefois « rappel : `FinderNode.id === node.path` dans
- * ce projet ». Ce n'est plus vrai : l'`id` d'un fichier EST son localisateur,
- * pour que deux homonymes — l'un publié, l'autre en attente — restent
- * distinguables sous un même chemin logique.)
+ * `node.path` est la clé de stockage du fichier (`MediaAsset.fullPath`) : la clé du panier est
+ * donc aussi celle qu'on envoie au backend.
  *
  * On stocke le FinderNode
  * COMPLET (pas seulement le path) pour que le bandeau panier puisse afficher

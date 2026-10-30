@@ -14,7 +14,6 @@ import { useNodeActions } from '@features/finder-core/hooks/useNodeActions';
 import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
 import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 import { useSessionStore } from '@lib/stores/useSessionStore';
 import { baseNameOf } from '@features/finder-core/utils/fileType';
 import { parentPath } from '@features/finder-core/utils/path';
@@ -294,7 +293,7 @@ export default function FinderTreeFile({
 
       {publishTarget && (
         <PublishToMembersDialog
-          path={storagePathOf(publishTarget)}
+          path={publishTarget.path}
           defaultTitle={publishTarget.name}
           onClose={() => setPublishTarget(null)}
         />

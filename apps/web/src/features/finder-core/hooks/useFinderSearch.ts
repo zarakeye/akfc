@@ -73,11 +73,6 @@ export function useFinderSearch(): void {
           caseSensitive: flags.caseSensitive,
           wholeWord: flags.wholeWord,
           useRegex: flags.useRegex,
-          // `currentPath` est désormais un chemin logique : sans ce flag, le
-          // prefix ne matcherait aucun `MediaAsset.fullPath`, et les rares
-          // résultats reviendraient en chemins physiques dans une grille qui
-          // affiche du logique.
-          logical: true,
         });
 
         // Map vers SearchResultNode (FinderNode + parentPath).
@@ -103,10 +98,6 @@ export function useFinderSearch(): void {
             type: 'file' as const,
             size: r.bytes ?? undefined,
             meta: {
-              // Un résultat de recherche porte un cuid dans `id` : sans ce
-              // champ, les actions lancées depuis la recherche n'auraient
-              // aucun chemin à envoyer au backend.
-              storagePath: r.storagePath,
               format: r.format ?? undefined,
               kind: deriveKind(r.mimeType ?? ''),
               createdAt: r.createdAt ?? undefined,

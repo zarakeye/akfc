@@ -12,7 +12,6 @@ import {
   buildNodePool,
   resolveSelectedNodes,
 } from '@features/finder-core/utils/selectionNodes';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import { baseNameOf } from '@features/finder-core/utils/fileType';
 
@@ -159,7 +158,7 @@ export function useNodeActions(): {
       //
       // ⚠️ NE PAS utiliser `inBin` ici (qui est calculé sur `currentPath`,
       // c-à-d où se trouve la GridView principale). Un right-click sur un
-      // node TreeView du bin alors que la GridView est sur `pending/` doit
+      // node TreeView du bin alors que la GridView est sur `courses/` doit
       // dispatcher vers `purge`, pas vers `trashToBin`.
       //
       // Convention : on détecte par le **premier node** de la sélection.
@@ -196,12 +195,11 @@ export function useNodeActions(): {
         // ─── Hors bin → trashToBin ──────────────────────────────────────
         const sources = nodes.map((n) => ({
           kind: n.type === 'folder' ? ('folder' as const) : ('file' as const),
-          fullPath: storagePathOf(n),
+          fullPath: n.path,
         }));
         await trashToBinMutation.mutateAsync({
           appRoot: APP_ROOT,
           sources,
-          logical: true,
         });
         utils.storage.getAttentionCounts.invalidate();
       }
@@ -278,7 +276,7 @@ export function useNodeActions(): {
 
       try {
         await renameMutation.mutateAsync({
-          path: storagePathOf(node),
+          path: node.path,
           type: node.type === 'folder' ? 'folder' : 'file',
           newBaseName: clean,
         });
@@ -308,11 +306,11 @@ export function useNodeActions(): {
               type: (nodes[0].type === 'folder' ? 'folder' : 'file') as
                 | 'folder'
                 | 'file',
-              path: storagePathOf(nodes[0]),
+              path: nodes[0].path,
             }
           : {
               type: 'selection' as const,
-              roots: nodes.map(storagePathOf),
+              roots: nodes.map((n) => n.path),
             };
 
       try {

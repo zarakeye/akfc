@@ -60,7 +60,7 @@ export type SortState = {
 /**
  * Un résultat de recherche est un FinderNode enrichi avec son `parentPath`.
  * Le parentPath permet au composant `SearchResultsView` d'afficher où le
- * fichier se trouve (sous-titre type "pending/Stage/karate") et de naviguer
+ * fichier se trouve (sous-titre type "AKFC/seminars/stage-ete") et de naviguer
  * vers ce dossier au click.
  */
 export type SearchResultNode = FinderNode & {
@@ -93,6 +93,13 @@ type FinderState = {
   reloadKey: number;
   reloadFolderContent: () => void;
 
+  /**
+   * Refus d'une action lancée par glisser-déposer (déplacement, mise à la corbeille). Le geste
+   * n'a pas de formulaire où afficher l'erreur : le Finder la montre dans son bandeau.
+   */
+  actionError: string | null;
+  setActionError: (message: string | null) => void;
+
   selection: SelectionState;
   setSelection: (ids: string[], anchorId?: string | null) => void;
   toggleSelect: (id: string) => void;
@@ -111,9 +118,9 @@ type FinderState = {
   /**
    * La lentille de statut posée sur la GRILLE.
    *
-   * Depuis le chantier « arbre sans strate de statut », un dossier contient
-   * ses contenus en attente ET ses contenus publiés. Ce filtre rend ce que la
-   * strate donnait gratuitement — sans la strate.
+   * Un dossier contient ses fichiers en attente ET ses fichiers validés : le
+   * statut est une métadonnée, pas un lieu. Ce filtre permet d'en voir une
+   * seule sorte sans changer de dossier.
    *
    * ⚠️ Il ne touche PAS l'arbre, délibérément. Il n'est jamais transmis à
    * `FinderTree` : la structure reste stable quel que soit le filtre actif.
@@ -273,6 +280,9 @@ export const useFinderStore = create<FinderState>((set) => ({
     }),
 
   reloadKey: 0,
+
+  actionError: null,
+  setActionError: (message) => set({ actionError: message }),
 
   reloadFolderContent: () =>
     set((state) => ({

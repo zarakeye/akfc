@@ -300,15 +300,9 @@ export const memberDocumentRouter = router({
         });
       }
 
-      // Résolution par chemin logique, tolérante à l'extension (comme
-      // media.updateDescription) : le finder fournit un chemin, pas un id.
-      const asset = await ctx.prisma.mediaAsset.findFirst({
-        where: {
-          OR: [
-            { fullPath: input.path },
-            { fullPath: { startsWith: `${input.path}.` } },
-          ],
-        },
+      // Le finder fournit un chemin, pas un id : la clé de stockage (`fullPath`, unique).
+      const asset = await ctx.prisma.mediaAsset.findUnique({
+        where: { fullPath: input.path },
         select: { id: true },
       });
       if (!asset) {
@@ -371,13 +365,8 @@ export const memberDocumentRouter = router({
         });
       }
 
-      const asset = await ctx.prisma.mediaAsset.findFirst({
-        where: {
-          OR: [
-            { fullPath: input.path },
-            { fullPath: { startsWith: `${input.path}.` } },
-          ],
-        },
+      const asset = await ctx.prisma.mediaAsset.findUnique({
+        where: { fullPath: input.path },
         select: { id: true },
       });
       if (!asset) {
@@ -447,13 +436,8 @@ export const memberDocumentRouter = router({
   publicationForPath: adminProcedure
     .input(z.object({ path: z.string() }))
     .query(async ({ ctx, input }) => {
-      const asset = await ctx.prisma.mediaAsset.findFirst({
-        where: {
-          OR: [
-            { fullPath: input.path },
-            { fullPath: { startsWith: `${input.path}.` } },
-          ],
-        },
+      const asset = await ctx.prisma.mediaAsset.findUnique({
+        where: { fullPath: input.path },
         select: { id: true },
       });
       if (!asset) return null;

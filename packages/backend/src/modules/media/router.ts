@@ -1,14 +1,9 @@
 /**
  * 📂 Module `media` — accès aux métadonnées MediaAsset depuis le finder
  *
- * Matching par `fullPath`, avec **tolérance d'extension** héritée : on
- * accepte `fullPath === path` et `fullPath startsWith path + '.'` (un chemin
- * sans extension désigne le fichier du même nom avec extension). Sur R2 les
- * chemins portent toujours leur extension : le premier cas suffit.
- *
- * Le `+ '.'` dans le startsWith évite de matcher accidentellement
- * `foobar.jpg` quand on cherche `foo` (foobar.jpg ne commence pas par
- * "foo.", il commence par "foob").
+ * Matching EXACT par `fullPath` : la clé de stockage EST le chemin. (L'époque Cloudinary tolérait un
+ * chemin sans extension, `startsWith(path + '.')` ; sur R2 un chemin porte toujours la sienne, et
+ * cette tolérance faisait correspondre « photo.jpg » à « photo.jpg.zip ».)
  *
  * Les résultats sont **toujours indexés par le path d'entrée** (UI-facing),
  * pas par le fullPath DB. C'est ce que le frontend attend depuis Phase 1.
@@ -23,10 +18,6 @@ import { sameAppRoot } from '@backend/trpc/middleware';
 import type { ResolvedMedia } from '@contracts/page';
 import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
 import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
-import {
-  physicalCandidates,
-  toLogicalPath,
-} from '@backend/modules/storage/logicalPath';
 import { assertStatusChangeDoesntUnpublishReferencedAssets } from '@backend/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service';
 
 /* -------------------------------------------------------------------------- */
@@ -57,16 +48,6 @@ function fileNameOf(fullPath: string): string {
   return fullPath.split('/').pop() ?? fullPath;
 }
 
-/**
- * Détermine si un `fullPath` DB matche un `path` d'entrée frontend.
- * Cf. doc en tête de fichier.
- */
-function matchesPath(fullPath: string, inputPath: string): boolean {
-  if (fullPath === inputPath) return true;
-  if (fullPath.startsWith(`${inputPath}.`)) return true;
-  return false;
-}
-
 /* -------------------------------------------------------------------------- */
 /*                                 ROUTER                                     */
 /* -------------------------------------------------------------------------- */
@@ -76,8 +57,7 @@ const storageProcedure = protectedProcedure.use(sameAppRoot);
 
 export const mediaRouter = router({
   /**
-   * Lookup batch des MediaAsset rows pour une liste de paths.
-   * Matching tolérant à l'extension (cf. doc en tête de fichier).
+   * Lookup batch des MediaAsset rows pour une liste de paths (matching exact).
    */
   getByPaths: storageProcedure
     .input(
@@ -91,17 +71,10 @@ export const mediaRouter = router({
       // Statut, auteur, description : la même règle que la lecture du dossier.
       await assertCanReadPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: input.paths });
 
-      // Construit les conditions OR : pour chaque path, on essaie
-      // (exact match) OU (match avec extension).
-      const orConditions = input.paths.flatMap((p) => [
-        { fullPath: p },
-        { fullPath: { startsWith: `${p}.` } },
-      ]);
-
       const assets = await ctx.prisma.mediaAsset.findMany({
         where: {
           appRoot: input.appRoot,
-          OR: orConditions,
+          fullPath: { in: input.paths },
         },
         include: {
           uploader: {
@@ -132,13 +105,7 @@ export const mediaRouter = router({
       > = {};
 
       for (const asset of assets) {
-        if (!asset.fullPath) continue;
-        // Retrouve le path d'entrée qui matche cet asset.
-        // O(N) par asset, donc O(N*M) global — acceptable pour N,M ≤ 500.
-        const inputPath = input.paths.find((p) => matchesPath(asset.fullPath!, p));
-        if (!inputPath) continue;
-
-        byPath[inputPath] = {
+        byPath[asset.fullPath] = {
           // Source de vérité visée du statut (cf. MediaMeta.status).
           status: asset.status,
           createdAt: asset.uploadedAt.toISOString(),
@@ -160,8 +127,6 @@ export const mediaRouter = router({
    * 🔗 Résout une liste de paths (côté UI/finder) vers leur `mediaId`
    * stable correspondant.
    *
-   * Matching tolérant à l'extension (cf. doc en tête de fichier).
-   *
    * Retourne un Record indexé par le path d'entrée. Si un path ne
    * correspond à aucun asset, la valeur est `null` plutôt qu'omise.
    */
@@ -178,26 +143,15 @@ export const mediaRouter = router({
       }
       await assertCanReadPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: input.paths });
 
-      const orConditions = input.paths.flatMap((p) => [
-        { fullPath: p },
-        { fullPath: { startsWith: `${p}.` } },
-      ]);
-
       const assets = await ctx.prisma.mediaAsset.findMany({
-        where: { appRoot: input.appRoot, OR: orConditions },
+        where: { appRoot: input.appRoot, fullPath: { in: input.paths } },
         select: { id: true, fullPath: true },
       });
 
       const byPath: Record<string, string | null> = {};
       for (const p of input.paths) byPath[p] = null;
 
-      for (const asset of assets) {
-        if (!asset.fullPath) continue;
-        const inputPath = input.paths.find((p) =>
-          matchesPath(asset.fullPath!, p),
-        );
-        if (inputPath) byPath[inputPath] = asset.id;
-      }
+      for (const asset of assets) byPath[asset.fullPath] = asset.id;
 
       return byPath;
     }),
@@ -283,15 +237,6 @@ export const mediaRouter = router({
         appRoot: z.string().min(1),
         prefix: z.string().min(1),
         query: z.string().min(1).max(200),
-        /**
-         * `prefix` est un chemin LOGIQUE (cf. le flag `logical` du router
-         * storage) : la recherche s'élargit alors à ses emplacements
-         * physiques, replie les chemins trouvés, et n'expose plus les
-         * strates `pending`/`published` comme des dossiers.
-         *
-         * Baissé (le défaut), rien ne change.
-         */
-        logical: z.boolean().optional(),
         caseSensitive: z.boolean().default(false),
         wholeWord: z.boolean().default(false),
         useRegex: z.boolean().default(false),
@@ -330,47 +275,45 @@ export const mediaRouter = router({
         return { results: [], truncated: false };
       }
 
-      // ─── Pliage de la strate de statut ────────────────────────────
+      // 2. Lecture par paquets, triés par chemin, jusqu'à avoir assez de fichiers qui correspondent.
       //
-      // Un prefix logique recouvre plusieurs emplacements physiques :
-      // `AKFC/cours` vit sous `pending`, sous `published`, et (après
-      // l'étape 4 du chantier) à plat. On interroge les trois.
-      //
-      // `toLogical` replie ensuite chaque fullPath trouvé. Tout ce qui suit
-      // — dérivation des dossiers, calcul des parents, noms — travaille donc
-      // en chemins LOGIQUES sans le savoir, et n'a pas eu à changer.
-      const prefixes = input.logical
-        ? physicalCandidates(input.prefix, input.appRoot)
-        : [input.prefix];
-
-      const toLogical = (fullPath: string): string =>
-        input.logical ? toLogicalPath(fullPath, input.appRoot) : fullPath;
-
-      // 2. Lookup DB — match par fullPath
-      const candidates = await ctx.prisma.mediaAsset.findMany({
-        where: {
-          appRoot: input.appRoot,
-          OR: prefixes.flatMap((prefix) => [
-            { fullPath: prefix },
-            { fullPath: { startsWith: `${prefix}/` } },
-          ]),
-        },
-        include: {
-          uploader: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              pseudo: true,
-            },
+      // Le filtre (nom, description, expéditeur, éventuellement une expression régulière) s'exécute
+      // ici et non en base : lire « les N premiers » puis filtrer manquerait tout fichier qui
+      // correspond au-delà de ces N. On lit donc tout le sous-arbre, paquet par paquet, dans une
+      // limite de SCAN_MAX lignes (le résultat est alors signalé tronqué).
+      const SCAN_BATCH = 500;
+      const SCAN_MAX = 10_000;
+      const candidates: Array<Awaited<ReturnType<typeof fetchBatch>>[number]> = [];
+      async function fetchBatch(cursor: string | undefined) {
+        return ctx.prisma.mediaAsset.findMany({
+          where: {
+            appRoot: input.appRoot,
+            OR: [{ fullPath: input.prefix }, { fullPath: { startsWith: `${input.prefix}/` } }],
           },
-        },
-        take: input.limit * 5,
-      });
+          include: {
+            uploader: { select: { id: true, firstName: true, lastName: true, pseudo: true } },
+          },
+          orderBy: { fullPath: 'asc' },
+          take: SCAN_BATCH,
+          ...(cursor ? { cursor: { fullPath: cursor }, skip: 1 } : {}),
+        });
+      }
+      let scanTruncated = false;
+      for (let cursor: string | undefined; ; ) {
+        const batch = await fetchBatch(cursor);
+        candidates.push(...batch);
+        if (batch.length < SCAN_BATCH) break;
+        if (candidates.length >= SCAN_MAX) {
+          scanTruncated = true;
+          break;
+        }
+        cursor = batch[batch.length - 1].fullPath;
+      }
 
-      // 3a. FICHIERS qui matchent
+      // 3a. FICHIERS qui matchent : nom d'origine, nom d'affichage, description, expéditeur.
       const filteredFiles = candidates.filter((asset) => {
         if (matcher!(asset.originalFileName)) return true;
+        if (asset.displayName && matcher!(asset.displayName)) return true;
         if (asset.description && matcher!(asset.description)) return true;
         const displayName = composeDisplayName(asset.uploader);
         if (matcher!(displayName)) return true;
@@ -381,11 +324,7 @@ export const mediaRouter = router({
       const folderPaths = new Set<string>();
       for (const asset of candidates) {
         if (!asset.fullPath) continue;
-        // Replié AVANT la dérivation : `folderPaths` étant un Set, le dossier
-        // logique `AKFC/cours` dérivé depuis un asset `pending` et depuis un
-        // asset `published` se dédoublonne tout seul. La fusion des strates
-        // n'a pas besoin d'être écrite — elle tombe.
-        const fullPath = toLogical(asset.fullPath);
+        const fullPath = asset.fullPath;
         const relative = fullPath.startsWith(`${input.prefix}/`)
           ? fullPath.slice(input.prefix.length + 1)
           : fullPath === input.prefix
@@ -412,15 +351,8 @@ export const mediaRouter = router({
         }
       }
 
-      // 3c. STATUS FOLDERS — exposés depuis la racine
-      //
-      // En vue pliée, `pending` et `published` ne sont plus des lieux : les
-      // faire remonter comme résultats de recherche donnerait à l'admin un
-      // dossier sur lequel cliquer et qui n'existe nulle part. `bin`, lui,
-      // reste un vrai dossier et reste cherchable.
-      const STATUS_FOLDERS = input.logical
-        ? ['bin']
-        : ['pending', 'published', 'bin'];
+      // 3c. La corbeille, vrai dossier de la racine, reste cherchable.
+      const STATUS_FOLDERS = ['bin'];
       const statusFolders: Array<{ path: string; name: string }> = [];
       if (input.prefix === input.appRoot) {
         for (const folder of STATUS_FOLDERS) {
@@ -436,7 +368,7 @@ export const mediaRouter = router({
       // 4. Concat + truncation
       matchedFolders.sort((a, b) => a.path.localeCompare(b.path));
       const totalCount = statusFolders.length + matchedFolders.length + filteredFiles.length;
-      const truncated = totalCount > input.limit;
+      const truncated = scanTruncated || totalCount > input.limit;
 
       const folderResultsCount = statusFolders.length + matchedFolders.length;
       const fileBudget = Math.max(0, input.limit - folderResultsCount);
@@ -447,11 +379,6 @@ export const mediaRouter = router({
         kind: 'folder' as const,
         id: `folder:${f.path}`,
         path: f.path,
-        // Pas de `storagePath` sur un dossier : un dossier logique recouvre
-        // plusieurs dossiers physiques, il n'a pas d'emplacement unique à
-        // désigner. Les écritures qui en ont besoin le résolvent côté
-        // backend (cf. `resolvePhysicalLocations`).
-        storagePath: null,
         parentPath: parentOf(f.path, input.appRoot),
         name: f.name,
         mimeType: null,
@@ -467,11 +394,8 @@ export const mediaRouter = router({
       }));
 
       const fileResults = limitedFiles.map((asset) => {
-        // `id` reste le cuid `MediaAsset.id` : c'est une identité d'unicité
-        // parfaitement valable, et le contrat finder l'autorise
-        // explicitement. Le LOCALISATEUR, lui, voyage à part.
-        const storagePath = asset.fullPath!;
-        const path = toLogical(storagePath);
+        // `id` reste le cuid `MediaAsset.id` ; le chemin EST la clé de stockage.
+        const path = asset.fullPath;
         const lastSlash = path.lastIndexOf('/');
         const parentPath = lastSlash > 0 ? path.slice(0, lastSlash) : input.appRoot;
         const name =
@@ -483,7 +407,6 @@ export const mediaRouter = router({
           kind: 'file' as const,
           id: asset.id,
           path,
-          storagePath,
           parentPath,
           name,
           mimeType: asset.mimeType,
@@ -504,7 +427,6 @@ export const mediaRouter = router({
 
   /**
    * ✏️ Mise à jour de la description d'un fichier.
-   * Matching tolérant à l'extension (cf. doc en tête de fichier).
    */
   updateDescription: storageProcedure
     .input(
@@ -522,10 +444,7 @@ export const mediaRouter = router({
       const result = await ctx.prisma.mediaAsset.updateMany({
         where: {
           appRoot: input.appRoot,
-          OR: [
-            { fullPath: input.path },
-            { fullPath: { startsWith: `${input.path}.` } },
-          ],
+          fullPath: input.path,
         },
         data: {
           description: input.description.trim() || null,
@@ -533,69 +452,26 @@ export const mediaRouter = router({
       });
 
       if (result.count === 0) {
-        throw new Error(
-          `Aucune MediaAsset trouvée pour ce fichier (path: ${input.path}). ` +
-            `Si c'est un fichier R2 historique, lance le backfill ` +
-            `via /api/admin/backfill-r2-assets.`,
-        );
-      }
-
-      if (result.count > 1) {
-        console.warn(
-          `[media.updateDescription] ${result.count} rows updated pour path="${input.path}" ` +
-            `— le path matche plusieurs MediaAssets. À investiguer si non intentionnel.`,
-        );
+        throw new TRPCError({ code: "NOT_FOUND", message: "Fichier introuvable." });
       }
 
       return { ok: true, updatedAt: new Date().toISOString() };
     }),
 
   /**
-   * 🔀 Changement de statut — **publier n'est plus un déplacement**.
+   * 🔀 Changement de statut — **publier n'est pas un déplacement**.
    *
-   * ─── Ce que cette mutation remplace ──────────────────────────────────────
+   * Au temps de Cloudinary, le statut était un segment du chemin (`AKFC/pending/…`,
+   * `AKFC/published/…`) : publier déplaçait le binaire, changeait son URL et toutes ses
+   * références. Ici, c'est un UPDATE de `MediaAsset.status`, la source de vérité : atomique, sans
+   * aller-retour avec le stockage, sans binaire qui bouge.
    *
-   * Avant : publier appelait `storage.move` vers `{type:'status-folder'}`.
-   * Le binaire traversait le provider, `reconcileMovedAsset` relisait l'asset
-   * à son nouveau chemin pour en redériver `status`, et deux mécanismes de
-   * synchro devaient tomber d'accord. Un `catch` silencieux de trop et la
-   * ligne décrochait.
+   *   - `file`   : la ligne dont `fullPath` est ce chemin. Zéro ligne est une anomalie (le statut
+   *                n'aurait pas pris sans que personne le sache) : NOT_FOUND.
+   *   - `folder` : toutes les lignes SOUS ce dossier (le `/` final évite que `cours` emporte
+   *                `cours-avance`). Zéro ligne est légitime : un dossier vide n'a rien à publier.
    *
-   * Après : un UPDATE. Atomique, sans aller-retour provider, sans binaire qui
-   * bouge. `MediaAsset.status` cesse d'être un cache dérivé du chemin pour
-   * devenir la source de vérité — c'est l'inversion que tout le chantier vise.
-   *
-   * ─── Pourquoi `sources` et pas `paths` ───────────────────────────────────
-   *
-   * Parce qu'on publie aussi des DOSSIERS, et qu'un dossier n'a pas de
-   * `MediaAsset`. Les deux cas ne se matchent pas de la même façon :
-   *
-   *   - `file`   → le chemin est un LOCALISATEUR. L'appelant front doit passer
-   *                `storagePathOf(node)` — le chemin physique, celui qui matche
-   *                `MediaAsset.fullPath`. Un chemin logique ne matcherait rien
-   *                et cette mutation lèverait. (Tolérance d'extension : cf. la
-   *                doc en tête de fichier.)
-   *
-   *   - `folder` → le chemin n'est PAS un localisateur : un dossier logique vit
-   *                dans 1..N strates. C'est le backend qui résout, via
-   *                `physicalCandidates` — la même règle que le pliage, pas une
-   *                copie. On met à jour tout ce qui vit SOUS l'un des candidats.
-   *
-   * Forme alignée sur `trash.trashToBin` (`sources` + `logical`), qui tranche
-   * déjà exactement le même problème. Une règle, un endroit.
-   *
-   * ─── Zéro ligne touchée : lever ou pas ? ─────────────────────────────────
-   *
-   * Pour un `file`, zéro ligne est une ANOMALIE : le statut n'a pas pris et
-   * personne ne le saurait. On lève. C'est le mode d'échec qui avait éteint
-   * le picker en silence.
-   * Pour un `folder`, zéro ligne est LÉGITIME : un dossier vide n'a rien à
-   * publier. On ne lève pas.
-   *
-   * ─── Pourquoi `bin` n'est pas dans l'enum ────────────────────────────────
-   *
-   * La corbeille garde son système propre (quarantaine physique + TrashEntry).
-   * Y entrer n'est pas un changement de statut : c'est `trash.trashToBin`.
+   * La corbeille n'est pas un statut : y entrer, c'est `trash.trashToBin`.
    */
   setStatus: storageProcedure
     .input(
@@ -610,8 +486,6 @@ export const mediaRouter = router({
           )
           .min(1),
         status: z.enum(["pending", "published"]),
-        /** Les `folder.path` sont des chemins LOGIQUES à résoudre. */
-        logical: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -623,48 +497,30 @@ export const mediaRouter = router({
         paths: input.sources.map((s) => s.path),
       });
 
-      // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page affiche.
-      // Le move avait sa garde (`assertOperationsDontUnpublish...`) ; ce
-      // chemin-ci doit avoir la sienne, sinon publier par la nouvelle voie
-      // contournerait en silence une règle que l'ancienne faisait respecter.
+      // AVANT le moindre UPDATE : on ne dépublie pas ce qu'une page ou une galerie affiche.
       await assertStatusChangeDoesntUnpublishReferencedAssets(
         ctx.prisma,
         input.sources,
         input.status,
         input.appRoot,
-        input.logical,
       );
 
       const results = await Promise.all(
         input.sources.map(async (source) => {
           if (source.kind === "file") {
             const { count } = await ctx.prisma.mediaAsset.updateMany({
-              where: {
-                appRoot: input.appRoot,
-                OR: [
-                  { fullPath: source.path },
-                  { fullPath: { startsWith: `${source.path}.` } },
-                ],
-              },
+              where: { appRoot: input.appRoot, fullPath: source.path },
               data: { status: input.status },
             });
             return { source, count };
           }
 
-          // Dossier : on ratisse chaque strate où il peut vivre. Le `/` final
-          // n'est pas cosmétique — sans lui, publier `cours` publierait aussi
-          // `cours-avance`. C'est la collision de préfixe déjà rencontrée dans
-          // `trashToBin.folder.deleteMany`.
-          const prefixes = input.logical
-            ? physicalCandidates(source.path, input.appRoot)
-            : [source.path];
-
+          // Dossier : tout ce qui vit SOUS lui. Le `/` final n'est pas cosmétique — sans lui,
+          // publier `cours` publierait aussi `cours-avance`.
           const { count } = await ctx.prisma.mediaAsset.updateMany({
             where: {
               appRoot: input.appRoot,
-              OR: prefixes.map((prefix) => ({
-                fullPath: { startsWith: `${prefix}/` },
-              })),
+              fullPath: { startsWith: `${source.path}/` },
             },
             data: { status: input.status },
           });
@@ -676,14 +532,10 @@ export const mediaRouter = router({
         (r) => r.source.kind === "file" && r.count === 0,
       );
       if (silent.length > 0) {
-        throw new Error(
-          `Aucune MediaAsset trouvée pour : ` +
-            `${silent.map((r) => r.source.path).join(", ")}. ` +
-            `Vérifier que l'appelant passe des chemins PHYSIQUES ` +
-            `(storagePathOf), pas des chemins logiques. ` +
-            `Si ce sont des fichiers R2 historiques, lancer le backfill ` +
-            `via /api/admin/backfill-r2-assets.`,
-        );
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Fichier introuvable : ${silent.map((r) => r.source.path).join(", ")}.`,
+        });
       }
 
       return {

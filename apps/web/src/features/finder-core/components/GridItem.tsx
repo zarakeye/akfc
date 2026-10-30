@@ -22,7 +22,6 @@ import { useNodeTextContent } from '@features/finder-core/hooks/useNodeTextConte
 import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
 import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 import { useSessionStore } from '@lib/stores/useSessionStore';
 
 /* -------------------------------------------------------------------------- */
@@ -121,13 +120,13 @@ export default function GridItem({
   pickMode = false,
   isInCart = false,
 }: GridItemProps): JSX.Element {
-  // Détection : ce node est-il un dossier de statut (pending/published/bin) ?
+  // Détection : ce node est-il la corbeille (`AKFC/bin`) ?
   // Si oui, il est exclu du DnD, du longpress, de la checkbox et du menu
   // contextuel — cf. doc dans utils/statusFolders.ts.
   const isStatus = isStatusFolder(node.path);
 
   // Wrapper du callback longpress pour no-op silencieusement sur les
-  // status folders. Le hook est instancié inconditionnellement (rules of hooks).
+  // la corbeille. Le hook est instancié inconditionnellement (rules of hooks).
   const longPress = useLongPress(() => {
     if (isStatus) return;
     onLongPress();
@@ -268,7 +267,7 @@ export default function GridItem({
             ? undefined
             : (e) => {
                 // Bloque le menu contextuel natif ; affiche le nôtre.
-                // Désactivé pour les status folders (pending/published/bin) :
+                // Désactivé pour la corbeille :
                 // ils n'ont pas d'action "Supprimer" / "Mettre à la corbeille"
                 // donc le menu serait vide.
                 e.preventDefault();
@@ -497,7 +496,7 @@ export default function GridItem({
 
       {publishTarget && (
         <PublishToMembersDialog
-          path={storagePathOf(publishTarget)}
+          path={publishTarget.path}
           defaultTitle={publishTarget.name}
           onClose={() => setPublishTarget(null)}
         />

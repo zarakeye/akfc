@@ -92,7 +92,7 @@ export interface StorageAdapter {
    * seul item, paths source et target concrets. Toute l'expressivité
    * riche du domaine (multi-sélection, cibles par statut applicatif)
    * est portée par `StorageMoveIntent` au niveau du contrat, et résolue
-   * en N appels `move()` par le service `resolveMoveIntent` côté backend.
+   * en N appels `move()` par le service `planMoveOperations` côté backend.
    *
    * Sémantique (atomique ? recursif côté provider ? que se passe-t-il
    * si la cible existe ?) à la charge de l'adapter, qui doit la

@@ -126,27 +126,18 @@ function mapFileToFinderNode(
   const name = file.name ?? fallbackName;
   const format = file.metadata?.format;
 
-  // Le LOCALISATEUR : `file.storagePath` (emplacement réel) tant que la vue
-  // pliée n'est pas levée, sinon `file.path`. C'est lui qui construit l'URL :
-  // un chemin logique rendrait 404. Image : vignette 600 px ; autre fichier :
-  // l'original (paramètre ignoré).
-  const storagePath = file.storagePath ?? file.path;
-  const url = getMediaUrl(storagePath, 'medium');
+  // Le chemin EST la clé de stockage. Image : vignette 600 px ; autre fichier : l'original
+  // (paramètre ignoré).
+  const url = getMediaUrl(file.path, 'medium');
 
   return {
-    // `id` = le localisateur, et pas le chemin logique : deux fichiers
-    // homonymes (l'un publié, l'autre en attente de relecture) partagent le
-    // MÊME path logique une fois la strate pliée. Les distinguer est ce qui
-    // évite qu'en sélectionner un sélectionne l'autre — et qu'React en
-    // efface un des deux sur collision de key.
-    id: storagePath,
+    id: file.path,
     name,
     path: file.path,
     type: 'file',
     mimeType: file.metadata?.mimeType,
     meta: {
       url,
-      storagePath,
       format,
       kind: kindFromFormat(format, name),
       status: file.metadata?.status,
@@ -168,42 +159,25 @@ function mapFileToFinderNode(
  *      On envoie une source `file` ou `folder` directe.
  *
  *   2. PLUSIEURS items (multi-sélection).
- *      On utilise `selection` avec tous les paths comme `roots`. Le
- *      backend `resolveMoveIntent` expanse chaque root selon son type
- *      (file pris tel quel, folder listé récursivement) et produit des
- *      ops fichier exécutées par `VirtualStorage.move`.
+ *      On utilise `selection` avec tous les paths comme `roots`. Le backend
+ *      (`planMoveOperations`) déplace chaque fichier, et chaque dossier d'un bloc,
+ *      sous-dossiers compris.
  */
 function moveOptionsToSource(items: MoveOptions['items']): StorageMoveSource {
-  // Le backend attend des SOURCES localisables. Pour un fichier, c'est le
-  // `storagePath` ; pour un dossier, le chemin logique — un dossier logique
-  // n'a pas d'emplacement unique, c'est `toPhysicalMoveIntents` qui résout
-  // ses strates contre le registre `Folder`.
-  const sourcePath = (it: MoveOptions['items'][number]): string =>
-    it.storagePath ?? it.path;
-
   if (items.length === 1) {
     const only = items[0];
-    return { type: only.type, path: sourcePath(only) };
+    return { type: only.type, path: only.path };
   }
 
   return {
     type: 'selection',
-    roots: items.map(sourcePath),
+    roots: items.map((it) => it.path),
   };
 }
 
-/**
- * Traduit la `MoveTarget` UI (discriminée par `type`) vers la
- * `StorageMoveTarget` agnostique. Le parallélisme structurel des deux
- * unions rend la traduction triviale — un simple narrowing par
- * discriminant.
- */
+/** La cible UI et la cible agnostique ont la même forme : un dossier concret. */
 function moveOptionsToTarget(target: MoveOptions['target']): StorageMoveTarget {
-  if (target.type === 'folder') {
-    return { type: 'folder', path: target.path };
-  }
-  // target.type === 'status-folder'
-  return { type: 'status-folder', status: target.status };
+  return { type: 'folder', path: target.path };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -223,23 +197,10 @@ function moveOptionsToTarget(target: MoveOptions['target']): StorageMoveTarget {
  */
 export const finderStorageAdapter: FileAdapter = {
   async list(options: ListOptions): Promise<ListResult> {
-    // ─── Vue LOGIQUE ────────────────────────────────────────────────
-    //
-    // Le nœud `AKFC/cours/x` fusionne les physiques `AKFC/pending/cours/x`
-    // et `AKFC/published/cours/x`. Le statut cesse d'être un lieu et
-    // redevient une métadonnée (`meta.status`, cf. `statusOf`).
-    //
-    // Les chemins qui ressortent d'ici sont donc LOGIQUES. Chaque fichier
-    // porte son emplacement réel dans `meta.storagePath` — c'est lui, et
-    // pas `path`, qu'attendent le provider et la DB (cf. `storagePathOf`).
-    //
-    // ⚠️ Ce flag est indivisible : lire en plié impose d'écrire en plié
-    // (`move`, `trashToBin`, `searchRecursive`). Les mélanger enverrait des
-    // chemins logiques à `resolveTargetPath`, qui lève.
+    // Le statut n'est pas un lieu : c'est une métadonnée de chaque fichier (`meta.status`).
     const { root } = await trpcClient.storage.getTree.query({
       path: options.path,
       depth: 1,
-      logical: true,
     });
 
     const { folders, files } = mapStorageTreeToFinderNodes(root);
@@ -255,7 +216,6 @@ export const finderStorageAdapter: FileAdapter = {
     const { root } = await trpcClient.storage.getTree.query({
       path: options.path,
       depth: options.depth ?? 1,
-      logical: true,
     });
 
     return { root: mapStorageNodeToFinderNode(root) };
@@ -277,14 +237,9 @@ export const finderStorageAdapter: FileAdapter = {
     const source = moveOptionsToSource(options.items);
     const target = moveOptionsToTarget(options.target);
 
-    // Les sources sont des localisateurs (fichiers) ou des chemins logiques
-    // de dossier ; la cible est logique. `toPhysicalMoveIntents` redescend le
-    // tout dans l'espace physique, en émettant une intention par strate
-    // réellement occupée, et en faisant hériter chaque cible de la strate de
-    // sa source — un DnD réorganise, il ne publie pas.
+    // Un DnD réorganise, il ne publie pas : le statut des fichiers déplacés ne change pas.
     await trpcClient.storage.move.mutate({
       intent: { source, target },
-      logical: true,
     });
   },
 };

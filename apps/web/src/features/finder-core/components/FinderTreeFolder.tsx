@@ -35,9 +35,6 @@ import {
   tryParsePayload,
   isDropAllowed,
   isDropEffective,
-  isStatusChangeDrop,
-  statusSegment,
-  getDraggingPaths,
 } from "@features/finder-core/dnd/payload";
 import FinderTreeFile from "@features/finder-core/components/FinderTreeFile";
 
@@ -90,7 +87,7 @@ export default function FinderTreeFolder({
   const isActive = node.path === currentPath;
 
   const isStatus = isStatusFolder(node.path);
-  // La corbeille (bin) est un status folder, mais on autorise l'édition de
+  // La corbeille (bin) est un dossier protégé, mais on autorise l'édition de
   // son LABEL d'affichage (renameNode route bin → setFolderLabel ; le path
   // physique `bin` reste). Drag/select/suppression restent interdits.
   const isRenamableRoot = node.path === `${APP_ROOT}/bin`;
@@ -175,6 +172,7 @@ export default function FinderTreeFolder({
   const [isDragOver, setIsDragOver] = useState(false);
 
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
+  const setActionError = useFinderStore((s) => s.setActionError);
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
   const toggleSelect = useFinderStore((s) => s.toggleSelect);
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
@@ -269,15 +267,8 @@ export default function FinderTreeFolder({
     return e.dataTransfer.types.includes(FINDER_DRAG_MIME);
   }
 
-  // Surbrillance de survol : n'allume ce nœud que s'il RECEVRA réellement
-  // le drop. Un changement de statut ne cible QUE le dossier-statut — un
-  // sous-dossier survolé pendant un tel drag ne doit donc pas s'allumer
-  // (sinon l'utilisateur croit droper là, alors que seul le statut change).
+  // Tout dossier survolé peut recevoir le drop : le statut d'un fichier n'est pas un lieu.
   function acceptsHighlight(): boolean {
-    if (isStatusChangeDrop(node.path, getDraggingPaths(), APP_ROOT)) {
-      // Drag inter-statuts : seul le dossier-statut lui-même s'illumine.
-      return isStatus;
-    }
     return true;
   }
 
@@ -328,18 +319,14 @@ export default function FinderTreeFolder({
           sources: items.map((it) => ({
             kind:
               it.type === "folder" ? ("folder" as const) : ("file" as const),
-            // Le LOCALISATEUR, pas le chemin logique : `trash.trashToBin`
-            // met en quarantaine un binaire, pas une vue. Un dossier n'en
-            // porte pas (il vit dans 1..N strates) — c'est le backend qui
-            // résout, cf. `resolvePhysicalLocations`.
-            fullPath: it.storagePath ?? it.path,
+            fullPath: it.path,
           })),
-          logical: true,
         });
+        setActionError(null);
         reloadFolderContent();
         exitMultiSelect();
       } catch (err) {
-        console.error("[FinderTreeFolder] trashToBin failed", err);
+        setActionError(err instanceof Error ? err.message : "La mise à la corbeille a échoué.");
       }
       return;
     }
@@ -351,28 +338,17 @@ export default function FinderTreeFolder({
       return;
     }
 
-    // Changement de statut vs déplacement : logique partagée avec la
-    // surbrillance (isStatusChangeDrop, dnd/payload). Un drop inter-statuts
-    // substitue le seul segment de statut et préserve le sous-chemin ; la
-    // position fine est ignorée (décision 2026-07-03).
-    const itemPaths = items.map((it) => it.path);
-    const targetStatus = statusSegment(targetPath, APP_ROOT);
-    const isStatusChange = isStatusChangeDrop(targetPath, itemPaths, APP_ROOT);
-
+    // Un drop déplace ; il ne change jamais le statut (publier, c'est media.setStatus).
     try {
       await adapter.moveItems({
         items,
-        target: isStatusChange
-          ? {
-              type: "status-folder",
-              status: targetStatus as "pending" | "published",
-            }
-          : { type: "folder", path: targetPath },
+        target: { type: "folder", path: targetPath },
       });
+      setActionError(null);
       reloadFolderContent();
       exitMultiSelect();
     } catch (err) {
-      console.error("[FinderTreeFolder] drop failed", err);
+      setActionError(err instanceof Error ? err.message : "Le déplacement a échoué.");
     }
   }
 

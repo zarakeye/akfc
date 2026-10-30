@@ -8,13 +8,11 @@ import { useFinderStore, type StatusFilter } from '@features/finder-core/state/u
 /**
  * La lentille de statut : Tous / En attente / Validés.
  *
- * Avant le chantier « arbre sans strate de statut », cette distinction était
- * un LIEU : `AKFC/pending/…` d'un côté, `AKFC/published/…` de l'autre. On la
- * lisait dans le fil d'Ariane, on la changeait en naviguant. C'était gratuit
- * — et c'est ce qui coûtait un déplacement de binaire à chaque publication.
- *
- * Le statut est redevenu une métadonnée. Cette barre rend ce que la strate
- * donnait, sans ce qu'elle coûtait.
+ * Au temps de Cloudinary, cette distinction était un LIEU : `AKFC/pending/…`
+ * d'un côté, `AKFC/published/…` de l'autre. On la lisait dans le fil d'Ariane,
+ * on la changeait en naviguant — au prix d'un déplacement de binaire à chaque
+ * publication. Le statut est une métadonnée ; cette barre en rend la lecture
+ * sans ce coût.
  *
  * ⚠️ Elle ne filtre QUE la grille. Cf. `statusFilter` dans le store : l'arbre
  * reste stable quel que soit le filtre actif.

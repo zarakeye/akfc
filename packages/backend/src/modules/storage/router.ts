@@ -13,6 +13,20 @@ const EXTENSION_PATTERN = /\.[A-Za-z0-9]{1,8}$/;
  * noeud dont le chemin est exactement `binPath`. (La vue plate lit trash.listBin,
  * le drill-down passe par `list` — aucun ne depend de getTree.)
  */
+/**
+ * La corbeille (`<racine>/bin/…`) n'appartient qu'au routeur `trash` : ni renommage ni déplacement
+ * n'y entre ou n'en sort par `storage`. Restaurer et vider ont leurs propres gardes (TrashEntry).
+ */
+function assertOutsideBin(appRoot: string, paths: readonly string[]): void {
+  const bin = `${appRoot}/bin`;
+  if (paths.some((p) => p === bin || p.startsWith(`${bin}/`))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "La corbeille se gère depuis sa propre vue (restaurer, supprimer).",
+    });
+  }
+}
+
 function stripBinSubtree(node: StorageFolderNode, binPath: string): void {
   for (const child of node.children ?? []) {
     if (child.type !== "folder") continue;
@@ -45,12 +59,11 @@ import { uploadTypeError } from "@contracts/storage/allowedUploadTypes";
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
 import { VirtualStorage } from "@backend/modules/storage/virtualStorage";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
-import { toPhysicalMoveIntents } from "@backend/modules/storage/toPhysicalMoveIntents.service";
+import { isRootFolder } from "@backend/modules/storage/services/ensureRootFolders.service";
 import {
   planMoveOperations,
   executeMoveOperations,
 } from "@backend/modules/storage/resolveMoveIntent.service";
-import { assertOperationsDontUnpublishReferencedAssets } from "@backend/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service";
 import { countPersoImages } from "@backend/modules/media/services/countPersoImages.service";
 import { PERSO_PHOTO_QUOTA } from "@backend/modules/media/services/persoPhotoQuota.constants";
 import { listCommonRepositoryFolders } from "@backend/modules/media/services/listCommonRepositoryFolders.service";
@@ -337,38 +350,6 @@ export const storageRouter = router({
     );
   }),
 
-  /**
-   * ═══ Le flag `logical` — chantier « arbre sans strate de statut » ═══════
-   *
-   * Levé, il enveloppe l'adapter dans `StatusFoldingReadView` : le nœud
-   * logique `AKFC/cours/x` fusionne alors les physiques
-   * `AKFC/pending/cours/x` et `AKFC/published/cours/x`, et le statut cesse
-   * d'être un lieu pour redevenir ce qu'il aurait toujours dû être — une
-   * métadonnée (`MediaAsset.status`, déjà exposée en `MediaMeta.status`).
-   *
-   * Baissé (le défaut), rien ne change : l'appelant voit l'arbre physique,
-   * exactement comme avant ce chantier.
-   *
-   * ─── Pourquoi un flag plutôt qu'une bascule sèche ─────────────────────
-   *
-   * Le pliage change ce que voit l'admin dans sa bibliothèque. Un flag
-   * découple la mise en place (backend, inerte, vérifiable) du basculement
-   * (front, visible) — et surtout, il rend le retour arrière instantané :
-   * un booléen, pas un revert en catastrophe un soir de démo.
-   *
-   * ⚠️ Un appelant qui lève `logical` sur une lecture DOIT le lever aussi
-   * sur `move` : les chemins qu'il reçoit sont logiques, et le pipeline de
-   * move ne sait travailler qu'en physique (cf. `toPhysicalMoveIntents`).
-   * Les mélanger, c'est envoyer des chemins logiques à `resolveTargetPath`,
-   * qui lève. En pratique il n'y a qu'un seul appelant
-   * (`finderStorageAdapter`), donc un seul endroit à tenir cohérent.
-   *
-   * ─── Durée de vie ─────────────────────────────────────────────────────
-   *
-   * Transitoire. À l'étape 5 du chantier, tous les binaires vivent à plat,
-   * le pliage devient l'identité, et le flag disparaît avec les trois
-   * modules qu'il commande.
-   */
   list: protectedProcedure
     .input(
       z.object({
@@ -376,7 +357,6 @@ export const storageRouter = router({
         path: z.string().min(1),
         cursor: z.string().optional(),
         limit: z.number().int().positive().optional(),
-        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -389,9 +369,6 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
-      // fusionner. On lit directement le backend. Le flag `logical` est
-      // désormais sans effet sur la lecture.
       const reader = backend;
       const result = await reader.list({
         path: input.path,
@@ -441,7 +418,6 @@ export const storageRouter = router({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
         depth: z.number().int().positive().optional(),
-        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -454,9 +430,6 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
-      // fusionner. On lit directement le backend. Le flag `logical` est
-      // désormais sans effet sur la lecture.
       const reader = backend;
       // Perso : quand la grille demande le conteneur personal-space
       // (adapter.list = getTree depth1), on lit en réalité le sous-espace de
@@ -559,7 +532,6 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
-        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -572,9 +544,6 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
-      // fusionner. On lit directement le backend. Le flag `logical` est
-      // désormais sans effet sur la lecture.
       const reader = backend;
       if (!reader.getNode) {
         throw new Error(
@@ -589,7 +558,6 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         path: z.string().min(1),
-        logical: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -602,9 +570,6 @@ export const storageRouter = router({
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
-      // Pliage retiré (étape 6) : les binaires sont à plat, plus de strate à
-      // fusionner. On lit directement le backend. Le flag `logical` est
-      // désormais sans effet sur la lecture.
       const reader = backend;
       if (!reader.getMetadata) {
         throw new Error(
@@ -634,6 +599,7 @@ export const storageRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Écriture : un administrateur partout, un éditeur dans l'espace de son groupe.
       await assertCanWritePaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
+      assertOutsideBin(ctx.appRoot, [input.path]);
       const cleanName = input.newBaseName.trim();
       if (!cleanName) {
         throw new TRPCError({
@@ -645,6 +611,14 @@ export const storageRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Le nom ne peut pas contenir « / ».",
+        });
+      }
+      // « . » et « .. » feraient un chemin que toutes les gardes refusent (`includes("..")`) : le
+      // dossier renommé deviendrait illisible pour tout le monde.
+      if (cleanName === "." || cleanName.includes("..")) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Le nom ne peut pas contenir « .. ».",
         });
       }
 
@@ -689,18 +663,11 @@ export const storageRouter = router({
       // Depuis la slugification (increment 1), la clé de stockage est un slug
       // stable et opaque. Renommer un fichier ne déplace donc plus rien chez
       // le provider et ne devine plus d'extension (fin du bug historique) :
-      // c'est un simple UPDATE de `displayName`. Match logique tolérant à
-      // l'extension, comme `media.updateDescription`. Deux fichiers peuvent partager un nom
-      // d'affichage : pas de contrôle de collision ici, la clé reste unique.
+      // c'est un simple UPDATE de `displayName`, par le chemin exact. Deux fichiers peuvent
+      // partager un nom d'affichage : pas de contrôle de collision ici, la clé reste unique.
       if (input.type === "file") {
         const result = await ctx.prisma.mediaAsset.updateMany({
-          where: {
-            appRoot: ctx.appRoot,
-            OR: [
-              { fullPath: input.path },
-              { fullPath: { startsWith: `${input.path}.` } },
-            ],
-          },
+          where: { appRoot: ctx.appRoot, fullPath: input.path },
           data: { displayName: cleanName },
         });
         if (result.count === 0) {
@@ -736,15 +703,18 @@ export const storageRouter = router({
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
 
-      // On n'écrase jamais un élément existant.
-      if (adapter.getNode) {
-        const collision = await adapter.getNode(targetPath);
-        if (collision) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Un élément porte déjà ce nom dans ce dossier.",
-          });
-        }
+      // On n'écrase jamais un élément existant : un objet (ou un dossier non vide) chez le stockage,
+      // une ligne MediaAsset, un dossier enregistré (même contrôle que storage.move).
+      const [collision, asset, folder] = await Promise.all([
+        adapter.getNode ? adapter.getNode(targetPath) : Promise.resolve(null),
+        ctx.prisma.mediaAsset.findUnique({ where: { fullPath: targetPath }, select: { id: true } }),
+        ctx.prisma.folder.findFirst({ where: { appRoot: ctx.appRoot, fullPath: targetPath }, select: { id: true } }),
+      ]);
+      if (collision || asset || folder) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Un élément porte déjà ce nom dans ce dossier.",
+        });
       }
 
       // `move` est optionnel sur l'interface d'adapter : on garde avant
@@ -769,13 +739,6 @@ export const storageRouter = router({
       z.object({
         provider: storageProviderSchema.optional(),
         intent: storageMoveIntentSchema,
-        /**
-         * L'intention est exprimée en chemins LOGIQUES (cf. `list`).
-         *
-         * Un appelant qui lit en `logical` DOIT lever ce flag ici aussi :
-         * les chemins qu'il détient viennent de la vue pliée.
-         */
-        logical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -784,12 +747,13 @@ export const storageRouter = router({
       {
         const source = input.intent.source;
         const sourcePaths = source.type === "selection" ? source.roots : [source.path];
-        const targetPaths = input.intent.target.type === "folder" ? [input.intent.target.path] : [];
+        const targetPaths = [input.intent.target.path];
         await assertCanWritePaths({
           prisma: ctx.prisma,
           userId: ctx.sessionClient.user.id,
           paths: [...sourcePaths, ...targetPaths],
         });
+        assertOutsideBin(ctx.appRoot, [...sourcePaths, ...targetPaths]);
       }
 
       // Dossier-entité : chemin immuable, pas de déplacement du binaire.
@@ -801,7 +765,17 @@ export const storageRouter = router({
             : input.intent.source.type === "selection"
               ? input.intent.source.roots
               : [];
-        if (movedPaths.some((pth) => isProtectedEntityFolderPath(pth))) {
+        // Les racines de contenu (cours, stages, événements, espaces…) et la corbeille non plus :
+        // leur chemin est connu du code (destinations d'envoi, gardes, libellés).
+        const roots = await requiredRootPaths(ctx.prisma, ctx.appRoot);
+        if (
+          movedPaths.some(
+            (pth) =>
+              isProtectedEntityFolderPath(pth) ||
+              roots.includes(pth) ||
+              isRootFolder(ctx.appRoot, pth),
+          )
+        ) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Ce dossier système ne peut pas être déplacé.",
@@ -811,64 +785,44 @@ export const storageRouter = router({
 
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
 
-      // ⚠️ L'adapter reste PHYSIQUE, toujours. On n'enveloppe JAMAIS le
-      // pipeline de move dans `StatusFoldingReadView` : `planMoveOperations`
-      // lit la source via cet adapter puis calcule la cible avec
-      // `resolveTargetPath`, qui exige un segment de statut en position 1 et
-      // lève sinon. Lui donner des chemins logiques casserait la
-      // publication. La traduction se fait en amont, sur l'INTENTION.
       const adapter = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
 
-      // Une intention logique peut recouvrir plusieurs emplacements réels
-      // (un dossier logique vit dans 1..N strates). `toPhysicalMoveIntents`
-      // les résout contre la DB et n'émet que des intentions RÉELLES — pas
-      // de spéculation, donc pas de tolérance à installer ici.
-      const intents = input.logical
-        ? await toPhysicalMoveIntents({
-            prisma: ctx.prisma,
-            appRoot: ctx.appRoot,
-            intent: input.intent,
-          })
-        : [input.intent];
-
-      // On planifie TOUT avant de garder, et on garde sur l'UNION.
-      //
-      // C'est le point non négociable de cet enchaînement :
-      // `assertOperationsDontUnpublishReferencedAssets` doit voir l'ensemble
-      // des opérations. La faire tourner par intention la laisserait
-      // raisonner sur un sous-ensemble — et une garde qui juge sur une
-      // partie du geste ne garde rien.
-      const plans = await Promise.all(
-        intents.map((intent) =>
-          planMoveOperations({ adapter, appRoot: ctx.appRoot, intent }),
-        ),
+      const planned = await planMoveOperations({ adapter, appRoot: ctx.appRoot, intent: input.intent });
+      // Une opération sur place (déposer un élément dans son propre dossier) n'a rien à faire :
+      // l'adapter renommerait un objet sur lui-même, le stockage refuserait, et tout le geste échouerait.
+      const effectiveOperations = planned.filter(
+        (operation) => operation.source.path !== operation.target.path,
       );
-      // ─── Une opération sur place n'est pas une opération ───────────
-      //
-      // Rien en aval ne filtre `{ source: X, target: X }` : `adapter.move`
-      // partirait renommer un objet sur lui-même, le provider refuserait, et
-      // l'exception ferait échouer TOUT le geste — y compris sa partie utile.
-      //
-      // Le cas devient courant avec le pliage : publier un dossier logique
-      // émet une intention par strate occupée, et celle qui vit DÉJÀ dans la
-      // strate cible se résout en X → X. Elle n'a simplement rien à faire.
-      //
-      // Le filtre est posé AVANT les gardes, pour qu'elles ne raisonnent que
-      // sur des opérations réelles — une opération sur place ne dépublie
-      // rien, elle n'a donc pas à peser dans leur verdict. Et il est posé
-      // avant `return { operations }` : l'appelant reçoit ce qui a bougé, pas
-      // ce qu'on a envisagé.
-      const effectiveOperations = plans
-        .flat()
-        .filter((operation) => operation.source.path !== operation.target.path);
 
-      await assertOperationsDontUnpublishReferencedAssets(
-        ctx.prisma,
-        effectiveOperations,
-        ctx.appRoot,
-      );
+      // Rien ne s'écrase en silence : une copie S3 remplace l'objet qui porte déjà la clé cible, et
+      // la ligne MediaAsset déplacée heurterait la contrainte d'unicité APRÈS la copie — le fichier
+      // d'arrivée serait perdu. On vérifie donc chaque cible avant la moindre écriture : un objet
+      // (ou un dossier non vide) chez le stockage, une ligne MediaAsset, un dossier enregistré.
+      const targets = new Set<string>();
+      for (const operation of effectiveOperations) {
+        const target = operation.target.path;
+        // Deux éléments de la même sélection qui arriveraient au même nom.
+        if (targets.has(target)) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `Deux éléments de la sélection s'appellent « ${target.slice(target.lastIndexOf("/") + 1)} ».`,
+          });
+        }
+        targets.add(target);
+        const [node, asset, folder] = await Promise.all([
+          adapter.getNode ? adapter.getNode(target) : Promise.resolve(null),
+          ctx.prisma.mediaAsset.findUnique({ where: { fullPath: target }, select: { id: true } }),
+          ctx.prisma.folder.findFirst({ where: { appRoot: ctx.appRoot, fullPath: target }, select: { id: true } }),
+        ]);
+        if (node || asset || folder) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `« ${target.slice(target.lastIndexOf("/") + 1)} » existe déjà dans le dossier de destination.`,
+          });
+        }
+      }
 
       // Exécution séquentielle : des opérations concurrentes sur des
       // préfixes voisins pourraient se marcher dessus.

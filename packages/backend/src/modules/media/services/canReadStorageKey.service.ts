@@ -3,9 +3,6 @@ import type { PrismaClient } from "@prisma/client";
 import { isAdminByGroup } from "@backend/modules/memberGroups/isAdminByGroup.service";
 import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolveGroupAccessForUser.service";
 
-/** Segments de statut qui peuvent encore précéder le chemin logique (anciens binaires). */
-const STRATA = new Set(["pending", "published"]);
-
 /**
  * Lecture d'un fichier privé par la route `/api/media/r2/…` : qui peut obtenir l'URL signée ?
  *
@@ -14,9 +11,9 @@ const STRATA = new Set(["pending", "published"]);
  *     (`<appRoot>/collaborative-group-spaces/<slug>-<groupId>/…`) ;
  *   - chacun : son propre espace personnel (`<appRoot>/personal-space/<slug>-<userId>/…`).
  *
- * Tout le reste est refusé. Le chemin est analysé par POSITION (juste après l'appRoot, et après un
- * éventuel segment de statut hérité), jamais par simple recherche d'un segment : un dossier nommé
- * « collaborative-group-spaces » ailleurs dans l'arborescence n'ouvre rien.
+ * Tout le reste est refusé. Le chemin est analysé par POSITION (juste après l'appRoot), jamais par
+ * simple recherche d'un segment : un dossier nommé « collaborative-group-spaces » ailleurs dans
+ * l'arborescence n'ouvre rien.
  */
 export async function canReadStorageKey(params: {
   prisma: PrismaClient;
@@ -28,8 +25,8 @@ export async function canReadStorageKey(params: {
   if (await isAdminByGroup(prisma, userId)) return true;
 
   const parts = key.split("/").filter(Boolean);
-  // parts[0] = appRoot ; un éventuel segment de statut hérité est ignoré.
-  const rest = STRATA.has(parts[1] ?? "") ? parts.slice(2) : parts.slice(1);
+  // parts[0] = appRoot ; parts[1] = l'espace ; parts[2] = son propriétaire.
+  const rest = parts.slice(1);
   const [space, owner] = rest;
   if (!space || !owner || rest.length < 3) return false;
 

@@ -14,7 +14,6 @@ import { RenameInput } from '@features/finder-core/components/RenameInput';
 import { MoveDialog } from '@features/finder-core/components/MoveDialog';
 import { isProtectedEntityFolder } from '@features/finder-core/utils/spaceFolderKind';
 import { PublishToMembersDialog } from '@features/member-documents/PublishToMembersDialog';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 import { useSessionStore } from '@lib/stores/useSessionStore';
 import { displayName, baseNameOf } from '@features/finder-core/utils/fileType';
 
@@ -206,7 +205,7 @@ export default function FinderCompactRow({
 
     {publishTarget && (
       <PublishToMembersDialog
-        path={storagePathOf(publishTarget)}
+        path={publishTarget.path}
         defaultTitle={publishTarget.name}
         onClose={() => setPublishTarget(null)}
       />

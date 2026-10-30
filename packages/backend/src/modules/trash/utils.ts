@@ -19,7 +19,7 @@ export function normalizePath(path: string): string {
  * Construit une version courte du previousPath, affichée dans la liste plate du bin.
  *
  * Exemple :
- * - previousPath: "AKFC/pending/cours/cours1"
+ * - previousPath: "AKFC/courses/kali"
  * - short:       "…/cours/cours1"
  *
  * On prend les 2 derniers segments (hors appRoot), car c’est un bon compromis lisibilité/contexte.

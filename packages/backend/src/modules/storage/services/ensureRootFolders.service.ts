@@ -88,8 +88,8 @@ export async function ensureRootFolders(
 /**
  * Teste si un `fullPath` désigne un dossier racine immuable pour `appRoot`.
  *
- * Retourne true pour `<appRoot>/pending`, `<appRoot>/published`, `<appRoot>/bin`
- * et pour la racine du projet `<appRoot>` elle-même.
+ * Retourne true pour la corbeille `<appRoot>/bin`, la racine du dépôt commun
+ * et la racine du projet `<appRoot>` elle-même.
  *
  * Vrai si le chemin est une racine immuable (ni renommable ni supprimable).
  */

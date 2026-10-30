@@ -240,38 +240,52 @@ export function createR2StorageAdapter(
     async move(operation: StorageMoveOperation): Promise<void> {
       const s3 = getR2Client();
       const Bucket = getR2Bucket();
+      const from = operation.source.path;
+      const to = operation.target.path;
 
-      // Statut dérivé du premier segment du chemin cible.
-      // Statut = segment APRÈS l'appRoot ([1] — les paths incluent l'appRoot).
-
+      // Le stockage d'abord, la base ensuite : si la copie échoue, rien n'a bougé nulle part ; si
+      // la base échoue après, l'objet est déjà à sa nouvelle place et la ligne pointe encore vers
+      // l'ancienne (une opération S3 et une transaction SQL ne se rendent pas atomiques ensemble).
       if (operation.source.type === "file") {
-        await moveFile(s3, Bucket, operation.source.path, operation.target.path);
-
-        // Phase 2 : on update aussi la row MediaAsset pour refléter le nouveau path
+        await moveFile(s3, Bucket, from, to);
         await prisma.mediaAsset.updateMany({
-          where: { appRoot, fullPath: operation.source.path },
-          data: { fullPath: operation.target.path },
+          where: { appRoot, fullPath: from },
+          data: { fullPath: to },
         });
         return;
       }
 
-      await moveFolder(s3, Bucket, operation.source.path, operation.target.path);
+      await moveFolder(s3, Bucket, from, to);
 
-      // Pour les folders : update tous les MediaAssets sous le préfixe.
-      // On fait ça en SQL raw pour profiter du UPDATE...SET en une passe
-      // (Prisma ne supporte pas REPLACE/SUBSTRING dans updateMany).
-      const oldPrefix = `${operation.source.path}/`;
-      const newPrefix = `${operation.target.path}/`;
+      // Le dossier et tout ce qu'il contient changent de préfixe en base, en une transaction :
+      // les fichiers (MediaAsset), les dossiers enregistrés (Folder : espaces, dossiers restaurés)
+      // et les libellés d'affichage (FolderLabel). Prisma n'offre pas de remplacement de
+      // sous-chaîne dans updateMany, d'où le SQL brut.
+      //
       // Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
       // aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
-      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique inverse est le
-      // caractère d'échappement par défaut de LIKE dans PostgreSQL.
-      const likePrefix = oldPrefix.replace(/[\\%_]/g, "\\$&");
-      await prisma.$executeRaw`
-        UPDATE "MediaAsset"
-        SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
-        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likePrefix + "%"};
-      `;
+      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique
+      // inverse est le caractère d'échappement par défaut de LIKE dans PostgreSQL. Le « / » final
+      // évite que déplacer `cours` emporte `cours-avance`.
+      const cut = from.length + 1;
+      const likeChildren = `${from}/`.replace(/[\\%_]/g, "\\$&") + "%";
+      await prisma.$transaction([
+        prisma.$executeRaw`
+          UPDATE "MediaAsset"
+          SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
+          WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likeChildren};
+        `,
+        prisma.$executeRaw`
+          UPDATE "Folder"
+          SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
+          WHERE "appRoot" = ${appRoot} AND ("fullPath" = ${from} OR "fullPath" LIKE ${likeChildren});
+        `,
+        prisma.$executeRaw`
+          UPDATE "FolderLabel"
+          SET "path" = ${to} || SUBSTRING("path" FROM ${cut}::int)
+          WHERE "path" = ${from} OR "path" LIKE ${likeChildren};
+        `,
+      ]);
     },
 
     async delete(path: StoragePath): Promise<void> {
@@ -635,6 +649,9 @@ async function moveFile(
   await s3.send(new DeleteObjectCommand({ Bucket, Key: srcKey }));
 }
 
+/** Copies simultanées au plus, pendant le déplacement d'un dossier. */
+const COPY_CONCURRENCY = 16;
+
 async function moveFolder(
   s3: S3Client,
   Bucket: string,
@@ -661,19 +678,23 @@ async function moveFolder(
     );
 
     if (objects.length > 0) {
-      await Promise.all(
-        objects.map((obj) => {
-          const relativeKey = obj.Key.slice(srcPrefix.length);
-          const newKey = dstPrefix + relativeKey;
-          return s3.send(
-            new CopyObjectCommand({
-              Bucket,
-              Key: newKey,
-              CopySource: buildCopySource(Bucket, obj.Key),
-            })
-          );
-        })
-      );
+      // Par paquets : une page compte jusqu'à 1 000 objets, et autant de copies simultanées
+      // saturent les connexions du client (et les limites de débit du stockage).
+      for (let i = 0; i < objects.length; i += COPY_CONCURRENCY) {
+        await Promise.all(
+          objects.slice(i, i + COPY_CONCURRENCY).map((obj) => {
+            const relativeKey = obj.Key.slice(srcPrefix.length);
+            const newKey = dstPrefix + relativeKey;
+            return s3.send(
+              new CopyObjectCommand({
+                Bucket,
+                Key: newKey,
+                CopySource: buildCopySource(Bucket, obj.Key),
+              })
+            );
+          })
+        );
+      }
 
       await s3.send(
         new DeleteObjectsCommand({

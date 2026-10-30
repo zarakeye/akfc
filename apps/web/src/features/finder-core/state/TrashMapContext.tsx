@@ -21,7 +21,7 @@ import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
  * `FinderTreeFolder` est récursif sur potentiellement N niveaux. Passer le
  * `trashMap` en props à chaque niveau pollue la signature et oblige tous
  * les ancêtres à savoir qu'on travaille avec le trashMap, même quand ils
- * ne sont pas concernés (ex: nodes sous `pending/` qui n'ont rien à voir
+ * ne sont pas concernés (ex: nodes sous `courses/` qui n'ont rien à voir
  * avec la corbeille).
  *
  * Le Context permet à n'importe quel `FinderTreeFolder` de récupérer la
@@ -30,7 +30,7 @@ import type { TrashEntryDTO } from '@contracts/trash/trash.dto';
  * ─── Valeur par défaut ────────────────────────────────────────────────────
  *
  * Map vide (`new Map()`) — sûr pour les cas où le finder ne charge pas la
- * corbeille (ex: rootPath sous `pending/`). Le code `trashMap.has(name)`
+ * corbeille (ex: rootPath sous `courses/`). Le code `trashMap.has(name)`
  * retourne simplement `false` partout, donc l'affichage est inchangé.
  */
 

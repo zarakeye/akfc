@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 
@@ -8,6 +9,7 @@ import { buildPreviousPathShort, normalizePath, bigIntToSafeNumber } from "@back
 import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
 import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
+import { requiredRootPaths } from "@backend/modules/storage/ensureContentRoots.service";
 import { assertTrashDoesntRemoveUsedAssets } from "@backend/modules/trash/services/trashedAssets.service";
 import {
   r2Exists,
@@ -48,20 +50,15 @@ function lastSegment(path: string): string {
   return parts[parts.length - 1] ?? p;
 }
 
+/** Ni la racine, ni la corbeille elle-même, ni ce qu'elle contient déjà. */
 function assertNotStatusOrRoot(appRoot: string, fullPath: string) {
   const p = normalizePath(fullPath);
 
   if (p === appRoot) {
-    throw new Error("Cannot trash the app root");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "La racine ne peut pas être mise à la corbeille." });
   }
-
-  const forbidden = [`${appRoot}/pending`, `${appRoot}/published`, `${appRoot}/bin`];
-  if (forbidden.includes(p)) {
-    throw new Error("Cannot trash a status folder root");
-  }
-
-  if (p.startsWith(`${appRoot}/bin/.trash/`)) {
-    throw new Error("Cannot trash an item already in trash storage");
+  if (p === `${appRoot}/bin` || p.startsWith(`${appRoot}/bin/`)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Cet élément est déjà dans la corbeille." });
   }
 }
 
@@ -90,7 +87,7 @@ async function knownMimeType(
 /** Taille et date d'un fichier R2 ; throw s'il n'existe pas. */
 async function fileInfo(path: string): Promise<{ bytes?: number; createdAt?: Date }> {
   const info = await r2GetInfo(path);
-  if (!info) throw new Error(`Fichier introuvable : ${path}`);
+  if (!info) throw new TRPCError({ code: "NOT_FOUND", message: `Fichier introuvable : « ${lastSegment(path)} ».` });
   return info;
 }
 
@@ -113,7 +110,7 @@ async function detectKind(params: { prisma: PrismaClient; appRoot: string; fullP
   const assets = await listAssetsByPrefix(`${p}/`);
   if (assets.length > 0) return "folder";
 
-  throw new Error(`Unable to detect kind (file/folder) for: ${p}`);
+  throw new TRPCError({ code: "NOT_FOUND", message: `Élément introuvable : « ${lastSegment(p)} ».` });
 }
 
 function computeAggregateFromAssets(assets: Array<{ bytes?: number; created_at?: string }>): {
@@ -194,22 +191,32 @@ export async function trashToBin(params: {
       source.kind === "folder" &&
       isProtectedEntityFolderPath(normalizePath(source.fullPath))
     ) {
-      throw new Error(
-        `Dossier protégé : « ${lastSegment(normalizePath(source.fullPath))} » est géré par une entité (groupe, espace perso, avatars) et ne peut pas être supprimé depuis le finder. Supprimez l'entité correspondante dans son gestionnaire.`,
-      );
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `Dossier protégé : « ${lastSegment(normalizePath(source.fullPath))} » est géré par une entité (groupe, espace perso, avatars) et ne peut pas être supprimé depuis le finder. Supprimez l'entité correspondante dans son gestionnaire.`,
+      });
     }
   }
 
   // 🔒 Protection disciplines/catégories (DB-aware) : conteneur de catégorie,
   // sous-conteneur `new`, ou dossier de discipline → non supprimables depuis
-  // le finder (passer par le gestionnaire de disciplines).
+  // le finder (passer par le gestionnaire de disciplines). Les racines de contenu
+  // (stages, événements, espaces, dépôt commun) non plus : elles reçoivent les envois.
+  const contentRoots = await requiredRootPaths(prisma, appRoot);
   for (const source of sources) {
     if (source.kind !== "folder") continue;
     const path = normalizePath(source.fullPath);
+    if (contentRoots.includes(path)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `« ${lastSegment(path)} » est une racine de la bibliothèque : elle ne se met pas à la corbeille.`,
+      });
+    }
     if (await isProtectedDisciplineFolderPath(prisma, appRoot, path)) {
-      throw new Error(
-        `Dossier protégé : « ${lastSegment(path)} » correspond à une discipline ou une catégorie et ne peut pas être supprimé depuis le finder. Supprimez-la dans le gestionnaire de disciplines.`,
-      );
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `Dossier protégé : « ${lastSegment(path)} » correspond à une discipline ou une catégorie et ne peut pas être supprimé depuis le finder. Supprimez-la dans le gestionnaire de disciplines.`,
+      });
     }
   }
 
@@ -220,13 +227,9 @@ export async function trashToBin(params: {
   const results: TrashEntryDTO[] = [];
 
   for (const source of sources) {
+    // Ni la racine, ni la corbeille, ni ce qu'elle contient déjà.
     assertNotStatusOrRoot(appRoot, source.fullPath);
-
-    // Interdit d'envoyer un contenu déjà dans bin/trash.
     const normalized = normalizePath(source.fullPath);
-    if (normalized.startsWith(`${appRoot}/bin/`)) {
-      throw new Error("Cannot trash an item already under appRoot/bin");
-    }
 
     const displayName = lastSegment(normalized);
     const id = randomUUID();
@@ -284,8 +287,8 @@ export async function trashToBin(params: {
       //
       // ⚠️ Le sous-arbre, c'est le dossier LUI-MÊME et ce qui est SOUS LUI —
       // pas tout ce qui commence par les mêmes lettres. Un `startsWith`
-      // nu sur `AKFC/pending/cours` emportait aussi les lignes de
-      // `AKFC/pending/cours-avance`, qui n'a rien à voir avec lui.
+      // nu sur `AKFC/courses/kali` emporterait aussi les lignes de
+      // `AKFC/courses/kali-2`, qui n'a rien à voir avec lui.
       //
       // C'est la collision de préfixe contre laquelle le déplacement ci-dessus
       // se prémunit (« trailing slash pour éviter les collisions ») : même

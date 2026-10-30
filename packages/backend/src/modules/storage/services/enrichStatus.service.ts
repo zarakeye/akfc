@@ -4,32 +4,18 @@ import type { StorageFileNode, StorageNode } from "@contracts/storage";
 /**
  * Enrichissement du listing avec le statut de cycle de vie.
  *
- * Depuis l'aplatissement des chemins, le statut ne peut plus être dérivé du
- * path : il vit dans `MediaAsset.status`. Cette couche le rapatrie pour que
- * `meta.status` soit renseigné côté client (pastille de statut, filtres,
- * règle `isPickable`).
+ * Le stockage ne connaît ni le statut, ni le nom d'origine, ni l'expéditeur d'un fichier : ils
+ * vivent dans `MediaAsset`. Cette couche les rapatrie pour que `meta.status` soit renseigné côté
+ * client (pastille de statut, filtres, règle `isPickable`) et que le nom lisible remplace le slug.
  *
- * ─── Clés interrogées ──────────────────────────────────────────────────────
- *
- * Le `path` d'un node est la clé R2, AVEC extension. Par tolérance héritée,
- * on interroge aussi le chemin suffixé de son `format` (sans effet quand le
- * chemin porte déjà son extension), et on résout dans le même ordre.
+ * La clé interrogée est le `path` du nœud : la clé de stockage EST `MediaAsset.fullPath`.
+ * Deux requêtes pour tout un dossier (les lignes, puis les expéditeurs), jamais une par fichier.
  */
 
 type LifecycleStatus = "pending" | "published" | "bin";
 
 function isLifecycleStatus(value: string): value is LifecycleStatus {
   return value === "pending" || value === "published" || value === "bin";
-}
-
-/** Les clés sous lesquelles ce fichier peut être connu en base. */
-function candidateKeys(file: StorageFileNode): string[] {
-  const keys = [file.path];
-  const format = file.metadata?.format?.toLowerCase();
-  if (format && !file.path.toLowerCase().endsWith(`.${format}`)) {
-    keys.push(`${file.path}.${format}`);
-  }
-  return keys;
 }
 
 type ResolvedMeta = { status?: LifecycleStatus; human?: string; uploaderName?: string };
@@ -98,25 +84,20 @@ export async function enrichFilesWithStatus(
 ): Promise<void> {
   if (files.length === 0) return;
 
-  const allKeys = files.flatMap(candidateKeys);
-  const byKey = await metaByKey(prisma, appRoot, allKeys);
+  const byKey = await metaByKey(prisma, appRoot, files.map((file) => file.path));
 
   for (const file of files) {
-    for (const key of candidateKeys(file)) {
-      const hit = byKey.get(key);
-      if (hit) {
-        if (hit.status || hit.uploaderName) {
-          file.metadata = {
-            ...(file.metadata ?? {}),
-            ...(hit.status ? { status: hit.status } : {}),
-            ...(hit.uploaderName ? { uploaderName: hit.uploaderName } : {}),
-          };
-        }
-        // Le `name` stocke est le slug ; on affiche le nom humain quand connu.
-        if (hit.human) file.name = hit.human;
-        break;
-      }
+    const hit = byKey.get(file.path);
+    if (!hit) continue;
+    if (hit.status || hit.uploaderName) {
+      file.metadata = {
+        ...(file.metadata ?? {}),
+        ...(hit.status ? { status: hit.status } : {}),
+        ...(hit.uploaderName ? { uploaderName: hit.uploaderName } : {}),
+      };
     }
+    // Le `name` stocké est le slug ; on affiche le nom lisible quand il est connu.
+    if (hit.human) file.name = hit.human;
   }
 }
 

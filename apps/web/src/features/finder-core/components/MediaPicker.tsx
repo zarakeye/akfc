@@ -8,7 +8,6 @@ import {
   isPickable,
   isMediaNode,
 } from '@features/finder-core/utils/statusFolders';
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
 
 type Props = {
   open: boolean;
@@ -83,8 +82,7 @@ export function MediaPicker({
   // On passe le nœud ENTIER. L'ancienne version reconstruisait un objet
   // `{ type: 'file', path: node.path }` — ce qui privait `isPickable` de
   // `meta`, donc de `meta.status`, donc de la seule source fiable du statut.
-  // Elle ne pouvait plus que le déduire du chemin : correct tant que le
-  // chemin portait la strate, muet ensuite.
+  // Elle ne pouvait plus que le déduire du chemin, qui ne porte pas le statut.
   function handlePickToggle(node: FinderNode) {
     if (!isPickable(node)) return; // non-publié ou dossier → on n'épingle pas
     toggleCart(node);
@@ -93,19 +91,9 @@ export function MediaPicker({
   function handleSubmit() {
     if (cartCount === 0) return;
 
-    // ⚠️ Les LOCALISATEURS, pas les clés du panier.
-    //
-    // `items` est keyée par `node.path` — un chemin LOGIQUE depuis le
-    // chantier « arbre sans strate de statut ». C'est la bonne clé pour le
-    // panier (les ghosts de la grille interrogent `isInCart(node.path)`), mais
-    // pas ce qu'attend le bout de la chaîne : `onSubmit` mène à
-    // `media.resolveByPaths`, qui matche `MediaAsset.fullPath` — physique.
-    //
-    // Rendre les clés ici renvoyait `AKFC/cours/x/photo` contre un
-    // `AKFC/pending/cours/x/photo` en base : aucun match, aucun id, une
-    // galerie vide. Et silencieusement, parce que le panier, lui, était bien
-    // rempli.
-    const paths = cartNodes.map(storagePathOf);
+    // `node.path` est la clé de stockage (`MediaAsset.fullPath`) : c'est ce que
+    // `media.resolveByPaths`, au bout de `onSubmit`, sait retrouver.
+    const paths = cartNodes.map((n) => n.path);
     onSubmit(paths);
     clearCart();
     onClose();

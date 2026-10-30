@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 
 import type { DeleteForeverInput, DeleteForeverOutput } from "@contracts/trash/trash.mutations";
@@ -43,7 +44,10 @@ export async function deleteForever(params: {
   if (entries.length !== input.ids.length) {
     const found = new Set(entries.map((e) => e.id));
     const missing = input.ids.filter((id) => !found.has(id));
-    throw new Error(`deleteForever: missing TrashEntry ids: ${missing.join(", ")}`);
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: `${missing.length} élément(s) déjà restauré(s) ou supprimé(s). Actualisez la corbeille.`,
+    });
   }
 
   for (const entry of entries) {

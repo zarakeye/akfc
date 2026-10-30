@@ -1,108 +1,35 @@
 import { APP_ROOT } from '@config/app';
 import type { FinderNode } from '@contracts/finder';
 
-import { storagePathOf } from '@features/finder-core/utils/storagePath';
-
 /**
- * 🛡️ Status folders : les 3 dossiers racines intouchables.
- *
- *   - `${APP_ROOT}/pending`    — contenu en attente de publication
- *   - `${APP_ROOT}/published`  — contenu publié, visible côté front public
- *   - `${APP_ROOT}/bin`        — corbeille (poubelle des items trashed)
- *
- * Règles métier (appliquées dans les composants UI qui s'en servent) :
- *   1. Pas drag-source     — on ne déplace pas un status folder.
- *   2. Pas supprimables    — points d'ancrage permanents.
- *   3. Pas renommables     — nom sémantique côté code (path hard-codé).
- *   4. Pas sélectionnables — seuls leurs DESCENDANTS le sont (on agit sur
- *      le contenu, pas sur la classification).
- *
- * Les guards backend existent déjà ; ce helper anticipe côté UI.
+ * Statut de cycle de vie d'un fichier : `MediaAsset.status` (`pending`, `published`), plus `bin`
+ * pour ce qui est dans la corbeille. Le statut n'est PAS un lieu : aucun chemin ne le porte.
  */
-
-export const STATUS_FOLDER_NAMES = ['pending', 'published', 'bin'] as const;
-
-/**
- * Statut applicatif de cycle de vie. Aligné sur le segment[1] des paths
- * (`${APP_ROOT}/<status>/...`) et sur `lifecycleStatusSchema` côté contracts.
- */
-export type LifecycleStatus = (typeof STATUS_FOLDER_NAMES)[number];
-
-/** Liste figée des paths qui sont des status folders. */
-export const STATUS_FOLDER_PATHS: readonly string[] = STATUS_FOLDER_NAMES.map(
-  (name) => `${APP_ROOT}/${name}`,
-);
+export type LifecycleStatus = 'pending' | 'published' | 'bin';
 
 /**
- * Vrai si `path` désigne exactement un status folder de l'app.
- * Match strict — les descendants (`${APP_ROOT}/pending/cours`) renvoient false.
+ * 🛡️ La corbeille, `${APP_ROOT}/bin` : seul dossier racine « de statut » qui subsiste (les
+ * dossiers `pending/` et `published/` de l'époque Cloudinary ont disparu avec le statut dans le
+ * chemin).
+ *
+ * Règles appliquées par les composants qui s'en servent :
+ *   1. Pas drag-source     — on ne déplace pas la corbeille.
+ *   2. Pas supprimable     — point d'ancrage permanent.
+ *   3. Pas renommable      — son chemin est fixe ; seul son libellé s'édite.
+ *   4. Pas sélectionnable  — on agit sur son contenu (vue dédiée), pas sur elle.
+ *
+ * Les gardes backend existent déjà (trashToBin refuse la corbeille) ; ce helper anticipe côté UI.
  */
 export function isStatusFolder(path: string): boolean {
-  return STATUS_FOLDER_PATHS.includes(path);
+  return path === `${APP_ROOT}/bin`;
 }
 
 /**
- * Déduit le statut applicatif d'un node à partir de son path.
+ * Un nœud est-il retenable dans le picker (galerie, image d'une page) ? Un FICHIER publié.
  *
- * Convention (cf. `resolveMoveIntent.service.ts`) : le statut est le SECOND
- * segment du path, juste après l'`APP_ROOT`.
- *   `AKFC/pending/cours/12/photo.jpg` → 'pending'
- *   `AKFC/published`                  → 'published'
- *
- * Renvoie `null` si le path n'est pas sous l'`APP_ROOT` ou si le segment de
- * statut n'est pas un statut connu (asset hors-pipeline) — le caller décide
- * quoi faire d'un `null` (typiquement : aucun radio coché).
- *
- * ═══════════════════════════════════════════════════════════════════════════
- *  ⚠️  N'APPELEZ PAS CETTE FONCTION SUR UN `node.path`.
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Le chantier « arbre sans strate de statut » a INVERSÉ la dépendance que
- * cette fonction incarne.
- *
- * Avant : le chemin était la vérité, `MediaAsset.status` un cache dérivé.
- *         Conséquence — publier obligeait à DÉPLACER le binaire chez le
- *         provider, avec tout ce qui s'ensuivait : deux mécanismes de synchro
- *         au move, un publicId qui se désynchronise, un chemin construit à
- *         deux endroits devant s'accorder au caractère près.
- *
- * Après :  `MediaAsset.status` est la vérité. Publier est un `UPDATE`. Le
- *          binaire ne bouge plus. Et `node.path` est un chemin LOGIQUE — il
- *          ne porte plus de segment de statut, donc cette fonction y renvoie
- *          `null`.
- *
- * Ce `null` est SILENCIEUX. Il ne lève pas, il ne warn pas : il éteint. Un
- * badge qui n'apparaît plus, un picker où plus rien ne s'épingle. C'est
- * exactement ce qui a failli passer inaperçu en livrant cette étape.
- *
- * Pour connaître le statut d'un nœud, utilisez **`statusOf(node)`**, plus bas.
- *
- * Ce qui reste légitime ici : les chemins PHYSIQUES (`storagePathOf(node)`,
- * `MediaAsset.fullPath`), tant que la migration des binaires n'est pas faite.
- * Après elle, cette fonction n'aura plus aucun appelant et se supprimera avec
- * le reste du pliage.
- */
-export function statusFromPath(path: string): LifecycleStatus | null {
-  const parts = path.split('/').filter(Boolean);
-  if (parts[0] !== APP_ROOT) return null;
-  const segment = parts[1];
-  return (STATUS_FOLDER_NAMES as readonly string[]).includes(segment)
-    ? (segment as LifecycleStatus)
-    : null;
-}
-
-/**
- * Un node est « pickable » (sélectionnable pour épinglage dans une galerie)
- * s'il est un FICHIER et qu'il vit sous le dossier-statut `published`.
- *
- * Les dossiers ne sont jamais pickables (on épingle des médias, pas des
- * dossiers). Les fichiers pending/bin restent VISIBLES et navigables dans le
- * picker — et même multi-sélectionnables pour un changement de statut — mais
- * ne peuvent pas être retenus pour le pick tant qu'ils ne sont pas publiés.
- *
- * Centralisé ici pour que la règle vive au même endroit que le mapping
- * statut ↔ dossier : si la règle de pick évolue (autoriser un autre statut,
- * ajouter une condition), c'est l'unique point à toucher.
+ * Les dossiers ne sont jamais pickables (on épingle des médias, pas des dossiers). Les fichiers
+ * en attente restent visibles et navigables dans le picker — et multi-sélectionnables pour un
+ * changement de statut — mais ne peuvent pas être retenus tant qu'ils ne sont pas validés.
  */
 export function isPickable(
   node: Pick<FinderNode, 'type' | 'path' | 'meta'>,
@@ -111,36 +38,14 @@ export function isPickable(
 }
 
 /**
- * Le statut d'un nœud. **Le seul point d'entrée.**
- *
- * ─── L'ordre de préséance, et pourquoi il est dans cet ordre ──────────────
- *
- *   1. `meta.status` — `MediaAsset.status`, servi par `media.getByPaths` via
- *      `useMediaAssetEnrichment`. C'est la VÉRITÉ.
- *
- *   2. `statusFromPath(storagePathOf(node))` — repli sur le chemin PHYSIQUE,
- *      pour les fichiers sans row DB (antérieurs au tracking). Noter le
- *      `storagePathOf` : c'est le chemin où vit le binaire, donc le seul qui
- *      porte encore un segment de statut. Appliqué à `node.path`, ce repli
- *      renverrait `null` dès la vue pliée levée — et s'éteindrait en silence.
- *
- * Le repli disparaîtra avec la strate elle-même (étape 5 du chantier) : à ce
- * moment-là, plus aucun chemin ne portera de statut, et `meta.status` sera la
- * seule réponse possible. Ce qui est déjà le cas dans les faits.
- *
- * ─── Pourquoi une fonction plutôt que l'expression recopiée ───────────────
- *
- * `n.meta?.status ?? statusFromPath(n.path)` était écrit à l'identique dans
- * `GridItem`, `FinderTableRow` et `StatusRadioGroup`, et sous une troisième
- * forme dans `isPickable`. Quatre copies d'une règle métier, qu'il fallait
- * penser à corriger quatre fois — et dont une seule oubliée aurait éteint le
- * picker sans un mot. C'est la même maladie que `MoveItem` / `DragItem`, et
- * que le type de `getAttentionCounts` recopié à la main dans la cloche.
+ * Le statut d'un nœud. **Le seul point d'entrée** : `meta.status`, c'est-à-dire
+ * `MediaAsset.status`, servi par le listing ou par `useMediaAssetEnrichment`. Un fichier sans
+ * ligne en base n'a pas de statut (null) : il n'est ni pickable, ni compté.
  */
 export function statusOf(
   node: Pick<FinderNode, 'path' | 'meta'>,
 ): LifecycleStatus | null {
-  return node.meta?.status ?? statusFromPath(storagePathOf(node));
+  return node.meta?.status ?? null;
 }
 
 /* -------------------------------------------------------------------------- */

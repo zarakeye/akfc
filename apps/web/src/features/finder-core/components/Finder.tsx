@@ -66,7 +66,6 @@ import {
 import {
   FINDER_DRAG_MIME,
   serializePayload,
-  setDraggingPaths,
   dragItemFromNode,
   type DragItem,
 } from "@features/finder-core/dnd/payload";
@@ -108,8 +107,8 @@ type Props = {
    *
    * Utilisé par la TreeView (colonne de gauche) comme point de départ
    * pour `getTree`. Pour AKFC, c'est typiquement l'`appRoot` du projet
-   * (ex: "AKFC") — la TreeView en affichera les enfants directs, qui
-   * sont les status-folders pending / published / bin.
+   * (ex: "AKFC") — la TreeView en affichera les enfants directs : les
+   * racines de contenu (courses, events, espaces…) et la corbeille `bin`.
    */
   rootPath: string;
   fileFilter?: (node: FinderNode) => boolean;
@@ -167,6 +166,8 @@ export default function Finder({
   } = useFinderStore();
 
   const { loading, error } = useFinderData(adapter);
+  const actionError = useFinderStore((s) => s.actionError);
+  const setActionError = useFinderStore((s) => s.setActionError);
 
   useMediaAssetEnrichment();
   useFinderSearch();
@@ -503,8 +504,6 @@ export default function Finder({
 
     e.dataTransfer.setData(FINDER_DRAG_MIME, serializePayload({ items }));
     e.dataTransfer.effectAllowed = "move";
-    // Registre lisible pendant dragover (getData y est vide).
-    setDraggingPaths(items.map((it) => it.path));
 
     const previews: GhostPreview[] = items.map((it) => {
       const fullNode = allNodes.find((n) => n.id === it.id);
@@ -662,7 +661,7 @@ export default function Finder({
 
         {!readOnly && (() => {
           // Ce bouton naviguait vers la corbeille. Elle est déjà atteignable
-          // par l'arbre (`AKFC/bin` y est un dossier, le pliage le préserve)
+          // par l'arbre (`AKFC/bin` y est un dossier)
           // et par le fil d'Ariane : il occupait la place d'une action utile
           // pour dupliquer un chemin qui existait déjà.
           //
@@ -769,6 +768,24 @@ export default function Finder({
         >
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>Erreur : {error}</span>
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          className="px-3 py-2 text-sm bg-red-50 text-red-700 border-b flex items-center gap-2"
+          role="alert"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1">{actionError}</span>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            aria-label="Fermer le message"
+            className="rounded p-1 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 

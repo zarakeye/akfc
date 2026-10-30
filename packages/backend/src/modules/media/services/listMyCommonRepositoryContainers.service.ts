@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { physicalCandidates } from "@backend/modules/storage/logicalPath";
 import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
 
 /**
@@ -24,29 +23,22 @@ export async function listMyCommonRepositoryContainers(params: {
     where: {
       appRoot,
       uploaderUserId: userId,
-      fullPath: { contains: "/common-repository/" },
+      fullPath: { startsWith: `${appRoot}/common-repository/` },
     },
     select: { fullPath: true },
   });
 
-  const prefixes = physicalCandidates(`${appRoot}/common-repository`, appRoot).map(
-    (candidate) => `${candidate}/`,
-  );
+  const prefix = `${appRoot}/common-repository/`;
   const tail = `-${userId}`;
   const subjects = new Set<string>();
 
   for (const { fullPath } of assets) {
-    for (const prefix of prefixes) {
-      if (!fullPath.startsWith(prefix)) continue;
-      let seg = fullPath.slice(prefix.length).split("/")[0];
-      if (seg.endsWith(tail)) {
-        seg = seg.slice(0, seg.length - tail.length);
-        const u = seg.lastIndexOf("_");
-        const subject = u >= 0 ? seg.slice(0, u) : seg;
-        if (subject) subjects.add(subject);
-      }
-      break;
-    }
+    let seg = fullPath.slice(prefix.length).split("/")[0];
+    if (!seg.endsWith(tail)) continue;
+    seg = seg.slice(0, seg.length - tail.length);
+    const u = seg.lastIndexOf("_");
+    const subject = u >= 0 ? seg.slice(0, u) : seg;
+    if (subject) subjects.add(subject);
   }
 
   const subjectList = [...subjects].sort((a, b) => a.localeCompare(b, "fr"));

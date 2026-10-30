@@ -4854,7 +4854,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 150,
+   "line": 82,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4880,7 +4880,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 156,
+   "line": 88,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4906,7 +4906,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 162,
+   "line": 94,
    "effects": [
     {
      "model": "Category",
@@ -4916,7 +4916,21 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
+       ],
+       [
+        "requiredRootPaths",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:11"
+       ],
+       [
+        "prisma.category.findMany",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:15"
+       ]
+      ],
+      [
+       [
+        "trashToBin",
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -4930,7 +4944,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -4951,7 +4965,7 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "isProtectedDisciplineFolderPath",
@@ -4972,11 +4986,11 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "prisma.folder.deleteMany",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:293"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:296"
        ]
       ]
      ]
@@ -4988,34 +5002,20 @@
      "trails": [
       [
        [
-        "toPhysicalTrashSources",
-        "packages/backend/src/modules/trash/router.ts:105"
-       ],
-       [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
-       ],
-       [
-        "prisma.folder.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:99"
-       ]
-      ],
-      [
-       [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "normalizeSources",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:146"
        ],
        [
         "detectKind",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:97"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:94"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:103"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:100"
        ]
       ]
      ]
@@ -5028,15 +5028,15 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -5049,15 +5049,15 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -5069,44 +5069,30 @@
      "trails": [
       [
        [
-        "toPhysicalTrashSources",
-        "packages/backend/src/modules/trash/router.ts:105"
-       ],
-       [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
-       ],
-       [
-        "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:103"
-       ]
-      ],
-      [
-       [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ],
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "knownMimeType",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:78"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:75"
        ],
        [
         "prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:80"
        ]
       ]
      ]
@@ -5119,15 +5105,15 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -5210,15 +5196,15 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -5243,11 +5229,11 @@
       [
        [
         "trashToBin",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:178"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:175"
        ],
        [
         "prisma.trashEntry.create",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:258"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:261"
        ]
       ]
      ]
@@ -5259,7 +5245,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 186,
+   "line": 110,
    "effects": [
     {
      "model": "Folder",
@@ -5273,15 +5259,15 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "upsertFolders",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:75"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:76"
        ],
        [
         "prisma.folder.upsert",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:81"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:82"
        ]
       ]
      ]
@@ -5294,7 +5280,7 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "pruneEmptyFolders",
@@ -5315,19 +5301,19 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "computeRestoredToPath",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:133"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:134"
        ],
        [
         "pathCollides",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:90"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:91"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:101"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:102"
        ]
       ]
      ]
@@ -5344,15 +5330,15 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "upsertFolders",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:75"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:76"
        ],
        [
         "prisma.folder.upsert",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:81"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:82"
        ]
       ]
      ]
@@ -5365,11 +5351,11 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "prisma.trashEntry.findMany",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:166"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:167"
        ]
       ]
      ]
@@ -5386,11 +5372,11 @@
       [
        [
         "restoreFromBin",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:159"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:160"
        ],
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:224"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:229"
        ]
       ]
      ]
@@ -5402,7 +5388,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 192,
+   "line": 116,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -5413,15 +5399,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5443,15 +5429,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
@@ -5468,15 +5454,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ]
       ]
      ]
@@ -5489,15 +5475,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -5511,15 +5497,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5537,15 +5523,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5567,15 +5553,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5596,15 +5582,15 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -5617,11 +5603,11 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "prisma.trashEntry.findMany",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:29"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:30"
        ]
       ]
      ]
@@ -5637,11 +5623,11 @@
       [
        [
         "deleteForever",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:22"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
        ],
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:69"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:73"
        ]
       ]
      ]
@@ -5653,7 +5639,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 198,
+   "line": 122,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -5668,11 +5654,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5719,11 +5705,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
@@ -5744,11 +5730,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ]
       ]
      ]
@@ -5765,11 +5751,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -5787,11 +5773,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5813,11 +5799,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5843,11 +5829,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -5872,11 +5858,11 @@
        ],
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -9865,7 +9851,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 143,
+   "line": 156,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9875,13 +9861,13 @@
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:145"
+        "packages/backend/src/modules/storage/router.ts:158"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:147"
+        "packages/backend/src/modules/storage/router.ts:160"
        ]
       ],
       [
@@ -9904,7 +9890,7 @@
       [
        [
         "ctx.prisma.trashEntry.count",
-        "packages/backend/src/modules/storage/router.ts:146"
+        "packages/backend/src/modules/storage/router.ts:159"
        ]
       ]
      ]
@@ -9916,7 +9902,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 177,
+   "line": 190,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9926,7 +9912,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:178"
+        "packages/backend/src/modules/storage/router.ts:191"
        ]
       ]
      ]
@@ -9938,7 +9924,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 224,
+   "line": 237,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9964,7 +9950,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 244,
+   "line": 257,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9974,11 +9960,11 @@
       [
        [
         "listCommonRepositoryFolders",
-        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:13"
+        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:8"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:19"
+        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:14"
        ]
       ]
      ]
@@ -9990,7 +9976,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 249,
+   "line": 262,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10000,11 +9986,11 @@
       [
        [
         "listMyCommonRepositoryContainers",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:16"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:15"
        ],
        [
         "prisma.folderLabel.findUnique",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:63"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:55"
        ]
       ]
      ]
@@ -10017,11 +10003,11 @@
       [
        [
         "listMyCommonRepositoryContainers",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:16"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:15"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:23"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:22"
        ]
       ]
      ]
@@ -10034,7 +10020,7 @@
       [
        [
         "listMyCommonRepositoryContainers",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:16"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:15"
        ],
        [
         "commonRepositoryContainerPath",
@@ -10054,7 +10040,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 260,
+   "line": 273,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10067,7 +10053,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:269"
+        "packages/backend/src/modules/storage/router.ts:282"
        ]
       ]
      ]
@@ -10083,7 +10069,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:269"
+        "packages/backend/src/modules/storage/router.ts:282"
        ]
       ]
      ]
@@ -10112,7 +10098,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 282,
+   "line": 295,
    "effects": [
     {
      "model": "Folder",
@@ -10139,7 +10125,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:285"
+        "packages/backend/src/modules/storage/router.ts:298"
        ]
       ],
       [
@@ -10161,7 +10147,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 311,
+   "line": 324,
    "effects": [
     {
      "model": "Folder",
@@ -10188,7 +10174,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:321"
+        "packages/backend/src/modules/storage/router.ts:334"
        ]
       ],
       [
@@ -10237,7 +10223,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 372,
+   "line": 353,
    "effects": [
     {
      "model": "Category",
@@ -10314,15 +10300,15 @@
       [
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:45"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:31"
        ]
       ]
      ]
@@ -10445,15 +10431,15 @@
       [
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:64"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:50"
        ]
       ]
      ]
@@ -10465,7 +10451,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 438,
+   "line": 415,
    "effects": [
     {
      "model": "Category",
@@ -10562,19 +10548,19 @@
       [
        [
         "enrichTreeWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:124"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:105"
        ],
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:45"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:31"
        ]
       ]
      ]
@@ -10707,19 +10693,19 @@
       [
        [
         "enrichTreeWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:124"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:105"
        ],
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:64"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:50"
        ]
       ]
      ]
@@ -10731,7 +10717,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 521,
+   "line": 494,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10741,7 +10727,7 @@
       [
        [
         "ctx.prisma.folderLabel.findMany",
-        "packages/backend/src/modules/storage/router.ts:522"
+        "packages/backend/src/modules/storage/router.ts:495"
        ]
       ]
      ]
@@ -10753,7 +10739,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 529,
+   "line": 502,
    "effects": [
     {
      "model": "Category",
@@ -10779,7 +10765,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 533,
+   "line": 506,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10792,7 +10778,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:549"
+        "packages/backend/src/modules/storage/router.ts:522"
        ]
       ]
      ]
@@ -10805,7 +10791,7 @@
       [
        [
         "ctx.prisma.folderLabel.deleteMany",
-        "packages/backend/src/modules/storage/router.ts:546"
+        "packages/backend/src/modules/storage/router.ts:519"
        ]
       ]
      ]
@@ -10821,7 +10807,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:549"
+        "packages/backend/src/modules/storage/router.ts:522"
        ]
       ]
      ]
@@ -10903,7 +10889,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 557,
+   "line": 530,
    "effects": [
     {
      "model": "MemberGroup",
@@ -10982,7 +10968,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 587,
+   "line": 556,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11061,7 +11047,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 625,
+   "line": 590,
    "effects": [
     {
      "model": "Category",
@@ -11081,6 +11067,72 @@
      ]
     },
     {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.folder.findFirst",
+        "packages/backend/src/modules/storage/router.ts:711"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "fullPath"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "path"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:283"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/storage/router.ts:710"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MediaAsset",
      "op": "update",
      "fields": [
@@ -11091,7 +11143,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/router.ts:696"
+        "packages/backend/src/modules/storage/router.ts:669"
        ]
       ],
       [
@@ -11111,7 +11163,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:273"
        ]
       ]
      ]
@@ -11193,8 +11245,25 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 767,
+   "line": 737,
    "effects": [
+    {
+     "model": "Category",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requiredRootPaths",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:11"
+       ],
+       [
+        "prisma.category.findMany",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:15"
+       ]
+      ]
+     ]
+    },
     {
      "model": "Folder",
      "op": "read",
@@ -11202,16 +11271,56 @@
      "trails": [
       [
        [
-        "toPhysicalMoveIntents",
-        "packages/backend/src/modules/storage/toPhysicalMoveIntents.service.ts:100"
+        "ctx.prisma.folder.findFirst",
+        "packages/backend/src/modules/storage/router.ts:817"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Folder",
+     "op": "update",
+     "fields": [
+      "fullPath"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "executeMoveOperations",
+        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:78"
        ],
        [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
-        "prisma.folder.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:99"
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "path"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "executeMoveOperations",
+        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:78"
+       ],
+       [
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:283"
        ]
       ]
      ]
@@ -11223,26 +11332,8 @@
      "trails": [
       [
        [
-        "toPhysicalMoveIntents",
-        "packages/backend/src/modules/storage/toPhysicalMoveIntents.service.ts:100"
-       ],
-       [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
-       ],
-       [
-        "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:103"
-       ]
-      ],
-      [
-       [
-        "assertOperationsDontUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:47"
-       ],
-       [
-        "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:87"
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/storage/router.ts:816"
        ]
       ]
      ]
@@ -11257,7 +11348,7 @@
       [
        [
         "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
+        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:78"
        ],
        [
         "adapter.move",
@@ -11271,7 +11362,7 @@
       [
        [
         "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
+        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:78"
        ],
        [
         "adapter.move",
@@ -11279,7 +11370,7 @@
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:273"
        ]
       ]
      ]
@@ -11353,23 +11444,6 @@
        ]
       ]
      ]
-    },
-    {
-     "model": "PageMediaReference",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "assertOperationsDontUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:47"
-       ],
-       [
-        "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:96"
-       ]
-      ]
-     ]
     }
    ],
    "emails": []
@@ -11378,7 +11452,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 887,
+   "line": 841,
    "effects": [
     {
      "model": "Category",
@@ -11488,7 +11562,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:907"
+        "packages/backend/src/modules/storage/router.ts:861"
        ]
       ]
      ]
@@ -11652,7 +11726,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 914,
+   "line": 868,
    "effects": [
     {
      "model": "Category",
@@ -11762,7 +11836,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:945"
+        "packages/backend/src/modules/storage/router.ts:899"
        ]
       ],
       [
@@ -11936,7 +12010,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 985,
+   "line": 939,
    "effects": [
     {
      "model": "Category",
@@ -11973,11 +12047,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:356"
        ],
        [
         "prisma.discipline.count",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:456"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:470"
        ]
       ]
      ]
@@ -12007,11 +12081,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:356"
        ],
        [
         "prisma.eventDiscipline.createMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:460"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:474"
        ]
       ]
      ]
@@ -12075,11 +12149,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:356"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:468"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:482"
        ]
       ]
      ]
@@ -12106,17 +12180,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:1008"
+        "packages/backend/src/modules/storage/router.ts:962"
        ]
       ],
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:356"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:370"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:384"
        ]
       ]
      ]
@@ -12145,11 +12219,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:356"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:468"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:482"
        ]
       ]
      ]
@@ -12313,7 +12387,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 82,
+   "line": 62,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12323,7 +12397,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:101"
+        "packages/backend/src/modules/media/router.ts:74"
        ]
       ]
      ]
@@ -12406,7 +12480,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:101"
+        "packages/backend/src/modules/media/router.ts:74"
        ]
       ]
      ]
@@ -12418,7 +12492,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 168,
+   "line": 133,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12428,7 +12502,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:186"
+        "packages/backend/src/modules/media/router.ts:146"
        ]
       ]
      ]
@@ -12510,7 +12584,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 223,
+   "line": 177,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12520,7 +12594,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:234"
+        "packages/backend/src/modules/media/router.ts:188"
        ]
       ]
      ]
@@ -12532,7 +12606,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 280,
+   "line": 234,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12542,7 +12616,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:350"
+        "packages/backend/src/modules/media/router.ts:288"
+       ]
+      ],
+      [
+       [
+        "fetchBatch",
+        "packages/backend/src/modules/media/router.ts:287"
+       ],
+       [
+        "ctx.prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/media/router.ts:288"
        ]
       ]
      ]
@@ -12625,7 +12709,17 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:350"
+        "packages/backend/src/modules/media/router.ts:288"
+       ]
+      ],
+      [
+       [
+        "fetchBatch",
+        "packages/backend/src/modules/media/router.ts:287"
+       ],
+       [
+        "ctx.prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/media/router.ts:288"
        ]
       ]
      ]
@@ -12637,7 +12731,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 509,
+   "line": 431,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12649,7 +12743,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:522"
+        "packages/backend/src/modules/media/router.ts:444"
        ]
       ]
      ]
@@ -12731,7 +12825,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 600,
+   "line": 476,
    "effects": [
     {
      "model": "Gallery",
@@ -12741,11 +12835,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
        ],
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
        ]
       ]
      ]
@@ -12758,11 +12852,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
        ],
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
        ]
       ]
      ]
@@ -12775,11 +12869,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
        ],
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:89"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:50"
        ]
       ]
      ]
@@ -12794,13 +12888,13 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:641"
+        "packages/backend/src/modules/media/router.ts:511"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:662"
+        "packages/backend/src/modules/media/router.ts:520"
        ]
       ]
      ]
@@ -12883,11 +12977,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:28"
        ],
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:99"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:60"
        ]
       ]
      ]
@@ -14706,8 +14800,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/memberDocuments/router.ts:305"
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/memberDocuments/router.ts:304"
        ]
       ]
      ]
@@ -14727,7 +14821,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:329"
+        "packages/backend/src/modules/memberDocuments/router.ts:323"
        ]
       ]
      ]
@@ -14740,7 +14834,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:318"
+        "packages/backend/src/modules/memberDocuments/router.ts:312"
        ]
       ]
      ]
@@ -14753,7 +14847,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:329"
+        "packages/backend/src/modules/memberDocuments/router.ts:323"
        ]
       ]
      ]
@@ -14766,7 +14860,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:329"
+        "packages/backend/src/modules/memberDocuments/router.ts:323"
        ]
       ]
      ]
@@ -14778,7 +14872,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 350,
+   "line": 344,
    "effects": [
     {
      "model": "MediaAsset",
@@ -14787,8 +14881,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/memberDocuments/router.ts:374"
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/memberDocuments/router.ts:368"
        ]
       ]
      ]
@@ -14807,7 +14901,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:395"
+        "packages/backend/src/modules/memberDocuments/router.ts:384"
        ]
       ]
      ]
@@ -14820,7 +14914,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:387"
+        "packages/backend/src/modules/memberDocuments/router.ts:376"
        ]
       ]
      ]
@@ -14835,7 +14929,7 @@
       [
        [
         "ctx.prisma.memberDocument.create",
-        "packages/backend/src/modules/memberDocuments/router.ts:395"
+        "packages/backend/src/modules/memberDocuments/router.ts:384"
        ]
       ]
      ]
@@ -14917,7 +15011,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 409,
+   "line": 398,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -14928,7 +15022,7 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:412"
+        "packages/backend/src/modules/memberDocuments/router.ts:401"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
@@ -14945,7 +15039,7 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:412"
+        "packages/backend/src/modules/memberDocuments/router.ts:401"
        ]
       ]
      ]
@@ -14959,7 +15053,7 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:412"
+        "packages/backend/src/modules/memberDocuments/router.ts:401"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
@@ -14977,7 +15071,7 @@
       [
        [
         "ctx.prisma.memberDocument.delete",
-        "packages/backend/src/modules/memberDocuments/router.ts:412"
+        "packages/backend/src/modules/memberDocuments/router.ts:401"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
@@ -14993,7 +15087,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 417,
+   "line": 406,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15003,7 +15097,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:418"
+        "packages/backend/src/modules/memberDocuments/router.ts:407"
        ]
       ]
      ]
@@ -15016,7 +15110,7 @@
       [
        [
         "ctx.prisma.memberDocument.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:418"
+        "packages/backend/src/modules/memberDocuments/router.ts:407"
        ]
       ]
      ]
@@ -15028,7 +15122,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 432,
+   "line": 421,
    "effects": [
     {
      "model": "User",
@@ -15038,7 +15132,7 @@
       [
        [
         "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/memberDocuments/router.ts:433"
+        "packages/backend/src/modules/memberDocuments/router.ts:422"
        ]
       ]
      ]
@@ -15050,7 +15144,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/memberDocuments/router.ts",
-   "line": 447,
+   "line": 436,
    "effects": [
     {
      "model": "MediaAsset",
@@ -15059,8 +15153,8 @@
      "trails": [
       [
        [
-        "ctx.prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/memberDocuments/router.ts:450"
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/memberDocuments/router.ts:439"
        ]
       ]
      ]
@@ -15073,7 +15167,7 @@
       [
        [
         "ctx.prisma.memberDocument.findUnique",
-        "packages/backend/src/modules/memberDocuments/router.ts:460"
+        "packages/backend/src/modules/memberDocuments/router.ts:444"
        ]
       ]
      ]
@@ -16406,42 +16500,9 @@
     "sendImageConsentNotice"
    ]
   },
-  "assertOperationsDontUnpublishReferencedAssets": {
-   "file": "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts",
-   "line": 47,
-   "effects": [
-    {
-     "model": "MediaAsset",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:87"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "PageMediaReference",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertOperationsDontUnpublishReferencedAssets.service.ts:96"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
   "assertStatusChangeDoesntUnpublishReferencedAssets": {
    "file": "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts",
-   "line": 54,
+   "line": 28,
    "effects": [
     {
      "model": "Gallery",
@@ -16451,7 +16512,7 @@
       [
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
        ]
       ]
      ]
@@ -16464,7 +16525,7 @@
       [
        [
         "db.galleryItem.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:64"
        ]
       ]
      ]
@@ -16477,7 +16538,7 @@
       [
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:89"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:50"
        ]
       ]
      ]
@@ -16490,7 +16551,7 @@
       [
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:99"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:60"
        ]
       ]
      ]
@@ -16500,7 +16561,7 @@
   },
   "canReadStorageKey": {
    "file": "packages/backend/src/modules/media/services/canReadStorageKey.service.ts",
-   "line": 21,
+   "line": 18,
    "effects": [
     {
      "model": "MemberGroup",
@@ -16699,7 +16760,7 @@
   },
   "listCommonRepositoryFolders": {
    "file": "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts",
-   "line": 13,
+   "line": 8,
    "effects": [
     {
      "model": "MediaAsset",
@@ -16709,7 +16770,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:19"
+        "packages/backend/src/modules/media/services/listCommonRepositoryFolders.service.ts:14"
        ]
       ]
      ]
@@ -16719,7 +16780,7 @@
   },
   "listMyCommonRepositoryContainers": {
    "file": "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts",
-   "line": 16,
+   "line": 15,
    "effects": [
     {
      "model": "FolderLabel",
@@ -16729,7 +16790,7 @@
       [
        [
         "prisma.folderLabel.findUnique",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:63"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:55"
        ]
       ]
      ]
@@ -16742,7 +16803,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:23"
+        "packages/backend/src/modules/media/services/listMyCommonRepositoryContainers.service.ts:22"
        ]
       ]
      ]
@@ -19247,112 +19308,75 @@
    ],
    "emails": []
   },
-  "resolveMoveIntent": {
-   "file": "packages/backend/src/modules/storage/resolveMoveIntent.service.ts",
-   "line": 70,
-   "effects": [
-    {
-     "model": "MediaAsset",
-     "op": "update",
-     "fields": [
-      "fullPath"
-     ],
-     "trails": [
-      [
-       [
-        "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
-       ],
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
-       ],
-       [
-        "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
-       ]
-      ],
-      [
-       [
-        "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
-       ],
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
-       ],
-       [
-        "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
   "executeMoveOperations": {
    "file": "packages/backend/src/modules/storage/resolveMoveIntent.service.ts",
-   "line": 117,
-   "effects": [
-    {
-     "model": "MediaAsset",
-     "op": "update",
-     "fields": [
-      "fullPath"
-     ],
-     "trails": [
-      [
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
-       ],
-       [
-        "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
-       ]
-      ],
-      [
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
-       ],
-       [
-        "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "resolvePhysicalLocations": {
-   "file": "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts",
    "line": 78,
    "effects": [
     {
      "model": "Folder",
-     "op": "read",
-     "fields": [],
+     "op": "update",
+     "fields": [
+      "fullPath"
+     ],
+     "raw": true,
      "trails": [
       [
        [
-        "prisma.folder.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:99"
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:278"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "FolderLabel",
+     "op": "update",
+     "fields": [
+      "path"
+     ],
+     "raw": true,
+     "trails": [
+      [
+       [
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:283"
        ]
       ]
      ]
     },
     {
      "model": "MediaAsset",
-     "op": "read",
-     "fields": [],
+     "op": "update",
+     "fields": [
+      "fullPath"
+     ],
      "trails": [
       [
        [
-        "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:103"
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.mediaAsset.updateMany",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
+       ]
+      ],
+      [
+       [
+        "adapter.move",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
+       ],
+       [
+        "prisma.$executeRaw (SQL)",
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:273"
        ]
       ]
      ]
@@ -19362,7 +19386,7 @@
   },
   "enrichFilesWithStatus": {
    "file": "packages/backend/src/modules/storage/services/enrichStatus.service.ts",
-   "line": 94,
+   "line": 80,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19372,11 +19396,11 @@
       [
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:45"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:31"
        ]
       ]
      ]
@@ -19389,11 +19413,11 @@
       [
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:64"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:50"
        ]
       ]
      ]
@@ -19403,7 +19427,7 @@
   },
   "enrichTreeWithStatus": {
    "file": "packages/backend/src/modules/storage/services/enrichStatus.service.ts",
-   "line": 124,
+   "line": 105,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19413,15 +19437,15 @@
       [
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:45"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:31"
        ]
       ]
      ]
@@ -19434,15 +19458,15 @@
       [
        [
         "enrichFilesWithStatus",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:94"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:80"
        ],
        [
         "metaByKey",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:37"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:23"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:64"
+        "packages/backend/src/modules/storage/services/enrichStatus.service.ts:50"
        ]
       ]
      ]
@@ -19930,47 +19954,6 @@
        [
         "db.folderLabel.upsert",
         "packages/backend/src/modules/storage/storageSegments.ts:152"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "toPhysicalMoveIntents": {
-   "file": "packages/backend/src/modules/storage/toPhysicalMoveIntents.service.ts",
-   "line": 100,
-   "effects": [
-    {
-     "model": "Folder",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
-       ],
-       [
-        "prisma.folder.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:99"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "MediaAsset",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "resolvePhysicalLocations",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:78"
-       ],
-       [
-        "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/resolvePhysicalLocations.service.ts:103"
        ]
       ]
      ]
@@ -22693,7 +22676,7 @@
   },
   "deleteForever": {
    "file": "packages/backend/src/modules/trash/services/deleteForever.service.ts",
-   "line": 22,
+   "line": 23,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -22704,11 +22687,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -22730,11 +22713,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
@@ -22751,11 +22734,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ]
       ]
      ]
@@ -22768,11 +22751,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -22786,11 +22769,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -22808,11 +22791,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -22834,11 +22817,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -22859,11 +22842,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -22876,7 +22859,7 @@
       [
        [
         "prisma.trashEntry.findMany",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:29"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:30"
        ]
       ]
      ]
@@ -22892,7 +22875,7 @@
       [
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/deleteForever.service.ts:69"
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:73"
        ]
       ]
      ]
@@ -22933,11 +22916,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -22976,11 +22959,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
@@ -22997,11 +22980,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ]
       ]
      ]
@@ -23014,11 +22997,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -23032,11 +23015,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23054,11 +23037,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23080,11 +23063,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23105,11 +23088,11 @@
       [
        [
         "deleteAssetRowsOfTrashedItem",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:95"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:100"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -23168,7 +23151,7 @@
   },
   "restoreFromBin": {
    "file": "packages/backend/src/modules/trash/services/restoreFromBin.service.ts",
-   "line": 159,
+   "line": 160,
    "effects": [
     {
      "model": "Folder",
@@ -23182,11 +23165,11 @@
       [
        [
         "upsertFolders",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:75"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:76"
        ],
        [
         "prisma.folder.upsert",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:81"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:82"
        ]
       ]
      ]
@@ -23216,15 +23199,15 @@
       [
        [
         "computeRestoredToPath",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:133"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:134"
        ],
        [
         "pathCollides",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:90"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:91"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:101"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:102"
        ]
       ]
      ]
@@ -23241,11 +23224,11 @@
       [
        [
         "upsertFolders",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:75"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:76"
        ],
        [
         "prisma.folder.upsert",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:81"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:82"
        ]
       ]
      ]
@@ -23258,7 +23241,7 @@
       [
        [
         "prisma.trashEntry.findMany",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:166"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:167"
        ]
       ]
      ]
@@ -23275,7 +23258,7 @@
       [
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:224"
+        "packages/backend/src/modules/trash/services/restoreFromBin.service.ts:229"
        ]
       ]
      ]
@@ -23285,13 +23268,23 @@
   },
   "trashToBin": {
    "file": "packages/backend/src/modules/trash/services/trashToBin.service.ts",
-   "line": 178,
+   "line": 175,
    "effects": [
     {
      "model": "Category",
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "requiredRootPaths",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:11"
+       ],
+       [
+        "prisma.category.findMany",
+        "packages/backend/src/modules/storage/ensureContentRoots.service.ts:15"
+       ]
+      ],
       [
        [
         "isProtectedDisciplineFolderPath",
@@ -23339,7 +23332,7 @@
       [
        [
         "prisma.folder.deleteMany",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:293"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:296"
        ]
       ]
      ]
@@ -23352,15 +23345,15 @@
       [
        [
         "normalizeSources",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:149"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:146"
        ],
        [
         "detectKind",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:97"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:94"
        ],
        [
         "prisma.folder.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:103"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:100"
        ]
       ]
      ]
@@ -23373,11 +23366,11 @@
       [
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23390,11 +23383,11 @@
       [
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23407,21 +23400,21 @@
       [
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ],
       [
        [
         "knownMimeType",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:78"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:75"
        ],
        [
         "prisma.mediaAsset.findFirst",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:83"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:80"
        ]
       ]
      ]
@@ -23434,11 +23427,11 @@
       [
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23451,11 +23444,11 @@
       [
        [
         "assertTrashDoesntRemoveUsedAssets",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:39"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:40"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23480,7 +23473,7 @@
       [
        [
         "prisma.trashEntry.create",
-        "packages/backend/src/modules/trash/services/trashToBin.service.ts:258"
+        "packages/backend/src/modules/trash/services/trashToBin.service.ts:261"
        ]
       ]
      ]
@@ -23490,7 +23483,7 @@
   },
   "assertTrashDoesntRemoveUsedAssets": {
    "file": "packages/backend/src/modules/trash/services/trashedAssets.service.ts",
-   "line": 39,
+   "line": 40,
    "effects": [
     {
      "model": "Gallery",
@@ -23500,7 +23493,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23513,7 +23506,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23526,7 +23519,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23539,7 +23532,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23552,7 +23545,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:46"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:47"
        ]
       ]
      ]
@@ -23562,7 +23555,7 @@
   },
   "deleteAssetRowsOfTrashedItem": {
    "file": "packages/backend/src/modules/trash/services/trashedAssets.service.ts",
-   "line": 95,
+   "line": 100,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -23573,7 +23566,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23595,7 +23588,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
@@ -23612,7 +23605,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ]
       ]
      ]
@@ -23625,7 +23618,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -23639,7 +23632,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23657,7 +23650,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23679,7 +23672,7 @@
       [
        [
         "prisma.mediaAsset.deleteMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:114"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:119"
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
@@ -23700,7 +23693,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:101"
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:106"
        ]
       ]
      ]
@@ -27454,7 +27447,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
        ],
        [
         "isAdminByGroup",
@@ -27468,7 +27461,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
        ],
        [
         "resolveGroupAccessForUser",
@@ -27489,7 +27482,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
        ],
        [
         "isAdminByGroup",
@@ -27503,7 +27496,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:21"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
        ],
        [
         "resolveGroupAccessForUser",

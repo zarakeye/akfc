@@ -12,9 +12,8 @@ import { highlightMatches } from '@features/finder-core/utils/highlightMatches';
  * ─── Types de résultats ──────────────────────────────────────────────
  *
  * Affiche à la fois :
- *   - Les **dossiers** qui matchent (status folders comme `bin`, `pending`,
- *     `published` quand on cherche depuis APP_ROOT, et sous-dossiers métier
- *     dérivés des publicIds des MediaAssets)
+ *   - Les **dossiers** qui matchent (la corbeille `bin` quand on cherche depuis
+ *     APP_ROOT, et les sous-dossiers dérivés des chemins des MediaAssets)
  *   - Les **fichiers** qui matchent (filename, description, ou uploadedBy)
  *
  * Les dossiers sont rendus en tête (convention Finder) avec une icône
@@ -26,14 +25,14 @@ import { highlightMatches } from '@features/finder-core/utils/highlightMatches';
  * ─── UI ───────────────────────────────────────────────────────────────
  *
  *   ┌─────────────────────────────────────────┐
- *   │ 📁 Stage                                 │   ← folder
- *   │    pending/                              │
+ *   │ 📁 seminars                              │   ← folder
+ *   │    AKFC/                                 │
  *   ├─────────────────────────────────────────┤
- *   │ 📁 karate                                │   ← folder
- *   │    pending/Stage/                        │
+ *   │ 📁 stage-ete                             │   ← folder
+ *   │    AKFC/seminars/                        │
  *   ├─────────────────────────────────────────┤
  *   │ 📄 photo-stage-ete.jpg                   │   ← file
- *   │    pending/Stage/karate/                 │
+ *   │    AKFC/seminars/stage-ete/              │
  *   └─────────────────────────────────────────┘
  */
 export default function SearchResultsView(): JSX.Element {
