@@ -16,7 +16,7 @@ Un fichier `tsconfig.json` dit à TypeScript quels fichiers lire et avec quelles
 
 Dans ce projet, `tsc` (le compilateur TypeScript) ne produit aucun fichier JavaScript. Next.js transforme lui-même le TypeScript en JavaScript, très vite, en retirant simplement les types. Pendant `pnpm dev`, il ne les vérifie pas : une erreur de type n'empêche pas la page de s'afficher. La vérification est le travail de `tsc --noEmit`, lancé par `pnpm typecheck` et par `pnpm check`. `next build` la refait aussi avant de construire : une erreur de type oubliée fait échouer la construction de l'image au déploiement.
 
-<DocsTable columnsJson='["Fichier", "Lu par", "Pour"]' rowsJson='[["tsconfig.base.json", "Tous les autres (extends)", "Les options communes."], ["apps/web/tsconfig.json", "pnpm typecheck, next build, l’éditeur", "L’application, et tout ce qu’elle importe des paquets."], ["packages/backend/tsconfig.json", "pnpm --filter backend typecheck, l’éditeur", "Le backend seul."], ["packages/contracts/tsconfig.json", "L’éditeur", "Les contrats (non vérifiés par eux-mêmes, voir plus bas)."], ["packages/finder-core/tsconfig.json", "pnpm --filter finder-core typecheck, l’éditeur", "Le moteur du Finder."], ["tsconfig.json (racine)", "L’éditeur", "prisma.config.ts et les scripts de prisma/."]]' />
+<DocsTable columnsJson='["Fichier", "Lu par", "Pour"]' rowsJson='[["tsconfig.base.json", "Tous les autres (extends)", "Les options communes."], ["apps/web/tsconfig.json", "pnpm typecheck, next build, l’éditeur", "L’application, et tout ce qu’elle importe des paquets."], ["packages/backend/tsconfig.json", "pnpm --filter backend typecheck, l’éditeur", "Le backend seul."], ["packages/contracts/tsconfig.json", "L’éditeur", "Les contrats (non vérifiés par eux-mêmes, voir plus bas)."], ["packages/finder-core/tsconfig.json", "pnpm --filter finder-core typecheck, l’éditeur", "Le moteur du Finder."], ["tsconfig.json (racine)", "pnpm typecheck, l’éditeur", "prisma.config.ts et les scripts TypeScript de prisma/."]]' />
 
 L'éditeur (VS Code) prend, pour chaque fichier ouvert, le `tsconfig.json` le plus proche en remontant les dossiers. C'est pourquoi chaque paquet a le sien : un fichier du backend ouvert dans l'éditeur est vérifié avec la configuration du backend.
 
@@ -135,33 +135,17 @@ Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du w
 
 `noCheck: true` désactive la vérification de ce paquet par lui-même. Les contrats ne sont pas vérifiés pour autant à l'aveugle : le web et le backend les incluent et les vérifient, avec leurs propres règles, comme le montre la liste `include` du web :
 
-```json
-// apps/web/tsconfig.json (extrait)
-"include": [
-  "next-env.d.ts",
-  "src/global.d.ts",
-  "instrumentation.ts",                                                                                                                                                               
-  "src",
-  "app",
-  "components",
-  "features",
-  "hooks",
-  "lib",
-  "styles",
-  "types",
-  "**/*.ts",
-  "**/*.tsx",
-  "src/**/*.d.ts",
-  "../../packages/contracts/src/**/*.ts",
-  "../../packages/contracts/src/finder",
-  "../../packages/config",
-  "../../packages/contracts/src/slug/slug.schema.ts",
-  "../../packages/finder-core/src/**/*.ts",
-],
-"exclude": ["node_modules"]
-```
+<CodeExample
+  language="json"
+  filepath="apps/web/tsconfig.json"
+  filename="tsconfig.json"
+  snippetRange="23-32"
+  snippetHighlight="6"
+  snippetTitle="Ce que vérifie le web"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Cette liste porte aussi des traces d'un ancien rangement : `app`, `components`, `features`… n'existent pas à la racine de `apps/web` (tout est sous `src/`), et `**/*.ts` couvre déjà le reste. Elles sont sans effet, mais un nettoyage les retirerait.
+Cette liste a longtemps porté des traces d'un ancien rangement : `app`, `components`, `features`… à la racine de `apps/web`, où ils n'existent pas (tout est sous `src/`). Elles étaient sans effet, et le nettoyage l'a vérifié : `tsc --listFilesOnly` liste exactement les mêmes fichiers avant et après leur retrait (partie « Qualité »).
 
 ## Les fichiers de déclaration
 
@@ -188,7 +172,7 @@ Les pages de cette documentation sont des fichiers `.mdx`, mais aucun n'est impo
 }
 ```
 
-Elle ne sert qu'à l'éditeur, pour `prisma.config.ts` et les scripts de `prisma/` : ils ne font partie d'aucun paquet, et sans elle l'éditeur les vérifierait avec des options par défaut.
+Elle couvre `prisma.config.ts` et les scripts TypeScript de `prisma/` : ils ne font partie d'aucun paquet, et sans elle l'éditeur les vérifierait avec des options par défaut. Longtemps lue par l'éditeur seul, elle est aussi vérifiée par `pnpm typecheck` (`tsc -p tsconfig.json`) : un fichier que rien ne vérifie finit par contenir une erreur que personne ne voit.
 
 ## Récapitulatif
 

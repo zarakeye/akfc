@@ -1,0 +1,147 @@
+---
+title: "pnpm check, une chaîne de gardes"
+description: "Une seule commande avant chaque commit : des gardes rapides d’abord, puis les types de trois projets TypeScript et le lint de tout le code écrit à la main. Ce que chaque étape couvre, ce qu’elle ne voit pas, et ce que l’extension du lint aux paquets a trouvé dès son premier passage."
+section: "Qualité"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le site est utilisable au clavier et avec un lecteur d’écran. Toutes les fonctions sont en place ; reste à garantir qu’elles continuent de marcher après chaque modification.
+
+Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain la croise. Cette partie présente les vérifications automatiques du projet. Ce chapitre les prend ensemble, comme une chaîne : ce que lance `pnpm check`, dans quel ordre, et ce que chaque maillon couvre. Le chapitre 2 entre dans le typecheck et le lint, le chapitre 3 dans les gardes écrites pour ce projet.
+
+## Une commande, lancée avant chaque commit ✅
+
+`pnpm check` est un script de la racine. Il enchaîne les vérifications avec `&&` : la première qui échoue arrête tout, et son message est le dernier affiché.
+
+<CodeExample
+  language="json"
+  filepath="package.json"
+  filename="package.json"
+  snippetRange="16-20"
+  snippetHighlight="5"
+  snippetTitle="Les scripts de vérification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’ordre n’est pas indifférent : les **gardes maison** passent d’abord, parce qu’elles prennent une seconde et qu’elles expliquent l’erreur en une phrase. Le typecheck et le lint, qui relisent des centaines de fichiers, viennent ensuite. Une erreur bon marché à trouver est trouvée tôt.
+
+<DocsTable columnsJson='["Étape", "Question posée", "Si elle échoue"]' rowsJson='[["check-next-conventions", "Les fichiers de convention de Next (proxy, instrumentation) sont-ils là où Next les lit ?", "Un fichier ignoré sans un mot de Next : le filtre d’authentification ne s’exécuterait pas."], ["check-tour-targets", "Chaque étape d’un tutoriel interactif vise-t-elle un élément qui existe ?", "Un tutoriel bloqué chez l’utilisateur."], ["build-procedure-map", "La carte des procédures de la documentation correspond-elle au backend ?", "Des parcours de la doc qui décrivent un code disparu."], ["check-doc-entities", "Les entités, procédures et sections citées par la doc existent-elles ?", "Une carte des entités fausse, sans erreur visible."], ["pnpm clean", "—", "Efface .next : les types générés périmés n’entrent pas dans le typecheck."], ["pnpm typecheck", "Les types sont-ils cohérents, dans les trois projets TypeScript ?", "Une procédure et le composant qui l’appelle ne parlent plus de la même chose."], ["pnpm lint", "Le code respecte-t-il les règles de React et du langage, sans un seul avertissement ?", "Un motif fautif, du code mort, un composant que le React Compiler renonce à optimiser."]]' />
+
+<Callout type="info">
+`pnpm check` passe **avant** chaque commit, pas seulement avant une mise en production. Un commit qui ne passe pas les vérifications en cache d’autres : la prochaine erreur se trouvera au milieu de celles qu’on a laissées.
+</Callout>
+
+## Pourquoi effacer .next avant de vérifier les types
+
+`pnpm clean` paraît hors sujet au milieu des vérifications. Il est là parce que le `tsconfig` du web inclut **tous** les fichiers `.ts` de son dossier :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/tsconfig.json"
+  filename="tsconfig.json"
+  snippetRange="23-31"
+  snippetHighlight="4,6"
+  snippetTitle="Ce que vérifie le typecheck du web"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`**/*.ts` couvre aussi le dossier `.next`, où Next écrit des fichiers de types qu’il génère (les routes, les paramètres des pages). Ces fichiers datent du dernier `pnpm dev` ou du dernier build : une page renommée depuis y figure encore, et le typecheck échoue sur un fichier que personne n’a écrit. Le projet a connu trois de ces faux échecs avant que `pnpm check` ne commence par vider `.next`.
+
+<Callout type="warning">
+`pnpm clean` vide le `.next` que `pnpm dev` utilise. Après un `pnpm check` lancé pendant que `pnpm dev` tourne, une modification peut ne plus apparaître dans le navigateur : arrêter `pnpm dev`, le relancer, recharger la page.
+</Callout>
+
+## Trois projets TypeScript
+
+Le dépôt n’est pas **un** projet TypeScript mais plusieurs, chacun avec son `tsconfig.json` (partie « Configuration »). `pnpm typecheck` les vérifie l’un après l’autre :
+
+<DocsTable columnsJson='["Projet", "Commande", "Ce qu’il vérifie"]' rowsJson='[["apps/web", "pnpm --filter web typecheck", "L’application, et avec ses propres règles tout ce qu’elle inclut : les contrats, le moteur du Finder, la configuration partagée."], ["packages/backend", "pnpm --filter backend typecheck", "Le backend et les contrats, avec les règles du backend."], ["La racine", "tsc -p tsconfig.json", "prisma.config.ts, et les scripts TypeScript de prisma/."]]' />
+
+Les contrats sont donc vérifiés deux fois, une fois par chacun de leurs lecteurs : c’est voulu, chaque projet les compile avec ses propres alias et ses propres options, et une incompatibilité avec l’un des deux doit se voir.
+
+La troisième ligne est récente. La configuration de la racine ne servait qu’à l’éditeur : `prisma.config.ts` n’était vérifié par **rien**. Un fichier que personne ne vérifie finit par contenir une erreur que personne ne voit.
+
+<CodeExample
+  language="json"
+  filepath="tsconfig.json"
+  filename="tsconfig.json"
+  snippetRange="1-11"
+  snippetHighlight="10"
+  snippetTitle="La configuration de la racine"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Le lint, de tout le code écrit à la main
+
+`pnpm lint` relisait seulement `apps/web`. Le backend, les contrats et le moteur du Finder — la moitié du code, celle qui touche la base et décide des droits — n’étaient relus par aucune règle. Le script de la racine lance maintenant deux passes :
+
+<CodeExample
+  language="json"
+  filepath="package.json"
+  filename="package.json"
+  snippetRange="17-17"
+  snippetTitle="Deux passes de lint"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La seconde passe réutilise la configuration du web (`-c apps/web/eslint.config.mjs`) : une seule liste de règles pour tout le dépôt. Deux détails la rendent possible.
+
+- **Lancée depuis la racine.** ESLint refuse de relire un fichier situé hors du dossier de sa configuration : lancé depuis `apps/web`, il déclare `../../packages` « ignoré ». Avec `-c`, les chemins se lisent depuis le dossier courant, la racine, et les paquets sont à l’intérieur.
+- **Une règle coupée, et une seule.** La règle `@next/next/no-html-link-for-pages` cherche un dossier `pages/` à la racine du projet et affiche un avertissement quand elle n’en trouve pas. Le backend n’écrit aucun lien HTML : la règle est sans objet, elle est coupée pour cette passe, sur la ligne de commande où on la lit.
+
+`--max-warnings 0` vaut pour les deux passes : un paquet n’a pas droit à plus d’avertissements que l’application.
+
+## Ce que le premier passage a trouvé
+
+La seconde passe a signalé trois avertissements au premier lancement. Aucun n’était grave en lui-même ; chacun menait à du code qui ne servait plus.
+
+<CodeSnippet
+  language="ts"
+  title="Un import jamais utilisé (r2StorageAdapter.ts, avant)"
+  kind="educational"
+  codeJson='"import { getR2Client, getR2PresignClient, getR2Bucket } from \"@backend/modules/storage/adapters/r2/client\";\nimport { parsePathToDestination } from \"@backend/modules/media/services/parsePathToDestination\";\nimport { probeMediaDimensions } from \"@backend/modules/media/services/mediaDerivatives.service\";"'
+/>
+
+L’avertissement porte sur un import ; la question utile est : **qui d’autre appelle cette fonction ?** Personne. `parsePathToDestination` reconstituait la destination d’un fichier à partir de son seul chemin, pour un rattrapage historique des fichiers du stockage. Ce rattrapage a été supprimé avec Cloudinary ; le service, lui, était resté, avec ses 160 lignes et sa documentation qui décrivait un appelant disparu. Il est supprimé.
+
+<CodeSnippet
+  language="ts"
+  title="Deux paramètres jamais lus (virtual-path.ts, avant)"
+  kind="educational"
+  codeJson='"export function pickBackend(_mimeType?: string | null): StorageProvider {\n  return \u0027r2\u0027;\n}\n\nexport function pickBackendByExtension(_filename?: string): StorageProvider {\n  return \u0027r2\u0027;\n}"'
+/>
+
+Ici le lint signalait des paramètres inutilisés. Les renommer ou les retirer aurait fait taire l’avertissement sans rien régler : la vraie question était encore celle de l’appelant, et ces deux fonctions n’en avaient aucun. Leur commentaire les présentait comme « le point unique de décision si un second stockage arrivait un jour » — un point de décision que personne ne consulte ne décide de rien. Si un second stockage arrive, la décision s’écrira là où elle sera lue.
+
+La même revue a trouvé deux restes que le lint ne pouvait pas voir, faute de vérifier ces fichiers :
+
+<DocsTable columnsJson='["Fichier", "Ce qu’il faisait", "Pourquoi il est parti"]' rowsJson='[["prisma/backfill-navigation.ts", "Un rattrapage ponctuel des familles de disciplines, lancé à la main lors d’une ancienne migration.", "Il lit une colonne family que la base n’a plus depuis la toute première migration (0_init) : il ne pouvait qu’échouer."], ["La clé prisma.seed du package.json", "Désignait le script de remplissage lancé par prisma migrate reset.", "Elle visait prisma/seed.js, qui n’existe pas ; la configuration de Prisma vit de toute façon dans prisma.config.ts."]]' />
+
+<Callout type="tip">
+Un avertissement de lint est un **indice**, pas une tâche. « Variable inutilisée » se corrige en une seconde en la retirant ; la bonne correction demande parfois de remonter jusqu’à la fonction entière, et de vérifier qu’elle a encore un appelant. Et supprimer du code mort exige une preuve : aucun appelant, une donnée qui n’existe plus.
+</Callout>
+
+Enfin, la liste `include` du web a perdu ses traces d’un ancien rangement (`app`, `components`, `features`… à la racine de `apps/web`, qui n’existent plus). Le changement est sans effet sur ce qui est vérifié, et c’est vérifiable : `tsc --listFilesOnly` donne exactement la même liste de fichiers avant et après.
+
+## Ce que pnpm check ne voit pas
+
+Toutes ces vérifications sont **statiques** : elles lisent le code sans l’exécuter. Elles trouvent un type incohérent, une règle de React enfreinte, une cible de tutoriel disparue. Elles ne voient pas :
+
+<DocsTable columnsJson='["Ce qui leur échappe", "Exemple"]' rowsJson='[["Une règle métier fausse mais bien typée", "Une page brouillon montrée aux visiteurs : le code compile, il fait simplement la mauvaise chose."], ["Ce qui dépend des données", "Une requête correcte qui renvoie un document à qui ne devrait pas le voir, parce qu’un groupe a été mal rattaché."], ["Ce qui dépend du temps", "Un plan du site figé au démarrage du serveur (partie « Interface transverse ») : rien d’incohérent, juste un résultat qui vieillit."], ["Le comportement dans un navigateur", "Un menu qui ne s’ouvre pas au clavier, un formulaire qui s’envoie deux fois."]]' />
+
+Ces erreurs-là se trouvent en **exécutant** le code : à la main, en relisant (ce qu’ont fait les revues de chaque partie de cette documentation), ou par des tests automatiques, que le projet n’a pas encore.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que lance pnpm check ?", "Quatre gardes maison, l’effacement de .next, le typecheck des trois projets, le lint de l’application et des paquets."], ["Dans quel ordre, et pourquoi ?", "Les vérifications rapides et explicites d’abord ; la première qui échoue arrête tout."], ["Pourquoi effacer .next ?", "Le typecheck du web inclut tous les .ts du dossier, y compris les types générés par Next, qui peuvent être périmés."], ["Quels projets TypeScript sont vérifiés ?", "Le web, le backend et la configuration de la racine ; les contrats par le web et par le backend."], ["Le lint relit-il le backend ?", "Oui : une seconde passe, lancée depuis la racine avec la configuration du web, sans avertissement toléré."], ["Que faire d’un avertissement de code inutilisé ?", "Chercher l’appelant : souvent, c’est la fonction entière qui ne sert plus, et sa suppression demande une preuve."], ["Que ne voit pas pnpm check ?", "Ce qui ne se voit qu’à l’exécution : une règle métier fausse, les données, le temps, le navigateur."]]' />
+
+## À suivre
+
+Le typecheck et le lint sont les deux maillons les plus longs de la chaîne, et les plus instructifs : ramener le lint à zéro a demandé de réécrire seize composants selon les règles de React.
+
+<Callout type="tip">
+**Chapitre suivant : le typecheck et le lint.** Deux questions différentes, le lint ramené à zéro, et ce que les règles du React Compiler apprennent sur la façon d’écrire un composant.
+</Callout>

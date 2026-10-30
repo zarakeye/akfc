@@ -92,7 +92,7 @@ S3 n’a pas d’opération « renommer » : déplacer un objet, c’est le **co
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetRange="655-715"
+  snippetRange="654-714"
   snippetHighlight="19,32,49"
   snippetTitle="moveFolder"
   fullFileTitle="Voir le fichier complet"
@@ -110,7 +110,7 @@ Puis la base suit, dans une seule transaction :
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetRange="241-292"
+  snippetRange="240-291"
   title="adapter.move — le stockage, la base, et le retour en arrière"
   stepsJson='[{"title": "Le stockage d’abord", "body": "Un fichier se copie puis se supprime ; un dossier, objet par objet, par paquets. Si la copie échoue en route, on ramène à la source ce qui est déjà arrivé : l’état final est l’état initial, et l’erreur remonte.", "scope": "7-21", "focus": "17-17"}, {"title": "Un fichier : une ligne", "body": "Sa ligne MediaAsset prend la nouvelle clé (rewriteAssetPaths, la même fonction pour tous les gestes).", "scope": "27-28", "focus": "28-28"}, {"title": "Un dossier : trois tables", "body": "Les fichiers (MediaAsset), les dossiers enregistrés (Folder) et les libellés (FolderLabel) changent de préfixe ensemble, en une transaction. Oublier Folder laisserait un espace enregistré à l’ancien chemin ; oublier FolderLabel ferait perdre son nom au dossier déplacé.", "scope": "32-44", "focus": "35-40"}, {"title": "Si la base échoue : les objets reviennent", "body": "Une transaction SQL et une copie S3 ne se rendent pas atomiques ensemble : on compense. Les objets retournent à leur place, et la base n’a rien changé (la transaction a été annulée).", "scope": "46-52", "focus": "47-47"}]'
 />

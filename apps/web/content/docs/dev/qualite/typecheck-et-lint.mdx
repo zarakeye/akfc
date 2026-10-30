@@ -2,13 +2,13 @@
 title: "Le typecheck et le lint"
 description: "Deux vérifications automatiques, deux questions : les types sont-ils cohérents, et le code respecte-t-il les règles de React ? Le lint ramené à zéro et ajouté à pnpm check, et ce que les règles du React Compiler apprennent sur la façon d'écrire un composant."
 section: "Qualité"
-order: 1
+order: 2
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le site est utilisable au clavier et avec un lecteur d'écran. Toutes les fonctions sont en place ; reste à garantir qu'elles continuent de marcher après chaque modification.
+> **Précédemment.** `pnpm check` enchaîne des gardes rapides, le typecheck de trois projets et le lint de tout le code écrit à la main ; il ne voit que ce qui se lit sans exécuter.
 
 Une erreur qu'un outil peut trouver ne devrait jamais attendre qu'un humain la croise. Ce chapitre présente les deux vérifications que `pnpm check` lance avant chaque commit : le **typecheck**, qui compare les types de tout le projet, et le **lint**, qui relit le code à la recherche de motifs que l'on sait fautifs. Il raconte aussi comment le lint a été ramené à zéro, parce que chaque correction enseigne une règle de React.
 
@@ -20,12 +20,16 @@ Le typecheck ne connaît que les types : un composant parfaitement typé peut qu
 
 ## Le lint dans pnpm check
 
-Le lint s'exécute sur `apps/web`, à la fin de `pnpm check`, et n'accepte **aucun** avertissement :
+Le lint s'exécute à la fin de `pnpm check`, sur `apps/web` puis sur les paquets (chapitre 1), et n'accepte **aucun** avertissement :
 
-```json
-// apps/web/package.json (extrait)
-"lint": "eslint . --max-warnings 0",
-```
+<CodeExample
+  language="json"
+  filepath="apps/web/package.json"
+  filename="package.json"
+  snippetRange="8-8"
+  snippetTitle="Le lint du web"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Un avertissement toléré en appelle d'autres : au bout de quelques mois, la liste en compte des dizaines, et plus personne ne la lit. Une règle qui ne convient pas au projet se désactive dans la configuration, avec un commentaire qui dit pourquoi ; elle ne reste pas affichée en jaune. Les fichiers qui ne sont pas notre code, comme le worker minifié de pdf.js servi depuis `public/`, sont exclus de la même façon.
 
@@ -53,17 +57,14 @@ Les Réglages du site remplissaient leur formulaire avec un `useEffect` : à l'a
 
 Le remplissage se fait maintenant **pendant le rendu**, une seule fois, protégé par un drapeau :
 
-```tsx
-// apps/web/src/app/(admin)/dashboard/settings/page.tsx (extrait)
-if (!initialized && settings.isSuccess) {
-  const s = settings.data;
-  setInitialized(true);
-  setShortTitle(s?.shortTitle ?? "AKFC");
-  setLongTitle(s?.longTitle ?? "Association de Kung Fu de Chambéry");
-  setTagline(s?.tagline ?? "");
-  setSupportEmail(s?.supportEmail ?? "");
-}
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(admin)/dashboard/settings/page.tsx"
+  filename="page.tsx"
+  snippetRange="48-55"
+  snippetTitle="Remplir le formulaire pendant le rendu, une fois"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 React accepte qu'un composant modifie son propre état pendant le rendu, à condition qu'une condition l'empêche de recommencer : il refait alors immédiatement le rendu, avant d'afficher quoi que ce soit. Le formulaire apparaît directement rempli.
 
@@ -73,29 +74,25 @@ Les aperçus des blocs « image et texte » résolvaient leur média dans un eff
 
 Le hook partagé `useResolvedPreviewMedia` garde un seul état, le **résultat**, étiqueté par la clé du média auquel il répond. L'effet ne le modifie qu'à l'arrivée de la réponse :
 
-```ts
-// apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts (extrait)
-const [fetched, setFetched] = useState<Fetched | null>(null);
-
-useEffect(() => {
-  if (m == null || key === null) return;
-  let cancelled = false;
-  const done = (media: Fetched["media"], resolution: Fetched["resolution"]) => {
-    if (!cancelled) setFetched({ key, media, resolution });
-  };
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts"
+  filename="useResolvedPreviewMedia.ts"
+  snippetRange="58-65"
+  snippetTitle="Un seul état, le résultat étiqueté par sa clé"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 « En cours » n'est plus stocké : il se **déduit**. S'il y a un média et pas encore de résultat pour lui, c'est qu'on l'attend.
 
-```ts
-// apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts (extrait)
-if (m == null || key === null) return { media: null, resolution: "idle" };
-if (fetched === null || fetched.key !== key) return { media: null, resolution: "loading" };
-return {
-  media: fetched.media ? { ...fetched.media, caption: m.caption } : null,
-  resolution: fetched.resolution,
-};
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts"
+  filename="useResolvedPreviewMedia.ts"
+  snippetRange="104-109"
+  snippetTitle="« En cours » se déduit"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Le même raisonnement règle deux autres problèmes. Une réponse arrivée trop tard pour un ancien média est ignorée d'office, puisque sa clé ne correspond plus. Et la légende, prise dans le bloc à chaque rendu, se met à jour pendant la frappe sans relancer de requête, alors qu'avant elle restait figée jusqu'au changement de média. Les deux aperçus recopiaient la même logique ; ils partagent désormais le hook.
 
@@ -103,16 +100,14 @@ Le même raisonnement règle deux autres problèmes. Une réponse arrivée trop 
 
 Le recadrage d'image associe à chaque curseur un champ numérique. Un effet recopiait la valeur du curseur dans le texte du champ à chaque changement. Le champ affiche maintenant la valeur du curseur, **sauf** pendant la saisie, où un brouillon prend le relais :
 
-```tsx
-// apps/web/src/features/gallery-crop/components/Cropper.tsx (extrait)
-const [draft, setDraft] = useState<string | null>(null);
-const text = draft ?? (decimals ? ctrl.value.toFixed(decimals) : String(Math.round(ctrl.value)));
-const commitText = (raw: string) => {
-  const n = Number(raw);
-  if (!Number.isNaN(n)) ctrl.set(Math.min(max, Math.max(min, n)));
-  setDraft(null);
-};
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/gallery-crop/components/Cropper.tsx"
+  filename="Cropper.tsx"
+  snippetRange="66-72"
+  snippetTitle="Un brouillon pendant la saisie"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ### Une source extérieure : useSyncExternalStore
 
@@ -120,11 +115,14 @@ Le bandeau d'actualités compte les nouvelles publiées depuis la dernière ouve
 
 React a un hook fait pour lire une source extérieure : `useSyncExternalStore`. Il reçoit une fonction d'abonnement, une fonction de lecture, et la valeur à utiliser côté serveur :
 
-```tsx
-// apps/web/src/features/breaking-news/BreakingNewsShell.tsx (extrait)
-const lastSeenRaw = useSyncExternalStore(subscribeLastSeen, readLastSeen, () => null);
-const unseenCount = lastSeenRaw === null ? 0 : countUnseen(news, lastSeenRaw);
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/breaking-news/BreakingNewsShell.tsx"
+  filename="BreakingNewsShell.tsx"
+  snippetRange="70-71"
+  snippetTitle="Lire le localStorage comme une source extérieure"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 Côté serveur et pendant l'hydratation, la valeur vaut `null` : pas de badge, donc pas de différence entre le HTML du serveur et le premier rendu du navigateur. Ensuite le navigateur lit sa valeur, et React se réabonne aux changements, y compris ceux faits dans un autre onglet.
 
@@ -132,13 +130,14 @@ Côté serveur et pendant l'hydratation, la valeur vaut `null` : pas de badge, d
 
 L'envoi de photos personnelles garde ses aperçus dans un ref, pour les libérer au démontage. Le ref était mis à jour pendant le rendu, ce que la règle `react-hooks/refs` interdit : React peut abandonner un rendu en cours, et le ref garderait alors une valeur qui n'a jamais été affichée. La mise à jour passe dans un effet, qui ne s'exécute qu'après un rendu effectivement affiché :
 
-```tsx
-// apps/web/src/features/admin/perso/PersoPhotoUploader.tsx (extrait)
-const itemsRef = useRef<UploadItem[]>([]);
-useEffect(() => {
-  itemsRef.current = items;
-}, [items]);
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/perso/PersoPhotoUploader.tsx"
+  filename="PersoPhotoUploader.tsx"
+  snippetRange="84-87"
+  snippetTitle="Le ref mis à jour après le rendu"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ### Laisser le Compiler mémoïser
 
@@ -152,12 +151,14 @@ Sur la carte des entités, le placement des atomes, coûteux, est désormais gar
 
 Les formulaires de galerie lisaient leurs champs avec `form.watch()` de react-hook-form. Cette fonction renvoie des valeurs que le Compiler ne sait pas suivre, et il renonçait à optimiser tout le composant (`react-hooks/incompatible-library`). La bibliothèque fournit un hook prévu pour cela, `useWatch` :
 
-```tsx
-// apps/web/src/features/admin/galleries/forms/UpdateGalleryForm.tsx (extrait)
-const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
-const watchedSeminarId = useWatch({ control: form.control, name: "seminarId" });
-const watchedEventId = useWatch({ control: form.control, name: "eventId" });
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/galleries/forms/UpdateGalleryForm.tsx"
+  filename="UpdateGalleryForm.tsx"
+  snippetRange="125-127"
+  snippetTitle="useWatch"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 <Callout type="tip">
 Les six motifs disent la même chose : **un état ne doit pas être la copie d'une autre donnée**. Ce qui se calcule à partir des props, d'un résultat de requête ou d'une source extérieure se calcule au rendu. Un état garde seulement ce que rien d'autre ne sait : ce que l'utilisateur a tapé, ce qu'une requête a renvoyé.
@@ -171,12 +172,12 @@ Désactiver une règle sur une ligne (`// eslint-disable-next-line`) reste possi
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que vérifie pnpm check ?", "Les conventions de Next, les tutoriels, la carte des procédures, les entités de la doc, les types du backend et du web, puis le lint."], ["Combien d’avertissements le lint tolère-t-il ?", "Aucun (--max-warnings 0) ; une règle inadaptée se désactive avec un commentaire."], ["Pourquoi ne pas recopier une donnée dans un état depuis un effet ?", "L’écran s’affiche d’abord faux, puis React refait un rendu ; le Compiler renonce à optimiser le composant."], ["Comment remplir un formulaire à l’arrivée des données ?", "Pendant le rendu, une seule fois, protégé par un drapeau."], ["Comment représenter « en cours » ?", "Le déduire : un résultat étiqueté par sa clé, et pas encore de résultat pour la clé actuelle."], ["Comment lire le localStorage sans écart d’hydratation ?", "useSyncExternalStore, avec null comme valeur serveur."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où s’exécute le lint ?", "Sur apps/web, puis sur le backend, les contrats et le moteur du Finder, avec la même configuration."], ["Combien d’avertissements le lint tolère-t-il ?", "Aucun (--max-warnings 0) ; une règle inadaptée se désactive avec un commentaire."], ["Pourquoi ne pas recopier une donnée dans un état depuis un effet ?", "L’écran s’affiche d’abord faux, puis React refait un rendu ; le Compiler renonce à optimiser le composant."], ["Comment remplir un formulaire à l’arrivée des données ?", "Pendant le rendu, une seule fois, protégé par un drapeau."], ["Comment représenter « en cours » ?", "Le déduire : un résultat étiqueté par sa clé, et pas encore de résultat pour la clé actuelle."], ["Comment lire le localStorage sans écart d’hydratation ?", "useSyncExternalStore, avec null comme valeur serveur."]]' />
 
 ## À suivre
 
-Le typecheck et le lint trouvent les erreurs que l'on peut décrire à l'avance. Les autres se manifestent à l'exécution : une page blanche, une requête qui échoue, un membre qui ne voit pas un document. Il faut alors savoir où regarder, et dans quel ordre.
+Le typecheck et le lint appliquent des règles générales, écrites pour tous les projets. Certaines erreurs n’appartiennent qu’à celui-ci : un fichier de Next posé au mauvais endroit, un tutoriel qui vise un élément disparu, une documentation qui cite une procédure renommée. Pour elles, le projet a écrit ses propres gardes.
 
 <Callout type="tip">
-**Chapitre suivant : déboguer.** Les journaux du serveur et du navigateur, les erreurs de Prisma, et la méthode qui part d'une observation plutôt que d'une hypothèse.
+**Chapitre suivant : les gardes maison.** Quatre scripts courts, chacun pour une erreur silencieuse, et la façon d’en écrire un cinquième.
 </Callout>
