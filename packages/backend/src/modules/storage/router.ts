@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { outsideBin } from "@backend/modules/storage/mediaPaths";
+import { assertOutsideAvatars, avatarsPrefix, outsideBin } from "@backend/modules/storage/mediaPaths";
 import { TRPCError } from "@trpc/server";
 
 /**
@@ -367,16 +367,22 @@ export const storageRouter = router({
         userId: ctx.sessionClient.user.id,
         path: input.path,
       });
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
         : new VirtualStorage(deps);
       const reader = backend;
-      const result = await reader.list({
+      const listed = await reader.list({
         path: input.path,
         cursor: input.cursor,
         limit: input.limit,
       });
+      // Les avatars ne sont pas des médias de la bibliothèque : leur dossier n'est jamais listé.
+      const result = {
+        ...listed,
+        folders: listed.folders.filter((f) => f.path !== avatarsPrefix(ctx.appRoot)),
+      };
       // Le statut vit en DB depuis l'aplatissement : on le rapatrie ici.
       await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
       // Espaces de groupe visibles même vides : R2 n'a pas de
@@ -428,6 +434,7 @@ export const storageRouter = router({
         userId: ctx.sessionClient.user.id,
         path: input.path,
       });
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -455,6 +462,10 @@ export const storageRouter = router({
       });
       // Corbeille = feuille : jamais de `.trash` dans l'arbre du finder.
       stripBinSubtree(result.root, `${ctx.appRoot}/bin`);
+      // Avatars : hors de la bibliothèque, leur dossier (enfant direct de la racine) n'apparaît pas.
+      if (result.root.children) {
+        result.root.children = result.root.children.filter((c) => c.path !== avatarsPrefix(ctx.appRoot));
+      }
       await enrichTreeWithStatus(ctx.prisma, ctx.appRoot, result.root);
       // Espaces de groupe ET perso visibles même vides, dans l'arbre du finder.
       result.root = await mergeGroupSpaceFoldersIntoTree({
@@ -515,6 +526,7 @@ export const storageRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Un libellé change ce que TOUT LE MONDE voit : même droit qu'un renommage.
       await assertCanWritePaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const name = input.displayName.trim();
       // Libellé vide = on retire l'override (retour au repli du listing).
       if (name === "") {
@@ -542,6 +554,7 @@ export const storageRouter = router({
         userId: ctx.sessionClient.user.id,
         path: input.path,
       });
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -568,6 +581,7 @@ export const storageRouter = router({
         userId: ctx.sessionClient.user.id,
         path: input.path,
       });
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
       const backend = input.provider
         ? getAdapter(input.provider, deps)
@@ -602,6 +616,7 @@ export const storageRouter = router({
       // Écriture : un administrateur partout, un éditeur dans l'espace de son groupe.
       await assertCanWritePaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
       assertOutsideBin(ctx.appRoot, [input.path]);
+      assertOutsideAvatars(ctx.appRoot, [input.path]);
       const cleanName = input.newBaseName.trim();
       if (!cleanName) {
         throw new TRPCError({
@@ -756,6 +771,7 @@ export const storageRouter = router({
           paths: [...sourcePaths, ...targetPaths],
         });
         assertOutsideBin(ctx.appRoot, [...sourcePaths, ...targetPaths]);
+        assertOutsideAvatars(ctx.appRoot, [...sourcePaths, ...targetPaths]);
       }
 
       // Dossier-entité : chemin immuable, pas de déplacement du binaire.

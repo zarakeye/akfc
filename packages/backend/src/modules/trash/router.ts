@@ -18,6 +18,7 @@ import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTras
 import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
 import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
 import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.service";
+import { assertOutsideAvatars } from "@backend/modules/storage/mediaPaths";
 
 /**
  * trash.router.ts
@@ -103,6 +104,11 @@ export const trashRouter = router({
           source.kind === "selection" ? source.roots : [source.fullPath],
         ),
       });
+      // Les avatars ne sont pas des médias de la bibliothèque : ils ne passent pas par la corbeille.
+      assertOutsideAvatars(
+        ctx.appRoot,
+        input.sources.flatMap((source) => (source.kind === "selection" ? source.roots : [source.fullPath])),
+      );
 
       return trashToBin({ prisma: ctx.prisma, input });
     }),

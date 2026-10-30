@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 /**
  * mediaPaths.ts — la clé de stockage EST `MediaAsset.fullPath`.
@@ -54,3 +55,31 @@ export function binPrefix(appRoot: string): string {
 export function outsideBin(appRoot: string): Prisma.MediaAssetWhereInput {
   return { NOT: { fullPath: { startsWith: binPrefix(appRoot) } } };
 }
+
+/* ─── Les avatars : hors de la bibliothèque ──────────────────────────────────────────────────── */
+
+/**
+ * Les avatars vivent sous `<racine>/avatars/<userId>/…`, mais ce ne sont pas des médias de la
+ * bibliothèque : ni ligne MediaAsset, ni statut, ni rangement. Ils se consomment autrement — par
+ * le profil de leur titulaire (`avatar.*`) et la route `/api/media/public/avatar/<userId>`.
+ * `User.avatar` garde leur clé exacte : un déplacement, un renommage ou une corbeille depuis le
+ * Finder la rendraient fausse, et l'avatar disparaîtrait sans explication.
+ *
+ * Le Finder ne liste donc pas ce dossier, et aucune opération de la bibliothèque n'y entre.
+ */
+export function avatarsPrefix(appRoot: string): string {
+  return `${appRoot}/avatars`;
+}
+
+export function isAvatarPath(appRoot: string, path: string): boolean {
+  const prefix = avatarsPrefix(appRoot);
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+/** Refuse toute opération de la bibliothèque sur le dossier des avatars. Même réponse qu'un chemin inconnu. */
+export function assertOutsideAvatars(appRoot: string, paths: readonly string[]): void {
+  if (paths.some((p) => isAvatarPath(appRoot, p))) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Dossier introuvable." });
+  }
+}
+

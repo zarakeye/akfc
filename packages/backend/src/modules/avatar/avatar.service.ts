@@ -6,6 +6,7 @@ import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-s
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getR2Bucket, getR2Client, getR2PresignClient } from "@backend/modules/storage/adapters/r2/client";
 import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
+import { avatarsPrefix } from "@backend/modules/storage/mediaPaths";
 
 /**
  * avatar.service.ts — pipeline avatar, ISOLÉ du reste.
@@ -22,7 +23,7 @@ import { deleteDerivatives } from "@backend/modules/media/services/mediaDerivati
 
 /** Dossier-entité des avatars d'un user. */
 export function avatarFolder(appRoot: string, userId: string): string {
-  return `${appRoot}/avatars/${userId}`;
+  return `${avatarsPrefix(appRoot)}/${userId}`;
 }
 
 /**

@@ -4412,11 +4412,11 @@
       [
        [
         "registerAvatar",
-        "packages/backend/src/modules/avatar/avatar.service.ts:82"
+        "packages/backend/src/modules/avatar/avatar.service.ts:83"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/avatar/avatar.service.ts:95"
+        "packages/backend/src/modules/avatar/avatar.service.ts:96"
        ]
       ]
      ]
@@ -4431,11 +4431,11 @@
       [
        [
         "registerAvatar",
-        "packages/backend/src/modules/avatar/avatar.service.ts:82"
+        "packages/backend/src/modules/avatar/avatar.service.ts:83"
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/avatar/avatar.service.ts:96"
+        "packages/backend/src/modules/avatar/avatar.service.ts:97"
        ]
       ]
      ]
@@ -4479,11 +4479,11 @@
       [
        [
         "deleteAvatar",
-        "packages/backend/src/modules/avatar/avatar.service.ts:31"
+        "packages/backend/src/modules/avatar/avatar.service.ts:32"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/avatar/avatar.service.ts:37"
+        "packages/backend/src/modules/avatar/avatar.service.ts:38"
        ]
       ]
      ]
@@ -4498,11 +4498,11 @@
       [
        [
         "deleteAvatar",
-        "packages/backend/src/modules/avatar/avatar.service.ts:31"
+        "packages/backend/src/modules/avatar/avatar.service.ts:32"
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/avatar/avatar.service.ts:45"
+        "packages/backend/src/modules/avatar/avatar.service.ts:46"
        ]
       ]
      ]
@@ -4913,7 +4913,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 82,
+   "line": 83,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4939,7 +4939,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 88,
+   "line": 89,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4965,7 +4965,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 94,
+   "line": 95,
    "effects": [
     {
      "model": "Category",
@@ -5171,11 +5171,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
@@ -5185,11 +5185,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
@@ -5373,7 +5373,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 110,
+   "line": 116,
    "effects": [
     {
      "model": "Folder",
@@ -5486,11 +5486,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
@@ -5500,11 +5500,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
@@ -5554,7 +5554,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 116,
+   "line": 122,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -5900,7 +5900,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 122,
+   "line": 128,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -10807,7 +10807,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 417,
+   "line": 423,
    "effects": [
     {
      "model": "Category",
@@ -11073,7 +11073,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 496,
+   "line": 507,
    "effects": [
     {
      "model": "FolderLabel",
@@ -11083,7 +11083,7 @@
       [
        [
         "ctx.prisma.folderLabel.findMany",
-        "packages/backend/src/modules/storage/router.ts:497"
+        "packages/backend/src/modules/storage/router.ts:508"
        ]
       ]
      ]
@@ -11095,7 +11095,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 504,
+   "line": 515,
    "effects": [
     {
      "model": "Category",
@@ -11121,7 +11121,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 508,
+   "line": 519,
    "effects": [
     {
      "model": "FolderLabel",
@@ -11134,7 +11134,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:524"
+        "packages/backend/src/modules/storage/router.ts:536"
        ]
       ]
      ]
@@ -11147,7 +11147,7 @@
       [
        [
         "ctx.prisma.folderLabel.deleteMany",
-        "packages/backend/src/modules/storage/router.ts:521"
+        "packages/backend/src/modules/storage/router.ts:533"
        ]
       ]
      ]
@@ -11163,7 +11163,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:524"
+        "packages/backend/src/modules/storage/router.ts:536"
        ]
       ]
      ]
@@ -11245,7 +11245,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 532,
+   "line": 544,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11324,7 +11324,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 558,
+   "line": 571,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11403,7 +11403,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 592,
+   "line": 606,
    "effects": [
     {
      "model": "Category",
@@ -11430,7 +11430,7 @@
       [
        [
         "ctx.prisma.folder.findFirst",
-        "packages/backend/src/modules/storage/router.ts:713"
+        "packages/backend/src/modules/storage/router.ts:728"
        ]
       ]
      ]
@@ -11483,7 +11483,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:712"
+        "packages/backend/src/modules/storage/router.ts:727"
        ]
       ]
      ]
@@ -11499,7 +11499,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/router.ts:671"
+        "packages/backend/src/modules/storage/router.ts:686"
        ]
       ],
       [
@@ -11509,11 +11509,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
@@ -11523,11 +11523,11 @@
        ],
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
@@ -11609,7 +11609,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 739,
+   "line": 754,
    "effects": [
     {
      "model": "Category",
@@ -11636,7 +11636,7 @@
       [
        [
         "ctx.prisma.folder.findFirst",
-        "packages/backend/src/modules/storage/router.ts:819"
+        "packages/backend/src/modules/storage/router.ts:835"
        ]
       ]
      ]
@@ -11649,7 +11649,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:818"
+        "packages/backend/src/modules/storage/router.ts:834"
        ]
       ]
      ]
@@ -11731,7 +11731,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 843,
+   "line": 859,
    "effects": [
     {
      "model": "Category",
@@ -11841,7 +11841,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:863"
+        "packages/backend/src/modules/storage/router.ts:879"
        ]
       ]
      ]
@@ -12005,7 +12005,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 870,
+   "line": 886,
    "effects": [
     {
      "model": "Category",
@@ -12115,7 +12115,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:901"
+        "packages/backend/src/modules/storage/router.ts:917"
        ]
       ],
       [
@@ -12289,7 +12289,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 941,
+   "line": 957,
    "effects": [
     {
      "model": "Category",
@@ -12459,7 +12459,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:964"
+        "packages/backend/src/modules/storage/router.ts:980"
        ]
       ],
       [
@@ -16597,7 +16597,7 @@
   },
   "deleteAvatar": {
    "file": "packages/backend/src/modules/avatar/avatar.service.ts",
-   "line": 31,
+   "line": 32,
    "effects": [
     {
      "model": "User",
@@ -16607,7 +16607,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/avatar/avatar.service.ts:37"
+        "packages/backend/src/modules/avatar/avatar.service.ts:38"
        ]
       ]
      ]
@@ -16622,7 +16622,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/avatar/avatar.service.ts:45"
+        "packages/backend/src/modules/avatar/avatar.service.ts:46"
        ]
       ]
      ]
@@ -16632,7 +16632,7 @@
   },
   "registerAvatar": {
    "file": "packages/backend/src/modules/avatar/avatar.service.ts",
-   "line": 82,
+   "line": 83,
    "effects": [
     {
      "model": "User",
@@ -16642,7 +16642,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/avatar/avatar.service.ts:95"
+        "packages/backend/src/modules/avatar/avatar.service.ts:96"
        ]
       ]
      ]
@@ -16657,7 +16657,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/avatar/avatar.service.ts:96"
+        "packages/backend/src/modules/avatar/avatar.service.ts:97"
        ]
       ]
      ]
@@ -19685,7 +19685,7 @@
   },
   "rewriteAssetPaths": {
    "file": "packages/backend/src/modules/storage/mediaPaths.ts",
-   "line": 23,
+   "line": 24,
    "effects": [
     {
      "model": "MediaAsset",
@@ -19698,13 +19698,13 @@
       [
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
@@ -24057,21 +24057,21 @@
       [
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
@@ -24273,21 +24273,21 @@
       [
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:31"
+        "packages/backend/src/modules/storage/mediaPaths.ts:32"
        ]
       ],
       [
        [
         "rewriteAssetPaths",
-        "packages/backend/src/modules/storage/mediaPaths.ts:23"
+        "packages/backend/src/modules/storage/mediaPaths.ts:24"
        ],
        [
         "db.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/mediaPaths.ts:38"
+        "packages/backend/src/modules/storage/mediaPaths.ts:39"
        ]
       ]
      ]
