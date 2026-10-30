@@ -32,7 +32,7 @@ Un stockage S3 ne sait pas dire « voici l’arbre ». Il sait répondre à une 
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetRange="529-582"
+  snippetRange="532-585"
   title="buildSubTree — d’une liste de clés à un niveau d’arbre"
   stepsJson='[{"title": "Un préfixe, un délimiteur", "body": "On demande les clés sous `AKFC/courses/` en regroupant au prochain « / ». Le stockage ne descend pas : il rend un seul niveau.", "scope": "7-17", "focus": "14-14"}, {"title": "CommonPrefixes : les sous-dossiers", "body": "Les préfixes regroupés sont tout ce qu’un stockage objet a à offrir comme « dossiers » : des chaînes communes à plusieurs clés. Un préfixe sans aucune clé n’apparaît pas — il n’existe pas.", "scope": "19-22", "focus": "19-19"}, {"title": "Descendre, ou s’arrêter", "body": "Tant qu’il reste de la profondeur, on relance la même question sur chaque sous-dossier. À la limite, le dossier est rendu SANS `children` : non chargé, ce qui n’est pas la même chose que vide.", "scope": "25-36", "focus": "27-27"}, {"title": "Contents : les fichiers", "body": "Les objets situés directement sous le préfixe sont les fichiers de ce niveau. Le stockage n’en connaît que la clé, la taille et la date : ni le statut, ni le nom d’origine, ni l’expéditeur.", "scope": "38-43", "focus": "38-38"}]'
 />

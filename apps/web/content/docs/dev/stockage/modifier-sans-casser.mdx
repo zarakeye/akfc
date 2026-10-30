@@ -52,10 +52,10 @@ Chaque modification du Finder touche **deux** systèmes : le stockage, qui porte
 Toute la conception qui suit découle de cette contrainte. Elle impose trois règles, qu’on retrouvera à chaque geste :
 
 - **ne rien écraser en silence** : vérifier, avant la moindre écriture, que la cible est libre ;
-- **écrire dans un ordre réfléchi** : le stockage d’abord, la base ensuite, de sorte qu’un échec en cours de route laisse l’état le moins grave ;
+- **écrire dans un ordre réfléchi, et compenser** : le stockage d’abord, la base ensuite ; si une étape échoue, on défait les précédentes, pour retrouver l’état de départ ;
 - **ne toucher la base que là où elle doit suivre** : un renommage de fichier qui ne concerne que l’affichage ne touche pas le stockage du tout.
 
-<DocsTable columnsJson='["Geste","Le stockage","La base"]' rowsJson='[["Renommer un fichier","rien","MediaAsset.displayName"],["Renommer, déplacer un dossier","copie puis suppression de chaque objet","MediaAsset, Folder et FolderLabel : préfixe réécrit"],["Déplacer un fichier","copie puis suppression","MediaAsset.fullPath"],["Valider","rien","MediaAsset.status (chapitre 4)"],["Mettre à la corbeille","déplacement vers bin/.trash/<id>/","TrashEntry créée ; MediaAsset inchangée"],["Restaurer","retour au chemin d’origine (ou à côté)","TrashEntry « restaurée »"],["Supprimer définitivement","suppression des objets et déclinaisons","TrashEntry « supprimée », lignes orphelines effacées"]]' />
+<DocsTable columnsJson='["Geste","Le stockage","La base"]' rowsJson='[["Renommer un fichier","rien","MediaAsset.displayName"],["Renommer, déplacer un dossier","copie puis suppression de chaque objet","MediaAsset, Folder et FolderLabel : préfixe réécrit"],["Déplacer un fichier","copie puis suppression","MediaAsset.fullPath"],["Valider","rien","MediaAsset.status (chapitre 4)"],["Mettre à la corbeille","déplacement vers bin/.trash/<id>/","TrashEntry créée ; les lignes MediaAsset suivent leurs objets"],["Restaurer","retour au chemin d’origine (ou à côté)","les lignes reviennent avec les objets ; TrashEntry « restaurée »"],["Supprimer définitivement","suppression des objets et déclinaisons","lignes effacées ; TrashEntry « supprimée »"]]' />
 
 ## Renommer un fichier, ce n’est pas le déplacer
 
@@ -65,7 +65,7 @@ Au temps de Cloudinary, renommer un fichier changeait son `public_id` : un renom
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="668-680"
+  snippetRange="670-682"
   snippetHighlight="3-4"
   snippetTitle="Le renommage d’un fichier"
   fullFileTitle="Voir le fichier complet"
@@ -79,7 +79,7 @@ Renommer un **dossier**, en revanche, est un vrai déplacement : sa clé est la 
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="590-735"
+  snippetRange="592-737"
   title="storage.rename — refuser d’abord, déplacer ensuite"
   stepsJson='[{"title": "Le droit d’écrire", "body": "Un administrateur partout, un éditeur dans l’espace de son groupe. Renommer le dossier d’un autre groupe est une écriture comme une autre (fiche 3.11).", "scope": "12-12", "focus": "12-12"}, {"title": "Un nom qui reste un nom", "body": "Ni vide, ni « / » (il créerait un sous-dossier), ni « .. » : un chemin qui en contient un est refusé par toutes les gardes de lecture, et le dossier deviendrait illisible pour tout le monde.", "scope": "14-34", "focus": "29-29"}, {"title": "Les dossiers que le code connaît", "body": "Un dossier-entité (l’espace d’un groupe, d’un membre, un dossier d’avatars) et une racine de contenu (cours, stages…) ont un chemin connu du code : destinations d’envoi, gardes de lecture. Leur « Renommer » édite le libellé (FolderLabel), jamais le chemin.", "scope": "50-70", "focus": "63-63"}, {"title": "L’extension, si c’en est une", "body": "Un point n’est pas forcément un séparateur d’extension : « CNI recto (ep. BAZZE) » en contient un. On ne garde qu’un suffixe qui A LA FORME d’une extension, et jamais pour un dossier.", "scope": "102-105", "focus": "102-103"}, {"title": "Ne rien écraser", "body": "La cible doit être libre partout : chez le stockage, dans MediaAsset, dans Folder. Une seule de ces trois sources ne suffit pas — un dossier vide enregistré n’a aucun objet, un fichier en corbeille n’a plus d’objet mais garde sa ligne.", "scope": "119-129", "focus": "124-124"}, {"title": "Puis déplacer", "body": "Le renommage d’un dossier passe par le même `adapter.move` qu’un déplacement : copie de chaque objet, réécriture du préfixe en base.", "scope": "140-143", "focus": "140-140"}]'
 />
@@ -92,7 +92,7 @@ S3 n’a pas d’opération « renommer » : déplacer un objet, c’est le **co
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetRange="652-712"
+  snippetRange="655-715"
   snippetHighlight="19,32,49"
   snippetTitle="moveFolder"
   fullFileTitle="Voir le fichier complet"
@@ -110,12 +110,24 @@ Puis la base suit, dans une seule transaction :
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
   filename="r2StorageAdapter.ts"
-  snippetRange="240-289"
-  title="adapter.move — le stockage, puis la base"
-  stepsJson='[{"title": "Un fichier : une ligne", "body": "L’objet est copié puis supprimé, et sa ligne MediaAsset prend la nouvelle clé.", "scope": "10-17", "focus": "14-14"}, {"title": "Pourquoi le stockage d’abord", "body": "Si la copie échoue, rien n’a bougé nulle part. Si la base échoue après, l’objet est à sa nouvelle place et la ligne pointe encore vers l’ancienne : un état réparable (on rejoue la mise à jour), alors que l’ordre inverse laisserait une ligne pointant vers un objet qui n’existe pas encore.", "scope": "7-9", "focus": "7-9"}, {"title": "Un dossier : trois tables", "body": "Les fichiers (MediaAsset), les dossiers enregistrés (Folder) et les libellés (FolderLabel) changent de préfixe ensemble. Oublier Folder laisserait un espace enregistré à l’ancien chemin ; oublier FolderLabel ferait perdre son nom au dossier déplacé.", "scope": "33-50", "focus": "40-45"}, {"title": "Le préfixe, comparé littéralement", "body": "Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait aussi à « coursX2026 ». On les échappe ; seul le « % » final reste un joker. Et SUBSTRING remplace le début du chemin, sous-chemin préservé.", "scope": "31-32", "focus": "32-32"}]'
+  snippetRange="241-292"
+  title="adapter.move — le stockage, la base, et le retour en arrière"
+  stepsJson='[{"title": "Le stockage d’abord", "body": "Un fichier se copie puis se supprime ; un dossier, objet par objet, par paquets. Si la copie échoue en route, on ramène à la source ce qui est déjà arrivé : l’état final est l’état initial, et l’erreur remonte.", "scope": "7-21", "focus": "17-17"}, {"title": "Un fichier : une ligne", "body": "Sa ligne MediaAsset prend la nouvelle clé (rewriteAssetPaths, la même fonction pour tous les gestes).", "scope": "27-28", "focus": "28-28"}, {"title": "Un dossier : trois tables", "body": "Les fichiers (MediaAsset), les dossiers enregistrés (Folder) et les libellés (FolderLabel) changent de préfixe ensemble, en une transaction. Oublier Folder laisserait un espace enregistré à l’ancien chemin ; oublier FolderLabel ferait perdre son nom au dossier déplacé.", "scope": "32-44", "focus": "35-40"}, {"title": "Si la base échoue : les objets reviennent", "body": "Une transaction SQL et une copie S3 ne se rendent pas atomiques ensemble : on compense. Les objets retournent à leur place, et la base n’a rien changé (la transaction a été annulée).", "scope": "46-52", "focus": "47-47"}]'
 />
 
-Prisma n’offre pas de remplacement de sous-chaîne dans `updateMany` : d’où le SQL brut, **paramétré** — le gabarit étiqueté `$executeRaw` transforme chaque valeur interpolée en paramètre de requête, jamais en texte concaténé (fiche 6.5).
+La réécriture des lignes est écrite **une fois**, et sert à tous les gestes qui changent la clé d’un objet — déplacer, jeter, restaurer :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/mediaPaths.ts"
+  filename="mediaPaths.ts"
+  snippetRange="23-43"
+  snippetHighlight="15,18"
+  snippetTitle="rewriteAssetPaths"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Prisma n’offre pas de remplacement de sous-chaîne dans `updateMany` : d’où le SQL brut, **paramétré** — le gabarit étiqueté `$executeRaw` transforme chaque valeur interpolée en paramètre de requête, jamais en texte concaténé (fiche 6.5). Dans un `LIKE`, `_` et `%` sont des jokers : un dossier « cours_2026 » correspondrait aussi à « coursX2026 ». On les échappe ; seul le `%` final reste un joker. Et `SUBSTRING` remplace le début du chemin, sous-chemin préservé.
 
 ### La structure se déplace avec ce qu’on déplace
 
@@ -125,7 +137,7 @@ Une sélection peut mêler fichiers et dossiers. Le service de résolution en fa
   language="ts"
   filepath="packages/backend/src/modules/storage/resolveMoveIntent.service.ts"
   filename="resolveMoveIntent.service.ts"
-  snippetRange="101-150"
+  snippetRange="135-184"
   title="resolveSource — une sélection en opérations"
   stepsJson='[{"title": "Un fichier : tel quel", "body": "Il garde son nom dans le dossier cible.", "scope": "26-30", "focus": "28-28"}, {"title": "Un dossier : d’un bloc", "body": "Sans exclusion à l’intérieur, le dossier part ENTIER, sous-dossiers compris : une seule opération dossier.", "scope": "32-36", "focus": "34-34"}, {"title": "Avec des exclusions : fichier par fichier", "body": "Si la sélection exclut une partie du dossier, on descend aux fichiers — et chacun garde son chemin RELATIF au dossier sélectionné.", "scope": "38-47", "focus": "45-45"}]'
 />
@@ -140,13 +152,31 @@ Le même service refuse de déposer un dossier **dans lui-même** ou dans l’un
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="737-832"
+  snippetRange="739-834"
   title="storage.move — tout vérifier, puis tout exécuter"
-  stepsJson='[{"title": "La source ET la cible", "body": "Un éditeur ne sort rien de l’espace de son groupe, et n’y fait rien entrer qui vienne d’ailleurs : le droit d’écriture porte sur les deux bouts.", "scope": "13-19", "focus": "18-18"}, {"title": "Les dossiers que le code connaît", "body": "Dossiers-entités, racines de contenu, corbeille : leur chemin est connu du code. On ne les déplace pas, même au sein d’une sélection.", "scope": "26-47", "focus": "38-40"}, {"title": "Planifier sans rien écrire", "body": "La sélection devient une liste d’opérations. Une opération sur place (déposer un élément dans son propre dossier) est écartée : l’adapter renommerait un objet sur lui-même, le stockage refuserait, et tout le geste échouerait.", "scope": "56-61", "focus": "56-56"}, {"title": "Ne rien écraser", "body": "Deux éléments de la sélection qui arriveraient au même nom, ou une cible déjà occupée (objet, ligne, dossier enregistré) : CONFLICT, avant la moindre copie. Une copie S3 remplace sans prévenir l’objet qui porte la clé cible, et la ligne déplacée heurterait ensuite la contrainte d’unicité : le fichier d’arrivée serait perdu.", "scope": "67-89", "focus": "83-83"}, {"title": "Puis exécuter, une à une", "body": "Séquentiellement : des déplacements simultanés sur des préfixes voisins pourraient se marcher dessus. Un déplacement ne change jamais le statut : c’est une réorganisation, pas une validation.", "scope": "93-95", "focus": "93-93"}]'
+  stepsJson='[{"title": "La source ET la cible", "body": "Un éditeur ne sort rien de l’espace de son groupe, et n’y fait rien entrer qui vienne d’ailleurs : le droit d’écriture porte sur les deux bouts.", "scope": "13-19", "focus": "18-18"}, {"title": "Les dossiers que le code connaît", "body": "Dossiers-entités, racines de contenu, corbeille : leur chemin est connu du code. On ne les déplace pas, même au sein d’une sélection.", "scope": "26-47", "focus": "38-40"}, {"title": "Planifier sans rien écrire", "body": "La sélection devient une liste d’opérations. Une opération sur place (déposer un élément dans son propre dossier) est écartée : l’adapter renommerait un objet sur lui-même, le stockage refuserait, et tout le geste échouerait.", "scope": "56-61", "focus": "56-56"}, {"title": "Ne rien écraser", "body": "Deux éléments de la sélection qui arriveraient au même nom, ou une cible déjà occupée (objet, ligne, dossier enregistré) : CONFLICT, avant la moindre copie. Une copie S3 remplace sans prévenir l’objet qui porte la clé cible, et la ligne déplacée heurterait ensuite la contrainte d’unicité : le fichier d’arrivée serait perdu.", "scope": "67-89", "focus": "83-83"}, {"title": "Puis exécuter, une à une", "body": "Séquentiellement : des déplacements simultanés sur des préfixes voisins pourraient se marcher dessus. Tout ou rien : si une opération échoue, les précédentes sont défaites. Un déplacement ne change jamais le statut : c’est une réorganisation, pas une validation.", "scope": "93-95", "focus": "93-93"}]'
 />
 
+### Tout ou rien, par compensation
+
+Un geste multiple n’a pas de transaction commune : chaque opération touche le stockage **et** la base. La première version exécutait les opérations l’une après l’autre et s’arrêtait à la première erreur — les précédentes restaient faites, et l’administrateur se retrouvait avec une sélection à moitié déplacée. On ne peut pas rendre l’ensemble atomique ; on peut le **compenser** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/resolveMoveIntent.service.ts"
+  filename="resolveMoveIntent.service.ts"
+  snippetRange="84-122"
+  snippetHighlight="13,16,18,30"
+  snippetTitle="executeMoveOperations"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Si l’opération *k* échoue, l’adapter a déjà ramené ses propres objets ; on défait alors les opérations 1 à *k − 1* **en sens inverse**, de la plus récente à la plus ancienne — l’ordre compte, car une opération peut dépendre de la place libérée par la précédente. L’administrateur retrouve la bibliothèque telle qu’avant son geste, et un message qui le dit.
+
+Le code d’erreur est `SERVICE_UNAVAILABLE`, pas `INTERNAL_SERVER_ERROR` : c’est le stockage ou la base qui a failli, pas la requête (fiche 5.3) — et le message, qui dit si quelque chose est resté en route, doit arriver jusqu’à l’écran, alors qu’une erreur interne voit le sien remplacé en production.
+
 <Callout type="warning">
-Ce qui reste fragile, et qu’il faut savoir : un déplacement de plusieurs éléments n’est **pas atomique**. Si la troisième opération échoue, les deux premières sont faites. Et entre la copie d’un dossier et la mise à jour de la base, un arrêt du serveur laisserait des objets à leur nouvelle place et des lignes à l’ancienne. Le Finder signale l’échec (bandeau d’erreur) ; la réparation, elle, reste manuelle.
+Ce que la compensation ne couvre pas : un **arrêt du serveur** au milieu d’un geste. Plus personne n’est là pour défaire. C’est la limite de toute compensation applicative ; la lever demanderait un journal des opérations en cours, rejoué au démarrage.
 </Callout>
 
 Côté navigateur, un glisser-déposer n’a pas de formulaire où afficher une erreur : longtemps, un refus finissait dans la console, et l’administrateur voyait son fichier « revenir » sans explication. Le refus s’affiche désormais dans le bandeau du Finder (`actionError` du store), avec le message du serveur — d’où l’importance qu’il soit une `TRPCError` en français, et pas une `Error` dont le texte serait masqué en production.
@@ -159,9 +189,9 @@ La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin
   language="ts"
   filepath="packages/backend/src/modules/trash/services/trashToBin.service.ts"
   filename="trashToBin.service.ts"
-  snippetRange="229-305"
+  snippetRange="230-319"
   title="trashToBin — réserver, puis déplacer"
-  stepsJson='[{"title": "Ni la racine, ni la corbeille", "body": "On ne jette ni la racine, ni la corbeille elle-même, ni ce qu’elle contient déjà.", "scope": "3-4", "focus": "3-3"}, {"title": "Un identifiant unique dans le chemin", "body": "Deux `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille : chacun a son dossier `.trash/<uuid>/`. Les collisions sont impossibles par construction.", "scope": "6-11", "focus": "11-11"}, {"title": "La TrashEntry avant le déplacement", "body": "La ligne est créée AVANT de déplacer : si le déplacement échoue, la corbeille sait au moins qu’un élément était en route, et d’où il venait. L’ordre inverse pourrait laisser des objets dans la quarantaine sans aucune trace.", "scope": "33-47", "focus": "40-41"}, {"title": "Puis la quarantaine", "body": "Le fichier (ou chaque objet du dossier) part sous `storageRoot`. Pour un dossier, ses lignes Folder disparaissent de l’ancien endroit — le dossier lui-même, et ce qui est SOUS lui, pas tout ce qui commence par les mêmes lettres.", "scope": "49-77", "focus": "54-54"}]'
+  stepsJson='[{"title": "Ni la racine, ni la corbeille", "body": "On ne jette ni la racine, ni la corbeille elle-même, ni ce qu’elle contient déjà.", "scope": "3-4", "focus": "3-3"}, {"title": "Un identifiant unique dans le chemin", "body": "Deux `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille : chacun a son dossier `.trash/<uuid>/`. Les collisions sont impossibles par construction.", "scope": "6-11", "focus": "11-11"}, {"title": "La TrashEntry avant le déplacement", "body": "La ligne est créée AVANT de déplacer : si le déplacement échoue, la corbeille sait au moins qu’un élément était en route, et d’où il venait. L’ordre inverse pourrait laisser des objets dans la quarantaine sans aucune trace.", "scope": "33-47", "focus": "40-41"}, {"title": "Puis la quarantaine, lignes comprises", "body": "Les objets partent sous `storageRoot`, et leurs lignes MediaAsset les SUIVENT (rewriteAssetPaths) : statut, nom d’origine, description et auteur reviendront avec eux à la restauration. Les lignes Folder du sous-arbre disparaissent de l’ancien endroit.", "scope": "49-90", "focus": "74-74"}, {"title": "Et si une étape échoue", "body": "Pas de transaction commune : on compense. Les objets reviennent à leur place, et la TrashEntry réservée est retirée.", "scope": "58-63", "focus": "62-62"}]'
 />
 
 Avant la boucle, trois refus, tous **avant** le moindre déplacement — rien n’est jeté si un seul élément est refusé :
@@ -180,7 +210,9 @@ Avant la boucle, trois refus, tous **avant** le moindre déplacement — rien n�
   fullFileTitle="Voir le fichier complet"
 />
 
-Pourquoi refuser, plutôt que retirer le fichier des pages ? Parce que la ligne `MediaAsset` d’un fichier jeté **n’est pas modifiée** : elle garde son chemin d’origine, son statut, sa description. La page qui l’affiche pointerait vers un objet qui n’est plus là — un média cassé, tant que dure la quarantaine. Le refus nomme chaque fichier et ce qui l’utilise : l’administrateur sait quoi retirer, et où.
+Pourquoi refuser, plutôt que laisser faire ? Parce qu’une page référence un fichier par l’identifiant de sa ligne, et que cette ligne part avec l’objet dans la quarantaine : la page afficherait un média cassé tant que dure la quarantaine. Le refus nomme chaque fichier et ce qui l’utilise : l’administrateur sait quoi retirer, et où.
+
+Une ligne en quarantaine garde son statut. Elle ne doit pourtant plus compter nulle part : les compteurs « à traiter » et la recherche excluent la corbeille (`outsideBin`), et un fichier jeté ne peut plus être posé dans une page ni résolu pour l’affichage.
 
 ### L’immuabilité de la quarantaine
 
@@ -198,13 +230,13 @@ La quarantaine n’est modifiable que par le routeur `trash` : le routeur `stora
 
 ## Restaurer
 
-Restaurer replace l’élément à son chemin d’origine. Comme la ligne `MediaAsset` y est restée, elle retrouve son objet, avec son statut, son nom et sa description intacts. Mais le chemin d’origine a pu être **réoccupé** entre-temps :
+Restaurer replace l’élément à son chemin d’origine, et ses lignes `MediaAsset` reviennent avec lui. Mais le chemin d’origine a pu être **réoccupé** entre-temps :
 
 <CodeExample
   language="ts"
   filepath="packages/backend/src/modules/trash/services/restoreFromBin.service.ts"
   filename="restoreFromBin.service.ts"
-  snippetRange="134-158"
+  snippetRange="135-159"
   snippetHighlight="11,15,19"
   snippetTitle="computeRestoredToPath"
   fullFileTitle="Voir le fichier complet"
@@ -212,25 +244,35 @@ Restaurer replace l’élément à son chemin d’origine. Comme la ligne `Media
 
 En cas de collision, l’élément est restauré **à côté**, avec un suffixe daté de sa mise à la corbeille (« photo (bin 2026-10-30 14-05).jpg »), puis un compteur si nécessaire. On n’écrase jamais ce qui a pris sa place.
 
-<Callout type="warning">
-Une limite connue : un fichier restauré **à côté** de son chemin d’origine n’a pas de ligne `MediaAsset` à son nouveau chemin. Sa ligne d’origine est restée à l’ancien chemin, où un autre fichier a pris sa place — et l’enregistrement de cet envoi a repris la ligne. Le fichier restauré apparaît donc dans le Finder, mais sans statut ni nom d’origine, et ne peut pas être choisi dans une page. Le corriger demanderait que les lignes suivent les objets dans la quarantaine, ce qui reste à faire.
-</Callout>
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/restoreFromBin.service.ts"
+  filename="restoreFromBin.service.ts"
+  snippetRange="219-240"
+  snippetHighlight="16,18"
+  snippetTitle="Les lignes reviennent avec leurs objets"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est ici que le choix « les lignes suivent leurs objets » paie. La première version laissait les lignes au chemin d’origine pendant la quarantaine : restauré à sa place, un fichier les retrouvait ; restauré **à côté**, il n’en avait plus aucune — un nouvel envoi au même chemin avait repris la sienne. Il apparaissait sans statut ni nom d’origine, et ne pouvait plus être choisi dans une page. Désormais, les lignes accompagnent les objets dans la quarantaine et en reviennent avec eux, où qu’ils atterrissent.
+
+Les éléments jetés **avant** ce changement ont laissé leurs lignes au chemin d’origine. Le code les accepte sans migration : leur réécriture ne trouve rien sous `storageRoot`, et leurs lignes, restées en place, les retrouvent s’ils y reviennent.
 
 ## Supprimer pour de bon
 
-La suppression définitive (une entrée, ou toute la corbeille) efface les objets, leurs **déclinaisons** (vignettes, affiches), et passe la `TrashEntry` à « supprimée ». Reste la base : les lignes `MediaAsset` restées sur le chemin d’origine n’ont plus de fichier.
+La suppression définitive (une entrée, ou toute la corbeille) efface les objets, leurs **déclinaisons** (vignettes, affiches), et passe la `TrashEntry` à « supprimée ». Reste la base : les lignes `MediaAsset` de l’élément n’ont plus de fichier.
 
 <CodeExample
   language="ts"
   filepath="packages/backend/src/modules/trash/services/trashedAssets.service.ts"
   filename="trashedAssets.service.ts"
-  snippetRange="100-115"
-  snippetHighlight="9,15-16"
+  snippetRange="105-130"
+  snippetHighlight="8,20-21"
   snippetTitle="deleteAssetRowsOfTrashedItem"
   fullFileTitle="Voir le fichier complet"
 />
 
-Une ligne n’est effacée que si **aucun objet** n’existe plus à son chemin : un fichier redéposé au même endroit entre-temps a repris la ligne (un `upsert` sur `fullPath`), et elle lui appartient désormais. La décision se prend en interrogeant le stockage, pas en supposant.
+Les lignes qui ont suivi leurs objets dans la quarantaine sont effacées directement. Pour les éléments jetés avant ce changement, une ligne restée au chemin d’origine n’est effacée que si **aucun objet** n’existe plus à son chemin : un fichier redéposé au même endroit entre-temps a repris la ligne (un `upsert` sur `fullPath`), et elle lui appartient désormais. La décision se prend en interrogeant le stockage, pas en supposant.
 
 <Callout type="warning">
 Le stockage et la base doivent rester d’accord. Chaque geste du Finder écrit des deux côtés, dans un ordre choisi, après avoir vérifié que rien ne sera écrasé. Une opération qui ne toucherait que l’un des deux laisserait des fichiers sans statut, ou des lignes qui pointent vers rien — et rien, ensuite, ne permettrait de les distinguer des vrais.
@@ -238,7 +280,7 @@ Le stockage et la base doivent rester d’accord. Chaque geste du Finder écrit 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait « Renommer » sur un fichier ?", "Un UPDATE de displayName ; la clé ne change pas, le stockage n’est pas touché."], ["Et sur un dossier ?", "Un déplacement (copie puis suppression), refusé pour les dossiers que le code connaît, pour « .. », et si la cible est occupée."], ["Qu’est-ce qui suit un dossier déplacé ?", "MediaAsset, Folder et FolderLabel, en une transaction, préfixe échappé dans le LIKE."], ["Comment évite-t-on d’écraser ?", "Cible vérifiée partout (stockage, MediaAsset, Folder) et doublons de la sélection refusés, avant toute copie."], ["Qu’est-ce qui reste fragile ?", "Un geste multiple n’est pas atomique ; un arrêt entre copie et base laisse un écart à réparer à la main."], ["Où va un fichier jeté ?", "Dans bin/.trash/<uuid>/, avec une TrashEntry qui garde son chemin d’origine ; refusé s’il est encore utilisé."], ["Que devient sa ligne MediaAsset ?", "Inchangée pendant la quarantaine ; effacée à la suppression définitive si aucun objet n’a repris son chemin."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait « Renommer » sur un fichier ?", "Un UPDATE de displayName ; la clé ne change pas, le stockage n’est pas touché."], ["Et sur un dossier ?", "Un déplacement (copie puis suppression), refusé pour les dossiers que le code connaît, pour « .. », et si la cible est occupée."], ["Qu’est-ce qui suit un dossier déplacé ?", "MediaAsset, Folder et FolderLabel, en une transaction, préfixe échappé dans le LIKE (rewriteAssetPaths)."], ["Comment évite-t-on d’écraser ?", "Cible vérifiée partout (stockage, MediaAsset, Folder) et doublons de la sélection refusés, avant toute copie."], ["Et si une étape échoue ?", "Compensation : l’adapter ramène ses objets, le geste multiple défait ses opérations en sens inverse. Seul un arrêt du serveur en plein geste n’est pas couvert."], ["Où va un fichier jeté ?", "Dans bin/.trash/<uuid>/, avec une TrashEntry qui garde son chemin d’origine ; refusé s’il est encore utilisé."], ["Que devient sa ligne MediaAsset ?", "Elle suit l’objet dans la quarantaine (hors compteurs, hors recherche), revient avec lui à la restauration, même à côté, et disparaît avec lui à la suppression."]]' />
 
 ## À suivre
 
