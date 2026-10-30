@@ -1,0 +1,200 @@
+---
+title: "Ce que voit le visiteur"
+description: "Le domaine vu du site public : les fiches des disciplines, des cours, des stages et des événements, ce qu’elles montrent et ce qu’elles taisent, l’agenda qui réunit stages et événements, le fichier .ics, les horaires du pied de page — puis la vue d’ensemble de la partie, ses pièges et ce qui reste à faire."
+section: "Domaine du club"
+order: 4
+entities:
+  Discipline: [slug, publicationDate, instructorId]
+  Course: [disciplineId, day, beginTime, endTime, instructorId]
+  Seminar: [slug, publicationDate, disciplineId, primaryAnimatorId]
+  SeminarSession: [date, beginTime, endTime, location]
+  Event: [slug, publicationDate, organizerId]
+  EventSession: [date, beginTime, endTime]
+  EventDiscipline: [eventId, disciplineId]
+stories:
+  - title: Un visiteur prépare sa venue à un stage
+    actor: Visiteur
+    steps:
+      - label: Il consulte l’agenda, qui réunit stages et événements à venir
+        call: page /agenda
+        section: "L’agenda : deux modèles, une liste"
+      - label: Il ouvre la fiche du stage
+        call: page /seminars/[slug]
+        section: Les fiches publiques
+      - label: Il télécharge le fichier .ics des séances
+        call: GET /api/calendar/seminars/[id]
+        section: Le fichier .ics
+  - title: Un visiteur cherche un horaire de cours
+    actor: Visiteur
+    steps:
+      - label: Il lit la colonne « Horaires » du pied de page
+        call: page /
+        section: Les horaires du pied de page
+      - label: Il ouvre la fiche d’un créneau
+        call: page /course/[id]
+        section: Les fiches publiques
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le modèle s’est ouvert aux intervenants extérieurs et aux événements culturels : l’origine et la famille sont devenues des entités, l’événement s’est distingué du stage, la règle « au moins un des trois » garde un contexte à chaque rendez-vous, et les dossiers de fichiers ne dépendent plus d’un nom affiché.
+
+## Les parcours du chapitre
+
+Deux parcours de visiteur traversent ce chapitre : préparer sa venue à un stage, et trouver l’horaire d’un cours. Chaque étape mène à son explication plus bas.
+
+<Parcours />
+
+## Les fiches publiques
+
+Chaque entité publique a sa fiche, à une adresse construite sur son slug (ou son identifiant pour un créneau) : `/disciplines/[slug]`, `/course/[id]`, `/seminars/[slug]`, `/events/[slug]`. Ce sont des composants serveur : ils lisent la base directement avec Prisma, sans passer par l’API, et rendent le composite de contenu avec le moteur de rendu du constructeur de pages.
+
+Lire la base sans passer par l’API a une conséquence : **les gardes de l’API ne s’appliquent pas**. Chaque fiche doit refaire elle-même le contrôle de publication, et elle le fait deux fois. D’abord dans `generateMetadata`, qui décrit la page aux moteurs de recherche :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/disciplines/[slug]/page.tsx"
+  filename="page.tsx"
+  snippetRange="17-34"
+  snippetTitle="Les métadonnées d’une discipline : rien pour un brouillon"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Puis dans la page elle-même, qui répond « introuvable » à un brouillon comme à un slug inconnu — le visiteur ne peut pas distinguer les deux, et c’est voulu :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/disciplines/[slug]/page.tsx"
+  filename="page.tsx"
+  snippetRange="55-67"
+  snippetTitle="La page d’une discipline : la garde de publication"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le chapitre 2 a montré que la règle ne s’arrête pas à l’entité. Les fiches l’appliquent aussi à ce qu’elles **mentionnent** : la fiche d’un créneau exige que sa discipline soit publiée (un créneau d’un brouillon répond 404) ; celle d’un événement ne nomme que ses disciplines publiées ; celle d’un stage n’affiche sa discipline que si elle l’est :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/seminars/[slug]/page.tsx"
+  filename="page.tsx"
+  snippetRange="107-112"
+  snippetTitle="La fiche d’un stage : une discipline en brouillon n’est pas nommée"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque fiche propose enfin, quand l’entité a des séances, d’**ajouter le rendez-vous à son agenda** (plus bas, « Le fichier .ics »).
+
+## Aucune adresse e-mail sur une page publique
+
+Une fiche affiche les personnes qui animent : l’instructeur d’un créneau, l’animateur principal et les co-animateurs d’un stage, l’organisateur d’un événement. Le nom affiché venait d’une petite fonction, avec un dernier recours : « Prénom Nom », sinon le pseudo, sinon… **l’adresse e-mail**. Les trois fiches lisaient d’ailleurs l’e-mail exprès pour ce cas.
+
+Un membre sans nom ni pseudo voyait donc son adresse publiée sur une page publique, lisible par tous et récoltée par les robots. La règle avait pourtant été posée ailleurs (chapitre « La frontière serveur / client ») : aucune adresse dans ce qui est public, et un repli qui ne révèle rien. Ces trois pages y échappaient, parce que leur repli était écrit dans `lib/format`, une fonction à part.
+
+Les pages ne lisent plus l’adresse, et la fonction n’en a plus le moyen :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/lib/format/index.ts"
+  filename="index.ts"
+  snippetRange="42-61"
+  snippetHighlight="19"
+  snippetTitle="formatUserName : plus d’e-mail, même en dernier recours"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le type `UserNameParts` n’a plus de champ `email` : une page qui voudrait réintroduire le repli devrait d’abord modifier ce type, et la revue le verrait. Sans nom ni pseudo, la fiche n’affiche simplement pas de nom.
+
+<Callout type="warning">
+Un repli (`??`, `||`) est une **sortie** comme une autre : le dernier cas d’une chaîne de replis finit toujours par s’afficher, chez quelqu’un. Pour une page publique, la question est « qu’affiche le dernier recours ? », et la réponse ne peut pas être une donnée personnelle.
+</Callout>
+
+## L’agenda : deux modèles, une liste
+
+Pour un visiteur, la différence entre un stage et un événement n’a pas d’importance : il veut savoir ce qui arrive. La page « Agenda » fond donc les deux dans une seule liste chronologique, triée sur la **prochaine séance à venir** de chacun. Le chapitre 2 a montré la requête et la comparaison au début du jour ; voici la fusion :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/agenda/page.tsx"
+  filename="page.tsx"
+  snippetRange="89-100"
+  snippetTitle="La fusion des stages et des événements, triée en mémoire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le tri est fait en mémoire, après les deux requêtes. La clé de tri, la prochaine séance, est calculée sur une relation filtrée : SQL ne saurait l’ordonner qu’avec une sous-requête, et les rendez-vous à venir d’un club se comptent en dizaines. Un stage commencé mais pas terminé reste dans l’agenda, avec sa prochaine date : on peut encore le rejoindre. Un rendez-vous sans résumé n’y figure pas : sa carte serait vide.
+
+Les cartes reçoivent une **clé préfixée par le type** (`seminar-12`, `event-12`) : les identifiants des deux tables se recouvrent, et React confondrait sinon deux cartes de même identifiant. Le filtre de publication est le même que celui des fiches : une seconde règle créerait deux vérités sur ce qui est public.
+
+## Le fichier .ics
+
+Chaque fiche de stage ou d’événement propose d’ajouter le rendez-vous à son agenda personnel. Une route d’API produit un fichier `.ics`, le format que lisent Google Agenda, Apple Calendrier et Outlook, où chaque séance devient un rendez-vous :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/calendar/seminars/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="27-46"
+  snippetHighlight="2"
+  snippetTitle="La route du fichier .ics d’un stage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La route applique le même filtre de publication que la fiche : un brouillon n’est pas plus téléchargeable qu’il n’est visible. L’identifiant de chaque rendez-vous (`UID`) est stable : un visiteur qui importe le fichier une seconde fois met à jour ses rendez-vous au lieu de les dupliquer.
+
+C’est ici que les deux conventions du chapitre 2 se rejoignent. La date d’une séance est un jour pur, lu en `getUTC*` ; l’heure est un entier HHMM. Le fichier les assemble en une heure **locale**, marquée du fuseau du club :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/lib/calendar/ical.ts"
+  filename="ical.ts"
+  snippetRange="107-115"
+  snippetHighlight="3,6"
+  snippetTitle="Une date pure et une heure HHMM, en heure locale de Paris"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La ligne produite ressemble à `DTSTART;TZID=Europe/Paris:20260314T183000`. Le client d’agenda comprend « 18h30 à Paris », et l’affiche à 18h30 pour un visiteur parisien, à 12h30 pour un visiteur de New York — exactement ce que veut dire un rendez-vous au club. `1830` devient `T183000` sans calcul : c’est ce que le format HHMM rend simple.
+
+## Les horaires du pied de page
+
+Le pied de page, rendu sur toutes les pages, affiche une colonne « Horaires » : pour chaque discipline publiée, ses créneaux de la semaine. La requête applique la règle des dépendants (un créneau suit sa discipline), et ne doit jamais casser le site :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/app-shell/Footer.tsx"
+  filename="Footer.tsx"
+  snippetRange="38-55"
+  snippetHighlight="16"
+  snippetTitle="Les créneaux du pied de page : un repli, mais pas en silence"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le repli existait déjà (une liste vide, et le pied de page s’affiche sans horaires) ; il était **muet**. Une base injoignable n’aurait laissé aucune trace : seulement un pied de page sans horaires, que personne n’aurait remarqué. Le `catch` journalise désormais l’erreur avant de se replier, comme celui des réglages du site, juste en dessous.
+
+La mise en forme est une fonction pure, `buildFooterSchedule` : disciplines par nom, jours du lundi au dimanche, plusieurs créneaux d’un même jour sur une ligne (« 18h – 19h, 19h – 20h »), et le public seulement quand une discipline a des créneaux pour des publics différents. Pure, elle se lit et se teste sans base.
+
+## Vue d’ensemble de la partie
+
+Quatre chapitres ont parcouru le domaine du club : ce qu’il modélise, les conventions qui relient ses entités, l’évolution qui l’a ouvert, et ce qu’en voit le visiteur. La relecture du code pour les écrire a relevé plusieurs défauts, corrigés en même temps.
+
+<DocsTable columnsJson='["Piège", "Ce qui se passait", "La correction", "Chapitre"]' rowsJson='[["Valider une règle multi-champs sur la seule requête", "Modifier seulement l’heure de début pouvait enregistrer un créneau de 19h à 18h", "La règle est vérifiée sur la combinaison finale, relue en base", "2"], ["Comparer une date pure à un instant", "Les séances du jour disparaissaient de l’agenda dès 13h ou 14h", "Comparaison au début du jour, dans le fuseau du club ; date normalisée à midi UTC par le serveur", "2"], ["Oublier les dépendants d’un brouillon", "Créneaux, séances, disciplines liées et nom de discipline d’un brouillon sortaient publiquement", "Filtre par le parent dans l’API et dans les fiches", "2, 4"], ["Appliquer une hiérarchie à moitié", "Un cours sans instructeur attitré s’affichait sans animateur", "Les pages lisent les deux instructeurs ; « — Celui de la discipline — » dans le formulaire", "2"], ["Un vivier incomplet", "Un organisateur ni admin ni instructeur disparaissait du sélecteur", "Les organisateurs font partie du vivier", "1"], ["Un nom affiché comme identité de stockage", "Renommer une discipline ou la catégorie « Cours » changeait de dossier, perdait la protection, bloquait les créneaux", "storageSegment figé à la création ; FolderLabel pour l’affichage", "3"], ["Un repli qui publie l’e-mail", "Un membre sans nom ni pseudo voyait son adresse sur les fiches publiques", "Plus d’e-mail lu ni affiché ; pas de nom plutôt qu’une adresse", "4"], ["Un catch muet", "Une panne de base aurait vidé les horaires sans laisser de trace", "Journalisation avant le repli (pied de page, catégories)", "4"], ["Recopier une règle", "Le schéma HHMM en trois exemplaires, l’affichage des heures et des jours en cinq", "Un schéma dans contracts ; lib/time et lib/format", "2"]]' />
+
+### Ce qui reste à faire
+
+- **`Seminar.preRegistered`** contient des prérequis : un renommage (`requisites`, comme pour les créneaux) rendrait le modèle honnête. Il demande une migration de renommage et la mise à jour du formulaire.
+- **Les libellés extérieurs** d’un stage ne sont pas uniques sans discipline du club (`NULL` dans la contrainte) ; seul le slug les distingue. Un index partiel sur `label` quand `disciplineId` est nul fermerait le cas, si le club le juge utile.
+- **La garde de statut des fichiers** ne consulte pas les galeries : remettre en attente une photo d’une galerie publique reste possible. C’est le terrain de la partie « Stockage et médias ».
+- **La galerie publique** range ses groupes d’après des listes de libellés écrites dans le code : catégories (`"Cours"`, `"Stage"`, `"Event"`, les autres n’y sont pas affichées) et disciplines (`"Tchoy Lee Fut"`, `"Kali"`…). Renommer une catégorie la ferait disparaître de cette vue ; renommer une discipline la ferait passer en fin de liste. Le segment de stockage, désormais stable, est la bonne clé pour les catégories ; un rang d’affichage (`sortOrder`, comme pour les familles) le serait pour les disciplines.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’une discipline ?", "Un art enseigné, rangé dans une catégorie, avec une famille et une origine (des entités, pas du texte libre)."], ["Un cours a-t-il une date ?", "Non : un jour (lundi à dimanche), des horaires HHMM et un public. Les dates sont celles des séances."], ["Comment s’appelle un stage dans le code ?", "Seminar ; l’interface dit « stage », les URL /seminars."], ["Stage ou événement ?", "Stage : une discipline (du club ou extérieure) ou une origine, un programme, des animateurs. Événement : plusieurs disciplines ou aucune, un organisateur."], ["Qu’est-ce qui est public ?", "Ce dont la date de publication est passée — et seulement les dépendants d’un parent publié."], ["Où vivent les fichiers d’une discipline ?", "Dans le dossier de son segment de stockage, figé à la création ; un renommage ne change que le libellé affiché."], ["Peut-on supprimer un instructeur ?", "Pas tant qu’il est responsable d’une discipline, d’un stage ou d’un événement."]]' />
+
+## À suivre
+
+Les disciplines, les stages et les événements sont les contenus du club. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
+
+<Callout type="tip">
+**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
+</Callout>

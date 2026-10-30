@@ -1,0 +1,321 @@
+---
+title: "Les conventions du domaine"
+description: "Ce qui relie les entités entre elles : les heures au format HHMM et la règle « fin après début », la date pure d’une séance, le composite de contenu et ses références de médias, le statut d’un fichier, les deux instructeurs d’un créneau, et la date de publication — avec tout ce qui en dépend."
+section: "Domaine du club"
+order: 2
+entities:
+  Course: [beginTime, endTime, instructorId, disciplineId]
+  SeminarSession: [date, beginTime, endTime]
+  EventSession: [date, beginTime, endTime]
+  Discipline: [description, summary, summaryMediaId, instructorId, publicationDate]
+  Seminar: [description, program, summary, summaryMediaId, publicationDate]
+  Event: [content, summary, summaryMediaId, publicationDate]
+  Post: [content, publicationDate]
+  MediaAsset: [status]
+  PageMediaReference: [mediaAssetId, pageType, pageId]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le club modélise des disciplines (l’art), des cours (le créneau hebdomadaire), des stages et des événements (des contenants de séances datées) et des actualités (des articles à part). Les personnes qui les animent sont des membres, reliés par des relations nommées.
+
+Lire un modèle à la fois ne montre pas ce qui les relie. Six conventions traversent le domaine : chacune doit être appliquée **de la même façon** par le formulaire, par le routeur et par la page publique, sinon deux vérités cohabitent. Ce chapitre les prend une à une, avec ce qu’elles permettent et l’endroit du code où elles sont garanties.
+
+## Les heures : le format HHMM
+
+Quand il faut stocker l’heure de début d’un cours, plusieurs options s’offrent à nous. Un `DateTime` PostgreSQL dont on ne garderait que l’heure traîne avec lui une date et un fuseau dont nous n’avons pas besoin, et le changement d’heure d’octobre le ferait glisser. Un nombre de minutes depuis minuit est compact, mais illisible quand on ouvre la base :
+
+<CodeSnippet
+  language="sql"
+  title="Minutes depuis minuit : il faut calculer pour lire"
+  kind="anti-pattern"
+  codeJson='"SELECT id, \"beginTime\" FROM \"Course\";\n-- id | beginTime\n-- 1  | 1110      ← 18h30 ? il faut diviser par 60\n-- 2  | 1140\n-- 3  | 600"'
+/>
+
+Le format HHMM range l’heure dans un entier qui se **lit directement** : les deux derniers chiffres sont les minutes, les autres les heures.
+
+<CodeSnippet
+  language="sql"
+  title="HHMM : la valeur se lit telle quelle"
+  kind="pattern"
+  codeJson='"SELECT id, \"beginTime\" FROM \"Course\";\n-- id | beginTime\n-- 1  | 1830      ← 18h30\n-- 2  | 1900      ← 19h00\n-- 3  | 905       ← 9h05"'
+/>
+
+L’entier se compare et se trie directement (`905 < 1830`), sans conversion, et c’est ce qui rend la règle « la fin après le début » triviale : une comparaison. Il n’a pas de fuseau : c’est l’heure locale du club, et le chapitre 4 montre comment l’agenda personnel des visiteurs la reçoit quand même dans le bon fuseau.
+
+### Un seul schéma, trois modèles
+
+La validation ne peut pas se contenter de `min(0).max(2359)` : la valeur `1860` (« 18h60 ») passerait. Un `refine` vérifie donc les minutes. Ce schéma était recopié dans trois routeurs (créneaux, séances de stage, séances d’événement) ; il vit désormais une seule fois, dans `packages/contracts`, avec le message de la règle « fin après début » :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/time/hhmm.schema.ts"
+  filename="hhmm.schema.ts"
+  snippetRange="1-22"
+  snippetHighlight="17,22"
+  snippetTitle="Le schéma HHMM, partagé"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Côté formulaire, le composant `TimeInput` présente deux champs, heures et minutes, et recompose la valeur. Les saisies hors bornes sont ramenées dans l’intervalle au moment de la frappe, ce qui évite un état intermédiaire incohérent (25 heures pendant qu’on tape) :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/common/components/TimeInput.tsx"
+  filename="TimeInput.tsx"
+  snippetRange="50-62"
+  snippetHighlight="7,12"
+  snippetTitle="TimeInput : deux champs, un entier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La projection inverse, pour l’affichage, est `formatHHMM` (`1830` → « 18h30 »). Elle aussi existait en plusieurs exemplaires — une fonction locale dans la page publique d’un cours, une autre dans sa page d’administration, une troisième dans la table des cours, une quatrième dans `lib/format` — avec les libellés des jours et des publics recopiés à côté (et « Tous âges » dans un fichier, « Tous publics » dans les autres). Tout passe désormais par `lib/time/formatHHMM.ts` et `lib/format`, que `formatTime` réexporte.
+
+### « La fin après le début » porte sur le résultat
+
+À la création, toutes les valeurs sont dans la requête : un `refine` sur l’objet suffit. À la modification, c’est plus subtil. Une requête qui ne change **que** l’heure de début n’envoie pas l’heure de fin : le schéma, qui ne voit que la requête, ne peut pas savoir que la fin enregistrée est à 18h et que le nouveau début est à 19h. Le `refine` de la modification ne vérifiait la règle que si les deux heures étaient fournies, et laissait donc passer un créneau de 19h à 18h.
+
+La règle porte sur ce qui sera **enregistré**. Quand une seule des deux heures change, le routeur relit l’autre, et vérifie la combinaison :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/courses/router.ts"
+  filename="router.ts"
+  snippetRange="268-285"
+  snippetTitle="course.update : la règle vérifiée sur la combinaison finale"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les routeurs des séances font la même chose. C’est le même raisonnement que la règle « au moins un rattachement » des stages (chapitre 3) : une règle qui porte sur plusieurs champs se vérifie sur l’état fusionné, pas sur la seule requête.
+
+<Callout type="info">
+Le format HHMM est la **convention unique** pour toutes les heures de la journée : `Course.beginTime`, `SeminarSession.beginTime`, `EventSession.beginTime` et leurs `endTime`. Compact, lisible en base sans calcul, triable, validé strictement par un seul schéma. Pas de fuseau : heure locale du club.
+</Callout>
+
+## Les jours : une date pure, à midi UTC
+
+Une séance a une **date** sans heure (les heures sont à part, en HHMM). Or PostgreSQL et JavaScript ne connaissent que des instants. Stocker « le 14 mars » comme minuit UTC ferait glisser la date au 13 mars pour tout code qui la lirait dans un fuseau à l’ouest de Greenwich. La convention du projet : **midi UTC** du jour choisi. Midi UTC tombe le même jour calendaire partout en Europe (13h ou 14h à Paris), et le code lit toujours la date avec `getUTC*`.
+
+Le formulaire des séances fabrique cette valeur explicitement :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/common/components/SessionsManager.tsx"
+  filename="SessionsManager.tsx"
+  snippetRange="249-254"
+  snippetTitle="SessionsManager : la date saisie, ramenée à midi UTC"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Mais une convention que seul le formulaire applique n’est qu’une habitude : un appel direct à l’API avec `"2026-03-14"` enregistrait minuit UTC. Le schéma des routeurs l’**impose** désormais, quelle que soit la forme reçue :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/time/sessionDate.schema.ts"
+  filename="sessionDate.schema.ts"
+  snippetRange="1-16"
+  snippetHighlight="16"
+  snippetTitle="La date d’une séance, normalisée par le serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette convention a une conséquence qu’il faut garder en tête : **« à venir » se compte en jours, pas en instants**. Une séance d’aujourd’hui à 18h est stockée à 12h UTC. Comparée à l’instant présent (`date >= now`), elle devient « passée » dès 13h ou 14h à Paris, alors qu’elle n’a pas commencé. C’est exactement ce que faisait l’agenda : un stage dont la dernière séance avait lieu le soir même disparaissait de la liste en début d’après-midi.
+
+La comparaison se fait donc avec le **début du jour** au club, exprimé dans la même convention :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/lib/time/clubDay.ts"
+  filename="clubDay.ts"
+  snippetRange="1-20"
+  snippetHighlight="14,19"
+  snippetTitle="startOfClubDay : le début du jour, dans le fuseau du club"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/agenda/page.tsx"
+  filename="page.tsx"
+  snippetRange="51-66"
+  snippetHighlight="2,8"
+  snippetTitle="L’agenda compare les séances au début du jour"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le jour est pris dans le fuseau du club, pas dans celui du serveur (UTC dans le conteneur) : à 0h30 à Paris, il est 22h30 UTC la veille, et c’est pourtant bien aujourd’hui qui commence.
+
+<Callout type="warning">
+Une date pure et un instant ne se comparent pas directement. Le jour d’une séance se compare au **début d’un jour**, calculé dans le fuseau du club ; l’instant présent ne sert qu’aux dates de publication, qui sont, elles, de vrais instants.
+</Callout>
+
+## Le contenu : un composite de blocs
+
+Neuf champs du domaine portent un contenu riche éditable : `Course.content`, `Discipline.description` et `Discipline.summary`, `Seminar.description`, `Seminar.program` et `Seminar.summary`, `Event.content` et `Event.summary`, `Post.content`. Plutôt que de donner à chacun sa propre structure, nous utilisons une **convention unique** : tous sont des `PageContentV1`.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="272-275"
+  snippetTitle="L’enveloppe versionnée d’un contenu de page"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un `PageContentV1` est un **composite de blocs** : une enveloppe avec une version, et une liste de blocs discriminés par leur `type`. Six types existent : `tiptap` (texte enrichi, avec images en ligne), `image-gallery`, `audio-collection`, `document-list`, `media-text` (un média et un texte côte à côte) et `float-text` (un texte qui enrobe une image).
+
+<CodeSnippet
+  language="ts"
+  title="La forme d’un PageContentV1"
+  codeJson='"{\n  version: 1,\n  blocks: [\n    { id: \"b1\", type: \"tiptap\", content: { /* document ProseMirror */ } },\n    { id: \"b2\", type: \"image-gallery\", items: [{ mediaId: \"clx…\" }], layout: \"grid\" },\n    { id: \"b3\", type: \"document-list\", items: [{ mediaId: \"clz…\" }] },\n  ],\n}"'
+/>
+
+L’avantage de l’unification est considérable : un seul constructeur de pages, un seul moteur de rendu, un seul recensement des médias, réutilisables sur les neuf champs. Quand la description d’une discipline est passée du texte simple au composite, il n’y avait rien à inventer côté interface : le constructeur existant fonctionnait tel quel. Les résumés (`summary`) utilisent le même format, avec un constructeur restreint à certains blocs.
+
+Chaque bloc qui montre un média le désigne **par son `mediaId`**, jamais par une URL ni par un chemin. Cette indirection est la clé de l’intégrité : une seule fonction, `extractMediaIdsFromContent`, parcourt un composite et rend la liste des médias qu’il utilise, et chaque enregistrement tient à jour la table `PageMediaReference` (le chapitre « Le constructeur de pages » détaille ce recensement).
+
+Le domaine ajoute trois règles à ce mécanisme.
+
+**Un type de référence par composite, ou un seul pour tous.** Un stage déclare chacun de ses composites sous son propre `pageType` (`SEMINAR_DESCRIPTION`, `SEMINAR_PROGRAM`, `SEMINAR_SUMMARY`) : chacun se synchronise seul, quand il change. Une discipline, elle, déclare tout sous `DISCIPLINE` : sa description, son résumé, et l’image de sa carte d’accueil, qui vit hors de tout bloc (`summaryMediaId`) et passe par `extraMediaIds`.
+
+**Avec un type unique, on synchronise l’union, relue après l’écriture.** La synchronisation recalcule l’ensemble **complet** des références d’un couple (type, identifiant). Lui passer la seule description effacerait les références du résumé et de l’image. Plutôt que de raisonner sur ce que la requête a fourni, `discipline.update` relit la ligne après l’écriture et passe l’union de l’état réel :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="406-441"
+  snippetHighlight="16,31-32,35"
+  snippetTitle="discipline.update : l’union des composites, relue en base"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+**La synchronisation fait partie de la transaction.** Si un composite référence un média qui n’existe pas ou qui n’est pas validé, la synchronisation lève une erreur, et l’enregistrement de la page est annulé avec elle. À la suppression, l’appel avec `newContent: null` retire toutes les références de la page dans la même transaction que la suppression de la ligne. La table n’a pas de clé étrangère vers les pages (une seule table sert neuf types de contenus) : c’est le code qui tient cette intégrité-là.
+
+<Callout type="tip">
+Le `PageContentV1` est une **convention de structure** partagée par tous les contenus riches : une enveloppe versionnée, et une liste de blocs typés qui désignent les médias par leur identifiant. Cette unification rend le constructeur, le moteur de rendu et le recensement des médias **réutilisables sans adaptation** sur toute entité qui adopte le format.
+</Callout>
+
+## Le statut d’un fichier
+
+Un fichier déposé dans la bibliothèque n’est pas immédiatement utilisable par une page. Il naît **en attente** (`MediaAsset.status = "pending"`), le temps qu’un administrateur le valide ; une fois **publié** (`"published"`), il devient référençable. Un troisième statut, `"bin"`, désigne la corbeille. Le statut est une simple chaîne en base : seul le code garantit ces trois valeurs.
+
+Deux gardes maintiennent la cohérence entre le statut et les pages :
+
+- **à l’enregistrement d’une page**, la synchronisation des références refuse tout média qui n’est pas publié (ci-dessus) ;
+- **au changement de statut**, `assertStatusChangeDoesntUnpublishReferencedAssets` refuse de remettre en attente un fichier qu’une page affiche encore, en nommant les pages concernées. Sans elle, un administrateur pourrait casser sans le savoir une page qui pointe vers ce fichier.
+
+La relation `PageMediaReference → MediaAsset` est en `onDelete: Restrict` : un fichier affiché ne peut pas non plus être supprimé.
+
+<Callout type="warning">
+Un fichier référencé par une page **ne peut ni quitter le statut publié, ni être supprimé**. Une limite connue : les galeries (`GalleryItem`) ne sont pas consultées par la garde de statut. Le statut et son ancien lien avec les dossiers de stockage relèvent de la partie « Stockage et médias ».
+</Callout>
+
+## Les deux instructeurs d’un créneau
+
+À la lecture du schéma, **deux champs** désignent un instructeur pour un même créneau : `Discipline.instructorId`, obligatoire, et `Course.instructorId`, facultatif. Pourquoi deux ?
+
+Parce qu’ils représentent deux choses différentes. `Discipline.instructorId` est l’**instructeur principal de la discipline** : celui qui en a la responsabilité pédagogique, et qui supervise tout ce que le club fait dans cette discipline. `Course.instructorId` est l’**instructeur attitré d’un créneau**, qui peut différer. Cas typique : le responsable du Tchoy Lee Fut anime lui-même le cours du mardi soir ; le jeudi soir, c’est une assistante qui prend le relais.
+
+<CodeSnippet
+  language="ts"
+  title="Deux créneaux de la même discipline"
+  codeJson='"// Mardi : pas d’instructeur attitré → celui de la discipline\n{ disciplineId: 5, day: \"TUESDAY\", beginTime: 1830, instructorId: null }\n\n// Jeudi : une instructrice attitrée\n{ disciplineId: 5, day: \"THURSDAY\", beginTime: 1830, instructorId: \"clw…\" }"'
+/>
+
+`null` ne veut pas dire « personne » : il veut dire « **par défaut, celui de la discipline** ». Ce n’est pas une duplication, c’est une **hiérarchie**. Encore faut-il que tout le monde l’applique : la page publique d’un cours, et sa page d’administration, n’affichaient que l’instructeur du créneau — un cours sans instructeur attitré apparaissait sans aucun animateur. Elles lisent désormais les deux, et appliquent la règle :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/course/[id]/page.tsx"
+  filename="page.tsx"
+  snippetRange="36-57"
+  snippetHighlight="11,22"
+  snippetTitle="Page publique d’un cours : la hiérarchie appliquée"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Côté formulaire, le sélecteur affichait « — Aucun — » pour la valeur `null`. Pour un créneau, c’était trompeur ; pour une discipline, un stage ou un événement, dont le responsable est obligatoire, c’était faux. Le libellé de l’option vide est maintenant un paramètre : « — Choisir — » par défaut, « — Celui de la discipline — » dans le formulaire d’un créneau.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/common/components/InstructorSelect.tsx"
+  filename="InstructorSelect.tsx"
+  snippetRange="44-49"
+  snippetHighlight="6"
+  snippetTitle="InstructorSelect : le libellé de l’option vide"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="info">
+La double présence d’`instructorId` sur `Discipline` et `Course` est une **hiérarchie** : la discipline porte le responsable par défaut, le créneau peut le surcharger. Si nous voyons `Course.instructorId === null`, nous lisons « par défaut, celui de la discipline », jamais « personne » — et toute page qui affiche un animateur applique cette lecture.
+</Callout>
+
+## La date de publication, et ce qui en dépend
+
+Quatre entités ont une date de publication : la discipline, le stage, l’événement et l’actualité. La convention est la même partout : `null` pour un **brouillon**, une date future pour une publication **programmée**, une date passée pour un contenu **en ligne**. Le public ne voit que le troisième cas ; un administrateur voit tout.
+
+Chaque routeur l’applique par une petite fonction, `visibleTo`, qui rend un filtre Prisma selon l’appelant :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="167-170"
+  snippetTitle="discipline : le filtre de publication selon l’appelant"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Toutes les lectures du routeur l’ajoutent à leur `where`, y compris celles qui servent surtout le tableau de bord : une procédure publique peut être appelée par n’importe qui (chapitre « Protéger une procédure », l’histoire des brouillons).
+
+### Ce qui dépend d’un brouillon est un brouillon
+
+La règle ne s’arrête pas à l’entité elle-même. Un créneau appartient à sa discipline ; une séance, à son stage ou à son événement ; le lien d’un événement vers une discipline, aux deux. Si la discipline est un brouillon, ses créneaux en sont aussi — sinon la page d’un créneau publie, avec son titre, le nom d’une discipline que personne n’est censé connaître. Or les lectures publiques des créneaux et des séances ne regardaient pas leur parent : `course.getAll`, `course.getById`, la page `/course/[id]`, `seminarSession.getAllBySeminar` renvoyaient aussi les créneaux et les séances (dates, lieux) des brouillons. La page d’un événement affichait les noms de ses disciplines liées, brouillons compris, et celle d’un stage, le nom de sa discipline.
+
+Chacune de ces lectures filtre désormais **par le parent** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/courses/router.ts"
+  filename="router.ts"
+  snippetRange="122-125"
+  snippetTitle="course : visible si la discipline l’est"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/seminarSessions/router.ts"
+  filename="router.ts"
+  snippetRange="85-88"
+  snippetTitle="seminarSession : visible si le stage l’est"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/events/router.ts"
+  filename="router.ts"
+  snippetRange="310-317"
+  snippetTitle="event.getBySlug : seules les disciplines publiées sont nommées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le pied de page appliquait déjà la règle pour sa colonne « Horaires » (`where: { discipline: { publicationDate: … } }`) ; c’est la même condition, écrite partout où un créneau sort.
+
+<Callout type="warning">
+Une règle de visibilité porte sur **tout ce qui révèle l’entité** : ses enfants (créneaux, séances), ses liens (disciplines d’un événement), et jusqu’à son nom affiché ailleurs. Pour chaque lecture publique, la question est : « si le parent est un brouillon, cette réponse en dit-elle quelque chose ? »
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Convention", "La règle", "Où elle est garantie"]' rowsJson='[["Heures HHMM", "Un entier, minutes < 60, fin après début sur le résultat final", "hhmmSchema (contracts) ; relecture dans les routeurs à la modification"], ["Date d’une séance", "Midi UTC du jour, lue en getUTC* ; « à venir » se compte en jours", "sessionDateSchema ; startOfClubDay"], ["Contenu riche", "PageContentV1, médias par mediaId", "pageContentSchemaV1 ; syncPageMediaReferences dans la transaction"], ["Statut d’un fichier", "Seul un fichier publié est référençable ; un fichier référencé reste publié", "syncPageMediaReferences ; garde de changement de statut ; onDelete Restrict"], ["Instructeurs", "null sur le créneau = celui de la discipline", "Pages du cours (publique et admin) ; libellé du sélecteur"], ["Publication", "null brouillon, futur programmé, passé en ligne ; les dépendants suivent leur parent", "visibleTo dans chaque routeur ; filtres des pages publiques"]]' />
+
+## À suivre
+
+Ce modèle n’a pas toujours été celui-là. Au départ, tout stage appartenait à une discipline du club, et l’origine d’une discipline était un texte libre. Puis le club a voulu accueillir un calligraphe.
+
+<Callout type="tip">
+**Chapitre suivant : un modèle qui s’ouvre.** Pourquoi l’origine est devenue une entité, pourquoi l’événement n’est pas un stage, la règle « au moins un rattachement », et le renommage de `Stage` en `Seminar`.
+</Callout>

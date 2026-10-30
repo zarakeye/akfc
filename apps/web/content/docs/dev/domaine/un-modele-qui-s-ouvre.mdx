@@ -1,0 +1,295 @@
+---
+title: "Un modèle qui s’ouvre"
+description: "Comment le modèle a accueilli ce qui ne rentrait pas dans ses cases : l’origine et la famille devenues des entités, l’événement distinct du stage, la règle « au moins un des trois » vérifiée à la création et à la modification, le renommage de Stage en Seminar, des slugs stables, et des dossiers qui ne dépendent plus d’un nom affiché."
+section: "Domaine du club"
+order: 3
+entities:
+  Origin: [name, slug, country, region, flag, historicalPeriod, sortOrder]
+  DisciplineFamily: [name, slug, sortOrder]
+  Discipline: [name, slug, familyId, originId, categoryId, storageSegment]
+  Category: [type, storageSegment]
+  Seminar: [disciplineId, externalDisciplineLabel, originId, slug]
+  Event: [externalDisciplineLabels, originId, slug]
+  EventDiscipline: [eventId, disciplineId]
+stories:
+  - title: Le club accueille un intervenant extérieur
+    actor: Administrateur
+    steps:
+      - label: Il crée le stage sans discipline du club, avec le nom de la pratique et son origine
+        call: seminar.create
+        section: "« Au moins un des trois »"
+      - label: Il retire plus tard l’origine ; le stage garde son nom de discipline extérieure
+        call: seminar.update
+        section: "« Au moins un des trois »"
+  - title: Le club renomme une discipline
+    actor: Administrateur
+    steps:
+      - label: Il change le nom ; le slug et le dossier des fichiers ne bougent pas, le finder affiche le nouveau nom
+        call: discipline.update
+        section: Le nom affiché n’est pas une identité
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Six conventions relient les entités du domaine : les heures HHMM, la date pure d’une séance, le composite de contenu, le statut d’un fichier, la hiérarchie des instructeurs et la date de publication, que suivent tous les dépendants d’un brouillon.
+
+## Le besoin qui a tout déclenché
+
+Pendant un temps, le modèle initial a bien servi. Tant que le club ne proposait que des cours hebdomadaires et des stages dans ses disciplines enseignées, tout rentrait dans les cases : la discipline était l’art, le cours le créneau, le stage le rendez-vous intensif, et chaque entité était obligatoirement rattachée à une discipline du club.
+
+Puis le club a voulu organiser un stage de **calligraphie chinoise**, avec un calligraphe invité. Et le modèle a résisté. Le stage exigeait une `disciplineId` non nulle — mais la calligraphie chinoise n’était pas une discipline du club. Le club ne l’enseignait pas en cours régulier : créer une `Discipline` pour l’occasion l’aurait fait apparaître dans le menu « Nos disciplines », dans les sélecteurs, dans l’accueil, comme une discipline fantôme.
+
+Le problème s’est étendu avec d’autres besoins : des stages ponctuels par des **intervenants extérieurs** sur des pratiques que le club n’enseigne pas ; des **événements culturels** plus larges (un repas, une conférence sur le bouddhisme zen) qui ne se prêtaient à aucune des cases existantes.
+
+<Callout type="warning">
+Le modèle initial supposait qu’**un rendez-vous est toujours rattaché à une discipline du club**. Cette hypothèse est devenue fausse à mesure que le club s’est ouvert aux intervenants extérieurs et aux événements culturels. L’évolution du modèle lève cette contrainte, sans renoncer à ce que chaque rendez-vous ait un contexte.
+</Callout>
+
+Trois briques y répondent, dans l’ordre où nous les prenons : une origine qui devient une entité, un événement distinct du stage, et la règle « au moins un des trois ».
+
+## Une origine est une entité, pas un texte
+
+La première brique remplace l’ancien champ `Discipline.origin`, un texte libre, par un modèle `Origin`. Pourquoi cette transformation ?
+
+Un texte libre laisse coexister des doublons orthographiques. « Chine », « chine », « China » et « CHINE » sont quatre chaînes distinctes, alors qu’elles désignent la même chose. Le jour où nous voulons regrouper « tout ce qui vient de Chine », nous sommes coincés : un `lower(origin) = 'chine'` ne capture même pas « China ».
+
+<CodeSnippet
+  language="sql"
+  title="Des origines en texte libre"
+  kind="anti-pattern"
+  codeJson='"SELECT DISTINCT origin FROM \"Discipline\";\n-- \"Chine\"\n-- \"chine\"\n-- \"China\"\n-- \"Fujian\"   ← rattaché à la Chine, mais comment le savoir ?"'
+/>
+
+Une entité dédiée règle tout cela d’un coup :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="435-486"
+  snippetHighlight="6,9,16,19,22,25,37,41,45"
+  snippetTitle="Le modèle Origin"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+**L’unicité** du nom et du slug élimine les doublons par construction : le formulaire propose un sélecteur, et on ne crée pas une origine en tapant son nom une deuxième fois. **Les métadonnées** culturelles (pays, région, drapeau, période historique) servent à l’affichage — le drapeau apparaît à côté de l’origine sur la fiche d’un stage. **Le regroupement transverse** devient possible : disciplines, stages et événements pointent vers la même `Origin`, et l’API sait déjà répondre « tous les événements de cette origine » (`event.getAllByOrigin`).
+
+La séparation du nom, du pays et de la région permet une nuance utile : « Fujian » peut être une origine à part entière (`name: "Fujian"`, `country: "Chine"`, `region: "Fujian"`), tout en restant géographiquement rattachée à la Chine. Le club pourra présenter les arts du sud de la Chine distinctement de ceux du nord.
+
+La **famille** de disciplines a suivi le même chemin, pour la même raison : « Kung-fu », « Kung Fu » et « kungfu » auraient fait trois entrées de menu.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="523-542"
+  snippetHighlight="5,9"
+  snippetTitle="Le modèle DisciplineFamily"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Supprimer une origine ou une famille **détache** ce qui y était rattaché (`SetNull`), sans rien supprimer d’autre ; les routeurs refusent pourtant la suppression tant qu’elles sont utilisées, pour que l’administrateur sache ce qu’il défait.
+
+<Callout type="tip">
+Passer d’un texte libre à une entité n’est pas cosmétique : c’est ce qui rend possibles **les regroupements transverses** et **les métadonnées riches**. Une fois l’origine devenue une entité, une page `/origines/chine` qui liste disciplines, stages et événements ne demande aucune gymnastique de requête.
+</Callout>
+
+## Pourquoi un événement n’est pas un stage
+
+Face aux événements culturels, deux voies étaient possibles. La première : élargir le stage pour qu’il accepte tout — rendre la discipline facultative, ajouter des champs, et appeler « stage » un repas de fin d’année. La seconde : créer un modèle `Event` distinct.
+
+Nous avons choisi la seconde, parce que **le stage et l’événement ont des sens différents**, même si leurs structures se ressemblent. Un stage reste centré sur la **pratique** : un animateur principal, des co-animateurs, un programme détaillé, des séances intensives. Un événement est centré sur la **rencontre** : un organisateur, une présentation, une ou plusieurs séances, sans programme au sens du stage.
+
+<DocsTable columnsJson='["Aspect", "Stage (Seminar)", "Événement (Event)"]' rowsJson='[["Contenus", "Deux : description et programme (plus un résumé)", "Un : content (plus un résumé)"], ["Animation", "Un animateur principal et des co-animateurs", "Un organisateur"], ["Disciplines du club", "Au plus une (disciplineId)", "Autant que voulu (table EventDiscipline)"], ["Disciplines extérieures", "Un nom (externalDisciplineLabel)", "Une liste (externalDisciplineLabels)"], ["Fichiers déposés par les membres", "Non", "Oui (mediaAssets)"], ["Séances", "SeminarSession", "EventSession, de même structure"], ["Rattachement", "Au moins un des trois", "Au moins un des trois"]]' />
+
+L’option « un seul modèle » nous aurait donné un stage avec deux contenus dont l’un serait souvent vide, deux niveaux d’animation dont l’un serait rarement rempli, et une liste de disciplines qui n’a de sens que pour certains rendez-vous. Aucun gain de simplicité, et une perte de clarté : l’administrateur ne saurait plus quel champ remplir. Le prix de la séparation est faible — deux modèles de séances de même structure — et l’agenda public les réunit de toute façon dans une seule liste (chapitre 4).
+
+<Callout type="info">
+La règle que nous appliquons : **deux modèles distincts quand le sens métier diverge**, même si la structure technique se ressemble. La duplication de structure coûte peu ; la confusion de sens coûte à chaque formulaire.
+</Callout>
+
+## « Au moins un des trois »
+
+Pour que le stage de calligraphie existe, la discipline du stage devient facultative. Mais un stage sans aucun rattachement serait un contenant sans contexte : rien pour le classer, rien pour le présenter. Nous acceptons donc qu’il ne soit pas rattaché à une discipline du club, à condition d’avoir **au moins un autre signal de contexte**.
+
+D’où la règle « **au moins un des trois** » : `disciplineId`, `externalDisciplineLabel`, `originId`. Si la pratique n’est pas enseignée au club mais que nous savons la nommer (« Calligraphie chinoise »), nous remplissons le nom extérieur. Si nous connaissons seulement sa culture (« stage culturel japonais »), l’origine. Et nous combinons quand cela a du sens.
+
+<CodeSnippet
+  language="ts"
+  title="Trois façons de rattacher un stage"
+  codeJson='"// Stage d’armes de Tchoy Lee Fut : une discipline du club\n{ disciplineId: 5, externalDisciplineLabel: null, originId: null }\n\n// Calligraphie chinoise, par un calligraphe invité\n{ disciplineId: null, externalDisciplineLabel: \"Calligraphie chinoise\", originId: 3 }\n\n// Journée culturelle sur le Fujian\n{ disciplineId: null, externalDisciplineLabel: null, originId: 7 }"'
+/>
+
+La règle se vérifie à **deux endroits**, et la différence entre les deux est une leçon en soi. À la création, toutes les valeurs sont dans la requête : un `refine` du schéma Zod peut décider seul.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/seminars/router.ts"
+  filename="router.ts"
+  snippetRange="135-146"
+  snippetTitle="seminar.create : la règle, dans le schéma"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+À la modification, Zod ne voit que la requête. Une requête qui ne contient que `originId: null` (« retirer l’origine ») est valide en soi ; elle ne devient fautive que si le stage n’a ni discipline ni nom extérieur **en base**. Le routeur lit donc l’état actuel, calcule la combinaison qui serait enregistrée, et refuse si elle est vide :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/seminars/router.ts"
+  filename="router.ts"
+  snippetRange="501-543"
+  snippetHighlight="21,25,29,37"
+  snippetTitle="seminar.update : la règle, sur l’état fusionné"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`undefined` et `null` n’y veulent pas dire la même chose : `undefined` signifie « champ absent de la requête, on garde la valeur en base » ; `null` signifie « détacher ». C’est ce qui permet au même `update` de ne toucher qu’au libellé, ou de retirer une origine.
+
+L’événement applique la même règle à ses listes : au moins une discipline du club, au moins une discipline extérieure, ou une origine. Les listes se fusionnent de la même façon, dédoublonnées :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/events/router.ts"
+  filename="router.ts"
+  snippetRange="428-452"
+  snippetTitle="event.update : la même règle, avec des listes"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce n’est pas une particularité des stages : c’est la règle générale de toute validation qui porte sur **plusieurs champs**, et le chapitre précédent l’a appliquée aux horaires (« la fin après le début »). Une règle sur plusieurs champs se vérifie sur l’état qui sera enregistré, pas sur la requête seule.
+
+<Callout type="tip">
+« Au moins un des trois » est la **règle de cohérence** des rendez-vous qui ne sont plus obligatoirement rattachés à une discipline du club. Elle se vérifie dans le schéma à la création, et dans le routeur, après fusion avec l’état en base, à la modification.
+</Callout>
+
+## Stage devient Seminar
+
+Le modèle s’est appelé `Stage` jusqu’en novembre 2026. Le projet nomme pourtant en anglais tout ce qui relève du code : modèles, procédures, URL, dossiers de stockage. « Stage » était l’exception, et une exception trompeuse : en anglais, *stage* veut dire « étape » ou « scène ». Il a été renommé `Seminar`.
+
+Un renommage de modèle Prisma est le cas d’école du chapitre « Écrire et faire évoluer » : généré automatiquement, il devient « supprimer la table `Stage`, créer la table `Seminar` », et efface les données. La migration a donc été écrite à la main, en ne faisant que des **renommages** : tables, colonnes, séquences, contraintes et index.
+
+<CodeExample
+  language="sql"
+  filepath="prisma/migrations/20261111000000_rename_stage_to_seminar/migration.sql"
+  filename="migration.sql"
+  snippetRange="1-12"
+  snippetTitle="La migration de renommage (début)"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une seconde migration a renommé les valeurs d’énumération (`STAGE_DESCRIPTION` → `SEMINAR_DESCRIPTION` dans `PageReferencerKind`). Aucune donnée n’a été modifiée. L’interface, elle, parle français et dit toujours « stage » ; les URL publiques sont `/seminars/[slug]`.
+
+## Des adresses stables : le slug
+
+Une discipline, un stage et un événement ont chacun une page publique, à une adresse lisible : `/disciplines/tchoy-lee-fut`, `/seminars/stage-d-armes-mars`. Le segment final, le **slug**, est saisi par l’administrateur (le formulaire le pré-remplit à partir du nom), et validé par un schéma partagé :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/slug/slug.schema.ts"
+  filename="slug.schema.ts"
+  snippetRange="1-16"
+  snippetTitle="Le schéma d’un slug"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le slug est **stable** : renommer une discipline ne le change pas, et les liens déjà partagés restent valides. Il est unique en base, ce qui donne à ces modèles une **deuxième** contrainte d’unicité (en plus du nom par catégorie, ou du libellé par discipline). Les routeurs distinguent donc les deux conflits, d’après la cible de l’erreur `P2002`, pour donner le bon message :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="290-305"
+  snippetTitle="discipline.create : quel champ est en conflit ?"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une limite à connaître : la contrainte `@@unique([disciplineId, label])` d’un stage ne protège rien quand `disciplineId` est nul. PostgreSQL considère deux `NULL` comme différents ; deux stages extérieurs peuvent donc porter le même libellé. Leur slug, lui, reste unique : leurs pages ne se confondent pas.
+
+## Le nom affiché n’est pas une identité
+
+La dernière évolution du modèle est la plus récente. Les fichiers d’une discipline sont rangés dans un dossier sous celui de sa catégorie : `AKFC/courses/tchoy-lee-fut/`. Jusqu’ici, ce nom de dossier était **recalculé** à chaque usage, à partir du nom de la discipline (et, pour la catégorie, de son libellé, avec une exception écrite à la main : « Cours » → `courses`).
+
+C’est le même défaut que celui des espaces collaboratifs, corrigé plus tôt avec l’identifiant du groupe : un nom affiché peut changer, et tout ce qui est construit dessus se casse ou se dédouble. Renommer « Tchoy Lee Fut » en « Tchoy Li Fut » faisait trois choses à la fois :
+
+- les nouveaux fichiers partaient dans un **nouveau** dossier, `tchoy-li-fut`, et les anciens restaient dans `tchoy-lee-fut` ;
+- l’ancien dossier n’était **plus protégé** contre la suppression, puisque la protection recalculait le nom attendu à partir du nom actuel ;
+- à la suppression de la discipline, la vérification « le dossier est-il vide ? » regardait le **mauvais** dossier, et laissait derrière elle des fichiers orphelins.
+
+Pour une catégorie, c’était pire : renommer « Cours » déplaçait virtuellement tout son contenu, et `course.create`, qui reconnaissait la catégorie des cours à son libellé, refusait toute création de créneau.
+
+La correction consiste à **figer le segment de dossier à la création**, dans une colonne `storageSegment`, pour les catégories et les disciplines. Le nom devient un simple libellé.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="264-273"
+  snippetTitle="discipline.create : le segment, calculé une seule fois"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/storageSegments.ts"
+  filename="storageSegments.ts"
+  snippetRange="64-75"
+  snippetHighlight="2,11"
+  snippetTitle="newDisciplineSegment : le slug du nom, suffixé s’il est pris"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le suffixe règle un cas que l’ancien calcul ignorait : « Kung-fu » et « Kung Fu » donnent le même slug, et auraient partagé le même dossier. Toutes les fonctions qui construisent un chemin (envoi d’un fichier, protection des dossiers, suppression d’une discipline, dossiers racines) lisent désormais le segment par une seule fonction, `disciplineSegment` ou `categorySegment`, et la catégorie des cours se reconnaît à son segment (`courses`), non à son libellé.
+
+Renommer ne change plus que ce que le finder **affiche** : un `FolderLabel` associe au dossier le nom actuel.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/disciplines/router.ts"
+  filename="router.ts"
+  snippetRange="444-451"
+  snippetTitle="discipline.update : seul le libellé du dossier suit le nom"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+### Une migration qui ne déplace aucun fichier
+
+Les lignes existantes avaient un dossier calculé à partir de leur nom, avec la bibliothèque `slugify`. Écrire en SQL un équivalent exact de `slugify` (translittérations, caractères supprimés) aurait été un pari. La migration se contente donc d’ajouter les colonnes, vides :
+
+<CodeExample
+  language="sql"
+  filepath="prisma/migrations/20261211000000_storage_segments/migration.sql"
+  filename="migration.sql"
+  snippetRange="1-10"
+  snippetTitle="La migration : deux colonnes, aucune donnée modifiée"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est l’application qui les complète au démarrage, avec **exactement** le calcul d’origine, conservé pour cela (`legacyDisciplineSegment`) : chaque discipline reçoit le dossier qu’elle avait déjà.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/storageSegments.ts"
+  filename="storageSegments.ts"
+  snippetRange="92-131"
+  snippetTitle="ensureStorageSegments : chaque ligne garde son dossier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Entre la migration et ce premier démarrage, rien ne casse : tant que la colonne est vide, `disciplineSegment` retombe sur le calcul d’origine. Le seul cas qui demande une décision humaine est celui de deux disciplines d’une même catégorie dont les noms donnaient déjà le même slug : elles partageaient déjà un dossier. La seconde garde alors le calcul d’origine, et le journal du démarrage la signale.
+
+<Callout type="warning">
+Un nom affiché n’est **jamais** une identité de stockage. Ce qui sert à construire un chemin, une clé ou un lien durable se calcule une fois, se fige, et ne dépend plus du libellé. La même règle a déjà servi aux espaces collaboratifs ; elle sert ici aux catégories et aux disciplines.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Évolution", "Ce qu’elle permet", "Garantie par"]' rowsJson='[["Origin et DisciplineFamily, des entités", "Pas de doublons, des métadonnées, des regroupements transverses", "Unicité du nom et du slug ; sélecteurs"], ["Event distinct de Seminar", "Des rendez-vous culturels sans programme ni animateurs ; plusieurs disciplines", "Deux modèles, deux routeurs ; un agenda commun"], ["« Au moins un des trois »", "Des stages et des événements sans discipline du club, mais jamais sans contexte", "refine Zod à la création ; routeur après fusion à la modification"], ["Stage → Seminar", "Un code nommé en anglais, sans exception trompeuse", "Une migration de renommages seuls"], ["Slugs", "Des adresses lisibles et stables", "slugSchema ; unicité ; messages selon la cible du P2002"], ["storageSegment", "Renommer sans déplacer de fichiers, ni perdre la protection d’un dossier", "Segment figé à la création ; complété au démarrage pour l’existant"]]' />
+
+## À suivre
+
+Le modèle est en place, ses conventions aussi. Reste ce que le visiteur en voit : les fiches publiques, ce qu’elles montrent et ce qu’elles taisent, l’agenda qui réunit stages et événements, et le fichier qui les fait entrer dans son agenda personnel.
+
+<Callout type="tip">
+**Chapitre suivant : ce que voit le visiteur.** Les fiches publiques, l’agenda, le fichier `.ics`, et la vue d’ensemble de la partie.
+</Callout>

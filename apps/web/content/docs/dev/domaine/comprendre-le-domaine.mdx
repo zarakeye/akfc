@@ -1,6 +1,6 @@
 ---
-title: "Le domaine du club"
-description: "Ce que représentent vraiment une catégorie, une discipline, un cours, un stage et un événement, comment ils se relient, et les décisions de modélisation qui en découlent."
+title: "Ce que le club modélise"
+description: "Le vocabulaire du domaine : ce que sont vraiment une discipline, un cours, un stage, un événement et une actualité, ce qui les distingue, et les personnes qui les animent."
 section: "Domaine du club"
 order: 1
 entities:
@@ -14,13 +14,14 @@ entities:
   Event: [label, externalDisciplineLabels, publicationDate, organizerId]
   EventSession: [eventId, date, beginTime, endTime]
   EventDiscipline: [eventId, disciplineId]
+  Post: [title, publicationDate, authorId]
 stories:
   - title: Le club ouvre une discipline et ses cours
     actor: Administrateur
     steps:
       - label: Il crée la discipline dans une catégorie, avec sa famille, son origine et son instructeur principal
         call: discipline.create
-        section: La discipline, au centre
+        section: "Une discipline n’est pas un cours : c’est un art"
       - label: Il ajoute un créneau hebdomadaire, pour un public
         call: course.create
         section: "Le cours : un créneau, pas une date"
@@ -29,172 +30,231 @@ stories:
     steps:
       - label: Il crée la fiche du stage, rattachée à une discipline du club ou à une discipline extérieure
         call: seminar.create
-        section: "Le stage et l'événement : des séances datées"
+        section: "Le stage : un contenant de séances"
       - label: Il ajoute une séance datée
         call: seminarSession.create
-        section: "Le stage et l'événement : des séances datées"
+        section: "Le stage : un contenant de séances"
   - title: Un visiteur consulte l'agenda
     actor: Visiteur
     steps:
       - label: L'agenda réunit stages et événements publiés, triés sur leur prochaine séance
         call: page /agenda
-        section: "L'agenda : deux modèles, une liste"
+        section: "Le stage : un contenant de séances"
       - label: Il ouvre la fiche d'un stage
         call: page /seminars/[slug]
-        section: "Le stage et l'événement : des séances datées"
+        section: "Le stage : un contenant de séances"
       - label: Il ajoute le stage à son agenda personnel (fichier .ics)
         call: GET /api/calendar/seminars/[id]
-        section: "Le stage et l'événement : des séances datées"
+        section: "Le stage : un contenant de séances"
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les actualités et les pages se construisent avec des blocs, et chaque contenu tient à jour la liste des médias qu'il affiche. L'identité du site et ses coordonnées se règlent dans une ligne unique, depuis le tableau de bord. Les contenus les plus importants du site, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements du club.
+> **Précédemment.** Les actualités et les pages se construisent avec des blocs, et chaque contenu tient à jour la liste des médias qu’il affiche. L’identité du site et ses coordonnées se règlent dans une ligne unique, depuis le tableau de bord. Les contenus les plus importants du site, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements du club.
 
 ## Les parcours du chapitre
 
-Trois cas d'utilisation traversent ce chapitre : ouvrir une discipline et ses cours, programmer un stage, et ce qu'en voit un visiteur. Chaque onglet en déroule les étapes et ce qu'elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+Trois cas d’utilisation traversent ce chapitre : ouvrir une discipline et ses cours, programmer un stage, et ce qu’en voit un visiteur. Chaque onglet en déroule les étapes et ce qu’elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
 
 <Parcours />
 
 ## Pourquoi commencer par le vocabulaire
 
-Avant d'écrire un formulaire ou une requête, il faut savoir exactement ce que l'on modélise. « Le cours de Tchoy Lee Fut » peut désigner l'art martial lui-même, le créneau du mardi soir, ou la séance d'hier. Chacun de ces sens correspond à un modèle différent, avec des règles différentes. Confondre deux d'entre eux mène à des formulaires qui demandent des informations absurdes (une date pour un créneau hebdomadaire) ou qui n'en demandent pas assez.
+Avant de construire des pages d’administration, des formulaires, des sélecteurs et des composants visuels, nous avons besoin de **savoir exactement ce que nous modélisons**. Sans ce socle, chaque décision technique flotte : quel champ exposer dans le formulaire ? quelle relation filtrer ? quelle contrainte poser à la validation ? Toutes ces questions trouvent leur réponse dans le sens des choses, pas dans l’inspection du schéma Prisma seul.
 
-Le modèle du club distingue **ce qui est enseigné** (les disciplines, rangées par catégorie, famille et origine), **quand on le pratique régulièrement** (les cours) et **ce qui se passe ponctuellement** (les stages et les événements, avec leurs séances datées).
+« Le cours de Tchoy Lee Fut » peut désigner l’art martial lui-même, le créneau du mardi soir, ou la séance d’hier. Chacun de ces sens correspond à un modèle différent, avec des règles différentes. Confondre deux d’entre eux mène à des formulaires qui demandent des informations absurdes (une date pour un créneau hebdomadaire) ou qui n’en demandent pas assez (aucune date pour un stage).
 
-<DocsTable columnsJson='["Modèle","Dans l’interface","Nature","Exemple"]' rowsJson='[["Category","Catégorie","La plus grosse maille de classement ; elle range aussi la bibliothèque de fichiers.","Cours"],["Discipline","Discipline","Un art enseigné par le club, indépendant du temps et du lieu.","Tchoy Lee Fut"],["DisciplineFamily","Famille","Un regroupement de disciplines pour le menu.","Kung-fu"],["Origin","Origine","Les racines culturelles d’une discipline, d’un stage, d’un événement.","Chine"],["Course","Cours","Un créneau HEBDOMADAIRE : jour, horaire, public. Sans date.","Le mardi, 18h30–20h, adultes"],["Seminar","Stage","Un rendez-vous ponctuel, avec un programme et des séances datées.","Stage d’armes, deux week-ends de mars"],["Event","Événement","Un rendez-vous plus léger, éventuellement sans discipline.","Forum des associations"],["SeminarSession, EventSession","Séance","Une date et un horaire précis d’un stage ou d’un événement.","Samedi 14 mars, 9h–12h"]]' />
+Ce chapitre construit donc une compréhension **conceptuelle** des entités du club : non pas une description des tables, mais une lecture de ce qu’elles représentent dans la vie réelle d’un club d’arts martiaux et de pratiques culturelles asiatiques. Le modèle distingue **ce qui est enseigné** (les disciplines, rangées par catégorie, famille et origine), **quand on le pratique régulièrement** (les cours) et **ce qui se passe ponctuellement** (les stages et les événements, avec leurs séances datées). À côté, l’**actualité** vit sa propre vie.
+
+<DocsTable columnsJson='["Modèle", "Dans l’interface", "Nature", "Exemple"]' rowsJson='[["Category", "Catégorie", "La plus grosse maille de classement ; elle range aussi la bibliothèque de fichiers.", "Cours"], ["Discipline", "Discipline", "Un art enseigné par le club, indépendant du temps et du lieu.", "Tchoy Lee Fut"], ["DisciplineFamily", "Famille", "Un regroupement de disciplines pour le menu.", "Kung-fu"], ["Origin", "Origine", "Les racines culturelles d’une discipline, d’un stage, d’un événement.", "Chine"], ["Course", "Cours", "Un créneau HEBDOMADAIRE : jour, horaire, public. Sans date.", "Le mardi, 18h30–20h, adultes"], ["Seminar", "Stage", "Un rendez-vous ponctuel, avec une présentation, un programme et des séances datées.", "Stage d’armes, deux week-ends de mars"], ["Event", "Événement", "Un rendez-vous plus libre, avec plusieurs disciplines ou aucune.", "Forum des associations"], ["SeminarSession, EventSession", "Séance", "Une date et un horaire précis d’un stage ou d’un événement.", "Samedi 14 mars, 9h–12h"], ["Post", "Actualité", "Un article éditorial, rattaché à rien d’autre du domaine.", "Compte rendu de la démonstration"]]' />
 
 <Callout type="warning">
-Dans le code, un **stage** s'appelle `Seminar`. Le modèle s'appelait `Stage` ; il a été renommé pour suivre la convention du projet, qui nomme en anglais le code, les URL et les dossiers de stockage (`courses`, `seminars`, `events`). L'interface, elle, parle français et dit « stage ». La page publique d'un stage est donc `/seminars/[slug]`, et la migration `rename_stage_to_seminar` ne fait que renommer tables, colonnes et contraintes, sans toucher aux données.
+Dans le code, un **stage** s’appelle `Seminar`. Le modèle s’appelait `Stage` ; il a été renommé pour suivre la convention du projet, qui nomme en anglais le code, les URL et les dossiers de stockage (`courses`, `seminars`, `events`). L’interface, elle, parle français et dit « stage ». La page publique d’un stage est donc `/seminars/[slug]`, et la migration `rename_stage_to_seminar` ne fait que renommer tables, colonnes et contraintes, sans toucher aux données. Le chapitre 3 revient sur ce renommage.
 </Callout>
 
-## La discipline, au centre
+## Une discipline n’est pas un cours : c’est un art
 
-La discipline est le cœur du modèle. Tout ce qui est enseigné ou organisé s'y rattache directement ou indirectement.
+Quand nous commençons à modéliser un club d’arts martiaux, la tentation est de partir des cours visibles sur le site — « Tchoy Lee Fut adultes, mardi 18h30 », « Kali enfants, mercredi 17h » — et d’en faire des entités. Cette approche capture ce qui se passe concrètement chaque semaine, mais elle confond deux niveaux d’abstraction qu’il faut distinguer.
 
-```prisma
-// prisma/schema.prisma (extrait simplifié)
-model Discipline {
-  id              Int            @id @default(autoincrement())
-  name            String
-  type            DisciplineType           // MARTIAL_ART, CALLIGRAPHY…
-  slug            String?        @unique
-  publicationDate DateTime?
-  familyId        Int?
-  originId        Int?
-  description     Json                     // page complète, au constructeur
-  summary         Json                     // présentation courte pour l'accueil
-  summaryMediaId  String?                  // image de la carte d'accueil
-  categoryId      Int
-  instructorId    String                   // instructeur principal
+Une discipline est **un art enseigné**, au sens conceptuel. Le Tchoy Lee Fut existe en tant que tel — il a une histoire, des techniques, une école, une lignée de maîtres — indépendamment du fait qu’il soit enseigné le mardi à 18h30 ou le samedi à 10h. Si les cours s’arrêtent l’été et qu’aucun créneau n’a lieu pendant deux mois, la discipline existe toujours.
 
-  @@unique([categoryId, name])
-}
-```
+Un cours, lui, est un **créneau récurrent** dans lequel une discipline est enseignée à un public donné : discipline, plus jour, plus heure, plus public. C’est concret, planifié, placé dans la semaine.
 
-Plusieurs décisions sont visibles dans ce modèle.
+Cette distinction guide tout le reste du modèle. La `Discipline` porte les informations conceptuelles : son nom, son école, sa classification, son origine culturelle, sa page de présentation, son instructeur principal. Le `Course` porte les informations pratiques du créneau : son jour, ses horaires, son public, ses prérequis, son instructeur éventuel.
 
-**Un nom unique par catégorie, un slug unique tout court.** Deux catégories peuvent avoir une discipline du même nom ; l'URL publique, elle, doit être unique. Le slug est saisi par l'administrateur (pré-rempli à partir du nom), et ne change pas quand on renomme la discipline : les liens déjà partagés restent valides.
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="552-662"
+  snippetHighlight="6,14,19,22,35,38,44,53,64,103"
+  snippetTitle="Le modèle Discipline"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-**Famille et origine sont des entités, pas du texte libre.** Un champ texte « Famille » aurait vite contenu « Kung-fu », « Kung Fu » et « kungfu » : trois entrées de menu pour la même famille. Une table, avec un sélecteur dans le formulaire, rend les doublons impossibles. L'origine porte en plus ses propres informations (pays, région, période historique) et sert aussi aux stages et aux événements.
+Plusieurs décisions sont visibles dans ce modèle, et chacune répond à une question concrète.
 
-**Deux contenus.** `description` est la page complète de la discipline, construite avec les blocs du constructeur de pages. `summary` et `summaryMediaId` forment la carte de la page d'accueil : une image puis un court texte, avec « Lire la suite ». Une discipline au résumé vide n'a pas de carte.
+**Un nom unique par catégorie, un slug unique tout court.** Deux catégories peuvent avoir une discipline du même nom (`@@unique([categoryId, name])`) ; l’adresse publique, elle, doit être unique. Le slug est saisi par l’administrateur, pré-rempli à partir du nom, et ne change pas quand on renomme la discipline : les liens déjà partagés restent valides. Il est facultatif en base pour d’anciennes lignes seulement ; le routeur l’exige à la création.
 
-**La catégorie ne change pas après la création.** `discipline.update` refuse de modifier `categoryId` : le dossier des fichiers d'une discipline est rangé sous celui de sa catégorie (`AKFC/courses/tchoy-lee-fut/`). Déplacer la discipline casserait le lien avec ses fichiers.
+**Famille et origine sont des entités, pas du texte libre.** Un champ texte « Famille » aurait vite contenu « Kung-fu », « Kung Fu » et « kungfu » : trois entrées de menu pour la même famille. Une table, avec un sélecteur dans le formulaire, rend les doublons impossibles. Le chapitre 3 raconte comment l’origine est passée du texte à l’entité, et ce que cela permet.
 
-**Une date de publication.** Sans date, la discipline est un brouillon ; avec une date future, sa publication est programmée. Le filtre est appliqué par toutes les lectures de l'API (voir le chapitre sur l'API, « l'histoire des brouillons »).
+**Deux contenus.** `description` est la page complète de la discipline, construite avec les blocs du constructeur de pages. `summary` et `summaryMediaId` forment la carte de la page d’accueil : une image, puis un court texte, avec « Lire la suite ». Une discipline au résumé vide n’a pas de carte. Le chapitre 2 montre comment ces deux contenus et l’image partagent une seule liste de références de médias.
+
+**La catégorie ne change pas après la création.** `discipline.update` n’accepte pas `categoryId` : le dossier des fichiers d’une discipline est rangé sous celui de sa catégorie (`AKFC/courses/tchoy-lee-fut/`). Déplacer la discipline couperait le lien avec ses fichiers.
+
+**Une date de publication.** Sans date, la discipline est un brouillon ; avec une date future, sa publication est programmée. Le filtre est appliqué par toutes les lectures de l’API, et par tout ce qui dépend d’elle — ses créneaux compris (chapitre 2).
+
+**Un instructeur principal obligatoire.** C’est le responsable pédagogique de la discipline. Les créneaux peuvent avoir le leur ; à défaut, c’est lui qui s’applique (chapitre 2, « Les deux instructeurs d’un créneau »).
+
+<Callout type="tip">
+La discipline est l’**art** au sens conceptuel ; le cours est le **créneau** dans lequel cet art est enseigné. Une discipline peut n’avoir aucun cours actif et exister quand même, par exemple si le club arrête temporairement de l’enseigner. Un cours, à l’inverse, ne peut pas exister sans sa discipline : sa suppression est d’ailleurs bloquée tant qu’elle a des créneaux, des stages ou des événements.
+</Callout>
 
 ## Le cours : un créneau, pas une date
 
-```prisma
-// prisma/schema.prisma (extrait simplifié)
-model Course {
-  id           Int      @id @default(autoincrement())
-  disciplineId Int
-  audience     Audience  // KIDS, TEENAGERS, ADULTS, ALL_AGES
-  day          Day       // MONDAY … SATURDAY
-  beginTime    Int       // HHMM : 1830 = 18h30
-  endTime      Int
-  instructorId String?
-  requisites   String[]
-  content      Json
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="672-721"
+  snippetHighlight="9,12,16,20,24,47"
+  snippetTitle="Le modèle Course"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-  @@unique([disciplineId, day, beginTime, audience])
-}
-```
+Un cours n’a pas de date : c’est « le mardi à 18h30, pour les adultes ». Les vacances et les annulations ponctuelles ne font pas partie du modèle, et c’est voulu : elles relèvent d’une actualité ou du bandeau d’annonces, sans toucher à la grille hebdomadaire. Le jour va du lundi au **dimanche** (l’énumération `Day` a sept valeurs, et la colonne « Horaires » du pied de page les trie dans cet ordre).
 
-Un cours n'a pas de date : c'est « le mardi à 18h30, pour les adultes ». Les vacances et les annulations ponctuelles ne font pas partie du modèle.
+Les horaires sont des entiers au format HHMM (`1830` pour 18h30), et non des `DateTime`. Une heure de cours n’a ni jour ni fuseau ; un `DateTime` aurait obligé à inventer une date arbitraire et à gérer le changement d’heure. Le chapitre suivant détaille cette convention, ses validations, et ce qu’elle permet.
 
-Les horaires sont des entiers au format HHMM (`1830`), pas des `DateTime`. Une heure de cours n'a ni jour ni fuseau ; un `DateTime` aurait obligé à inventer une date arbitraire et à gérer le changement d'heure. Un entier se compare et se trie directement, et la règle « la fin après le début » se vérifie d'une soustraction.
+**La contrainte d’unicité** empêche de saisir deux fois le même créneau pour le même public : « Tchoy Lee Fut, adultes, mercredi 18h » et « Tchoy Lee Fut, ados, mercredi 18h » sont deux cours légitimes ; deux fois le premier, non. Elle ne porte que sur l’heure de *début* : deux créneaux qui se chevauchent sans commencer à la même heure restent possibles, et c’est à l’administrateur d’y veiller.
 
-La contrainte d'unicité empêche de saisir deux fois le même créneau pour le même public. L'instructeur du cours est facultatif : à défaut, c'est l'instructeur principal de la discipline.
+**La discipline ne change pas après la création.** Changer la discipline d’un cours reviendrait à en créer un autre ; `course.update` n’accepte donc pas `disciplineId`.
 
-## Le stage et l'événement : des séances datées
+**Le cours doit appartenir à la catégorie des cours.** `course.create` vérifie que la discipline choisie est rangée dans la catégorie dont le dossier est `courses` : une discipline de calligraphie présentée seulement en stage n’a pas de grille hebdomadaire. La vérification lit le segment de stockage de la catégorie, figé, et non son libellé, que l’on peut renommer (chapitre 3).
 
-Un stage et un événement ont la même structure temporelle : une fiche, et une liste de **séances** (`SeminarSession`, `EventSession`), chacune avec une date, des horaires au format HHMM, un lieu et des remarques. Un stage d'un week-end a deux séances ; un stage sur deux week-ends en a quatre. Les séances sont supprimées avec leur stage (`onDelete: Cascade`).
+**`requisites`** est une liste de prérequis libres (« 14 ans révolus », « certificat médical ») et **`content`** la présentation complète du cours, au constructeur de pages.
 
-Ils diffèrent par leur rapport aux disciplines :
+## Le stage : un contenant de séances
 
-<DocsTable columnsJson='["","Stage (Seminar)","Événement (Event)"]' rowsJson='[["Discipline","Au plus une discipline du club (disciplineId), ou le nom libre d’une discipline extérieure (externalDisciplineLabel).","Plusieurs disciplines (table EventDiscipline), ou des noms libres, ou aucune."],["Contenu","Présentation et programme, deux contenus au constructeur.","Un contenu au constructeur."],["Encadrement","Un animateur principal obligatoire et des co-animateurs.","Un organisateur."],["Exemple","Stage d’armes avec un expert invité.","Forum des associations, démonstration, repas de fin d’année."]]' />
+À première vue, un stage ressemble à un cours plus long. Si nous nous arrêtions là, nous modéliserions le stage comme une variante de `Course`, avec quelques champs de plus pour la durée. Ce serait une erreur.
 
-Le stage accepte une discipline **extérieure** sous forme de texte (`externalDisciplineLabel`) : le club accueille parfois un intervenant pour une pratique qu'il n'enseigne pas, comme la calligraphie chinoise. Créer une `Discipline` pour l'occasion la ferait apparaître dans le menu des disciplines enseignées. L'origine permet alors de classer le stage quand il n'a pas de discipline du club.
+Un stage est **un rendez-vous ponctuel**, qui se déroule sur quelques jours et qui rassemble une communauté autour d’un thème précis. Il a une narration propre : qui anime, dans quel cadre, avec quels intervenants, sur quelles techniques. Cette narration n’est pas celle d’un cours hebdomadaire, qui par nature se répète et se contente d’une fiche stable.
 
-Comme les disciplines, stages et événements ont un `summary` et une image de carte, et une date de publication. Leurs lectures publiques sont filtrées ; les écrans d'administration utilisent des procédures séparées (`seminar.getAllAdmin`, `seminar.getByIdAdmin`), réservées aux administrateurs.
+Conséquence : le stage porte **deux contenus séparés**, `description` et `program`. La description raconte ce qu’est le stage et pourquoi il existe ; le programme détaille ce qui va s’y passer, séance par séance. Un cours, plus uniforme, n’en a qu’un.
 
-Chaque fiche publique propose aussi d'**ajouter le stage ou l'événement à son agenda** : une route d'API produit un fichier `.ics` (le format que lisent Google Agenda, Apple Calendrier ou Outlook), où chaque séance devient un rendez-vous à l'heure de Paris. La route applique le même filtre de publication que la fiche : un brouillon n'est pas plus téléchargeable qu'il n'est visible.
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="736-820"
+  snippetHighlight="6,10,13,22,25,39,42,66,69,80"
+  snippetTitle="Le modèle Seminar"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-```ts
-// apps/web/src/app/api/calendar/seminars/[id]/route.ts (extrait)
-const stage = await prisma.seminar.findFirst({
-  where: { id: seminarId, publicationDate: { not: null, lte: new Date() } },
-  include: {
-    sessions: { orderBy: [{ date: "asc" }, { beginTime: "asc" }] },
-  },
-});
-```
+Surtout, un stage n’a **pas de date directe**. Il a des séances (`SeminarSession`), chacune avec sa date, ses horaires, un lieu et des remarques. Un stage de week-end en a quatre : samedi matin, samedi après-midi, dimanche matin, dimanche après-midi. Le stage est un **contenant temporel**, pas un point dans le temps.
 
-## L'agenda : deux modèles, une liste
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="824-860"
+  snippetHighlight="9,12,31,34"
+  snippetTitle="Le modèle SeminarSession"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Pour un visiteur, la différence entre un stage et un événement n'a pas d'importance : il veut savoir ce qui arrive. La page « Agenda » fond donc les deux dans une seule liste chronologique, triée sur la **prochaine séance à venir** de chacun.
+Les séances sont supprimées avec leur stage (`onDelete: Cascade`) : une séance sans stage n’a aucun sens. Leur `seminarId` ne change pas après la création ; pour déplacer une séance vers un autre stage, on la supprime et on la recrée.
 
-```ts
-// apps/web/src/app/(public)/agenda/page.tsx (extrait)
-const publicFilter = { publicationDate: { not: null, lte: now } };
-const nextSession = {
-  where: { date: { gte: now } },
-  orderBy: { date: "asc" as const },
-  take: 1,
-  select: { date: true },
-};
-const [seminars, events] = await Promise.all([
-  prisma.seminar.findMany({
-    where: { ...publicFilter, sessions: { some: { date: { gte: now } } } },
-    select: { id: true, label: true, slug: true, summary: true, summaryMediaId: true, sessions: nextSession },
-  }),
-  prisma.event.findMany({ /* même requête */ }),
-]);
-```
+Trois détails du modèle méritent l’attention.
 
-Le tri est fait en mémoire, après les deux requêtes. La clé de tri, la prochaine séance, est calculée sur une relation filtrée : SQL ne saurait l'ordonner qu'avec une sous-requête, et les rendez-vous à venir d'un club se comptent en dizaines. Un stage commencé mais pas terminé reste dans l'agenda, avec sa prochaine date : on peut encore le rejoindre.
+**L’animation.** Un animateur principal obligatoire (`primaryAnimatorId`), et des co-animateurs. La liste `animators` *contient* l’animateur principal : le routeur reçoit `primaryAnimatorId` et `coAnimatorIds`, refuse qu’une même personne soit les deux ou qu’un co-animateur figure deux fois, puis compose la liste complète.
 
-Le filtre de publication est **le même** que celui des fiches publiques : une seconde règle créerait deux vérités sur ce qui est public.
+**Le rattachement.** Un stage peut porter sur une discipline du club (`disciplineId`), sur une discipline que le club n’enseigne pas (`externalDisciplineLabel`, en texte), ou sur une culture (`originId`) — mais il doit avoir **au moins un** de ces trois rattachements. Le chapitre 3 raconte pourquoi, et comment la règle se vérifie à la création et à la modification.
+
+**`preRegistered`.** Malgré son nom, ce champ contient des **prérequis**, un par ligne, affichés sous « Prérequis » sur la page publique : c’est l’équivalent de `Course.requisites`. Le nom est un reste d’une intention abandonnée (une liste d’inscrits) ; le commentaire du schéma le signale, en attendant un renommage.
+
+<Callout type="tip">
+Le stage est un **contenant temporel** qui regroupe une ou plusieurs séances concrètes. Il a sa propre narration en deux temps — sa **description** (ce qu’il est) et son **programme** (ce qu’on y fera). Les dates effectives vivent dans les séances, pas dans le stage.
+</Callout>
+
+## L’événement : l’entité la plus libre
+
+Si nous nous arrêtions au trio discipline, cours, stage, nous ne pourrions pas modéliser proprement le repas de fin d’année, la conférence sur le bouddhisme zen, la journée portes ouvertes ou le forum des associations. Tous ont leur place dans la vie du club, mais ils ne sont ni des cours ni des stages.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="874-949"
+  snippetHighlight="10,27,30,33,37,54,67,71"
+  snippetTitle="Le modèle Event"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’événement est volontairement **plus libre** que le stage :
+
+- il présente **plusieurs disciplines du club, ou aucune** : la table de liaison `EventDiscipline` relie un événement à autant de disciplines que nécessaire (un forum en présente quatre), et `externalDisciplineLabels` liste autant de disciplines extérieures que voulu ;
+- il porte **un seul contenu** (`content`), pas la paire description et programme : sa narration est tournée vers l’annonce et la présentation ;
+- il a **un organisateur** (`organizerId`), pas un animateur principal entouré de co-animateurs : la logique d’animation collective n’a pas de sens à ce niveau ;
+- il peut recevoir des **fichiers déposés par les membres** (`mediaAssets`) : les photos d’un repas ou d’une démonstration, distinctes des galeries montées par les administrateurs.
+
+Comme le stage, l’événement est un contenant temporel : ses dates vivent dans des `EventSession`, de même structure que les séances de stage. Un événement d’un soir en a une ; une conférence en deux soirées, deux.
+
+<Callout type="tip">
+L’événement est **l’entité la plus libre** du domaine : pas obligatoirement martial, pas obligatoirement rattaché à une discipline du club, une structure narrative simple. Il porte la dimension culturelle large du club, celle qui ne rentre pas dans le cadre des disciplines enseignées.
+</Callout>
+
+## L’actualité : un article à part
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1234-1268"
+  snippetHighlight="6,9,12,21,28,32"
+  snippetTitle="Le modèle Post"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’actualité (`Post`) est volontairement à part. Ce n’est ni un cours, ni un stage, ni un événement, ni une discipline : c’est **un article éditorial**. Une annonce, un compte rendu, une réflexion. Il a un titre, un contenu au constructeur de pages, un auteur et une date de publication.
+
+Il n’est rattaché à **rien d’autre du domaine** : ni `disciplineId`, ni `categoryId`, ni `seminarId`. Une actualité peut parler de la vie associative, d’un événement qui n’est même pas enregistré dans la base, de ce que l’on veut. Cette indépendance est volontaire : si le club voulait un jour classer ses actualités en rubriques, il ajouterait une catégorisation ; aujourd’hui, tout vit en un seul fil.
+
+L’actualité porte en revanche une dimension **communautaire** que les autres entités n’ont pas : des commentaires (`Comment`, avec réponses), des réactions (`Reaction`) et, facultativement, un sondage (`Poll`). C’est le point d’entrée social du modèle.
+
+<Callout type="info">
+L’actualité est l’**outil éditorial transversal** du club : indépendante des disciplines, libre dans son contenu, seule à porter une dimension sociale. Sa convention de publication — `publicationDate` nulle pour un brouillon, future pour une publication programmée, passée pour un article en ligne — s’est généralisée ensuite aux disciplines, aux stages et aux événements.
+</Callout>
 
 ## Les personnes
 
-Les instructeurs, animateurs et organisateurs ne sont pas des entités à part : ce sont des membres (`User`), reliés par des relations nommées (`DisciplineInstructor`, `CourseInstructor`, `SeminarPrimaryAnimator`, `SeminarAnimators`, `EventOrganizer`). Un instructeur se connecte avec son compte de membre et a son profil, sa photo, sa biographie.
+Les instructeurs, animateurs et organisateurs ne sont pas des entités à part : ce sont des membres (`User`), reliés par des relations nommées (`DisciplineInstructor`, `CourseInstructor`, `SeminarPrimaryAnimator`, `SeminarAnimators`, `EventOrganizer`). Un instructeur se connecte avec son compte de membre, et a son profil, sa photo, sa biographie.
 
-Ces relations sont en `Restrict` : un membre qui est instructeur principal d'une discipline, animateur principal d'un stage ou organisateur d'un événement ne peut pas être supprimé tant qu'il l'est. Supprimer le compte d'un instructeur n'efface donc jamais une discipline par accident ; il faut d'abord la confier à quelqu'un d'autre.
+Il n’existe d’ailleurs pas de rôle « instructeur » en base : **l’instructeur se définit par ce qu’il anime**. Le sélecteur des formulaires d’administration (`user.getAssignableInstructors`) propose les membres du groupe Administrateurs, plus tous ceux qui ont déjà une responsabilité — instructeur d’une discipline ou d’un créneau, animateur d’un stage, organisateur d’un événement. Cette dernière condition manquait : un organisateur qui n’était ni administrateur ni instructeur disparaissait du sélecteur, et le formulaire d’édition de son événement affichait un choix vide.
+
+Ce que devient une responsabilité quand son titulaire part dépend de la relation :
+
+<DocsTable columnsJson='["Relation", "À la suppression du membre", "Pourquoi"]' rowsJson='[["Instructeur principal d’une discipline", "Refusée (Restrict)", "Une discipline sans responsable n’a pas de sens : il faut d’abord la confier à quelqu’un d’autre."], ["Animateur principal d’un stage", "Refusée (Restrict)", "Même raison : le stage perdrait son responsable."], ["Organisateur d’un événement", "Refusée (Restrict)", "Même raison."], ["Instructeur attitré d’un créneau", "Le créneau retombe sur l’instructeur de la discipline (SetNull)", "Le créneau a une valeur par défaut : rien n’est perdu."], ["Co-animateur d’un stage", "Retiré de la liste", "Le stage garde son animateur principal."], ["Auteur d’une actualité", "Refusée (Restrict)", "L’article perdrait sa signature."]]' />
+
+Supprimer le compte d’un instructeur n’efface donc jamais une discipline par accident.
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qu’est-ce qu’une discipline ?","Un art enseigné, rangé dans une catégorie, avec une famille et une origine (des entités, pas du texte libre)."],["Un cours a-t-il une date ?","Non : jour, horaire HHMM et public. Les dates sont celles des séances de stages et d’événements."],["Comment s’appelle un stage dans le code ?","Seminar ; l’interface et les URL disent « stage »."],["Stage ou événement ?","Stage : une discipline (du club ou extérieure), un programme, des animateurs. Événement : plusieurs disciplines ou aucune, un organisateur."],["Qu’est-ce qui est public ?","Ce dont la date de publication est renseignée et passée, partout avec la même règle."],["Peut-on supprimer un instructeur ?","Pas tant qu’il est responsable d’une discipline, d’un stage ou d’un événement."]]' />
+<DocsTable columnsJson='["Entité", "Nature", "Datée ?", "Contenus au constructeur", "Rattachement aux disciplines"]' rowsJson='[["Discipline", "L’art enseigné", "Non", "description, summary", "C’est elle"], ["Course", "Créneau hebdomadaire", "Non : jour et horaires", "content", "Une, obligatoire, figée"], ["Seminar (stage)", "Rendez-vous ponctuel", "Par ses séances", "description, program, summary", "Une du club, OU une extérieure, OU une origine (au moins un)"], ["Event (événement)", "Rendez-vous libre", "Par ses séances", "content, summary", "0..N du club, 0..N extérieures, une origine (au moins un)"], ["Post (actualité)", "Article éditorial", "Non", "content", "Aucun"]]' />
+
+Trois idées à garder de ce chapitre :
+
+1. **La discipline est conceptuelle, le cours est le créneau** : une distinction qui structure tout le reste.
+2. **Le stage et l’événement sont des contenants** : leurs dates vivent dans des séances.
+3. **Les personnes sont des membres** : leurs responsabilités sont des relations, et la suppression d’un membre responsable est refusée tant qu’il l’est.
+
 
 ## À suivre
 
-Les disciplines, les stages et les événements sont les contenus du club. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu'ils adressent au club.
+Ces entités partagent des conventions qui ne se voient pas en lisant un modèle à la fois : le format des heures, la date d’une séance, le composite de contenu et ses références de médias, la hiérarchie des instructeurs, la date de publication et tout ce qui en dépend.
 
 <Callout type="tip">
-**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
+**Chapitre suivant : les conventions du domaine.** Ce qui relie les entités entre elles, et les règles qu’un formulaire, un routeur et une page publique doivent appliquer de la même façon.
 </Callout>
