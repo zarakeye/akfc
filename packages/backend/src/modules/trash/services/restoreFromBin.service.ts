@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
 import type { PrismaClient } from "@prisma/client";
 
 import type {
@@ -215,15 +216,27 @@ export async function restoreFromBin(params: {
       await upsertFolders(prisma, appRoot, folderAncestorsOfFilePath(restoredToPath));
     }
 
-    // Move physique
-    if (kind === "file") {
-      await r2MoveFile(entry.storageRoot, restoredToPath);
-    } else {
-      // IMPORTANT: trailing slash pour éviter collisions cours1 vs cours10
-      await r2MoveFolder(
-        `${normalizePath(entry.storageRoot)}/`,
-        `${normalizePath(restoredToPath)}/`,
-      );
+    // Move physique, puis les lignes MediaAsset reviennent avec leurs objets — à leur chemin
+    // d'origine, ou À CÔTÉ en cas de collision : le fichier restauré garde son statut, son nom
+    // d'origine et sa description où qu'il atterrisse. (Un élément jeté avant que les lignes
+    // suivent leurs objets n'en a aucune sous `storageRoot` : la réécriture ne touche alors rien,
+    // et ses lignes, restées au chemin d'origine, le retrouvent s'il y revient.)
+    //
+    // Pas de transaction commune entre le stockage et la base : si la base échoue, les objets
+    // retournent en quarantaine et l'entrée reste « dans la corbeille ».
+    const storageRoot = normalizePath(entry.storageRoot);
+    const target = normalizePath(restoredToPath);
+    const moveObjects = (from: string, to: string): Promise<void> =>
+      kind === "file" ? r2MoveFile(from, to) : r2MoveFolder(`${from}/`, `${to}/`);
+
+    await moveObjects(storageRoot, target);
+    try {
+      await rewriteAssetPaths(prisma, appRoot, kind, storageRoot, target);
+    } catch (err) {
+      await moveObjects(target, storageRoot).catch((undoErr) => {
+        console.error("[trash] restauration : objets non ramenés en quarantaine", entry.id, undoErr);
+      });
+      throw err;
     }
 
     await prisma.trashEntry.update({

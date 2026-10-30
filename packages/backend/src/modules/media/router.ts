@@ -10,6 +10,7 @@
  */
 
 import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { outsideBin } from '@backend/modules/storage/mediaPaths';
 import { assertCanReadPaths } from "@backend/modules/memberGroups/assertCanReadPaths.service";
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -289,6 +290,8 @@ export const mediaRouter = router({
           where: {
             appRoot: input.appRoot,
             OR: [{ fullPath: input.prefix }, { fullPath: { startsWith: `${input.prefix}/` } }],
+            // Depuis la racine, la corbeille n'est pas fouillée : ses fichiers ont leur propre vue.
+            ...(input.prefix.startsWith(`${input.appRoot}/bin`) ? {} : outsideBin(input.appRoot)),
           },
           include: {
             uploader: { select: { id: true, firstName: true, lastName: true, pseudo: true } },

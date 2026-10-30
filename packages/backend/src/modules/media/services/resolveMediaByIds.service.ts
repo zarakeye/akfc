@@ -60,6 +60,8 @@ export async function resolveMediaByIds(
     where: {
       id: { in: [...mediaIds] },
       status: 'published',
+      // Un fichier jeté (sa ligne a suivi l'objet dans la corbeille) ne s'affiche plus nulle part.
+      NOT: { fullPath: { contains: '/bin/.trash/' } },
     },
     select: {
       id: true,

@@ -98,7 +98,8 @@ export async function syncPageMediaReferences(
 
   if (toAdd.length > 0) {
     const validAssets = await tx.mediaAsset.findMany({
-      where: { id: { in: toAdd }, status: 'published' },
+      // Ni brouillon, ni fichier jeté (sa ligne a suivi l'objet dans la corbeille).
+      where: { id: { in: toAdd }, status: 'published', NOT: { fullPath: { contains: '/bin/.trash/' } } },
       select: { id: true },
     });
     const validIds = new Set(validAssets.map((a) => a.id));

@@ -10,6 +10,7 @@ import { deriveMediaKind, type MediaKind } from "@backend/modules/media/helpers/
 import { isProtectedDisciplineFolderPath } from "@backend/modules/storage/protectedDisciplineFolder";
 import { isProtectedEntityFolderPath } from "@backend/modules/storage/protectedEntityFolder";
 import { requiredRootPaths } from "@backend/modules/storage/ensureContentRoots.service";
+import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
 import { assertTrashDoesntRemoveUsedAssets } from "@backend/modules/trash/services/trashedAssets.service";
 import {
   r2Exists,
@@ -274,34 +275,47 @@ export async function trashToBin(params: {
       },
     });
 
-    // 3) Déplacement physique vers storageRoot
-    if (source.kind === "file") {
-      await r2MoveFile(normalized, storageRoot);
-    } else {
-      // ✅ trailing slash pour éviter les collisions de prefix
-      await r2MoveFolder(`${normalized}/`, `${storageRoot}/`);
-
-      // 4) Nettoyage registry DB des dossiers :
-      //    Si tu jettes un dossier, il ne doit plus exister "à l'ancien endroit".
-      //    Donc on supprime les Folder dont le fullPath est dans ce sous-arbre.
-      //
-      // ⚠️ Le sous-arbre, c'est le dossier LUI-MÊME et ce qui est SOUS LUI —
-      // pas tout ce qui commence par les mêmes lettres. Un `startsWith`
-      // nu sur `AKFC/courses/kali` emporterait aussi les lignes de
-      // `AKFC/courses/kali-2`, qui n'a rien à voir avec lui.
-      //
-      // C'est la collision de préfixe contre laquelle le déplacement ci-dessus
-      // se prémunit (« trailing slash pour éviter les collisions ») : même
-      // protection côté DB.
-      await prisma.folder.deleteMany({
-        where: {
-          appRoot,
-          OR: [
-            { fullPath: normalized },
-            { fullPath: { startsWith: `${normalized}/` } },
-          ],
-        },
+    // 3) Déplacement physique vers storageRoot, puis la base suit : les lignes MediaAsset
+    //    accompagnent leurs objets dans la quarantaine (statut, nom d'origine, description et
+    //    auteur reviendront avec eux à la restauration, même à côté du chemin d'origine), et les
+    //    lignes Folder du sous-arbre disparaissent de l'ancien endroit.
+    //
+    //    Pas de transaction commune entre le stockage et la base : on COMPENSE. Si l'une des deux
+    //    étapes échoue, les objets reviennent à leur place et la TrashEntry réservée est retirée.
+    const moveObjects = (from: string, to: string): Promise<void> =>
+      source.kind === "file" ? r2MoveFile(from, to) : r2MoveFolder(`${from}/`, `${to}/`);
+    const undo = async (): Promise<void> => {
+      await moveObjects(storageRoot, normalized).catch((err) => {
+        console.error("[trash] objets non ramenés", normalized, err);
       });
+      await prisma.trashEntry.delete({ where: { id } }).catch(() => undefined);
+    };
+
+    try {
+      await moveObjects(normalized, storageRoot);
+    } catch (err) {
+      await undo();
+      throw err;
+    }
+
+    try {
+      await prisma.$transaction([
+        rewriteAssetPaths(prisma, appRoot, source.kind, normalized, storageRoot),
+        // Le sous-arbre, c'est le dossier LUI-MÊME et ce qui est SOUS LUI — pas tout ce qui
+        // commence par les mêmes lettres (`AKFC/courses/kali` n'emporte pas `kali-2`).
+        prisma.folder.deleteMany({
+          where: {
+            appRoot,
+            OR:
+              source.kind === "folder"
+                ? [{ fullPath: normalized }, { fullPath: { startsWith: `${normalized}/` } }]
+                : [{ fullPath: normalized }],
+          },
+        }),
+      ]);
+    } catch (err) {
+      await undo();
+      throw err;
     }
 
     results.push({

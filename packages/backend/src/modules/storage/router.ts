@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { outsideBin } from "@backend/modules/storage/mediaPaths";
 import { TRPCError } from "@trpc/server";
 
 /**
@@ -155,13 +156,14 @@ export const storageRouter = router({
    */
   getAttentionCounts: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const [pending, bin, commonRepositoryPending, persoCounts] = await Promise.all([
-      ctx.prisma.mediaAsset.count({ where: { status: "pending" } }),
+      // Hors corbeille : un fichier jeté garde sa ligne (pour sa restauration), pas son tour.
+      ctx.prisma.mediaAsset.count({ where: { appRoot: ctx.appRoot, status: "pending", ...outsideBin(ctx.appRoot) } }),
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
       ctx.prisma.mediaAsset.count({
         where: {
           status: "pending",
           appRoot: ctx.appRoot,
-          fullPath: { contains: "/common-repository/" },
+          fullPath: { startsWith: `${ctx.appRoot}/common-repository/` },
         },
       }),
       countPersoImages({
@@ -189,7 +191,7 @@ export const storageRouter = router({
    */
   getPendingBreakdown: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const rows = await ctx.prisma.mediaAsset.findMany({
-      where: { appRoot: ctx.appRoot, status: "pending" },
+      where: { appRoot: ctx.appRoot, status: "pending", ...outsideBin(ctx.appRoot) },
       select: { fullPath: true },
     });
 

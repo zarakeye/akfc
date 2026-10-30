@@ -92,30 +92,39 @@ export async function assertTrashDoesntRemoveUsedAssets(
 }
 
 /**
- * Après une suppression définitive : efface les lignes `MediaAsset` restées sur le chemin
- * d'origine de l'élément. Une ligne n'est effacée que si AUCUN objet n'existe plus à son chemin :
- * un fichier redéposé au même endroit entre-temps a repris la ligne (upsert sur fullPath), et
- * celle-ci lui appartient désormais.
+ * Après une suppression définitive : efface les lignes `MediaAsset` de l'élément, désormais sans
+ * fichier. Une ligne encore référencée par une page (RESTRICT) n'est jamais effacée ici ; la galerie
+ * et la publication aux membres partent avec la ligne (CASCADE).
+ *
+ *   1. Les lignes ont suivi leurs objets dans la quarantaine (`storageRoot`) : on les efface.
+ *   2. Héritage : un élément jeté avant que les lignes suivent leurs objets a laissé les siennes sur
+ *      son chemin d'origine. On ne les efface que si AUCUN objet n'existe plus à leur chemin : un
+ *      fichier redéposé au même endroit entre-temps a repris la ligne (upsert sur fullPath), et
+ *      celle-ci lui appartient désormais.
  */
 export async function deleteAssetRowsOfTrashedItem(
   prisma: PrismaClient,
   appRoot: string,
-  item: { kind: "file" | "folder"; previousPath: string },
+  item: { kind: "file" | "folder"; previousPath: string; storageRoot: string },
 ): Promise<number> {
+  const notReferenced: Prisma.MediaAssetWhereInput = { pageReferences: { none: {} } };
+
+  const inBin = await prisma.mediaAsset.deleteMany({
+    where: { AND: [assetsWhere(appRoot, [{ kind: item.kind, fullPath: item.storageRoot }]), notReferenced] },
+  });
+
   const previous = normalizePath(item.previousPath);
   const rows = await prisma.mediaAsset.findMany({
-    // Une ligne encore référencée par une page (RESTRICT) n'est jamais effacée ici.
-    where: { AND: [assetsWhere(appRoot, [{ kind: item.kind, fullPath: previous }]), { pageReferences: { none: {} } }] },
+    where: { AND: [assetsWhere(appRoot, [{ kind: item.kind, fullPath: previous }]), notReferenced] },
     select: { id: true, fullPath: true },
   });
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) return inBin.count;
 
   const prefix = item.kind === "file" ? previous : `${previous}/`;
   const live = new Set((await r2ListByPrefix(prefix)).map((o) => o.key));
   const orphanIds = rows.filter((r) => !live.has(r.fullPath)).map((r) => r.id);
-  if (orphanIds.length === 0) return 0;
+  if (orphanIds.length === 0) return inBin.count;
 
-  // Galerie et publication aux membres partent avec la ligne (CASCADE).
   const { count } = await prisma.mediaAsset.deleteMany({ where: { id: { in: orphanIds } } });
-  return count;
+  return inBin.count + count;
 }

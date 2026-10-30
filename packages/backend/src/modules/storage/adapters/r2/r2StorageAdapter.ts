@@ -11,6 +11,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { rewriteAssetPaths } from "@backend/modules/storage/mediaPaths";
 
 import type {
   StorageAdapter,
@@ -240,52 +241,54 @@ export function createR2StorageAdapter(
     async move(operation: StorageMoveOperation): Promise<void> {
       const s3 = getR2Client();
       const Bucket = getR2Bucket();
+      const kind = operation.source.type;
       const from = operation.source.path;
       const to = operation.target.path;
+      const moveObjects = (src: string, dst: string): Promise<void> =>
+        kind === "file" ? moveFile(s3, Bucket, src, dst) : moveFolder(s3, Bucket, src, dst);
 
-      // Le stockage d'abord, la base ensuite : si la copie échoue, rien n'a bougé nulle part ; si
-      // la base échoue après, l'objet est déjà à sa nouvelle place et la ligne pointe encore vers
-      // l'ancienne (une opération S3 et une transaction SQL ne se rendent pas atomiques ensemble).
-      if (operation.source.type === "file") {
-        await moveFile(s3, Bucket, from, to);
-        await prisma.mediaAsset.updateMany({
-          where: { appRoot, fullPath: from },
-          data: { fullPath: to },
+      // Le stockage d'abord, la base ensuite. Une opération S3 et une transaction SQL ne se rendent
+      // pas atomiques ensemble : on COMPENSE. Si la copie échoue en cours de route (un dossier se
+      // copie par paquets), on ramène à la source ce qui est déjà arrivé ; si la base échoue après,
+      // on ramène les objets. Dans les deux cas, l'état final est l'état initial, et l'erreur remonte.
+      try {
+        await moveObjects(from, to);
+      } catch (err) {
+        await moveObjects(to, from).catch((undoErr) => {
+          console.error("[r2] déplacement interrompu, retour impossible", { from, to }, undoErr);
         });
-        return;
+        throw err;
       }
 
-      await moveFolder(s3, Bucket, from, to);
-
-      // Le dossier et tout ce qu'il contient changent de préfixe en base, en une transaction :
-      // les fichiers (MediaAsset), les dossiers enregistrés (Folder : espaces, dossiers restaurés)
-      // et les libellés d'affichage (FolderLabel). Prisma n'offre pas de remplacement de
-      // sous-chaîne dans updateMany, d'où le SQL brut.
-      //
-      // Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
-      // aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
-      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique
-      // inverse est le caractère d'échappement par défaut de LIKE dans PostgreSQL. Le « / » final
-      // évite que déplacer `cours` emporte `cours-avance`.
-      const cut = from.length + 1;
-      const likeChildren = `${from}/`.replace(/[\\%_]/g, "\\$&") + "%";
-      await prisma.$transaction([
-        prisma.$executeRaw`
-          UPDATE "MediaAsset"
-          SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
-          WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likeChildren};
-        `,
-        prisma.$executeRaw`
-          UPDATE "Folder"
-          SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
-          WHERE "appRoot" = ${appRoot} AND ("fullPath" = ${from} OR "fullPath" LIKE ${likeChildren});
-        `,
-        prisma.$executeRaw`
-          UPDATE "FolderLabel"
-          SET "path" = ${to} || SUBSTRING("path" FROM ${cut}::int)
-          WHERE "path" = ${from} OR "path" LIKE ${likeChildren};
-        `,
-      ]);
+      // Le dossier et tout ce qu'il contient changent de préfixe en base, en une transaction : les
+      // fichiers (MediaAsset), les dossiers enregistrés (Folder : espaces, dossiers restaurés) et
+      // les libellés d'affichage (FolderLabel).
+      try {
+        if (kind === "file") {
+          await rewriteAssetPaths(prisma, appRoot, "file", from, to);
+        } else {
+          const cut = from.length + 1;
+          const likeChildren = `${from}/`.replace(/[\\%_]/g, "\\$&") + "%";
+          await prisma.$transaction([
+            rewriteAssetPaths(prisma, appRoot, "folder", from, to),
+            prisma.$executeRaw`
+              UPDATE "Folder"
+              SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
+              WHERE "appRoot" = ${appRoot} AND ("fullPath" = ${from} OR "fullPath" LIKE ${likeChildren});
+            `,
+            prisma.$executeRaw`
+              UPDATE "FolderLabel"
+              SET "path" = ${to} || SUBSTRING("path" FROM ${cut}::int)
+              WHERE "path" = ${from} OR "path" LIKE ${likeChildren};
+            `,
+          ]);
+        }
+      } catch (err) {
+        await moveObjects(to, from).catch((undoErr) => {
+          console.error("[r2] base non mise à jour, objets non ramenés", { from, to }, undoErr);
+        });
+        throw err;
+      }
     },
 
     async delete(path: StoragePath): Promise<void> {

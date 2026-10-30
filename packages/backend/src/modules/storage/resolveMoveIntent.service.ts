@@ -74,16 +74,50 @@ export async function planMoveOperations(
 /**
  * Phase 2 : exécution des opérations planifiées. Séquentielle : des opérations concurrentes sur
  * des préfixes voisins pourraient se marcher dessus.
+ *
+ * Tout ou rien, par compensation : un geste multiple n'a pas de transaction commune (chaque
+ * opération touche le stockage ET la base). Si l'opération k échoue — l'adapter a déjà ramené ses
+ * propres objets —, on défait les opérations 1..k-1 en sens inverse, de la plus récente à la plus
+ * ancienne. L'utilisateur retrouve la bibliothèque telle qu'avant son geste, et un message qui le
+ * dit. Ce que la compensation ne couvre pas : un arrêt du serveur au milieu du geste.
  */
 export async function executeMoveOperations(
   adapter: StorageAdapter,
   operations: readonly StorageMoveOperation[]
 ): Promise<void> {
-  if (!adapter.move) {
+  const move = adapter.move?.bind(adapter);
+  if (!move) {
     throw new Error("Adapter does not support move().");
   }
+  const done: StorageMoveOperation[] = [];
   for (const operation of operations) {
-    await adapter.move(operation);
+    try {
+      await move(operation);
+      done.push(operation);
+    } catch (err) {
+      const notUndone: string[] = [];
+      for (const prev of [...done].reverse()) {
+        await move({
+          source: { type: prev.source.type, path: prev.target.path },
+          target: { path: prev.source.path },
+        }).catch((undoErr) => {
+          notUndone.push(prev.source.path);
+          console.error("[move] retour impossible", prev, undoErr);
+        });
+      }
+      console.error("[move] échec, geste annulé", operation, err);
+      // SERVICE_UNAVAILABLE et non INTERNAL_SERVER_ERROR : c'est le stockage (ou la base) qui a
+      // failli, pas la requête — et le message, qui dit ce qui reste à faire, doit arriver jusqu'à
+      // l'administrateur (une erreur interne voit son message remplacé en production).
+      throw new TRPCError({
+        code: "SERVICE_UNAVAILABLE",
+        message:
+          notUndone.length === 0
+            ? "Le déplacement a échoué ; rien n'a été déplacé."
+            : `Le déplacement a échoué, et ${notUndone.length} élément(s) n'ont pas pu être remis à leur place.`,
+        cause: err,
+      });
+    }
   }
 }
 
