@@ -1,0 +1,217 @@
+---
+title: "Le registre et l’éditeur"
+description: "Comment chaque type de bloc trouve son éditeur et son rendu : la définition d’un bloc, un registre que le compilateur oblige à être complet, le cast de variance qui le parcourt, un éditeur contrôlé, les blocs permis par hôte, le sélecteur de fichiers et son dossier de départ, et les aperçus."
+section: "Contenu éditorial"
+order: 3
+entities:
+  SitePage: [slug, title, content]
+  MediaAsset: [fullPath, status]
+stories:
+  - title: Un administrateur compose une page
+    actor: Administrateur
+    steps:
+      - label: Il choisit une image dans le sélecteur ; le chemin choisi est traduit en identifiant stable
+        call: media.resolveByPaths
+        section: Choisir un fichier
+      - label: L’aperçu du bloc résout ses médias, sur la route privée
+        call: media.resolveByIds
+        section: L’aperçu, sous chaque éditeur
+      - label: Il enregistre le contenu tenu par le formulaire
+        call: sitePage.save
+        section: Un éditeur contrôlé
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un contenu est une liste de blocs décrite par un contrat partagé. Le texte riche y est assaini par une liste blanche, à l’entrée comme à la lecture, et rendu en HTML par une seule fonction.
+
+## Les parcours du chapitre
+
+Un parcours traverse ce chapitre : l’administrateur qui compose une page dans le tableau de bord, choisit des fichiers, regarde les aperçus et enregistre.
+
+<Parcours />
+
+## Ce qu’il faut pour un bloc
+
+Pour qu’un type de bloc existe vraiment, il faut quatre choses : un **schéma** dans le contrat (chapitre 1), un **éditeur** dans le tableau de bord, un **rendu** sur le site, et une entrée dans le menu « + » qui l’ajoute. Les trois dernières sont réunies dans une **définition** :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/BlockDefinition.types.ts"
+  filename="BlockDefinition.types.ts"
+  snippetRange="30-75"
+  snippetHighlight="6,27,36,45"
+  snippetTitle="La définition d’un bloc"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’interface est **générique** : `TBlock` est une variante précise de l’union des blocs. Une définition du bloc média-texte est un `BlockDefinition<MediaTextBlockV1>`, et son éditeur ne peut recevoir qu’un `MediaTextBlockV1`. `kind` est typé `TBlock["type"]` : il est impossible d’écrire `kind: "tiptap"` dans la définition du média-texte.
+
+Voici une définition complète :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/blocks/media-text/index.tsx"
+  filename="index.tsx"
+  snippetRange="9-20"
+  snippetHighlight="2,10-11"
+  snippetTitle="Le bloc média-texte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`Editor` est un composant **client**, utilisé dans le tableau de bord. `View` est un composant **serveur** : son fichier s’appelle `view.server.tsx`, et il ne s’exécute jamais dans le navigateur (chapitre 4). `defaultData` fabrique le bloc vide que le menu « + » insère ; l’identifiant lui est fourni par le constructeur.
+
+## Un registre que le compilateur vérifie
+
+Les définitions sont rassemblées dans un registre. Son **type** est la partie intéressante :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/blockRegistry.ts"
+  filename="blockRegistry.ts"
+  snippetRange="29-44"
+  snippetHighlight="2"
+  snippetTitle="Un type de registre qui exige chaque bloc"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est un **type indexé** (mapped type). Pour chaque valeur `K` de `PageBlockKindV1` — `"tiptap"`, `"image-gallery"`… —, il exige une propriété `K` dont la valeur est une définition de la variante dont `type` vaut `K` (`Extract` la retrouve dans l’union).
+
+Deux erreurs deviennent impossibles :
+
+<DocsTable columnsJson='["Erreur", "Ce que dit le compilateur"]' rowsJson='[["Ajouter un bloc au contrat sans définition", "La propriété manque dans BLOCK_REGISTRY : le type n’est pas satisfait."], ["Ranger une définition sous la mauvaise clé", "Sous \"tiptap\", une définition du média-texte n’est pas une BlockDefinition<TipTapBlockV1>."]]' />
+
+Un bloc ne peut donc pas exister dans les données sans éditeur ni rendu. La lecture passe par une fonction qui conserve ce typage :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/blockRegistry.ts"
+  filename="blockRegistry.ts"
+  snippetRange="58-62"
+  snippetHighlight="3"
+  snippetTitle="getBlockDefinition"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Appelée avec une valeur **connue** (`getBlockDefinition("tiptap")`), elle rend exactement la définition du bloc de texte.
+
+## Parcourir des blocs de types différents
+
+Le constructeur, lui, parcourt une liste de blocs de types **mélangés**. `block.type` n’y est pas une valeur connue, mais l’union `PageBlockKindV1`. `getBlockDefinition(block.type)` rend alors l’union des six définitions, et son `Editor` l’union des six composants. TypeScript refuse de rendre cette union avec un `block` quelconque :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/components/BlockShell.tsx"
+  filename="BlockShell.tsx"
+  snippetRange="74-77"
+  snippetHighlight="2"
+  snippetTitle="Le cast, une fois, à un seul endroit"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi ce refus ? Un éditeur reçoit `onChange: (next: TBlock) => void`. Une fonction qui attend un bloc de texte ne peut pas être utilisée là où l’on pourrait lui passer une galerie : en position de **paramètre**, un type plus précis n’est pas substituable à un type plus large. C’est la **contravariance** des paramètres de fonction. Le compilateur ne peut pas suivre le lien entre `block.type` et la définition choisie ; il voit seulement qu’une des six pourrait recevoir le mauvais bloc.
+
+Le développeur, lui, sait que ce n’est jamais le cas : la définition est choisie **par** `block.type`, elle accepte donc exactement ce bloc. Le cast exprime ce savoir. Il est écrit à deux endroits seulement (`BlockShell` pour l’édition, `PageRenderer` pour le rendu), commenté, et ne peut rien masquer d’autre.
+
+<Callout type="info">
+Un cast acceptable est **local**, **justifié** par un invariant que le compilateur ne voit pas, et placé là où cet invariant est garanti. Un `as` répandu dans chaque composant de bloc serait l’inverse : chaque copie pourrait se tromper.
+</Callout>
+
+## Un éditeur contrôlé
+
+`PageBuilder` affiche les blocs les uns sous les autres, chacun dans un cadre commun (`BlockShell` : poignée de déplacement, icône, bouton de suppression), puis le menu « + ». Il ne garde **pas** le contenu dans son propre état : il le reçoit (`value`) et signale chaque modification (`onChange`). C’est un composant **contrôlé**, comme un `<input value onChange>`.
+
+Chaque action fabrique un nouveau contenu à partir du précédent, sans le modifier :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/page-builder/PageBuilder.tsx"
+  filename="PageBuilder.tsx"
+  snippetRange="86-112"
+  title="Les quatre actions du constructeur"
+  stepsJson='[{"title": "Ajouter", "body": "La définition fabrique un bloc vide, avec un identifiant tiré par le constructeur ; il est ajouté en fin de liste.", "scope": "1-5", "focus": "3-4"}, {"title": "Modifier", "body": "Un éditeur de bloc ne connaît que son bloc ; il rend sa nouvelle version, et le constructeur la remet à sa place, retrouvée par son identifiant.", "scope": "7-12", "focus": "10-10"}, {"title": "Supprimer", "body": "Une nouvelle liste sans le bloc.", "scope": "14-19", "focus": "17-17"}, {"title": "Déplacer", "body": "Une COPIE de la liste, où le bloc est retiré puis réinséré. `splice` modifie le tableau sur lequel il agit : sur `value.blocks` lui-même, il modifierait l’état du parent dans son dos.", "scope": "21-27", "focus": "23-25"}]'
+/>
+
+Le formulaire qui héberge le constructeur reste le **seul** détenteur du contenu. Il peut le comparer à ce qui est enregistré (« modifications non enregistrées »), l’envoyer avec ses autres champs, ou l’abandonner. Un constructeur qui garderait sa propre copie obligerait à synchroniser deux états.
+
+Chaque bloc est rendu avec `key={block.id}`. Quand on déplace un bloc, React reconnaît chacun par son identifiant et déplace son éditeur avec lui — curseur et sélection compris. Avec l’indice comme clé, l’éditeur resterait à sa place et afficherait le contenu du voisin.
+
+## Les blocs permis par hôte
+
+Le même constructeur sert à plusieurs endroits, qui n’acceptent pas tous les mêmes blocs. L’hôte peut le restreindre :
+
+<DocsTable columnsJson='["Hôte", "Blocs permis", "Pourquoi"]' rowsJson='[["Pages, actualités, fiches", "Tous", "Un contenu éditorial complet."], ["Présentation courte (discipline, stage, événement)", "tiptap", "Elle s’affiche en carte sur l’accueil ou l’agenda : du texte seulement."], ["Présentation d’instructeur", "float-text", "Un portrait que le texte enrobe ; sans image, le bloc rend du texte simple."]]' />
+
+La liste est une liste d’**autorisation** : un bloc ajouté au registre plus tard n’apparaît pas dans un hôte restreint tant qu’on ne l’y a pas inscrit. Elle ne porte que sur l’**ajout** : un bloc déjà présent reste affiché et modifiable, pour ne pas faire disparaître du contenu parce qu’un réglage a changé.
+
+## Choisir un fichier
+
+Les éditeurs de blocs ouvrent le sélecteur de fichiers de la bibliothèque — le Finder de la partie précédente, en mode sélection. Ils ont besoin de deux valeurs que l’hôte connaît, partagées par un **contexte** React plutôt que passées de bloc en bloc :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/PageBuilderContext.tsx"
+  filename="PageBuilderContext.tsx"
+  snippetRange="19-41"
+  snippetHighlight="8,15,22"
+  snippetTitle="Ce que le constructeur partage avec ses blocs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`appRoot` est la racine de l’application (`AKFC`), envoyée avec chaque requête de fichiers : le serveur la compare à la sienne (`sameAppRoot`). `mediaRoot` est le dossier où **s’ouvre** le sélecteur. Pour un administrateur, c’est la racine : toute la bibliothèque. Pour un instructeur qui rédige sa présentation, c’est son espace personnel, le seul dont il puisse publier les fichiers (chapitre 6). Les deux valeurs étaient confondues : le sélecteur d’un instructeur s’ouvrait sur la racine, que le serveur refusait de lui lister.
+
+Le sélecteur rend des **chemins** ; un bloc enregistre des **identifiants**. La traduction est faite par le serveur, au moment du choix :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/page-builder/blocks/tiptap/builder-tiptap-editor.tsx"
+  filename="builder-tiptap-editor.tsx"
+  snippetRange="144-165"
+  title="Du chemin choisi à l’identifiant enregistré"
+  stepsJson='[{"title": "La promesse de l’éditeur", "body": "L’éditeur de texte a demandé une image en ouvrant le sélecteur, et attend une promesse. On la récupère ; annuler la résout avec `null`.", "scope": "3-6", "focus": "4-5"}, {"title": "Le serveur traduit", "body": "`media.resolveByPaths` vérifie que l’utilisateur peut lire ces chemins, puis rend l’identifiant de chacun (ou `null` pour un chemin sans fichier enregistré).", "scope": "11-14", "focus": "11-13"}, {"title": "Le premier identifiant trouvé", "body": "Le nœud image du texte n’en prend qu’un. C’est cet identifiant, et non le chemin, qui entre dans le document.", "scope": "15-19", "focus": "18-19"}]'
+/>
+
+Le sélecteur ne montre que les fichiers ; il ne garantit pas qu’ils sont **validés**. Un fichier en attente peut être choisi, mais l’enregistrement le refusera (chapitre 5) : on ne publie pas un fichier qu’un administrateur n’a pas validé.
+
+## L’aperçu, sous chaque éditeur
+
+Sous chaque éditeur, un aperçu montre le bloc tel qu’il sera publié. Il ne peut pas réutiliser `View` : `View` est un composant serveur, qui attend des médias déjà résolus par le serveur. L’aperçu les résout donc lui-même, par une procédure :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts"
+  filename="useResolvedPreviewMedia.ts"
+  snippetRange="84-94"
+  snippetHighlight="4"
+  snippetTitle="Résoudre un fichier pour l’aperçu"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`media.resolveByIds` rend des URLs de la route **privée** : l’aperçu est vu par un utilisateur connecté, et un fichier n’a pas à être placé pour qu’il le voie. Elle ne résout que les fichiers **validés**, hors corbeille ; pour un membre qui n’est pas administrateur, seulement ceux qu’il peut lire. Un fichier repassé en attente après avoir été choisi apparaît donc comme « introuvable » dans l’aperçu, avec un message qui dit pourquoi, au lieu d’un vide.
+
+Pour le reste, l’aperçu reprend le rendu public : le même `richTextHtml` pour le texte (chapitre 2), les mêmes classes CSS (`akfc-prose`, `akfc-block-columns`), donc les mêmes réglages de style. Et la même alternance des blocs média-texte, calculée de la même façon dans `PageBuilder` et dans `PageRenderer`.
+
+Un hôte complet ressemble à ceci — la présentation d’un instructeur, sur son profil :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/social/InstructorBioEditor.tsx"
+  filename="InstructorBioEditor.tsx"
+  snippetRange="109-118"
+  snippetHighlight="8-9"
+  snippetTitle="Un hôte qui restreint et oriente"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que faut-il pour un type de bloc ?", "Un schéma dans le contrat, puis une définition : libellé, icône, bloc vide, Editor (client) et View (serveur)."], ["Qui garantit qu’aucun bloc n’est oublié ?", "Le type du registre, indexé sur PageBlockKindV1 : une définition manquante ou mal rangée ne compile pas."], ["Pourquoi un cast dans BlockShell et PageRenderer ?", "La contravariance de onChange empêche TypeScript de rendre l’union des éditeurs ; la définition étant choisie par block.type, le cast est sûr."], ["Qui détient le contenu en cours d’édition ?", "Le formulaire hôte : PageBuilder est contrôlé (value, onChange) et chaque action fabrique un nouveau contenu."], ["Où s’ouvre le sélecteur de fichiers ?", "Sur mediaRoot : la racine pour un administrateur, son espace personnel pour un instructeur."], ["Comment l’aperçu trouve-t-il ses fichiers ?", "Par media.resolveByIds, sur la route privée, avec le même rendu de texte et les mêmes classes que la page publique."]]' />
+
+## À suivre
+
+Le contenu est composé et enregistré. Côté site, un visiteur ouvre la page : il faut résoudre tous les fichiers de la page, choisir pour chacun une URL qu’un visiteur anonyme a le droit de charger, et rendre chaque bloc sans un aller-retour par image.
+
+<Callout type="tip">
+**Chapitre suivant : le rendu serveur.** `PageRenderer` passe par passe, la résolution groupée des fichiers et son audience, les avatars et le logo, l’alternance sans mutation, et ce qu’il coûte par page.
+</Callout>

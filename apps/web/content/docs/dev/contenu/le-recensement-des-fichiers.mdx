@@ -1,0 +1,201 @@
+---
+title: "Le recensement des fichiers"
+description: "Comment la base sait quels fichiers chaque contenu affiche : la table PageMediaReference, l’extraction exhaustive vérifiée par le compilateur, la synchronisation par différence dans la transaction d’enregistrement, et tout ce qui s’appuie dessus — la route publique, la corbeille, le changement de statut, la suppression."
+section: "Contenu éditorial"
+order: 5
+entities:
+  PageMediaReference: [mediaAssetId, pageType, pageId]
+  MediaAsset: [status, fullPath]
+  SitePage: [slug, content]
+stories:
+  - title: Un administrateur enregistre une page
+    actor: Administrateur
+    steps:
+      - label: Le contenu est écrit, puis ses fichiers sont recensés dans la même transaction ; un fichier non validé annule tout
+        call: sitePage.save
+        section: La synchronisation, dans la transaction
+  - title: Un visiteur charge une image
+    actor: Visiteur
+    steps:
+      - label: La route publique ne sert le fichier que s’il est validé et recensé
+        call: GET /api/media/public/r2/[...path]
+        section: Ce qui s’appuie sur le recensement
+  - title: Un administrateur range la bibliothèque
+    actor: Administrateur
+    steps:
+      - label: Il jette un fichier encore affiché ; la corbeille refuse et nomme les contenus qui l’utilisent
+        call: trash.trashToBin
+        section: Ce qui s’appuie sur le recensement
+      - label: Il repasse un fichier affiché en attente ; refusé pour la même raison
+        call: media.setStatus
+        section: Ce qui s’appuie sur le recensement
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une page est rendue sur le serveur : tous ses fichiers résolus en une requête, une URL publique pour chacun, des blocs qui lisent une table préparée. La route publique ne sert pourtant un fichier que s’il est placé.
+
+## Les parcours du chapitre
+
+Trois parcours traversent ce chapitre : l’enregistrement d’une page, qui recense ses fichiers ; le visiteur qui charge une image ; l’administrateur qui range la bibliothèque et se heurte au recensement.
+
+<Parcours />
+
+## Pourquoi recenser 📋
+
+Un contenu ne désigne ses fichiers que par leur identifiant, rangé quelque part dans un JSON. Pour savoir si un fichier est utilisé, il faudrait relire tous les contenus de toutes les entités et fouiller chaque bloc, chaque document de texte. Trois questions posent pourtant cette question à tout moment :
+
+<DocsTable columnsJson='["Question", "Qui la pose", "À quel moment"]' rowsJson='[["Ce fichier peut-il être servi à un visiteur ?", "La route publique", "À chaque image chargée par un visiteur."], ["Ce fichier peut-il être jeté ?", "La corbeille", "Quand un administrateur range la bibliothèque."], ["Ce fichier peut-il repasser en attente ?", "Le changement de statut", "Idem."]]' />
+
+La réponse est donc **précalculée** : une table relie chaque fichier à chaque contenu qui l’affiche.
+
+```prisma
+// prisma/schema.prisma (extrait)
+model PageMediaReference {
+  /// Identifiant CUID.
+  id           String             @id @default(cuid())
+  /// Fichier référencé.
+  mediaAssetId String
+  /// Type de contenu qui utilise le fichier (voir PageReferencerKind).
+  pageType     PageReferencerKind
+  /// Identifiant du contenu, en texte (les identifiants numériques sont
+  /// …
+  pageId       String
+  // …
+  mediaAsset   MediaAsset         @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+```
+
+Une ligne par fichier et par contenu. `pageType` dit **quelle colonne** (chapitre 1 : `SITE_PAGE`, `POST`, `DISCIPLINE`, `INSTRUCTOR_BIO`…), `pageId` **quelle ligne** — en texte, parce que certains contenus ont un identifiant numérique, d’autres un slug, d’autres un cuid. La relation vers le fichier est en `onDelete: Restrict` : la base refuse de supprimer un fichier encore recensé (partie « Données »).
+
+Une table précalculée n’est utile que si elle est **juste**. Deux conditions : savoir extraire, sans en oublier, les fichiers d’un contenu ; et tenir la table à jour à chaque enregistrement, sans fenêtre où elle ment.
+
+## Extraire, sans en oublier
+
+L’extraction est une fonction pure du contrat, dans `packages/contracts` :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/page/extractMediaIds.ts"
+  filename="extractMediaIds.ts"
+  snippetRange="29-57"
+  title="extractMediaIdsFromBlock — un cas par bloc"
+  stepsJson='[{"title": "Les listes", "body": "Une galerie, une liste de pistes, une liste de documents : chaque élément porte un identifiant.", "scope": "5-10", "focus": "5-6"}, {"title": "Le texte riche", "body": "Les images d’un texte sont des nœuds `library-image` au milieu du document ProseMirror : il faut descendre dans l’arbre.", "scope": "11-12", "focus": "12-12"}, {"title": "Le média et son texte", "body": "Les blocs média-texte et texte enrobant : le média s’il vient de la bibliothèque (un avatar ou le logo ne sont pas des fichiers de la bibliothèque), plus les images de leur texte.", "scope": "13-26", "focus": "22-25"}, {"title": "Le cas impossible", "body": "Tous les types sont traités au-dessus. Ce qui arrive ici est, pour le compilateur, de type `never` — et c’est ce qu’exige `assertNever`.", "scope": "27-29", "focus": "28-28"}]'
+/>
+
+La dernière étape est la garantie. `assertNever` n’accepte qu’une valeur de type `never` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/extractMediaIds.ts"
+  filename="extractMediaIds.ts"
+  snippetRange="134-138"
+  snippetHighlight="1"
+  snippetTitle="assertNever"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans le `default`, TypeScript a éliminé un à un les types traités par les `case` : il ne reste rien, `block` est de type `never`, l’appel compile. Si l’on ajoute un septième bloc au contrat sans écrire son `case`, ce bloc arrive dans le `default` avec son type, qui n’est pas `never` : **la compilation échoue**, avec le nom du bloc oublié. Aucun type de bloc ne peut échapper au recensement.
+
+Dans le texte riche, la descente est récursive et défensive :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/extractMediaIds.ts"
+  filename="extractMediaIds.ts"
+  snippetRange="95-122"
+  snippetHighlight="14,22"
+  snippetTitle="Descendre dans un document ProseMirror"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Elle ne suppose rien de la forme du document : un nœud qui n’est pas un objet est ignoré, une liste d’enfants absente aussi. Le document a déjà été assaini (chapitre 2), mais l’extraction est aussi appelée par d’autres chemins ; elle ne doit lever dans aucun cas.
+
+<Callout type="tip">
+`extractMediaIdsFromContent` sert au **rendu** (quels fichiers résoudre, chapitre 4) et au **recensement** (quels fichiers déclarer). Une seule fonction : ce que la page affiche et ce que la base croit qu’elle affiche ne peuvent pas diverger.
+</Callout>
+
+## La synchronisation, dans la transaction
+
+Chaque procédure qui enregistre un contenu appelle la même fonction, **dans sa transaction** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/sitePages/router.ts"
+  filename="router.ts"
+  snippetRange="53-80"
+  snippetHighlight="2,20"
+  snippetTitle="sitePage.save : écrire, puis recenser"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La fonction reçoit `tx`, le client de la transaction, et non `prisma`. Ce n’est pas un détail :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts"
+  filename="syncPageMediaReferences.service.ts"
+  snippetRange="47-141"
+  title="syncPageMediaReferences — une différence, pas une réécriture"
+  stepsJson='[{"title": "Ce qui est déjà recensé", "body": "Les lignes actuelles pour ce contenu (ce type, cet identifiant).", "scope": "23-27", "focus": "23-27"}, {"title": "Le contenu disparaît", "body": "`newContent: null` signifie que le contenu est supprimé : toutes ses lignes partent, sans rien valider. C’est appelé dans la transaction de la suppression, AVANT elle.", "scope": "31-39", "focus": "35-36"}, {"title": "Ce qu’il faut maintenant", "body": "Les fichiers du nouveau contenu, plus ceux qu’un contenu montre en dehors de ses blocs (l’image de carte d’une discipline, rangée dans une colonne à part).", "scope": "43-49", "focus": "48-49"}, {"title": "Seulement des fichiers validés", "body": "Avant d’ajouter, chaque nouveau fichier doit exister, être validé et hors de la corbeille. Sinon la fonction LÈVE : l’erreur traverse la transaction, qui annule tout — le contenu n’est pas enregistré non plus.", "scope": "53-69", "focus": "56-62"}, {"title": "Appliquer la différence", "body": "Retirer ce qui n’est plus affiché, ajouter ce qui l’est devenu. Deux enregistrements simultanés calculent la même différence : `skipDuplicates` évite que le second échoue sur une ligne que le premier vient d’écrire.", "scope": "75-95", "focus": "84-90"}]'
+/>
+
+Pourquoi une transaction commune ? Sans elle, deux états faux deviennent possibles :
+
+<DocsTable columnsJson='["Si…", "Alors…"]' rowsJson='[["Le contenu est écrit, puis le recensement échoue", "La page montre un fichier que la base croit libre : la route publique le refuse aux visiteurs, et la corbeille accepte de le jeter."], ["Le recensement est écrit, puis le contenu échoue", "La base croit affiché un fichier qui ne l’est pas : il ne peut plus être jeté, et il est servi au public sans raison."]]' />
+
+Dans la transaction, les deux écritures réussissent ensemble ou échouent ensemble. Et la validation (« seulement des fichiers validés ») protège l’autre sens : on ne publie pas, en le posant dans une page, un fichier qu’un administrateur n’a pas validé.
+
+<Callout type="warning">
+Une procédure qui enregistre un contenu sans appeler `syncPageMediaReferences` ne provoque **aucune** erreur. Ses images s’affichent dans l’éditeur (route privée), et sont absentes pour les visiteurs. C’est arrivé avec la présentation courte des disciplines : la seule défense est de relire chaque procédure qui écrit une colonne de contenu.
+</Callout>
+
+Pour les contenus enregistrés avant l’existence d’une synchronisation, un **rattrapage** au démarrage du serveur recalcule les lignes ; il est idempotent, puisqu’une différence recalculée sur un état juste est vide. Celui des présentations d’instructeur applique en plus les règles du chapitre suivant.
+
+## Ce qui s’appuie sur le recensement
+
+**La route publique.** Un fichier n’est servi à un visiteur que s’il est validé et recensé (ou placé dans une galerie publique) :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/public/r2/[...path]/route.ts"
+  filename="route.ts"
+  snippetRange="77-92"
+  snippetHighlight="7"
+  snippetTitle="La garde de la route publique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est ce qui empêche un visiteur de deviner le chemin d’un fichier validé mais jamais publié dans une page (une photo de groupe rangée pour plus tard) et de le charger.
+
+**La corbeille.** Jeter un fichier encore affiché est refusé, avec la liste de ce qui l’affiche :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashedAssets.service.ts"
+  filename="trashedAssets.service.ts"
+  snippetRange="47-69"
+  snippetHighlight="7,18"
+  snippetTitle="Ce qui empêche de jeter"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’administrateur lit par exemple « POST #42, galerie « Stage d’été » » : il sait quoi retirer d’abord. Une page ne perd jamais une image parce que quelqu’un a rangé la bibliothèque.
+
+**Le changement de statut.** Repasser en attente un fichier affiché est refusé de la même façon (`assertStatusChangeDoesntUnpublishReferencedAssets`, partie « Stockage et médias ») : un fichier affiché ne devient pas, à l’insu de la page, un fichier que plus personne ne peut voir.
+
+**La suppression.** La relation `onDelete: Restrict` fait refuser par la base elle-même la suppression d’un fichier recensé. C’est le dernier filet, si une procédure oubliait la vérification.
+
+<DocsTable columnsJson='["Garde", "S’appuie sur", "Protège contre"]' rowsJson='[["Route publique", "Validé ET recensé", "Un fichier servi à un visiteur sans être publié."], ["Corbeille", "Recensé → refus", "Une image qui disparaît d’une page parce qu’on a rangé la bibliothèque."], ["Statut", "Recensé → refus de repasser en attente", "Une image affichée qui devient invisible."], ["Base", "onDelete: Restrict", "La suppression d’un fichier encore affiché, si tout le reste a été oublié."]]' />
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment la base sait-elle qu’un fichier est affiché ?", "PageMediaReference : une ligne par fichier et par contenu (pageType, pageId)."], ["Qui extrait les fichiers d’un contenu ?", "extractMediaIdsFromContent, la même fonction que pour le rendu."], ["Comment être sûr de n’oublier aucun bloc ?", "Un switch exhaustif terminé par assertNever : un bloc sans cas ne compile pas."], ["Quand la table est-elle mise à jour ?", "À chaque enregistrement, par une différence, dans la transaction qui écrit le contenu ; un fichier non validé annule tout."], ["Qui s’en sert ?", "La route publique, la corbeille, le changement de statut, et la base (Restrict)."], ["Et les contenus plus anciens que la synchronisation ?", "Un rattrapage idempotent au démarrage recalcule leurs lignes."]]' />
+
+## À suivre
+
+Jusqu’ici, un contenu est écrit par un administrateur, qui peut tout publier. La présentation d’un instructeur est différente : c’est le membre lui-même qui l’écrit, et ce qu’il y pose devient public. Le recensement, qui rend un fichier servi, devient alors une question de droits.
+
+<Callout type="tip">
+**Chapitre suivant : un contenu écrit par un membre.** Qui peut écrire une présentation, quels fichiers et quel avatar elle peut montrer, où s’ouvre son sélecteur, et pourquoi l’ordre de la page reste au club.
+</Callout>

@@ -1,0 +1,245 @@
+---
+title: "Le texte riche"
+description: "Le texte riche d’un bloc est un document ProseMirror transformé en HTML et injecté tel quel dans la page : ce que generateHTML recopie sans vérifier, la liste blanche qui réécrit chaque document à l’entrée et à la lecture, le rendu unique des blocs, et la stratégie différente des commentaires."
+section: "Contenu éditorial"
+order: 2
+entities:
+  SitePage: [slug, title, content]
+stories:
+  - title: Un administrateur enregistre une page
+    actor: Administrateur
+    steps:
+      - label: Le contenu reçu est validé ; le texte riche de chaque bloc est réécrit d’après la liste blanche avant d’être enregistré
+        call: sitePage.save
+        section: Assainir à l’entrée, et à la lecture
+  - title: Un visiteur lit la page
+    actor: Visiteur
+    steps:
+      - label: La page relit son contenu (assaini une seconde fois), puis chaque bloc de texte est transformé en HTML par le même rendu
+        call: page /about
+        section: Un seul rendu pour tous les blocs
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Tous les contenus du site sont une liste de blocs dans une enveloppe versionnée, décrite par un schéma Zod partagé. Le schéma refuse à l’entrée et répare à la lecture ; un bloc y désigne un fichier par son identifiant.
+
+## Les parcours du chapitre
+
+Deux parcours traversent ce chapitre : l’administrateur qui enregistre une page, le visiteur qui la lit. Chaque onglet en déroule les étapes relevées dans le code ; chaque étape mène à son explication plus bas.
+
+<Parcours />
+
+## Un document dans le document
+
+Le bloc `tiptap`, et la partie texte des blocs média-texte et texte enrobant, contiennent un **document ProseMirror**. ProseMirror est le moteur d’édition sur lequel est construit Tiptap, l’éditeur du projet. Il ne manipule pas du HTML, mais un arbre de **nœuds** typés :
+
+<CodeSnippet
+  language="json"
+  title="Un document ProseMirror, tel qu’il est enregistré"
+  codeJson='"{\n  \"type\": \"doc\",\n  \"content\": [\n    {\n      \"type\": \"heading\",\n      \"attrs\": { \"level\": 2 },\n      \"content\": [{ \"type\": \"text\", \"text\": \"Horaires\" }]\n    },\n    {\n      \"type\": \"paragraph\",\n      \"attrs\": { \"textAlign\": \"left\" },\n      \"content\": [\n        { \"type\": \"text\", \"text\": \"Cours le \" },\n        { \"type\": \"text\", \"text\": \"mardi\", \"marks\": [{ \"type\": \"bold\" }] },\n        { \"type\": \"text\", \"text\": \", voir le \" },\n        {\n          \"type\": \"text\",\n          \"text\": \"planning\",\n          \"marks\": [{ \"type\": \"link\", \"attrs\": { \"href\": \"/agenda\" } }]\n        }\n      ]\n    },\n    { \"type\": \"library-image\", \"attrs\": { \"mediaId\": \"cm9x…\", \"caption\": \"Le dojo\" } }\n  ]\n}"'
+/>
+
+Trois notions suffisent à le lire.
+
+<DocsTable columnsJson='["Notion", "Ce que c’est", "Dans l’exemple"]' rowsJson='[["Nœud (node)", "Un élément de structure, qui peut en contenir d’autres (content).", "doc, heading, paragraph, text, library-image"], ["Marque (mark)", "Une mise en forme posée sur un morceau de texte, sans le découper en sous-nœuds.", "bold, link"], ["Attributs (attrs)", "Les propriétés d’un nœud ou d’une marque.", "level: 2, textAlign, href, mediaId"]]' />
+
+C’est ce document qui est enregistré dans la colonne JSON, à l’intérieur du bloc. L’image de la bibliothèque y est un nœud `library-image` qui ne porte qu’un identifiant : l’URL viendra au rendu, comme pour les autres blocs.
+
+## Du JSON au HTML
+
+Pour afficher le document, le rendu le transforme en HTML avec `generateHTML`, une fonction de Tiptap. Chaque **extension** de l’éditeur (titre, paragraphe, lien, surlignage…) décrit comment son nœud ou sa marque s’écrit en HTML, dans une méthode `renderHTML`. `generateHTML` parcourt l’arbre et appelle, pour chaque élément, la méthode de son extension :
+
+<CodeSnippet
+  language="html"
+  title="Le même document, en HTML"
+  codeJson='"<h2>Horaires</h2>\n<p style=\"text-align: left\">Cours le <strong>mardi</strong>, voir le\n  <a href=\"/agenda\" rel=\"noopener noreferrer nofollow\">planning</a></p>\n<figure class=\"tiptap-library-image\"><img src=\"/api/media/public/r2/AKFC/…\" alt=\"Le dojo\" …><figcaption>Le dojo</figcaption></figure>"'
+/>
+
+Ce HTML est ensuite inséré dans la page par `dangerouslySetInnerHTML` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/blocks/tiptap/view.server.tsx"
+  filename="view.server.tsx"
+  snippetRange="25-41"
+  snippetHighlight="5,14"
+  snippetTitle="Le rendu d’un bloc de texte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+D’ordinaire, React échappe tout ce qu’il affiche : une chaîne qui contient `<script>` s’affiche comme du texte. `dangerouslySetInnerHTML` désactive cette protection. Son nom est un avertissement : ce qu’on lui passe **doit** être sûr, parce que personne d’autre ne le vérifiera.
+
+Le texte, lui, est sûr : les `renderHTML` de Tiptap ne fabriquent pas de chaîne HTML à la main, ils décrivent des éléments et des attributs que la bibliothèque écrit en échappant chaque valeur. Un texte `<script>` devient `&lt;script&gt;`. La question est ailleurs : dans les **attributs**.
+
+## Ce que generateHTML recopie sans vérifier ⚠️
+
+Quand on colle du HTML dans l’éditeur, chaque extension le relit avec des règles (`parseHTML`) qui écartent ce qu’elle ne reconnaît pas. Mais `generateHTML` part du **JSON** : les règles de lecture ne sont jamais appliquées. Ce que le JSON contient, l’extension le recopie.
+
+Or le JSON n’est pas forcément produit par l’éditeur. Une procédure tRPC reçoit une requête HTTP, et une requête se fabrique sans navigateur. Voici un paragraphe qu’aucun éditeur ne produit, mais qu’une requête peut envoyer :
+
+<CodeSnippet
+  language="json"
+  title="Un paragraphe fabriqué à la main"
+  codeJson='"{\n  \"type\": \"paragraph\",\n  \"attrs\": { \"textAlign\": \"left; position: fixed; inset: 0; z-index: 99; background: url(https://ailleurs.example/faux.png)\" },\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"Mettre à jour vos coordonnées\",\n      \"marks\": [{ \"type\": \"link\", \"attrs\": { \"href\": \"javascript:fetch(\u0027/api/…\u0027)\" } }]\n    }\n  ]\n}"'
+/>
+
+Trois effets, tous réels avant ce chapitre :
+
+<DocsTable columnsJson='["Ce qui est envoyé", "Ce que le rendu en faisait", "Conséquence"]' rowsJson='[["textAlign avec du CSS à la suite", "L’extension d’alignement écrit style=\"text-align: …\" en recopiant la valeur.", "Le paragraphe recouvre toute la page (position: fixed), avec une image prise ailleurs : un faux écran du club."], ["La couleur d’un surlignage", "Recopiée de la même façon dans un style.", "Le même recouvrement, par un autre attribut."], ["Un lien javascript:", "Le lien est écrit tel quel.", "Un clic exécute du script sur le domaine du club, avec la session du visiteur."], ["Un type de nœud inconnu", "generateHTML lève une exception.", "La page entière tombe en erreur, pas seulement le bloc."]]' />
+
+L’éditeur ne produit aucun de ces documents, et une page n’est écrite que par un administrateur. Mais la présentation d’un instructeur est écrite par un **membre** (chapitre 6), et « l’éditeur ne le produit pas » n’est pas une protection : le serveur reçoit ce qu’on lui envoie, pas ce que l’éditeur aurait envoyé.
+
+<Callout type="warning">
+Un contenu rendu en HTML brut est une **entrée utilisateur** jusqu’à preuve du contraire. On ne la valide pas en vérifiant qu’elle « a la bonne forme » (un objet), mais en ne gardant que ce qu’on sait rendre sans danger.
+</Callout>
+
+## Une liste blanche
+
+Deux stratégies existent pour assainir. Une **liste noire** retire ce qu’on sait dangereux (`javascript:`, `position: fixed`…) ; elle échoue au premier cas qu’on n’a pas prévu (`JaVaScRiPt:`, une entité HTML, une autre propriété CSS). Une **liste blanche** ne garde que ce qu’on sait sûr ; un cas imprévu est retiré par défaut. Le projet utilise la seconde, dans `packages/contracts/src/page/richText.ts`.
+
+D’abord, ce qu’est un lien sûr :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/page/richText.ts"
+  filename="richText.ts"
+  snippetRange="34-40"
+  title="isSafeHref — un lien qu’on peut suivre"
+  stepsJson='[{"title": "Une chaîne de taille raisonnable", "body": "Tout ce qui n’est pas une chaîne est refusé ; une adresse de plus de 2 000 caractères n’est pas un lien qu’un auteur a tapé.", "scope": "2-3", "focus": "2-2"}, {"title": "Un chemin du site", "body": "Un chemin qui commence par `/` reste sur le site. Mais `//ailleurs.example` est une adresse d’un AUTRE site (le protocole est sous-entendu) : il est exclu explicitement.", "scope": "4-4", "focus": "4-4"}, {"title": "Une ancre, ou quatre protocoles", "body": "Une ancre (`#horaires`) ; sinon, seuls `http:`, `https:`, `mailto:` et `tel:` passent. Tout le reste — `javascript:`, `data:`, `vbscript:`, une casse mélangée — est refusé sans avoir à être nommé.", "scope": "5-6", "focus": "6-6"}]'
+/>
+
+Ensuite, pour chaque type de nœud connu, une fonction qui **reconstruit** ses attributs à partir des seules valeurs valides :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/richText.ts"
+  filename="richText.ts"
+  snippetRange="46-70"
+  snippetHighlight="4,6,21"
+  snippetTitle="Les nœuds permis et leurs attributs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La fonction ne **filtre** pas l’objet reçu, elle en **fabrique** un nouveau. `textAlign` n’est gardé que s’il vaut exactement `left`, `center`, `right` ou `justify` ; un niveau de titre hors de 1 à 6 devient 2 ; une case à cocher est cochée seulement si `checked` vaut exactement `true`. Un attribut qui n’est pas nommé ici n’existe pas dans le résultat — y compris ceux qu’une future version de Tiptap ajouterait.
+
+Les marques suivent la même règle, avec une différence pour le lien :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/richText.ts"
+  filename="richText.ts"
+  snippetRange="72-83"
+  snippetHighlight="10-11"
+  snippetTitle="Les marques permises"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un lien dont l’adresse n’est pas sûre rend `null` : la **marque** disparaît, le texte reste. Le lecteur voit « Mettre à jour vos coordonnées » en texte simple, au lieu d’un lien piégé. Une couleur de surlignage doit être un code hexadécimal ou l’une des variables du thème.
+
+Reste le parcours de l’arbre :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/page/richText.ts"
+  filename="richText.ts"
+  snippetRange="85-133"
+  title="sanitizeNode — reconstruire l’arbre"
+  stepsJson='[{"title": "Un nœud inconnu disparaît", "body": "Pas un objet, pas de type, un type absent de la liste, ou une imbrication de plus de 40 niveaux (rien de ce que l’éditeur produit) : le nœud est retiré, avec tout ce qu’il contient.", "scope": "2-7", "focus": "6-7"}, {"title": "Un nouvel objet", "body": "Le résultat part de `{ type }` seul ; les attributs sont ceux que la fonction du nœud a reconstruits, et seulement s’il y en a.", "scope": "9-11", "focus": "9-10"}, {"title": "Le texte et ses marques", "body": "Un nœud texte garde sa chaîne (que generateHTML échappera) et ses seules marques connues, chacune avec ses attributs reconstruits. Une marque refusée (un lien piégé) est simplement absente.", "scope": "13-30", "focus": "21-24"}, {"title": "Les enfants, récursivement", "body": "Les nœuds enfants passent par la même fonction, un niveau plus bas ; ceux qui sont retirés disparaissent de la liste.", "scope": "33-38", "focus": "35-36"}, {"title": "Un schéma Zod qui réécrit", "body": "`richTextContentSchema` accepte un objet quelconque, puis le TRANSFORME : la valeur que la procédure reçoit (`input`) est déjà le document assaini.", "scope": "47-49", "focus": "49-49"}]'
+/>
+
+Le paragraphe fabriqué plus haut ressort ainsi : `textAlign` absent (la valeur n’est pas l’un des quatre mots), le lien retiré, le texte intact. Et un nœud inconnu ne fait plus tomber la page, puisqu’il n’arrive jamais jusqu’à `generateHTML`.
+
+## Assainir à l’entrée, et à la lecture
+
+Le schéma assainissant est branché là où le texte riche apparaît dans le contrat — le bloc `tiptap`, et la partie texte des blocs média-texte et texte enrobant :
+
+```ts
+// packages/contracts/src/page/blocks.v1.ts (extrait)
+const tiptapBlockSchema = blockBaseSchema.extend({
+  type: z.literal("tiptap"),
+  content: richTextContentSchema,
+});
+```
+
+Il agit donc partout où le contrat est appliqué, sans qu’aucune procédure ait à y penser :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/sitePages/router.ts"
+  filename="router.ts"
+  snippetRange="47-52"
+  snippetHighlight="4"
+  snippetTitle="L’entrée de sitePage.save"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+**À l’entrée.** Chaque procédure qui enregistre un contenu valide son entrée avec `pageContentSchemaV1`. Ce qui est écrit en base est le document réécrit, jamais le document reçu.
+
+**À la lecture.** `parsePageContentV1` (chapitre 1) lit avec le même schéma, donc avec la même transformation. Un contenu enregistré **avant** la règle est assaini au moment où il est affiché ; il n’y a pas de migration de données à écrire, et rien à oublier.
+
+<Callout type="tip">
+Un `transform` Zod fait d’un schéma un **traducteur** : la valeur qui en sort n’est pas « la valeur reçue, vérifiée », mais « la valeur qu’on accepte de manipuler ». Le reste du code ne voit jamais l’autre.
+</Callout>
+
+## Un seul rendu pour tous les blocs
+
+Trois blocs rendent du texte riche (`tiptap`, `media-text`, `float-text`), et deux aperçus de l’éditeur le font aussi. Chacun avait sa propre copie de la liste des extensions et de l’appel à `generateHTML`. Cinq copies, qui avaient déjà divergé : les deux aperçus ne déclaraient pas le nœud `library-image`, et `generateHTML` levait dès qu’un texte contenait une image — l’aperçu entier tombait.
+
+Le rendu est désormais écrit une fois :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/page-builder/richTextHtml.ts"
+  filename="richTextHtml.ts"
+  snippetRange="85-103"
+  title="richTextHtml — du document assaini au HTML"
+  stepsJson='[{"title": "Rien à rendre", "body": "Un texte absent ou vide donne une chaîne vide, sans appeler Tiptap.", "scope": "2-2", "focus": "2-2"}, {"title": "Assaini, encore", "body": "Le document est assaini une fois de plus. Il l’est déjà s’il vient de parsePageContentV1 ; mais un aperçu de l’éditeur rend un contenu qui n’est jamais passé par le schéma. La fonction ne suppose rien de son appelant.", "scope": "4-4", "focus": "4-4"}, {"title": "Les extensions de l’éditeur", "body": "La liste est celle de l’éditeur (builder-tiptap-editor.tsx). Une extension absente ici ferait disparaître à la publication une mise en forme possible en édition.", "scope": "5-13", "focus": "5-13"}, {"title": "Les images, résolues par l’appelant", "body": "Le nœud library-image reçoit la fonction de résolution du rendu serveur ; un aperçu n’en a pas, et l’image n’y apparaît simplement pas.", "scope": "14-14", "focus": "14-14"}, {"title": "Un bloc abîmé n’abat pas la page", "body": "Si Tiptap lève malgré tout, ce bloc est rendu vide et l’erreur est journalisée. Les autres blocs s’affichent.", "scope": "16-19", "focus": "17-18"}]'
+/>
+
+Le nœud des images a son propre `renderHTML`, sans composant React, qui lit l’URL calculée par le serveur :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/richTextHtml.ts"
+  filename="richTextHtml.ts"
+  snippetRange="42-77"
+  snippetHighlight="20-21"
+  snippetTitle="L’image de la bibliothèque, en HTML"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un fichier non validé, supprimé ou jeté donne `null` à la résolution, et le nœud n’émet qu’un élément caché : la page s’affiche sans l’image plutôt que de montrer une image cassée. Le texte de la légende devient l’`alt` de l’image, et Tiptap l’échappe comme tout attribut.
+
+## Les commentaires : l’autre stratégie
+
+Les commentaires des actualités sont aussi des documents ProseMirror, écrits par n’importe quel membre connecté. Ils n’utilisent **pas** `generateHTML` : un petit rendu React parcourt le document et ne fabrique que des éléments qu’il connaît.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/social/CommentContent.tsx"
+  filename="CommentContent.tsx"
+  snippetRange="40-72"
+  snippetHighlight="10,15"
+  snippetTitle="Le rendu d’un commentaire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pas de HTML brut du tout : React échappe tout, et un lien n’est posé que si son adresse est sûre. La contrepartie est la pauvreté : paragraphes, gras, italique, liens. C’est suffisant pour un commentaire, pas pour une page.
+
+<DocsTable columnsJson='["", "Pages et présentations", "Commentaires"]' rowsJson='[["Mise en forme", "Riche : titres, listes, alignement, surlignage, images.", "Minimale : gras, italique, liens."], ["Rendu", "generateHTML, puis dangerouslySetInnerHTML.", "Des éléments React, sans HTML brut."], ["Protection", "Liste blanche appliquée au document avant le rendu.", "Liste blanche appliquée par le rendu lui-même."]]' />
+
+Les deux sont des listes blanches ; elles diffèrent par l’endroit où elles s’appliquent. Quand le rendu doit être riche, on assainit la **donnée** ; quand il peut être pauvre, on écrit un **rendu** qui ne sait rien faire de dangereux.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce que le texte riche d’un bloc ?", "Un document ProseMirror : des nœuds, des marques, des attributs."], ["Comment devient-il du HTML ?", "Par generateHTML et les renderHTML des extensions, puis dangerouslySetInnerHTML."], ["Qu’est-ce qui était dangereux ?", "Les attributs recopiés sans vérification (style, lien), et un nœud inconnu qui faisait lever le rendu."], ["Comment est-il assaini ?", "Par une liste blanche (richText.ts) qui reconstruit chaque nœud, marque et attribut à partir des seules valeurs valides."], ["Quand ?", "À l’entrée (le transform du schéma) et à la lecture (parsePageContentV1, puis richTextHtml) : un ancien contenu est assaini à l’affichage."], ["Combien de rendus du texte riche ?", "Un seul, richTextHtml, pour les trois blocs et les deux aperçus ; un bloc qui échoue est rendu vide."]]' />
+
+## À suivre
+
+Le texte riche est sûr. Il reste à voir comment chaque type de bloc trouve son éditeur dans le tableau de bord et son rendu sur le site, et pourquoi le compilateur refuse un bloc qui n’aurait pas les deux.
+
+<Callout type="tip">
+**Chapitre suivant : le registre et l’éditeur.** La définition d’un bloc, un registre que le compilateur vérifie, un éditeur contrôlé, les aperçus, et le dossier où s’ouvre le sélecteur de fichiers.
+</Callout>

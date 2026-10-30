@@ -125,17 +125,23 @@ Quatre opérations touchent un espace : lire, déposer, mettre à la corbeille, 
 
 ```ts
 // packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts (extrait)
-export function groupIdFromLogicalPath(path: string): string | null {
+function spaceOwnerId(path: string, container: string): string | null {
   const parts = path.split("/").filter(Boolean);
-  const i = parts.indexOf("collaborative-group-spaces");
-  if (i === -1 || i + 1 >= parts.length) return null;
-  const segment = parts[i + 1];
+  if (parts.some((p) => p === "." || p === "..")) return null;
+  if (parts[1] !== container || parts.length < 3) return null;
+  const segment = parts[2];
   const dash = segment.lastIndexOf("-");
   if (dash === -1) return null;
-  const groupId = segment.slice(dash + 1);
-  return groupId.length > 0 ? groupId : null;
+  const id = segment.slice(dash + 1);
+  return id.length > 0 ? id : null;
+}
+// …
+export function groupIdFromLogicalPath(path: string): string | null {
+  return spaceOwnerId(path, "collaborative-group-spaces");
 }
 ```
+
+Le chemin est lu **par position** : le conteneur doit être le deuxième segment (`AKFC/collaborative-group-spaces/<slug>-<id>/…`). Un dossier qui porterait ce nom ailleurs dans la bibliothèque n’ouvre rien, et un chemin contenant `.` ou `..` est refusé. La même lecture donne le propriétaire d’un espace personnel (`personalSpaceOwnerId`, partie « Contenu éditorial »).
 
 <DocsTable columnsJson='["Opération","Garde","Exige"]' rowsJson='[["Parcourir un dossier","assertCanReadPath","un accès au groupe du chemin (VIEWER ou EDITOR)"],["Ouvrir un fichier","canReadStorageKey","un accès au groupe de la clé de stockage"],["Déposer","assertCanWriteGroupSpace (destination « group »)","EDITOR sur le groupe ; le serveur calcule lui-même le dossier de dépôt"],["Mettre à la corbeille","assertCanTrashPaths","EDITOR sur le groupe de chaque chemin ; hors d’un espace de groupe, réservé aux administrateurs"],["Rendre visible au groupe","depositToGroupSpace","EDITOR sur le groupe, et un fichier situé dans l’espace de ce même groupe"]]' />
 

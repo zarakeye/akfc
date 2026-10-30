@@ -55,7 +55,7 @@ Aujourd’hui, valider est un `UPDATE` :
   language="ts"
   filepath="packages/backend/src/modules/media/router.ts"
   filename="router.ts"
-  snippetRange="479-548"
+  snippetRange="500-569"
   title="media.setStatus — un UPDATE, pas un déplacement"
   stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "19-23", "focus": "19-23"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "26-32", "focus": "26-26"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse.", "scope": "35-40", "focus": "38-38"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "43-52", "focus": "48-48"}]'
 />

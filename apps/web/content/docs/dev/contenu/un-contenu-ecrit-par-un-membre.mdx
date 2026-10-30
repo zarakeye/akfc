@@ -1,0 +1,213 @@
+---
+title: "Un contenu écrit par un membre"
+description: "Ce qui change quand l’auteur d’un contenu public n’est pas un administrateur : la présentation d’instructeur, ce que le recensement rend public, qui peut écrire, quels fichiers et quel avatar montrer, la lecture d’un chemin par position, le sélecteur ouvert sur son espace, l’ordre réservé au club et le rattrapage du démarrage."
+section: "Contenu éditorial"
+order: 6
+entities:
+  User: [instructorBio, instructorOrder, avatar]
+  MediaAsset: [fullPath, status]
+  PageMediaReference: [mediaAssetId, pageType, pageId]
+stories:
+  - title: Un instructeur rédige sa présentation
+    actor: Instructeur (membre non administrateur)
+    steps:
+      - label: Son profil demande s’il est titulaire, sa présentation et le dossier où ouvrir le sélecteur
+        call: user.getMyInstructorState
+        section: Le sélecteur, ouvert sur son espace
+      - label: Le sélecteur d’avatar ne lui propose que le sien
+        call: user.listAvatarCandidates
+        section: Son avatar, et seulement le sien
+      - label: Il enregistre ; le serveur vérifie qu’il est titulaire, que chaque fichier vient de son espace, puis recense
+        call: user.saveMyInstructorBio
+        section: L’enregistrement, garde par garde
+  - title: Un visiteur parcourt les instructeurs
+    actor: Visiteur
+    steps:
+      - label: La page liste les titulaires qui ont une présentation, dans l’ordre fixé par le club
+        call: page /about/instructeurs
+        section: L’ordre reste au club
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Chaque enregistrement recense, dans sa transaction, les fichiers qu’un contenu affiche. La route publique sert un fichier validé et recensé ; la corbeille et le changement de statut refusent de retirer un fichier affiché.
+
+## Les parcours du chapitre
+
+Deux parcours traversent ce chapitre : l’instructeur qui rédige sa présentation sur son profil, et le visiteur qui la lit sur la page « Nos instructeurs ».
+
+<Parcours />
+
+## Un auteur qui n’est pas administrateur 🥋
+
+Tous les contenus vus jusqu’ici sont écrits par un administrateur, qui peut déjà tout faire : publier un fichier, modifier une page, ranger la bibliothèque. Ce qu’il pose dans une page, il aurait pu le publier autrement.
+
+La présentation d’un instructeur est différente. Elle est rédigée par **l’instructeur lui-même**, sur son profil, et affichée sur une page publique. Or le chapitre précédent l’a montré : recenser un fichier, c’est le rendre **servi à tout visiteur**. Une présentation est donc un moyen de publier — et la question devient : publier **quoi** ?
+
+<DocsTable columnsJson='["Ce qu’un membre pourrait poser", "Ce que cela publierait"]' rowsJson='[["Un fichier de l’espace d’un groupe", "Une photo que les autres membres du groupe partageaient entre eux, sans avoir choisi de la rendre publique."], ["Un fichier de l’espace d’un autre membre", "Ses fichiers personnels."], ["Un fichier validé quelconque, dont il connaît l’identifiant", "N’importe quel fichier de la bibliothèque qu’aucune page ne montre encore."], ["L’avatar d’un autre membre", "Le visage de quelqu’un d’autre, peut-être mineur, sur une page qui ne le concerne pas."]]' />
+
+Avant ce chapitre, tout cela était possible, et même un membre qui n’était pas instructeur pouvait enregistrer une présentation : aucune page ne l’affichait, mais ses fichiers devenaient servis au public. Les règles qui suivent sont celles d’un contenu public écrit par un membre ; elles valent pour tout contenu de ce genre qu’on ajouterait.
+
+<Callout type="warning">
+Une procédure qui **déclare** des fichiers (un recensement, une galerie) est une procédure qui **publie**. Ses droits ne sont pas ceux de l’écriture d’un texte, mais ceux de la publication de chaque fichier qu’elle déclare.
+</Callout>
+
+## Qui peut écrire
+
+Une présentation n’a de sens que pour un **titulaire** : un membre rattaché à une discipline, un cours ou un stage. Le critère est écrit une fois :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/instructorBio.service.ts"
+  filename="instructorBio.service.ts"
+  snippetRange="20-38"
+  snippetHighlight="17"
+  snippetTitle="Être titulaire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est le même critère que la page publique, qui ne liste que les titulaires :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/about/instructeurs/page.tsx"
+  filename="page.tsx"
+  snippetRange="28-38"
+  snippetHighlight="4,7"
+  snippetTitle="La page publique : titulaire ET présenté"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les deux sont écrits différemment (un comptage d’un côté, un filtre `some` de l’autre), mais disent la même chose : rattaché à au moins une des quatre relations. Un membre qui cesse d’enseigner disparaît de la page, et ne peut plus modifier une présentation que personne ne voit.
+
+## Quels fichiers, quel avatar
+
+La règle est simple à énoncer : un membre ne montre que **ce qui lui appartient**. Ses fichiers, c’est son espace personnel ; son image, c’est son avatar.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/instructorBio.service.ts"
+  filename="instructorBio.service.ts"
+  snippetRange="48-72"
+  title="splitBioMedia — ce qui est à lui, et le reste"
+  stepsJson='[{"title": "Un avatar qui n’est pas le sien", "body": "Un bloc média-texte ou texte enrobant qui montre l’avatar d’un AUTRE membre.", "scope": "6-11", "focus": "9-10"}, {"title": "Les fichiers de la présentation", "body": "La même extraction que le rendu et le recensement : les fichiers de chaque bloc, y compris les images dans le texte.", "scope": "12-13", "focus": "12-12"}, {"title": "Le propriétaire de chacun", "body": "Pour chaque fichier, son chemin, et le propriétaire de l’espace personnel qui le contient — ou rien, s’il n’est dans aucun espace personnel.", "scope": "15-19", "focus": "19-19"}, {"title": "Deux listes", "body": "Ce qui est dans SON espace, et le reste. Un identifiant inconnu de la base n’a pas de propriétaire : il tombe dans le reste.", "scope": "13-25", "focus": "21-22"}]'
+/>
+
+La fonction ne décide rien : elle **classe**. L’enregistrement refusera s’il y a un reste ; le rattrapage du démarrage, lui, ne déclarera que la première liste. Une seule définition de « ce qui est à lui », deux usages.
+
+Un fichier de son espace doit encore être **validé** pour être recensé (chapitre 5), et seul un administrateur valide les fichiers d’un espace personnel. La présentation d’un instructeur passe donc par une **modération** : il dépose sa photo, un administrateur la valide, la présentation peut la montrer.
+
+## Lire un chemin par position
+
+« Le propriétaire de l’espace personnel qui contient ce chemin » doit être lu avec soin. Les espaces suivent une forme fixe — `AKFC/personal-space/<prénom-nom>-<identifiant>/…` — et l’identifiant du membre est la fin du troisième segment :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts"
+  filename="assertCanTrashPaths.service.ts"
+  snippetRange="13-32"
+  title="spaceOwnerId — un chemin lu par position"
+  stepsJson='[{"title": "Pas de détour", "body": "Un chemin qui contient `.` ou `..` ne désigne pas ce qu’il semble désigner. Aucune garde ne l’accepte.", "scope": "2-3", "focus": "3-3"}, {"title": "Le conteneur en deuxième position", "body": "Le deuxième segment DOIT être le conteneur (`personal-space`), et il faut un troisième segment.", "scope": "4-4", "focus": "4-4"}, {"title": "L’identifiant après le dernier tiret", "body": "Le segment est `<slug>-<identifiant>`. Le slug peut contenir des tirets (`jean-pierre-martin`), l’identifiant (un cuid) jamais : on coupe au DERNIER.", "scope": "5-9", "focus": "6-8"}, {"title": "Deux espaces, une lecture", "body": "Les espaces de groupe ont la même forme, avec un autre conteneur. Les deux fonctions publiques ne diffèrent que par ce nom.", "scope": "13-20", "focus": "14-19"}]'
+/>
+
+La version précédente cherchait le nom du conteneur **n’importe où** dans le chemin (`indexOf`). Un administrateur qui rangeait un dossier nommé `collaborative-group-spaces` sous `courses/` créait, sans le savoir, un faux espace de groupe que la garde reconnaissait. Lire par position, c’est lire le chemin comme l’application le **fabrique**, et rien d’autre.
+
+<Callout type="tip">
+Un chemin de stockage est une donnée structurée écrite comme une chaîne. Le lire par recherche de sous-chaîne (`includes`, `indexOf`, `startsWith` sans `/` final) revient à accepter toutes les chaînes qui **ressemblent** à la bonne.
+</Callout>
+
+## L’enregistrement, garde par garde
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="350-393"
+  title="saveMyInstructorBio — trois gardes, puis la transaction"
+  stepsJson='[{"title": "Toujours soi", "body": "La cible est l’utilisateur de session, jamais un identifiant reçu : on ne peut écrire QUE sa propre présentation. La garde est structurelle, il n’y a rien à vérifier.", "scope": "11-11", "focus": "11-11"}, {"title": "Être titulaire", "body": "Un membre qui n’enseigne pas n’a pas de présentation publique : refusé.", "scope": "14-16", "focus": "14-14"}, {"title": "Ni l’ordre, ni ce qui n’est pas à lui", "body": "Pour un membre qui n’est pas administrateur : l’ordre de la page lui est refusé, et chaque fichier, chaque avatar doit être le sien. Un administrateur peut tout poser, comme dans une page.", "scope": "17-24", "focus": "20-23"}, {"title": "Écrire et recenser ensemble", "body": "La présentation, puis ses fichiers, dans une transaction (chapitre 5). Une présentation retirée (`null`) retire toutes ses lignes de recensement.", "scope": "25-43", "focus": "37-40"}]'
+/>
+
+Les gardes sont faites **avant** la transaction : elles ne font que lire, et un refus n’a rien à annuler. L’ordre compte aussi pour les messages : un membre qui n’enseigne pas apprend qu’il n’enseigne pas, pas que sa photo vient du mauvais dossier.
+
+## Le sélecteur, ouvert sur son espace
+
+Refuser à l’enregistrement ne suffit pas à rendre l’outil utilisable : il faut que le sélecteur de fichiers propose ce qui sera accepté. Le serveur dit au profil où l’ouvrir :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="318-338"
+  snippetHighlight="17,19"
+  snippetTitle="getMyInstructorState"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`resolvePersoBaseFolder` est la fonction qui fabrique le chemin de l’espace personnel à l’envoi d’un fichier (partie « Stockage et médias ») : le sélecteur s’ouvre exactement là où le membre dépose ses photos. Le profil le passe au constructeur comme `mediaRoot` (chapitre 3).
+
+Pour que le sélecteur puisse **lire** ce dossier, la garde de lecture devait l’accepter. Elle ne connaissait que les espaces de groupe :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/assertCanReadPath.service.ts"
+  filename="assertCanReadPath.service.ts"
+  snippetRange="22-24"
+  snippetHighlight="3"
+  snippetTitle="La garde de lecture : son espace personnel"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est la même règle que la livraison des fichiers (`canReadStorageKey`) : on lit son propre espace, par la même fonction de lecture par position. La traduction d’un chemin choisi en identifiant (`media.resolveByPaths`) et l’aperçu (`media.resolveByIds`, qui ne résout pour un membre que les fichiers qu’il peut lire) suivent la même règle.
+
+## Son avatar, et seulement le sien
+
+Le sélecteur d’avatar des blocs proposait la liste des administrateurs : c’est ce dont une page du club a besoin (« l’avatar du président »). Pour un instructeur, cette liste était à la fois inutile (il ne peut pas les montrer) et incomplète (il n’y figurait pas). Le serveur adapte désormais la liste à celui qui la demande :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="541-546"
+  snippetHighlight="6"
+  snippetTitle="Les avatars proposés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un administrateur voit les administrateurs et lui-même ; un autre membre, lui seul. Le sélecteur et la garde de l’enregistrement disent la même chose, et un membre ne se voit jamais proposer un choix que le serveur refusera.
+
+## L’ordre reste au club
+
+`saveMyInstructorBio` accepte aussi un ordre d’affichage, `instructorOrder`, qui trie la page « Nos instructeurs ». Aucun écran ne l’envoie, mais une requête le pouvait : un instructeur pouvait se placer **en tête** de la page. L’ordre de présentation des enseignants est une décision du club ; pour un membre qui n’est pas administrateur, la procédure le refuse désormais.
+
+C’est un cas d’école : un champ **sans écran** n’est pas un champ sans risque. Ce qui protège, c’est ce que la procédure accepte, pas ce que l’interface envoie.
+
+## Les présentations d’avant
+
+Des présentations ont été enregistrées avant ces règles, et un **rattrapage** recalcule leur recensement à chaque démarrage (chapitre 5). Recalculer sans les règles reviendrait à republier, au démarrage, ce que l’enregistrement refuse désormais. Le rattrapage les applique donc :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/ensureInstructorBioMediaReferences.service.ts"
+  filename="ensureInstructorBioMediaReferences.service.ts"
+  snippetRange="41-54"
+  snippetHighlight="4,12"
+  snippetTitle="Le rattrapage applique les mêmes règles"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pour un membre qui n’est pas administrateur, seuls ses propres fichiers sont recensés : un contenu vide, et leurs identifiants passés à part (`extraMediaIds`). La différence calculée retire les lignes des autres fichiers : ils cessent d’être servis au public. L’écart est écrit dans les journaux du serveur, avec l’identifiant du membre, pour que la présentation soit corrigée.
+
+Sur la page, une telle image apparaît alors cassée — la route publique la refuse —, ce qui se voit et se corrige ; un avatar d’un autre membre resterait visible, puisque la route des avatars ne vérifie rien (chapitre 4). C’est pourquoi le journal le nomme aussi.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi un contenu écrit par un membre est-il différent ?", "Recenser un fichier le rend public : écrire un contenu public, c’est publier chaque fichier qu’il montre."], ["Qui peut écrire une présentation ?", "Soi seul (la cible est l’utilisateur de session), et seulement s’il est titulaire."], ["Quels fichiers peut-elle montrer ?", "Pour un membre non administrateur : ceux de son espace personnel, validés par un administrateur."], ["Quel avatar ?", "Le sien ; le sélecteur ne propose que lui, l’enregistrement refuse les autres."], ["Comment sait-on à qui appartient un fichier ?", "Par la position dans son chemin (conteneur en deuxième segment, identifiant après le dernier tiret), jamais par recherche de sous-chaîne."], ["Où s’ouvre le sélecteur ?", "Sur son espace personnel (mediaRoot), que la garde de lecture lui ouvre."], ["Et l’ordre de la page ?", "Réservé aux administrateurs."], ["Et les présentations plus anciennes ?", "Le rattrapage du démarrage ne recense que les fichiers de leur auteur et journalise l’écart."]]' />
+
+## À suivre
+
+Les contenus sont faits, rendus, recensés, et bornés à ce que leur auteur a le droit de publier. Il reste des informations qui n’appartiennent à aucun contenu, mais apparaissent sur toutes les pages : le nom du club, son logo, ses coordonnées, ses mentions légales.
+
+<Callout type="tip">
+**Chapitre suivant : les réglages du site.** Une ligne unique en base que les administrateurs modifient eux-mêmes, la frontière avec les variables d’environnement, une valeur de repli pour chaque lecture, et un logo servi hors de la bibliothèque.
+</Callout>

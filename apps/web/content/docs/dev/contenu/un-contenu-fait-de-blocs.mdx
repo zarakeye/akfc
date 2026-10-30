@@ -1,0 +1,204 @@
+---
+title: "Un contenu fait de blocs"
+description: "Pourquoi tous les textes du site sont enregistrés dans un même format, une liste de blocs en JSON : le contrat Zod bloc par bloc, l’union discriminée, l’enveloppe versionnée, les références aux médias, et la lecture tolérante d’un contenu enregistré."
+section: "Contenu éditorial"
+order: 1
+entities:
+  SitePage: [slug, title, content]
+  Post: [content]
+  Discipline: [description, summary]
+  Course: [content]
+  Seminar: [description, program, summary]
+  Event: [content, summary]
+  User: [instructorBio]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les fichiers sont envoyés, rangés et validés dans la bibliothèque. Un fichier validé n’est pourtant servi à personne tant qu’il n’est posé nulle part : la route publique exige qu’il soit **placé** dans une page ou une galerie publique. Cette partie raconte ce qui le place.
+
+Cette partie suit un contenu du début à la fin. Ce chapitre décrit son **format**. Les suivants montrent comment le texte riche est rendu sans danger, comment l’éditeur et le rendu se branchent sur ce format, comment un contenu affiché sait quels fichiers il montre, ce qui change quand l’auteur n’est pas un administrateur, et enfin les réglages qui n’appartiennent à aucune page.
+
+## Des textes partout 📝
+
+Le site affiche beaucoup de textes mis en forme : la page « L’association », la description de chaque discipline et sa présentation courte, le contenu d’un cours, la description, le programme et le résumé d’un stage, le contenu et le résumé d’un événement, les actualités, la présentation de chaque instructeur. Chacun mêle des titres, des listes, des liens, des images de la bibliothèque, parfois une galerie ou une liste de documents.
+
+Il existe trois façons courantes d’enregistrer un tel texte.
+
+<DocsTable columnsJson='["Format enregistré", "Ce qu’il permet", "Ce qu’il coûte"]' rowsJson='[["Une chaîne HTML", "S’affiche telle quelle.", "Rien n’est vérifiable : on enregistre ce que le navigateur a envoyé, script compris. Une image y est une URL figée, qui casse au premier déplacement du fichier."], ["Du Markdown", "Lisible et léger.", "Pas de mise en page (deux colonnes, image enrobée), et les mêmes URLs figées."], ["Un document structuré (JSON)", "Chaque élément a un type et des propriétés connues ; une image est un identifiant.", "Il faut un éditeur qui le produit, un schéma qui le valide et un rendu qui le transforme."]]' />
+
+Le projet a choisi la troisième. Le coût est payé une fois — un éditeur, un schéma, un rendu — puis partagé par tous les contenus.
+
+## Un seul format pour tous les contenus
+
+Tous ces textes sont écrits avec le même outil, le **constructeur de pages**, et enregistrés dans le même format : une liste ordonnée de **blocs**.
+
+<DocsTable columnsJson='["Bloc", "Ce qu’il affiche"]' rowsJson='[["tiptap", "Du texte riche : titres, listes, liens, citations, code, cases à cocher, images de la bibliothèque dans le texte."], ["image-gallery", "Une galerie d’images, en grille, carrousel ou mosaïque, avec légendes."], ["audio-collection", "Une liste de pistes audio."], ["document-list", "Une liste de documents à télécharger."], ["media-text", "Un média (image, vidéo, avatar d’un membre ou logo du site) à côté d’un texte, sur deux colonnes."], ["float-text", "Une petite image que le texte enrobe, comme un portrait dans une présentation."]]' />
+
+Chaque endroit qui accueille un tel contenu est une colonne JSON d’une entité : `SitePage.content`, `Post.content`, `Discipline.description` et `Discipline.summary`, `Course.content`, `Seminar.description`, `program` et `summary`, `Event.content` et `summary`, `User.instructorBio`. La base en garde la liste, parce que chacun doit déclarer les fichiers qu’il affiche (chapitre 5) :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1450-1472"
+  snippetTitle="Les contenus qui affichent des fichiers"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un format unique permet d’écrire **une seule fois** l’éditeur, le rendu, la validation et le recensement des fichiers. Ajouter un type de bloc le rend disponible partout à la fois ; corriger le rendu d’un bloc le corrige sur toutes les pages.
+
+## Le contrat, bloc par bloc
+
+Le format est un **contrat** : un schéma Zod dans `packages/contracts`, importé par le front (l’éditeur, le rendu) comme par le backend (la validation à l’enregistrement). Les deux côtés ne peuvent pas diverger, puisqu’ils lisent le même fichier.
+
+Tous les blocs partagent une base : un identifiant.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="35-47"
+  snippetHighlight="12"
+  snippetTitle="La base commune"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cet `id` est celui du **bloc**, pas d’un fichier : il distingue deux blocs d’une même page. React s’en sert comme clé quand on réordonne les blocs ; sans lui, déplacer un bloc ferait reprendre à son voisin l’état de son éditeur (le curseur, la sélection).
+
+Un bloc de liste de médias décrit chaque élément par un identifiant de fichier et un texte facultatif :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="68-87"
+  snippetHighlight="15,19"
+  snippetTitle="La galerie d’images"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Deux décisions s’y lisent. La liste n’exige pas au moins un élément : un bloc qu’on vient d’ajouter est vide le temps de choisir ses images, et un schéma qui le refuserait empêcherait d’enregistrer une page en cours d’écriture. Et `layout` a une valeur **par défaut** : un bloc enregistré avant l’arrivée de ce champ se lit comme une grille, sans migration.
+
+Les blocs média-texte et texte enrobant n’ont qu’un média, mais ce média peut être de trois sortes :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="144-182"
+  snippetHighlight="3,15,31"
+  snippetTitle="Trois sortes de médias"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un fichier de la bibliothèque (`library`), l’avatar d’un membre (`avatar`), ou le logo du site (`site-logo`). Les deux derniers sont des références **logiques** : on n’enregistre pas l’image, mais « l’avatar de tel membre », « le logo du site ». Si le membre change d’avatar ou si l’administrateur change le logo, chaque page qui les montre suit, sans copie ni synchronisation.
+
+Le bloc média-texte montre comment un contrat absorbe son propre passé :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="184-209"
+  title="Le bloc média-texte et son passé"
+  stepsJson='[{"title": "Deux parties facultatives", "body": "Le texte et le média sont facultatifs. Avec les deux, le bloc s’affiche sur deux colonnes ; avec un seul, centré sur toute la largeur. Un bloc vide est permis : c’est l’état d’un bloc qu’on vient d’ajouter.", "scope": "4-4", "focus": "4-4"}, {"title": "Un ancien tableau devient un média", "body": "Ce bloc acceptait autrefois une LISTE de médias. Un contenu de cette époque est encore en base : `z.preprocess` reçoit la valeur brute avant toute validation et réduit un tableau à son premier élément.", "scope": "13-15", "focus": "15-15"}, {"title": "Un objet sans sorte devient un fichier", "body": "Avant l’arrivée des avatars, un média n’avait pas de `kind`. Un objet sans ce champ est un ancien fichier de bibliothèque : on lui ajoute `kind: \"library\"`, et l’union discriminée qui suit peut le reconnaître.", "scope": "16-24", "focus": "22-22"}, {"title": "Puis la validation ordinaire", "body": "Ce qui sort du preprocess est validé par le schéma d’aujourd’hui. Le passé est traduit à la LECTURE, une fois pour toutes, au lieu d’être traité par chaque composant qui lit un bloc.", "scope": "25-25", "focus": "25-25"}]'
+/>
+
+Le côté du média n’est **pas** enregistré dans un bloc média-texte : le rendu alterne, gauche puis droite, d’un bloc média-texte au suivant (chapitre 4). Le bloc texte enrobant, lui, enregistre son côté :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="226-229"
+  snippetHighlight="4"
+  snippetTitle="Un côté choisi, et non calculé"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La différence est voulue. Une alternance est une décision de mise en page, qui dépend de la position du bloc dans la page ; un portrait posé à droite d’un texte est un choix de l’auteur. Ce qui dépend de la position se **calcule** ; ce que l’auteur choisit s’**enregistre**.
+
+## L’union discriminée
+
+Les six schémas sont réunis en une seule union, discriminée par le champ `type` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="250-267"
+  snippetHighlight="1,18"
+  snippetTitle="Six blocs, un champ qui les distingue"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`z.discriminatedUnion` lit d’abord `type`, puis valide le bloc avec le seul schéma correspondant. Une simple `z.union` essaierait les six schémas l’un après l’autre et, en cas d’échec, rapporterait six listes d’erreurs ; ici l’erreur nomme le bon bloc, ou dit que `type` est inconnu.
+
+Côté TypeScript, l’union donne le **rétrécissement** : dans `if (block.type === "image-gallery")`, le compilateur sait que `block.items` existe. Un `switch` sur `block.type` peut même être vérifié **exhaustif** — le chapitre 5 s’en sert pour qu’aucun bloc n’échappe au recensement des fichiers.
+
+`PageBlockKindV1` est l’union des valeurs de `type` : `"tiptap" | "image-gallery" | …`. Le registre des blocs (chapitre 3) l’utilise pour exiger une définition par type.
+
+## L’enveloppe versionnée
+
+Un contenu n’est pas une liste nue, mais une liste dans une **enveloppe** qui porte un numéro de version :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/page/blocks.v1.ts"
+  filename="blocks.v1.ts"
+  snippetRange="273-291"
+  snippetHighlight="2"
+  snippetTitle="L’enveloppe et le contenu vide"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une évolution **compatible** — un champ facultatif en plus, un champ avec une valeur par défaut, un ancien format absorbé par un `preprocess` — reste en version 1. Une évolution qui **change le sens** d’un champ ferait une version 2 : un fichier `blocks.v2.ts`, une fonction qui convertit un contenu v1 en v2, et la lecture qui choisit le schéma d’après `version`. Sans numéro dans les données, on ne saurait pas, devant un contenu enregistré il y a deux ans, avec quel schéma le lire.
+
+`emptyPageContentV1()` fabrique un contenu vide. C’est la valeur de départ d’un nouveau contenu, et le repli d’une lecture qui échoue.
+
+## Des références, jamais des URLs 🔗
+
+Aucun bloc ne contient l’URL ni le chemin d’un fichier, seulement son `mediaId`. La partie « Stockage et médias » a montré pourquoi : un fichier se renomme, se déplace, change de statut. Une URL enregistrée dans une page casserait au premier déplacement ; un identifiant ne bouge pas.
+
+L’URL est donc **calculée au rendu**, à partir de l’identifiant, avec la route qui convient au lecteur (la route privée dans l’éditeur, la route publique pour un visiteur). Le chapitre 4 montre ce calcul ; le chapitre 5, comment la base apprend qu’un fichier est placé.
+
+<Callout type="info">
+Le même principe vaut pour l’avatar et le logo : on enregistre **qui** (« l’avatar de ce membre », « le logo du site »), jamais **quoi** (un fichier). Ce qui est enregistré ne vieillit pas.
+</Callout>
+
+## Lire un contenu enregistré
+
+À l’enregistrement, le schéma **refuse** un contenu invalide : la procédure répond `BAD_REQUEST`, rien n’est écrit. À la lecture, la situation est inverse. Le contenu est déjà en base ; il peut dater d’un ancien format, avoir été écrit avant une règle, ou avoir été abîmé. Refuser ne servirait à rien : la page doit s’afficher.
+
+Toutes les lectures passent donc par une seule fonction :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/contracts/src/page/parseContent.ts"
+  filename="parseContent.ts"
+  snippetRange="57-75"
+  title="parsePageContentV1 — ne jamais casser une page"
+  stepsJson='[{"title": "Le cas ordinaire", "body": "Le contenu est valide : il est rendu tel que le schéma l’a lu, c’est-à-dire assaini et complété (valeurs par défaut, anciens formats absorbés).", "scope": "2-3", "focus": "3-3"}, {"title": "Rien d’écrit", "body": "Un contenu jamais rédigé (`null`) est une page vide. Ce n’est pas une anomalie, donc pas d’avertissement.", "scope": "4-4", "focus": "4-4"}, {"title": "Une enveloppe illisible", "body": "Pas de version 1, ou pas de liste de blocs : il n’y a rien à sauver. La page est vide, et un avertissement le dit dans les journaux.", "scope": "6-9", "focus": "8-8"}, {"title": "Un bloc fautif, et lui seul", "body": "L’enveloppe est bonne mais un bloc ne l’est pas : chaque bloc est relu SÉPARÉMENT, les bons sont gardés, le fautif est écarté et signalé avec son rang.", "scope": "12-19", "focus": "14-16"}]'
+/>
+
+La dernière étape est la plus importante. Une version antérieure rendait la page **entière** vide dès qu’un seul bloc était invalide. À l’affichage, c’était déjà une perte ; dans l’éditeur, c’était pire : l’administrateur ouvrait une page vide, ajoutait un paragraphe, enregistrait — et tous les autres blocs étaient effacés pour de bon.
+
+<Callout type="warning">
+Une lecture tolérante doit perdre **le moins possible**, et le dire. Un repli silencieux et total transforme une petite anomalie de données en perte définitive au premier enregistrement.
+</Callout>
+
+Le schéma sert donc deux fois : il **refuse** à l’entrée, il **répare** à la sortie. Le chapitre suivant montre qu’il fait aussi une troisième chose, pour le texte riche : il **assainit**.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi du JSON plutôt que du HTML ?", "Chaque élément a un type et des propriétés connues : on peut le valider, l’assainir, et une image y est un identifiant, pas une URL."], ["Où est défini le format ?", "Dans packages/contracts/src/page/blocks.v1.ts, lu par le front et le backend."], ["Comment distingue-t-on les blocs ?", "Par le champ type, d’une union discriminée : une erreur précise, et le rétrécissement en TypeScript."], ["Comment le format évolue-t-il ?", "Champs facultatifs, valeurs par défaut et preprocess en version 1 ; un changement de sens ferait une version 2 avec conversion."], ["Comment un bloc désigne-t-il un média ?", "Par son mediaId, ou par une référence logique (avatar d’un membre, logo du site) ; l’URL est calculée au rendu."], ["Que devient un contenu illisible ?", "parsePageContentV1 écarte le seul bloc fautif, garde les autres, et le signale ; une enveloppe illisible donne une page vide."]]' />
+
+## À suivre
+
+Le format est posé. Un bloc reste à part : le texte riche, un document entier dans le document, que le rendu transforme en HTML injecté tel quel dans la page. C’est là que se joue la sécurité de tout le constructeur.
+
+<Callout type="tip">
+**Chapitre suivant : le texte riche.** Le modèle de ProseMirror, ce que `generateHTML` recopie sans vérifier, la liste blanche qui assainit chaque document, et le rendu unique partagé par tous les blocs.
+</Callout>

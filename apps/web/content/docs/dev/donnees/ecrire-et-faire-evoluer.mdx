@@ -102,25 +102,17 @@ Dans un bloc `$transaction(async (tx) => …)`, on n’utilise que `tx`. Une req
 
 Prisma couvre l’immense majorité des besoins. Le projet descend en SQL dans deux types de cas, avec `$executeRaw`.
 
-**Une opération que l’API ne sait pas exprimer.** Déplacer un dossier dans le finder, c’est réécrire le début de `fullPath` pour tous les médias qu’il contient. `updateMany` sait donner la même valeur à plusieurs lignes, pas transformer la valeur de chacune :
+**Une opération que l’API ne sait pas exprimer.** Déplacer un dossier dans le finder, c’est réécrire le début de `fullPath` pour tous les médias qu’il contient (`rewriteAssetPaths`, la seule fonction qui le fait, pour le déplacement comme pour la corbeille). `updateMany` sait donner la même valeur à plusieurs lignes, pas transformer la valeur de chacune :
 
 ```ts
-// packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts (extrait)
-      // Pour les folders : update tous les MediaAssets sous le préfixe.
-      // On fait ça en SQL raw pour profiter du UPDATE...SET en une passe
-      // (Prisma ne supporte pas REPLACE/SUBSTRING dans updateMany).
-      const oldPrefix = `${operation.source.path}/`;
-      const newPrefix = `${operation.target.path}/`;
-      // Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait
-      // aussi à « coursX2026 ». On les échappe (ainsi que l'échappement lui-même) pour que le
-      // préfixe soit comparé littéralement ; seul le « % » final reste un joker. La barre oblique inverse est le
-      // caractère d'échappement par défaut de LIKE dans PostgreSQL.
-      const likePrefix = oldPrefix.replace(/[\\%_]/g, "\\$&");
-      await prisma.$executeRaw`
-        UPDATE "MediaAsset"
-        SET "fullPath" = ${newPrefix} || SUBSTRING("fullPath" FROM ${oldPrefix.length + 1}::int)
-        WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likePrefix + "%"};
-      `;
+// packages/backend/src/modules/storage/mediaPaths.ts (extrait)
+  const cut = from.length + 1;
+  const likeChildren = `${from}/`.replace(/[\\%_]/g, "\\$&") + "%";
+  return db.$executeRaw`
+    UPDATE "MediaAsset"
+    SET "fullPath" = ${to} || SUBSTRING("fullPath" FROM ${cut}::int)
+    WHERE "appRoot" = ${appRoot} AND "fullPath" LIKE ${likeChildren};
+  `;
 ```
 
 Ce bloc montre aussi que le SQL brut demande plus d’attention que l’API. Dans un `LIKE`, `_` et `%` sont des **jokers** : `_` remplace n’importe quel caractère, `%` n’importe quelle suite. Un dossier nommé `cours_2026`, passé tel quel en préfixe, correspondait aussi à `coursX2026`, et un déplacement pouvait réécrire le chemin de fichiers qui n’étaient pas dans le dossier déplacé. Le préfixe est donc échappé avant d’être donné à `LIKE` : chaque `_`, `%` ou barre oblique inverse est précédé d’une barre oblique inverse, le caractère d’échappement par défaut de PostgreSQL. Seul le `%` ajouté à la fin reste un joker. Avec l’API de Prisma (`startsWith`), cet échappement est fait automatiquement : c’est le prix de la descente en SQL.

@@ -117,18 +117,13 @@ Le finder manipule des chemins, pas des identifiants de base. La procédure retr
 
 ```ts
 // packages/backend/src/modules/memberDocuments/router.ts (extrait)
-const asset = await ctx.prisma.mediaAsset.findFirst({
-  where: {
-    OR: [
-      { fullPath: input.path },
-      { fullPath: { startsWith: `${input.path}.` } },
-    ],
-  },
+const asset = await ctx.prisma.mediaAsset.findUnique({
+  where: { fullPath: input.path },
   select: { id: true },
 });
 ```
 
-La seconde condition tolère un chemin donné sans son extension, comme le reste du module média. La procédure refuse ensuite un fichier déjà publié (`CONFLICT`), et une diffusion ciblée sans aucun groupe ni aucune personne.
+Le chemin est la clé du fichier (partie « Stockage et médias ») : la recherche est exacte, sans tolérance sur l’extension. La procédure refuse ensuite un fichier déjà publié (`CONFLICT`), et une diffusion ciblée sans aucun groupe ni aucune personne.
 
 ## Lu, non lu
 
