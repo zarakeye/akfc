@@ -11,6 +11,7 @@ import {
 import Finder from "@features/finder-core/components/Finder";
 import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 import { trpc } from "@trpc/trpcClient";
+import { uploadToR2 } from "@features/media/uploadToR2";
 import {
   memberFinderAdapter,
   MEMBER_FINDER_ROOT,
@@ -51,26 +52,11 @@ function MemberDepositBar(): JSX.Element | null {
     try {
       const destination = { kind: "group" as const, groupId };
 
-      const auth = await createR2.mutateAsync({
+      const registered = await uploadToR2({
+        file,
         destination,
-        originalFileName: file.name,
-        mimeType: file.type,
-        maxBytes: file.size,
-      });
-
-      const res = await fetch(auth.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!res.ok) throw new Error(`Envoi échoué (HTTP ${res.status}).`);
-
-      const registered = await registerR2.mutateAsync({
-        path: auth.path,
-        expectedBytes: file.size,
-        expectedMimeType: file.type,
-        destination,
-        originalFileName: file.name,
+        create: createR2.mutateAsync,
+        register: registerR2.mutateAsync,
       });
 
       await deposit.mutateAsync({ path: registered.path, groupId });

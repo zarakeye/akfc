@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
 import { categorySegment, disciplineSegment } from "@backend/modules/storage/storageSegments";
@@ -10,45 +11,26 @@ import { commonRepositoryContainerPath } from "@backend/modules/media/services/c
 /**
  * resolvePendingUploadFolder.service.ts
  *
- * Traduit une intention d'upload (`Destination`) en chemin de stockage absolu.
+ * Traduit une intention d'envoi (`UploadDestination`) en dossier de stockage. Le client ne
+ * fournit jamais de chemin : tout ce qui compose le dossier est relu en base ou vient de la
+ * session.
  *
- * ─── ⚠️ Le nom de cette fonction est historique ──────────────────────────
+ * Le nom est historique : le statut d'un fichier ne vit plus dans son chemin (un envoi naît
+ * `pending` parce que l'enregistrement écrit `status: "pending"`), et le dossier rendu ici est
+ * l'emplacement définitif du fichier.
  *
- * Elle ne résout plus rien de « pending ». Depuis l'étape 3, un upload naît
- * `pending` parce que `registerUploadedAssets` écrit `status: "pending"` en
- * base — pas parce qu'il atterrit sous un dossier qui s'appelle ainsi. Le
- * chemin ne dit plus le statut : il dit juste où est le fichier.
+ *   - existing-discipline : `${appRoot}/<segment de catégorie>/<segment de discipline>`, segments
+ *                           FIGÉS à la création (storageSegments.ts) ; la discipline doit
+ *                           appartenir à la catégorie annoncée ;
+ *   - new-discipline      : `${appRoot}/<segment de catégorie>/new/<slug du nom proposé>` ;
+ *   - common_repository   : `${appRoot}/common-repository/<sujet ou depot>_<personne>-<userId>` ;
+ *   - perso               : `${appRoot}/personal-space/<personne>-<userId>/photos`, l'id venant
+ *                           de la SESSION : on n'écrit que dans son propre espace ;
+ *   - event, seminar      : `${appRoot}/events/<slug>`, `${appRoot}/seminars/<slug>` ;
+ *   - group               : l'espace du groupe collaboratif (resolveGroupBaseFolder).
  *
- * Le renommage (`resolveUploadFolder`) touche `registerUploadedAssets`,
- * `createUploadSignatures`, un commentaire de `DragNDropForm` et un tutoriel
- * MDX. Il part avec le reste à l'étape 6, plutôt que d'élargir un incrément
- * qui parle de chemins.
- *
- * ─── Destinations couplées à une discipline (historique) ─────────────────
- *   - existing-discipline :
- *       `${appRoot}/<segment de catégorie>/<segment de discipline>` — segments FIGÉS
- *       à la création (`storageSegment`, cf. storageSegments.ts) : renommer une
- *       discipline ne change pas son dossier.
- *   - new-discipline :
- *       `${appRoot}/${slug(category.type)}/new/${slug(proposedName)}`
- *     Les assets restent isolés dans `new/` jusqu'à validation admin.
- *
- * ─── Destinations découplées (fondation « destination générique ») ────────
- *   - general : `${appRoot}/general`
- *       Espace club sans discipline ni catégorie. Sert d'espace partagé de
- *       fait entre admins (pas de permissions : club petit, confiance).
- *   - perso   : `${appRoot}/persos/${personSlug}-${userId}`
- *       Espace personnel de l'admin qui uploade. Le dossier est dérivé de
- *       `userId` (identité AUTHENTIFIÉE issue du contexte tRPC, jamais un id
- *       fourni par le client) → un admin ne peut écrire que dans son dossier.
- *       `personSlug` = slug(firstName lastName), sinon slug(pseudo), sinon
- *       `user-${userId}` (les trois champs de nom sont nullable en DB).
- *
- * ─── Pourquoi un segment lisible plutôt que l'id numérique (disciplines) ───
- *
- * Historiquement le path utilisait `discipline.id`, ce qui divergeait de la
- * navigation du finder (en slugs). Le segment est donc un slug — mais calculé
- * UNE FOIS, à la création, et conservé dans `Discipline.storageSegment`.
+ * Une entité absente ou incohérente est une erreur de la requête (NOT_FOUND, BAD_REQUEST),
+ * pas une panne du serveur : le message remonte tel quel au formulaire.
  */
 const SLUG_OPTIONS = { lower: true, strict: true } as const;
 
@@ -86,7 +68,7 @@ export async function resolvePendingUploadFolder(params: {
       select: { id: true, slug: true },
     });
     if (!seminar) {
-      throw new Error(`Seminar not found (id=${destination.seminarId})`);
+      throw new TRPCError({ code: "NOT_FOUND", message: "Stage introuvable." });
     }
     // `Seminar.slug` est nullable (le temps du backfill) → fallback sur l'id.
     const seminarSlug = seminar.slug ? slug(seminar.slug) : `seminar-${seminar.id}`;
@@ -101,7 +83,7 @@ export async function resolvePendingUploadFolder(params: {
     });
 
     if (!event) {
-      throw new Error(`Event not found (id=${destination.eventId})`);
+      throw new TRPCError({ code: "NOT_FOUND", message: "Événement introuvable." });
     }
 
     // `Event.slug` est nullable (le temps du backfill) → fallback sur l'id,
@@ -132,7 +114,7 @@ export async function resolvePendingUploadFolder(params: {
   });
 
   if (!category) {
-    throw new Error(`Category not found (id=${destination.categoryId})`);
+    throw new TRPCError({ code: "NOT_FOUND", message: "Catégorie introuvable." });
   }
 
   const categorySeg = categorySegment(category);
@@ -144,13 +126,11 @@ export async function resolvePendingUploadFolder(params: {
     });
 
     if (!discipline) {
-      throw new Error(`Discipline not found (id=${destination.disciplineId})`);
+      throw new TRPCError({ code: "NOT_FOUND", message: "Discipline introuvable." });
     }
 
     if (discipline.categoryId !== destination.categoryId) {
-      throw new Error(
-        `Discipline ${destination.disciplineId} does not belong to category ${destination.categoryId}`,
-      );
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Cette discipline n'appartient pas à la catégorie choisie." });
     }
 
     return `${appRoot}/${categorySeg}/${disciplineSegment(discipline)}`;
@@ -160,9 +140,7 @@ export async function resolvePendingUploadFolder(params: {
   const proposedSlug = slug(destination.proposedDisciplineName);
 
   if (!proposedSlug) {
-    throw new Error(
-      "Proposed discipline name must contain at least one slug-friendly character",
-    );
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Le nom proposé doit contenir au moins une lettre ou un chiffre." });
   }
 
   return `${appRoot}/${categorySeg}/new/${proposedSlug}`;

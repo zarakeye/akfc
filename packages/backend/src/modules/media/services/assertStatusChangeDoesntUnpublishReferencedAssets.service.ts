@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 import { physicalCandidates } from '@backend/modules/storage/logicalPath';
@@ -35,10 +36,14 @@ import { physicalCandidates } from '@backend/modules/storage/logicalPath';
  * l'originale doit rester en place : un DnD peut toujours sortir un asset de
  * `published/` par le chemin. Elle se supprimera avec la strate, à l'étape 6.
  *
- * ⚠️ Portée connue, héritée de l'originale : seules les `pageMediaReference`
- * sont consultées. `MediaAsset.galleryItems` ne l'est pas. Ce trou existe
- * déjà aujourd'hui — on le reporte tel quel plutôt que d'élargir la garde en
- * douce dans un incrément qui n'en parle pas.
+ * Portée : les pages (`pageMediaReference`) ET les galeries (`galleryItems`).
+ * Une galerie n'affiche que les fichiers publiés : dépublier une photo l'en
+ * retirerait sans un mot, ce que la garde refuse comme pour une page.
+ *
+ * Le refus est un CONFLICT (TRPCError) et non une Error nue : une Error
+ * devient une erreur interne, dont le message est remplacé par un message
+ * neutre en production — l'administrateur ne saurait pas quelles pages
+ * retirer.
  */
 
 export type StatusChangeSource = {
@@ -88,37 +93,40 @@ export async function assertStatusChangeDoesntUnpublishReferencedAssets(
 
   if (affectedAssets.length === 0) return;
 
-  // 3) Les références entrantes.
+  // 3) Les usages : pages et galeries.
   const assetIds = affectedAssets.map((a) => a.id);
-  const refs = await db.pageMediaReference.findMany({
-    where: { mediaAssetId: { in: assetIds } },
-    select: { mediaAssetId: true, pageType: true, pageId: true },
-  });
+  const [refs, galleryItems] = await Promise.all([
+    db.pageMediaReference.findMany({
+      where: { mediaAssetId: { in: assetIds } },
+      select: { mediaAssetId: true, pageType: true, pageId: true },
+    }),
+    db.galleryItem.findMany({
+      where: { mediaAssetId: { in: assetIds } },
+      select: { mediaAssetId: true, gallery: { select: { title: true } } },
+    }),
+  ]);
 
-  if (refs.length === 0) return;
+  if (refs.length === 0 && galleryItems.length === 0) return;
 
-  // 4) Diagnostic. tRPC v11 propage le `.message` jusqu'au client, et
-  //    `useStatusChange` l'expose via `error` : on nomme les pages.
-  const refsByAssetId = new Map<
-    string,
-    Array<{ pageType: string; pageId: string }>
-  >();
-  for (const ref of refs) {
-    const list = refsByAssetId.get(ref.mediaAssetId) ?? [];
-    list.push({ pageType: String(ref.pageType), pageId: ref.pageId });
-    refsByAssetId.set(ref.mediaAssetId, list);
-  }
+  // 4) Diagnostic : on nomme ce qui affiche chaque fichier, pour que
+  //    l'administrateur sache quoi retirer.
+  const usesByAssetId = new Map<string, string[]>();
+  const addUse = (assetId: string, use: string) => {
+    usesByAssetId.set(assetId, [...(usesByAssetId.get(assetId) ?? []), use]);
+  };
+  for (const ref of refs) addUse(ref.mediaAssetId, `${String(ref.pageType)} #${ref.pageId}`);
+  for (const item of galleryItems) addUse(item.mediaAssetId, `galerie « ${item.gallery.title} »`);
 
-  const blockedAssets = affectedAssets.filter((a) => refsByAssetId.has(a.id));
-  const lines = blockedAssets.map((asset) => {
-    const items = refsByAssetId.get(asset.id) ?? [];
-    const formatted = items.map((r) => `${r.pageType} #${r.pageId}`).join(', ');
-    return `  - ${asset.fullPath} → utilisé par : ${formatted}`;
-  });
-
-  throw new Error(
-    `Dépublication impossible : ${blockedAssets.length} média(s) encore référencé(s).\n` +
-      `Retire-les des pages qui les affichent, puis réessaie.\n` +
-      lines.join('\n'),
+  const blockedAssets = affectedAssets.filter((a) => usesByAssetId.has(a.id));
+  const lines = blockedAssets.map(
+    (asset) => `  - ${asset.fullPath} → utilisé par : ${(usesByAssetId.get(asset.id) ?? []).join(', ')}`,
   );
+
+  throw new TRPCError({
+    code: 'CONFLICT',
+    message:
+      `Dépublication impossible : ${blockedAssets.length} média(s) encore utilisé(s).\n` +
+      `Retire-les des pages et des galeries qui les affichent, puis réessaie.\n` +
+      lines.join('\n'),
+  });
 }

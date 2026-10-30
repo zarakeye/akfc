@@ -15,8 +15,11 @@
  */
 
 import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
+import { assertCanReadPaths } from "@backend/modules/memberGroups/assertCanReadPaths.service";
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, protectedProcedure } from '@backend/trpc';
+import { sameAppRoot } from '@backend/trpc/middleware';
 import type { ResolvedMedia } from '@contracts/page';
 import { deriveMediaKind } from '@backend/modules/media/helpers/deriveMediaKind';
 import { buildMediaProxyUrl } from '@backend/modules/media/helpers/media-url';
@@ -68,12 +71,15 @@ function matchesPath(fullPath: string, inputPath: string): boolean {
 /*                                 ROUTER                                     */
 /* -------------------------------------------------------------------------- */
 
+/** Procédure connectée dont l'`appRoot` éventuel doit être celui du serveur. */
+const storageProcedure = protectedProcedure.use(sameAppRoot);
+
 export const mediaRouter = router({
   /**
    * Lookup batch des MediaAsset rows pour une liste de paths.
    * Matching tolérant à l'extension (cf. doc en tête de fichier).
    */
-  getByPaths: protectedProcedure
+  getByPaths: storageProcedure
     .input(
       z.object({
         appRoot: z.string().min(1),
@@ -82,6 +88,8 @@ export const mediaRouter = router({
     )
     .query(async ({ input, ctx }) => {
       if (input.paths.length === 0) return {};
+      // Statut, auteur, description : la même règle que la lecture du dossier.
+      await assertCanReadPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: input.paths });
 
       // Construit les conditions OR : pour chaque path, on essaie
       // (exact match) OU (match avec extension).
@@ -157,7 +165,7 @@ export const mediaRouter = router({
    * Retourne un Record indexé par le path d'entrée. Si un path ne
    * correspond à aucun asset, la valeur est `null` plutôt qu'omise.
    */
-  resolveByPaths: protectedProcedure
+  resolveByPaths: storageProcedure
     .input(
       z.object({
         appRoot: z.string().min(1),
@@ -168,6 +176,7 @@ export const mediaRouter = router({
       if (input.paths.length === 0) {
         return {} as Record<string, string | null>;
       }
+      await assertCanReadPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: input.paths });
 
       const orConditions = input.paths.flatMap((p) => [
         { fullPath: p },
@@ -211,7 +220,7 @@ export const mediaRouter = router({
    * Retourne un Record indexé par mediaId. Les ids absents de la DB
    * ou non-published rendent `null`.
    */
-  resolveByIds: protectedProcedure
+  resolveByIds: storageProcedure
     .input(
       z.object({
         mediaIds: z.array(z.string().min(1)).max(500),
@@ -268,7 +277,7 @@ export const mediaRouter = router({
    * 🔎 Recherche récursive — files + folders (status + métier).
    * Matche par `fullPath` (clé universelle).
    */
-  searchRecursive: protectedProcedure
+  searchRecursive: storageProcedure
     .input(
       z.object({
         appRoot: z.string().min(1),
@@ -290,6 +299,19 @@ export const mediaRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
+      // On ne cherche que là où l'on peut lire : sans cette garde, la recherche listait les
+      // fichiers de toute la bibliothèque (espaces personnels et autres groupes compris).
+      await assertCanReadPaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.prefix] });
+
+      // Une expression régulière fournie par l'utilisateur s'exécute sur le serveur : une expression
+      // mal construite (« (a+)+$ ») peut le bloquer de longues secondes. Réservée aux administrateurs.
+      if (input.useRegex && !ctx.sessionClient.user.isAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "La recherche par expression régulière est réservée aux administrateurs.",
+        });
+      }
+
       // 1. Compile le matcher selon les flags
       let matcher: ((s: string) => boolean) | null = null;
       try {
@@ -484,7 +506,7 @@ export const mediaRouter = router({
    * ✏️ Mise à jour de la description d'un fichier.
    * Matching tolérant à l'extension (cf. doc en tête de fichier).
    */
-  updateDescription: protectedProcedure
+  updateDescription: storageProcedure
     .input(
       z.object({
         appRoot: z.string().min(1),
@@ -575,7 +597,7 @@ export const mediaRouter = router({
    * La corbeille garde son système propre (quarantaine physique + TrashEntry).
    * Y entrer n'est pas un changement de statut : c'est `trash.trashToBin`.
    */
-  setStatus: protectedProcedure
+  setStatus: storageProcedure
     .input(
       z.object({
         appRoot: z.string().min(1),

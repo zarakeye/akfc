@@ -5,6 +5,7 @@ import { useDropzone, type Accept } from 'react-dropzone';
 import { HEIC_ACCEPT, countHeic, heicFailureMessage, heicProgressMessage, toBrowserImages } from '@features/media/heic/browserImages';
 
 import { trpc } from '@trpc/trpcClient';
+import { uploadToR2 } from '@features/media/uploadToR2';
 
 /**
  * PersoPhotoUploader
@@ -196,26 +197,13 @@ export default function PersoPhotoUploader(): JSX.Element {
       const outcomes: UploadOutcome[] = [];
       for (const it of actuallyUpload) {
         try {
-          const auth = await createR2Mutation.mutateAsync({
+          const registered = await uploadToR2({
+            file: it.file,
             destination,
-            originalFileName: it.file.name,
-            mimeType: it.file.type,
-            maxBytes: it.file.size,
+            create: createR2Mutation.mutateAsync,
+            register: registerR2Mutation.mutateAsync,
           });
-          const res = await fetch(auth.uploadUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': it.file.type },
-            body: it.file,
-          });
-          if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
-          await registerR2Mutation.mutateAsync({
-            path: auth.path,
-            expectedBytes: it.file.size,
-            expectedMimeType: it.file.type,
-            destination,
-            originalFileName: it.file.name,
-          });
-          outcomes.push({ ok: true, itemId: it.id, path: auth.path });
+          outcomes.push({ ok: true, itemId: it.id, path: registered.path });
         } catch (err) {
           outcomes.push({ ok: false, itemId: it.id, error: err instanceof Error ? err.message : 'Envoi échoué' });
         }

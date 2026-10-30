@@ -15,6 +15,7 @@ import type { PictureItem } from '@features/gallery-crop/types/picture.types';
 import type { CropResult } from '@features/gallery-crop/types/cropper.types';
 import Cropper from '@features/gallery-crop/components/Cropper';
 import { PdfThumbnail } from '@features/common-repository/PdfThumbnailClient';
+import { uploadToR2 } from '@features/media/uploadToR2';
 
 /**
  * DragNDropForm — envoi de fichiers vers la bibliothèque AKFC (stockage R2).
@@ -475,35 +476,12 @@ export default function DragNDropForm(): JSX.Element {
     allowOverwrite = false,
   ): Promise<R2UploadOutcome> {
     try {
-      // Le serveur calcule le chemin et le renvoie dans `auth.path` — on le
-      // réutilise pour l'enregistrement.
-      const auth = await createR2UploadMutation.mutateAsync({
+      const result = await uploadToR2({
+        file: item.file,
         destination,
-        originalFileName: item.file.name,
-        mimeType: item.file.type,
-        maxBytes: item.file.size,
         allowOverwrite,
-      });
-      const path = auth.path;
-
-      const res = await fetch(auth.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': item.file.type,
-        },
-        body: item.file,
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`R2 HTTP ${res.status}: ${text.slice(0, 200)}`);
-      }
-
-      const result = await registerR2UploadMutation.mutateAsync({
-        path,
-        expectedBytes: item.file.size,
-        expectedMimeType: item.file.type,
-        destination,
-        originalFileName: item.file.name,
+        create: createR2UploadMutation.mutateAsync,
+        register: registerR2UploadMutation.mutateAsync,
       });
 
       return {
@@ -516,7 +494,7 @@ export default function DragNDropForm(): JSX.Element {
       return {
         ok: false,
         itemId: item.id,
-        error: err instanceof Error ? err.message : 'Upload R2 failed',
+        error: err instanceof Error ? err.message : "L'envoi a échoué.",
       };
     }
   }
@@ -583,10 +561,17 @@ export default function DragNDropForm(): JSX.Element {
       // Un fichier déjà présent → on demande (jamais d'écrasement silencieux).
       const skipped: string[] = [];
       const overwrite = new Set<string>();
-      const { existing } = await utils.storage.checkR2Conflicts.fetch({
+      const { existing, duplicateIndexes } = await utils.storage.checkR2Conflicts.fetch({
         destination,
         fileNames: toUpload.map((it) => it.file.name),
       });
+      // Même clé qu'un autre fichier du lot : on ne l'envoie pas (il écraserait l'autre).
+      const duplicates = new Map<string, string>(
+        duplicateIndexes.map((i): [string, string] => [
+          toUpload[i].id,
+          `« ${toUpload[i].file.name} » porte le même nom qu'un autre fichier de cet envoi. Renommez-le.`,
+        ]),
+      );
       if (existing.length > 0) {
         const choice = await askOverwrite(existing);
         const conflicted = new Set(existing);
@@ -596,7 +581,7 @@ export default function DragNDropForm(): JSX.Element {
           else overwrite.add(it.id);
         }
       }
-      const r2ToUpload = toUpload.filter((it) => !skipped.includes(it.id));
+      const r2ToUpload = toUpload.filter((it) => !skipped.includes(it.id) && !duplicates.has(it.id));
 
       const r2Outcomes = await Promise.all(
         r2ToUpload.map((it) => uploadR2Single(it, destination, overwrite.has(it.id))),
@@ -609,11 +594,12 @@ export default function DragNDropForm(): JSX.Element {
       const successIds = new Set<string>(
         r2Outcomes.filter((o) => o.ok).map((o) => o.itemId),
       );
-      const failures = new Map<string, string>(
-        r2Outcomes
+      const failures = new Map<string, string>([
+        ...duplicates,
+        ...r2Outcomes
           .filter((o): o is R2UploadOutcome & { ok: false } => !o.ok)
           .map((o): [string, string] => [o.itemId, o.error]),
-      );
+      ]);
 
       setItems((prev) =>
         prev.map((it) => {

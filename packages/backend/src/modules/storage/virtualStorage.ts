@@ -30,8 +30,9 @@ import {
  * VirtualStorage — façade de stockage.
  *
  * Implémente `StorageAdapter` en déléguant à l'adapter R2 (seul stockage
- * depuis la sortie de Cloudinary), et ajoute ce que l'adapter ne fait pas :
- * réaligner la ligne `MediaAsset` après le déplacement d'un fichier.
+ * depuis la sortie de Cloudinary). L'adapter réaligne lui-même les lignes
+ * `MediaAsset` après un déplacement (fichier ou dossier) : la façade n'a
+ * rien à ajouter, elle ne fait que désigner le stockage.
  *
  * Les consommateurs (router storage, services) ne parlent qu'à cette façade :
  * si un second stockage revenait un jour, c'est ici qu'il serait combiné.
@@ -71,17 +72,9 @@ export class VirtualStorage implements StorageAdapter {
 
   async move(operation: StorageMoveOperation): Promise<void> {
     if (!this.r2.move) throw new Error("move non supporté par le stockage");
+    // L'adapter déplace l'objet ET la ligne MediaAsset (la clé R2 EST le chemin) : un second
+    // `updateMany` ici ne trouverait plus rien à mettre à jour.
     await this.r2.move(operation);
-    if (operation.source.type === "file") {
-      // Le déplacement physique a réussi : on aligne la DB sur le nouvel
-      // emplacement, sinon resolveByPaths, l'enrichissement et les filtres
-      // par status restent sur l'ancien path. La clé R2 EST le path.
-      const { prisma, appRoot } = this.deps;
-      await prisma.mediaAsset.updateMany({
-        where: { appRoot, fullPath: operation.source.path },
-        data: { fullPath: operation.target.path },
-      });
-    }
   }
 
   async delete(path: StoragePath): Promise<void> {

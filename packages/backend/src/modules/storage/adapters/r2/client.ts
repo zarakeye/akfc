@@ -87,12 +87,3 @@ export function getR2PresignClient(): S3Client {
   });
   return cachedPresign;
 }
-
-/**
- * Utilitaire pour les tests / dev : reset le singleton pour forcer une
- * recréation au prochain appel. Utile si on veut changer les credentials
- * à chaud (rare).
- */
-export function __resetR2ClientForTesting(): void {
-  cached = null;
-}

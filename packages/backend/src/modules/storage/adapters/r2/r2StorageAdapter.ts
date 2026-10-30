@@ -10,6 +10,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 import type {
   StorageAdapter,
@@ -27,6 +28,7 @@ import type {
 } from "@contracts/storage";
 
 import type { UploadDestination } from "@contracts/storage/upload-destination.schema";
+import { HARD_MAX_UPLOAD_BYTES } from "@contracts/storage/r2-upload.schema";
 
 import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
 import { parsePathToDestination } from "@backend/modules/media/services/parsePathToDestination";
@@ -348,10 +350,12 @@ export function createR2StorageAdapter(
         .send(new HeadObjectCommand({ Bucket, Key: input.path }))
         .catch((err) => {
           if (isNotFoundError(err)) {
-            throw new Error(
-              `Upload introuvable sur R2 : ${input.path}. ` +
-                `Le client a peut-être abandonné avant de finir l'upload.`
-            );
+            // BAD_REQUEST et non une Error nue : une Error deviendrait une erreur interne, dont le
+            // message est remplacé par un message neutre en production (errorFormatter).
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Le fichier n'est pas arrivé jusqu'au stockage. Relancez l'envoi.",
+            });
           }
           throw err;
         });
@@ -364,8 +368,13 @@ export function createR2StorageAdapter(
       // (écrasement confirmé), on le laisse : la ligne existante pointe toujours vers lui.
       const reject = async (message: string): Promise<never> => {
         const known = await prisma.mediaAsset.findUnique({ where: { fullPath: input.path }, select: { id: true } });
-        if (!known) await s3.send(new DeleteObjectCommand({ Bucket, Key: input.path })).catch(() => undefined);
-        throw new Error(message);
+        if (!known) {
+          await s3.send(new DeleteObjectCommand({ Bucket, Key: input.path })).catch((err) => {
+            console.error("[r2] objet refusé non supprimé", input.path, err);
+          });
+        }
+        // Une saisie refusée, pas une panne : le message doit arriver jusqu'à l'utilisateur.
+        throw new TRPCError({ code: "BAD_REQUEST", message });
       };
 
       // L'URL signée fixe la clé, le type et l'expiration, pas la taille : la limite dure est
@@ -375,14 +384,14 @@ export function createR2StorageAdapter(
       }
       if (actualBytes !== input.expectedBytes) {
         await reject(
-          `Taille incohérente sur ${input.path} : ` +
-            `attendu ${input.expectedBytes}, reçu ${actualBytes}.`
+          `Le fichier reçu ne correspond pas à celui annoncé (${actualBytes} octets au lieu de ` +
+            `${input.expectedBytes}). Relancez l'envoi.`
         );
       }
       if (actualMime !== input.expectedMimeType) {
         await reject(
-          `MIME type incohérent sur ${input.path} : ` +
-            `attendu "${input.expectedMimeType}", reçu "${actualMime}".`
+          `Le type du fichier reçu (« ${actualMime} ») ne correspond pas à celui annoncé ` +
+            `(« ${input.expectedMimeType} »). Relancez l'envoi.`
         );
       }
 
@@ -439,18 +448,22 @@ export function createR2StorageAdapter(
       // upsert pour faire évoluer la row existante plutôt que d'échouer.
       // (Le ré-envoi n'arrive qu'après confirmation « Écraser ».)
       // Événement : rattachement du fichier et des disciplines.
+      // (Rattacher des disciplines est réservé aux administrateurs : assertUploadDestinationAllowed.)
       const eventId = input.destination.kind === "event" ? input.destination.eventId : null;
       if (input.destination.kind === "event" && input.destination.disciplineIds.length > 0) {
-        const ids = [...new Set(input.destination.disciplineIds)];
+        const { eventId: targetEventId, disciplineIds } = input.destination;
+        const ids = [...new Set(disciplineIds)];
         const found = await prisma.discipline.count({ where: { id: { in: ids } } });
-        if (found !== ids.length) throw new Error("Discipline(s) introuvable(s) pour cet événement.");
+        if (found !== ids.length) {
+          await reject("Discipline(s) introuvable(s) pour cet événement.");
+        }
         await prisma.eventDiscipline.createMany({
-          data: ids.map((disciplineId) => ({ eventId: input.destination.kind === "event" ? input.destination.eventId : 0, disciplineId })),
+          data: ids.map((disciplineId) => ({ eventId: targetEventId, disciplineId })),
           skipDuplicates: true,
         });
       }
       // Dimensions (images, vidéos) : meilleur effort, jamais bloquant.
-      const dims = (await probeMediaDimensions(input.path, actualMime)) ?? {};
+      const dims = (await probeMediaDimensions(input.path, actualMime, actualBytes)) ?? {};
 
       const asset = await prisma.mediaAsset.upsert({
         where: { fullPath: input.path },
@@ -572,7 +585,6 @@ function objectToFileNode(obj: S3Object & { Key: string }): StorageFileNode {
 /*  Helpers — validation upload                                               */
 /* -------------------------------------------------------------------------- */
 
-const HARD_MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 function assertUploadPathSafe(path: string, appRoot: string): void {
   if (!path) throw new Error("createUploadAuthorization: path vide");

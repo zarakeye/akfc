@@ -7,12 +7,13 @@ import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/servic
 import { getSessionFromRequest } from '@backend/modules/auth/getSessionFromRequest';
 import { canReadStorageKey } from '@backend/modules/media/services/canReadStorageKey.service';
 import { prisma } from '@backend/prisma';
+import { APP_ROOT } from '@config/app';
 
 /**
  * Proxy de preview pour les fichiers hébergés sur R2.
  *
  * Pattern : le navigateur appelle `/api/media/r2/<path>`, on vérifie la
- * session admin, on génère une **presigned GET URL** R2 valide 30 minutes,
+ * session et le droit de lecture, on génère une **presigned GET URL** R2 valide 30 minutes,
  * puis on **redirige (302)** le navigateur vers cette URL. Le navigateur
  * va alors récupérer le contenu direct depuis R2 (zero egress côté
  * Cloudflare) — le backend n'est plus dans la boucle pour les octets.
@@ -25,8 +26,8 @@ import { prisma } from '@backend/prisma';
  * qui est *fait* pour ça.
  *
  * Trade-off : l'URL signée est exposée au navigateur. Elle expire en
- * 30 min, est scopée à un seul fichier (GET only), et requiert une
- * session admin valide pour être générée. Acceptable.
+ * 30 min, est scopée à un seul fichier (GET only), et n'est fabriquée
+ * qu'après la vérification du droit de lecture. Acceptable.
  *
  * ─── Path encoding ────────────────────────────────────────────────────────
  *
@@ -70,11 +71,9 @@ export async function GET(
 
   const r2Key = path.join('/');
 
-  // Validation : doit commencer par AKFC/ (isolation tenant)
-  // On pourrait importer APP_ROOT mais l'app racine est connue et stable ;
-  // on hardcode ici pour éviter une dépendance config dans une route triviale.
-  // Si l'app racine change, ce check doit être mis à jour en accord.
-  if (!r2Key.startsWith('AKFC/')) {
+  // Racine de l'application obligatoire : les déclinaisons (`_derived/…`) et tout ce qui vivrait
+  // hors de la racine ne sont jamais servis par leur clé.
+  if (!r2Key.startsWith(`${APP_ROOT}/`)) {
     return new NextResponse('Forbidden: path out of app root', { status: 403 });
   }
   if (r2Key.includes('..')) {

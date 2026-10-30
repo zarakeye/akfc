@@ -7,6 +7,7 @@ import Cropper from "@features/gallery-crop/components/Cropper";
 import { PdfThumbnail } from "@features/common-repository/PdfThumbnailClient";
 import type { PictureItem } from "@features/gallery-crop/types/picture.types";
 import type { CropResult } from "@features/gallery-crop/types/cropper.types";
+import { uploadToR2 } from "@features/media/uploadToR2";
 
 /**
  * Uploader MEMBRE en cascade.
@@ -141,25 +142,11 @@ export function CommonRepositoryUpload(): JSX.Element {
   };
 
   const uploadR2 = async (item: PictureItem): Promise<void> => {
-    const file = item.file;
-    const auth = await createR2Upload.mutateAsync({
+    await uploadToR2({
+      file: item.file,
       destination,
-      originalFileName: file.name,
-      mimeType: file.type,
-      maxBytes: file.size,
-    });
-    const put = await fetch(auth.uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-    if (!put.ok) throw new Error(`R2 HTTP ${put.status}`);
-    await registerR2Upload.mutateAsync({
-      path: auth.path,
-      expectedBytes: file.size,
-      expectedMimeType: file.type,
-      destination,
-      originalFileName: file.name,
+      create: createR2Upload.mutateAsync,
+      register: registerR2Upload.mutateAsync,
     });
   };
 

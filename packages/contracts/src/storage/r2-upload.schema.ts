@@ -14,11 +14,11 @@ import { uploadDestinationSchema } from "@contracts/storage/upload-destination.s
 /* -------------------------------------------------------------------------- */
 
 /**
- * Limite max côté contrat — duplique la garde côté adapter pour échouer
- * tôt (avant l'appel SDK). 500 MiB est cohérent avec l'usage AKFC
- * (audios, PDFs, archives). Au-delà, il faudrait un multipart upload.
+ * Limite dure d'un envoi : 500 MiB, cohérent avec l'usage AKFC (audios, PDFs, archives). Au-delà, il
+ * faudrait un envoi en plusieurs parties (multipart). Une seule définition : le schéma refuse tôt une
+ * taille annoncée trop grande, l'adaptateur R2 vérifie la taille RÉELLE à l'enregistrement.
  */
-const HARD_MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+export const HARD_MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 export const createR2UploadAuthorizationSchema = z.object({
   /**

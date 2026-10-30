@@ -3,6 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@backend/prisma';
+import { APP_ROOT } from '@config/app';
 import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/client';
 import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
 
@@ -11,12 +12,12 @@ import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/servic
  *
  * ─── Différence avec `/api/media/r2/[...path]` ──────────────────────────
  *
- * La route admin signe et redirige pour n'importe quel asset R2, à
- * condition que l'appelant ait une session admin. Cette route-ci est
+ * La route privée signe et redirige pour un fichier que l'appelant a le
+ * droit de lire (session + canReadStorageKey). Cette route-ci est
  * accessible **sans auth**, mais avec une garde stricte :
  *
- *   l'asset doit être en `published` ET référencé par au moins une
- *   `PageMediaReference` (sous-chantier 2).
+ *   l'asset doit être en `published` ET placé : référencé par au moins une
+ *   `PageMediaReference`, ou présent dans une galerie PUBLIQUE.
  *
  * Autrement dit : l'admin a fait **deux gestes intentionnels** pour
  * que cet asset soit publiquement servi — il l'a marqué publishable
@@ -68,10 +69,8 @@ export async function GET(
 
   const r2Key = path.join('/');
 
-  // Mêmes validations basiques que la route admin (anti-traversée).
-  // Le hardcode `AKFC/` matche l'appRoot du projet — si tu changes
-  // d'appRoot un jour, à synchroniser ici et dans la route admin.
-  if (!r2Key.startsWith('AKFC/') || r2Key.includes('..')) {
+  // Mêmes validations que la route privée : racine de l'application, pas de remontée.
+  if (!r2Key.startsWith(`${APP_ROOT}/`) || r2Key.includes('..')) {
     return new NextResponse('Not found', { status: 404 });
   }
 

@@ -7,10 +7,12 @@ import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolve
  * Extrait le groupId d'un chemin (logique ou physique) situé dans l'espace d'un
  * groupe collaboratif : `.../collaborative-group-spaces/${slug}-${groupId}/...`. Le groupId (cuid)
  * ne contient pas de tiret, il suit donc le DERNIER tiret du segment.
- * Renvoie null si le chemin n'est pas dans un espace de groupe.
+ * Renvoie null si le chemin n'est pas dans un espace de groupe — ou s'il contient un segment
+ * « . » ou « .. » : un tel chemin ne désigne pas ce qu'il semble désigner, aucune garde ne l'accepte.
  */
 export function groupIdFromLogicalPath(path: string): string | null {
   const parts = path.split("/").filter(Boolean);
+  if (parts.some((p) => p === "." || p === "..")) return null;
   const i = parts.indexOf("collaborative-group-spaces");
   if (i === -1 || i + 1 >= parts.length) return null;
   const segment = parts[i + 1];

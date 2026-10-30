@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
-import { isAdmin } from "@backend/trpc/middleware";
+import { isAdmin, sameAppRoot } from "@backend/trpc/middleware";
 
 import type { ListBinOutput } from "@contracts/trash/trash.dto";
 import type { ReadTrashFolderOutput } from "@contracts/trash/trash-node.types";
@@ -31,7 +31,9 @@ import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.s
  * - L'utilisateur ne voit jamais `.trash/<uuid>`
  */
 
-const adminProcedure = protectedProcedure.use(isAdmin);
+// L'`appRoot` éventuel de l'entrée doit être celui du serveur (sameAppRoot).
+const memberProcedure = protectedProcedure.use(sameAppRoot);
+const adminProcedure = memberProcedure.use(isAdmin);
 
 const listBinInputSchema = z.object({
   appRoot: z.string().min(1),
@@ -157,7 +159,7 @@ export const trashRouter = router({
       return readTrashFolder({ prisma: ctx.prisma, input });
     }),
 
-  trashToBin: protectedProcedure
+  trashToBin: memberProcedure
     .input(trashToBinInputSchema)
     .mutation(async ({ ctx, input }): Promise<TrashToBinOutput> => {
       // Garde : admin partout ; sinon uniquement dans un espace de groupe

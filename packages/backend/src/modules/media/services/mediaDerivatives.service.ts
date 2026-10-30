@@ -327,10 +327,20 @@ function runJson(cmd: string, args: string[]): Promise<unknown> {
   });
 }
 
-/** Largeur, hauteur (images, vidéos) et durée (vidéos) d'un objet R2, ou null. */
-export async function probeMediaDimensions(fullPath: string, mimeType: string): Promise<MediaDimensions | null> {
+/**
+ * Largeur, hauteur (images, vidéos) et durée (vidéos) d'un objet R2, ou null.
+ * Une image est lue EN MÉMOIRE pour être mesurée : au-delà de MAX_SOURCE_BYTES (la même borne que
+ * les déclinaisons), on renonce, plutôt que de laisser un envoi de 500 Mio annoncé « image/jpeg »
+ * occuper la mémoire du serveur. Une vidéo, elle, est lue en flux par ffprobe.
+ */
+export async function probeMediaDimensions(
+  fullPath: string,
+  mimeType: string,
+  bytes: number,
+): Promise<MediaDimensions | null> {
   try {
     if (mimeType.startsWith("image/") && isTransformableImage(fullPath)) {
+      if (bytes > MAX_SOURCE_BYTES) return null;
       const sh = await loadSharp();
       if (!sh) return null;
       const obj = await getR2Client().send(new GetObjectCommand({ Bucket: getR2Bucket(), Key: fullPath }));

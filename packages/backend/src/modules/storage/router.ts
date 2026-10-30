@@ -30,6 +30,7 @@ import {
 } from "@backend/modules/storage/services/enrichStatus.service";
 
 import { router, protectedProcedure } from "@backend/trpc";
+import { isAdmin } from "@backend/trpc/middleware";
 
 import {
   storageProviderSchema,
@@ -38,7 +39,7 @@ import {
   type StorageFolderNode,
 } from "@contracts/storage";
 
-import { uploadDestinationSchema } from "@contracts/storage/upload-destination.schema";
+import { uploadDestinationSchema, type UploadDestination } from "@contracts/storage/upload-destination.schema";
 import { uploadTypeError } from "@contracts/storage/allowedUploadTypes";
 
 import { getAdapter } from "@backend/modules/storage/providerRegistry";
@@ -57,6 +58,7 @@ import { listMyCommonRepositoryContainers } from "@backend/modules/media/service
 import { commonRepositoryContainerPath } from "@backend/modules/media/services/commonRepositoryContainerPath.service";
 import { resolvePendingUploadFolder } from '@backend/modules/storage/services/resolvePendingUploadFolder.service';
 import { assertCanReadPath } from "@backend/modules/memberGroups/assertCanReadPath.service";
+import { assertCanWritePaths } from "@backend/modules/memberGroups/assertCanWritePaths.service";
 import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveGroupBaseFolder.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { scopePersoSpaceInTree } from "@backend/modules/storage/scopePersoSpace.service";
@@ -93,6 +95,27 @@ import { buildUploadFileName } from '@backend/modules/storage/services/buildUplo
  * Forme identique à ce que `DragNDropForm` construit côté frontend.
  */
 
+/**
+ * Remplacer un fichier déjà connu, c'est publier un contenu SANS repasser par la validation : la
+ * ligne garde son statut. Un dépôt ouvert à tout membre (discipline, stage, événement, dépôt commun)
+ * ne doit donc pas permettre de remplacer un fichier publié, ou déposé par quelqu'un d'autre.
+ * Autorisé : un administrateur ; un éditeur dans l'espace de son groupe (il peut déjà y mettre à la
+ * corbeille ; son droit d'écriture est vérifié par assertUploadDestinationAllowed) ; l'auteur d'un
+ * fichier encore en attente. Vérifié à la signature ET à l'enregistrement : l'enregistrement met à
+ * jour la ligne existante, auteur compris.
+ */
+function mayReplace(
+  existing: { status: string; uploaderUserId: string },
+  user: { id: string; isAdmin: boolean },
+  destination: UploadDestination,
+): boolean {
+  return (
+    user.isAdmin ||
+    destination.kind === "group" ||
+    (existing.status === "pending" && existing.uploaderUserId === user.id)
+  );
+}
+
 const registerR2UploadInputSchema = z.object({
   path: z.string().min(1),
   expectedBytes: z.number().int().positive(),
@@ -107,39 +130,6 @@ const registerR2UploadInputSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 export const storageRouter = router({
-  /**
-   * Noms d'affichage EXACTS des espaces (groupe / perso), indexés par cuid.
-   * Permet au finder d'afficher « Administrateurs » au lieu de
-   * « administrateurs-<cuid> ». Noms de groupes : toujours ; noms
-   * d'utilisateurs (espaces perso) : réservés aux admins (confidentialité).
-   */
-  spaceDisplayNames: protectedProcedure.query(async ({ ctx }) => {
-    const map: Record<string, string> = {};
-
-    const groups = await ctx.prisma.memberGroup.findMany({
-      select: { id: true, name: true },
-    });
-    for (const g of groups) map[g.id] = g.name;
-
-    if (ctx.sessionClient.user.isAdmin) {
-      const users = await ctx.prisma.user.findMany({
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          pseudo: true,
-          email: true,
-        },
-      });
-      for (const u of users) {
-        const full = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
-        map[u.id] = full || u.pseudo || u.email;
-      }
-    }
-
-    return map;
-  }),
-
   /* ====================================================================== */
   /*  Lecture (inchangé)                                                    */
   /* ====================================================================== */
@@ -147,11 +137,10 @@ export const storageRouter = router({
   /**
    * Compteurs « à traiter » de la bibliothèque, pour la cloche du header :
    * assets en attente de classement (MediaAsset.status "pending") et
-   * entrées de corbeille (TrashEntry IN_BIN). protectedProcedure simple,
-   * comme le reste du router — la cloche est de plus gatée côté client
-   * sur la présence d'au moins une permission.
+   * entrées de corbeille (TrashEntry IN_BIN). Réservée aux administrateurs : ce sont des
+   * compteurs de toute la bibliothèque, et la cloche qui les affiche n'existe que pour eux.
    */
-  getAttentionCounts: protectedProcedure.query(async ({ ctx }) => {
+  getAttentionCounts: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const [pending, bin, commonRepositoryPending, persoCounts] = await Promise.all([
       ctx.prisma.mediaAsset.count({ where: { status: "pending" } }),
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
@@ -182,8 +171,10 @@ export const storageRouter = router({
    * Renvoie le `kind` du dossier plutôt qu'un libellé : la formulation
    * (« le stockage général », « votre stockage personnel »…) appartient à
    * l'UI, pas au backend. Les dossiers sont triés par volume décroissant.
+   * Réservée aux administrateurs : elle nomme les dossiers de toute la bibliothèque,
+   * espaces personnels compris.
    */
-  getPendingBreakdown: protectedProcedure.query(async ({ ctx }) => {
+  getPendingBreakdown: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     const rows = await ctx.prisma.mediaAsset.findMany({
       where: { appRoot: ctx.appRoot, status: "pending" },
       select: { fullPath: true },
@@ -547,6 +538,8 @@ export const storageRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Un libellé change ce que TOUT LE MONDE voit : même droit qu'un renommage.
+      await assertCanWritePaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
       const name = input.displayName.trim();
       // Libellé vide = on retire l'override (retour au repli du listing).
       if (name === "") {
@@ -639,6 +632,8 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Écriture : un administrateur partout, un éditeur dans l'espace de son groupe.
+      await assertCanWritePaths({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, paths: [input.path] });
       const cleanName = input.newBaseName.trim();
       if (!cleanName) {
         throw new TRPCError({
@@ -784,6 +779,19 @@ export const storageRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Écriture : la SOURCE et la CIBLE. Un éditeur ne sort rien de l'espace de son groupe, et
+      // n'y fait rien entrer qui vienne d'ailleurs.
+      {
+        const source = input.intent.source;
+        const sourcePaths = source.type === "selection" ? source.roots : [source.path];
+        const targetPaths = input.intent.target.type === "folder" ? [input.intent.target.path] : [];
+        await assertCanWritePaths({
+          prisma: ctx.prisma,
+          userId: ctx.sessionClient.user.id,
+          paths: [...sourcePaths, ...targetPaths],
+        });
+      }
+
       // Dossier-entité : chemin immuable, pas de déplacement du binaire.
       // Même raison qu'au rename ; couvre aussi les sélections multiples.
       {
@@ -879,16 +887,28 @@ export const storageRouter = router({
   checkR2Conflicts: protectedProcedure
     .input(z.object({ destination: uploadDestinationSchema, fileNames: z.array(z.string().min(1).max(255)).max(100) }))
     .query(async ({ ctx, input }) => {
-      await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, destination: input.destination });
+      await assertUploadDestinationAllowed({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, isAdmin: ctx.sessionClient.user.isAdmin, destination: input.destination });
       const folder = await resolvePendingUploadFolder({
         prisma: ctx.prisma,
         destination: input.destination,
         appRoot: ctx.appRoot,
         userId: ctx.sessionClient.user.id,
       });
-      const byPath = new Map(input.fileNames.map((n) => [`${folder}/${buildUploadFileName(n)}`, n]));
+      // Deux fichiers du même lot peuvent donner la même clé (« Photo 1.JPG » et « photo-1.jpg ») :
+      // envoyés en parallèle, le second écraserait le premier sans que personne ne l'ait demandé.
+      // On les signale par leur position dans le lot (deux noms identiques ne se distinguent pas).
+      const byPath = new Map<string, string>();
+      const duplicateIndexes: number[] = [];
+      input.fileNames.forEach((name, index) => {
+        const path = `${folder}/${buildUploadFileName(name)}`;
+        if (byPath.has(path)) duplicateIndexes.push(index);
+        else byPath.set(path, name);
+      });
       const found = await ctx.prisma.mediaAsset.findMany({ where: { fullPath: { in: [...byPath.keys()] } }, select: { fullPath: true } });
-      return { existing: found.map((f) => byPath.get(f.fullPath)!).filter(Boolean) };
+      return {
+        existing: found.map((f) => byPath.get(f.fullPath)).filter((name): name is string => Boolean(name)),
+        duplicateIndexes,
+      };
     }),
 
   createR2Upload: protectedProcedure
@@ -897,6 +917,7 @@ export const storageRouter = router({
       await assertUploadDestinationAllowed({
         prisma: ctx.prisma,
         userId: ctx.sessionClient.user.id,
+        isAdmin: ctx.sessionClient.user.isAdmin,
         destination: input.destination,
       });
       // Le chemin se calcule ICI, une seule fois (jamais côté client).
@@ -921,9 +942,19 @@ export const storageRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Le dossier perso n'accepte que des images." });
       }
       // Pas d'écrasement silencieux : confirmation explicite requise.
-      const existing = await ctx.prisma.mediaAsset.findUnique({ where: { fullPath: path }, select: { id: true } });
+      const existing = await ctx.prisma.mediaAsset.findUnique({
+        where: { fullPath: path },
+        select: { id: true, status: true, uploaderUserId: true },
+      });
       if (existing && !input.allowOverwrite) {
         throw new TRPCError({ code: "CONFLICT", message: `Un fichier « ${fileName} » existe déjà à cet endroit.` });
+      }
+      // Confirmer ne suffit pas : remplacer, c'est publier sans validation (mayReplace).
+      if (existing && !mayReplace(existing, ctx.sessionClient.user, input.destination)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `« ${fileName} » existe déjà et ne peut être remplacé que par un administrateur. Renommez votre fichier.`,
+        });
       }
       if (input.destination.kind === "perso" && !existing) {
         const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
@@ -957,6 +988,7 @@ export const storageRouter = router({
       await assertUploadDestinationAllowed({
         prisma: ctx.prisma,
         userId: ctx.sessionClient.user.id,
+        isAdmin: ctx.sessionClient.user.isAdmin,
         destination: input.destination,
       });
       // Le chemin enregistré doit être celui que createR2Upload a autorisé pour cette destination.
@@ -969,6 +1001,19 @@ export const storageRouter = router({
       const rest = input.path.slice(expectedFolder.length + 1);
       if (!input.path.startsWith(`${expectedFolder}/`) || rest === "" || rest.includes("/") || rest.includes("..")) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Chemin d'envoi hors de la destination autorisée." });
+      }
+      // L'enregistrement met à jour une ligne existante (auteur compris) : même règle qu'à la
+      // signature, sans quoi un membre pourrait « adopter » le fichier en attente d'un autre, puis le
+      // remplacer en tant qu'auteur.
+      const existing = await ctx.prisma.mediaAsset.findUnique({
+        where: { fullPath: input.path },
+        select: { status: true, uploaderUserId: true },
+      });
+      if (existing && !mayReplace(existing, ctx.sessionClient.user, input.destination)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Ce fichier existe déjà et ne peut être remplacé que par un administrateur.",
+        });
       }
       const adapter = getAdapter("r2", {
         prisma: ctx.prisma,

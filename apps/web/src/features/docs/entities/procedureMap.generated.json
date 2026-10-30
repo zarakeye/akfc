@@ -4854,7 +4854,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 148,
+   "line": 150,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4880,7 +4880,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 154,
+   "line": 156,
    "effects": [
     {
      "model": "TrashEntry",
@@ -4906,7 +4906,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 160,
+   "line": 162,
    "effects": [
     {
      "model": "Category",
@@ -4989,7 +4989,7 @@
       [
        [
         "toPhysicalTrashSources",
-        "packages/backend/src/modules/trash/router.ts:103"
+        "packages/backend/src/modules/trash/router.ts:105"
        ],
        [
         "resolvePhysicalLocations",
@@ -5070,7 +5070,7 @@
       [
        [
         "toPhysicalTrashSources",
-        "packages/backend/src/modules/trash/router.ts:103"
+        "packages/backend/src/modules/trash/router.ts:105"
        ],
        [
         "resolvePhysicalLocations",
@@ -5140,7 +5140,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -5154,7 +5154,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -5175,7 +5175,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -5189,7 +5189,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -5259,7 +5259,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 184,
+   "line": 186,
    "effects": [
     {
      "model": "Folder",
@@ -5402,7 +5402,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 190,
+   "line": 192,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -5653,7 +5653,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/trash/router.ts",
-   "line": 196,
+   "line": 198,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -9861,46 +9861,11 @@
    ],
    "emails": []
   },
-  "storage.spaceDisplayNames": {
-   "kind": "query",
-   "access": "membre",
-   "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 116,
-   "effects": [
-    {
-     "model": "MemberGroup",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:119"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "User",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "ctx.prisma.user.findMany",
-        "packages/backend/src/modules/storage/router.ts:125"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
   "storage.getAttentionCounts": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 154,
+   "line": 143,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9910,13 +9875,13 @@
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:156"
+        "packages/backend/src/modules/storage/router.ts:145"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.count",
-        "packages/backend/src/modules/storage/router.ts:158"
+        "packages/backend/src/modules/storage/router.ts:147"
        ]
       ],
       [
@@ -9939,7 +9904,7 @@
       [
        [
         "ctx.prisma.trashEntry.count",
-        "packages/backend/src/modules/storage/router.ts:157"
+        "packages/backend/src/modules/storage/router.ts:146"
        ]
       ]
      ]
@@ -9949,9 +9914,9 @@
   },
   "storage.getPendingBreakdown": {
    "kind": "query",
-   "access": "membre",
+   "access": "admin",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 186,
+   "line": 177,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9961,7 +9926,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:187"
+        "packages/backend/src/modules/storage/router.ts:178"
        ]
       ]
      ]
@@ -9973,7 +9938,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 233,
+   "line": 224,
    "effects": [
     {
      "model": "MediaAsset",
@@ -9999,7 +9964,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 253,
+   "line": 244,
    "effects": [
     {
      "model": "MediaAsset",
@@ -10025,7 +9990,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 258,
+   "line": 249,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10089,7 +10054,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 269,
+   "line": 260,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10102,7 +10067,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:278"
+        "packages/backend/src/modules/storage/router.ts:269"
        ]
       ]
      ]
@@ -10118,7 +10083,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:278"
+        "packages/backend/src/modules/storage/router.ts:269"
        ]
       ]
      ]
@@ -10147,7 +10112,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 291,
+   "line": 282,
    "effects": [
     {
      "model": "Folder",
@@ -10157,11 +10122,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -10174,17 +10139,17 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:294"
+        "packages/backend/src/modules/storage/router.ts:285"
        ]
       ],
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -10196,7 +10161,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 320,
+   "line": 311,
    "effects": [
     {
      "model": "Folder",
@@ -10206,11 +10171,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -10223,7 +10188,7 @@
       [
        [
         "ctx.prisma.memberGroup.findMany",
-        "packages/backend/src/modules/storage/router.ts:330"
+        "packages/backend/src/modules/storage/router.ts:321"
        ]
       ],
       [
@@ -10239,11 +10204,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -10272,7 +10237,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 381,
+   "line": 372,
    "effects": [
     {
      "model": "Category",
@@ -10311,11 +10276,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -10500,7 +10465,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 447,
+   "line": 438,
    "effects": [
     {
      "model": "Category",
@@ -10530,6 +10495,16 @@
      "trails": [
       [
        [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ],
+      [
+       [
         "mergeGroupSpaceFoldersIntoTree",
         "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:105"
        ],
@@ -10539,11 +10514,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -10574,6 +10549,16 @@
      "op": "read",
      "fields": [],
      "trails": [
+      [
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
+       ]
+      ],
       [
        [
         "enrichTreeWithStatus",
@@ -10712,11 +10697,11 @@
       [
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ],
       [
@@ -10746,7 +10731,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 530,
+   "line": 521,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10756,7 +10741,7 @@
       [
        [
         "ctx.prisma.folderLabel.findMany",
-        "packages/backend/src/modules/storage/router.ts:531"
+        "packages/backend/src/modules/storage/router.ts:522"
        ]
       ]
      ]
@@ -10768,7 +10753,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 538,
+   "line": 529,
    "effects": [
     {
      "model": "Category",
@@ -10794,7 +10779,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 542,
+   "line": 533,
    "effects": [
     {
      "model": "FolderLabel",
@@ -10807,7 +10792,7 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:556"
+        "packages/backend/src/modules/storage/router.ts:549"
        ]
       ]
      ]
@@ -10820,7 +10805,7 @@
       [
        [
         "ctx.prisma.folderLabel.deleteMany",
-        "packages/backend/src/modules/storage/router.ts:553"
+        "packages/backend/src/modules/storage/router.ts:546"
        ]
       ]
      ]
@@ -10836,7 +10821,77 @@
       [
        [
         "ctx.prisma.folderLabel.upsert",
-        "packages/backend/src/modules/storage/router.ts:556"
+        "packages/backend/src/modules/storage/router.ts:549"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -10848,7 +10903,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 564,
+   "line": 557,
    "effects": [
     {
      "model": "MemberGroup",
@@ -10927,7 +10982,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 594,
+   "line": 587,
    "effects": [
     {
      "model": "MemberGroup",
@@ -11006,7 +11061,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 632,
+   "line": 625,
    "effects": [
     {
      "model": "Category",
@@ -11036,27 +11091,97 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/router.ts:701"
+        "packages/backend/src/modules/storage/router.ts:696"
        ]
       ],
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:249"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
        ]
       ],
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -11068,7 +11193,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 772,
+   "line": 767,
    "effects": [
     {
      "model": "Folder",
@@ -11136,11 +11261,11 @@
        ],
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:249"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
        ]
       ],
       [
@@ -11150,25 +11275,81 @@
        ],
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
        ]
       ],
       [
        [
-        "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
        ],
        [
-        "adapter.move",
-        "packages/backend/src/modules/storage/virtualStorage.ts:72"
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
        ],
        [
-        "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/virtualStorage.ts:80"
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanWritePaths",
+        "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts:16"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -11197,7 +11378,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 879,
+   "line": 887,
    "effects": [
     {
      "model": "Category",
@@ -11207,11 +11388,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.category.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:129"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:111"
        ]
       ]
      ]
@@ -11224,11 +11405,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:141"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:123"
        ]
       ]
      ]
@@ -11241,11 +11422,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.event.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:98"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:80"
        ]
       ]
      ]
@@ -11258,15 +11439,29 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ],
+      [
+       [
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -11278,8 +11473,22 @@
      "trails": [
       [
        [
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
+       ]
+      ],
+      [
+       [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/storage/router.ts:890"
+        "packages/backend/src/modules/storage/router.ts:907"
        ]
       ]
      ]
@@ -11292,7 +11501,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11310,7 +11519,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11328,15 +11537,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -11349,7 +11558,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11367,7 +11576,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11392,11 +11601,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.seminar.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:84"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:66"
        ]
       ]
      ]
@@ -11409,7 +11618,7 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "commonRepositoryContainerPath",
@@ -11423,15 +11632,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -11443,7 +11652,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 894,
+   "line": 914,
    "effects": [
     {
      "model": "Category",
@@ -11453,11 +11662,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.category.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:129"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:111"
        ]
       ]
      ]
@@ -11470,11 +11679,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:141"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:123"
        ]
       ]
      ]
@@ -11487,11 +11696,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.event.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:98"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:80"
        ]
       ]
      ]
@@ -11504,15 +11713,29 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ],
+      [
+       [
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -11524,8 +11747,22 @@
      "trails": [
       [
        [
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
+       ]
+      ],
+      [
+       [
         "ctx.prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/router.ts:924"
+        "packages/backend/src/modules/storage/router.ts:945"
        ]
       ],
       [
@@ -11548,7 +11785,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11566,7 +11803,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11584,15 +11821,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -11605,7 +11842,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11623,7 +11860,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11648,11 +11885,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.seminar.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:84"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:66"
        ]
       ]
      ]
@@ -11665,7 +11902,7 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "commonRepositoryContainerPath",
@@ -11679,15 +11916,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -11699,7 +11936,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/storage/router.ts",
-   "line": 954,
+   "line": 985,
    "effects": [
     {
      "model": "Category",
@@ -11709,11 +11946,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.category.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:129"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:111"
        ]
       ]
      ]
@@ -11726,21 +11963,21 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:141"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:123"
        ]
       ],
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
        ],
        [
         "prisma.discipline.count",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:445"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:456"
        ]
       ]
      ]
@@ -11753,11 +11990,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.event.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:98"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:80"
        ]
       ]
      ]
@@ -11770,11 +12007,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
        ],
        [
         "prisma.eventDiscipline.createMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:447"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:460"
        ]
       ]
      ]
@@ -11787,15 +12024,29 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ],
+      [
+       [
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -11824,11 +12075,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:455"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:468"
        ]
       ]
      ]
@@ -11840,26 +12091,32 @@
      "trails": [
       [
        [
-        "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
+        "resolvePendingUploadFolder",
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
-        "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:366"
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
+       ]
+      ],
+      [
+       [
+        "ctx.prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/storage/router.ts:1008"
        ]
       ],
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
-       ],
-       [
-        "reject",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:365"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:366"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:370"
        ]
       ]
      ]
@@ -11888,11 +12145,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:340"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:342"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:455"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:468"
        ]
       ]
      ]
@@ -11905,7 +12162,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11923,7 +12180,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11941,15 +12198,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -11962,7 +12219,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -11980,7 +12237,7 @@
       [
        [
         "assertUploadDestinationAllowed",
-        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:22"
+        "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts:25"
        ],
        [
         "assertCanWriteGroupSpace",
@@ -12005,11 +12262,11 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "prisma.seminar.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:84"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:66"
        ]
       ]
      ]
@@ -12022,7 +12279,7 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "commonRepositoryContainerPath",
@@ -12036,15 +12293,15 @@
       [
        [
         "resolvePendingUploadFolder",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:59"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:41"
        ],
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -12056,7 +12313,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 76,
+   "line": 82,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12066,7 +12323,77 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:93"
+        "packages/backend/src/modules/media/router.ts:101"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -12079,7 +12406,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:93"
+        "packages/backend/src/modules/media/router.ts:101"
        ]
       ]
      ]
@@ -12091,7 +12418,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 160,
+   "line": 168,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12101,7 +12428,77 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:177"
+        "packages/backend/src/modules/media/router.ts:186"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -12113,7 +12510,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 214,
+   "line": 223,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12123,7 +12520,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:225"
+        "packages/backend/src/modules/media/router.ts:234"
        ]
       ]
      ]
@@ -12135,7 +12532,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 271,
+   "line": 280,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12145,7 +12542,77 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:328"
+        "packages/backend/src/modules/media/router.ts:350"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "assertCanReadPaths",
+        "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts:13"
+       ],
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
        ]
       ]
      ]
@@ -12158,7 +12625,7 @@
       [
        [
         "ctx.prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/media/router.ts:328"
+        "packages/backend/src/modules/media/router.ts:350"
        ]
       ]
      ]
@@ -12170,7 +12637,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 487,
+   "line": 509,
    "effects": [
     {
      "model": "MediaAsset",
@@ -12182,7 +12649,7 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:500"
+        "packages/backend/src/modules/media/router.ts:522"
        ]
       ]
      ]
@@ -12195,7 +12662,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -12209,7 +12676,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -12230,7 +12697,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -12244,7 +12711,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -12264,8 +12731,42 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/media/router.ts",
-   "line": 578,
+   "line": 600,
    "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertStatusChangeDoesntUnpublishReferencedAssets",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+       ],
+       [
+        "db.galleryItem.findMany",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertStatusChangeDoesntUnpublishReferencedAssets",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
+       ],
+       [
+        "db.galleryItem.findMany",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MediaAsset",
      "op": "read",
@@ -12274,11 +12775,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:49"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
        ],
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:84"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:89"
        ]
       ]
      ]
@@ -12293,13 +12794,13 @@
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:619"
+        "packages/backend/src/modules/media/router.ts:641"
        ]
       ],
       [
        [
         "ctx.prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/media/router.ts:640"
+        "packages/backend/src/modules/media/router.ts:662"
        ]
       ]
      ]
@@ -12312,7 +12813,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -12326,7 +12827,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -12347,7 +12848,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "isAdminByGroup",
@@ -12361,7 +12862,7 @@
       [
        [
         "assertCanTrashPaths",
-        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:29"
+        "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts:31"
        ],
        [
         "resolveGroupAccessForUser",
@@ -12382,11 +12883,11 @@
       [
        [
         "assertStatusChangeDoesntUnpublishReferencedAssets",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:49"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:54"
        ],
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:93"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:99"
        ]
       ]
      ]
@@ -14641,11 +15142,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -14707,11 +15208,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -14758,11 +15259,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -14800,11 +15301,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -14874,11 +15375,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ],
       [
@@ -14958,11 +15459,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -15940,8 +16441,34 @@
   },
   "assertStatusChangeDoesntUnpublishReferencedAssets": {
    "file": "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts",
-   "line": 49,
+   "line": 54,
    "effects": [
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.galleryItem.findMany",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.galleryItem.findMany",
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:103"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MediaAsset",
      "op": "read",
@@ -15950,7 +16477,7 @@
       [
        [
         "db.mediaAsset.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:84"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:89"
        ]
       ]
      ]
@@ -15963,7 +16490,7 @@
       [
        [
         "db.pageMediaReference.findMany",
-        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:93"
+        "packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts:99"
        ]
       ]
      ]
@@ -16343,7 +16870,7 @@
   },
   "resolveGroupBaseFolder": {
    "file": "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts",
-   "line": 26,
+   "line": 27,
    "effects": [
     {
      "model": "Folder",
@@ -16353,7 +16880,7 @@
       [
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -16366,7 +16893,7 @@
       [
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -16396,8 +16923,34 @@
   },
   "resolvePersoBaseFolder": {
    "file": "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts",
-   "line": 22,
+   "line": 25,
    "effects": [
+    {
+     "model": "Folder",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
+       ]
+      ]
+     ]
+    },
     {
      "model": "User",
      "op": "read",
@@ -16406,7 +16959,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -16540,9 +17093,70 @@
    ],
    "emails": []
   },
+  "assertCanReadPaths": {
+   "file": "packages/backend/src/modules/memberGroups/assertCanReadPaths.service.ts",
+   "line": 13,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "assertCanTrashPaths": {
    "file": "packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts",
-   "line": 29,
+   "line": 31,
    "effects": [
     {
      "model": "MemberGroup",
@@ -16604,6 +17218,67 @@
   "assertCanWriteGroupSpace": {
    "file": "packages/backend/src/modules/memberGroups/assertCanWriteGroupSpace.service.ts",
    "line": 15,
+   "effects": [
+    {
+     "model": "MemberGroup",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroup.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:35"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MemberGroupMembership",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "isAdminByGroup",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:8"
+       ],
+       [
+        "prisma.memberGroupMembership.findFirst",
+        "packages/backend/src/modules/memberGroups/isAdminByGroup.service.ts:12"
+       ]
+      ],
+      [
+       [
+        "resolveGroupAccessForUser",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:15"
+       ],
+       [
+        "prisma.memberGroupMembership.findUnique",
+        "packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "assertCanWritePaths": {
+   "file": "packages/backend/src/modules/memberGroups/assertCanWritePaths.service.ts",
+   "line": 16,
    "effects": [
     {
      "model": "MemberGroup",
@@ -16726,11 +17401,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ],
       [
@@ -16790,11 +17465,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -16882,11 +17557,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -16947,11 +17622,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -16996,11 +17671,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -17044,11 +17719,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -17085,11 +17760,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -17119,11 +17794,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -18074,7 +18749,7 @@
   },
   "assertUploadDestinationAllowed": {
    "file": "packages/backend/src/modules/storage/assertUploadDestinationAllowed.service.ts",
-   "line": 22,
+   "line": 25,
    "effects": [
     {
      "model": "MemberGroup",
@@ -18253,11 +18928,11 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
        ]
       ]
      ]
@@ -18381,11 +19056,46 @@
        ],
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
+       ]
+      ],
+      [
+       [
+        "missingPersoSpaceFolders",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:71"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "missingPersoSpaceFolders",
+        "packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts:71"
+       ],
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
        ]
       ]
      ]
@@ -18486,11 +19196,11 @@
        ],
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -18555,11 +19265,11 @@
        ],
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:249"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
        ]
       ],
       [
@@ -18569,25 +19279,11 @@
        ],
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
-       ]
-      ],
-      [
-       [
-        "executeMoveOperations",
-        "packages/backend/src/modules/storage/resolveMoveIntent.service.ts:117"
-       ],
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/virtualStorage.ts:72"
-       ],
-       [
-        "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/virtualStorage.ts:80"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
        ]
       ]
      ]
@@ -18609,31 +19305,21 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:249"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:251"
        ]
       ],
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:238"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:268"
-       ]
-      ],
-      [
-       [
-        "adapter.move",
-        "packages/backend/src/modules/storage/virtualStorage.ts:72"
-       ],
-       [
-        "prisma.mediaAsset.updateMany",
-        "packages/backend/src/modules/storage/virtualStorage.ts:80"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:270"
        ]
       ]
      ]
@@ -18952,7 +19638,7 @@
   },
   "resolvePendingUploadFolder": {
    "file": "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts",
-   "line": 59,
+   "line": 41,
    "effects": [
     {
      "model": "Category",
@@ -18962,7 +19648,7 @@
       [
        [
         "prisma.category.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:129"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:111"
        ]
       ]
      ]
@@ -18975,7 +19661,7 @@
       [
        [
         "prisma.discipline.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:141"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:123"
        ]
       ]
      ]
@@ -18988,7 +19674,7 @@
       [
        [
         "prisma.event.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:98"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:80"
        ]
       ]
      ]
@@ -19000,12 +19686,39 @@
      "trails": [
       [
        [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.folder.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:38"
+       ]
+      ],
+      [
+       [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.folder.findMany",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:46"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:47"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resolvePersoBaseFolder",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
+       ],
+       [
+        "prisma.mediaAsset.findFirst",
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:45"
        ]
       ]
      ]
@@ -19018,11 +19731,11 @@
       [
        [
         "resolveGroupBaseFolder",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:26"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:27"
        ],
        [
         "prisma.memberGroup.findUnique",
-        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:33"
+        "packages/backend/src/modules/media/services/resolveGroupBaseFolder.service.ts:34"
        ]
       ]
      ]
@@ -19035,7 +19748,7 @@
       [
        [
         "prisma.seminar.findUnique",
-        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:84"
+        "packages/backend/src/modules/storage/services/resolvePendingUploadFolder.service.ts:66"
        ]
       ]
      ]
@@ -19058,11 +19771,11 @@
       [
        [
         "resolvePersoBaseFolder",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:22"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:25"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:29"
+        "packages/backend/src/modules/media/services/resolvePersoBaseFolder.service.ts:53"
        ]
       ]
      ]
@@ -26671,7 +27384,7 @@
   "GET /api/media/public/r2/[...path]": {
    "kind": "route",
    "file": "apps/web/src/app/api/media/public/r2/[...path]/route.ts",
-   "line": 59,
+   "line": 60,
    "effects": [
     {
      "model": "Gallery",
@@ -26681,7 +27394,7 @@
       [
        [
         "prisma.mediaAsset.findFirst",
-        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:78"
        ]
       ]
      ]
@@ -26694,7 +27407,7 @@
       [
        [
         "prisma.mediaAsset.findFirst",
-        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:78"
        ]
       ]
      ]
@@ -26707,7 +27420,7 @@
       [
        [
         "prisma.mediaAsset.findFirst",
-        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:78"
        ]
       ]
      ]
@@ -26720,7 +27433,7 @@
       [
        [
         "prisma.mediaAsset.findFirst",
-        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:79"
+        "apps/web/src/app/api/media/public/r2/[...path]/route.ts:78"
        ]
       ]
      ]
@@ -26731,7 +27444,7 @@
   "GET /api/media/r2/[...path]": {
    "kind": "route",
    "file": "apps/web/src/app/api/media/r2/[...path]/route.ts",
-   "line": 55,
+   "line": 56,
    "effects": [
     {
      "model": "MemberGroup",

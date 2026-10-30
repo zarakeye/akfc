@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
 
@@ -36,10 +37,10 @@ export async function resolveGroupBaseFolder(params: {
   });
 
   if (!group) {
-    throw new Error(`Groupe introuvable (id=${groupId})`);
+    throw new TRPCError({ code: "NOT_FOUND", message: "Groupe introuvable." });
   }
   if (!group.isCollaborative) {
-    throw new Error(`Member group ${groupId} is not collaborative (no space)`);
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Ce groupe n'a pas d'espace collaboratif." });
   }
 
   const container = `${appRoot}/collaborative-group-spaces/`;
