@@ -117,7 +117,7 @@ Voyons comment elles vivent dans un routeur réel, celui qui crée les membres :
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="118-208"
+  snippetRange="119-209"
   snippetHighlight="29-53"
   snippetTitle="TRPCError : une erreur métier claire"
   fullFileTitle="Voir le fichier complet"
@@ -131,7 +131,7 @@ Voyons comment elles vivent dans un routeur réel, celui qui crée les membres :
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="118-208"
+  snippetRange="119-209"
   title="De l’écriture à l’erreur propagée"
   stepsJson='[{"title": "Une référence vérifiée avant d’écrire", "body": "Les groupes demandés doivent tous exister. Un groupe inconnu (supprimé entre-temps dans un autre onglet) produit BAD_REQUEST avec un message qui dit quoi faire. Ce contrôle n’est pas une validation de forme : il faut consulter la base pour le savoir.", "scope": "1-91", "focus": "13-17"}, {"title": "Une règle que le schéma n’exprime pas", "body": "legalInfoInput accepte une majorité « inconnue », parce que la fiche d’un membre existant peut l’être encore. À la création, elle ne l’est pas : la procédure le refuse explicitement, avec un message qui dit quoi faire. Le schéma décrit la forme ; la procédure, la règle propre à cette intention.", "scope": "1-91", "focus": "24-27"}, {"title": "L’unicité, elle, n’est pas vérifiée avant", "body": "La première version cherchait d’abord un membre avec la même adresse, puis créait. Entre les deux, une autre requête pouvait créer ce membre : les deux passaient la vérification, et la seconde écriture échouait sur la contrainte @unique, avec une erreur 500. Désormais, la procédure écrit directement.", "scope": "1-91", "focus": "29-32"}, {"title": "P2002 devient CONFLICT", "body": "Si la base refuse l’écriture parce que l’adresse existe déjà (code Prisma P2002), la procédure lève CONFLICT, le code HTTP 409 : la requête est valide, l’administrateur a le droit d’agir, mais l’état actuel rend l’opération impossible.", "scope": "1-91", "focus": "48-51"}, {"title": "Toute autre erreur repart telle quelle", "body": "throw err : la procédure ne traduit que ce qu’elle comprend. Le reste devient une erreur interne, journalisée par la route (section 6).", "scope": "1-91", "focus": "52-53"}, {"title": "Après l’écriture, le flux continue sans if/else défensif", "body": "Une fois le membre créé, la procédure envoie l’e-mail de bienvenue et l’avis au club. Un échec d’envoi est journalisé sans annuler la création : c’est une conséquence secondaire, pas une condition.", "scope": "1-91", "focus": "55-90"}]'
 />
@@ -194,7 +194,7 @@ Et pourtant :
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="242-251"
+  snippetRange="243-252"
   snippetHighlight="5-10"
   snippetTitle="FORBIDDEN levé par une règle métier, pas par une garde"
   fullFileTitle="Voir le fichier complet"

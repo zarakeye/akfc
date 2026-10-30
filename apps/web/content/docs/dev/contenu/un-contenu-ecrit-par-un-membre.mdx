@@ -123,9 +123,9 @@ Un chemin de stockage est une donnée structurée écrite comme une chaîne. Le 
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="350-393"
+  snippetRange="351-395"
   title="saveMyInstructorBio — trois gardes, puis la transaction"
-  stepsJson='[{"title": "Toujours soi", "body": "La cible est l’utilisateur de session, jamais un identifiant reçu : on ne peut écrire QUE sa propre présentation. La garde est structurelle, il n’y a rien à vérifier.", "scope": "11-11", "focus": "11-11"}, {"title": "Être titulaire", "body": "Un membre qui n’enseigne pas n’a pas de présentation publique : refusé.", "scope": "14-16", "focus": "14-14"}, {"title": "Ni l’ordre, ni ce qui n’est pas à lui", "body": "Pour un membre qui n’est pas administrateur : l’ordre de la page lui est refusé, et chaque fichier, chaque avatar doit être le sien. Un administrateur peut tout poser, comme dans une page.", "scope": "17-24", "focus": "20-23"}, {"title": "Écrire et recenser ensemble", "body": "La présentation, puis ses fichiers, dans une transaction (chapitre 5). Une présentation retirée (`null`) retire toutes ses lignes de recensement.", "scope": "25-43", "focus": "37-40"}]'
+  stepsJson='[{"title": "Toujours soi", "body": "La cible est l’utilisateur de session, jamais un identifiant reçu : on ne peut écrire QUE sa propre présentation. La garde est structurelle, il n’y a rien à vérifier.", "scope": "12-12", "focus": "12-12"}, {"title": "Être titulaire", "body": "Un membre qui n’enseigne pas n’a pas de présentation publique : refusé.", "scope": "15-17", "focus": "15-15"}, {"title": "Ni l’ordre, ni ce qui n’est pas à lui", "body": "Pour un membre qui n’est pas administrateur : l’ordre de la page lui est refusé, et chaque fichier, chaque avatar doit être le sien. Un administrateur peut tout poser, comme dans une page.", "scope": "18-25", "focus": "21-24"}, {"title": "Écrire et recenser ensemble", "body": "La présentation, puis ses fichiers, dans une transaction (chapitre 5). Une présentation retirée (`null`) retire toutes ses lignes de recensement.", "scope": "26-44", "focus": "38-41"}]'
 />
 
 Les gardes sont faites **avant** la transaction : elles ne font que lire, et un refus n’a rien à annuler. L’ordre compte aussi pour les messages : un membre qui n’enseigne pas apprend qu’il n’enseigne pas, pas que sa photo vient du mauvais dossier.
@@ -138,7 +138,7 @@ Refuser à l’enregistrement ne suffit pas à rendre l’outil utilisable : il 
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="318-338"
+  snippetRange="319-339"
   snippetHighlight="17,19"
   snippetTitle="getMyInstructorState"
   fullFileTitle="Voir le fichier complet"
@@ -162,19 +162,33 @@ C’est la même règle que la livraison des fichiers (`canReadStorageKey`) : on
 
 ## Son avatar, et seulement le sien
 
-Le sélecteur d’avatar des blocs proposait la liste des administrateurs : c’est ce dont une page du club a besoin (« l’avatar du président »). Pour un instructeur, cette liste était à la fois inutile (il ne peut pas les montrer) et incomplète (il n’y figurait pas). Le serveur adapte désormais la liste à celui qui la demande :
+Un avatar **représente** son titulaire : il s’affiche à côté de son nom quand il commente, publie ou réagit, et cela reste visible d’autrui. Le **poser** dans un contenu est autre chose : c’est publier le visage de quelqu’un sur une page qu’il n’a pas écrite. La règle du club est sans exception : on ne pose que son propre avatar, administrateurs compris. Elle ne concerne donc pas que la présentation d’instructeur, mais tout contenu du constructeur :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/assertOwnAvatars.service.ts"
+  filename="assertOwnAvatars.service.ts"
+  snippetRange="18-31"
+  snippetHighlight="6"
+  snippetTitle="assertOwnAvatars"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque procédure qui enregistre un contenu l’appelle en première ligne, sur les contenus **reçus** — pas sur ceux qu’elle relit en base pour recalculer un recensement. Une page plus ancienne qui montre l’avatar d’un autre (« l’avatar du président », que le sélecteur proposait aux administrateurs) est refusée au prochain enregistrement, avec un message qui dit quoi faire : remplacer l’avatar par une photo de la bibliothèque, validée et publiée comme toute photo.
+
+Le sélecteur d’avatar suit la règle : il ne propose que soi.
 
 <CodeExample
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="541-546"
-  snippetHighlight="6"
+  snippetRange="543-546"
+  snippetHighlight="4"
   snippetTitle="Les avatars proposés"
   fullFileTitle="Voir le fichier complet"
 />
 
-Un administrateur voit les administrateurs et lui-même ; un autre membre, lui seul. Le sélecteur et la garde de l’enregistrement disent la même chose, et un membre ne se voit jamais proposer un choix que le serveur refusera.
+Le sélecteur et la garde disent la même chose : personne ne se voit proposer un choix que le serveur refusera.
 
 ## L’ordre reste au club
 

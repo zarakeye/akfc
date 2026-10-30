@@ -176,15 +176,15 @@ L'avatar ne passe pas par le formulaire du profil. Il suit le circuit des fichie
 ```ts
 // packages/backend/src/modules/avatar/avatar.service.ts (extrait)
 if (!path.startsWith(`${avatarFolder(appRoot, userId)}/`) || path.includes("..") || !isAvatarKey(path)) {
-  throw new Error("Chemin hors de l'espace avatar de l'utilisateur.");
+  throw new TRPCError({ code: "BAD_REQUEST", message: "Chemin hors de l'espace avatar de l'utilisateur." });
 }
 const head = await getR2Client()
   .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
   .catch(() => null);
-if (!head) throw new Error("Avatar introuvable : l'envoi n'a pas abouti.");
+if (!head) throw new TRPCError({ code: "BAD_REQUEST", message: "Avatar introuvable : l'envoi n'a pas abouti." });
 if (!(head.ContentType ?? "").startsWith("image/") || (head.ContentLength ?? 0) > AVATAR_MAX_BYTES) {
   await removeAvatarFile(path);
-  throw new Error("Fichier d'avatar refusé.");
+  throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier d'avatar refusé." });
 }
 ```
 

@@ -181,7 +181,7 @@ Le fichier est ensuite lu dans le stockage et transmis par la route elle-même, 
 Seuls les types sans danger sont affichés dans le navigateur : PDF, images (hors SVG), texte, audio et vidéo. Tout autre type est servi en pièce jointe, qui s'enregistre au lieu de s'ouvrir. Deux en-têtes complètent la protection : `X-Content-Type-Options: nosniff` interdit au navigateur de deviner un autre type que celui annoncé, et une politique de sécurité `sandbox` empêche toute exécution de script. Les envois sont déjà limités aux formats autorisés (voir « Envoyer et servir un fichier ») ; ces en-têtes couvrent aussi les fichiers déposés avant cette limite.
 
 <Callout type="info">
-Une seule règle de visibilité, posée à chaque lecture : la liste, le badge, le marquage et la livraison du fichier répondent tous à la même question, avec la même condition.
+Deux conditions, posées à chaque lecture. `memberDocumentVisibleTo` dit ce qui **concerne** le membre (le badge « Documents »). `memberDocumentReadableBy` y ajoute les dépôts des espaces collaboratifs auxquels il a accès par **héritage** (membre d’un groupe parent, administrateur) : la liste, le marquage lu / non lu et la livraison du fichier l’utilisent. Sans elle, la cloche collaborative, qui compte ces dépôts, signalait des documents qu’on ne pouvait ni ouvrir ni marquer lus.
 </Callout>
 
 ## Récapitulatif

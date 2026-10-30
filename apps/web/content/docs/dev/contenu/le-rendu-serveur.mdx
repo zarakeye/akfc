@@ -41,14 +41,14 @@ Deux parcours traversent ce chapitre : le visiteur qui lit une page de contenu, 
 
 Une page publique est un composant **serveur** : il s’exécute sur le serveur, lit la base directement, et envoie au navigateur du HTML déjà construit. Le visiteur reçoit le texte et les balises `<img>` d’un coup, sans attendre un JavaScript qui irait chercher le contenu.
 
-La page « L’association » fait trois choses : lire la ligne, la passer au filtre de lecture, la confier au rendu.
+La page « L’association » fait quatre choses : décider si le visiteur peut la voir (publiée, ou aperçu d’un administrateur), lire la ligne, la passer au filtre de lecture, la confier au rendu.
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/app/(public)/about/page.tsx"
   filename="page.tsx"
-  snippetRange="37-49"
-  snippetHighlight="4,13"
+  snippetRange="36-53"
+  snippetHighlight="1,9,18"
   snippetTitle="Une page de contenu"
   fullFileTitle="Voir le fichier complet"
 />
@@ -63,9 +63,9 @@ La page « L’association » fait trois choses : lire la ligne, la passer au fi
   language="ts"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="63-120"
+  snippetRange="69-126"
   title="PageRenderer — préparer, puis rendre"
-  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience publique.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "17-18", "focus": "17-18"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "27-35", "focus": "33-33"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "38-58", "focus": "43-45"}]'
+  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience demandée : publique par défaut, privée pour l’aperçu d’un brouillon par un administrateur.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "17-18", "focus": "17-18"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "27-35", "focus": "33-33"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "38-58", "focus": "43-45"}]'
 />
 
 Puis chaque bloc est rendu par la `View` de sa définition, avec ce qui a été préparé :
@@ -74,7 +74,7 @@ Puis chaque bloc est rendu par la `View` de sa définition, avec ce qui a été 
   language="tsx"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="128-153"
+  snippetRange="134-159"
   snippetHighlight="14,21,24"
   snippetTitle="Chaque bloc, avec ce qui a été préparé"
   fullFileTitle="Voir le fichier complet"
@@ -135,13 +135,25 @@ Le même fichier a deux URLs, selon qui le regarde :
   fullFileTitle="Voir le fichier complet"
 />
 
-<DocsTable columnsJson='["Audience", "Route", "Ce qu’elle vérifie", "Utilisée par"]' rowsJson='[["admin", "/api/media/r2/…", "Une session, et le droit de lire le fichier (son espace, ses groupes).", "L’éditeur, les aperçus, la bibliothèque."], ["public", "/api/media/public/r2/…", "Le fichier est validé ET placé dans un contenu ou une galerie publique.", "Les pages du site."]]' />
+<DocsTable columnsJson='["Audience", "Route", "Ce qu’elle vérifie", "Utilisée par"]' rowsJson='[["admin", "/api/media/r2/…", "Une session, et le droit de lire le fichier (son espace, ses groupes).", "L’éditeur, les aperçus, la bibliothèque."], ["public", "/api/media/public/r2/…", "Le fichier est validé ET placé dans un contenu PUBLIÉ ou une galerie publique.", "Les pages du site."]]' />
 
-Le rendu public demande l’audience `public`. Une URL privée sur une page publique ne marcherait que pour un visiteur connecté qui a le droit de lire le fichier — c’est-à-dire, presque toujours, pour l’administrateur qui vérifie sa page, et pour personne d’autre. Ce défaut est invisible à celui qui teste connecté : l’affiche des vidéos en était l’exemple.
+Le rendu public demande l’audience `public` (la valeur par défaut de `PageRenderer`). Une URL privée sur une page publique ne marcherait que pour un visiteur connecté qui a le droit de lire le fichier — c’est-à-dire, presque toujours, pour l’administrateur qui vérifie sa page, et pour personne d’autre. Ce défaut est invisible à celui qui teste connecté : l’affiche des vidéos en était l’exemple.
 
 <Callout type="warning">
 Une page publique se vérifie **déconnecté**, dans une fenêtre privée. Connecté, on voit ce que voit un administrateur, pas ce que voit un visiteur.
 </Callout>
+
+Une page a pourtant une raison de demander l’audience `admin` : le **brouillon**. Ses fichiers sont recensés dès son premier enregistrement, mais la route publique ne les sert pas tant que le contenu n’est pas publié (chapitre 5). La page d’un brouillon répond 404 à un visiteur ; pour un administrateur, elle s’affiche avec le badge « Page non publiée », et ses fichiers passent par la route privée :
+
+```tsx
+// apps/web/src/app/(public)/disciplines/[slug]/page.tsx (extrait)
+const access = await draftAccess(isLive(discipline.publicationDate));
+if (!access) notFound();
+// …
+<PageRenderer content={description} audience={audienceFor(access)} />
+```
+
+`draftAccess` rend `"public"` pour un contenu publié, `"preview"` pour un brouillon vu par un administrateur, `null` sinon. Les aperçus du tableau de bord rendent toujours en `admin`.
 
 `?variant=large` demande la déclinaison de 1 200 pixels d’une image, fabriquée au besoin par la route (partie « Stockage et médias ») ; `&as=poster`, l’affiche d’une vidéo.
 
@@ -162,7 +174,7 @@ Un avatar n’est pas un fichier de la bibliothèque : c’est une clé de stock
 L’URL porte l’identifiant du membre, pas la clé du fichier : si le membre change d’avatar, l’URL ne change pas, et chaque page qui la montre suit. Le logo du site suit le même principe, avec une URL versionnée par la date de modification des réglages (chapitre 7).
 
 <Callout type="info">
-La route des avatars sert l’avatar de **n’importe quel** membre à qui connaît son identifiant. C’est une limite connue, notée dans la partie « Stockage et médias » : elle touche au droit à l’image, mineurs compris, et sa correction est une décision à prendre avec le club.
+La route des avatars sert l’avatar de n’importe quel membre : un avatar est fait pour **représenter** son titulaire, à côté de son nom (un commentaire, l’auteur d’une actualité). Ce qui est interdit, c’est de le **poser** dans un contenu à sa place : un contenu ne montre que l’avatar de son auteur (chapitre 6).
 </Callout>
 
 ## L’alternance, sans mutation
@@ -184,7 +196,7 @@ Le **React Compiler** du projet l’interdit : un rendu ne doit modifier aucune 
   language="tsx"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="119-126"
+  snippetRange="125-132"
   snippetHighlight="7"
   snippetTitle="Le côté, d’après le rang"
   fullFileTitle="Voir le fichier complet"

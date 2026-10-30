@@ -56,18 +56,19 @@ Lire la base sans passer par l’API a une conséquence : **les gardes de l’AP
   language="tsx"
   filepath="apps/web/src/app/(public)/disciplines/[slug]/page.tsx"
   filename="page.tsx"
-  snippetRange="17-34"
+  snippetRange="18-35"
   snippetTitle="Les métadonnées d’une discipline : rien pour un brouillon"
   fullFileTitle="Voir le fichier complet"
 />
 
-Puis dans la page elle-même, qui répond « introuvable » à un brouillon comme à un slug inconnu — le visiteur ne peut pas distinguer les deux, et c’est voulu :
+Puis dans la page elle-même, qui répond « introuvable » à un brouillon comme à un slug inconnu — le visiteur ne peut pas distinguer les deux, et c’est voulu. Un administrateur, lui, voit le brouillon : `draftAccess` rend `"preview"`, la page affiche le badge « Page non publiée » et ses fichiers passent par la route privée (la route publique ne sert pas les fichiers d’un brouillon, partie « Contenu éditorial ») :
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/app/(public)/disciplines/[slug]/page.tsx"
   filename="page.tsx"
-  snippetRange="55-67"
+  snippetRange="56-67"
+  snippetHighlight="11-12"
   snippetTitle="La page d’une discipline : la garde de publication"
   fullFileTitle="Voir le fichier complet"
 />
@@ -78,7 +79,7 @@ Le chapitre 2 a montré que la règle ne s’arrête pas à l’entité. Les fic
   language="tsx"
   filepath="apps/web/src/app/(public)/seminars/[slug]/page.tsx"
   filename="page.tsx"
-  snippetRange="107-112"
+  snippetRange="108-113"
   snippetTitle="La fiche d’un stage : une discipline en brouillon n’est pas nommée"
   fullFileTitle="Voir le fichier complet"
 />

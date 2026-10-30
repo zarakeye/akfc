@@ -17,7 +17,7 @@ stories:
   - title: Un visiteur charge une image
     actor: Visiteur
     steps:
-      - label: La route publique ne sert le fichier que s’il est validé et recensé
+      - label: La route publique ne sert le fichier que s’il est validé et placé dans un contenu publié
         call: GET /api/media/public/r2/[...path]
         section: Ce qui s’appuie sur le recensement
   - title: Un administrateur range la bibliothèque
@@ -89,7 +89,7 @@ La dernière étape est la garantie. `assertNever` n’accepte qu’une valeur d
   language="ts"
   filepath="packages/contracts/src/page/extractMediaIds.ts"
   filename="extractMediaIds.ts"
-  snippetRange="134-138"
+  snippetRange="149-153"
   snippetHighlight="1"
   snippetTitle="assertNever"
   fullFileTitle="Voir le fichier complet"
@@ -103,7 +103,7 @@ Dans le texte riche, la descente est récursive et défensive :
   language="ts"
   filepath="packages/contracts/src/page/extractMediaIds.ts"
   filename="extractMediaIds.ts"
-  snippetRange="95-122"
+  snippetRange="110-137"
   snippetHighlight="14,22"
   snippetTitle="Descendre dans un document ProseMirror"
   fullFileTitle="Voir le fichier complet"
@@ -123,8 +123,8 @@ Chaque procédure qui enregistre un contenu appelle la même fonction, **dans sa
   language="ts"
   filepath="packages/backend/src/modules/sitePages/router.ts"
   filename="router.ts"
-  snippetRange="53-80"
-  snippetHighlight="2,20"
+  snippetRange="54-82"
+  snippetHighlight="3,21"
   snippetTitle="sitePage.save : écrire, puis recenser"
   fullFileTitle="Voir le fichier complet"
 />
@@ -154,19 +154,31 @@ Pour les contenus enregistrés avant l’existence d’une synchronisation, un *
 
 ## Ce qui s’appuie sur le recensement
 
-**La route publique.** Un fichier n’est servi à un visiteur que s’il est validé et recensé (ou placé dans une galerie publique) :
+**La route publique.** Un fichier n’est servi à un visiteur que s’il est validé, hors corbeille, et placé dans quelque chose de public : une galerie publique, ou un contenu recensé **et publié** :
 
 <CodeExample
   language="ts"
   filepath="apps/web/src/app/api/media/public/r2/[...path]/route.ts"
   filename="route.ts"
-  snippetRange="77-92"
-  snippetHighlight="7"
+  snippetRange="66-76"
+  snippetHighlight="9"
   snippetTitle="La garde de la route publique"
   fullFileTitle="Voir le fichier complet"
 />
 
-C’est ce qui empêche un visiteur de deviner le chemin d’un fichier validé mais jamais publié dans une page (une photo de groupe rangée pour plus tard) et de le charger.
+C’est ce qui empêche un visiteur de charger un fichier validé mais jamais publié dans une page (une photo de groupe rangée pour plus tard). Un recensement seul ne suffit pas : un brouillon recense ses fichiers dès son premier enregistrement, et ils étaient servis à qui connaissait leur URL alors que la page répondait 404. `isPubliclyPlaced` parcourt donc les lignes de recensement du fichier et demande, pour chacune, si son contenu est publié :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/publiclyPlaced.service.ts"
+  filename="publiclyPlaced.service.ts"
+  snippetRange="27-52"
+  snippetHighlight="6,17,23"
+  snippetTitle="Publié, selon le contenu"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le `switch` est exhaustif sur `PageReferencerKind`, comme l’extraction l’est sur les blocs : un nouveau type de contenu recensé ne compile pas tant qu’on n’a pas dit ce que « publié » veut dire pour lui. Un cours n’a pas de date : il est publié avec sa discipline. Une page éditoriale (association, contacts, inscription) a son interrupteur ; une autre page de contenu (`/infos/…`, compléments des pages légales) n’en a pas et est publique.
 
 **La corbeille.** Jeter un fichier encore affiché est refusé, avec la liste de ce qui l’affiche :
 
@@ -186,7 +198,7 @@ L’administrateur lit par exemple « POST #42, galerie « Stage d’été » »
 
 **La suppression.** La relation `onDelete: Restrict` fait refuser par la base elle-même la suppression d’un fichier recensé. C’est le dernier filet, si une procédure oubliait la vérification.
 
-<DocsTable columnsJson='["Garde", "S’appuie sur", "Protège contre"]' rowsJson='[["Route publique", "Validé ET recensé", "Un fichier servi à un visiteur sans être publié."], ["Corbeille", "Recensé → refus", "Une image qui disparaît d’une page parce qu’on a rangé la bibliothèque."], ["Statut", "Recensé → refus de repasser en attente", "Une image affichée qui devient invisible."], ["Base", "onDelete: Restrict", "La suppression d’un fichier encore affiché, si tout le reste a été oublié."]]' />
+<DocsTable columnsJson='["Garde", "S’appuie sur", "Protège contre"]' rowsJson='[["Route publique", "Validé, recensé ET contenu publié", "Un fichier servi à un visiteur sans être publié, ou celui d’un brouillon."], ["Corbeille", "Recensé → refus", "Une image qui disparaît d’une page parce qu’on a rangé la bibliothèque."], ["Statut", "Recensé → refus de repasser en attente", "Une image affichée qui devient invisible."], ["Base", "onDelete: Restrict", "La suppression d’un fichier encore affiché, si tout le reste a été oublié."]]' />
 
 ## Récapitulatif
 
