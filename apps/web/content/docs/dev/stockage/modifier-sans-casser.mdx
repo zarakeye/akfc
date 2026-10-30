@@ -1,0 +1,251 @@
+---
+title: "Modifier sans casser"
+description: "Renommer, déplacer, jeter, restaurer : quatre gestes qui touchent deux mondes sans transaction commune, le stockage et la base. Comment le Finder les garde d’accord, refuse d’écraser, protège ce que le code connaît, et ce qui reste fragile."
+section: "Stockage et médias"
+order: 7
+entities:
+  MediaAsset: [fullPath, displayName, status]
+  Folder: [appRoot, fullPath]
+  FolderLabel: [path, displayName]
+  TrashEntry: [previousPath, storageRoot, kind, status, trashedAt, restoredAt, restoredToPath]
+  PageMediaReference: [mediaAssetId]
+  GalleryItem: [mediaAssetId]
+stories:
+  - title: Ranger la bibliothèque
+    actor: Administrateur, ou éditeur dans l’espace de son groupe
+    steps:
+      - label: Il renomme un fichier ; seul son nom d’affichage change
+        call: storage.rename
+        section: Renommer un fichier, ce n’est pas le déplacer
+      - label: Il déplace des fichiers et des dossiers ; rien ne s’écrase, et la structure suit
+        call: storage.move
+        section: La procédure de déplacement
+      - label: Il met un dossier à la corbeille, sauf s’il contient un fichier encore utilisé
+        call: trash.trashToBin
+        section: La corbeille, une quarantaine
+  - title: Gérer la corbeille
+    actor: Administrateur
+    steps:
+      - label: Il restaure un élément à son chemin d’origine, ou à côté s’il est occupé
+        call: trash.restoreFromBin
+        section: Restaurer
+      - label: Il supprime définitivement ; les lignes devenues sans fichier sont effacées
+        call: trash.deleteForever
+        section: Supprimer pour de bon
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le serveur fabrique l’arbre à chaque lecture : le stockage dit ce qui existe, la base ce qui doit exister et comment le nommer. Le navigateur garde un cache par dossier, vidé après chaque modification.
+
+## Les parcours du chapitre
+
+Deux parcours traversent ce chapitre : ranger la bibliothèque (renommer, déplacer, jeter), et gérer la corbeille (restaurer, supprimer). Chaque onglet en déroule les étapes et ce qu’elles écrivent en base.
+
+<Parcours />
+
+## Deux mondes, aucune transaction commune
+
+Chaque modification du Finder touche **deux** systèmes : le stockage, qui porte les octets, et la base, qui porte tout ce que le stockage ignore (statut, nom lisible, auteur, références depuis les pages). Une base de données sait rendre plusieurs écritures atomiques : c’est une **transaction**. Un stockage objet aussi, pour un seul objet. Mais rien ne rend atomiques **ensemble** une copie S3 et une mise à jour SQL.
+
+Toute la conception qui suit découle de cette contrainte. Elle impose trois règles, qu’on retrouvera à chaque geste :
+
+- **ne rien écraser en silence** : vérifier, avant la moindre écriture, que la cible est libre ;
+- **écrire dans un ordre réfléchi** : le stockage d’abord, la base ensuite, de sorte qu’un échec en cours de route laisse l’état le moins grave ;
+- **ne toucher la base que là où elle doit suivre** : un renommage de fichier qui ne concerne que l’affichage ne touche pas le stockage du tout.
+
+<DocsTable columnsJson='["Geste","Le stockage","La base"]' rowsJson='[["Renommer un fichier","rien","MediaAsset.displayName"],["Renommer, déplacer un dossier","copie puis suppression de chaque objet","MediaAsset, Folder et FolderLabel : préfixe réécrit"],["Déplacer un fichier","copie puis suppression","MediaAsset.fullPath"],["Valider","rien","MediaAsset.status (chapitre 4)"],["Mettre à la corbeille","déplacement vers bin/.trash/<id>/","TrashEntry créée ; MediaAsset inchangée"],["Restaurer","retour au chemin d’origine (ou à côté)","TrashEntry « restaurée »"],["Supprimer définitivement","suppression des objets et déclinaisons","TrashEntry « supprimée », lignes orphelines effacées"]]' />
+
+## Renommer un fichier, ce n’est pas le déplacer
+
+Au temps de Cloudinary, renommer un fichier changeait son `public_id` : un renommage chez le fournisseur, une URL qui change, des références à suivre. Depuis que la clé est un **slug stable** calculé à l’envoi, renommer un fichier ne touche plus le stockage :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="668-680"
+  snippetHighlight="3-4"
+  snippetTitle="Le renommage d’un fichier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un simple `UPDATE` de `displayName`. Pas de copie, pas d’extension à deviner, pas de référence à mettre à jour. Deux fichiers peuvent porter le même nom affiché : leurs clés restent distinctes.
+
+Renommer un **dossier**, en revanche, est un vrai déplacement : sa clé est la base de toutes les clés de son contenu. La procédure refuse avant de bouger quoi que ce soit :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="590-735"
+  title="storage.rename — refuser d’abord, déplacer ensuite"
+  stepsJson='[{"title": "Le droit d’écrire", "body": "Un administrateur partout, un éditeur dans l’espace de son groupe. Renommer le dossier d’un autre groupe est une écriture comme une autre (fiche 3.11).", "scope": "12-12", "focus": "12-12"}, {"title": "Un nom qui reste un nom", "body": "Ni vide, ni « / » (il créerait un sous-dossier), ni « .. » : un chemin qui en contient un est refusé par toutes les gardes de lecture, et le dossier deviendrait illisible pour tout le monde.", "scope": "14-34", "focus": "29-29"}, {"title": "Les dossiers que le code connaît", "body": "Un dossier-entité (l’espace d’un groupe, d’un membre, un dossier d’avatars) et une racine de contenu (cours, stages…) ont un chemin connu du code : destinations d’envoi, gardes de lecture. Leur « Renommer » édite le libellé (FolderLabel), jamais le chemin.", "scope": "50-70", "focus": "63-63"}, {"title": "L’extension, si c’en est une", "body": "Un point n’est pas forcément un séparateur d’extension : « CNI recto (ep. BAZZE) » en contient un. On ne garde qu’un suffixe qui A LA FORME d’une extension, et jamais pour un dossier.", "scope": "102-105", "focus": "102-103"}, {"title": "Ne rien écraser", "body": "La cible doit être libre partout : chez le stockage, dans MediaAsset, dans Folder. Une seule de ces trois sources ne suffit pas — un dossier vide enregistré n’a aucun objet, un fichier en corbeille n’a plus d’objet mais garde sa ligne.", "scope": "119-129", "focus": "124-124"}, {"title": "Puis déplacer", "body": "Le renommage d’un dossier passe par le même `adapter.move` qu’un déplacement : copie de chaque objet, réécriture du préfixe en base.", "scope": "140-143", "focus": "140-140"}]'
+/>
+
+## Déplacer, c’est copier puis supprimer
+
+S3 n’a pas d’opération « renommer » : déplacer un objet, c’est le **copier** sous sa nouvelle clé, puis **supprimer** l’ancien. Déplacer un dossier, c’est le faire pour chaque objet qui commence par son préfixe :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="652-712"
+  snippetHighlight="19,32,49"
+  snippetTitle="moveFolder"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois détails comptent :
+
+- **le `/` final** du préfixe (`ensureTrailingSlash`) : sans lui, déplacer `cours` déplacerait aussi `cours-avance` ;
+- **la pagination** : `ListObjectsV2` rend 1 000 clés au plus ; le `ContinuationToken` reprend où la page précédente s’est arrêtée ;
+- **les copies par paquets** de 16 : la première version lançait les 1 000 copies d’une page en même temps, ce qui sature les connexions du client et les limites de débit du stockage. Un `Promise.all` sur une liste non bornée est une charge non bornée.
+
+Puis la base suit, dans une seule transaction :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="240-289"
+  title="adapter.move — le stockage, puis la base"
+  stepsJson='[{"title": "Un fichier : une ligne", "body": "L’objet est copié puis supprimé, et sa ligne MediaAsset prend la nouvelle clé.", "scope": "10-17", "focus": "14-14"}, {"title": "Pourquoi le stockage d’abord", "body": "Si la copie échoue, rien n’a bougé nulle part. Si la base échoue après, l’objet est à sa nouvelle place et la ligne pointe encore vers l’ancienne : un état réparable (on rejoue la mise à jour), alors que l’ordre inverse laisserait une ligne pointant vers un objet qui n’existe pas encore.", "scope": "7-9", "focus": "7-9"}, {"title": "Un dossier : trois tables", "body": "Les fichiers (MediaAsset), les dossiers enregistrés (Folder) et les libellés (FolderLabel) changent de préfixe ensemble. Oublier Folder laisserait un espace enregistré à l’ancien chemin ; oublier FolderLabel ferait perdre son nom au dossier déplacé.", "scope": "33-50", "focus": "40-45"}, {"title": "Le préfixe, comparé littéralement", "body": "Dans un LIKE, « _ » et « % » sont des jokers : un dossier « cours_2026 » correspondrait aussi à « coursX2026 ». On les échappe ; seul le « % » final reste un joker. Et SUBSTRING remplace le début du chemin, sous-chemin préservé.", "scope": "31-32", "focus": "32-32"}]'
+/>
+
+Prisma n’offre pas de remplacement de sous-chaîne dans `updateMany` : d’où le SQL brut, **paramétré** — le gabarit étiqueté `$executeRaw` transforme chaque valeur interpolée en paramètre de requête, jamais en texte concaténé (fiche 6.5).
+
+### La structure se déplace avec ce qu’on déplace
+
+Une sélection peut mêler fichiers et dossiers. Le service de résolution en fait des opérations :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/resolveMoveIntent.service.ts"
+  filename="resolveMoveIntent.service.ts"
+  snippetRange="101-150"
+  title="resolveSource — une sélection en opérations"
+  stepsJson='[{"title": "Un fichier : tel quel", "body": "Il garde son nom dans le dossier cible.", "scope": "26-30", "focus": "28-28"}, {"title": "Un dossier : d’un bloc", "body": "Sans exclusion à l’intérieur, le dossier part ENTIER, sous-dossiers compris : une seule opération dossier.", "scope": "32-36", "focus": "34-34"}, {"title": "Avec des exclusions : fichier par fichier", "body": "Si la sélection exclut une partie du dossier, on descend aux fichiers — et chacun garde son chemin RELATIF au dossier sélectionné.", "scope": "38-47", "focus": "45-45"}]'
+/>
+
+La première version, héritée de l’époque des dossiers de statut, développait **tout** dossier sélectionné en ses fichiers, et posait chacun sous `<cible>/<nom du fichier>` : les sous-dossiers disparaissaient, leur contenu était **aplati** dans la cible, et deux `photo.jpg` de sous-dossiers différents se percutaient. C’est le genre de bogue qu’aucun test « un fichier dans un dossier » ne voit.
+
+Le même service refuse de déposer un dossier **dans lui-même** ou dans l’un de ses descendants : la boucle de copie déplacerait ses propres objets sous un préfixe qu’elle est en train de vider.
+
+## La procédure de déplacement
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="737-832"
+  title="storage.move — tout vérifier, puis tout exécuter"
+  stepsJson='[{"title": "La source ET la cible", "body": "Un éditeur ne sort rien de l’espace de son groupe, et n’y fait rien entrer qui vienne d’ailleurs : le droit d’écriture porte sur les deux bouts.", "scope": "13-19", "focus": "18-18"}, {"title": "Les dossiers que le code connaît", "body": "Dossiers-entités, racines de contenu, corbeille : leur chemin est connu du code. On ne les déplace pas, même au sein d’une sélection.", "scope": "26-47", "focus": "38-40"}, {"title": "Planifier sans rien écrire", "body": "La sélection devient une liste d’opérations. Une opération sur place (déposer un élément dans son propre dossier) est écartée : l’adapter renommerait un objet sur lui-même, le stockage refuserait, et tout le geste échouerait.", "scope": "56-61", "focus": "56-56"}, {"title": "Ne rien écraser", "body": "Deux éléments de la sélection qui arriveraient au même nom, ou une cible déjà occupée (objet, ligne, dossier enregistré) : CONFLICT, avant la moindre copie. Une copie S3 remplace sans prévenir l’objet qui porte la clé cible, et la ligne déplacée heurterait ensuite la contrainte d’unicité : le fichier d’arrivée serait perdu.", "scope": "67-89", "focus": "83-83"}, {"title": "Puis exécuter, une à une", "body": "Séquentiellement : des déplacements simultanés sur des préfixes voisins pourraient se marcher dessus. Un déplacement ne change jamais le statut : c’est une réorganisation, pas une validation.", "scope": "93-95", "focus": "93-93"}]'
+/>
+
+<Callout type="warning">
+Ce qui reste fragile, et qu’il faut savoir : un déplacement de plusieurs éléments n’est **pas atomique**. Si la troisième opération échoue, les deux premières sont faites. Et entre la copie d’un dossier et la mise à jour de la base, un arrêt du serveur laisserait des objets à leur nouvelle place et des lignes à l’ancienne. Le Finder signale l’échec (bandeau d’erreur) ; la réparation, elle, reste manuelle.
+</Callout>
+
+Côté navigateur, un glisser-déposer n’a pas de formulaire où afficher une erreur : longtemps, un refus finissait dans la console, et l’administrateur voyait son fichier « revenir » sans explication. Le refus s’affiche désormais dans le bandeau du Finder (`actionError` du store), avec le message du serveur — d’où l’importance qu’il soit une `TRPCError` en français, et pas une `Error` dont le texte serait masqué en production.
+
+## La corbeille, une quarantaine
+
+La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin` déplace l’élément dans une zone cachée, `AKFC/bin/.trash/<identifiant>/`, et crée une ligne `TrashEntry` qui garde son nom et son **chemin d’origine** :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashToBin.service.ts"
+  filename="trashToBin.service.ts"
+  snippetRange="229-305"
+  title="trashToBin — réserver, puis déplacer"
+  stepsJson='[{"title": "Ni la racine, ni la corbeille", "body": "On ne jette ni la racine, ni la corbeille elle-même, ni ce qu’elle contient déjà.", "scope": "3-4", "focus": "3-3"}, {"title": "Un identifiant unique dans le chemin", "body": "Deux `photo.jpg` jetés depuis deux dossiers différents coexistent dans la corbeille : chacun a son dossier `.trash/<uuid>/`. Les collisions sont impossibles par construction.", "scope": "6-11", "focus": "11-11"}, {"title": "La TrashEntry avant le déplacement", "body": "La ligne est créée AVANT de déplacer : si le déplacement échoue, la corbeille sait au moins qu’un élément était en route, et d’où il venait. L’ordre inverse pourrait laisser des objets dans la quarantaine sans aucune trace.", "scope": "33-47", "focus": "40-41"}, {"title": "Puis la quarantaine", "body": "Le fichier (ou chaque objet du dossier) part sous `storageRoot`. Pour un dossier, ses lignes Folder disparaissent de l’ancien endroit — le dossier lui-même, et ce qui est SOUS lui, pas tout ce qui commence par les mêmes lettres.", "scope": "49-77", "focus": "54-54"}]'
+/>
+
+Avant la boucle, trois refus, tous **avant** le moindre déplacement — rien n’est jeté si un seul élément est refusé :
+
+- les **dossiers-entités** et les dossiers de **disciplines** ou de **catégories**, qui se suppriment par leur gestionnaire (supprimer un groupe supprime son espace, après vérification qu’il est vide) ;
+- les **racines de contenu** (stages, événements, espaces, dépôt commun) ;
+- les **fichiers encore utilisés** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashedAssets.service.ts"
+  filename="trashedAssets.service.ts"
+  snippetRange="40-92"
+  snippetHighlight="14-16,47"
+  snippetTitle="On ne jette pas un fichier utilisé"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pourquoi refuser, plutôt que retirer le fichier des pages ? Parce que la ligne `MediaAsset` d’un fichier jeté **n’est pas modifiée** : elle garde son chemin d’origine, son statut, sa description. La page qui l’affiche pointerait vers un objet qui n’est plus là — un média cassé, tant que dure la quarantaine. Le refus nomme chaque fichier et ce qui l’utilise : l’administrateur sait quoi retirer, et où.
+
+### L’immuabilité de la quarantaine
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/utils.ts"
+  filename="utils.ts"
+  snippetRange="65-68"
+  snippetHighlight="3"
+  snippetTitle="isTrashStoragePath"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La quarantaine n’est modifiable que par le routeur `trash` : le routeur `storage` refuse d’y renommer ou d’y déplacer quoi que ce soit, dans un sens comme dans l’autre (`assertOutsideBin`), et l’arbre ne montre jamais son contenu. Sans ce refus, un glisser-déposer depuis la vue de la corbeille sortirait un fichier de quarantaine sans passer par la restauration : sa `TrashEntry` resterait « dans la corbeille », pointant vers un emplacement vide. La restauration et la suppression définitive revérifient, avant d’agir, que la `storageRoot` d’une entrée est **bien** sous `bin/.trash/` : une ligne `TrashEntry` falsifiée ou corrompue ne doit pas pouvoir faire supprimer un dossier de la bibliothèque. Deux routeurs, deux zones : on ne mélange pas le rangement ordinaire et la quarantaine.
+
+## Restaurer
+
+Restaurer replace l’élément à son chemin d’origine. Comme la ligne `MediaAsset` y est restée, elle retrouve son objet, avec son statut, son nom et sa description intacts. Mais le chemin d’origine a pu être **réoccupé** entre-temps :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/restoreFromBin.service.ts"
+  filename="restoreFromBin.service.ts"
+  snippetRange="134-158"
+  snippetHighlight="11,15,19"
+  snippetTitle="computeRestoredToPath"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+En cas de collision, l’élément est restauré **à côté**, avec un suffixe daté de sa mise à la corbeille (« photo (bin 2026-10-30 14-05).jpg »), puis un compteur si nécessaire. On n’écrase jamais ce qui a pris sa place.
+
+<Callout type="warning">
+Une limite connue : un fichier restauré **à côté** de son chemin d’origine n’a pas de ligne `MediaAsset` à son nouveau chemin. Sa ligne d’origine est restée à l’ancien chemin, où un autre fichier a pris sa place — et l’enregistrement de cet envoi a repris la ligne. Le fichier restauré apparaît donc dans le Finder, mais sans statut ni nom d’origine, et ne peut pas être choisi dans une page. Le corriger demanderait que les lignes suivent les objets dans la quarantaine, ce qui reste à faire.
+</Callout>
+
+## Supprimer pour de bon
+
+La suppression définitive (une entrée, ou toute la corbeille) efface les objets, leurs **déclinaisons** (vignettes, affiches), et passe la `TrashEntry` à « supprimée ». Reste la base : les lignes `MediaAsset` restées sur le chemin d’origine n’ont plus de fichier.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashedAssets.service.ts"
+  filename="trashedAssets.service.ts"
+  snippetRange="100-115"
+  snippetHighlight="9,15-16"
+  snippetTitle="deleteAssetRowsOfTrashedItem"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une ligne n’est effacée que si **aucun objet** n’existe plus à son chemin : un fichier redéposé au même endroit entre-temps a repris la ligne (un `upsert` sur `fullPath`), et elle lui appartient désormais. La décision se prend en interrogeant le stockage, pas en supposant.
+
+<Callout type="warning">
+Le stockage et la base doivent rester d’accord. Chaque geste du Finder écrit des deux côtés, dans un ordre choisi, après avoir vérifié que rien ne sera écrasé. Une opération qui ne toucherait que l’un des deux laisserait des fichiers sans statut, ou des lignes qui pointent vers rien — et rien, ensuite, ne permettrait de les distinguer des vrais.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que fait « Renommer » sur un fichier ?", "Un UPDATE de displayName ; la clé ne change pas, le stockage n’est pas touché."], ["Et sur un dossier ?", "Un déplacement (copie puis suppression), refusé pour les dossiers que le code connaît, pour « .. », et si la cible est occupée."], ["Qu’est-ce qui suit un dossier déplacé ?", "MediaAsset, Folder et FolderLabel, en une transaction, préfixe échappé dans le LIKE."], ["Comment évite-t-on d’écraser ?", "Cible vérifiée partout (stockage, MediaAsset, Folder) et doublons de la sélection refusés, avant toute copie."], ["Qu’est-ce qui reste fragile ?", "Un geste multiple n’est pas atomique ; un arrêt entre copie et base laisse un écart à réparer à la main."], ["Où va un fichier jeté ?", "Dans bin/.trash/<uuid>/, avec une TrashEntry qui garde son chemin d’origine ; refusé s’il est encore utilisé."], ["Que devient sa ligne MediaAsset ?", "Inchangée pendant la quarantaine ; effacée à la suppression définitive si aucun objet n’a repris son chemin."]]' />
+
+## À suivre
+
+Les médias sont envoyés, rangés, validés. Un média validé n’est pourtant visible de personne tant qu’il n’est posé nulle part : la route publique exige qu’il soit **placé** dans une page ou une galerie publique.
+
+Ce placement est le travail du constructeur de pages. Une page y est faite de blocs (texte riche, image et texte, galerie…), édités dans le tableau de bord et rendus côté serveur sur le site. Chaque enregistrement doit tenir à jour la liste des médias qu’une page utilise, pour que la route publique sache quoi servir, et pour qu’on ne puisse pas retirer un média encore affiché.
+
+<Callout type="tip">
+**Partie suivante : le contenu éditorial.** Le constructeur de pages : un format de blocs commun aux pages, aux actualités et aux fiches, son éditeur, son rendu serveur, et la synchronisation des références de médias qui relie une page à ce qu’elle affiche.
+</Callout>

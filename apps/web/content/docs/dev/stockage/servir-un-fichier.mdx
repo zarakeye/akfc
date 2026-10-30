@@ -55,16 +55,14 @@ Aujourd’hui, valider est un `UPDATE` :
   language="ts"
   filepath="packages/backend/src/modules/media/router.ts"
   filename="router.ts"
-  snippetRange="600-693"
+  snippetRange="476-545"
   title="media.setStatus — un UPDATE, pas un déplacement"
-  stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "21-25", "focus": "21-25"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "31-37", "focus": "31-31"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse.", "scope": "41-52", "focus": "50-50"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "59-72", "focus": "67-67"}]'
+  stepsJson='[{"title": "Qui peut valider", "body": "Un administrateur partout ; un membre seulement dans l’espace d’un groupe dont il est éditeur — la même règle que pour la corbeille. Dans les autres destinations, un membre dépose, mais ne publie pas.", "scope": "19-23", "focus": "19-23"}, {"title": "Ne pas dépublier ce qui est affiché", "body": "AVANT le moindre UPDATE : remettre en attente un fichier qu’une page ou une galerie affiche le ferait disparaître sans un mot. La garde refuse, et nomme les contenus concernés.", "scope": "26-32", "focus": "26-26"}, {"title": "Un fichier : sa ligne", "body": "Seule la colonne status change. Le binaire ne bouge pas, sa clé reste la même, aucune référence ne casse.", "scope": "35-40", "focus": "38-38"}, {"title": "Un dossier : tout ce qu’il contient", "body": "Le « / » final n’est pas cosmétique : sans lui, valider le dossier « cours » validerait aussi « cours-avance ». C’est la collision de préfixe qu’un stockage sans dossiers impose de garder en tête.", "scope": "43-52", "focus": "48-48"}]'
 />
 
 Le statut a cessé d’être un **cache dérivé du chemin** pour devenir la **source de vérité**. Valider est atomique, sans aller-retour avec le stockage, sans binaire qui bouge.
 
-<Callout type="info">
-Vous croiserez encore dans le code des traces de l’époque où le statut vivait dans le chemin : le paramètre `logical`, `physicalCandidates`, des « strates » `pending/` et `published/`. Elles servent aux fichiers anciens qui n’auraient pas été remis à plat, et disparaîtront avec eux.
-</Callout>
+La transition a eu un coût, et une fin. Pendant des mois, le finder a « plié » les anciens chemins : il montrait `AKFC/courses/x` en fusionnant `AKFC/pending/courses/x` et `AKFC/published/courses/x`, et chaque écriture redescendait vers les emplacements réels — un millier de lignes de code de passage. Il a été retiré d’un coup, après une seule vérification : une requête en production qui comptait les fichiers et les dossiers encore rangés sous `pending/` ou `published/`, et rendait deux zéros. Un code de transition se supprime sur une **preuve**, pas sur une impression.
 
 ### Ne pas dépublier ce qui est affiché
 
@@ -74,7 +72,7 @@ La garde cherche, pour les fichiers publiés qui seraient remis en attente, ce q
   language="ts"
   filepath="packages/backend/src/modules/media/services/assertStatusChangeDoesntUnpublishReferencedAssets.service.ts"
   filename="assertStatusChangeDoesntUnpublishReferencedAssets.service.ts"
-  snippetRange="96-131"
+  snippetRange="57-92"
   snippetHighlight="4,8,31"
   snippetTitle="Les usages d’un fichier, nommés"
   fullFileTitle="Voir le fichier complet"
@@ -121,7 +119,7 @@ La symétrie avec l’envoi est complète. À l’aller, le serveur signe un PUT
   language="ts"
   filepath="packages/backend/src/modules/media/services/canReadStorageKey.service.ts"
   filename="canReadStorageKey.service.ts"
-  snippetRange="21-47"
+  snippetRange="18-44"
   snippetHighlight="8,13,19,23"
   snippetTitle="canReadStorageKey"
   fullFileTitle="Voir le fichier complet"

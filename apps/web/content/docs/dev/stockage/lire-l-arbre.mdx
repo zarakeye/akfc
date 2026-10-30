@@ -1,0 +1,192 @@
+---
+title: "Lire l’arbre"
+description: "Comment le serveur fabrique, à chaque ouverture d’un dossier, l’arbre qu’affiche le Finder : la procédure storage.getTree passe par passe, l’enrichissement groupé, les espaces réinjectés, l’ordre des passes, la recherche, et le cache du navigateur."
+section: "Stockage et médias"
+order: 6
+entities:
+  MediaAsset: [fullPath, status, displayName, originalFileName, uploaderUserId, description]
+  MemberGroup: [isCollaborative]
+  FolderLabel: [path, displayName]
+stories:
+  - title: Parcourir la bibliothèque
+    actor: Administrateur, ou membre d’un groupe collaboratif
+    steps:
+      - label: Le navigateur demande un dossier ; le serveur vérifie le droit de lire, lit le stockage, puis le complète avec la base
+        call: storage.getTree
+        section: La procédure qui fabrique l’arbre
+      - label: Les libellés des dossiers, séparés de leur clé
+        call: storage.folderLabels
+        section: Les libellés des dossiers
+      - label: Il cherche un fichier dans le dossier courant et ses sous-dossiers
+        call: media.searchRecursive
+        section: Chercher dans un sous-arbre
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le stockage sait lister un niveau de clés ; il ignore les noms lisibles, les statuts, les dossiers vides et les droits. La base, par ses entités, sait ce qui doit exister. Le Finder est découpé en un composant, des adaptateurs et un backend.
+
+## Les parcours du chapitre
+
+Un parcours traverse ce chapitre : ouvrir la bibliothèque, y naviguer, y chercher. L’onglet en déroule les étapes, relevées dans le code ; la carte des entités montre ce que chaque étape lit en base.
+
+<Parcours />
+
+## La procédure qui fabrique l’arbre
+
+Chaque fois que le Finder ouvre un dossier, l’adaptateur appelle `storage.getTree`. La procédure ne relaie pas le stockage : elle **traduit**, en plusieurs passes, dans un ordre qui n’est pas indifférent.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/router.ts"
+  filename="router.ts"
+  snippetRange="415-491"
+  title="storage.getTree — lire, puis compléter"
+  stepsJson='[{"title": "Le droit d’abord", "body": "Un administrateur lit tout ; un autre utilisateur ne lit que l’espace d’un groupe auquel il a accès, et son espace personnel. Les droits s’appliquent AVANT toute lecture : on ne filtre pas après coup ce qu’on n’aurait pas dû lire.", "scope": "10-14", "focus": "10-10"}, {"title": "L’espace personnel : le sien seulement", "body": "Demander le conteneur `personal-space`, c’est en réalité lire SON sous-espace : l’utilisateur ne voit que son contenu, comme si ce dossier était à lui seul.", "scope": "23-35", "focus": "25-27"}, {"title": "Le stockage : la vérité physique", "body": "Ce qui existe vraiment : les clés, regroupées en niveaux. Tout ce qui suit complète cette vérité, sans jamais la contredire.", "scope": "36-39", "focus": "36-36"}, {"title": "La corbeille reste une feuille", "body": "Ses rangements internes (`.trash/<identifiant>/…`) n’ont rien à faire dans l’arbre : la corbeille a sa propre vue, en liste plate.", "scope": "41-41", "focus": "41-41"}, {"title": "Ce que la base sait des fichiers", "body": "Statut, nom lisible, expéditeur : lus en une requête groupée pour tout le dossier.", "scope": "42-42", "focus": "42-42"}, {"title": "Ce que la base sait des espaces", "body": "Les espaces de groupe et l’espace personnel que le stockage ne montre pas — parce qu’ils sont vides — sont réinjectés à partir des entités.", "scope": "44-49", "focus": "44-44"}, {"title": "À la racine : la structure, même vide", "body": "Les racines de contenu (cours, stages, événements, espaces, dépôt commun) apparaissent dès une base neuve. Seulement à la racine : la grille appelle getTree sur CHAQUE dossier, et sans cette garde, ces racines seraient injectées partout.", "scope": "55-61", "focus": "55-55"}, {"title": "Les espaces des autres, masqués", "body": "Dans l’arbre de la racine, « Espace personnel » montre directement le contenu de l’utilisateur courant, et masque les espaces des autres administrateurs.", "scope": "65-69", "focus": "65-65"}, {"title": "Les noms exacts des groupes", "body": "La clé d’un espace contient un slug et un identifiant (`kung-fu-enfants-c…`) ; on affiche le nom du groupe, avec ses accents.", "scope": "73-76", "focus": "75-75"}]'
+/>
+
+## L’ordre des passes
+
+Le tutoriel Cloudinary construisait l’arbre dans l’ordre inverse : d’abord la **charpente** des dossiers enregistrés en base, puis l’injection des **feuilles** venues du fournisseur. C’était logique : Cloudinary ne rendait qu’un tableau plat, et seule la base savait dessiner des niveaux.
+
+Avec un stockage S3, l’ordre s’inverse, et pour une bonne raison : le stockage sait désormais rendre un niveau d’arbre (`Delimiter`). Il fournit donc la **vérité physique** — ce qui existe vraiment — et la base vient **compléter** ce qu’il ne peut pas dire. La règle de fusion tient en une ligne : **le physique prime**. Un espace réinjecté depuis la base n’est ajouté que s’il manque :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/mergeGroupSpaceFolders.service.ts"
+  filename="mergeGroupSpaceFolders.service.ts"
+  snippetRange="49-68"
+  snippetHighlight="9,12"
+  snippetTitle="Les espaces manquants, et seulement eux"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le dédoublonnage se fait sur le suffixe **stable** `-<identifiant du groupe>`, pas sur le nom : un groupe renommé garde son espace, et n’en voit pas apparaître un second. Et `collaborativeGroupIds` applique les droits : un administrateur reçoit tous les groupes collaboratifs, un membre seulement les siens.
+
+<DocsTable columnsJson='["Situation", "Le stockage", "La base", "L’arbre"]' rowsJson='[["Espace avec des fichiers", "le montre", "le connaît", "l’espace (une seule fois, par son suffixe)"], ["Espace tout juste créé", "ne le montre pas", "le connaît", "l’espace, vide"], ["Dossier rangé par un membre", "le montre", "ne le connaît pas", "le dossier"], ["Groupe auquel on n’a pas accès", "—", "le connaît", "rien (droits appliqués)"]]' />
+
+Les racines de contenu suivent la même logique, à partir des catégories et d’une liste fixe :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/ensureContentRoots.service.ts"
+  filename="ensureContentRoots.service.ts"
+  snippetRange="11-24"
+  snippetHighlight="7"
+  snippetTitle="requiredRootPaths"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="tip">
+Dans un arbre fusionné, chaque source a son domaine : le stockage dit ce qui **existe**, la base dit ce qui **doit exister** et comment le **nommer**. On ne laisse jamais la base inventer un fichier, ni le stockage décider d’un droit.
+</Callout>
+
+## Ce que la base sait des fichiers
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/services/enrichStatus.service.ts"
+  filename="enrichStatus.service.ts"
+  snippetRange="23-77"
+  title="metaByKey — deux requêtes pour tout un dossier"
+  stepsJson='[{"title": "Une requête pour toutes les lignes", "body": "Toutes les clés du dossier en un seul `fullPath IN (…)` : la clé de stockage EST `MediaAsset.fullPath`.", "scope": "9-21", "focus": "12-12"}, {"title": "Une requête pour tous les expéditeurs", "body": "Les identifiants d’expéditeurs, dédoublonnés, puis une seule lecture des membres.", "scope": "24-40", "focus": "29-29"}, {"title": "Le nom lisible remplace le slug", "body": "displayName s’il a été choisi, sinon le nom d’origine du fichier. Le slug reste la clé ; il n’est plus montré.", "scope": "42-53", "focus": "46-46"}]'
+/>
+
+Un dossier de 200 photos coûte **deux** requêtes, pas 400. La version naïve — une lecture de `MediaAsset` par fichier, puis une lecture du membre par fichier — est le piège classique du « N + 1 » : invisible avec trois fichiers de test, elle devient la page lente dont personne ne comprend la lenteur.
+
+## Les libellés des dossiers
+
+Les dossiers suivent le même découplage que les fichiers : la clé ne change jamais, et `FolderLabel` donne un nom d’affichage. Le fil d’Ariane et l’arbre lisent ces libellés en une seule requête (`storage.folderLabels`), et « Renommer » une racine de contenu modifie son libellé, pas son chemin (`storage.setFolderLabel`, garde d’écriture comprise : un libellé change ce que **tout le monde** voit).
+
+<Callout type="tip">
+Partout dans le Finder, deux notions cohabitent : l’**identité** d’un nœud (sa clé, stable, qui sert aux opérations et aux jointures) et son **nom affiché** (nom d’origine, `displayName`, `FolderLabel`). Une opération ne reconstruit jamais un chemin à partir d’un nom affiché.
+</Callout>
+
+## L’espace personnel, une illusion assumée
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/scopePersoSpace.service.ts"
+  filename="scopePersoSpace.service.ts"
+  snippetRange="10-33"
+  snippetHighlight="12,16"
+  snippetTitle="scopePersoSpaceInTree"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Physiquement, `personal-space` contient un sous-dossier par utilisateur. À l’affichage, il montre directement le contenu de l’utilisateur courant : chacun a l’impression que « Espace personnel » est à lui. L’illusion est purement visuelle ; la **garde**, elle, est ailleurs — `canReadStorageKey` refuse la lecture d’un espace qui n’est pas le sien, quel que soit le chemin demandé.
+
+## Chercher dans un sous-arbre
+
+La recherche (`media.searchRecursive`) parcourt le dossier courant et tous ses sous-dossiers. Elle cherche dans le nom d’origine, le nom d’affichage, la description et le nom de l’expéditeur — autant de champs que le stockage ignore : la recherche lit donc la base, pas le stockage.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/router.ts"
+  filename="router.ts"
+  snippetRange="278-311"
+  snippetHighlight="19,21,29"
+  snippetTitle="Lire par paquets, sans s’arrêter trop tôt"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La première version lisait « les 1 000 premières lignes du sous-arbre », puis filtrait. Tout fichier correspondant au-delà de ces 1 000 était **introuvable**, sans que rien ne le signale. La lecture se fait maintenant par **paquets** triés par chemin, avec un curseur (`cursor` + `skip: 1` reprend juste après la dernière ligne lue), jusqu’à épuisement du sous-arbre ou à une borne de 10 000 lignes — auquel cas le résultat est marqué **tronqué**, et l’interface le dit.
+
+Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière réservée aux administrateurs (une expression mal construite peut bloquer le serveur, chapitre 4 et fiche 1.8).
+
+## Côté navigateur : un cache par dossier
+
+Le composant garde son état dans un store Zustand (`useFinderStore`) : dossier courant, contenu, sélection, tri, mode d’affichage. Le hook `useFinderData` charge le contenu du dossier courant et le range dans un **cache par chemin** :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useFinderData.ts"
+  filename="useFinderData.ts"
+  snippetRange="56-93"
+  snippetHighlight="6,20,36"
+  snippetTitle="useFinderData"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+- revenir dans un dossier déjà visité l’affiche **immédiatement**, sans requête ni indicateur de chargement ;
+- une réponse arrivée après qu’on a changé de dossier est **ignorée** (`cancelled`) : sinon, un dossier lent à charger pourrait écraser l’affichage du dossier suivant ;
+- après une modification (envoi, déplacement, renommage), `reloadFolderContent()` vide le cache et force une relecture :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetRange="287-291"
+  snippetHighlight="4"
+  snippetTitle="reloadFolderContent"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le tri suit la convention des explorateurs : les dossiers d’abord, puis les fichiers, avec une comparaison qui respecte les accents et les nombres :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/utils/sortNodes.ts"
+  filename="sortNodes.ts"
+  snippetRange="42-45"
+  snippetHighlight="2"
+  snippetTitle="Un comparateur français et numérique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+« photo 2 » passe avant « photo 10 », et « Élève » se range avec « eleve ». Le comparateur est créé **une fois** : en fabriquer un par tri coûterait à chaque rendu.
+
+Enfin, la lentille de statut (« Tous », « En attente », « Validés ») ne filtre **que la grille**, jamais l’arbre : un arbre qui change de forme quand on change de filtre rendrait indécidable la question « ce dossier a-t-il disparu parce qu’il est filtré, ou parce qu’il n’existe plus ? ».
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui fabrique l’arbre ?", "Le serveur (storage.getTree), à chaque ouverture : droits, stockage, puis compléments de la base."], ["Dans quel ordre ?", "Le stockage d’abord (ce qui existe), la base ensuite (ce qui doit exister, et comment le nommer). Le physique prime."], ["Comment éviter un espace en double ?", "Dédoublonnage par le suffixe stable « -<identifiant> », jamais par le nom."], ["Combien de requêtes pour enrichir un dossier ?", "Deux, quel que soit le nombre de fichiers."], ["Comment la recherche trouve-t-elle tout ?", "Lecture par paquets triés, avec curseur, bornée à 10 000 lignes et signalée tronquée au-delà."], ["Que garde le navigateur ?", "Un cache par dossier, vidé après chaque modification ; les réponses périmées sont ignorées."]]' />
+
+## À suivre
+
+L’arbre se lit. Il reste à le modifier : renommer, déplacer, jeter, restaurer. Chaque geste touche deux mondes qui ne partagent aucune transaction — le stockage et la base — et le Finder ne vaut que si les deux restent d’accord.
+
+<Callout type="tip">
+**Chapitre suivant : modifier sans casser.** Renommer sans déplacer, déplacer en copiant, refuser d’écraser, la corbeille et sa quarantaine, et ce qui reste fragile.
+</Callout>

@@ -1,0 +1,195 @@
+---
+title: "Un explorateur sur un sac de clés"
+description: "Pourquoi un stockage plat ne suffit pas à nourrir un explorateur de fichiers, pourquoi relayer sa liste au navigateur est une fausse bonne idée, ce que la base sait que le stockage ignore, et comment un composant unique se branche sur des adaptateurs."
+section: "Stockage et médias"
+order: 5
+entities:
+  MediaAsset: [fullPath, displayName, originalFileName, status, uploaderUserId]
+  Folder: [appRoot, fullPath]
+  FolderLabel: [path, displayName]
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les fichiers du club vivent dans un stockage objet, sous des clés comme `AKFC/courses/tchoy-lee-fut/salut-final.jpg`. Ils y arrivent par une URL signée, sont enregistrés dans `MediaAsset`, et servis par des routes qui vérifient les droits.
+
+## Donner à voir ce qui n’a pas de forme
+
+Jusqu’ici, nous avons fait **entrer** des choses dans le système : des données, des relations, des fichiers. La chorégraphie d’envoi est aboutie — le navigateur obtient une signature, le stockage reçoit, le serveur relit, la base enregistre.
+
+Le problème, c’est que **rien de tout cela ne se voit**. Un administrateur qui ouvre la bibliothèque veut regarder ce qui attend sa validation. Il veut ouvrir un dossier, voir ce qu’il contient, glisser une photo d’un dossier à un autre, renommer, jeter. Il veut un Finder — au sens du Finder de macOS, de l’explorateur de Windows : un arbre qu’on parcourt à la souris.
+
+Et c’est là que nous rencontrons, de plein fouet, une vérité posée dès le premier chapitre de cette partie : un stockage objet **n’a pas de dossiers**. Ce que nous avons déposé, ce sont des clés ; ce que l’administrateur attend, c’est une arborescence. Entre les deux, quelqu’un doit traduire.
+
+<DocsTable columnsJson='["Chapitre","La question"]' rowsJson='[["5. Un explorateur sur un sac de clés","Pourquoi le stockage ne suffit pas, et comment le Finder se découpe"],["6. Lire l’arbre","Comment le serveur fabrique, à chaque ouverture, l’arbre qu’affiche le navigateur"],["7. Modifier sans casser","Renommer, déplacer, jeter, restaurer : garder le stockage et la base d’accord"]]' />
+
+## Ce que le stockage sait répondre
+
+Un stockage S3 ne sait pas dire « voici l’arbre ». Il sait répondre à une question plus étroite : « donne-moi les clés qui commencent par ce préfixe ». Avec une option qui change tout, `Delimiter: "/"`, il **regroupe** ce qui suit le prochain `/` :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts"
+  filename="r2StorageAdapter.ts"
+  snippetRange="529-582"
+  title="buildSubTree — d’une liste de clés à un niveau d’arbre"
+  stepsJson='[{"title": "Un préfixe, un délimiteur", "body": "On demande les clés sous `AKFC/courses/` en regroupant au prochain « / ». Le stockage ne descend pas : il rend un seul niveau.", "scope": "7-17", "focus": "14-14"}, {"title": "CommonPrefixes : les sous-dossiers", "body": "Les préfixes regroupés sont tout ce qu’un stockage objet a à offrir comme « dossiers » : des chaînes communes à plusieurs clés. Un préfixe sans aucune clé n’apparaît pas — il n’existe pas.", "scope": "19-22", "focus": "19-19"}, {"title": "Descendre, ou s’arrêter", "body": "Tant qu’il reste de la profondeur, on relance la même question sur chaque sous-dossier. À la limite, le dossier est rendu SANS `children` : non chargé, ce qui n’est pas la même chose que vide.", "scope": "25-36", "focus": "27-27"}, {"title": "Contents : les fichiers", "body": "Les objets situés directement sous le préfixe sont les fichiers de ce niveau. Le stockage n’en connaît que la clé, la taille et la date : ni le statut, ni le nom d’origine, ni l’expéditeur.", "scope": "38-43", "focus": "38-38"}]'
+/>
+
+C’est mieux que Cloudinary, qui ne rendait qu’un tableau plat de `public_id` et laissait au code le soin de reconstruire les niveaux. Mais c’est encore loin d’un explorateur.
+
+## Le réflexe naïf : relayer la liste au navigateur
+
+Puisque le stockage sait lister, pourquoi ne pas lui ouvrir une procédure et laisser le navigateur se débrouiller ?
+
+<CodeSnippet
+  language="ts"
+  title="Relayer le stockage tel quel"
+  kind="anti-pattern"
+  codeJson='"listRaw: adminProcedure\n  .input(z.object({ prefix: z.string() }))\n  .query(async ({ input }) => {\n    const res = await s3.send(new ListObjectsV2Command({ Bucket, Prefix: input.prefix, Delimiter: \"/\" }));\n    return { folders: res.CommonPrefixes, files: res.Contents }; // des clés, et rien d’autre\n  }),"'
+/>
+
+À première vue, cela marche : le navigateur reçoit des dossiers et des fichiers, il les affiche. Mais quatre choses manquent, et aucune ne se rattrape côté navigateur :
+
+- **le nom lisible.** La clé est un slug (`salut-final-2025.jpg`) ; le nom que le membre a choisi (« Salut final (2025).JPG ») est dans `MediaAsset.originalFileName`, ou dans un `displayName` posé plus tard ;
+- **le statut et l’expéditeur.** En attente ou validé, déposé par qui : la base les sait, le stockage non ;
+- **les dossiers vides.** Un espace de groupe tout juste créé n’a encore aucun fichier, donc aucune clé, donc aucun `CommonPrefix` : il serait **invisible**, alors que le groupe existe et que ses membres doivent pouvoir y déposer ;
+- **les droits.** Le stockage ne connaît ni les membres, ni les groupes : un relais brut montrerait tout à tout le monde, ou rien à personne.
+
+Il y a enfin une raison d’architecture. Transformer une liste de clés en arborescence est un travail de synthèse qui doit être fait **une fois**, au bon endroit. Si le navigateur s’en charge, la future application mobile le refera, un peu différemment, et les deux arbres divergeront.
+
+<Callout type="tip">
+Un Finder n’est pas une vue du stockage : c’est une **traduction**. Le stockage parle « clés », l’administrateur pense « arborescence », et c’est notre serveur, avec ce qu’il sait de la base, qui invente entre les deux une topologie qui n’existe nulle part.
+</Callout>
+
+## La base n’est pas un cache, elle est une source
+
+Prenons le cas qui résiste le plus : le **dossier vide**. Un groupe collaboratif vient d’être créé ; son espace, `AKFC/collaborative-group-spaces/kung-fu-enfants-c…`, n’a encore reçu aucun fichier.
+
+Dans un vrai système de fichiers, la réponse serait évidente : on crée un répertoire, il existe. Dans un stockage objet, « créer un dossier vide » ne veut rien dire : il n’y a rien à créer. Les contournements viennent vite à l’esprit, et chacun échoue pour une raison différente :
+
+- **déposer un fichier fantôme** (`.keep`) pour que le préfixe existe : il pollue les listings et les quotas, doit suivre chaque renommage, et installe un invariant fragile — « ce dossier existe parce qu’un certain fichier existe » ;
+- **garder les dossiers vides en mémoire** du serveur : ils disparaissent au redémarrage du conteneur, et ne sont pas partagés si le site tourne sur plusieurs instances ;
+- **laisser chaque navigateur s’en souvenir** : aucun utilisateur ne verrait ce qu’un autre a préparé.
+
+Il ne reste qu’une voie : ce que le stockage ne peut pas représenter, **la base le sait**. Pas comme un cache du stockage — le stockage n’a littéralement rien à en dire — mais comme une source autonome. Et dans AKFC, la base le sait déjà, par ses **entités** : un groupe collaboratif existe dans `MemberGroup`, un membre dans `User`, une catégorie dans `Category`. L’arbre peut donc garantir que les dossiers qui **doivent** exister apparaissent, même vides : les racines de contenu, l’espace de chaque groupe accessible, l’espace personnel de l’utilisateur.
+
+Deux tables complètent ce que les entités ne disent pas :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1123-1142"
+  snippetTitle="Folder : les dossiers que la base enregistre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1977-1985"
+  snippetTitle="FolderLabel : un nom d’affichage, séparé du chemin"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+- **`Folder`** enregistre les dossiers dont le serveur a besoin de connaître l’existence indépendamment de leur contenu : la corbeille, l’espace d’un groupe au moment de sa création, les dossiers restaurés depuis la corbeille. Sa colonne `status` est un vestige de l’époque où le statut était un segment du chemin ; elle n’est plus lue pour décider de rien.
+- **`FolderLabel`** associe un chemin à un **nom d’affichage** : `courses` s’affiche « Cours », `personal-space` « Espace personnel », le dossier d’une discipline porte son nom avec ses accents. Le chemin, lui, ne change jamais — la règle déjà rencontrée pour les disciplines : un nom d’affichage n’est pas une clé.
+
+<Callout type="tip">
+Le stockage connaît les **fichiers** ; la base connaît les **entités** (groupes, membres, catégories) et ce qu’on a voulu nommer. Aucune des deux n’est subordonnée à l’autre : l’arbre du Finder est leur fusion, refaite à chaque lecture.
+</Callout>
+
+## Trois couches
+
+Le Finder répartit le travail en trois couches, chacune ignorant ce que fait l’autre.
+
+<DocsTable columnsJson='["Couche", "Où", "Rôle"]' rowsJson='[["Le composant", "apps/web/src/features/finder-core", "Affichage et interactions : grille, liste, arbre, fil d’Ariane, sélection, glisser-déposer, aperçu, recherche. Ne sait rien du stockage."], ["L’adaptateur", "apps/web/src/features/finder-adapters", "Traduit les demandes du composant (lister, déplacer…) en appels tRPC, et les réponses en nœuds affichables."], ["Le backend", "packages/backend/src/modules/storage", "Lit le stockage, le complète avec la base, applique les droits, exécute les opérations."]]' />
+
+Le contrat entre le composant et l’adaptateur est une interface de `packages/contracts` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/finder/adapter.ts"
+  filename="adapter.ts"
+  snippetRange="99-149"
+  snippetHighlight="6,44"
+  snippetTitle="FileAdapter"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Seule `list` est obligatoire. Un adaptateur en lecture seule n’implémente ni `moveItems` ni `delete`, et le composant masque les actions correspondantes. Ce découpage permet d’utiliser **le même composant à trois endroits** :
+
+- la **bibliothèque** du tableau de bord (`<Finder adapter={finderStorageAdapter} rootPath={APP_ROOT} />`), qui parle aux procédures `storage.*` ;
+- la page **Mes espaces** des membres, avec `memberFinder.adapter.ts`, dont la racine est **virtuelle** — elle n’existe pas dans le stockage — et ne liste que les espaces de groupe accessibles au membre ;
+- le **sélecteur de médias** (`MediaPicker`), qui monte le Finder en mode sélection pour choisir les images d’une page ou d’une galerie.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-adapters/member/memberFinder.adapter.ts"
+  filename="memberFinder.adapter.ts"
+  snippetRange="13-17"
+  snippetHighlight="5"
+  snippetTitle="Une racine qui n’est pas un chemin"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le panier du sélecteur vit dans `packages/finder-core` (`usePickerCartStore`), un paquet sans aucun code d’affichage : il pourra être repris tel quel par la future application mobile.
+
+<Callout type="info">
+Le composant ne connaît qu’un **contrat** ; chaque usage fournit son adaptateur. Ajouter un nouvel explorateur (un espace documentaire, une version mobile) revient à écrire un adaptateur, pas un nouveau Finder.
+</Callout>
+
+## Le nœud du Finder
+
+Ce qui circule entre les trois couches est un `FinderNode` :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/finder/node.ts"
+  filename="node.ts"
+  snippetRange="16-49"
+  snippetHighlight="2,4,24,33"
+  snippetTitle="FinderNode"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois champs méritent qu’on s’y arrête.
+
+**`path` est l’identité d’un nœud.** Pour la bibliothèque, c’est la clé de stockage elle-même, celle qui sert aux opérations et aux jointures avec `MediaAsset.fullPath`. Le contrat reste plus général — un adaptateur peut présenter un chemin qui n’existe pas chez un fournisseur, comme la racine virtuelle de *Mes espaces* — mais il ne reconstruit **jamais** un chemin à partir d’un nom affiché.
+
+**`children` distingue trois états**, qu’un simple tableau confondrait :
+
+<DocsTable columnsJson='["children", "Signification"]' rowsJson='[["undefined", "Pas encore chargé (limite de profondeur atteinte) : l’arbre demandera la suite quand on dépliera le dossier."], ["[]", "Vide pour de vrai."], ["[ … ]", "Enfants chargés."]]' />
+
+**`meta` porte ce que la base ajoute** au stockage : le statut, le nom de l’expéditeur, l’URL d’aperçu, le format. C’est l’adaptateur qui l’assemble :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-adapters/storage/finderStorage.adapter.ts"
+  filename="finderStorage.adapter.ts"
+  snippetRange="122-146"
+  snippetHighlight="10,22"
+  snippetTitle="mapFileToFinderNode"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’URL d’aperçu ne pointe pas vers le stockage, mais vers la route privée de l’application (`/api/media/r2/…?variant=medium`) : c’est elle qui vérifie le droit de lecture et sert la déclinaison, comme au chapitre précédent.
+
+<Callout type="warning">
+Au temps de Cloudinary, le chemin d’un fichier contenait son statut (`AKFC/pending/…`), et le Finder a longtemps « plié » ces chemins pour n’en montrer qu’un. Ce pliage a été retiré : le statut est une métadonnée (`meta.status`), et le chemin est la clé, point. Si un ancien commentaire parle de « chemin logique » opposé à un « chemin physique », c’est de cette époque qu’il vient.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que sait répondre le stockage ?", "Les clés sous un préfixe, regroupées au prochain « / » (ListObjectsV2 + Delimiter) : un niveau à la fois, sans dossier vide."], ["Pourquoi ne pas relayer cette liste ?", "Il y manque le nom lisible, le statut, l’expéditeur, les dossiers vides et les droits ; et la synthèse serait refaite par chaque client."], ["D’où viennent les dossiers vides ?", "Des entités en base (groupes, membres, catégories), complétées par Folder ; les libellés viennent de FolderLabel."], ["Comment le Finder est-il découpé ?", "Un composant, des adaptateurs (bibliothèque, Mes espaces, sélecteur), un backend ; le contrat FileAdapter les relie."], ["Qu’est-ce qui identifie un nœud ?", "Son path : pour la bibliothèque, la clé de stockage. Jamais un nom affiché."]]' />
+
+## À suivre
+
+Nous savons ce que le stockage rend, ce que la base sait, et comment le Finder se découpe. Reste à assembler : comment, à chaque ouverture d’un dossier, le serveur fabrique l’arbre que le navigateur affiche — et dans quel ordre il le fait.
+
+<Callout type="tip">
+**Chapitre suivant : lire l’arbre.** La procédure `storage.getTree` passe par passe, l’enrichissement groupé, les espaces réinjectés, la recherche, et le cache du navigateur.
+</Callout>
