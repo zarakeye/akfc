@@ -2,7 +2,7 @@
 title: "Les demandes"
 description: "Un message, un numéro, un responsable, un délai : les demandes des membres au club, qui peut les traiter, le passage de relais, les réponses envoyées depuis le site, la relève des réponses par e-mail et le récapitulatif quotidien."
 section: "Membres et collaboration"
-order: 4
+order: 6
 entities:
   Ticket: [number, status, categoryId, requesterEmail, requesterName, assigneeId, dueAt, firstResponseAt, closedAt]
   TicketCategory: [label, replyTo, groupId]
@@ -53,7 +53,7 @@ stories:
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les groupes collaboratifs ont chacun leur espace de fichiers, avec des droits de lecture ou d'écriture qui descendent dans la hiérarchie des groupes. Chaque garde lit le groupe dans le chemin visé.
+> **Précédemment.** Les membres reçoivent les documents du club et partagent leurs fichiers dans les espaces de leurs groupes, avec des droits qui descendent l’arbre des groupes et se lisent dans le chemin de chaque fichier.
 
 Un membre a parfois besoin de s'adresser au club : poser une question, signaler un problème sur le site, demander une attestation. Le club a fixé quatre exigences : **un message, un numéro, un responsable, un délai**. Chaque demande est numérotée, quelqu'un en est responsable, et le club s'engage sur un délai de première réponse. Sans que l'adresse personnelle de personne ne circule, ni celle du membre, ni celle de qui lui répond.
 

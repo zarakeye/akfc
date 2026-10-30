@@ -1,8 +1,8 @@
 ---
 title: "Les documents des membres"
-description: "Mettre un fichier de la bibliothèque à disposition des membres sans le copier, choisir qui le reçoit (tous, des groupes, des personnes), suivre ce que chacun a lu, et ne servir le fichier qu'à ses destinataires."
+description: "Mettre un fichier de la bibliothèque à disposition des membres sans le copier, choisir qui le reçoit (tous, des groupes, des personnes), distinguer ce qui concerne un membre de ce qu’il peut ouvrir, suivre ce que chacun a lu, et ne servir le fichier qu’à ceux qui peuvent l’ouvrir."
 section: "Membres et collaboration"
-order: 2
+order: 3
 entities:
   MemberDocument: [mediaAssetId, title, audience, publishedAt, publishedById]
   MediaAsset: [fullPath, originalFileName, mimeType]
@@ -24,174 +24,191 @@ stories:
       - label: Le menu signale ce qu'il n'a pas encore lu, par provenance
         call: memberDocument.unreadBreakdownForMe
         section: Ce qui est signalé, et à partir de quand
-      - label: La page « Documents » liste ceux qui lui sont adressés
+      - label: La page « Documents » liste ceux qu'il peut ouvrir
         call: memberDocument.listForMe
-        section: Qui reçoit le document
+        section: Concerner, et pouvoir ouvrir
       - label: Il en ouvre un ; un accusé de lecture est créé
         call: memberDocument.markRead
         section: Lu, non lu
-      - label: Il peut le remettre en non lu
-        call: memberDocument.markUnread
-        section: Lu, non lu
+      - label: Le fichier est servi par le site, à lui seul
+        call: GET /api/media/member-document/[id]
+        section: Servir le fichier à ceux qui peuvent l'ouvrir
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le membre a son compte, son mot de passe et son profil. Le club peut maintenant lui transmettre des documents.
+> **Précédemment.** Le membre a son compte, son profil et son avatar, envoyé et vérifié par son propre circuit, hors de la bibliothèque.
 
-Le club diffuse des documents à ses membres : le compte rendu de l'assemblée générale pour tous, une attestation pour une seule personne, un planning pour un groupe. Les membres les retrouvent sur la page « Documents », les lisent dans un panneau d'aperçu, et l'entrée « Documents » du menu signale ce qu'ils n'ont pas encore lu.
+Le club diffuse des documents à ses membres : le compte rendu de l’assemblée générale pour tous, une attestation pour une seule personne, un planning pour un groupe. Les membres les retrouvent sur la page « Documents », les lisent dans un panneau d’aperçu, et l’entrée « Documents » du menu signale ce qu’ils n’ont pas encore lu.
 
 ## Les parcours du chapitre
 
-Deux cas d'utilisation traversent ce chapitre : la publication, côté club, et la lecture, côté membre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+Deux cas d’utilisation traversent ce chapitre : la publication, côté club, et la lecture, côté membre. Chaque onglet en déroule les étapes relevées dans le code ; chaque étape mène à son explication plus bas.
 
 <Parcours />
 
-## Une publication, pas une copie
+## Une publication, pas une copie 📄
 
-Un document des membres est d'abord un fichier de la bibliothèque, rangé dans le finder comme les autres. Le publier ne le copie pas : cela crée une ligne `MemberDocument` qui pointe vers son `MediaAsset` et décrit sa diffusion.
+Un document des membres est d’abord un fichier de la bibliothèque, rangé dans le finder comme les autres. Le publier ne le copie pas : cela crée une ligne `MemberDocument` qui pointe vers son `MediaAsset` et décrit sa diffusion.
 
-```prisma
-// prisma/schema.prisma (extrait)
-model MemberDocument {
-  /// Identifiant CUID.
-  id           String     @id @default(cuid())
-  /// Fichier publié (unique).
-  mediaAssetId String     @unique
-  /// Fichier (1–1, MediaAsset.memberDocument). Supprimer le fichier supprime
-  /// la publication (CASCADE).
-  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1680-1714"
+  snippetHighlight="5,8,14"
+  snippetTitle="MemberDocument"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-  /// Titre affiché. À défaut : nom affiché du fichier, puis son nom d'origine.
-  title String?
+Ce choix permet trois choses. Le fichier n’existe qu’une fois : le corriger dans le finder corrige le document des membres. Son nom, son format et son type viennent du `MediaAsset`, sans être recopiés. Et `mediaAssetId` est **unique** : un même fichier ne peut pas être publié deux fois, avec deux diffusions contradictoires.
 
-  /// Diffusion : à tous, ou ciblée (voir DocumentAudience).
-  audience DocumentAudience @default(ALL_MEMBERS)
-  // …
-}
-```
-
-Ce choix permet trois choses. Le fichier n'existe qu'une fois : le corriger dans le finder corrige le document des membres. Son nom, son format et son type viennent du `MediaAsset`, sans être recopiés. Et `mediaAssetId` est unique : un même fichier ne peut pas être publié deux fois, avec deux diffusions contradictoires.
-
-La publication vit aussi longtemps que le fichier : la relation est en `onDelete: Cascade`. Un fichier supprimé de la bibliothèque ne laisse pas derrière lui un document fantôme dans la liste des membres. À l'inverse, retirer la publication ne touche pas au fichier.
+La publication vit aussi longtemps que le fichier : la relation est en `onDelete: Cascade`. Un fichier supprimé de la bibliothèque ne laisse pas derrière lui un document fantôme. À l’inverse, retirer la publication ne touche pas au fichier. Et un fichier publié aux membres ne peut pas être jeté sans retirer d’abord la publication : la corbeille le refuse, en nommant « documents des membres » parmi ce qui l’utilise.
 
 ## Qui reçoit le document
 
 Un document a deux modes de diffusion :
 
 - **`ALL_MEMBERS`** : tous les membres, y compris ceux qui adhèrent après la publication ;
-- **`SPECIFIC`** : une diffusion ciblée, vers des **groupes** (`MemberDocumentGroup`), des **personnes** désignées nommément (`MemberDocumentRecipient`), ou les deux à la fois.
+- **`SPECIFIC`** : une diffusion ciblée, vers des **groupes** (`MemberDocumentGroup`), des **personnes** désignées nommément (`MemberDocumentRecipient`), ou les deux.
 
 Les destinataires ne sont jamais recopiés dans une liste au moment de la publication. La question « ce document concerne-t-il ce membre ? » est posée à chaque lecture, par une seule condition Prisma :
 
-```ts
-// packages/backend/src/modules/memberDocuments/visibleTo.ts (extrait)
-export function memberDocumentVisibleTo(userId: string) {
-  return {
-    OR: [
-      { audience: "ALL_MEMBERS" as const },
-      {
-        audience: "SPECIFIC" as const,
-        OR: [
-          { recipients: { some: { userId } } },
-          {
-            groups: { some: { group: { memberships: { some: { userId } } } } },
-          },
-        ],
-      },
-    ],
-  };
-}
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberDocuments/visibleTo.ts"
+  filename="visibleTo.ts"
+  snippetRange="17-32"
+  snippetHighlight="4,8,10"
+  snippetTitle="Ce qui concerne un membre"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Un groupe est ainsi une liste de diffusion **vivante** : un membre ajouté au groupe « Bureau » reçoit les documents déjà adressés au bureau, et un membre qui en sort ne les voit plus. Aucune tâche de synchronisation n'est nécessaire, puisqu'il n'y a rien à synchroniser.
+Un groupe est ainsi une liste de diffusion **vivante** : un membre ajouté au groupe « Bureau » reçoit les documents déjà adressés au bureau, et un membre qui en sort ne les voit plus. Aucune tâche de synchronisation, puisqu’il n’y a rien à synchroniser.
 
-Toutes les procédures du membre (lister, compter, marquer lu, marquer non lu) passent par cette condition, et la route qui livre le fichier l'importe aussi : ce que le membre voit dans sa liste et ce qu'il peut ouvrir ne peuvent pas diverger. Un membre qui demande à marquer comme lu un document qui ne le concerne pas reçoit « Document introuvable », exactement comme si le document n'existait pas.
+## Concerner, et pouvoir ouvrir
+
+Une seconde catégorie de documents s’ajoute : les **dépôts des espaces collaboratifs** (chapitre 5). Quand un membre dépose un fichier dans l’espace de son groupe, il est publié comme document de ce groupe. Or les droits sur les espaces **descendent** la hiérarchie des groupes (chapitre 4) : un membre du groupe parent, ou un administrateur, a accès à l’espace d’un sous-groupe sans en être membre.
+
+La cloche collaborative du header compte ces dépôts avec l’héritage. La condition de visibilité, elle, ne regardait que l’appartenance **directe**. Résultat : la cloche signalait à un administrateur des dépôts qu’il ne pouvait ni ouvrir, ni marquer lus — elle ne se vidait jamais. D’où une seconde condition, qui étend la première :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberDocuments/visibleTo.ts"
+  filename="visibleTo.ts"
+  snippetRange="45-62"
+  title="memberDocumentReadableBy — concerner, plus l’héritage"
+  stepsJson='[{"title": "Les espaces accessibles, héritage compris", "body": "La même fonction que la cloche et le finder des membres : ses groupes, plus tous les groupes placés sous eux, limités aux collaboratifs.", "scope": "5-5", "focus": "5-5"}, {"title": "La condition de départ", "body": "Ce qui le concerne reste la base : tous, ses documents personnels, ses groupes directs.", "scope": "6-6", "focus": "6-6"}, {"title": "Plus les dépôts des espaces hérités", "body": "Un document ciblé sur l’un de ces groupes s’ajoute à la condition. Sans espace accessible, la condition reste celle de départ.", "scope": "7-18", "focus": "14-14"}]'
+/>
+
+Les deux conditions ont chacune leur emploi :
+
+<DocsTable columnsJson='["Condition", "Question", "Utilisée par"]' rowsJson='[["memberDocumentVisibleTo", "Ce document lui est-il adressé ?", "Le badge « Documents » du menu (ses non-lus)."], ["memberDocumentReadableBy", "Peut-il l’ouvrir ?", "La liste de la page « Documents », le marquage lu / non lu, la route qui livre le fichier."]]' />
+
+Le badge « Documents » reste sur la première : un administrateur ne veut pas voir chaque dépôt de chaque groupe compté parmi les documents que le club lui adresse ; ces dépôts ont leur cloche. Mais tout ce que la cloche signale doit pouvoir être ouvert. Un clic dans la cloche ouvre désormais le document lui-même, ce qui le marque lu :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/app-shell/CollaborativeBell.tsx"
+  filename="CollaborativeBell.tsx"
+  snippetRange="88-92"
+  snippetHighlight="4"
+  snippetTitle="La cloche ouvre le document"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="info">
+Ce qu’un compteur signale, l’utilisateur doit pouvoir le traiter. Un compteur et l’action qui le fait baisser doivent lire **la même** règle d’accès — ici la même liste de groupes, calculée par la même fonction.
+</Callout>
 
 ## Publier depuis le finder
 
-Les administrateurs publient un fichier sans quitter la bibliothèque, par trois chemins : le menu contextuel d'un fichier (dans les quatre vues du finder), l'option « Rendre les PDF disponibles aux membres » du formulaire d'envoi, et le glisser-déposer dans ce même formulaire. Tous ouvrent la même boîte de dialogue, qui choisit la diffusion, et appellent la même procédure.
+Les administrateurs publient un fichier sans quitter la bibliothèque, par trois chemins : le menu contextuel d’un fichier (dans les quatre vues du finder), l’option « Rendre les PDF disponibles aux membres » du formulaire d’envoi, et le glisser-déposer dans ce même formulaire. Tous ouvrent la même boîte de dialogue, qui choisit la diffusion, et appellent la même procédure :
 
-Le finder manipule des chemins, pas des identifiants de base. La procédure retrouve donc le fichier par son chemin :
-
-```ts
-// packages/backend/src/modules/memberDocuments/router.ts (extrait)
-const asset = await ctx.prisma.mediaAsset.findUnique({
-  where: { fullPath: input.path },
-  select: { id: true },
-});
-```
-
-Le chemin est la clé du fichier (partie « Stockage et médias ») : la recherche est exacte, sans tolérance sur l’extension. La procédure refuse ensuite un fichier déjà publié (`CONFLICT`), et une diffusion ciblée sans aucun groupe ni aucune personne.
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberDocuments/router.ts"
+  filename="router.ts"
+  snippetRange="282-350"
+  title="memberDocument.publish"
+  stepsJson='[{"title": "Réservé aux administrateurs", "body": "Diffuser un document au nom du club est une action d’administration.", "scope": "1-1", "focus": "1-1"}, {"title": "Une diffusion ciblée a des destinataires", "body": "Pour tous, les listes sont ignorées ; pour une diffusion ciblée, il faut au moins un groupe ou un membre.", "scope": "12-25", "focus": "17-19"}, {"title": "Le fichier, par sa clé", "body": "Le finder manipule des chemins, pas des identifiants : la procédure retrouve le fichier par son chemin, qui EST sa clé (recherche exacte, partie « Stockage et médias »).", "scope": "28-34", "focus": "29-29"}, {"title": "Une seule publication par fichier", "body": "Un fichier déjà publié est refusé avec un message (CONFLICT), avant que la contrainte d’unicité ne lève une erreur interne.", "scope": "36-45", "focus": "40-42"}, {"title": "Des destinataires qui existent", "body": "Un membre ou un groupe supprimé pendant que la boîte de dialogue était ouverte donnerait une erreur de clé étrangère : ils sont comptés en base, doublons écartés.", "scope": "49-55", "focus": "53-53"}, {"title": "La publication et sa diffusion, ensemble", "body": "Une écriture imbriquée crée la ligne et ses destinataires : une publication sans ses destinataires n’existe jamais.", "scope": "57-68", "focus": "63-64"}]'
+/>
 
 ## Lu, non lu
 
 Le suivi de lecture repose sur `DocumentReceipt`, une ligne par membre et par document :
 
-<DocsTable columnsJson='["État","En base","Signalé au membre ?"]' rowsJson='[["Jamais ouvert","pas de ligne","oui"],["Ouvert","readAt = date d’ouverture","non"],["Re-marqué non lu","readAt = null","oui"]]' />
+<DocsTable columnsJson='["État", "En base", "Signalé au membre ?"]' rowsJson='[["Jamais ouvert", "pas de ligne", "oui"], ["Ouvert", "readAt = date d’ouverture", "non"], ["Re-marqué non lu", "readAt = null", "oui"]]' />
 
-Aucune ligne n'est créée à la publication : un document adressé à deux cents membres n'écrit rien de plus en base. La ligne naît à la première ouverture de l'aperçu, par un `upsert` :
+Aucune ligne n’est créée à la publication : un document adressé à deux cents membres n’écrit rien de plus en base. La ligne naît à la première ouverture de l’aperçu :
 
-```ts
-// packages/backend/src/modules/memberDocuments/router.ts (extrait)
-await ctx.prisma.documentReceipt.upsert({
-  where: { memberDocumentId_userId: { memberDocumentId: input.id, userId } },
-  create: { memberDocumentId: input.id, userId, readAt: new Date() },
-  update: { readAt: new Date() },
-});
-```
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberDocuments/router.ts"
+  filename="router.ts"
+  snippetRange="238-256"
+  title="memberDocument.markRead"
+  stepsJson='[{"title": "Pouvoir l’ouvrir", "body": "Le document doit satisfaire la condition d’ouverture. Sinon : « Document introuvable », exactement comme s’il n’existait pas — la réponse ne révèle pas qu’il existe.", "scope": "5-12", "focus": "7-7"}, {"title": "Un upsert, une ligne", "body": "La première ouverture crée la ligne, les suivantes la mettent à jour : jamais deux reçus pour un même membre et un même document (clé unique composée).", "scope": "13-17", "focus": "14-16"}]'
+/>
 
-« Non lu » se compte donc comme « aucun reçu daté pour ce membre » (`receipts: { none: { userId, readAt: { not: null } } }`), ce qui couvre à la fois l'absence de ligne et la ligne remise à `null`. Le membre peut re-marquer un document comme non lu, pour garder le signal et y revenir plus tard.
+« Non lu » se compte comme « aucun reçu daté pour ce membre » (`receipts: { none: { userId, readAt: { not: null } } }`), ce qui couvre à la fois l’absence de ligne et la ligne remise à `null`. Le membre peut re-marquer un document comme non lu, pour garder le signal et y revenir plus tard.
 
 ### Ce qui est signalé, et à partir de quand
 
-Le badge de l'entrée « Documents » ne signale pas tout l'historique. Un membre qui adhère en octobre ne doit pas trouver vingt documents « non lus » datant d'avant son arrivée. Les documents adressés à tous ne sont signalés qu'à partir du **1er janvier de l'année d'adhésion** :
+Le badge de l’entrée « Documents » ne signale pas tout l’historique. Un membre qui adhère en octobre ne doit pas trouver vingt documents « non lus » datant d’avant son arrivée :
 
-```ts
-// packages/backend/src/modules/memberDocuments/router.ts (extrait)
-const yearStart = me?.memberSince
-  ? new Date(Date.UTC(me.memberSince.getUTCFullYear(), 0, 1))
-  : null;
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberDocuments/router.ts"
+  filename="router.ts"
+  snippetRange="94-102"
+  snippetHighlight="2"
+  snippetTitle="Une borne : le début de l’année d’adhésion"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Le début de l'année, et non la date exacte d'adhésion : un membre qui arrive après l'assemblée générale est quand même invité à lire son compte rendu. Les documents plus anciens restent dans la liste de la page ; les lire est une démarche volontaire, pas une alerte. Les documents personnels et ceux des groupes sont toujours signalés : ils ont été adressés à ce membre en particulier.
+Le **début de l’année**, et non la date exacte d’adhésion : un membre qui arrive après l’assemblée générale est quand même invité à lire son compte rendu. Les documents plus anciens restent dans la liste de la page ; les lire est une démarche volontaire, pas une alerte. Les documents personnels et ceux des groupes sont toujours signalés : ils ont été adressés à ce membre en particulier.
 
-Le badge affiche un total **distinct** : un document qui atteint le membre par deux chemins (à titre personnel et par son groupe) ne compte qu'une fois. L'infobulle détaille le nombre par provenance : le club, chaque groupe, les documents personnels.
+Le badge affiche un total **distinct** : un document qui atteint le membre par deux chemins (à titre personnel et par son groupe) ne compte qu’une fois. L’infobulle détaille le nombre par provenance : le club, chaque groupe, les documents personnels.
 
-## Servir le fichier aux seuls destinataires
+## Servir le fichier à ceux qui peuvent l’ouvrir
 
-Un document des membres n'a pas d'URL publique, et aucune URL signée de stockage n'est donnée au navigateur. Il est servi par une route du site, `/api/media/member-document/[id]`, qui vérifie la session puis applique la même condition que les procédures :
+Un document des membres n’a pas d’URL publique, et aucune URL signée du stockage n’est donnée au navigateur. Il est servi par une route du site :
 
-```ts
-// apps/web/src/app/api/media/member-document/[id]/route.ts (extrait)
-const session = await getSessionFromRequest(req);
-if (!session?.user) {
-  return new NextResponse("Unauthorized", { status: 401 });
-}
-const userId = session.user.id;
-// …
-if (!doc) return new NextResponse("Not found", { status: 404 });
-```
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/media/member-document/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="34-65"
+  title="GET /api/media/member-document/[id]"
+  stepsJson='[{"title": "Une session", "body": "Sans session : 401. Un document des membres n’est jamais servi à un visiteur.", "scope": "5-9", "focus": "6-7"}, {"title": "La condition d’ouverture", "body": "La même que la liste et le marquage : ce que le membre voit dans sa liste et ce qu’il peut ouvrir ne peuvent pas diverger.", "scope": "15-17", "focus": "15-17"}, {"title": "404 plutôt que 403", "body": "Un document qui existe mais que le membre ne peut pas ouvrir répond « introuvable » : la réponse ne révèle pas qu’il existe.", "scope": "32-32", "focus": "32-32"}]'
+/>
 
-Un document qui existe mais ne concerne pas le membre répond 404, et non 403 : la réponse ne révèle pas qu'il existe.
+Le fichier est ensuite lu dans le stockage et transmis **par la route elle-même**, sous la même origine que le site :
 
-Le fichier est ensuite lu dans le stockage et transmis par la route elle-même, sous la même origine que le site, avec `Cache-Control: private, no-store`. Deux raisons à ce choix plutôt qu'une redirection vers une URL signée. L'aperçu des PDF (pdf.js) télécharge le fichier en JavaScript, ce qu'une redirection vers un autre domaine bloquerait (CORS). Et chaque accès repasse par la vérification : il n'existe aucun lien qu'un membre pourrait transmettre à quelqu'un d'autre. Le paramètre `?download=1` sert le même fichier en pièce jointe, sous son nom lisible.
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/member-document/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="94-110"
+  snippetHighlight="9-10"
+  snippetTitle="Les en-têtes de la réponse"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Seuls les types sans danger sont affichés dans le navigateur : PDF, images (hors SVG), texte, audio et vidéo. Tout autre type est servi en pièce jointe, qui s'enregistre au lieu de s'ouvrir. Deux en-têtes complètent la protection : `X-Content-Type-Options: nosniff` interdit au navigateur de deviner un autre type que celui annoncé, et une politique de sécurité `sandbox` empêche toute exécution de script. Les envois sont déjà limités aux formats autorisés (voir « Envoyer et servir un fichier ») ; ces en-têtes couvrent aussi les fichiers déposés avant cette limite.
+Deux raisons à ce choix plutôt qu’une redirection vers une URL signée. L’aperçu des PDF (pdf.js) télécharge le fichier en JavaScript, ce qu’une redirection vers un autre domaine bloquerait (CORS). Et chaque accès repasse par la vérification : il n’existe aucun lien qu’un membre pourrait transmettre à quelqu’un d’autre. `private, no-store` interdit à tout cache intermédiaire de le garder ; `?download=1` sert le même fichier en pièce jointe, sous son nom lisible.
 
-<Callout type="info">
-Deux conditions, posées à chaque lecture. `memberDocumentVisibleTo` dit ce qui **concerne** le membre (le badge « Documents »). `memberDocumentReadableBy` y ajoute les dépôts des espaces collaboratifs auxquels il a accès par **héritage** (membre d’un groupe parent, administrateur) : la liste, le marquage lu / non lu et la livraison du fichier l’utilisent. Sans elle, la cloche collaborative, qui compte ces dépôts, signalait des documents qu’on ne pouvait ni ouvrir ni marquer lus.
-</Callout>
+Seuls les types sans danger s’affichent dans le navigateur : PDF, images (hors SVG), texte, audio et vidéo. Tout autre type est servi en pièce jointe. `nosniff` interdit au navigateur de deviner un autre type que celui annoncé, et une politique `sandbox` empêche toute exécution de script — sauf pour un PDF, dont le lecteur intégré des navigateurs refuse de s’afficher dans un document « sandboxé ».
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Publier copie-t-il le fichier ?","Non : MemberDocument pointe vers le MediaAsset, une fois au plus ; la publication disparaît avec le fichier."],["Qui reçoit un document ?","Tous (ALL_MEMBERS), ou des groupes et des personnes (SPECIFIC) ; l’appartenance aux groupes est résolue à chaque lecture."],["Comment le site sait-il ce qui a été lu ?","Une ligne DocumentReceipt créée à la première ouverture ; pas de ligne ou readAt null = non lu."],["Pourquoi un nouveau membre n’a-t-il pas tout l’historique en non lu ?","Les documents pour tous ne sont signalés qu’à partir du 1er janvier de son année d’adhésion."],["Comment le fichier est-il protégé ?","Une route du site vérifie la session et la diffusion à chaque accès, répond 404 sinon, et transmet le fichier elle-même, sans URL signée."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Publier copie-t-il le fichier ?", "Non : MemberDocument pointe vers le MediaAsset, une fois au plus ; la publication disparaît avec le fichier."], ["Qui reçoit un document ?", "Tous (ALL_MEMBERS), ou des groupes et des personnes (SPECIFIC) ; l’appartenance aux groupes est résolue à chaque lecture."], ["Qu’est-ce qui le concerne, et que peut-il ouvrir ?", "memberDocumentVisibleTo pour son badge ; memberDocumentReadableBy, qui ajoute les dépôts des espaces hérités, pour la liste, le marquage et le fichier."], ["Comment le site sait-il ce qui a été lu ?", "Une ligne DocumentReceipt créée à la première ouverture ; pas de ligne ou readAt null = non lu."], ["Pourquoi un nouveau membre n’a-t-il pas tout l’historique en non lu ?", "Les documents pour tous ne sont signalés qu’à partir du 1er janvier de son année d’adhésion."], ["Comment le fichier est-il protégé ?", "Une route du site vérifie la session et le droit d’ouvrir à chaque accès, répond 404 sinon, et transmet le fichier elle-même, sans URL signée."]]' />
 
 ## À suivre
 
-Les documents descendent du club vers ses membres. Certains groupes ont aussi besoin de travailler ensemble : déposer leurs propres fichiers, les ranger, les partager entre eux, sans voir ceux des autres groupes.
+Les documents sont adressés à des groupes, et les groupes ouvrent des espaces. Avant d’y entrer, il faut comprendre ce qu’est un groupe ici : une liste de diffusion, un niveau d’accès, et une place dans un arbre dont la racine est « Administrateurs ».
 
 <Callout type="tip">
-**Chapitre suivant : les espaces collaboratifs.** Un espace de fichiers par groupe, des droits de lecture ou d'écriture propres à chaque espace, la hiérarchie des groupes, et les gardes qui vérifient chaque chemin.
+**Chapitre suivant : les groupes.** Deux sortes de groupes, lecteur ou éditeur, une hiérarchie qui transmet ses droits vers le bas, une racine qui ne bouge pas, et un arbre sans cycle.
 </Callout>

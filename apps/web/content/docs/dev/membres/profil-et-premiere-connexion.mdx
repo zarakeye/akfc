@@ -1,19 +1,17 @@
 ---
-title: "Le profil et la première connexion"
-description: "Un compte créé par le club avec un mot de passe robuste qui ne parvient qu'au membre, une première connexion qui le guide vers son profil, un profil que seul son titulaire modifie, et un avatar envoyé et vérifié à part."
+title: "Le compte et le profil"
+description: "Un compte ouvert par le club avec un mot de passe robuste qui ne parvient qu’au membre, une première connexion qui le guide vers son profil, un profil que seul son titulaire modifie, un nom affiché qui ne livre jamais l’adresse, et un compte qui part sans rien laisser."
 section: "Membres et collaboration"
 order: 1
 entities:
-  User: [email, password, firstName, lastName, pseudo, aboutMe, phone, birthDate, avatar, isFirstLogin]
-  MemberGroupMembership: [groupId, userId]
+  User: [email, password, firstName, lastName, pseudo, aboutMe, phone, birthDate, birthDateVerified, isFirstLogin, avatar]
+  MemberGroupMembership: [groupId, userId, access]
   MemberGroup: [name]
-  Session: [userId, expiresAt]
-  PasswordResetToken: [tokenHash, expiresAt, usedAt]
 stories:
   - title: Le club crée un compte
     actor: Administrateur
     steps:
-      - label: L'administrateur crée le compte, rattaché à au moins un groupe
+      - label: L'administrateur crée le compte, rattaché à au moins un groupe ; le serveur génère le mot de passe
         call: user.create
         section: Un compte créé par le club
       - label: Le mot de passe part au seul membre ; la boîte du club reçoit un avis sans mot de passe
@@ -31,194 +29,175 @@ stories:
       - label: Le formulaire relit la session avant de quitter la page
         call: auth.getSession
         section: Relire la session après une écriture
-  - title: Le membre change son avatar
-    actor: Membre connecté
+  - title: Le club supprime un compte
+    actor: Administrateur
     steps:
-      - label: Le navigateur demande une autorisation d'envoi dans le dossier du membre
-        call: avatar.createUpload
-        section: L'avatar, un envoi à part
-      - label: Le serveur vérifie le fichier envoyé et l'enregistre comme avatar
-        call: avatar.register
-        section: L'avatar, un envoi à part
+      - label: Le compte part avec ses liens, sa présentation et son portrait ; jamais le sien
+        call: user.delete
+        section: Un compte qui part
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les disciplines, les cours, les stages et les événements sont les contenus du club, chacun avec sa façon de porter le temps. Les membres, eux, ont leur propre espace sur le site.
+> **Précédemment.** Les disciplines, les cours, les stages et les événements sont les contenus du club ; les pages, le texte riche et les fichiers qu’ils montrent ont leurs propres règles. Les membres, eux, ont leur propre espace sur le site.
 
-Cette partie suit un membre à travers les fonctions qui lui sont réservées. Ce chapitre commence par son arrivée : la création de son compte, sa première connexion, son profil et son avatar.
+Cette partie suit un membre à travers ce qui lui est réservé : son compte et son profil, son avatar, les documents que le club lui adresse, les groupes auxquels il appartient, les espaces où ces groupes travaillent, et les demandes qu’il adresse au club. Ce chapitre commence par son arrivée.
 
 ## Les parcours du chapitre
 
-Trois cas d'utilisation traversent ce chapitre. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+Trois cas d’utilisation traversent ce chapitre. Chaque onglet en déroule les étapes et ce qu’elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas.
 
 <Parcours />
 
-## Un compte créé par le club
+## Un compte créé par le club 🥋
 
-Le site n'a pas d'inscription libre. Un membre s'inscrit au club auprès de la MJC, et c'est un administrateur qui lui ouvre un compte, avec au moins un groupe :
+Le site n’a pas d’inscription libre. Un membre s’inscrit au club auprès de la MJC, et c’est un administrateur qui lui ouvre un compte :
 
-```ts
-// packages/backend/src/modules/users/router.ts (extrait)
-const password = generateStrongPassword();
-const hash = await hashPassword(password);
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="121-213"
+  title="user.create — ouvrir un compte"
+  stepsJson='[{"title": "Réservé aux administrateurs", "body": "Ouvrir un compte, c’est faire entrer quelqu’un dans l’espace des membres : `.use(isAdmin)`, déclaré avant tout le reste.", "scope": "1-2", "focus": "2-2"}, {"title": "Une adresse, au moins un groupe, la situation légale", "body": "L’adresse suit la même règle que la connexion (nettoyée, en minuscules). Au moins un groupe : un membre sans groupe ne recevrait aucun document ciblé et n’aurait aucun espace. La majorité, et pour un mineur sa date de naissance et un parent référent, conditionnent le droit à l’image (partie « Légal »).", "scope": "3-12", "focus": "7-11"}, {"title": "Des groupes qui existent", "body": "Dédoublonnés, puis comptés en base : un identifiant inconnu (une page restée ouverte pendant qu’un groupe était supprimé) donne un message clair, pas une erreur de clé étrangère.", "scope": "15-19", "focus": "16-17"}, {"title": "Un mot de passe que personne ne choisit", "body": "Généré par le serveur, haché aussitôt : l’administrateur ne le voit jamais, la base n’en garde que l’empreinte.", "scope": "23-24", "focus": "23-24"}, {"title": "Le compte et ses groupes, en une écriture", "body": "Une écriture imbriquée crée le compte et ses appartenances ensemble : un compte sans groupe n’existe jamais, même un instant. `omit` retire l’empreinte de la ligne renvoyée au navigateur.", "scope": "36-49", "focus": "41-48"}, {"title": "L’unicité, par la base", "body": "On ne vérifie pas « l’adresse est-elle libre ? » avant d’écrire : deux créations simultanées passeraient toutes deux. On écrit, et on traduit le refus de la contrainte `@unique` (P2002) en CONFLICT.", "scope": "50-55", "focus": "51-52"}, {"title": "Puis les e-mails", "body": "Après la création, jamais avant : un échec d’envoi n’annule pas le compte, il est journalisé et signalé au club. Une adresse de démonstration (`@akfc.demo`) ne mène nulle part : pas d’e-mail.", "scope": "60-87", "focus": "63-79"}]'
+/>
 
-user = await ctx.prisma.user.create({
-  data: {
-    email: input.email,
-    password: hash,
-    ...legal,
-    memberGroupMemberships: {
-      create: groupIds.map((id) => ({
-        group: { connect: { id } },
-        access: "EDITOR" as const,
-      })),
-    },
-  },
-  omit: { password: true },
-});
-```
+Le mot de passe est généré par une bibliothèque éprouvée, avec des règles explicites :
 
-Le mot de passe est **généré par le serveur** : 12 caractères mêlant majuscules, minuscules, chiffres et symboles, sans caractères faciles à confondre. Chaque membre reçoit ainsi un mot de passe robuste, qu'il soit ou non familier des règles qui le rendent difficile à deviner. Il peut le garder, ou le changer depuis son profil. L'administrateur ne le voit jamais, et seule son empreinte bcrypt est enregistrée ; `omit` la retire de la ligne renvoyée au navigateur de l'administrateur.
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/security/generatePassword.ts"
+  filename="generatePassword.ts"
+  snippetRange="3-11"
+  snippetHighlight="3,7-8"
+  snippetTitle="Un mot de passe robuste par construction"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Le compte et ses groupes sont créés par une seule écriture imbriquée : un compte sans groupe ne peut pas exister, même un instant. L'e-mail de bienvenue part **après** la création ; un échec d'envoi n'annule pas le compte. Les comptes de démonstration (`@akfc.demo`) ne reçoivent pas d'e-mail, puisque leur adresse ne mène nulle part.
+Douze caractères mêlant majuscules, minuscules, chiffres et symboles (`strict` garantit au moins un de chaque), sans les caractères qu’on confond à la lecture (`l`, `1`, `O`, `0`). Chaque membre reçoit ainsi un mot de passe robuste, qu’il connaisse ou non les règles qui rendent un mot de passe difficile à deviner. Il peut le garder, ou le changer depuis son profil.
 
-## Un mot de passe qui ne va qu'au membre
+Les appartenances créées sont en accès `EDITOR` : dans l’espace collaboratif d’un groupe (chapitre 5), un membre peut d’emblée déposer des fichiers. L’administrateur ramène un membre au simple accès de lecture, groupe par groupe, s’il le faut.
 
-L'e-mail de bienvenue contient le mot de passe. Il doit donc aboutir dans la boîte du membre, et nulle part ailleurs. Or un e-mail circule : on y répond en citant son contenu, et un e-mail qui ne peut pas être remis revient à l'expéditeur sous forme d'avis de non-remise (un « rebond »), qui recopie souvent le message d'origine. Le site envoie depuis `noreply@`, et la boîte du club, `contact@`, garde la mémoire des échanges : il faut que cette mémoire ne contienne jamais de mot de passe.
+## Un mot de passe qui ne va qu’au membre
 
-Deux réglages de l'envoi y veillent :
+L’e-mail de bienvenue contient le mot de passe. Il doit donc aboutir dans la boîte du membre, et nulle part ailleurs. Or un e-mail circule : on y répond en citant son contenu, et un e-mail qui ne peut pas être remis revient à l’expéditeur sous forme d’avis de non-remise (un « rebond »), qui recopie souvent le message d’origine. Le site envoie depuis `noreply@`, et la boîte du club, `contact@`, garde la mémoire des échanges : cette mémoire ne doit jamais contenir de mot de passe.
 
-```ts
-// packages/backend/src/email/templates/welcomeEmailWithPassword.ts (extrait)
-const message: SMTPTransport.Options = {
-  from: mailFrom(shortTitle),
-  to,
-  // Pas de replyTo : une réponse citerait le mot de passe.
-  // Rebond : en-têtes seulement (jamais le corps, donc jamais le mot de passe).
-  // (Transmis seulement si le serveur SMTP annonce l'extension DSN.)
-  dsn: { ret: "HDRS", notify: ["FAILURE", "DELAY"], orcpt: to },
-  subject: `Bienvenue à l'${shortTitle} : ${WELCOME_SUBJECT_MARK}`,
-  // …
-};
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/email/templates/welcomeEmailWithPassword.ts"
+  filename="welcomeEmailWithPassword.ts"
+  snippetRange="59-66"
+  snippetHighlight="4,7"
+  snippetTitle="L’envoi de l’e-mail de bienvenue"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-- **Pas d'adresse de réponse.** Les autres e-mails du site indiquent `contact@` comme adresse de réponse. Celui-ci non : une réponse revient à `noreply@`. Le texte du message le dit, et donne l'adresse du club pour écrire.
-- **Un rebond sans le message.** L'option `dsn` demande au serveur d'envoi, en cas d'échec, un avis qui ne contient que les en-têtes du message (`RET=HDRS`, extension DSN du protocole SMTP), donc pas le mot de passe.
+- **Pas d’adresse de réponse.** Les autres e-mails du site indiquent `contact@` comme adresse de réponse. Celui-ci non : une réponse revient à `noreply@`. Le texte du message le dit, et donne l’adresse du club pour écrire.
+- **Un rebond sans le message.** L’option `dsn` demande au serveur d’envoi, en cas d’échec, un avis qui ne contient que les en-têtes du message (`RET=HDRS`, extension DSN du protocole SMTP), donc pas le mot de passe.
 
-Le reste est confié aux filtres de la boîte `noreply@`, dans la messagerie du club. Les avis de non-remise sont transférés à `contact@`, pour que les administrateurs vérifient l'adresse du membre. Un dernier filtre supprime toute réponse dont l'objet contient « ton compte est créé » : c'est la constante `WELCOME_SUBJECT_MARK`, qui ne doit pas changer sans que ce filtre change aussi.
+Le reste est confié aux filtres de la boîte `noreply@`, dans la messagerie du club. Les avis de non-remise sont transférés à `contact@`, pour que les administrateurs vérifient l’adresse du membre. Un dernier filtre supprime toute réponse dont l’objet contient « ton compte est créé » : c’est la constante `WELCOME_SUBJECT_MARK`, qui ne doit pas changer sans que ce filtre change aussi.
 
-La boîte du club garde malgré tout la trace de chaque création. Le site lui envoie un **avis sans mot de passe** : compte créé pour telle adresse, par tel administrateur, dans tels groupes, ou bien e-mail impossible à envoyer, avec l'erreur.
+La boîte du club garde malgré tout la trace de chaque création : le site lui envoie un **avis sans mot de passe** (compte créé pour telle adresse, par tel administrateur, dans tels groupes ; ou bien e-mail impossible à envoyer, avec l’erreur).
 
 <Callout type="info">
-Le partage des rôles est net : le site décide de ce que contient chaque message, la messagerie décide où va le courrier reçu par `noreply@`. Aucun des deux ne refait le travail de l'autre.
+Le partage des rôles est net : le site décide de ce que contient chaque message, la messagerie décide où va le courrier reçu par `noreply@`. Aucun des deux ne refait le travail de l’autre.
 </Callout>
 
 ## La première connexion
 
-Un compte naît avec `isFirstLogin` à vrai : le membre n'a pas encore complété son profil. Tant que c'est le cas, il est ramené sur la page d'édition de son profil. La redirection est faite par un petit composant client, placé dans le layout du site public :
+Un compte naît avec `isFirstLogin` à vrai : le membre n’a pas encore complété son profil. Tant que c’est le cas, il est ramené sur la page d’édition de son profil, par un petit composant client placé dans le gabarit du site public :
 
-```tsx
-// apps/web/src/features/auth/FirstLoginRedirect.tsx (extrait)
-useEffect(() => {
-  if (!user?.isFirstLogin) return;
-  if (pathname === "/profil/edit") return;
-  router.replace("/profil/edit");
-}, [user?.isFirstLogin, pathname, router]);
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/auth/FirstLoginRedirect.tsx"
+  filename="FirstLoginRedirect.tsx"
+  snippetRange="17-29"
+  snippetHighlight="8-9"
+  snippetTitle="FirstLoginRedirect"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Il lit la session dans le store client, et ne redirige jamais depuis la page de destination elle-même : aucune boucle n'est possible. `replace` plutôt que `push` : le bouton « précédent » ne ramène pas sur la page dont le membre vient d'être redirigé. Le drapeau retombe quand le membre enregistre son profil.
+Il lit la session dans le store client, et ne redirige jamais depuis la page de destination : aucune boucle n’est possible. `replace` plutôt que `push` : le bouton « précédent » ne ramène pas sur la page dont le membre vient d’être redirigé.
+
+C’est une invitation, pas une sécurité : le composant s’exécute dans le navigateur, et un membre qui le contournerait n’obtiendrait rien de plus qu’un profil incomplet. Choisir un nouveau mot de passe ne lève pas le drapeau : changer de mot de passe ne complète pas le profil.
 
 ### Relire la session après une écriture
 
-Le store client contient la session lue au chargement de la page. Une server action modifie la base, mais pas ce store : après l'enregistrement du profil, il porterait encore `isFirstLogin` à vrai, et le membre serait aussitôt ramené sur le formulaire. Le formulaire relit donc la session avant de quitter la page :
+Le store client contient la session lue au chargement de la page. Une server action modifie la base, mais pas ce store : après l’enregistrement du profil, il porterait encore `isFirstLogin` à vrai, et le membre serait aussitôt ramené sur le formulaire. Le formulaire relit donc la session avant de quitter la page :
 
-```tsx
-// apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx (extrait)
-void useSessionStore
-  .getState()
-  .fetchSession()
-  .then(() => router.push(back.href));
-```
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/users/forms/update-me/UpdateMeForm.tsx"
+  filename="UpdateMeForm.tsx"
+  snippetRange="119-131"
+  snippetHighlight="11-12"
+  snippetTitle="Relire la session, puis partir"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 La même relecture met à jour le nom affiché dans le header.
 
 <Callout type="info">
-Toute donnée de la session affichée par le client (nom, avatar, état de la première connexion) doit être rafraîchie dans le store après l'écriture qui la change. Le serveur a la bonne valeur ; c'est la copie du navigateur qui retarde.
+Toute donnée de la session affichée par le client (nom, avatar, état de la première connexion) doit être rafraîchie dans le store après l’écriture qui la change. Le serveur a la bonne valeur ; c’est la copie du navigateur qui retarde.
 </Callout>
 
 ## Le profil, scellé sur son titulaire
 
-Le formulaire du profil (prénom, nom, pseudo, présentation, téléphone, date de naissance) est envoyé par une **server action**. Elle ne reçoit aucun identifiant d'utilisateur : elle prend celui de la session.
+Le formulaire du profil (prénom, nom, pseudo, présentation, téléphone, date de naissance) est envoyé par une **server action** :
 
-```ts
-// apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts (extrait)
-const sessionClient = await getSessionFromRequest();
-const userId = sessionClient?.user?.id;
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/admin/users/forms/update-me/updateMeForm.action.ts"
+  filename="updateMeForm.action.ts"
+  snippetRange="15-94"
+  title="updateMeFormAction — un seul profil possible"
+  stepsJson='[{"title": "Le titulaire vient de la session", "body": "L’action ne reçoit aucun identifiant d’utilisateur : elle prend celui de la session. Une server action est un point d’accès public, que n’importe qui peut appeler avec les données de son choix ; si le formulaire envoyait l’identifiant du compte à modifier, il suffirait d’en changer la valeur pour modifier le profil d’un autre.", "scope": "5-13", "focus": "5-6"}, {"title": "Les champs, convertis un à un", "body": "Un `FormData` ne contient que des chaînes. Chaque champ est lu, nettoyé, et une chaîne vide devient `undefined` (« non renseigné »), pas une valeur.", "scope": "15-31", "focus": "24-30"}, {"title": "Le même schéma que le formulaire", "body": "`updateMeFormSchema` (packages/contracts) affiche les erreurs pendant la saisie, et valide ici ce qui arrive : le serveur ne croit jamais le navigateur. Les erreurs repartent champ par champ.", "scope": "33-50", "focus": "33-33"}, {"title": "Une date de naissance verrouillée", "body": "Vérifiée par un instructeur, la date de naissance justifie l’accord parental du droit à l’image : le membre ne peut plus la modifier. L’objet d’écriture n’en contient alors aucune.", "scope": "56-67", "focus": "57-65"}, {"title": "Le drapeau retombe", "body": "Enregistrer le profil le complète : `isFirstLogin` passe à faux, et la redirection cesse (après la relecture de la session).", "scope": "66-66", "focus": "66-66"}]'
+/>
 
-if (!userId) {
-  return {
-    status: "error",
-    error: "Vous devez être connecté pour mettre à jour votre profil.",
-  };
-}
-```
-
-Une server action est un point d'accès public, que n'importe qui peut appeler avec les données de son choix. Si le formulaire envoyait l'identifiant du compte à modifier, il suffirait d'en changer la valeur pour modifier le profil d'un autre membre. En le lisant dans la session, l'action ne peut modifier qu'un seul profil : celui de la personne connectée.
-
-Les données sont validées par un schéma Zod partagé (`updateMeFormSchema`, dans `packages/contracts`), utilisé à la fois par le formulaire pour afficher les erreurs pendant la saisie, et par l'action, qui ne fait jamais confiance au navigateur. Le chapitre sur les formulaires détaille ce montage.
-
-## L'avatar, un envoi à part
-
-L'avatar ne passe pas par le formulaire du profil. Il suit le circuit des fichiers vu dans la partie « Stockage et médias » : le navigateur demande une autorisation d'envoi, envoie l'image directement au stockage, puis fait enregistrer le résultat.
-
-```ts
-// packages/backend/src/modules/avatar/avatar.service.ts (extrait)
-if (!path.startsWith(`${avatarFolder(appRoot, userId)}/`) || path.includes("..") || !isAvatarKey(path)) {
-  throw new TRPCError({ code: "BAD_REQUEST", message: "Chemin hors de l'espace avatar de l'utilisateur." });
-}
-const head = await getR2Client()
-  .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
-  .catch(() => null);
-if (!head) throw new TRPCError({ code: "BAD_REQUEST", message: "Avatar introuvable : l'envoi n'a pas abouti." });
-if (!(head.ContentType ?? "").startsWith("image/") || (head.ContentLength ?? 0) > AVATAR_MAX_BYTES) {
-  await removeAvatarFile(path);
-  throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier d'avatar refusé." });
-}
-```
-
-L'enregistrement ne croit pas le navigateur sur parole. Le chemin reçu doit se trouver dans le dossier d'avatars **de l'utilisateur connecté**, dérivé de son identifiant par le serveur. Le fichier doit exister réellement, être une image, et ne pas dépasser 10 Mo, ce que le serveur vérifie en interrogeant le stockage lui-même (`HeadObject`). Un fichier refusé est supprimé. Une fois le nouvel avatar enregistré, l'ancien fichier est effacé.
-
-Un avatar est **public** : il s'affiche à côté d'un nom, y compris sur des pages que tout le monde peut lire (la page des instructeurs, par exemple). Il est servi par une route dédiée, `/api/media/public/avatar/[userId]`, qui prend un identifiant d'utilisateur et non un chemin de fichier. Elle ne peut donc servir rien d'autre qu'un avatar, alors qu'une route acceptant un chemin pourrait être détournée vers n'importe quel fichier.
-
-Un avatar représente son titulaire ; personne d'autre ne le **pose** dans un contenu, administrateurs compris (partie « Contenu éditorial »). Et ce n'est pas un média de la bibliothèque : ni ligne `MediaAsset`, ni statut, ni rangement. Son dossier, `AKFC/avatars/`, n'apparaît donc pas dans le Finder, et aucune opération de la bibliothèque n'y entre (`assertOutsideAvatars` : lecture, renommage, déplacement, libellé, corbeille). `User.avatar` garde la clé exacte du fichier : un déplacement depuis le Finder l'aurait rendue fausse, et l'avatar aurait disparu sans explication.
+`satisfies Prisma.UserUpdateInput` fait vérifier l’objet d’écriture par le type de Prisma sans en perdre la forme exacte : un champ mal nommé ne compile pas.
 
 ## Le nom affiché
 
 Partout où un membre apparaît (commentaires, réactions, demandes, fichiers des espaces de groupe), son nom passe par une même fonction :
 
-```ts
-// apps/web/src/features/social/userDisplay.ts (extrait)
-export function formatUserName(u: DisplayUser): string {
-  const full = [u.firstName, u.lastName]
-    .filter((p): p is string => Boolean(p?.trim()))
-    .join(" ")
-    .trim();
-  return full || u.pseudo || u.email || "Membre";
-}
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/social/userDisplay.ts"
+  filename="userDisplay.ts"
+  snippetRange="26-32"
+  snippetHighlight="6"
+  snippetTitle="formatUserName"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Le prénom et le nom, sinon le pseudo, sinon « Membre ». L'adresse e-mail n'est un recours que lorsque l'appelant l'a fournie, c'est-à-dire là où il a le droit de la voir : un administrateur, ou le membre lui-même sur sa propre page. Les données envoyées aux autres membres et aux visiteurs n'en contiennent jamais (voir le chapitre sur la frontière serveur / client).
+Le prénom et le nom, sinon le pseudo, sinon « Membre ». L’adresse e-mail n’est un recours que lorsque l’appelant l’a fournie, c’est-à-dire là où il a le droit de la voir : un administrateur, ou le membre lui-même sur sa propre page. Les données envoyées aux autres membres et aux visiteurs n’en contiennent jamais (partie « Fondations front », la frontière serveur / client).
+
+## Un compte qui part
+
+Supprimer un compte efface aussi ce qui n’existe que pour lui :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="247-280"
+  title="user.delete — ne rien laisser derrière"
+  stepsJson='[{"title": "Jamais le sien", "body": "Règle métier, pas question de droit : un administrateur qui supprimerait son propre compte perdrait l’accès, et le club pourrait se retrouver sans administrateur. L’interface désactive le bouton ; c’est ici que la règle est garantie.", "scope": "8-10", "focus": "8-9"}, {"title": "Ce qui doit survivre, détaché", "body": "Un formulaire de droit à l’image signé est une preuve : il est détaché du compte et gardé cinq ans, puis purgé.", "scope": "14-14", "focus": "14-14"}, {"title": "Ce qui n’a pas de clé étrangère", "body": "Le recensement des fichiers de sa présentation désigne le compte par un texte (`pageId`), sans relation : la base ne le supprimerait pas d’elle-même, et ces liens bloqueraient pour toujours la suppression des images.", "scope": "17-21", "focus": "18-20"}, {"title": "Le compte, et ses appartenances en cascade", "body": "Sessions, appartenances, accusés de lecture partent avec lui (`onDelete: Cascade`). Seul l’identifiant repart vers le navigateur.", "scope": "24-27", "focus": "24-26"}, {"title": "Son portrait, après la transaction", "body": "L’avatar est un fichier du stockage qu’aucune ligne de la bibliothèque ne retient : sans cette ligne, il y resterait, inaccessible mais présent. Il est supprimé APRÈS la transaction : un fichier effacé ne se restaure pas si la base annule.", "scope": "32-33", "focus": "32-32"}]'
+/>
+
+<Callout type="warning">
+Supprimer une ligne ne supprime pas ce qu’elle désignait ailleurs. Un fichier du stockage, une référence sans clé étrangère, une adresse dans un journal : chaque donnée personnelle a besoin de son propre chemin de suppression, sinon elle survit au compte.
+</Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Qui crée les comptes ?","Un administrateur, avec au moins un groupe ; le mot de passe, robuste, est généré par le serveur."],["Comment le mot de passe reste-t-il au membre ?","Pas d’adresse de réponse, rebond limité aux en-têtes ; les filtres de noreply@ suppriment les réponses et transfèrent les rebonds ; la boîte du club reçoit un avis sans mot de passe."],["Que signifie isFirstLogin ?","Le profil n’a pas encore été enregistré ; le membre est ramené sur /profil/edit jusque-là."],["Pourquoi relire la session après une écriture ?","Le store client garde la session du chargement ; sans relecture, le membre serait ramené sur le formulaire et le header afficherait l’ancien nom."],["Comment le profil est-il protégé ?","La server action prend l’identifiant dans la session, jamais dans le formulaire."],["Comment l’avatar est-il vérifié ?","Chemin dans le dossier du membre, fichier présent, type image, 10 Mo au plus : vérifié par le serveur auprès du stockage."],["Quel nom s’affiche ?","Prénom et nom, sinon pseudo, sinon « Membre » ; l’e-mail seulement pour qui a le droit de le voir."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui crée les comptes ?", "Un administrateur, avec au moins un groupe et la situation légale ; le compte et ses groupes sont écrits ensemble."], ["Qui choisit le mot de passe ?", "Le serveur : 12 caractères de quatre familles, sans caractères ambigus ; seule l’empreinte est gardée."], ["Comment le mot de passe reste-t-il au membre ?", "Pas d’adresse de réponse, rebond limité aux en-têtes, filtres de noreply@ ; la boîte du club reçoit un avis sans mot de passe."], ["Que signifie isFirstLogin ?", "Le profil n’a pas encore été enregistré ; le membre est ramené sur /profil/edit jusque-là."], ["Pourquoi relire la session après une écriture ?", "Le store client garde la session du chargement ; sans relecture, le membre serait ramené sur le formulaire."], ["Comment le profil est-il protégé ?", "La server action prend l’identifiant dans la session, jamais dans le formulaire ; une date de naissance vérifiée est verrouillée."], ["Quel nom s’affiche ?", "Prénom et nom, sinon pseudo, sinon « Membre » ; l’e-mail seulement pour qui a le droit de le voir."], ["Que laisse un compte supprimé ?", "Rien de personnel : recensement de sa présentation, portrait du stockage ; seul le formulaire de droit à l’image signé est gardé, détaché, comme preuve."]]' />
 
 ## À suivre
 
-Le membre a son compte, son mot de passe et son profil. Le club peut maintenant lui transmettre des documents : un compte rendu d'assemblée générale pour tous, une attestation pour lui seul, un document pour un groupe.
+Le membre a son compte et son profil. Il lui manque un visage : un avatar, qui le représente à côté de son nom, et qui suit un circuit à part — ni formulaire, ni bibliothèque.
 
 <Callout type="tip">
-**Chapitre suivant : les documents des membres.** Publier un fichier aux membres sans le copier, choisir qui le reçoit, suivre ce que chacun a lu, et le servir à ses seuls destinataires.
+**Chapitre suivant : l’avatar.** Un envoi direct au stockage, vérifié par le serveur ; un fichier par membre ; une route qui ne sert que des avatars ; représenter n’est pas poser ; et un dossier que la bibliothèque ne voit pas.
 </Callout>

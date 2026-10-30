@@ -1,0 +1,191 @@
+---
+title: "Les groupes"
+description: "Ce qu’est un groupe : une liste de diffusion, un niveau d’accès par appartenance, une place dans un arbre dont « Administrateurs » est la racine immobile ; comment les droits descendent l’arbre, comment on les calcule dans les deux sens, et comment l’arbre reste un arbre."
+section: "Membres et collaboration"
+order: 4
+entities:
+  MemberGroup: [name, description, isCollaborative, isAdminGroup, parentGroupId]
+  MemberGroupMembership: [groupId, userId, access]
+  Folder: [appRoot, fullPath]
+stories:
+  - title: Le club organise ses groupes
+    actor: Administrateur
+    steps:
+      - label: Il crée un groupe ; sans parent choisi, il est rangé sous Administrateurs
+        call: memberGroup.create
+        section: Un arbre dont la racine ne bouge pas
+      - label: Il le range sous un autre groupe ; un cycle est refusé
+        call: memberGroup.setParentGroup
+        section: Un arbre sans cycle
+      - label: Il y ajoute un membre, lecteur ou éditeur
+        call: memberGroup.addMember
+        section: Lecteur ou éditeur
+      - label: Il retire un membre ; jamais lui-même des Administrateurs
+        call: memberGroup.removeMember
+        section: Lecteur ou éditeur
+      - label: Il supprime un groupe dont l'espace est vide ; ses sous-groupes remontent d'un cran
+        call: memberGroup.delete
+        section: Supprimer un groupe
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le club diffuse des documents à tous, à des personnes ou à des groupes ; ce qui concerne un membre et ce qu’il peut ouvrir sont deux conditions posées à chaque lecture.
+
+## Les parcours du chapitre
+
+Un parcours traverse ce chapitre : l’administrateur qui organise les groupes du club, de la création à la suppression.
+
+<Parcours />
+
+## Deux sortes de groupes 👥
+
+Un groupe (`MemberGroup`) sert d’abord de **liste de diffusion** : on lui adresse des documents, et ses membres les reçoivent (chapitre 3). Un groupe marqué `isCollaborative` reçoit en plus un **espace de fichiers**, un dossier du stockage qui lui est propre (chapitre 5).
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1785-1824"
+  snippetHighlight="11,16,22"
+  snippetTitle="MemberGroup"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois champs comptent ici. `isCollaborative` ouvre l’espace. `isAdminGroup` marque **le** groupe des administrateurs : c’est l’appartenance à ce groupe, et rien d’autre, qui fait d’un membre un administrateur du site (partie « Authentification et droits »). `parentGroupId` range le groupe dans un arbre.
+
+## Lecteur ou éditeur
+
+L’appartenance à un groupe porte un niveau d’accès à son espace :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1828-1846"
+  snippetHighlight="14"
+  snippetTitle="MemberGroupMembership"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<DocsTable columnsJson='["Accès", "Ce qu’il permet dans l’espace du groupe"]' rowsJson='[["VIEWER", "Consulter les dossiers et ouvrir les fichiers."], ["EDITOR", "Consulter, déposer des fichiers, les valider pour le groupe, et les mettre à la corbeille."]]' />
+
+Ce niveau ne concerne que l’espace : il ne donne aucun droit ailleurs sur le site, et ne fait pas d’un membre un administrateur. Un compte est créé avec ses groupes en `EDITOR` (chapitre 1) ; l’administrateur abaisse l’accès d’un membre, groupe par groupe, s’il le faut.
+
+Le retrait d’un membre porte une règle :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/router.ts"
+  filename="router.ts"
+  snippetRange="265-284"
+  snippetHighlight="4,9"
+  snippetTitle="removeMember : jamais soi-même des Administrateurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un administrateur qui se retirerait du groupe Administrateurs perdrait aussitôt l’accès au panneau, et le club pourrait se retrouver sans administrateur. Un autre administrateur peut le faire ; lui, non.
+
+## Une hiérarchie qui transmet ses droits vers le bas
+
+Les groupes forment un **arbre** : chacun a au plus un parent. Les droits **descendent** dans cet arbre : un membre d’un groupe a accès aux espaces de tous les groupes placés sous lui, au même niveau. Un membre du bureau, éditeur de son groupe, est aussi éditeur de l’espace d’un sous-groupe « Commission des stages ». L’inverse n’est pas vrai : un membre de la commission ne voit pas l’espace du bureau.
+
+Cet héritage se calcule dans les deux sens, selon la question posée.
+
+**« Quel accès a ce membre à CET espace ? »** — la question d’une garde. On part du groupe de l’espace et on **remonte** vers la racine, en gardant le niveau le plus élevé rencontré :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/resolveGroupAccessForUser.service.ts"
+  filename="resolveGroupAccessForUser.service.ts"
+  snippetRange="15-43"
+  title="resolveGroupAccessForUser — remonter"
+  stepsJson='[{"title": "Du groupe visé vers la racine", "body": "Le curseur part du groupe de l’espace. `seen` protège contre une boucle : l’arbre est censé ne pas en avoir, mais une garde de droits ne doit pas dépendre de cette promesse.", "scope": "6-11", "focus": "10-10"}, {"title": "Une appartenance à ce niveau ?", "body": "EDITOR : rien ne peut faire mieux, on s’arrête. VIEWER : on le retient, et on continue, au cas où un ancêtre donnerait EDITOR.", "scope": "13-18", "focus": "17-18"}, {"title": "Le parent", "body": "Un cran plus haut, jusqu’à la racine (parent nul).", "scope": "20-25", "focus": "25-25"}]'
+/>
+
+**« À quels espaces ce membre a-t-il accès ? »** — la question du finder des membres et de la cloche. On part de ses appartenances et on **descend** l’arbre, en propageant le niveau :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/collaborativeEntriesForMember.service.ts"
+  filename="collaborativeEntriesForMember.service.ts"
+  snippetRange="43-58"
+  snippetHighlight="11-12,15"
+  snippetTitle="collaborativeEntriesForMember — descendre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un parcours en largeur : une file de groupes à visiter, chacun avec le niveau qui lui arrive. Un groupe déjà atteint avec le même niveau n’est pas revisité (`prev === level`), ce qui borne le parcours même si l’arbre avait une boucle. Le résultat ne garde que les groupes collaboratifs : ce sont les seuls qui ont un espace.
+
+Les deux fonctions doivent dire la même chose, lue dans deux sens. Quand elles divergent, ce que la cloche signale ne correspond plus à ce que les gardes permettent — c’est exactement le défaut du chapitre 3, dont la cloche ne se vidait pas.
+
+## Un arbre dont la racine ne bouge pas
+
+Le groupe « Administrateurs » est la **racine** de l’arbre. Il est garanti au démarrage du serveur, unique et collaboratif :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/ensureAdminGroup.service.ts"
+  filename="ensureAdminGroup.service.ts"
+  snippetRange="16-39"
+  snippetHighlight="6,15"
+  snippetTitle="ensureAdminGroup"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un groupe créé sans parent lui est rattaché :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/router.ts"
+  filename="router.ts"
+  snippetRange="65-73"
+  snippetHighlight="5"
+  snippetTitle="À la création : sous Administrateurs par défaut"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Comme il est l’ancêtre de tous les groupes, ses membres héritent de l’accès éditeur à **tous** les espaces. Les gardes vérifient d’ailleurs d’abord l’appartenance à ce groupe (`isAdminByGroup`), sans remonter l’arbre.
+
+Cette position donne au groupe un pouvoir qui se transmet : quiconque serait placé **au-dessus** de lui hériterait de tous les espaces du club. L’arbre interdisait les cycles, mais rien n’empêchait de détacher un groupe (« aucun parent »), puis de le choisir comme parent d’Administrateurs. Ses membres seraient devenus éditeurs de tous les espaces.
+
+## Un arbre sans cycle
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/router.ts"
+  filename="router.ts"
+  snippetRange="141-210"
+  title="setParentGroup — garder un arbre"
+  stepsJson='[{"title": "La racine reste la racine", "body": "Le groupe Administrateurs ne reçoit jamais de parent : FORBIDDEN, quelle que soit la demande. L’écran ne propose d’ailleurs plus de choix pour lui.", "scope": "10-21", "focus": "16-16"}, {"title": "« Sans parent » veut dire « sous Administrateurs »", "body": "Comme à la création. Détacher un groupe ne défait plus la règle « Administrateurs ancêtre de tout ».", "scope": "24-24", "focus": "24-24"}, {"title": "Pas son propre parent, un parent qui existe", "body": "Deux refus simples avant le parcours.", "scope": "26-40", "focus": "26-26"}, {"title": "Pas un descendant", "body": "On remonte les ancêtres du parent choisi : si l’on croise le groupe lui-même, c’est que le parent est l’un de ses descendants, et l’affectation fermerait un cycle.", "scope": "45-62", "focus": "48-51"}]'
+/>
+
+<Callout type="warning">
+Un droit qui se **transmet** (par héritage, par appartenance, par délégation) doit être protégé à sa source, pas seulement là où il s’exerce. Ici, la source est la place d’un groupe dans l’arbre : c’est elle que la procédure verrouille.
+</Callout>
+
+## Supprimer un groupe
+
+Supprimer un groupe touche à trois choses : son espace, ses sous-groupes, ses appartenances.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/deleteGroupWithSpace.service.ts"
+  filename="deleteGroupWithSpace.service.ts"
+  snippetRange="40-91"
+  title="deleteGroupWithSpace — la suppression sûre"
+  stepsJson='[{"title": "Jamais la racine", "body": "Le groupe Administrateurs ne se supprime pas.", "scope": "1-6", "focus": "1-1"}, {"title": "Son espace, lu par position", "body": "Les dossiers enregistrés qui se terminent par l’identifiant du groupe ; on ne garde que l’espace lui-même : `<racine>/collaborative-group-spaces/<slug>-<id>`, trois segments, lus par position (partie « Contenu éditorial », fiche 1.11). Un dossier homonyme rangé ailleurs n’en est pas un.", "scope": "9-19", "focus": "18-18"}, {"title": "Un espace vide", "body": "Le contrôle est PHYSIQUE, chez le stockage : ce que montre le finder. Un espace qui contient des fichiers est refusé, avec un message qui dit quoi faire.", "scope": "29-36", "focus": "30-30"}, {"title": "Trois écritures, une transaction", "body": "Les sous-groupes remontent d’un cran (vers le parent du groupe supprimé, au pire Administrateurs) AVANT la suppression, sans quoi la base mettrait leur parent à nul ; puis le registre de l’espace, puis le groupe, dont les appartenances et liens de documents partent en cascade. Ensemble, ou pas du tout.", "scope": "40-52", "focus": "42-51"}]'
+/>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un groupe ?", "Une liste de diffusion ; avec isCollaborative, un espace de fichiers ; avec isAdminGroup, le groupe qui fait les administrateurs."], ["Quels droits porte une appartenance ?", "VIEWER (consulter) ou EDITOR (déposer, valider, jeter), dans l’espace du groupe seulement."], ["Comment les droits se transmettent-ils ?", "Vers le bas : un membre d’un groupe a accès aux espaces des groupes placés sous lui, au même niveau."], ["Comment les calcule-t-on ?", "En remontant depuis un espace (gardes), en descendant depuis un membre (finder, cloche) ; les deux doivent concorder."], ["Qu’est-ce qui protège la racine ?", "Administrateurs n’a jamais de parent, et « sans parent » veut dire « sous Administrateurs »."], ["Comment l’arbre reste-t-il un arbre ?", "Pas son propre parent, pas un descendant comme parent ; les parcours se protègent quand même d’une boucle."], ["Que fait la suppression d’un groupe ?", "Refusée pour Administrateurs ou un espace non vide ; sinon sous-groupes re-parentés, registre et groupe supprimés, dans une transaction."]]' />
+
+## À suivre
+
+Les groupes sont en place, avec leurs droits et leur arbre. Il reste à voir ce que ces droits ouvrent : un espace de fichiers par groupe collaboratif, où ses membres déposent, rangent et partagent.
+
+<Callout type="tip">
+**Chapitre suivant : les espaces collaboratifs.** Un dossier par groupe pour toute sa vie, des gardes qui déduisent tout du chemin, un dépôt qui devient document du groupe, et un finder réservé aux membres.
+</Callout>

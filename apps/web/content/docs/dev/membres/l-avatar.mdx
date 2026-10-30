@@ -1,0 +1,159 @@
+---
+title: "L’avatar"
+description: "Le portrait d’un membre : un envoi direct au stockage que le serveur autorise et vérifie, un seul fichier par membre, une route publique qui ne sert que des avatars, une version pour rafraîchir toutes les vues, un avatar qui représente sans être posé ailleurs, et un dossier que la bibliothèque ne voit pas."
+section: "Membres et collaboration"
+order: 2
+entities:
+  User: [avatar]
+stories:
+  - title: Le membre change son avatar
+    actor: Membre connecté
+    steps:
+      - label: Le navigateur demande une autorisation d'envoi, dans le dossier du membre
+        call: avatar.createUpload
+        section: Un envoi direct, autorisé par le serveur
+      - label: Le serveur vérifie le fichier arrivé, l'enregistre comme avatar et efface l'ancien
+        call: avatar.register
+        section: Ce que le serveur vérifie
+      - label: Un visiteur voit le portrait à côté d'un nom
+        call: GET /api/media/public/avatar/[userId]
+        section: Une route qui ne sert que des avatars
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un compte est ouvert par le club, avec un mot de passe qui ne parvient qu’au membre ; le profil n’est modifiable que par son titulaire, et un compte supprimé ne laisse rien derrière lui.
+
+## Les parcours du chapitre
+
+Un parcours traverse ce chapitre : le membre qui change son avatar, jusqu’au visiteur qui le voit à côté de son nom.
+
+<Parcours />
+
+## Pas un média comme les autres 🖼️
+
+Un avatar est une image, envoyée au même stockage que les fichiers de la bibliothèque. Ce n’est pourtant pas un média de la bibliothèque, et presque tout ce qui le concerne en découle :
+
+<DocsTable columnsJson='["", "Fichier de la bibliothèque", "Avatar"]' rowsJson='[["Ligne en base", "MediaAsset (statut, nom d’origine, auteur…)", "Aucune : User.avatar garde sa clé"], ["Rangement", "Dans le Finder, déplaçable, renommable", "Un dossier par membre, invisible du Finder"], ["Publication", "Validé par un administrateur, puis placé dans un contenu publié", "Visible dès qu’il est enregistré, là où le membre est représenté"], ["Nombre", "Autant que nécessaire", "Un seul : le précédent est effacé"], ["Qui le modifie", "Les administrateurs, les éditeurs d’un espace", "Son titulaire seul"]]' />
+
+L’avatar ne passe pas non plus par le formulaire du profil : il a son propre routeur, entièrement **scellé sur l’utilisateur connecté**. Aucune procédure ne reçoit d’identifiant de membre : le dossier est dérivé de la session, côté serveur.
+
+## Un envoi direct, autorisé par le serveur
+
+L’envoi suit le circuit des fichiers de la partie « Stockage et médias » : le serveur signe une autorisation, le navigateur envoie l’image **directement** au stockage, puis fait enregistrer le résultat. Le fichier ne transite pas par le serveur de l’application.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/avatar/avatar.service.ts"
+  filename="avatar.service.ts"
+  snippetRange="60-71"
+  title="createAvatarUpload — signer une destination"
+  stepsJson='[{"title": "Trois formats", "body": "JPEG, PNG ou WebP. Le type annoncé par le navigateur choisit l’extension ; un autre type est refusé avant toute signature.", "scope": "2-3", "focus": "3-3"}, {"title": "Une taille annoncée", "body": "10 Mo au plus. Le navigateur ANNONCE la taille ; elle sera vérifiée après l’envoi, chez le stockage lui-même.", "scope": "4-4", "focus": "4-4"}, {"title": "Une clé que le serveur choisit", "body": "Le dossier du membre, un horodatage et quelques octets aléatoires : une clé NOUVELLE à chaque envoi. Le navigateur ne choisit rien du chemin.", "scope": "5-5", "focus": "5-5"}, {"title": "Une URL signée pour cinq minutes", "body": "L’URL autorise UN dépôt, à CETTE clé, avec CE type, pendant cinq minutes. Le secret du stockage ne quitte jamais le serveur.", "scope": "6-10", "focus": "8-9"}]'
+/>
+
+Côté navigateur, l’image recadrée suit les trois temps :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/avatar/AvatarUploader.tsx"
+  filename="AvatarUploader.tsx"
+  snippetRange="171-191"
+  snippetHighlight="6,11,17,20"
+  snippetTitle="AvatarUploader : autoriser, envoyer, enregistrer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le recadrage se fait avant, dans le navigateur, et ne déclenche rien : le membre voit le résultat et le confirme. Seul le fichier recadré est envoyé.
+
+## Ce que le serveur vérifie
+
+L’enregistrement ne croit pas le navigateur sur parole :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/avatar/avatar.service.ts"
+  filename="avatar.service.ts"
+  snippetRange="83-100"
+  title="registerAvatar — croire le stockage, pas le navigateur"
+  stepsJson='[{"title": "Dans SON dossier", "body": "Le chemin reçu doit commencer par le dossier d’avatars du membre connecté, dérivé de son identifiant ; pas de `..`, une extension d’image. Le chemin d’un autre membre est refusé.", "scope": "3-5", "focus": "3-3"}, {"title": "Le fichier existe vraiment", "body": "`HeadObject` interroge le stockage : un envoi qui n’a pas abouti n’est pas enregistré.", "scope": "6-9", "focus": "7-9"}, {"title": "Une image, de taille raisonnable", "body": "Le type et la taille sont ceux que le STOCKAGE a reçus, pas ceux qu’annonçait le navigateur. Un fichier refusé est supprimé aussitôt.", "scope": "10-13", "focus": "10-11"}, {"title": "Un seul avatar", "body": "Le compte pointe sur le nouveau fichier, puis l’ancien est effacé — dans cet ordre : un échec entre les deux laisse un fichier en trop, jamais un compte qui pointe sur rien.", "scope": "14-16", "focus": "15-16"}]'
+/>
+
+Chaque refus est une erreur `BAD_REQUEST` avec son message, que le membre lit tel quel (« Format d’avatar non accepté (JPEG, PNG ou WebP). », « Avatar trop volumineux (10 Mo au plus). »). Ces erreurs étaient levées comme de simples `Error`, que tRPC transforme en erreur interne au message masqué : le membre voyait « une erreur est survenue » pour une photo de 12 Mo.
+
+## Une route qui ne sert que des avatars
+
+Un avatar s’affiche à des visiteurs anonymes (la page des instructeurs, un commentaire). La route privée des fichiers exige une session, sans condition, parce qu’elle sert aussi des documents personnels ; la rouvrir pour les avatars l’aurait rouverte pour tout. Les avatars ont donc leur route :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/media/public/avatar/[userId]/route.ts"
+  filename="route.ts"
+  snippetRange="26-54"
+  title="GET /api/media/public/avatar/[userId]"
+  stepsJson='[{"title": "Un identifiant, pas un chemin", "body": "La route prend l’identifiant d’un membre. Elle ne peut donc servir rien d’autre que l’avatar de ce membre ; un chemin en paramètre rouvrirait la route privée sous un autre nom.", "scope": "6-10", "focus": "6-6"}, {"title": "Sa clé, lue en base", "body": "La clé vient de `User.avatar`. Pas d’avatar : 404, et le rendu affiche les initiales — plutôt qu’une image de démonstration à la place d’un portrait absent.", "scope": "12-23", "focus": "20-20"}, {"title": "Une vignette, en flux", "body": "La déclinaison de 300 pixels, fabriquée au besoin et servie par la route elle-même, dans le format que le navigateur accepte. Cache court : un changement d’avatar doit se voir sans purge.", "scope": "27-29", "focus": "27-29"}]'
+/>
+
+L’URL est **la même** pour toujours : `/api/media/public/avatar/<id>`. Quand le membre change d’avatar, le navigateur garde l’ancienne image en cache. Un petit store partagé tient donc une **version** par membre, ajoutée à l’URL (`?v=…`) :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/lib/stores/useAvatarVersionStore.ts"
+  filename="useAvatarVersionStore.ts"
+  snippetRange="27-37"
+  snippetHighlight="4"
+  snippetTitle="Une version par membre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Après un enregistrement, `bumpAvatar(userId)` change la version : le header, le profil, les commentaires affichés rechargent l’image ensemble. La route ignore ce paramètre ; il ne sert qu’à changer l’URL aux yeux du cache.
+
+## Représenter n’est pas poser
+
+Un avatar sert à **représenter** son titulaire : à côté de son nom, quand il commente, publie, réagit, ou dans la liste des instructeurs. Là, il est visible d’autrui, et c’est sa raison d’être.
+
+Le **poser** dans un contenu (un bloc média-texte ou texte enrobant qui montre « l’avatar de tel membre ») est autre chose : c’est publier le visage de quelqu’un sur une page qu’il n’a pas écrite. La règle du club est sans exception, administrateurs compris :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/assertOwnAvatars.service.ts"
+  filename="assertOwnAvatars.service.ts"
+  snippetRange="18-31"
+  snippetHighlight="6"
+  snippetTitle="Seul son titulaire pose un avatar"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque procédure qui enregistre un contenu l’appelle sur les contenus reçus ; le sélecteur d’avatar ne propose que soi (partie « Contenu éditorial », un contenu écrit par un membre).
+
+## Hors de la bibliothèque
+
+Les avatars vivent sous `AKFC/avatars/<identifiant>/`. Le Finder liste le stockage tel qu’il est : ce dossier y apparaissait, avec les fichiers de chaque membre. Un administrateur pouvait les déplacer, les renommer, les jeter. `User.avatar` garde la clé **exacte** du fichier : après un déplacement, le compte aurait pointé sur rien, et l’avatar aurait disparu sans que personne comprenne pourquoi.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/storage/mediaPaths.ts"
+  filename="mediaPaths.ts"
+  snippetRange="70-83"
+  snippetHighlight="11"
+  snippetTitle="Le dossier des avatars, refusé à la bibliothèque"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le dossier n’est plus listé (ni par `storage.list`, ni par `storage.getTree`), et toute opération de la bibliothèque qui le vise — lecture, renommage, déplacement, libellé, corbeille — répond « introuvable », comme pour un dossier qui n’existe pas. Les avatars ne passent plus que par leur circuit : le profil de leur titulaire, et leur route.
+
+<Callout type="tip">
+Un objet qui a un **propriétaire** et un **circuit** à lui ne doit pas être aussi manipulable par un outil générique. Deux chemins d’écriture vers la même donnée, c’est deux façons de la rendre incohérente.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Un avatar est-il un média de la bibliothèque ?", "Non : ni MediaAsset, ni statut ; User.avatar garde sa clé, et la bibliothèque ne le voit pas."], ["Qui choisit où il est rangé ?", "Le serveur : le dossier du membre connecté, une clé nouvelle à chaque envoi."], ["Que vérifie l’enregistrement ?", "Le dossier du membre, la présence du fichier, son type et sa taille réels, lus chez le stockage ; un fichier refusé est supprimé."], ["Combien d’avatars par membre ?", "Un : le précédent est effacé après la mise à jour du compte, et à la suppression du compte."], ["Comment un visiteur le voit-il ?", "Par /api/media/public/avatar/<id>, qui ne sert que des avatars, en vignette de 300 pixels."], ["Comment toutes les vues se rafraîchissent-elles ?", "Une version par membre, ajoutée à l’URL, changée après chaque envoi."], ["Peut-on poser l’avatar d’un autre ?", "Non, personne : un contenu ne montre que l’avatar de son auteur."]]' />
+
+## À suivre
+
+Le membre a son compte, son profil et son visage. Le club peut maintenant lui transmettre des documents : un compte rendu d’assemblée générale pour tous, une attestation pour lui seul, un planning pour un groupe.
+
+<Callout type="tip">
+**Chapitre suivant : les documents des membres.** Publier un fichier sans le copier, choisir qui le reçoit, suivre ce que chacun a lu, et ne servir le fichier qu’à ceux qui peuvent l’ouvrir.
+</Callout>
