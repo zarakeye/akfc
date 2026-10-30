@@ -1,15 +1,11 @@
 ---
-title: "Les documents légaux et les données personnelles"
-description: "Des mentions légales et une politique de confidentialité générées depuis les réglages, un registre des traitements décrit une seule fois, des durées de conservation appliquées par une purge quotidienne, et l'export de ses données par chaque membre."
+title: "Les pages légales"
+description: "Des mentions légales et une politique de confidentialité générées depuis les réglages, qui annoncent ce qui manque au lieu de l’inventer ; des coordonnées légales distinctes des coordonnées publiques ; et un registre des traitements décrit une seule fois pour deux publics."
 section: "Légal et RGPD"
 order: 1
 entities:
-  SiteSettings: [legalName, legalRna, legalSiret, legalAddress, publicationDirector, hostName, storageRegion, accountRetentionMonths, ticketRetentionMonths, legalUpdatedAt]
-  Ticket: [status, closedAt]
-  TicketMessage: [createdAt]
-  Session: [expiresAt]
-  PasswordResetToken: [expiresAt]
-  User: [lastLoginAt, createdAt]
+  SiteSettings: [legalName, legalRna, legalSiret, legalAddress, legalPhone, legalEmail, publicationDirector, hostName, storageRegion, accountRetentionMonths, ticketRetentionMonths, legalUpdatedAt]
+  SitePage: [slug, content]
 stories:
   - title: Le club renseigne ses informations légales
     actor: Administrateur
@@ -17,125 +13,130 @@ stories:
       - label: Il enregistre la rubrique « Informations légales » des Réglages ; les pages légales la lisent aussitôt
         call: siteSettings.saveLegal
         section: Des pages générées depuis les réglages
-  - title: La purge de la nuit
-    actor: Serveur (chaque nuit à 3 heures, et au démarrage)
+  - title: Un visiteur lit la politique de confidentialité
+    actor: Visiteur
     steps:
-      - label: Les demandes closes depuis la durée réglée, les sessions et liens expirés, les formulaires détachés depuis cinq ans sont supprimés
-        call: purgeExpiredData
-        section: Des durées de conservation appliquées
-  - title: Un membre télécharge ses données
-    actor: Membre connecté
-    steps:
-      - label: Depuis son profil, il obtient un fichier JSON de toutes ses données
-        call: GET /api/me/export
-        section: "Le droit d'accès : télécharger ses données"
+      - label: La page présente les traitements décrits une seule fois, avec les durées réglées
+        call: page /infos/confidentialite
+        section: Le registre des traitements, décrit une seule fois
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les membres reçoivent les documents du club, partagent leurs fichiers et s'adressent au club par des demandes suivies. Tout cela repose sur des données personnelles.
+> **Précédemment.** Les membres reçoivent les documents du club, partagent leurs fichiers et s’adressent au club par des demandes suivies. Tout cela repose sur des données personnelles.
 
-Un site qui collecte des données personnelles doit dire qui l'édite, ce qu'il fait de ces données, combien de temps il les garde, et permettre à chacun d'exercer ses droits. L'association n'a pas toutes les informations légales sous la main d'un coup : le siège, le numéro RNA ou l'hébergeur se renseignent au fil de l'eau. Les documents légaux du site sont donc **générés** à partir des Réglages, et se mettent à jour d'eux-mêmes.
+Un site qui collecte des données personnelles doit dire qui l’édite, ce qu’il fait de ces données, combien de temps il les garde, et permettre à chacun d’exercer ses droits. Cette partie suit ces obligations une à une : les pages légales, puis ce que le site fait réellement des données (durées tenues, export), enfin l’image des personnes, par formulaire papier et en ligne.
 
 ## Les parcours du chapitre
 
-Trois cas d'utilisation traversent ce chapitre : le club qui renseigne ses informations, la purge qui tient les durées annoncées, et le membre qui exerce son droit d'accès. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+Deux parcours traversent ce chapitre : le club qui renseigne ses informations légales, et le visiteur qui lit la politique de confidentialité.
 
 <Parcours />
 
-## Des pages générées depuis les réglages
+## Des pages générées depuis les réglages ⚖️
 
-Les pages « Mentions légales » et « Politique de confidentialité » ne sont pas rédigées à la main. Ce sont des composants serveur qui lisent la rubrique « Informations légales » des Réglages du site :
+L’association n’a pas toutes ses informations légales sous la main d’un coup : le siège, le numéro RNA, l’hébergeur se renseignent au fil de l’eau. Les pages « Mentions légales » et « Politique de confidentialité » ne sont donc pas rédigées à la main : ce sont des composants serveur qui lisent la rubrique « Informations légales » des Réglages du site, à chaque affichage.
 
-```tsx
-// apps/web/src/app/(public)/infos/mentions-legales/page.tsx (extrait)
-<p>
-  Le site akfc.fr est édité par <strong><Val v={info.name} /></strong>, association régie par la loi du
-  1er juillet 1901
-  {info.rna ? <>, enregistrée au Répertoire national des associations sous le numéro {info.rna}</> : null}
-  {info.siret ? <>, SIRET {info.siret}</> : null}.
-</p>
-```
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/legal/getLegalInfo.ts"
+  filename="getLegalInfo.ts"
+  snippetRange="26-46"
+  title="getLegalInfo — une seule lecture des réglages"
+  stepsJson='[{"title": "Une ligne, lue à chaque affichage", "body": "La ligne unique des réglages (chapitre « Les réglages du site » de la partie « Contenu éditorial ») : une information corrigée dans les Réglages l’est aussitôt sur la page.", "scope": "2-2", "focus": "2-2"}, {"title": "null, plutôt qu’une valeur inventée", "body": "Un champ non renseigné reste `null` : c’est la page qui décidera comment l’annoncer.", "scope": "5-10", "focus": "5-10"}, {"title": "Les coordonnées LÉGALES", "body": "Siège, téléphone et e-mail viennent des champs `legal*` — ceux de l’association en tant qu’éditeur, tels que dans ses statuts. Jamais des coordonnées publiques de la page « Nous contacter », qui peuvent désigner le lieu des cours ou le téléphone d’un instructeur.", "scope": "8-10", "focus": "8-8"}, {"title": "Les durées, en paramètres", "body": "Les durées de conservation et la région du stockage sont des réglages : la politique les insère dans son texte, et la purge de la nuit (chapitre 2) lit les mêmes.", "scope": "16-19", "focus": "16-17"}]'
+/>
 
-Une information corrigée dans les Réglages l'est aussitôt sur la page. Une information pas encore renseignée n'est jamais inventée : le composant `Val` affiche alors « en cours de renseignement ». Une page à moitié remplie le dit, plutôt que de paraître complète avec de fausses valeurs.
+La page annonce ce qui manque au lieu de l’inventer :
 
-Les documents à valeur légale utilisent les **coordonnées légales** de l'association (siège, téléphone et e-mail de l'éditeur), et jamais les coordonnées publiques de la page « Nous contacter » : les deux peuvent différer (voir « Les réglages du site »). Chaque page accepte enfin un complément libre, rédigé dans le constructeur de pages et affiché à la suite.
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/legal/LegalBits.tsx"
+  filename="LegalBits.tsx"
+  snippetRange="3-11"
+  snippetHighlight="8"
+  snippetTitle="Val : une valeur, ou « en cours de renseignement »"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/infos/mentions-legales/page.tsx"
+  filename="page.tsx"
+  snippetRange="31-40"
+  snippetHighlight="3,5"
+  snippetTitle="Les mentions légales, champ par champ"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une page à moitié remplie le **dit**, plutôt que de paraître complète avec de fausses valeurs. Une mention facultative (le numéro RNA, le SIRET) n’apparaît que si elle existe ; une mention obligatoire absente est annoncée « en cours de renseignement ».
+
+Chaque page légale accepte enfin un **complément libre**, rédigé dans le constructeur de pages (une page de contenu du même slug) et affiché à la suite. Ces pages n’ont pas d’interrupteur de publication : elles sont publiques dès qu’elles existent, leurs fichiers aussi (partie « Contenu éditorial »).
+
+L’enregistrement des informations est réservé aux administrateurs et date la mise à jour, que la page affiche :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/siteSettings/router.ts"
+  filename="router.ts"
+  snippetRange="106-134"
+  snippetHighlight="5,21"
+  snippetTitle="siteSettings.saveLegal"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un champ vidé redevient `null` (et la page l’annonce manquant). Les numéros RNA et SIRET sont enregistrés **compactés** (`compactId` retire les espaces et met en majuscules) : saisis « w 731 000 123 » ou « W731000123 », ils sont enregistrés et affichés pareil.
 
 ## Le registre des traitements, décrit une seule fois
 
-Le RGPD demande deux documents qui disent la même chose à deux publics. La **politique de confidentialité** explique aux personnes ce qu'on fait de leurs données. Le **registre des activités de traitement** (article 30) est le document interne de l'association. Les deux sont produits à partir d'une description unique des traitements du site :
+Le RGPD demande deux documents qui disent la même chose à deux publics. La **politique de confidentialité** explique aux personnes ce qu’on fait de leurs données. Le **registre des activités de traitement** (article 30) est le document interne de l’association. Les deux sont produits à partir d’une description unique, dans `packages/contracts` :
 
-```ts
-// packages/contracts/src/legal/processingRegister.ts (extrait)
-export type ProcessingActivity = {
-  id: string;
-  /** Intitulé court (registre). */
-  name: string;
-  /** Finalité, formulée pour la personne concernée (« Vous donner accès… »). */
-  purpose: string;
-  /** Personnes concernées. */
-  people: string;
-  /** Données traitées. */
-  data: string;
-  /** Base légale (art. 6 RGPD), en clair. */
-  legalBasis: string;
-  /** Qui y accède au sein du club. */
-  recipients: string;
-  /** Prestataires impliqués (noms de PROCESSORS). */
-  processors: string[];
-  retention: string;
-};
-```
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/processingRegister.ts"
+  filename="processingRegister.ts"
+  snippetRange="19-36"
+  snippetHighlight="6,12,17"
+  snippetTitle="Un traitement"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Chaque traitement (gestion des membres, présentation des instructeurs, demandes, documents, photos et vidéos…) y est décrit une fois, avec sa finalité, sa base légale, ses destinataires, ses prestataires et sa durée de conservation. La page publique et le registre (`/dashboard/rgpd`, imprimable) en sont deux présentations. Une fonctionnalité qui collecte une donnée nouvelle s'ajoute dans ce fichier, et les deux documents suivent : ils ne peuvent pas se contredire.
+Chaque traitement (gestion des membres, présentation des instructeurs, demandes, correspondance, documents, photos et vidéos, sécurité) y est décrit une fois : finalité, personnes concernées, données, base légale, destinataires, prestataires et durée. Par exemple :
 
-Les durées sont des paramètres, réglés dans les Réglages (`accountRetentionMonths`, `ticketRetentionMonths`…) et insérés dans le texte, comme la région du stockage des fichiers.
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/processingRegister.ts"
+  filename="processingRegister.ts"
+  snippetRange="112-123"
+  snippetHighlight="5-7"
+  snippetTitle="Les photos et vidéos des activités"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-## Des durées de conservation appliquées
+La relecture de cette partie a complété le registre : le **parent référent** d’un membre mineur est une personne concernée à part entière (son nom et son e-mail sont enregistrés pour l’autorisation du droit à l’image), et la majorité et la date de dernière connexion font partie des données d’un membre. Une donnée collectée qui n’est pas au registre est une donnée dont l’association ne peut pas rendre compte.
 
-Une durée de conservation annoncée doit être tenue. Une purge tourne chaque nuit à 3 heures (heure de Paris), avec une passe au démarrage du serveur :
+Les deux documents en sont deux présentations :
 
-```ts
-// packages/backend/src/modules/privacy/retention.service.ts (extrait)
-const { ticketMonths } = await retentionSettings(db);
-const cutoff = monthsAgo(now, ticketMonths);
-const tickets = await db.ticket.deleteMany({
-  where: { status: "CLOSED", closedAt: { lt: cutoff }, messages: { none: { createdAt: { gte: cutoff } } } },
-});
-const sessions = await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
-const resetTokens = await db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } });
-```
+<DocsTable columnsJson='["Document", "Où", "Public"]' rowsJson='[["Politique de confidentialité", "/infos/confidentialite", "Les personnes concernées (page publique)."], ["Registre des traitements (art. 30)", "/dashboard/rgpd, imprimable", "L’association (administrateurs)."]]' />
 
-<DocsTable columnsJson='["Données","Ce que fait la purge"]' rowsJson='[["Demandes closes","Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."],["Sessions expirées, liens de réinitialisation périmés","Supprimés."],["Vignettes et affiches dont l’original a disparu","Supprimées du stockage."],["Formulaires de droit à l’image d’un compte supprimé","Supprimés cinq ans après la suppression du compte (preuve de l’autorisation)."],["Comptes","Jamais supprimés automatiquement : listés aux administrateurs."]]' />
-
-Les comptes font exception. Le site ne sait pas quand une adhésion prend fin : l'inscription se fait auprès de la MJC. Supprimer automatiquement un compte resté sans connexion risquerait d'effacer celui d'un membre toujours inscrit. Le registre liste donc les **comptes inactifs** (sans connexion depuis la durée réglée), et ce sont les administrateurs qui décident.
-
-## Le droit d'accès : télécharger ses données
-
-Depuis son profil, un membre télécharge toutes ses données personnelles en un fichier JSON lisible (droit d'accès et de portabilité, articles 15 et 20). La route `/api/me/export` exige une session et ne lit que les données de la personne connectée :
-
-```ts
-// apps/web/src/app/api/me/export/route.ts (extrait)
-const session = await getSessionFromRequest(req);
-if (!session?.user) return new NextResponse("Connexion requise.", { status: 401 });
-const data = await exportMyData(prisma, session.user.id);
-```
-
-L'export contient le compte, le profil, les groupes, les demandes et leurs échanges, les documents reçus et leur état de lecture, les publications, les commentaires et les réactions, les fichiers déposés et les autorisations de droit à l'image. Il ne contient **jamais** le mot de passe, même sous forme d'empreinte. Il ne contient pas non plus les données d'autres personnes : des réponses qu'un membre a rédigées pour d'autres demandeurs, seul le nombre figure. Les fichiers sont listés par leur nom, sans être joints.
+Les deux pages appellent la même fonction, avec les mêmes réglages : `processingActivities(info)`. Une fonctionnalité qui collecte une donnée nouvelle s’ajoute dans ce fichier, et les deux documents suivent : ils ne peuvent pas se contredire.
 
 <Callout type="info">
-Chaque obligation a son mécanisme, et chaque mécanisme lit la même source : les Réglages pour les informations de l'éditeur et les durées, `processingRegister.ts` pour la description des traitements. Aucun document légal ne recopie une information qui vit ailleurs.
+Chaque obligation a son mécanisme, et chaque mécanisme lit la même source : les Réglages pour les informations de l’éditeur et les durées, `processingRegister.ts` pour la description des traitements. Aucun document légal ne recopie une information qui vit ailleurs.
+</Callout>
+
+<Callout type="warning">
+Le registre décrit ce que le **code** fait. Toute procédure qui enregistre une donnée personnelle nouvelle (un champ de profil, une adresse d’un tiers, un journal qui garde des IP) doit être relue avec lui ouvert à côté.
 </Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["D’où viennent les mentions légales et la politique de confidentialité ?","Des Réglages du site, lus à chaque affichage ; une information absente est annoncée « en cours de renseignement »."],["Comment la politique et le registre restent-ils cohérents ?","Ils sont deux présentations d’une même description des traitements (processingRegister.ts)."],["Les durées de conservation sont-elles tenues ?","Oui : purge chaque nuit des demandes closes anciennes, sessions et liens périmés, vignettes orphelines, anciens formulaires."],["Et les comptes ?","Jamais supprimés automatiquement : listés aux administrateurs, qui décident."],["Comment un membre accède-t-il à ses données ?","Par un export JSON depuis son profil, sans mot de passe ni données d’autres personnes."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où viennent les mentions légales et la politique de confidentialité ?", "Des Réglages du site, lus à chaque affichage par getLegalInfo."], ["Que montre une page pour une information absente ?", "« en cours de renseignement » : jamais une valeur inventée."], ["Quelles coordonnées figurent dans les documents légaux ?", "Les coordonnées légales (siège, téléphone, e-mail de l’éditeur), jamais celles de « Nous contacter »."], ["Comment la politique et le registre restent-ils cohérents ?", "Ils sont deux présentations d’une même description des traitements (processingRegister.ts)."], ["Qui figure au registre ?", "Toutes les personnes concernées, y compris le parent référent d’un mineur."]]' />
 
 ## À suivre
 
-Une donnée personnelle demande un traitement particulier : l'image des personnes. Une photo de cours peut montrer des membres reconnaissables, et chacun choisit ce qu'il accepte : la galerie des membres, le site public, les réseaux sociaux.
+Les pages disent ce que le site fait des données. Encore faut-il qu’il le fasse : garder chaque donnée le temps annoncé, pas plus, et permettre à chacun de récupérer les siennes.
 
 <Callout type="tip">
-**Chapitre suivant : le droit à l'image.** Un formulaire d'autorisation signé, conservé hors de la bibliothèque et servi à ses seuls ayants droit, les usages choisis par chaque membre, et le statut qui en découle.
+**Chapitre suivant : les données personnelles.** Une purge chaque nuit qui tient les durées annoncées, des comptes jamais supprimés sans décision humaine, et l’export de ses données par chaque membre.
 </Callout>

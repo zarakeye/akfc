@@ -78,7 +78,7 @@ C’est le même principe que pour les mots de passe : on garde l’empreinte, j
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="129-179"
+  snippetRange="130-180"
   snippetHighlight="40-48"
   snippetTitle="auth.requestPasswordReset"
   fullFileTitle="Voir le fichier complet"
@@ -92,7 +92,7 @@ C’est le même principe que pour les mots de passe : on garde l’empreinte, j
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="129-179"
+  snippetRange="130-180"
   title="La demande de lien, sans rien révéler"
   stepsJson='[{"title": "Une adresse déjà normalisée", "body": "emailSchema a nettoyé l’adresse et l’a mise en minuscules, comme toutes les adresses enregistrées : elle est cherchée telle quelle.", "scope": "1-51", "focus": "4-6"}, {"title": "Pas de compte : la même réponse", "body": "Sans compte, la procédure répond { ok: true } — exactement ce qu’elle répond quand un lien part.", "scope": "1-51", "focus": "10-12"}, {"title": "Le délai entre deux demandes", "body": "Si un lien a été demandé il y a moins de deux minutes, rien ne repart, et la réponse est toujours la même.", "scope": "1-51", "focus": "14-25"}, {"title": "Le jeton : l’empreinte en base, le brut dans l’e-mail", "body": "createPasswordResetToken fabrique les deux. L’empreinte est enregistrée avec sa date d’expiration, l’adresse IP et le navigateur de la demande, pour la traçabilité.", "scope": "1-51", "focus": "27-38"}, {"title": "L’envoi n’est pas attendu", "body": "void … .catch(…) : l’e-mail part en arrière-plan. La réponse ne dépend plus de la lenteur du serveur de messagerie, et ne trahit donc pas qu’un compte existe. Un échec est journalisé, sans le jeton.", "scope": "1-51", "focus": "40-48"}]'
 />
@@ -111,7 +111,7 @@ C’est ici que le motif se révèle dans toute sa rigueur.
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="181-236"
+  snippetRange="182-237"
   snippetHighlight="31-53"
   snippetTitle="auth.resetPassword : trois écritures atomiques"
   fullFileTitle="Voir le fichier complet"
@@ -125,7 +125,7 @@ C’est ici que le motif se révèle dans toute sa rigueur.
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="181-236"
+  snippetRange="182-237"
   title="La réinitialisation, en une transaction"
   stepsJson='[{"title": "Retrouver le lien par son empreinte", "body": "Le jeton reçu est réduit à son empreinte, qui est cherchée en base. Le jeton brut n’est jamais comparé ni enregistré.", "scope": "1-56", "focus": "4-15"}, {"title": "Trois vérifications, trois messages", "body": "Le lien existe, n’a pas servi, n’a pas expiré. Chaque échec a son message, qui dit quoi faire ensuite.", "scope": "1-56", "focus": "17-27"}, {"title": "La nouvelle empreinte", "body": "hashPassword, avec le coût commun. Le calcul est fait avant la transaction, pour qu’elle reste courte.", "scope": "1-56", "focus": "29-29"}, {"title": "Dans la transaction : le mot de passe", "body": "Le membre reçoit sa nouvelle empreinte. isFirstLogin n’est pas touché : choisir un mot de passe ne complète pas un profil.", "scope": "1-56", "focus": "31-37"}, {"title": "Consommer le lien, une seule fois", "body": "updateMany ne marque le lien que si usedAt est encore vide. Si une autre requête l’a consommé entre-temps, count vaut 0, la procédure lève une erreur, et toute la transaction est annulée.", "scope": "1-56", "focus": "39-48"}, {"title": "Fermer toutes les sessions", "body": "Si le membre réinitialise parce qu’il soupçonne une intrusion, toute session ouverte par l’intrus disparaît avec cette instruction.", "scope": "1-56", "focus": "50-52"}]'
 />

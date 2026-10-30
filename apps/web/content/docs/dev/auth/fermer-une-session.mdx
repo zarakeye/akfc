@@ -140,7 +140,7 @@ Le changement de mot de passe est une autre façon, plus ciblée, de faire mouri
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="68-123"
+  snippetRange="69-124"
   snippetHighlight="42-53"
   snippetTitle="auth.changePassword"
   fullFileTitle="Voir le fichier complet"
@@ -154,9 +154,9 @@ Le changement de mot de passe est une autre façon, plus ciblée, de faire mouri
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="68-123"
+  snippetRange="69-124"
   title="Changer de mot de passe, et fermer les autres appareils"
-  stepsJson='[{"title": "Une procédure protégée", "body": "Seul un membre connecté change son mot de passe ; l’identifiant vient de la session.", "scope": "1-56", "focus": "7-10"}, {"title": "Vérifier le mot de passe actuel", "body": "Une saisie fausse lève BAD_REQUEST. Pas UNAUTHORIZED : le membre est bien connecté, et un 401 pourrait être pris pour une session perdue. C’était le cas jusqu’à récemment.", "scope": "1-56", "focus": "20-28"}, {"title": "Refuser un mot de passe identique", "body": "Changer pour le même mot de passe ne protège de rien ; la procédure le dit plutôt que de faire semblant.", "scope": "1-56", "focus": "30-36"}, {"title": "Retrouver la session en cours", "body": "verifyJwt lit le jeton du cookie pour connaître l’identifiant de la session courante, celle qu’il ne faut pas fermer.", "scope": "1-56", "focus": "38-40"}, {"title": "Une transaction : la nouvelle empreinte, et les autres sessions supprimées", "body": "Les deux écritures réussissent ensemble ou pas du tout. NOT: { id: currentSessionId } épargne l’appareil utilisé.", "scope": "1-56", "focus": "42-53"}]'
+  stepsJson='[{"title": "Une procédure protégée", "body": "Seul un membre connecté change son mot de passe ; l’identifiant vient de la session.", "scope": "1-56", "focus": "7-10"}, {"title": "Vérifier le mot de passe actuel", "body": "Une saisie fausse lève BAD_REQUEST. Pas UNAUTHORIZED : le membre est bien connecté, et un 401 pourrait être pris pour une session perdue. Les essais sont limités (assertPasswordOfConnectedUser : cinq essais faux par quart d’heure et par membre) : une session volée ne permet pas d’essayer des mots de passe sans fin.", "scope": "1-56", "focus": "20-28"}, {"title": "Refuser un mot de passe identique", "body": "Changer pour le même mot de passe ne protège de rien ; la procédure le dit plutôt que de faire semblant.", "scope": "1-56", "focus": "30-36"}, {"title": "Retrouver la session en cours", "body": "verifyJwt lit le jeton du cookie pour connaître l’identifiant de la session courante, celle qu’il ne faut pas fermer.", "scope": "1-56", "focus": "38-40"}, {"title": "Une transaction : la nouvelle empreinte, et les autres sessions supprimées", "body": "Les deux écritures réussissent ensemble ou pas du tout. NOT: { id: currentSessionId } épargne l’appareil utilisé.", "scope": "1-56", "focus": "42-53"}]'
 />
 
 ---

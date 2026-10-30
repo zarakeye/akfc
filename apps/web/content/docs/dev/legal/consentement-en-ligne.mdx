@@ -1,0 +1,138 @@
+---
+title: "Le consentement en ligne"
+description: "Un membre majeur donne son accord depuis son profil : une majorité qui se vérifie, un mot de passe qui vaut signature et dont les essais sont limités, un récapitulatif PDF figé rangé avec les formulaires papier, la version du texte, et ce qui reste à faire pour les mineurs."
+section: "Légal et RGPD"
+order: 4
+entities:
+  User: [legalAge, birthDate, birthDateVerified, guardianName, guardianEmail, imageConsent, imageConsentAt]
+  ImageConsentForm: [source, textVersion, signerName, signedAt, memberBirthDate, storageKey]
+stories:
+  - title: Un membre majeur donne son accord en ligne
+    actor: Membre majeur, connecté
+    steps:
+      - label: Son profil sait s’il peut confirmer lui-même, ou ce qui manque
+        call: imageConsent.onlineState
+        section: Qui peut confirmer en ligne
+      - label: Il coche ses usages et confirme avec son mot de passe ; un récapitulatif PDF est produit, rangé, et le statut mis à jour
+        call: imageConsent.confirmMine
+        section: La confirmation, pas à pas
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le formulaire de droit à l’image signé est déposé par un administrateur, rangé hors de l’application, servi à ses seuls ayants droit ; le statut en découle, et la preuve survit cinq ans au départ.
+
+Le formulaire papier reste la voie de tous. Mais remettre une feuille signée à un responsable, la faire scanner, la faire déposer, c’est trois personnes pour un oui. Un membre **majeur** peut donner son accord lui-même, depuis son profil. Le site doit alors produire ce que produisait la signature : un document, une date, la version du texte accepté, et la certitude que c’est bien lui.
+
+## Les parcours du chapitre
+
+Un parcours traverse ce chapitre : le membre majeur qui donne son accord en ligne.
+
+<Parcours />
+
+## Qui peut confirmer en ligne ✍️
+
+Seul un membre **majeur** signe pour lui-même ; pour un mineur, c’est son représentant légal. La majorité est une donnée que le club renseigne (`legalAge`), mais elle **change** avec le temps : un mineur de dix-sept ans devient majeur un jour, sans que personne ne mette sa fiche à jour.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/imageConsent.ts"
+  filename="imageConsent.ts"
+  snippetRange="87-93"
+  snippetHighlight="5"
+  snippetTitle="La majorité effective"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un mineur dont la date de naissance **vérifiée** atteint dix-huit ans est majeur, même si sa fiche dit encore « mineur ». La vérification compte : une date saisie par le membre lui-même ne suffirait pas à lui faire signer seul (partie « Membres », la date de naissance vérifiée est verrouillée).
+
+Le profil demande au serveur ce qu’il peut proposer :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts"
+  filename="imageConsentOnline.service.ts"
+  snippetRange="79-96"
+  snippetHighlight="9,11,16"
+  snippetTitle="onlineConsentState"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un majeur dont le nom est renseigné peut confirmer en ligne (le nom figurera sur le récapitulatif). Pour un mineur, le serveur dit ce qui **manque** avant de pouvoir solliciter son parent (son nom, sa date de naissance vérifiée, le nom et l’e-mail du parent) ; l’adresse du parent est montrée masquée (`c•••@example.com`) : le membre sait à qui la demande partira, sans lire l’adresse en entier.
+
+## La confirmation, pas à pas
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts"
+  filename="imageConsentOnline.service.ts"
+  snippetRange="106-193"
+  title="confirmMemberConsent"
+  stepsJson='[{"title": "Majeur, sinon une explication", "body": "Un mineur est renvoyé vers son parent ; une majorité non renseignée, vers le formulaire papier ou un instructeur. Le refus dit quoi faire.", "scope": "9-19", "focus": "11-11"}, {"title": "Un nom à mettre sur le document", "body": "Le récapitulatif porte le nom du signataire : sans nom, pas de signature.", "scope": "20-23", "focus": "21-21"}, {"title": "Le mot de passe vaut signature", "body": "Une session restée ouverte (un ordinateur partagé) ne suffit pas : confirmer est un geste de signature, et le mot de passe le prouve. Ses essais sont limités comme ceux de la connexion.", "scope": "25-30", "focus": "25-25"}, {"title": "Un récapitulatif figé", "body": "Le serveur remplit le formulaire du club avec les choix, la date, et dans le cadre de signature la mention de la confirmation en ligne et de la version du texte. Le PDF est aplati : c’est un document, pas un formulaire modifiable.", "scope": "32-44", "focus": "40-42"}, {"title": "Rangé avec les formulaires papier", "body": "Même dossier privé, même table : une autorisation en ligne et une autorisation papier sont deux sources (`source`) d’une même preuve.", "scope": "45-46", "focus": "46-46"}, {"title": "La preuve et le statut, ensemble", "body": "La version, la source, le signataire, la date de naissance au jour de la signature : tout ce qui prouvera, plus tard, ce qui a été accepté et par qui. Le statut suit dans la même transaction.", "scope": "49-73", "focus": "61-64"}, {"title": "Un fichier sans ligne n’existe pas", "body": "Le PDF est rangé AVANT la transaction (on ne garde pas une ligne qui désignerait un fichier absent). Si la transaction échoue, le fichier est supprimé : pas de document signé sans ligne pour le désigner.", "scope": "84-87", "focus": "85-85"}]'
+/>
+
+### Des essais de mot de passe limités
+
+La connexion limitait déjà ses tentatives. Les vérifications d’un mot de passe **par un membre connecté** — confirmer ce consentement, changer de mot de passe — ne limitaient rien : une session volée permettait d’essayer des mots de passe sans fin, pour le changer, ou pour l’apprendre (un mot de passe resservant souvent ailleurs).
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/lib/security/passwordCheck.ts"
+  filename="passwordCheck.ts"
+  snippetRange="17-36"
+  title="assertPasswordOfConnectedUser"
+  stepsJson='[{"title": "Un compteur par membre", "body": "Cinq essais faux par quart d’heure, par membre (et non par adresse IP : l’attaquant a déjà la session). En mémoire du serveur, comme celui de la connexion.", "scope": "8-8", "focus": "8-8"}, {"title": "Limité : on ne vérifie même pas", "body": "Au-delà, la vérification n’a pas lieu : TOO_MANY_REQUESTS, avec un délai.", "scope": "9-14", "focus": "9-9"}, {"title": "Un essai faux compte", "body": "BAD_REQUEST, pas UNAUTHORIZED : le membre EST connecté, c’est la saisie qui est fausse (un client pourrait prendre UNAUTHORIZED pour une déconnexion).", "scope": "15-18", "focus": "16-16"}, {"title": "Une réussite efface", "body": "Un membre qui se trompe deux fois puis réussit repart de zéro.", "scope": "19-19", "focus": "19-19"}]'
+/>
+
+## La version du texte
+
+Une autorisation porte sur un **texte**. Si le club modifie le formulaire (un usage ajouté, une durée changée), les autorisations déjà données l’ont été sur l’ancien texte. La preuve doit dire lequel :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/imageConsent.ts"
+  filename="imageConsent.ts"
+  snippetRange="57-61"
+  snippetHighlight="5"
+  snippetTitle="Une version, à changer avec le texte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque autorisation en ligne enregistre cette version (`textVersion`), et le récapitulatif l’imprime. La règle est humaine : quiconque modifie le PDF ou le texte du formulaire en ligne change la version dans le même commit.
+
+Le récapitulatif est produit à partir du formulaire vierge lui-même :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/consentPdf.service.ts"
+  filename="consentPdf.service.ts"
+  snippetRange="8-18"
+  snippetHighlight="8"
+  snippetTitle="Un formulaire rempli par le serveur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le même service sert aussi le formulaire **pré-rempli** (l’identité du membre, qui signe), que le membre télécharge, imprime et signe à la main. Les noms de champs sont ceux du PDF : un PDF retouché sans mettre ce fichier à jour remplirait des champs qui n’existent plus.
+
+## Et les mineurs
+
+Pour un mineur, l’autorisation est donnée par son **parent référent**. Le circuit en ligne prévu est un lien envoyé à l’adresse du parent ; il n’est pas encore en place. En attendant :
+
+<DocsTable columnsJson='["Situation", "Ce que propose le profil"]' rowsJson='[["Majeur, nom renseigné", "La confirmation en ligne, et le formulaire pré-rempli."], ["Majorité non renseignée", "Le formulaire papier ; un instructeur renseigne la majorité."], ["Mineur, fiche incomplète", "La liste de ce qui manque (nom, date de naissance vérifiée, parent)."], ["Mineur, fiche complète", "Le formulaire pré-rempli au nom du parent, à signer et remettre."]]' />
+
+<Callout type="info">
+Une signature électronique « simple » (le mot de passe du titulaire, une date, un document figé et versionné) prouve moins qu’une signature manuscrite, mais plus qu’une case cochée. Ce qui la rend probante, c’est ce qu’on garde : le document, le texte accepté, qui, quand, et la certitude que c’était lui.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui peut confirmer en ligne ?", "Un membre majeur (majorité effective : saisie, ou date de naissance vérifiée qui atteint 18 ans), dont le nom est renseigné."], ["Qu’est-ce qui vaut signature ?", "Son mot de passe, saisi au moment de confirmer ; une session ouverte ne suffit pas."], ["Comment les essais sont-ils limités ?", "Cinq essais faux par quart d’heure et par membre, comme pour changer de mot de passe."], ["Que garde le club ?", "Un récapitulatif PDF figé, rangé avec les formulaires papier, avec la source, la version du texte, le signataire et la date."], ["Que se passe-t-il si l’enregistrement échoue ?", "Le PDF rangé est supprimé : aucun document sans ligne pour le désigner."], ["Et pour un mineur ?", "Le formulaire pré-rempli au nom du parent, signé à la main ; le lien envoyé au parent reste à faire."]]' />
+
+## À suivre
+
+La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations. Restent les mécanismes que toutes les pages partagent : être trouvé, se repérer, être utilisable par tous.
+
+<Callout type="tip">
+**Partie suivante : interface transverse.** Le référencement, le header, l’accessibilité.
+</Callout>

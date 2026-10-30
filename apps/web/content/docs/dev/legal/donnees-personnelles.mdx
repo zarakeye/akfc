@@ -1,0 +1,132 @@
+---
+title: "Les données personnelles"
+description: "Ce que le site fait réellement des données : une purge chaque nuit qui tient les durées annoncées, des comptes jamais supprimés sans décision humaine, et l’export par chaque membre de toutes ses données, sans mot de passe ni données d’autrui."
+section: "Légal et RGPD"
+order: 2
+entities:
+  Ticket: [status, closedAt]
+  TicketMessage: [createdAt, authorId]
+  Session: [expiresAt]
+  PasswordResetToken: [expiresAt]
+  ImageConsentForm: [detachedAt]
+  User: [lastLoginAt, createdAt, memberSince]
+  SiteSettings: [accountRetentionMonths, ticketRetentionMonths]
+stories:
+  - title: La purge de la nuit
+    actor: Serveur (chaque nuit à 3 heures, et au démarrage)
+    steps:
+      - label: Les demandes closes depuis la durée réglée, les sessions et liens expirés, les vignettes orphelines, les formulaires détachés depuis cinq ans sont supprimés
+        call: purgeExpiredData
+        section: Des durées de conservation appliquées
+  - title: Un membre télécharge ses données
+    actor: Membre connecté
+    steps:
+      - label: Depuis son profil, il obtient un fichier JSON de toutes ses données
+        call: GET /api/me/export
+        section: Le droit d’accès, télécharger ses données
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les pages légales sont générées depuis les réglages, et la politique de confidentialité comme le registre présentent une même description des traitements.
+
+## Les parcours du chapitre
+
+Deux parcours traversent ce chapitre : la purge de la nuit, et le membre qui exerce son droit d’accès.
+
+<Parcours />
+
+## Des durées de conservation appliquées 🗓️
+
+Une durée de conservation annoncée doit être **tenue**. Une politique qui promet « trois ans après le dernier échange » et une base qui garde tout indéfiniment, c’est une promesse fausse. Une purge tourne donc chaque nuit :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/retention.service.ts"
+  filename="retention.service.ts"
+  snippetRange="31-49"
+  title="purgeExpiredData — ce qui part chaque nuit"
+  stepsJson='[{"title": "Les demandes closes depuis longtemps", "body": "La durée vient des réglages (celle qu’annonce la politique). Une demande part si elle est close depuis cette durée ET sans message depuis : un demandeur qui écrit sur une demande close la rouvre, et repousse l’échéance.", "scope": "2-6", "focus": "5-5"}, {"title": "Ce qui a expiré", "body": "Les sessions expirées et les liens de réinitialisation périmés n’ont plus d’usage : supprimés.", "scope": "7-8", "focus": "7-8"}, {"title": "Les vignettes orphelines", "body": "Les déclinaisons dont l’original a disparu (partie « Stockage et médias ») : une photo supprimée ne survit pas en vignette.", "scope": "10-13", "focus": "10-10"}, {"title": "Les preuves arrivées à échéance", "body": "Les formulaires de droit à l’image d’un compte supprimé depuis cinq ans (chapitre 3). Chaque étape qui touche au stockage est isolée : son échec est journalisé, il n’empêche pas les autres.", "scope": "14-19", "focus": "14-14"}]'
+/>
+
+La purge est lancée au démarrage du serveur, puis chaque nuit à 3 heures, heure de Paris :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/retention.service.ts"
+  filename="retention.service.ts"
+  snippetRange="85-109"
+  snippetHighlight="2,21"
+  snippetTitle="Une purge par jour, à heure fixe"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Pas de planificateur externe : une minuterie vérifie chaque minute s’il est 3 heures et si la purge du jour n’a pas déjà tourné (`lastDay`). `busy` empêche deux passes de se chevaucher. `RETENTION_PURGE_DISABLED=1` la coupe, pour un environnement de démonstration ou une base qu’on examine.
+
+<DocsTable columnsJson='["Données", "Ce que fait la purge"]' rowsJson='[["Demandes closes", "Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."], ["Sessions expirées, liens de réinitialisation périmés", "Supprimés."], ["Vignettes et affiches dont l’original a disparu", "Supprimées du stockage."], ["Formulaires de droit à l’image d’un compte supprimé", "Supprimés cinq ans après la suppression du compte."], ["Comptes", "Jamais supprimés automatiquement : listés aux administrateurs."]]' />
+
+## Des comptes, jamais supprimés sans décision
+
+Les comptes font exception. Le site ne sait pas quand une adhésion prend fin : l’inscription se fait auprès de la MJC. Supprimer automatiquement un compte resté sans connexion risquerait d’effacer celui d’un membre toujours inscrit, qui ne se connecte simplement pas. Le registre liste donc les **comptes inactifs** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/retention.service.ts"
+  filename="retention.service.ts"
+  snippetRange="61-67"
+  snippetHighlight="5"
+  snippetTitle="Les comptes à examiner"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un compte sans connexion depuis la durée réglée, ou jamais connecté et créé depuis plus longtemps. Ce sont les administrateurs qui décident, compte par compte, sur la page du registre. La suppression d’un compte emporte alors tout ce qui n’existe que pour lui (partie « Membres et collaboration ») ; seul le formulaire de droit à l’image signé survit, détaché, comme preuve.
+
+<Callout type="info">
+Une suppression **automatique** demande de savoir, sans erreur possible, que la donnée n’a plus de raison d’être. Quand le site ne le sait pas, il signale et laisse décider : une donnée gardée un peu trop longtemps se rattrape, une adhésion effacée par erreur, non.
+</Callout>
+
+## Le droit d’accès, télécharger ses données
+
+Depuis son profil, un membre télécharge toutes ses données personnelles en un fichier JSON lisible (droit d’accès et de portabilité, articles 15 et 20 du RGPD) :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/app/api/me/export/route.ts"
+  filename="route.ts"
+  snippetRange="11-25"
+  title="GET /api/me/export"
+  stepsJson='[{"title": "Les siennes, et seulement les siennes", "body": "La route exige une session, et lit les données de la personne connectée : aucun paramètre ne désigne un autre membre.", "scope": "2-5", "focus": "4-4"}, {"title": "Un fichier à garder", "body": "`attachment` avec un nom daté : le navigateur enregistre le fichier. `no-store` : aucun cache, ni du navigateur ni d’un intermédiaire, ne garde une copie des données personnelles.", "scope": "6-14", "focus": "11-12"}]'
+/>
+
+L’export contient le compte et le profil (dont la majorité et le parent référent pour un mineur), les groupes, les sessions (leurs dates), les demandes et leurs échanges, les documents reçus et leur état de lecture, les publications, commentaires, réactions et votes, les fichiers déposés et les autorisations de droit à l’image.
+
+Il ne contient **jamais** le mot de passe, même sous forme d’empreinte. Il ne contient pas non plus les données d’**autres personnes** :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/privacy/exportMyData.service.ts"
+  filename="exportMyData.service.ts"
+  snippetRange="52-55"
+  snippetHighlight="3"
+  snippetTitle="Des réponses pour d’autres : le nombre seulement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un membre responsable d’une catégorie de demandes a écrit des réponses à d’autres demandeurs ; ces échanges contiennent les données de ces demandeurs. L’export dit combien il en a écrit, pas ce qu’ils contiennent. Les fichiers sont listés par leur nom, sans être joints : le fichier reste lisible et léger.
+
+<Callout type="tip">
+Un export de données personnelles se construit par une **liste blanche** de champs (`select` explicite), jamais par « toute la ligne » : une colonne ajoutée plus tard (un jeton, une empreinte) ne doit pas y entrer par défaut.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Les durées de conservation sont-elles tenues ?", "Oui : purge au démarrage et chaque nuit à 3 h des demandes closes anciennes, sessions et liens périmés, vignettes orphelines, anciens formulaires détachés."], ["D’où viennent les durées ?", "Des Réglages, comme le texte de la politique : la promesse et son application lisent la même valeur."], ["Et les comptes ?", "Jamais supprimés automatiquement : listés aux administrateurs, qui décident."], ["Comment un membre accède-t-il à ses données ?", "Par un export JSON depuis son profil, en pièce jointe, jamais en cache."], ["Que ne contient pas l’export ?", "Le mot de passe (ni son empreinte), et les données d’autres personnes : seul le nombre de réponses écrites pour d’autres."]]' />
+
+## À suivre
+
+Une donnée personnelle demande un soin particulier : l’image des personnes. Une photo de cours peut montrer des membres reconnaissables, et chacun choisit ce qu’il accepte — usage par usage.
+
+<Callout type="tip">
+**Chapitre suivant : le droit à l’image.** Un formulaire d’autorisation signé, conservé hors de la bibliothèque et servi à ses seuls ayants droit, un statut qui en découle, et une preuve gardée après le départ.
+</Callout>

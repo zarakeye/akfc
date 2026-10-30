@@ -1,10 +1,10 @@
 ---
-title: "Le droit à l'image"
-description: "Un formulaire d'autorisation signé, déposé par un administrateur, conservé hors de la bibliothèque et servi aux seuls ayants droit ; des usages choisis un par un ; un statut qui en découle ; une preuve gardée cinq ans après le départ."
+title: "Le droit à l’image"
+description: "L’autorisation d’utiliser l’image d’un membre, usage par usage : un formulaire signé déposé par un administrateur, rangé hors de la bibliothèque et servi à ses seuls ayants droit, un statut qui en découle, un historique qui fait preuve, et une preuve gardée cinq ans après le départ."
 section: "Légal et RGPD"
-order: 2
+order: 3
 entities:
-  ImageConsentForm: [userId, memberName, usages, keepAfterLeave, signedAt, storageKey, detachedAt, uploadedById]
+  ImageConsentForm: [userId, memberName, usages, keepAfterLeave, signedAt, storageKey, source, detachedAt, uploadedById]
   User: [imageConsent, imageConsentAt]
 stories:
   - title: Le club enregistre une autorisation signée
@@ -13,7 +13,7 @@ stories:
       - label: Depuis la fiche du membre, il demande une autorisation d'envoi pour le formulaire scanné
         call: imageConsent.createUpload
         section: Un formulaire signé, déposé par un administrateur
-      - label: Le formulaire est enregistré avec ses usages ; le statut du membre en découle, dans la même transaction
+      - label: Le formulaire est vérifié et enregistré avec ses usages ; le statut du membre en découle, dans la même transaction
         call: imageConsent.register
         section: Un statut qui découle du formulaire
   - title: Le membre consulte son autorisation
@@ -27,128 +27,158 @@ stories:
     steps:
       - label: Le compte est supprimé ; ses formulaires sont détachés et datés, pas effacés
         call: user.delete
-        section: "Après le départ : une preuve gardée cinq ans"
+        section: Après le départ, une preuve gardée cinq ans
       - label: Cinq ans après le détachement, la purge de la nuit supprime la fiche et le fichier
         call: purgeExpiredData
-        section: "Après le départ : une preuve gardée cinq ans"
+        section: Après le départ, une preuve gardée cinq ans
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les documents légaux sont générés depuis les Réglages, les traitements sont décrits une seule fois, les durées de conservation sont tenues par une purge, et chaque membre peut télécharger ses données.
+> **Précédemment.** Une purge tient chaque nuit les durées annoncées ; les comptes ne sont jamais supprimés sans décision ; chaque membre exporte ses données.
 
-Le club prend des photos et des vidéos pendant les cours et les stages. Un membre reconnaissable sur une image a son mot à dire sur sa diffusion, et pas d'un bloc : il peut accepter la galerie des membres et refuser les réseaux sociaux. Son accord doit être **écrit**, signé (par un parent pour un mineur), et le club doit pouvoir le **prouver** (article 7.1 du RGPD). Le site ne remplace donc pas la signature : il conserve le formulaire signé, en tire un statut, et le rend consultable au membre.
+Le club prend des photos et des vidéos pendant les cours et les stages. Un membre reconnaissable sur une image a son mot à dire sur sa diffusion, et pas d’un bloc : il peut accepter la galerie des membres et refuser les réseaux sociaux. Son accord doit être **écrit**, signé (par un parent pour un mineur), et le club doit pouvoir le **prouver** (article 7.1 du RGPD). Le site ne remplace pas la signature : il conserve le document signé, en tire un statut, et le rend consultable au membre.
 
 ## Les parcours du chapitre
 
-Trois cas d'utilisation traversent ce chapitre : le dépôt d'un formulaire signé, la consultation par le membre, et ce que devient la preuve après son départ. Chaque onglet en déroule les étapes et ce qu'elles écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.
+Trois parcours traversent ce chapitre : le dépôt d’un formulaire signé, la consultation par le membre, et ce que devient la preuve après son départ.
 
 <Parcours />
 
-## Des usages choisis un par un
+## Des usages choisis un par un 📸
 
 Le formulaire papier propose une ligne Oui / Non par usage. Le site reprend exactement ces lignes, dans le même ordre, depuis une description partagée par le backend et le front :
 
-```ts
-// packages/contracts/src/legal/imageConsent.ts (extrait)
-export const IMAGE_USAGE_VALUES = ["MEMBER_SPACE", "PUBLIC_SITE", "SOCIAL_NETWORKS", "PRINT", "PRESS"] as const;
-export type ImageUsageValue = (typeof IMAGE_USAGE_VALUES)[number];
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/imageConsent.ts"
+  filename="imageConsent.ts"
+  snippetRange="34-43"
+  snippetHighlight="1"
+  snippetTitle="Les usages"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-export const IMAGE_USAGE_LABEL: Record<ImageUsageValue, string> = {
-  MEMBER_SPACE: "Espace membres",
-  PUBLIC_SITE: "Site public",
-  SOCIAL_NETWORKS: "Réseaux sociaux du club",
-  PRINT: "Supports imprimés",
-  PRESS: "Presse locale",
-};
-```
+Le tableau `as const` donne à la fois la liste (pour les cases à cocher, dans l’ordre du formulaire) et le type (`ImageUsageValue`, l’union de ses valeurs) ; le dictionnaire des libellés est vérifié par le compilateur : un usage ajouté sans libellé ne compile pas.
 
-Le formulaire vierge est un PDF du site (`/documents/autorisation-droit-image.pdf`). Le membre le trouve dans son profil, avec une explication : l'autorisation est facultative, chaque usage se choisit, et le formulaire se remet à un responsable du club, en main propre ou scanné.
-
-Le formulaire demande aussi ce que deviennent les images **après le départ** du membre : le club peut continuer à utiliser celles déjà prises, ou les retire sous un an. Le choix est enregistré tel quel (`keepAfterLeave`), avec une troisième valeur, `null`, pour les formulaires d'une version qui ne posait pas la question.
+Le formulaire vierge est un PDF du site. Le membre le trouve dans son profil, avec une explication : l’autorisation est facultative, chaque usage se choisit, et le formulaire se remet à un responsable du club. Il demande aussi ce que deviennent les images **après le départ** du membre : le club peut continuer à utiliser celles déjà prises, ou les retire sous un an. Le choix est enregistré tel quel (`keepAfterLeave`), avec une troisième valeur, `null`, pour un formulaire d’une version qui ne posait pas la question.
 
 ## Un formulaire signé, déposé par un administrateur
 
-Seul un administrateur dépose un formulaire, depuis la fiche du membre : le fichier (PDF ou photo), les usages cochés « Oui », le choix après le départ et la date de signature. Une photo prise avec un iPhone (HEIC) est convertie en JPEG dans le navigateur avant l'envoi.
+Seul un administrateur dépose un formulaire, depuis la fiche du membre : le fichier (PDF ou photo), les usages cochés « Oui », le choix après le départ et la date de signature. Une photo prise avec un téléphone en HEIC est convertie en JPEG dans le navigateur avant l’envoi.
 
-L'envoi suit le circuit signé du stockage : le serveur délivre une URL valable cinq minutes, le navigateur envoie le fichier directement, puis le serveur enregistre. Mais la clé n'est **pas** dans la bibliothèque : elle est rangée sous `_private/image-consent/<userId>/`, hors de la racine de l'application, et n'apparaît donc dans aucun finder. À l'enregistrement, le serveur vérifie que le chemin renvoyé par le navigateur désigne bien l'espace de ce membre, puis que le fichier existe avec le type annoncé :
+L’envoi suit le circuit signé du stockage : le serveur délivre une URL valable cinq minutes, le navigateur envoie le fichier directement, puis le serveur enregistre. Mais la clé n’est **pas** dans la bibliothèque :
 
-```ts
-// packages/backend/src/modules/imageConsent/imageConsentForm.service.ts (extrait)
-if (!path.startsWith(`${formFolder(userId)}/`) || path.includes("..") || !mimeType) {
-  throw new Error("Chemin hors de l'espace du membre.");
-}
-const head = await getR2Client()
-  .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
-  .catch(() => null);
-if (!head) throw new Error("Fichier introuvable : l'envoi n'a pas abouti.");
-```
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
+  filename="imageConsentForm.service.ts"
+  snippetRange="28-32"
+  snippetHighlight="1"
+  snippetTitle="Un rangement hors de l’application"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-C'est la règle des espaces collaboratifs appliquée ici : le serveur ne croit pas deux informations séparées (le membre, le chemin) qui devraient concorder, il vérifie qu'elles concordent.
+`_private/image-consent/<identifiant>/` est hors de la racine de l’application (`AKFC/…`) : aucun finder ne le liste, aucune route de la bibliothèque ne le sert. Comme le logo du site, et pour une raison plus forte : ce document porte une signature et parfois l’identité d’un parent.
 
 ## Un statut qui découle du formulaire
 
-Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou **Refusée**. Il n'est pas saisi à côté du formulaire, il en est **déduit** :
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
+  filename="imageConsentForm.service.ts"
+  snippetRange="59-131"
+  title="registerImageConsentForm — vérifier, enregistrer, déduire"
+  stepsJson='[{"title": "Dans l’espace de CE membre", "body": "Le chemin renvoyé par le navigateur doit être dans le dossier du membre visé, sans `..`, avec une extension acceptée (qui donne le type attendu). Le serveur ne croit pas deux informations séparées (le membre, le chemin) qui devraient concorder : il vérifie qu’elles concordent.", "scope": "12-16", "focus": "14-14"}, {"title": "Le fichier, tel que le stockage l’a reçu", "body": "Présent, d’une taille raisonnable, du type exact attendu — lus chez le stockage. Un fichier refusé est supprimé.", "scope": "17-25", "focus": "22-23"}, {"title": "Le nom du membre, copié", "body": "Le nom est copié dans le formulaire (`memberName`) : après le départ du membre, le formulaire détaché doit encore dire de qui il est la preuve.", "scope": "27-37", "focus": "36-36"}, {"title": "Le formulaire et le statut, ensemble", "body": "La création du formulaire et la mise à jour du statut se font dans une même transaction : un formulaire enregistré a toujours mis le statut à jour.", "scope": "43-64", "focus": "61-61"}, {"title": "La boîte du club prévenue", "body": "Un avis, avec les usages du formulaire précédent : un RETRAIT d’autorisation (une photo publique à dépublier) se voit d’un coup d’œil. Son échec n’annule rien.", "scope": "65-71", "focus": "70-70"}]'
+/>
 
-```ts
-// packages/contracts/src/legal/imageConsent.ts (extrait)
-export function consentFromUsages(usages: readonly ImageUsageValue[]): Exclude<ImageConsentValue, "UNKNOWN"> {
-  return usages.length > 0 ? "GRANTED" : "REFUSED";
-}
-```
+Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou **Refusée**. Il n’est pas saisi à côté du formulaire, il en est **déduit** :
 
-Accordée dès qu'un usage est autorisé, refusée sinon. La création du formulaire et la mise à jour du statut se font dans une même transaction : un formulaire enregistré a toujours mis le statut à jour.
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/imageConsent.ts"
+  filename="imageConsent.ts"
+  snippetRange="117-119"
+  snippetHighlight="2"
+  snippetTitle="consentFromUsages"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Les anciens formulaires ne sont pas remplacés. Un membre qui change d'avis remet un nouveau formulaire, qui s'ajoute à l'historique : **le plus récent fait foi**, les précédents restent comme preuve de ce qui était autorisé à leur date. Supprimer un formulaire, par exemple déposé sur la mauvaise fiche, ne modifie pas le statut : l'administrateur le corrige alors lui-même sur la fiche, où il peut aussi le fixer à la main.
+Accordée dès qu’un usage est autorisé, refusée sinon. Les anciens formulaires ne sont pas remplacés : un membre qui change d’avis remet un nouveau formulaire, qui s’ajoute à l’historique. **Le plus récent fait foi**, les précédents restent comme preuve de ce qui était autorisé à leur date. Supprimer un formulaire (déposé sur la mauvaise fiche, par exemple) ne modifie pas le statut : l’administrateur le corrige alors lui-même sur la fiche, où il peut aussi le fixer à la main.
 
-<DocsTable columnsJson='["Où","Ce qu’on y voit"]' rowsJson='[["Table des utilisateurs (admin)","Une colonne « Photos » : le statut de chaque membre, en couleur."],["Fiche du membre (admin)","Le statut, modifiable ; les formulaires déposés, avec aperçu, et le dépôt d’un nouveau."],["Profil du membre","Son statut, les usages autorisés par le dernier formulaire, ses formulaires signés (aperçu), et le formulaire vierge."]]' />
+<DocsTable columnsJson='["Où", "Ce qu’on y voit"]' rowsJson='[["Table des utilisateurs (admin)", "Une colonne « Photos » : le statut de chaque membre, en couleur."], ["Fiche du membre (admin)", "Le statut, modifiable ; les formulaires déposés, avec aperçu, et le dépôt d’un nouveau."], ["Profil du membre", "Son statut, les usages autorisés par le dernier formulaire, ses formulaires (aperçu), le formulaire vierge, et la confirmation en ligne s’il est majeur (chapitre 4)."]]' />
 
 <Callout type="warning">
-Le statut **informe**, il ne bloque rien. La visibilité d'une photo se décide par galerie (publique, ou réservée aux membres connectés), et le site ne sait pas qui figure sur une image. C'est à l'administrateur qui publie de consulter la colonne « Photos » avant de rendre une galerie publique.
+Le statut **informe**, il ne bloque rien. La visibilité d’une photo se décide par galerie (publique, ou réservée aux membres connectés), et le site ne sait pas qui figure sur une image. C’est à l’administrateur qui publie de consulter la colonne « Photos » avant de rendre une galerie publique.
 </Callout>
 
 ## Servi aux seuls ayants droit
 
-Un formulaire signé porte une signature et parfois l'identité d'un parent : il n'a ni URL publique ni URL signée transmissible. Une route du site le lit dans le stockage et le transmet elle-même, comme les documents des membres, au **membre concerné** et aux **administrateurs** :
+Un formulaire signé n’a ni URL publique ni URL signée transmissible. Une route du site le lit dans le stockage et le transmet elle-même, au **membre concerné** et aux **administrateurs** :
 
-```ts
-// apps/web/src/app/api/media/image-consent/[id]/route.ts (extrait)
-const form = await prisma.imageConsentForm.findUnique({
-  where: { id },
-  select: { userId: true, storageKey: true, mimeType: true, fileName: true },
-});
-if (!form || (!session.user.isAdmin && form.userId !== session.user.id)) {
-  return new NextResponse("Not found", { status: 404 });
-}
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/app/api/media/image-consent/[id]/route.ts"
+  filename="route.ts"
+  snippetRange="15-25"
+  snippetHighlight="9"
+  snippetTitle="La garde de la route"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Tout autre membre reçoit 404, comme si le formulaire n'existait pas. La réponse porte `Cache-Control: private, no-store` et `nosniff`. Les procédures qui listent les formulaires ne renvoient jamais la clé de stockage (`imageConsentFormSelect`).
+Tout autre membre reçoit 404, comme si le formulaire n’existait pas. La réponse porte `Cache-Control: private, no-store` et `nosniff` ; les types acceptés au dépôt (PDF, JPEG, PNG, WebP) s’affichent sans risque. Les procédures qui listent les formulaires ne renvoient jamais la clé de stockage :
 
-## Après le départ : une preuve gardée cinq ans
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
+  filename="imageConsentForm.service.ts"
+  snippetRange="170-183"
+  snippetHighlight="1"
+  snippetTitle="Les champs exposés"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Supprimer le compte d'un membre ne supprime pas ses formulaires. Ils servent à prouver qu'une image publiée l'a été avec son accord, et cette preuve peut être demandée après son départ. Juste avant la suppression du compte, les formulaires sont **détachés** et datés :
+## Après le départ, une preuve gardée cinq ans
 
-```ts
-// packages/backend/src/modules/users/router.ts (extrait)
-// Formulaires de droit à l'image signés : gardés 5 ans comme preuve (purge nocturne).
-await tx.imageConsentForm.updateMany({ where: { userId: input.id }, data: { detachedAt: new Date() } });
-```
+Supprimer le compte d’un membre ne supprime pas ses formulaires. Ils servent à prouver qu’une image publiée l’a été avec son accord, et cette preuve peut être demandée après son départ. Juste avant la suppression du compte, les formulaires sont **détachés** et datés :
 
-La relation vers le membre passe alors à `null` (`onDelete: SetNull`). Le nom du membre, copié dans le formulaire au dépôt (`memberName`), permet encore de l'identifier. La purge nocturne du chapitre précédent supprime la fiche et le fichier cinq ans après le détachement.
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/users/router.ts"
+  filename="router.ts"
+  snippetRange="259-260"
+  snippetHighlight="2"
+  snippetTitle="Détacher, pas effacer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La relation vers le membre passe alors à `null` (`onDelete: SetNull`) ; `memberName` permet encore de l’identifier. La purge de la nuit supprime la fiche et le fichier cinq ans après le détachement :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
+  filename="imageConsentForm.service.ts"
+  snippetRange="145-168"
+  snippetHighlight="5,15,18"
+  snippetTitle="La purge des formulaires détachés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le fichier d’abord, la fiche ensuite, et la fiche **seulement** si le fichier est parti : un échec laisse la fiche, et la purge suivante réessaiera. La première version ignorait l’échec (`removeObject` l’avale) et supprimait la fiche quand même : un document signé pouvait rester dans le stockage sans plus aucune ligne pour le désigner — et donc pour le purger un jour.
 
 <Callout type="info">
-Le club ne prouve rien avec un statut coché : il prouve avec le formulaire signé. Le site garde donc le document, en tire le statut, et conserve l'historique, plutôt que de stocker seulement une case « accordée ».
+Le club ne prouve rien avec un statut coché : il prouve avec le document signé. Le site garde donc le document, en tire le statut, et conserve l’historique, plutôt que de stocker seulement une case « accordée ».
 </Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question","Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?","Par un formulaire papier signé, usage par usage, remis au club ; un administrateur le dépose sur sa fiche."],["Où est rangé le fichier ?","Sous _private/image-consent/, hors de la bibliothèque ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."],["D’où vient le statut ?","Du formulaire le plus récent : accordée dès qu’un usage est autorisé, refusée sinon."],["Le statut empêche-t-il de publier une photo ?","Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."],["Que deviennent les formulaires au départ du membre ?","Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?", "Par un formulaire signé, usage par usage, remis au club ; un administrateur le dépose sur sa fiche (ou, majeur, il confirme en ligne : chapitre 4)."], ["Où est rangé le fichier ?", "Sous _private/image-consent/, hors de l’application ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."], ["D’où vient le statut ?", "Du formulaire le plus récent, dans la même transaction : accordée dès qu’un usage est autorisé, refusée sinon."], ["Le statut empêche-t-il de publier une photo ?", "Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."], ["Que deviennent les formulaires au départ du membre ?", "Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés (fichier d’abord)."]]' />
 
 ## À suivre
 
-La partie légale est complète : le site dit ce qu'il fait des données, tient ses durées, et garde la preuve des autorisations. Restent les mécanismes que toutes les pages partagent, à commencer par celui qu'on a croisé dans chaque partie : le formulaire.
+Le formulaire papier reste la voie de tous. Un membre majeur peut aussi donner son accord lui-même, depuis son profil : le site doit alors produire ce que produisait la signature — un document, une date, une version du texte, et la certitude que c’est bien lui.
 
 <Callout type="tip">
-**Partie suivante : interface transverse.** Le référencement, le header, l'accessibilité.
+**Chapitre suivant : le consentement en ligne.** La majorité vérifiée, le mot de passe qui vaut signature, un récapitulatif PDF figé, la version du texte, et ce qui reste à faire pour les mineurs.
 </Callout>

@@ -42,7 +42,7 @@ Nous avons vu le service. Voyons maintenant comment il est exposé par tRPC.
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="22-127"
+  snippetRange="23-128"
   snippetHighlight="6,39,53,104"
   snippetTitle="Vue d’ensemble du routeur d’authentification"
   fullFileTitle="Voir le fichier complet"
@@ -89,7 +89,7 @@ Si `getSession` était protégée, l’application ne pourrait jamais apprendre 
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="27-58"
+  snippetRange="28-59"
   title="login : du formulaire au résultat exploitable"
   stepsJson='[{"title": "publicProcedure : un choix explicite", "body": "La connexion DOIT être publique. Avec protectedProcedure, personne ne pourrait jamais se connecter.", "scope": "1-32", "focus": "1-1"}, {"title": "Le schéma partagé", "body": "loginSchema vient de packages/contracts : le formulaire valide avec le même schéma, et affiche le même message. La première version du tutoriel notait ici un schéma redéfini dans le routeur, « à améliorer » : c’est fait.", "scope": "1-32", "focus": "2-3"}, {"title": "Délégation immédiate à loginService", "body": "La procédure ne fait aucun travail métier. Elle reçoit une entrée typée et la passe au service : le routeur reste lisible en quelques lignes.", "scope": "1-32", "focus": "4-8"}, {"title": "Une union discriminée", "body": "Le retour est { success: true } ou { success: false, error }. Le as const transforme les valeurs en types littéraux : côté front, if (!res.success) restreint le type, et TypeScript sait que error existe.", "scope": "1-32", "focus": "10-18"}, {"title": "Des résultats attendus, et rien d’autre", "body": "INVALID_CREDENTIALS et TOO_MANY_ATTEMPTS deviennent des résultats : ce sont des retours métier, qui méritent un message à l’écran. Toute autre erreur est relancée et journalisée (partie « API », chapitre 8).", "scope": "1-32", "focus": "13-30"}]'
 />
