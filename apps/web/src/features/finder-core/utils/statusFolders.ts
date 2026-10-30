@@ -53,10 +53,8 @@ export function statusOf(
 /* -------------------------------------------------------------------------- */
 
 /**
- * Extensions reconnues comme média visuel (image / vidéo). Alignée sur
- * `pickBackendByExtension` (@contracts/storage) — même taxonomie que le
- * dispatch de provider. Utilisée seulement en dernier recours par
- * `isMediaNode`.
+ * Extensions reconnues comme média visuel (image / vidéo). Utilisée
+ * seulement en dernier recours par `isMediaNode`.
  */
 const IMAGE_VIDEO_EXTS = new Set([
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'bmp', 'tiff', 'ico',

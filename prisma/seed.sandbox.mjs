@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Seed DÉDIÉ à la sandbox recruteurs — identifiants CONNUS, idempotent.
-// N'a rien à voir avec prisma/seed.js (prod). Lancé par le service `seeder`.
+// La production n'a pas de seed : ses données sont saisies sur le site. Lancé par le service `seeder`.
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";

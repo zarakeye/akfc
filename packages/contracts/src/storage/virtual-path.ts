@@ -1,10 +1,8 @@
 /**
- * Virtual paths et dispatch de provider.
+ * Virtual paths.
  *
- * Ce fichier introduit deux concepts qui rendent le finder vraiment
- * indépendant du provider de stockage : le **virtual path** (le path
- * tel que vu par la UI) et le **dispatcher** (la fonction qui décide
- * quel provider héberge quel asset).
+ * Ce fichier introduit le **virtual path** : le path tel que vu par la UI,
+ * qui rend le finder indépendant du provider de stockage.
  *
  * ─── Pourquoi un type `VirtualPath` distinct de `StoragePath` ? ─────────
  *
@@ -26,8 +24,6 @@
  * quelconque sans passer par `toVirtualPath()`. C'est une discipline
  * pure-TypeScript, zéro overhead runtime.
  */
-
-import type { StorageProvider } from './storage.types';
 
 /* -------------------------------------------------------------------------- */
 /*  Branded type VirtualPath                                                  */
@@ -90,21 +86,4 @@ export function tryToVirtualPath(raw: string): VirtualPath | null {
   } catch {
     return null;
   }
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Dispatcher : quel backend pour quel asset ?                               */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Provider de stockage d'un asset : R2, le seul. Conservé comme point
- * unique de décision si un second stockage arrivait un jour.
- */
-export function pickBackend(_mimeType?: string | null): StorageProvider {
-  return 'r2';
-}
-
-/** Variante par nom de fichier (même règle que `pickBackend`). */
-export function pickBackendByExtension(_filename?: string): StorageProvider {
-  return 'r2';
 }

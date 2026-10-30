@@ -32,7 +32,6 @@ import type { UploadDestination } from "@contracts/storage/upload-destination.sc
 import { HARD_MAX_UPLOAD_BYTES } from "@contracts/storage/r2-upload.schema";
 
 import { getR2Client, getR2PresignClient, getR2Bucket } from "@backend/modules/storage/adapters/r2/client";
-import { parsePathToDestination } from "@backend/modules/media/services/parsePathToDestination";
 import { probeMediaDimensions } from "@backend/modules/media/services/mediaDerivatives.service";
 
 /**

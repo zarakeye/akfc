@@ -13,14 +13,11 @@
     "db:seed:dev": "node --env-file=.env prisma/seed.sandbox.mjs",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "typecheck": "pnpm --filter web typecheck",
-    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web typecheck && pnpm --filter backend typecheck && tsc -p tsconfig.json",
+    "lint": "pnpm --filter web lint && eslint -c apps/web/eslint.config.mjs --rule '@next/next/no-html-link-for-pages: off' --max-warnings 0 packages/backend/src packages/contracts/src packages/finder-core/src",
     "postinstall": "pnpm prisma generate",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
-    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && pnpm clean && pnpm --filter backend typecheck && pnpm typecheck && pnpm lint"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
+    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && pnpm clean && pnpm typecheck && pnpm lint"
   },
   "dependencies": {
     "@cropper/elements": "^2.1.0",

@@ -11459,11 +11459,11 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:274"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:273"
        ]
       ]
      ]
@@ -11479,11 +11479,11 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "prisma.$executeRaw (SQL)",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:279"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:278"
        ]
       ]
      ]
@@ -11518,7 +11518,7 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "rewriteAssetPaths",
@@ -11532,7 +11532,7 @@
       [
        [
         "adapter.move",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:241"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:240"
        ],
        [
         "rewriteAssetPaths",
@@ -12339,11 +12339,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
        ],
        [
         "prisma.discipline.count",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:473"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:472"
        ]
       ]
      ]
@@ -12373,11 +12373,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
        ],
        [
         "prisma.eventDiscipline.createMany",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:477"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:476"
        ]
       ]
      ]
@@ -12441,11 +12441,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:485"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:484"
        ]
       ]
      ]
@@ -12478,11 +12478,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:387"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:386"
        ]
       ]
      ]
@@ -12511,11 +12511,11 @@
       [
        [
         "adapter.registerUploadedAsset",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:359"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:358"
        ],
        [
         "prisma.mediaAsset.upsert",
-        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:485"
+        "packages/backend/src/modules/storage/adapters/r2/r2StorageAdapter.ts:484"
        ]
       ]
      ]
@@ -17371,87 +17371,6 @@
        [
         "prisma.user.findUnique",
         "packages/backend/src/modules/media/services/commonRepositoryContainerPath.service.ts:24"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "parsePathToDestination": {
-   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 52,
-   "effects": [
-    {
-     "model": "Category",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "buildCategoryCache",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:135"
-       ],
-       [
-        "prisma.category.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:138"
-       ]
-      ]
-     ]
-    },
-    {
-     "model": "Discipline",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "buildDisciplineCache",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:148"
-       ],
-       [
-        "prisma.discipline.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:151"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "buildCategoryCache": {
-   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 135,
-   "effects": [
-    {
-     "model": "Category",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "prisma.category.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:138"
-       ]
-      ]
-     ]
-    }
-   ],
-   "emails": []
-  },
-  "buildDisciplineCache": {
-   "file": "packages/backend/src/modules/media/services/parsePathToDestination.ts",
-   "line": 148,
-   "effects": [
-    {
-     "model": "Discipline",
-     "op": "read",
-     "fields": [],
-     "trails": [
-      [
-       [
-        "prisma.discipline.findMany",
-        "packages/backend/src/modules/media/services/parsePathToDestination.ts:151"
        ]
       ]
      ]

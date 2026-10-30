@@ -22,24 +22,12 @@
   },
   "include": [
     "next-env.d.ts",
-    "src/global.d.ts",
-    "instrumentation.ts",                                                                                                                                                               
     "src",
-    "app",
-    "components",
-    "features",
-    "hooks",
-    "lib",
-    "styles",
-    "types",
     "**/*.ts",
     "**/*.tsx",
-    "src/**/*.d.ts",
     "../../packages/contracts/src/**/*.ts",
-    "../../packages/contracts/src/finder",
     "../../packages/config",
-    "../../packages/contracts/src/slug/slug.schema.ts",
-    "../../packages/finder-core/src/**/*.ts",
+    "../../packages/finder-core/src/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
