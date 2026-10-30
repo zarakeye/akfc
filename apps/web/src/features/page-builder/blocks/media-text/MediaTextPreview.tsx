@@ -125,7 +125,7 @@ function MediaResolutionNotice({
       ? "Chargement du média…"
       : resolution === "error"
         ? "Le média n'a pas pu être chargé (erreur réseau ou serveur)."
-        : "Média introuvable : il a peut-être été supprimé, remis en attente, ou l'administrateur choisi n'a pas d'avatar.";
+        : "Média introuvable : il a peut-être été supprimé, remis en attente, ou c'est l'avatar d'un autre membre, qui ne peut plus être posé.";
 
   return (
     <div className="flex min-h-32 items-center justify-center rounded-md border border-dashed border-border bg-muted/40 p-4 text-center text-xs text-muted-foreground">

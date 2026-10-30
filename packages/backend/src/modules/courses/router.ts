@@ -9,6 +9,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 import { pageContentSchemaV1 } from "@contracts/page";
 import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
 import { COURSES_SEGMENT, categorySegment } from "@backend/modules/storage/storageSegments";
+import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
 
 /**
  * courses/router.ts
@@ -177,6 +178,7 @@ export const courseRouter = router({
     .use(isAdmin)
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
+      assertOwnAvatars(ctx.sessionClient.user.id, input.content);
       // ─── Validations pré-transaction (lectures simples) ────────────────
       //
       // On fait ces lectures hors transaction pour ne pas tenir un lock
@@ -263,6 +265,7 @@ export const courseRouter = router({
     .use(isAdmin)
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
+      assertOwnAvatars(ctx.sessionClient.user.id, input.content);
       const { id, ...rest } = input;
 
       // ─── Horaires : la règle « fin après début » porte sur le résultat ──

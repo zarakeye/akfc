@@ -1,3 +1,7 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
+
+import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
+
 /**
  * Condition Prisma « ce document des membres concerne cet utilisateur ».
  *
@@ -24,5 +28,36 @@ export function memberDocumentVisibleTo(userId: string) {
         ],
       },
     ],
+  };
+}
+
+/**
+ * Condition « ce membre peut OUVRIR ce document, et le marquer lu ou non lu ».
+ *
+ * `memberDocumentVisibleTo`, PLUS les documents déposés dans un espace collaboratif auquel il a
+ * accès par HÉRITAGE (membre d'un groupe parent, administrateur). La cloche collaborative compte
+ * ces documents (`collaborativeEntriesForMember`) : sans cette condition, elle signalait des
+ * documents non lus que le membre ne pouvait ni ouvrir, ni marquer lus — la cloche ne se vidait
+ * jamais, pour tout administrateur en particulier.
+ *
+ * Partagée par la liste, le marquage et la route de livraison du fichier.
+ */
+export async function memberDocumentReadableBy(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<{ where: Prisma.MemberDocumentWhereInput; collaborativeGroupIds: string[] }> {
+  const collaborativeGroupIds = (await collaborativeEntriesForMember(prisma, userId)).map((e) => e.groupId);
+  const visible = memberDocumentVisibleTo(userId);
+  return {
+    where:
+      collaborativeGroupIds.length === 0
+        ? visible
+        : {
+            OR: [
+              ...visible.OR,
+              { audience: "SPECIFIC" as const, groups: { some: { groupId: { in: collaborativeGroupIds } } } },
+            ],
+          },
+    collaborativeGroupIds,
   };
 }

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { prisma } from "@backend/prisma";
-import { isEditorialPageGated, UnderConstruction } from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
+import { audienceFor, editorialAccess, UnderConstruction } from "@features/editorial/editorialGate";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { getActivePartners } from "@features/partners/getActivePartners";
 import { PartnerLogo } from "@features/partners/PartnerLogo";
@@ -21,7 +21,10 @@ import { PARTNER_ROLE_LABEL } from "@features/partners/partnerUi";
 export const metadata: Metadata = { title: "S'inscrire" };
 
 export default async function InscriptionPage(): Promise<JSX.Element> {
-  if (await isEditorialPageGated("inscription")) {
+  // Non publiée : « en construction » pour un visiteur, aperçu (bandeau, fichiers par la route
+  // privée) pour un administrateur.
+  const access = await editorialAccess("inscription");
+  if (!access) {
     return <UnderConstruction />;
   }
   const [page, partners] = await Promise.all([
@@ -39,7 +42,7 @@ export default async function InscriptionPage(): Promise<JSX.Element> {
 
       {/* Ce qui s'affiche est exactement le contenu du constructeur (texte de départ créé au
           premier démarrage, modifiable dans Pages éditoriales → S'inscrire). */}
-      {content.blocks.length > 0 && <PageRenderer content={content} />}
+      {content.blocks.length > 0 && <PageRenderer content={content} audience={audienceFor(access)} />}
 
       {partners.length > 0 && (
         <section className="mt-12">

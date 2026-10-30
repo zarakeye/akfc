@@ -7,7 +7,7 @@ import { isAdmin } from "@backend/trpc/middleware";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
 import { assertCanWriteGroupSpace } from "@backend/modules/memberGroups/assertCanWriteGroupSpace.service";
 import { groupIdFromLogicalPath } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
-import { memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
+import { memberDocumentReadableBy, memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
 
 /**
  * Documents membres : fichiers du finder mis à disposition des membres, avec
@@ -30,16 +30,19 @@ export const memberDocumentRouter = router({
   /** Documents visibles par le membre courant, avec son statut de lecture. */
   listForMe: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.sessionClient.user.id;
-    const myGroupIds = new Set(
-      (
+    // Lisibles : ce qui le concerne, plus les dépôts des espaces collaboratifs hérités.
+    const readable = await memberDocumentReadableBy(ctx.prisma, userId);
+    const myGroupIds = new Set([
+      ...(
         await ctx.prisma.memberGroupMembership.findMany({
           where: { userId },
           select: { groupId: true },
         })
       ).map((m) => m.groupId),
-    );
+      ...readable.collaborativeGroupIds,
+    ]);
     const docs = await ctx.prisma.memberDocument.findMany({
-      where: visibleToUser(userId),
+      where: readable.where,
       orderBy: { publishedAt: "desc" },
       select: {
         id: true,
@@ -236,8 +239,9 @@ export const memberDocumentRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.sessionClient.user.id;
+      const readable = await memberDocumentReadableBy(ctx.prisma, userId);
       const visible = await ctx.prisma.memberDocument.findFirst({
-        where: { id: input.id, ...visibleToUser(userId) },
+        where: { AND: [{ id: input.id }, readable.where] },
         select: { id: true },
       });
       if (!visible) {
@@ -256,8 +260,9 @@ export const memberDocumentRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.sessionClient.user.id;
+      const readable = await memberDocumentReadableBy(ctx.prisma, userId);
       const visible = await ctx.prisma.memberDocument.findFirst({
-        where: { id: input.id, ...visibleToUser(userId) },
+        where: { AND: [{ id: input.id }, readable.where] },
         select: { id: true },
       });
       if (!visible) {

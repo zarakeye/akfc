@@ -121,6 +121,11 @@ export default function GroupDetailPage(): JSX.Element {
         <label htmlFor="parent" className="text-sm font-medium">
           Groupe parent
         </label>
+        {group.isAdminGroup ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun : « Administrateurs » est la racine de tous les groupes.
+          </p>
+        ) : (
         <select
           id="parent"
           value={group.parentGroupId ?? ""}
@@ -133,7 +138,7 @@ export default function GroupDetailPage(): JSX.Element {
           }
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
-          <option value="">(Aucun — groupe racine)</option>
+          {/* « Sans parent » n'existe pas : le serveur rattache alors à Administrateurs. */}
           {(groupsQuery.data ?? [])
             .filter((g) => g.id !== group.id)
             .map((g) => (
@@ -142,6 +147,7 @@ export default function GroupDetailPage(): JSX.Element {
               </option>
             ))}
         </select>
+        )}
         {setParent.error && (
           <p className="text-xs text-red-600">{setParent.error.message}</p>
         )}

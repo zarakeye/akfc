@@ -72,6 +72,21 @@ export function extractMediaIdsFromContent(
   return Array.from(new Set(ids));
 }
 
+/**
+ * Membres dont un contenu montre l'AVATAR (références logiques `{ kind: "avatar", userId }` des
+ * blocs média-texte et texte enrobant). Dédupliqué.
+ *
+ * Sert à la règle « on ne pose que son propre avatar » (`assertOwnAvatars`, backend).
+ */
+export function avatarUserIdsFromContent(content: PageContentV1): readonly string[] {
+  const ids = content.blocks.flatMap((block) =>
+    (block.type === "media-text" || block.type === "float-text") && block.media?.kind === "avatar"
+      ? [block.media.userId]
+      : [],
+  );
+  return Array.from(new Set(ids));
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Walker ProseMirror                                                        */
 /* -------------------------------------------------------------------------- */

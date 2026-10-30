@@ -133,9 +133,10 @@ export const memberGroupRouter = router({
     }),
 
   /**
-   * Définit (ou retire, si parentGroupId=null) le groupe PARENT d'un
-   * groupe — l'inclusion/hiérarchie (arbre). Garde anti-cycle : le nouveau
-   * parent ne peut être ni le groupe lui-même ni l'un de ses descendants.
+   * Définit le groupe PARENT d'un groupe — l'inclusion/hiérarchie (arbre).
+   * `parentGroupId=null` le rattache au groupe Administrateurs (la racine).
+   * Garde anti-cycle : le nouveau parent ne peut être ni le groupe lui-même ni
+   * l'un de ses descendants. Le groupe Administrateurs, lui, n'a jamais de parent.
    */
   setParentGroup: adminProcedure
     .input(
@@ -145,7 +146,22 @@ export const memberGroupRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { groupId, parentGroupId } = input;
+      const { groupId } = input;
+      const adminGroup = await ctx.prisma.memberGroup.findFirst({
+        where: { isAdminGroup: true },
+        select: { id: true },
+      });
+      // Administrateurs est la RACINE : ses membres héritent de l'accès à tous les espaces. Lui
+      // donner un parent ferait hériter les membres de ce parent de tous les espaces du club.
+      if (groupId === adminGroup?.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Le groupe Administrateurs reste à la racine : il ne peut pas avoir de parent.",
+        });
+      }
+      // « Sans parent » = sous Administrateurs, comme à la création : la règle « Administrateurs
+      // ancêtre de tout » ne se défait pas en détachant un groupe.
+      const parentGroupId = input.parentGroupId ?? adminGroup?.id ?? null;
 
       if (parentGroupId === groupId) {
         throw new TRPCError({

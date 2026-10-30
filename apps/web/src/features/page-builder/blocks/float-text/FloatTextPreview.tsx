@@ -43,7 +43,7 @@ export function FloatTextPreview({
         {resolution === "loading"
           ? "Chargement du média…"
           : resolution === "missing"
-            ? "Média sélectionné introuvable (supprimé, en attente, ou administrateur sans avatar)."
+            ? "Média sélectionné introuvable (supprimé, en attente, ou avatar d'un autre membre, qui ne peut plus être posé)."
             : resolution === "error"
               ? "Échec du chargement du média."
               : "Bloc vide : ajoutez une image et du texte."}
@@ -62,7 +62,7 @@ export function FloatTextPreview({
               : resolution === "loading"
                 ? "Chargement du média…"
                 : resolution === "missing"
-                  ? "Média sélectionné introuvable (supprimé, en attente, ou administrateur sans avatar)."
+                  ? "Média sélectionné introuvable (supprimé, en attente, ou avatar d'un autre membre, qui ne peut plus être posé)."
                   : "Échec de la requête de résolution du média."}
         </p>
       )}

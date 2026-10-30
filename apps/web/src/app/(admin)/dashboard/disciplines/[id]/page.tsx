@@ -112,7 +112,7 @@ export default async function DisciplinePresentationPage({
         )}
       </dl>
 
-      <PageRenderer content={description} />
+      <PageRenderer content={description} audience="admin" />
     </PresentationShell>
   );
 }

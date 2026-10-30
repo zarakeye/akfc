@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import { audienceFor, DraftBanner, draftAccess, isLive } from "@features/editorial/editorialGate";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import { formatHHMM } from "@lib/time/formatHHMM";
@@ -99,10 +100,10 @@ export default async function PublicStagePage({
 
   if (!stage) notFound();
 
-  // Garde de publication : pas visible si brouillon (null) ou programmé (futur).
-  if (!stage.publicationDate || stage.publicationDate > new Date()) {
-    notFound();
-  }
+  // Garde de publication : brouillon (null) ou programmé (futur) → 404, sauf pour un
+  // administrateur (aperçu).
+  const access = await draftAccess(isLive(stage.publicationDate));
+  if (!access) notFound();
 
   // Discipline affichée seulement si elle est publiée : le nom d'un brouillon n'a pas à sortir.
   const now = new Date();
@@ -131,6 +132,7 @@ export default async function PublicStagePage({
   // élargir le puits profite aux médias, pas à la longueur des lignes.
   return (
     <article className="akfc-page py-12">
+      {access === "preview" && <DraftBanner />}
       <header className="mb-8 border-b border-border pb-6">
         <p className="mb-2 text-sm text-muted-foreground">
           Stage • {AUDIENCE_LABELS[stage.audience] ?? stage.audience}
@@ -197,13 +199,13 @@ export default async function PublicStagePage({
       {/* ── Description ──────────────────────────────────────────────── */}
       <section className="mb-10">
         <h2 className="mb-4 text-2xl font-bold">Présentation</h2>
-        <PageRenderer content={description} />
+        <PageRenderer content={description} audience={audienceFor(access)} />
       </section>
 
       {/* ── Programme ────────────────────────────────────────────────── */}
       <section className="mb-10">
         <h2 className="mb-4 text-2xl font-bold">Programme</h2>
-        <PageRenderer content={program} />
+        <PageRenderer content={program} audience={audienceFor(access)} />
       </section>
 
       {/* ── Sessions ─────────────────────────────────────────────────── */}

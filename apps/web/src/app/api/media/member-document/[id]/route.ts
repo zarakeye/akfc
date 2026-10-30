@@ -3,7 +3,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { memberDocumentVisibleTo } from "@backend/modules/memberDocuments/visibleTo";
+import { memberDocumentReadableBy } from "@backend/modules/memberDocuments/visibleTo";
 import {
   getR2Bucket,
   getR2Client,
@@ -14,8 +14,9 @@ import {
  *
  * Analogue membre de la garde publique (`public/r2`) :
  *   - session authentifiée requise (401 sinon) ;
- *   - le MemberDocument doit CONCERNER le membre (`memberDocumentVisibleTo`, la même
- *     condition que la liste et les compteurs). Sinon 404 — on ne révèle pas
+ *   - le membre doit pouvoir OUVRIR le MemberDocument (`memberDocumentReadableBy`, la même
+ *     condition que la liste et le marquage lu : ce qui le concerne, plus les dépôts des
+ *     espaces collaboratifs hérités). Sinon 404 — on ne révèle pas
  *     l'existence d'un document qui ne le concerne pas.
  *
  * Le fichier est streamé depuis R2 avec son type enregistré (`mimeType`, PDF par
@@ -44,8 +45,9 @@ export async function GET(
   if (!id) return new NextResponse("Not found", { status: 404 });
 
   // ─── Garde : le document concerne ce membre ───────────────────────────
+  const readable = await memberDocumentReadableBy(prisma, userId);
   const doc = await prisma.memberDocument.findFirst({
-    where: { id, ...memberDocumentVisibleTo(userId) },
+    where: { AND: [{ id }, readable.where] },
     select: {
       title: true,
       mediaAsset: {

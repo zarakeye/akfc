@@ -3,3 +3,4 @@ export * from '@contracts/page/extractMediaIds';
 export * from '@contracts/page/resolvedMedia';
 export * from '@contracts/page/parseContent';
 export * from '@contracts/page/plainText';
+export * from '@contracts/page/editorialPages';

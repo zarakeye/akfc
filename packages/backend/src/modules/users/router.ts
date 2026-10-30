@@ -17,6 +17,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 import { pageContentSchemaV1 } from "@contracts/page";
 import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/instructorBio.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
+import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
 const userProfileSelect = {
@@ -357,6 +358,7 @@ export const userRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      assertOwnAvatars(ctx.sessionClient.user.id, input.bio);
       const userId = ctx.sessionClient.user.id;
       // Seul un titulaire a une présentation publique. Un autre membre pourrait sinon référencer des
       // fichiers, et les rendre servis au public, sans qu'aucune page ne les montre.
@@ -532,18 +534,16 @@ export const userRouter = router({
   /**
    * Les avatars qu'un bloc media-text ou float-text peut montrer (« utiliser l'avatar de X »).
    *
-   * Un administrateur choisit parmi les administrateurs, et lui-même ; un autre membre (un
-   * instructeur qui rédige sa présentation) ne peut montrer que SON avatar — c'est aussi ce que
-   * `saveMyInstructorBio` vérifie. Inclut les membres SANS avatar (avatar `null`) : l'UI affiche
-   * un placeholder. `avatar` est la clé de stockage brute ; l'URL d'affichage est construite côté
+   * Un membre ne pose que SON avatar, administrateurs compris (`assertOwnAvatars`, vérifié par
+   * chaque enregistrement de contenu) : la liste ne contient donc que lui. Elle reste une liste
+   * pour que le sélecteur n'ait rien à changer. Inclut un membre SANS avatar (avatar `null`) :
+   * l'UI affiche un placeholder. `avatar` est la clé de stockage brute ; l'URL d'affichage est construite côté
    * client comme pour l'avatar du header.
    */
   listAvatarCandidates: protectedProcedure.query(async ({ ctx }) => {
     const self = ctx.sessionClient.user.id;
     return ctx.prisma.user.findMany({
-      where: ctx.sessionClient.user.isAdmin
-        ? { OR: [{ id: self }, { memberGroupMemberships: { some: { group: { isAdminGroup: true } } } }] }
-        : { id: self },
+      where: { id: self },
       select: {
         id: true,
         firstName: true,

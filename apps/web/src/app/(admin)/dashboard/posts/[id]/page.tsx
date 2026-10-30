@@ -54,7 +54,7 @@ export default async function PostPresentationPage({
         </div>
       </dl>
 
-      <PageRenderer content={content} />
+      <PageRenderer content={content} audience="admin" />
     </PresentationShell>
   );
 }

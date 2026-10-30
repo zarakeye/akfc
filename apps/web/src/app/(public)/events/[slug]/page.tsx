@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import { audienceFor, DraftBanner, draftAccess, isLive } from "@features/editorial/editorialGate";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import {
@@ -82,10 +83,9 @@ export default async function PublicEventPage({
 
   if (!event) notFound();
 
-  // Garde de publication : pas visible si brouillon ou programmé.
-  if (!event.publicationDate || event.publicationDate > new Date()) {
-    notFound();
-  }
+  // Garde de publication : brouillon ou programmé → 404, sauf pour un administrateur (aperçu).
+  const access = await draftAccess(isLive(event.publicationDate));
+  if (!access) notFound();
 
   const content = parsePageContentV1(event.content);
   const organizerName = formatUserName(event.organizer);
@@ -109,6 +109,7 @@ export default async function PublicEventPage({
   // élargir le puits profite aux médias, pas à la longueur des lignes.
   return (
     <article className="akfc-page py-12">
+      {access === "preview" && <DraftBanner />}
       <header className="mb-8 border-b border-border pb-6">
         <p className="mb-2 text-sm text-muted-foreground">
           Événement • {AUDIENCE_LABELS[event.audience] ?? event.audience}
@@ -162,7 +163,7 @@ export default async function PublicEventPage({
         )}
       </header>
 
-      <PageRenderer content={content} />
+      <PageRenderer content={content} audience={audienceFor(access)} />
     </article>
   );
 }

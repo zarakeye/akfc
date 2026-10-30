@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FileText, CircleDot } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
@@ -87,9 +88,22 @@ function Section({
   );
 }
 
-export default function DocumentsPage() {
+/**
+ * `?doc=<id>` ouvre directement ce document (lien de la cloche collaborative) : son ouverture le
+ * marque lu, comme depuis la liste. `useSearchParams` exige une frontière Suspense.
+ */
+export default function DocumentsPageWithParams() {
+  return (
+    <Suspense>
+      <DocumentsPage />
+    </Suspense>
+  );
+}
+
+function DocumentsPage() {
   const user = useSessionStore((s) => s.session?.user);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const docParam = useSearchParams().get("doc");
+  const [selectedId, setSelectedId] = useState<string | null>(docParam);
 
   const listQuery = trpc.memberDocument.listForMe.useQuery(undefined, {
     enabled: Boolean(user),

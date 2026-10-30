@@ -63,7 +63,7 @@ export default async function CoursePresentationPage({
         </div>
       )}
 
-      <PageRenderer content={content} />
+      <PageRenderer content={content} audience="admin" />
     </PresentationShell>
   );
 }

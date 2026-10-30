@@ -25,6 +25,12 @@ export interface PageRendererProps {
    * composite est supposé sain.
    */
   content: PageContentV1;
+  /**
+   * Pour qui les URLs des fichiers sont construites. `public` (défaut) : la route publique, qui ne
+   * sert que les fichiers d'un contenu PUBLIÉ. `admin` : la route privée, pour l'aperçu d'un
+   * brouillon par un administrateur (draftAccess).
+   */
+  audience?: "public" | "admin";
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -60,7 +66,7 @@ export interface PageRendererProps {
  * construction (le discriminant garantit la correspondance), localisé
  * et documenté, comme côté `BlockShell` pour l'édition.
  */
-export async function PageRenderer({ content }: PageRendererProps) {
+export async function PageRenderer({ content, audience = "public" }: PageRendererProps) {
   // Page vide : rien à résoudre, aucune requête.
   if (content.blocks.length === 0) {
     return null;
@@ -73,7 +79,7 @@ export async function PageRenderer({ content }: PageRendererProps) {
   //    Audience `public` : les URLs R2 pointent vers la route publique
   //    `/api/media/public/r2/...` qui valide qu'un PageMediaReference
   //    existe avant de signer (cf. sous-chantier 6c).
-  const resolvedMap = await resolveMediaByIds(prisma, mediaIds, "public");
+  const resolvedMap = await resolveMediaByIds(prisma, mediaIds, audience);
 
   // Lookup synchrone fermé sur la map — passé à chaque View.
   const resolveMedia = (mediaId: string): ResolvedMedia | null =>

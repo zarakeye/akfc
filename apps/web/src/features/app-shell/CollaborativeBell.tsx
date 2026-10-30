@@ -87,7 +87,8 @@ export function CollaborativeBell(): JSX.Element | null {
               {items.map((it) => (
                 <Link
                   key={it.id}
-                  href="/mes-espaces"
+                  // Ouvre le document : son ouverture le marque lu, et la cloche se vide.
+                  href={`/documents?doc=${encodeURIComponent(it.id)}`}
                   className="block px-3 py-2 hover:bg-gray-100"
                 >
                   <span className="block truncate text-sm font-medium text-gray-900">

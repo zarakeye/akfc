@@ -116,7 +116,7 @@ export default async function EventPresentationPage({
         )}
       </dl>
 
-      <PageRenderer content={content} />
+      <PageRenderer content={content} audience="admin" />
     </PresentationShell>
   );
 }

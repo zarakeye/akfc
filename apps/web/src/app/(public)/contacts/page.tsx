@@ -4,8 +4,9 @@ import Link from "next/link";
 
 import { prisma } from "@backend/prisma";
 import {
+  audienceFor,
+  editorialAccess,
   editorialRobots,
-  isEditorialPageGated,
   UnderConstruction,
 } from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
@@ -31,7 +32,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactsPage(): Promise<JSX.Element> {
-  if (await isEditorialPageGated("contacts")) {
+  // Non publiée : « en construction » pour un visiteur, aperçu (bandeau, fichiers par la route
+  // privée) pour un administrateur.
+  const access = await editorialAccess("contacts");
+  if (!access) {
     return <UnderConstruction />;
   }
 
@@ -55,7 +59,7 @@ export default async function ContactsPage(): Promise<JSX.Element> {
 
       {/* Exactement le contenu du constructeur (texte de départ créé au démarrage, voir
           ensureContactsPage) ; coordonnées et formulaire des membres suivent, hors constructeur. */}
-      {content.blocks.length > 0 && <PageRenderer content={content} />}
+      {content.blocks.length > 0 && <PageRenderer content={content} audience={audienceFor(access)} />}
 
       <div className="mt-8 grid items-start gap-6 md:grid-cols-2">
         <ClubContactCard contact={contact} />

@@ -2,8 +2,9 @@ import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
 import {
+  audienceFor,
+  editorialAccess,
   editorialRobots,
-  isEditorialPageGated,
   UnderConstruction,
 } from "@features/editorial/editorialGate";
 import { parsePageContentV1 } from "@contracts/page";
@@ -30,7 +31,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage(): Promise<JSX.Element> {
-  if (await isEditorialPageGated("association")) {
+  // Non publiée : « en construction » pour un visiteur, aperçu (bandeau, fichiers par la route
+  // privée) pour un administrateur.
+  const access = await editorialAccess("association");
+  if (!access) {
     return <UnderConstruction />;
   }
 
@@ -46,7 +50,7 @@ export default async function AboutPage(): Promise<JSX.Element> {
       </h1>
 
       {content.blocks.length > 0 ? (
-        <PageRenderer content={content} />
+        <PageRenderer content={content} audience={audienceFor(access)} />
       ) : (
         <p className="akfc-measure-block text-muted-foreground">
           Cette page n&apos;a pas encore été rédigée.

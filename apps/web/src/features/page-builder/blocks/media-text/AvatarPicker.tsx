@@ -20,9 +20,9 @@ function labelFor(a: AvatarCandidate): string {
 
 /**
  * Sélecteur d'avatar des blocs media-text et float-text. Liste les candidats
- * que le serveur autorise (`listAvatarCandidates` : les administrateurs et
- * soi-même pour un administrateur, soi seul pour un autre membre), avec un
- * placeholder si pas d'avatar. Choisir un membre pose une référence LOGIQUE
+ * que le serveur autorise (`listAvatarCandidates` : soi seul — personne ne pose
+ * l'avatar d'un autre, administrateurs compris), avec un placeholder si pas
+ * d'avatar. Choisir un membre pose une référence LOGIQUE
  * `{ kind: "avatar", userId }` — la page suivra l'avatar courant de ce membre.
  *
  * `selectedUserId` : le membre actuellement référencé (ou null). `onSelect`

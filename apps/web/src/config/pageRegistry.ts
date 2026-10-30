@@ -1,3 +1,5 @@
+import type { EditorialPageKey } from "@contracts/page";
+
 /**
  * Registre des PAGES ÉDITORIALES — pages au contenu PROPRE (non dynamiques, non
  * alimentées par un autre éditeur), avec un état publié/brouillon. Les pages
@@ -12,7 +14,8 @@
  * Source unique partagée avec le centre de contrôle « Pages éditoriales ».
  */
 export type PageRegistryEntry = {
-  key: string;
+  /** Une clé déclarée dans le contrat (la route publique des fichiers la connaît aussi). */
+  key: EditorialPageKey;
   label: string;
   path: string;
   /** Rattacher aussi les sous-routes (path + "/..."). Défaut : false. */

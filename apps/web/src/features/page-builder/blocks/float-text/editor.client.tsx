@@ -114,7 +114,7 @@ export function FloatTextEditor({
 
         <div className="space-y-1">
           <span className="text-xs uppercase tracking-wide text-muted-foreground">
-            …ou l&apos;avatar d&apos;un administrateur
+            …ou votre avatar
           </span>
           <AvatarPicker
             selectedUserId={

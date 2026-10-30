@@ -6,6 +6,8 @@ import { prisma } from '@backend/prisma';
 import { APP_ROOT } from '@config/app';
 import { getR2Bucket, getR2Client } from '@backend/modules/storage/adapters/r2/client';
 import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/services/mediaDerivatives.service';
+import { isPubliclyPlaced } from '@backend/modules/media/services/publiclyPlaced.service';
+import { outsideBin } from '@backend/modules/storage/mediaPaths';
 
 /**
  * Route publique pour les fichiers R2 référencés depuis le page-builder.
@@ -16,30 +18,17 @@ import { resolveDeliveryKey, streamDerived } from '@backend/modules/media/servic
  * droit de lire (session + canReadStorageKey). Cette route-ci est
  * accessible **sans auth**, mais avec une garde stricte :
  *
- *   l'asset doit être en `published` ET placé : référencé par au moins une
- *   `PageMediaReference`, ou présent dans une galerie PUBLIQUE.
+ *   l'asset doit être en `published`, hors corbeille, ET placé dans du
+ *   PUBLIC : une galerie publique, ou un contenu PUBLIÉ (`isPubliclyPlaced` :
+ *   date de publication passée, discipline publiée pour un cours,
+ *   interrupteur activé pour une page éditoriale).
  *
- * Autrement dit : l'admin a fait **deux gestes intentionnels** pour
- * que cet asset soit publiquement servi — il l'a marqué publishable
- * dans la bibliothèque, et il l'a inséré dans le contenu d'une page
- * (le sync du sous-chantier 4 a alors créé la référence). Sans ces
- * deux gestes, l'asset reste invisible.
- *
- * Pas de filtrage sur le statut de la page elle-même (Course / Stage
- * n'ont pas de flag de publication ; Post en a un mais ce serait
- * inconsistant). Si tu veux serrer plus tard, c'est ici que ça se
- * passe — mais la sémantique actuelle est défendable et simple.
- *
- * ─── La requête en une passe ────────────────────────────────────────────
- *
- * On part de `PageMediaReference` et on rejoint sur `MediaAsset` via la
- * relation directe — pas besoin d'une relation inverse côté MediaAsset
- * (qui n'est pas déclarée dans le schéma actuel). Une seule requête
- * vérifie tout :
- *
- *     PageMediaReference WHERE mediaAsset.fullPath = ? AND mediaAsset.status = 'published'
- *
- * S'il en existe au moins une, l'asset passe. Sinon 404.
+ * Autrement dit : l'admin a fait **trois gestes intentionnels** pour que cet
+ * asset soit publiquement servi — il l'a validé dans la bibliothèque, il l'a
+ * inséré dans un contenu (le recensement a créé la référence), et il a publié
+ * ce contenu. Un brouillon recense ses fichiers dès son premier
+ * enregistrement : sans la troisième condition, ses fichiers étaient servis à
+ * qui connaissait leur URL, alors que la page, elle, répondait 404.
  *
  * ─── Pourquoi 404 et pas 403 ────────────────────────────────────────────
  *
@@ -74,20 +63,15 @@ export async function GET(
     return new NextResponse('Not found', { status: 404 });
   }
 
-  // ─── Garde : asset published + placé (page OU galerie publique) ────────
-  const servable = await prisma.mediaAsset.findFirst({
-    where: {
-      fullPath: r2Key,
-      status: 'published',
-      OR: [
-        { pageReferences: { some: {} } },
-        { galleryItems: { some: { gallery: { visibility: 'PUBLIC' } } } },
-      ],
-    },
+  // ─── Garde : asset validé, hors corbeille, et placé dans du PUBLIC ──────
+  // (une galerie publique, ou un contenu PUBLIÉ : les fichiers d'un brouillon ne sont visibles
+  // que des administrateurs, par la route privée).
+  const asset = await prisma.mediaAsset.findFirst({
+    where: { fullPath: r2Key, status: 'published', ...outsideBin(APP_ROOT) },
     select: { id: true },
   });
 
-  if (!servable) {
+  if (!asset || !(await isPubliclyPlaced(prisma, asset.id))) {
     return new NextResponse('Not found', { status: 404 });
   }
 

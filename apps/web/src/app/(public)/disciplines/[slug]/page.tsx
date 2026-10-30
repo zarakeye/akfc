@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import { audienceFor, DraftBanner, draftAccess, isLive } from "@features/editorial/editorialGate";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import type { Metadata } from "next";
@@ -61,10 +62,9 @@ export default async function PublicDisciplinePage({
   });
 
   if (!discipline) notFound();
-  // Brouillon (ou publication programmée future) : invisible du public.
-  if (!discipline.publicationDate || discipline.publicationDate > new Date()) {
-    notFound();
-  }
+  // Brouillon (ou publication programmée future) : 404, sauf pour un administrateur (aperçu).
+  const access = await draftAccess(isLive(discipline.publicationDate));
+  if (!access) notFound();
 
   const description = parsePageContentV1(discipline.description);
 
@@ -91,6 +91,7 @@ export default async function PublicDisciplinePage({
   // élargir le puits profite aux médias, pas à la longueur des lignes.
   return (
     <article className="akfc-page py-12">
+      {access === "preview" && <DraftBanner />}
       {/*
       <!--
       <header className="mb-8 border-b border-border pb-6">
@@ -110,7 +111,7 @@ export default async function PublicDisciplinePage({
       */}
       
       <section>
-        <PageRenderer content={description} />
+        <PageRenderer content={description} audience={audienceFor(access)} />
       </section>
     </article>
   );

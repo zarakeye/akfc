@@ -99,12 +99,12 @@ export default async function StagePresentationPage({
 
       <section className="mb-8">
         <h3 className="mb-2 text-lg font-semibold">Présentation</h3>
-        <PageRenderer content={description} />
+        <PageRenderer content={description} audience="admin" />
       </section>
 
       <section>
         <h3 className="mb-2 text-lg font-semibold">Programme</h3>
-        <PageRenderer content={program} />
+        <PageRenderer content={program} audience="admin" />
       </section>
     </PresentationShell>
   );

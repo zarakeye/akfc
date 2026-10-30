@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
+import { audienceFor, DraftBanner, draftAccess, isLive } from "@features/editorial/editorialGate";
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import { DAY_LABELS, formatTime, formatUserName } from "@lib/format";
@@ -33,15 +34,15 @@ export default async function PublicCoursePage({
   const courseId = Number(id);
   if (!Number.isFinite(courseId)) notFound();
 
-  // Un créneau n'est public que si sa discipline l'est : celui d'un brouillon répond 404, comme la
-  // page de la discipline elle-même.
-  const now = new Date();
-  const course = await prisma.course.findFirst({
-    where: { id: courseId, discipline: { publicationDate: { not: null, lte: now } } },
+  // Un créneau n'est public que si sa discipline l'est : celui d'un brouillon répond 404 (aperçu
+  // pour un administrateur), comme la page de la discipline elle-même.
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
     include: {
       discipline: {
         select: {
           name: true,
+          publicationDate: true,
           // Instructeur principal : celui du créneau quand le créneau n'en a pas.
           instructor: { select: { firstName: true, lastName: true, pseudo: true } },
         },
@@ -51,6 +52,8 @@ export default async function PublicCoursePage({
   });
 
   if (!course) notFound();
+  const access = await draftAccess(isLive(course.discipline.publicationDate));
+  if (!access) notFound();
 
   const content = parsePageContentV1(course.content);
   // Hiérarchie des instructeurs : `Course.instructorId` null veut dire « celui de la discipline ».
@@ -58,6 +61,7 @@ export default async function PublicCoursePage({
 
   return (
     <article className="akfc-page py-12">
+      {access === "preview" && <DraftBanner />}
       <header className="mb-8 border-b border-border pb-6">
         <h1 className="text-3xl font-bold">{course.discipline.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -67,7 +71,7 @@ export default async function PublicCoursePage({
         </p>
       </header>
 
-      <PageRenderer content={content} />
+      <PageRenderer content={content} audience={audienceFor(access)} />
     </article>
   );
 }

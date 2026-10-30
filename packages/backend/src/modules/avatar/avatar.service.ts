@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -57,8 +58,8 @@ export function isAvatarKey(value: string): boolean {
 
 export async function createAvatarUpload(params: { appRoot: string; userId: string; mimeType: string; bytes: number }) {
   const ext = AVATAR_EXT[params.mimeType];
-  if (!ext) throw new Error("Format d'avatar non accepté (JPEG, PNG ou WebP).");
-  if (params.bytes <= 0 || params.bytes > AVATAR_MAX_BYTES) throw new Error("Avatar trop volumineux (10 Mo au plus).");
+  if (!ext) throw new TRPCError({ code: "BAD_REQUEST", message: "Format d'avatar non accepté (JPEG, PNG ou WebP)." });
+  if (params.bytes <= 0 || params.bytes > AVATAR_MAX_BYTES) throw new TRPCError({ code: "BAD_REQUEST", message: "Avatar trop volumineux (10 Mo au plus)." });
   const path = `${avatarFolder(params.appRoot, params.userId)}/${Date.now()}-${crypto.randomBytes(3).toString("hex")}.${ext}`;
   const uploadUrl = await getSignedUrl(
     getR2PresignClient(),
@@ -81,15 +82,15 @@ async function removeAvatarFile(value: string): Promise<void> {
 export async function registerAvatar(params: { prisma: PrismaClient; appRoot: string; userId: string; path: string }): Promise<{ avatar: string }> {
   const { prisma, appRoot, userId, path } = params;
   if (!path.startsWith(`${avatarFolder(appRoot, userId)}/`) || path.includes("..") || !isAvatarKey(path)) {
-    throw new Error("Chemin hors de l'espace avatar de l'utilisateur.");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Chemin hors de l'espace avatar de l'utilisateur." });
   }
   const head = await getR2Client()
     .send(new HeadObjectCommand({ Bucket: getR2Bucket(), Key: path }))
     .catch(() => null);
-  if (!head) throw new Error("Avatar introuvable : l'envoi n'a pas abouti.");
+  if (!head) throw new TRPCError({ code: "BAD_REQUEST", message: "Avatar introuvable : l'envoi n'a pas abouti." });
   if (!(head.ContentType ?? "").startsWith("image/") || (head.ContentLength ?? 0) > AVATAR_MAX_BYTES) {
     await removeAvatarFile(path);
-    throw new Error("Fichier d'avatar refusé.");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier d'avatar refusé." });
   }
   const prev = await prisma.user.findUnique({ where: { id: userId }, select: { avatar: true } });
   await prisma.user.update({ where: { id: userId }, data: { avatar: path } });
