@@ -12,6 +12,7 @@ export const publicDecouvrirLeSite: Tour = {
   audience: "public",
   routes: ["/"],
   startRoute: "/",
+  doc: "/docs/guide/decouvrir-le-site",
   steps: [
     {
       title: "Bienvenue",

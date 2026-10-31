@@ -264,7 +264,7 @@ export function SeminarForm({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Identité ─────────────────────────────────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-3">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-3" data-tour="seminars.form.identity">
         <legend className="px-2 text-sm font-medium">Identité</legend>
 
         <label className="flex flex-col gap-1 text-sm sm:col-span-2">
@@ -323,7 +323,7 @@ export function SeminarForm({
       </fieldset>
 
       {/* ── Rattachement (au moins un des trois) ────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2" data-tour="seminars.form.attachment">
         <legend className="px-2 text-sm font-medium">
           Rattachement (au moins un requis)
         </legend>
@@ -374,7 +374,7 @@ export function SeminarForm({
       </fieldset>
 
       {/* ── Description (PageBuilder) ───────────────────────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="seminars.form.description">
         <legend className="px-2 text-sm font-medium">
           Description (PageBuilder)
         </legend>
@@ -441,7 +441,7 @@ export function SeminarForm({
       </fieldset>
 
       {/* ── Publication ─────────────────────────────────────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="seminars.form.publication">
         <legend className="px-2 text-sm font-medium">Publication</legend>
 
         <div className="flex flex-col gap-3">
@@ -490,7 +490,7 @@ export function SeminarForm({
         </pre>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-tour="seminars.form.submit">
         <button
           type="button"
           onClick={handleSubmit}

@@ -12,6 +12,7 @@ export const adminBreakingNewsCreate: Tour = {
   audience: "admin",
   routes: ["/dashboard/breaking-news", "/dashboard/breaking-news/create"],
   startRoute: "/dashboard/breaking-news",
+  doc: "/docs/admin/creer-un-flash-info",
   steps: [
     {
       target: "breaking-news.list.create",

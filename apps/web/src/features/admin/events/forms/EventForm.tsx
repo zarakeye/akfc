@@ -264,7 +264,7 @@ export function EventForm({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Identité et publication ─────────────────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2" data-tour="events.form.identity">
         <legend className="px-2 text-sm font-medium">
           Identité et publication
         </legend>
@@ -336,7 +336,7 @@ export function EventForm({
       </fieldset>
 
       {/* ── Rattachement (au moins un des trois) ────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2" data-tour="events.form.attachment">
         <legend className="px-2 text-sm font-medium">
           Rattachement (au moins un requis)
         </legend>
@@ -430,7 +430,7 @@ export function EventForm({
       </fieldset>
 
       {/* ── Contenu (PageBuilder) ───────────────────────────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="events.form.content">
         <legend className="px-2 text-sm font-medium">
           Contenu (PageBuilder)
         </legend>
@@ -468,7 +468,7 @@ export function EventForm({
         </pre>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-tour="events.form.submit">
         <button
           type="button"
           onClick={handleSubmit}

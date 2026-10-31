@@ -113,7 +113,10 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
     return () => document.removeEventListener("click", onClick, true);
   }, [advance.kind, step.target, index]);
 
-  // Clavier : Échap quitte ; le focus ne sort ni de la cible ni de la bulle.
+  // Clavier : Échap quitte ; le focus ne sort ni de la cible ni de la bulle. Pour une étape
+  // d'explication, il n'entre pas non plus dans la cible : Tab puis Entrée sur le bouton montré
+  // l'activerait, ce que le panneau posé dessus interdit à la souris.
+  const explains = advance.kind === "next";
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") tourStore.stop();
@@ -121,8 +124,8 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
     const onFocus = (e: FocusEvent) => {
       const el = findTarget(step.target);
       const t = e.target as Node | null;
-      if (!t || el?.contains(t) || bubbleRef.current?.contains(t)) return;
-      (el ?? bubbleRef.current)?.focus?.();
+      if (!t || bubbleRef.current?.contains(t) || (!explains && el?.contains(t))) return;
+      ((explains ? null : el) ?? bubbleRef.current)?.focus?.();
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("focusin", onFocus);
@@ -130,7 +133,21 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [step.target]);
+  }, [step.target, explains]);
+
+  // Aucun formulaire ne part pendant une étape qui n'attend ni clic ni page : Entrée dans un champ
+  // à remplir enverrait sinon le formulaire (la demande au club, le lien de réinitialisation).
+  // Écouté en capture sur le document, avant que React ne reçoive l'évènement.
+  const allowsSubmit = advance.kind === "click" || advance.kind === "route";
+  useEffect(() => {
+    if (allowsSubmit) return;
+    const onSubmit = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    document.addEventListener("submit", onSubmit, true);
+    return () => document.removeEventListener("submit", onSubmit, true);
+  }, [allowsSubmit]);
 
   if (typeof document === "undefined") return null;
 

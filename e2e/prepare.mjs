@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, PASSWORD, TINY_PDF, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, PASSWORD, SEMINAR, TINY_PDF, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -105,6 +105,21 @@ await prisma.discipline.create({
   data: { ...DISCIPLINES.brouillon, type: "MARTIAL_ART", categoryId: category.id, instructorId: USERS.admin.id },
 });
 
+const EMPTY_PAGE = { version: 1, blocks: [] };
+await prisma.seminar.create({
+  data: {
+    ...SEMINAR,
+    audience: "ADULTS",
+    originId: null,
+    externalDisciplineLabel: "Discipline externe (e2e)",
+    description: EMPTY_PAGE,
+    program: EMPTY_PAGE,
+    preRegistered: [],
+    primaryAnimatorId: USERS.admin.id,
+    animators: { connect: { id: USERS.admin.id } },
+  },
+});
+
 const pdf = Buffer.from(TINY_PDF);
 await s3.send(new PutObjectCommand({ Bucket, Key: DOCUMENT_A.key, Body: pdf, ContentType: "application/pdf" }));
 const asset = await prisma.mediaAsset.create({
@@ -139,4 +154,4 @@ await prisma.user.update({
 });
 
 await prisma.$disconnect();
-console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 2 disciplines, 1 document`);
+console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 2 disciplines, 1 stage, 1 document`);

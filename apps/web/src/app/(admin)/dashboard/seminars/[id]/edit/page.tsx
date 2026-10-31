@@ -10,6 +10,7 @@ import {
   type SeminarFormInput,
 } from "@features/admin/seminars/forms/SeminarForm";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+import { SessionsManager } from "@features/admin/common/components/SessionsManager";
 
 /**
  * Édition d'un stage — `/(admin)/dashboard/seminars/[id]/edit`.
@@ -93,6 +94,7 @@ export default function EditStagePage({
             onSubmit={handleSubmit}
             submitLabel="Enregistrer"
           />
+          <SeminarSessions seminarId={seminarId} />
           <div className="mt-8 border-t pt-4">
             <button
               type="button"
@@ -106,6 +108,42 @@ export default function EditStagePage({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Les séances datées du stage : chacune s'enregistre aussitôt (procédures `seminarSession.*`),
+ * indépendamment du formulaire au-dessus. Sans séance, il n'apparaît pas dans l'agenda.
+ */
+function SeminarSessions({ seminarId }: { seminarId: number }): JSX.Element {
+  const utils = trpc.useUtils();
+  const sessions = trpc.seminarSession.getAllBySeminar.useQuery({ seminarId });
+  const create = trpc.seminarSession.create.useMutation();
+  const update = trpc.seminarSession.update.useMutation();
+  const remove = trpc.seminarSession.delete.useMutation();
+  const refresh = async (): Promise<void> => {
+    await utils.seminarSession.getAllBySeminar.invalidate({ seminarId });
+    await utils.seminar.getByIdAdmin.invalidate({ id: seminarId });
+  };
+
+  return (
+    <div data-tour="seminars.sessions">
+      <SessionsManager
+        sessions={sessions.data ?? []}
+        onCreate={async (draft) => {
+          await create.mutateAsync({ seminarId, ...draft });
+          await refresh();
+        }}
+        onUpdate={async (id, draft) => {
+          await update.mutateAsync({ id, ...draft });
+          await refresh();
+        }}
+        onDelete={async (id) => {
+          await remove.mutateAsync({ id });
+          await refresh();
+        }}
+      />
     </div>
   );
 }

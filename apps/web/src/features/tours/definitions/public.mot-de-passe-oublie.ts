@@ -12,6 +12,7 @@ export const publicMotDePasseOublie: Tour = {
   audience: "public",
   routes: ["/auth/forgot-password"],
   startRoute: "/auth/forgot-password",
+  doc: "/docs/guide/mot-de-passe-oublie",
   steps: [
     {
       target: "auth.forgot.email",

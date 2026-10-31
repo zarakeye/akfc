@@ -30,6 +30,9 @@ test("depuis une fiche du guide, « Mot de passe oublié » conduit à sa page e
   await email.fill("pas-une-adresse");
   await expect(next).toBeDisabled();
   await email.fill(USERS.oubli.email);
+  // Entrée dans le champ enverrait le formulaire (le bouton est actif) : pendant le tuto, rien ne part.
+  await email.press("Enter");
+  await expect(page.getByText("un lien a été envoyé")).toHaveCount(0);
   await next.click();
 
   await expect(bubble(page, t, 2, 2)).toBeVisible();
@@ -113,9 +116,23 @@ test("« Contacter le club » fait remplir le formulaire, et l'envoi reste au me
   await next.click();
 
   await expect(bubble(page, t, 4, 4)).toBeVisible();
+  // Au clavier non plus : Tab ne conduit pas au bouton montré, le curseur reste dans la bulle.
+  for (let i = 0; i < 4; i++) await page.keyboard.press("Tab");
+  await expect(page.locator('[data-tour="contact.form.submit"] button')).not.toBeFocused();
   // Pendant l'étape, un clic sur « Envoyer » ne passe pas : la cible d'une étape « Suivant » est couverte.
   await page.locator('[data-tour="contact.form.submit"] button').click({ force: true });
   await expect(page.getByText("Message envoyé, merci !")).toHaveCount(0);
   await page.getByRole("button", { name: "Terminer" }).click();
   await expect(page.getByText("Message envoyé, merci !")).toHaveCount(0);
+});
+
+test("le guide liste les parcours ; un tuto de membre y est grisé pour un visiteur", async ({ page }) => {
+  await page.goto("/docs/guide");
+  const membre = page.getByRole("region", { name: "Parcours membre" });
+  await expect(membre.getByRole("button", { name: "1. Mon profil (indisponible)" })).toBeDisabled();
+  await expect(membre.getByRole("link", { name: "La fiche" }).first()).toHaveAttribute("href", "/docs/guide/mon-profil");
+  const visiteur = page.getByRole("region", { name: "Parcours visiteur" });
+  await visiteur.getByRole("button", { name: "2. Mot de passe oublié" }).click();
+  await expect(page).toHaveURL(/\/auth\/forgot-password$/);
+  await expect(page.getByRole("dialog", { name: "Mot de passe oublié — étape 1 sur 2" })).toBeVisible();
 });

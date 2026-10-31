@@ -12,6 +12,7 @@ export const membreProfil: Tour = {
   audience: "member",
   routes: ["/profil", "/profil/edit"],
   startRoute: "/profil",
+  doc: "/docs/guide/mon-profil",
   steps: [
     {
       target: "profil.export",

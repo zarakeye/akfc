@@ -37,6 +37,7 @@ export function PresentationShell({
         <h2 className="text-2xl font-bold">{title}</h2>
         <Link
           href={editHref}
+          data-tour="fiche.edit"
           className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Pencil className="h-4 w-4" />

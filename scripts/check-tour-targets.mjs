@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Garde des tutos interactifs (lancée par `pnpm check`). Trois erreurs silencieuses :
+// Garde des tutos interactifs (lancée par `pnpm check`). Quatre erreurs silencieuses :
 //   - une étape vise `target: "…"` sans élément `data-tour="…"` dans apps/web/src (composant
 //     renommé, attribut supprimé) : le tuto se bloquerait chez l'utilisateur ;
 //   - une définition (definitions/*.ts) absente du registre : le tuto n'apparaîtrait nulle part ;
-//   - une fiche de documentation qui lance un tuto inconnu (`<TourStartButton id="…" />`).
-import { readdirSync, readFileSync, statSync } from "node:fs";
+//   - une fiche de documentation qui lance un tuto inconnu (`<TourStartButton id="…" />`, ou un
+//     parcours `<TourList ids="…" />`) ;
+//   - un tuto dont la fiche (`doc: "/docs/…"`) n'existe pas.
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 
 const SRC = "apps/web/src";
@@ -36,6 +38,10 @@ for (const f of walk(DEFS)) {
     if (ids.has(m[1])) errors.push(`identifiant de tuto en double « ${m[1]} » (${relative(".", f)} et ${ids.get(m[1])})`);
     ids.set(m[1], relative(".", f));
   }
+  // Sa fiche existe : `doc: "/docs/guide/mon-profil"` → content/docs/guide/mon-profil.mdx.
+  for (const m of s.matchAll(/^\s*doc:\s*"\/docs\/([^"]+)"/gm)) {
+    if (!existsSync(join(DOCS, `${m[1]}.mdx`))) errors.push(`${relative(".", f)} : fiche « /docs/${m[1]} » introuvable (${join(DOCS, m[1])}.mdx)`);
+  }
   for (const m of s.matchAll(/target:\s*"([^"]+)"/g)) {
     steps++;
     if (!anchors.has(m[1])) errors.push(`${relative(".", f)} : cible « ${m[1]} » introuvable (aucun data-tour="${m[1]}" dans ${SRC})`);
@@ -57,6 +63,16 @@ for (const f of walk(DOCS)) {
   for (const m of readFileSync(f, "utf8").matchAll(/<TourStartButton\s+id="([^"]+)"/g)) {
     launchers++;
     if (!ids.has(m[1])) errors.push(`${relative(".", f)} : <TourStartButton id="${m[1]}" /> désigne un tuto inconnu`);
+  }
+}
+
+// Chaque parcours de la documentation (`<TourList ids="a,b" />`) ne liste que des tutos qui existent.
+for (const f of walk(DOCS)) {
+  for (const m of readFileSync(f, "utf8").matchAll(/<TourList\b[^>]*\bids="([^"]+)"/g)) {
+    for (const id of m[1].split(",").map((x) => x.trim())) {
+      launchers++;
+      if (!ids.has(id)) errors.push(`${relative(".", f)} : <TourList> liste un tuto inconnu, « ${id} »`);
+    }
   }
 }
 

@@ -12,13 +12,16 @@ export default function StagesPage(): JSX.Element {
         <h2 className="text-2xl font-bold">Stages</h2>
         <Link
           href="/dashboard/seminars/create"
+          data-tour="seminars.list.create"
           className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
           Créer un stage
         </Link>
       </div>
-      <SeminarsTable />
+      <div data-tour="seminars.list">
+        <SeminarsTable />
+      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ export const adminPagesPublication: Tour = {
   audience: "admin",
   routes: ["/dashboard/pages"],
   startRoute: "/dashboard/pages",
+  doc: "/docs/admin/pages-editoriales",
   steps: [
     {
       target: "pages.list",

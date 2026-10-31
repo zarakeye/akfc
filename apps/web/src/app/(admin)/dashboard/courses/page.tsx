@@ -27,6 +27,7 @@ export default function CoursesListPage(): JSX.Element {
         <h2 className="text-2xl font-bold">Cours</h2>
         <Link
           href="/dashboard/courses/create"
+          data-tour="courses.list.create"
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />

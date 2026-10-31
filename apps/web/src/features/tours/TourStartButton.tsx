@@ -6,7 +6,7 @@ import { PlayCircle } from "lucide-react";
 
 import { useSessionStore } from "@lib/stores/useSessionStore";
 import { tourStore } from "./tour.store";
-import { getTour } from "./tour.registry";
+import { canFollow, getTour, unavailableReason } from "./tour.registry";
 
 /**
  * Bouton « Lancer le tuto » des fiches de documentation (composant MDX `<TourStartButton id="…" />`).
@@ -27,10 +27,7 @@ export function TourStartButton({ id }: { id: string }): JSX.Element {
     );
   }
 
-  const allowed =
-    tour.audience === "public" ||
-    (tour.audience === "member" && !!user) ||
-    (tour.audience === "admin" && !!user?.isAdmin);
+  const allowed = canFollow(tour.audience, { loggedIn: !!user, isAdmin: !!user?.isAdmin });
 
   return (
     <div className="not-prose my-6 flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -40,9 +37,7 @@ export function TourStartButton({ id }: { id: string }): JSX.Element {
         <p className="text-sm text-emerald-800">
           {allowed
             ? `${tour.description} ${tour.steps.length} étapes, guidées sur la vraie page.`
-            : tour.audience === "admin"
-              ? "Réservé aux administrateurs connectés."
-              : "Connectez-vous pour suivre ce tuto."}
+            : unavailableReason(tour.audience)}
         </p>
       </div>
       <button

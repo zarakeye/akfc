@@ -48,5 +48,7 @@ export interface Tour {
   routes: (string | RegExp)[];
   /** Page de départ : le lanceur y conduit avant la première étape. */
   startRoute: string;
+  /** Fiche de documentation du tuto (« /docs/guide/mon-profil ») ; vérifiée par la garde. */
+  doc: string;
   steps: TourStep[];
 }

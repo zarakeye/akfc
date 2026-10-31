@@ -313,7 +313,7 @@ export function DisciplineForm({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Identité ─────────────────────────────────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2" data-tour="disciplines.form.identity">
         <legend className="px-2 text-sm font-medium">Identité</legend>
 
         <label className="flex flex-col gap-1 text-sm">
@@ -390,7 +390,7 @@ export function DisciplineForm({
       </fieldset>
 
       {/* ── Origine et classification ───────────────────────────────── */}
-      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2">
+      <fieldset className="grid grid-cols-1 gap-4 rounded-lg border border-border p-4 sm:grid-cols-2" data-tour="disciplines.form.origin">
         <legend className="px-2 text-sm font-medium">
           Origine et classification
         </legend>
@@ -429,7 +429,7 @@ export function DisciplineForm({
       </fieldset>
 
       {/* ── Description (PageBuilder) ───────────────────────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="disciplines.form.description">
         <legend className="px-2 text-sm font-medium">
           Description (PageBuilder)
         </legend>
@@ -442,7 +442,7 @@ export function DisciplineForm({
       </fieldset>
 
       {/* ── Présentation synthétique (builder restreint) ─────────────── */}
-      <fieldset className="rounded-lg border border-border p-4">
+      <fieldset className="rounded-lg border border-border p-4" data-tour="disciplines.form.summary">
         <legend className="px-2 text-sm font-medium">
           Présentation synthétique (page d&apos;accueil)
         </legend>
@@ -583,7 +583,7 @@ export function DisciplineForm({
         </pre>
       )}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2" data-tour="disciplines.form.submit">
         <button
           type="button"
           onClick={() => handleSubmit(false)}

@@ -14,6 +14,7 @@ export const adminTicketsTraiter: Tour = {
   audience: "member",
   routes: ["/dashboard/tickets", /^\/dashboard\/tickets\/[^/]+$/],
   startRoute: "/dashboard/tickets",
+  doc: "/docs/admin/traiter-une-demande",
   steps: [
     {
       target: "tickets.tabs",

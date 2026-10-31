@@ -109,7 +109,7 @@ export function SessionsManager({
   };
 
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm("Supprimer cette session ?");
+    const confirmed = window.confirm("Supprimer cette séance ?");
     if (!confirmed) return;
     setDeletingId(id);
     try {
@@ -124,7 +124,7 @@ export function SessionsManager({
       <div className="mb-4 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-lg font-medium">
           <Calendar className="h-5 w-5" />
-          Sessions
+          Séances
         </h3>
         {editingId === null && (
           <button
@@ -133,10 +133,13 @@ export function SessionsManager({
             className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            Ajouter une session
+            Ajouter une séance
           </button>
         )}
       </div>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Chaque séance s&apos;enregistre dès que vous la validez, sans le bouton du formulaire.
+      </p>
 
       {/* Form de création */}
       {editingId === "new" && (
@@ -151,7 +154,7 @@ export function SessionsManager({
       {/* Liste des sessions */}
       {sessions.length === 0 && editingId !== "new" ? (
         <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Pas encore de session. Ajoute la première séance datée.
+          Pas encore de séance : sans date, il n&apos;apparaît pas dans l&apos;agenda. Ajoutez la première.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -336,7 +339,7 @@ function SessionForm({ initial, onSave, onCancel }: SessionFormProps) {
           disabled={isSaving}
           className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {isSaving ? "Enregistrement…" : "Enregistrer la session"}
+          {isSaving ? "Enregistrement…" : "Enregistrer la séance"}
         </button>
       </div>
     </div>

@@ -43,7 +43,7 @@ export function GroupForm(): JSX.Element {
         });
       }}
     >
-      <div className="space-y-1">
+      <div className="space-y-1" data-tour="groups.form.name">
         <label htmlFor="name" className="text-sm font-medium">
           Nom
         </label>
@@ -56,7 +56,7 @@ export function GroupForm(): JSX.Element {
         />
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1" data-tour="groups.form.parent">
         <label htmlFor="parent" className="text-sm font-medium">
           Groupe parent
         </label>
@@ -78,7 +78,7 @@ export function GroupForm(): JSX.Element {
         </p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+      <label className="flex items-center gap-2 text-sm text-muted-foreground" data-tour="groups.form.collaborative">
         <input
           type="checkbox"
           checked={collaborative}
@@ -89,7 +89,7 @@ export function GroupForm(): JSX.Element {
 
       {create.error && <p className="text-red-500">{create.error.message}</p>}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-tour="groups.form.submit">
         <Button type="submit" disabled={!name.trim() || create.isPending}>
           {create.isPending ? "Création…" : "Créer"}
         </Button>

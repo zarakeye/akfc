@@ -47,13 +47,14 @@ export default function EventsListPage(): JSX.Element {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Événements</h2>
+        <h2 className="text-2xl font-bold">Évènements</h2>
         <Link
           href="/dashboard/events/create"
+          data-tour="events.list.create"
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          Créer un événement
+          Créer un évènement
         </Link>
       </div>
 
@@ -112,7 +113,7 @@ export default function EventsListPage(): JSX.Element {
                     </td>
                     <td className="px-4 py-1 text-center">
                       <DeleteRowButton
-                        entityLabel="l'événement"
+                        entityLabel="l'évènement"
                         name={e.label}
                         consequence="Ses séances sont supprimées avec lui."
                         onDelete={async () => {

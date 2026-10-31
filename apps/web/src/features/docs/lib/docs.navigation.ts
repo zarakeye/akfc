@@ -9,6 +9,7 @@ const SECTION_ORDER = [
   "Espace membre",
   "Prise en main",
   "Publier",
+  "Catalogue et programme",
   "Membres et demandes",
   "Démarrer",
   "Configuration",

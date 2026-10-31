@@ -10,6 +10,7 @@ import {
   type EventFormInput,
 } from "@features/admin/events/forms/EventForm";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
+import { SessionsManager } from "@features/admin/common/components/SessionsManager";
 
 /**
  * Édition d'un évènement — `/(admin)/dashboard/events/[id]/edit`.
@@ -97,6 +98,7 @@ export default function EditEventPage({
             onSubmit={handleSubmit}
             submitLabel="Enregistrer"
           />
+          <EventSessions eventId={eventId} />
           <div className="mt-8 border-t pt-4">
             <button
               type="button"
@@ -110,6 +112,42 @@ export default function EditEventPage({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Les séances datées du évènement : chacune s'enregistre aussitôt (procédures `eventSession.*`),
+ * indépendamment du formulaire au-dessus. Sans séance, il n'apparaît pas dans l'agenda.
+ */
+function EventSessions({ eventId }: { eventId: number }): JSX.Element {
+  const utils = trpc.useUtils();
+  const sessions = trpc.eventSession.getAllByEvent.useQuery({ eventId });
+  const create = trpc.eventSession.create.useMutation();
+  const update = trpc.eventSession.update.useMutation();
+  const remove = trpc.eventSession.delete.useMutation();
+  const refresh = async (): Promise<void> => {
+    await utils.eventSession.getAllByEvent.invalidate({ eventId });
+    await utils.event.getByIdAdmin.invalidate({ id: eventId });
+  };
+
+  return (
+    <div data-tour="events.sessions">
+      <SessionsManager
+        sessions={sessions.data ?? []}
+        onCreate={async (draft) => {
+          await create.mutateAsync({ eventId, ...draft });
+          await refresh();
+        }}
+        onUpdate={async (id, draft) => {
+          await update.mutateAsync({ id, ...draft });
+          await refresh();
+        }}
+        onDelete={async (id) => {
+          await remove.mutateAsync({ id });
+          await refresh();
+        }}
+      />
     </div>
   );
 }

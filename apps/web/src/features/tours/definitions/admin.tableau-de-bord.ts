@@ -12,6 +12,7 @@ export const adminTableauDeBord: Tour = {
   audience: "admin",
   routes: ["/dashboard"],
   startRoute: "/dashboard",
+  doc: "/docs/admin/tableau-de-bord",
   steps: [
     {
       title: "Le tableau de bord",

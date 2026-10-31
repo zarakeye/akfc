@@ -12,6 +12,7 @@ export const membreDocuments: Tour = {
   audience: "member",
   routes: ["/documents"],
   startRoute: "/documents",
+  doc: "/docs/guide/mes-documents",
   steps: [
     {
       target: "documents.list",

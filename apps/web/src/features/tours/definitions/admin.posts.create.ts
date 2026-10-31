@@ -12,6 +12,7 @@ export const adminPostsCreate: Tour = {
   audience: "admin",
   routes: ["/dashboard/posts", "/dashboard/posts/create"],
   startRoute: "/dashboard/posts",
+  doc: "/docs/admin/creer-un-post",
   steps: [
     {
       target: "posts.list.create",

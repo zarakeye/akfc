@@ -12,6 +12,7 @@ export const membreContacterLeClub: Tour = {
   audience: "member",
   routes: ["/contacts"],
   startRoute: "/contacts",
+  doc: "/docs/guide/contacter-le-club",
   steps: [
     {
       target: "contact.form.category",

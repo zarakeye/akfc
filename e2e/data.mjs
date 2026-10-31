@@ -28,6 +28,9 @@ export const DOCUMENT_A = {
   key: "AKFC/e2e/convocation-membre-a.pdf",
 };
 
+/** Un stage en brouillon, sans séance : ses dates s'ajoutent depuis son édition. */
+export const SEMINAR = { label: "Stage e2e", slug: "e2e-stage" };
+
 /** Droits à l'image du membre « droitImage » au départ : accordés depuis le 1er septembre 2026. */
 export const CONSENT_SINCE = "2026-09-01T12:00:00.000Z";
 
