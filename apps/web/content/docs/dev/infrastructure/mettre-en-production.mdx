@@ -1,0 +1,106 @@
+---
+title: "Mettre en production"
+description: "Ce qui vit sur le serveur et ne quitte jamais le serveur, l’ordre d’un déploiement — le code, la migration, puis le nouveau conteneur —, ce que le site répare lui-même en démarrant, comment lire ses journaux, faire de la place sur le disque, et revenir en arrière."
+section: "Infrastructure et déploiement"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le Dockerfile produit deux images : un migrateur, qui applique les migrations, et le service, qui ne contient que ce qui s’exécute, sans un seul secret.
+
+Le site tourne sur un serveur loué, dans des conteneurs Docker, derrière un serveur web (Caddy) qui reçoit les visiteurs, s’occupe du HTTPS et leur transmet les requêtes. La base Postgres tourne sur le même serveur, dans son propre conteneur. Les fichiers, eux, sont chez Cloudflare R2 (partie « Stockage et médias »).
+
+## Ce qui vit sur le serveur, et pas dans le dépôt
+
+Le dépôt contient le code et la recette de l’image. Il ne contient pas ce qui est propre au serveur :
+
+<DocsTable columnsJson='["Sur le serveur", "Ce que c’est", "Pourquoi hors du dépôt"]' rowsJson='[["Un clone du dépôt", "Le code du site, mis à jour par git pull ; l’image se construit à partir de lui.", "C’est le dépôt lui-même."], ["Le fichier docker-compose.yml de l’infrastructure", "Tous les services du serveur (le site, Postgres, Caddy…), versionné dans un dépôt privé distinct.", "Il décrit tout le serveur, pas seulement ce site."], ["Le fichier d’environnement du site (env_file)", "Les secrets et les adresses de production : base, jeton R2, SMTP, JWT_SECRET.", "Des secrets : jamais dans un dépôt, jamais dans une image."], ["Les arguments de build (build: args)", "Les NEXT_PUBLIC_ à figer dans le code compilé.", "Ils appartiennent au déploiement, pas au code ; NEXT_PUBLIC_APP_SHORT_NAME a désormais une valeur par défaut."]]' />
+
+Le service du site, dans ce compose, se construit à partir du clone (`build: context`), reçoit ses arguments de build, et lit son fichier d’environnement au démarrage (`env_file:`). L’hôte de la base, dans ce fichier, est le **nom du service** Postgres dans le compose, pas `localhost` : dans un conteneur, `localhost` désigne le conteneur lui-même (partie « Configuration »).
+
+<Callout type="warning">
+Les secrets de production se tapent sur le serveur, dans son fichier d’environnement. Ils ne passent ni par le dépôt, ni par une image, ni par un message, ni par une machine de développement : le jeton de production ne se copie pas sur le Mac.
+</Callout>
+
+## L’ordre d’un déploiement 🚀
+
+<DocsTable columnsJson='["Étape", "Commande (sur le serveur)", "Pourquoi à ce moment"]' rowsJson='[["1. Le code", "git pull, dans le clone", "Rien ne change encore pour les visiteurs : le conteneur en service tourne sur son image."], ["2. La migration", "prisma migrate deploy, contre la base de production", "La base passe au nouveau schéma pendant que l’ancien code tourne encore."], ["3. Le nouveau conteneur", "docker compose up -d --build, pour le service du site", "L’image est reconstruite, le conteneur remplacé ; le nouveau code trouve une base déjà prête."], ["4. La vérification", "docker compose logs, pour le service du site", "Les lignes [instrumentation] disent ce que le site a trouvé et réparé en démarrant."]]' />
+
+### Pourquoi la migration avant le conteneur
+
+L’inverse — le nouveau code d’abord — fait démarrer un site qui lit des colonnes qui n’existent pas encore. Le démarrage lui-même interroge la base (la section suivante) : chaque vérification échoue, et chaque page qui touche la nouvelle colonne répond une erreur, jusqu’à la migration.
+
+L’ordre retenu demande en échange que **l’ancien code supporte le nouveau schéma**, le temps de reconstruire l’image. C’est le cas d’une migration qui **ajoute** (une table, une colonne facultative ou avec une valeur par défaut) : l’ancien code ne la voit pas. Une migration qui **retire** ou **renomme** se fait en deux déploiements : d’abord le code qui ne lit plus l’ancienne colonne, ensuite la migration qui la supprime.
+
+<Callout type="info">
+Une migration ne se défait pas. Prisma n’a pas de « migrate down » : revenir en arrière, c’est écrire une nouvelle migration. C’est une raison de plus de n’écrire que des migrations qui ajoutent, et de relire chacune avant de la commiter (partie « Données »).
+</Callout>
+
+### Lancer la migration
+
+Le dépôt fournit l’image `migrator` (chapitre 1), dont la seule commande est `prisma migrate deploy`. Elle se lance dans le réseau du compose, où le nom du service Postgres se résout, avec l’adresse de la base de production dans son environnement. La sandbox l’enchaîne ainsi, automatiquement, avant le site (chapitre 3) : un service `migrator`, et le site qui attend qu’il se soit terminé sans erreur (`depends_on: … condition: service_completed_successfully`).
+
+Le compose du serveur du club ne lance pas (encore) de service sur cette étape : la migration y est une étape **à la main** du déploiement, et l’oublier met en ligne un code qui attend une base plus récente que la vraie (partie « Données »). Ajouter au compose de l’infrastructure un service `migrator`, comme celui de la sandbox, rendrait l’ordre automatique : la reconstruction lancerait la migration, et le site ne démarrerait qu’une fois la base à jour.
+
+Une migration peut aussi partir du clone, avec la CLI Prisma de ses dépendances. Le fichier d’environnement désigne alors un hôte (le nom du service Postgres) que le serveur lui-même, hors des conteneurs, ne connaît pas : l’adresse de la base se donne le temps de la commande, pointée sur le conteneur Postgres. `dotenv` ne remplace pas une variable déjà présente : celle donnée sur la ligne de commande l’emporte sur le fichier.
+
+`migrate deploy` applique les migrations qui manquent, dans l’ordre, et les enregistre dans la table `_prisma_migrations` : relancé, il ne refait rien. Il n’en crée jamais, et ne réinitialise jamais rien — contrairement à `migrate dev` et `migrate reset`, qui n’ont rien à faire en production.
+
+## Ce que le site fait en démarrant
+
+Au démarrage du serveur Node, Next appelle `register()` dans `instrumentation.ts`, une fois. Le site y vérifie et répare ce dont il a besoin pour fonctionner, puis lance ses tâches de fond :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/instrumentation.ts"
+  filename="instrumentation.ts"
+  snippetRange="13-218"
+  title="instrumentation.ts — register()"
+  stepsJson='[{"title": "Seulement côté Node", "body": "`register()` est aussi appelé pour le moteur Edge de Next, qui n’a ni Prisma ni accès au système de fichiers : la fonction s’arrête là. Les modules du backend sont importés dynamiquement, après ce test, pour ne jamais être chargés ailleurs.", "scope": "1-27", "focus": "2-2"}, {"title": "Des réparations, une par une", "body": "Les segments de stockage, les dossiers racines, l’espace de chaque groupe, le groupe des administrateurs, les catégories de demandes, les partenaires et les pages par défaut. Chacune est **idempotente** : elle crée ce qui manque et ne touche pas à ce qui existe. Le démarrage d’un site neuf et celui du centième déploiement suivent le même chemin.", "scope": "29-142", "focus": "69-69"}, {"title": "Chacune isolée", "body": "Chaque étape a son `try`. Une étape qui échoue est journalisée (« failed — app will still start ») et n’empêche pas les suivantes, ni le site de répondre : un dossier de stockage injoignable ne met pas le site hors ligne.", "scope": "30-45", "focus": "40-43"}, {"title": "Les tâches de fond", "body": "La relève des réponses aux demandes par IMAP (si elle est configurée), la purge des données chaque nuit à 3 h (partie « Légal et RGPD »), le récapitulatif quotidien des demandes. Chacune annonce dans les journaux si elle est active.", "scope": "143-181", "focus": "162-162"}, {"title": "Les dernières réparations", "body": "Les libellés des dossiers de catégories et de disciplines, et les références des médias des présentations d’instructeurs (partie « Contenu éditorial »).", "scope": "183-206", "focus": "196-196"}]'
+/>
+
+<Callout type="tip">
+Une donnée dont le site a besoin pour fonctionner (un dossier racine, le groupe des administrateurs) n’est pas créée par une manipulation unique sur le serveur, qu’on oubliera de refaire : elle est **garantie** par le code, à chaque démarrage. Un serveur neuf, une base restaurée, une sandbox se retrouvent dans le même état.
+</Callout>
+
+## Lire les journaux
+
+Après un déploiement, les journaux du conteneur disent ce qui s’est passé :
+
+<DocsTable columnsJson='["Ligne", "Ce qu’elle dit"]' rowsJson='[["[instrumentation] ensure…: N …", "Une réparation au démarrage, et combien d’éléments elle a dû créer : zéro, d’ordinaire."], ["[instrumentation] … failed — app will still start", "Une réparation qui a échoué : le site tourne, mais ce qu’elle garantit manque peut-être. À lire en premier."], ["[instrumentation] purge RGPD … / relève … / récapitulatif …", "L’état des tâches de fond : actives ou non, et à quelle heure."], ["[trpc] <procédure> : …", "Une erreur imprévue dans une procédure, avec sa cause complète (le visiteur, lui, reçoit un message neutre ; partie « API »)."]]' />
+
+Une erreur de connexion à la base au démarrage (`P1001`, « can’t reach database server ») se lit d’abord dans l’adresse : un hôte `localhost` dans le fichier d’environnement du conteneur, un nom de service mal orthographié, un rôle qui n’existe pas. Chaque erreur corrigée en révèle parfois une autre plus loin : c’est un progrès, pas un échec.
+
+## Faire de la place
+
+Chaque construction laisse des images et un cache de construction. Sur un serveur au disque modeste, ils finissent par le remplir, et la construction suivante échoue. Le dépôt fournit un nettoyage **sûr** :
+
+<CodeExample
+  language="bash"
+  filepath="docker-cleanup.sh"
+  filename="docker-cleanup.sh"
+  snippetRange="1-14"
+  snippetHighlight="9,11-12"
+  snippetTitle="docker-cleanup.sh"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Il supprime le cache de construction et les images qu’aucun conteneur n’utilise, et **jamais** les volumes : c’est dans les volumes (et les dossiers montés) que vivent les données, la base en premier. `docker system prune --volumes`, au contraire, efface tout volume qu’aucun conteneur n’utilise — celui d’une base dont le conteneur vient d’être supprimé par un `docker compose down`, par exemple.
+
+## Revenir en arrière
+
+Un déploiement qui casse se défait en reconstruisant l’image du commit précédent : `git checkout <commit>` dans le clone, puis `docker compose up -d --build` pour le service du site. La base, elle, reste au nouveau schéma — une migration ne se défait pas. C’est là que les migrations qui ajoutent paient : l’ancien code fonctionne sur la base migrée, et le retour arrière est immédiat. Une fois la cause trouvée et corrigée, le clone revient sur la branche (`git checkout main`), et le déploiement suivant repart de l’étape 1.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où sont les secrets de production ?", "Dans le fichier d’environnement du site, sur le serveur seulement."], ["Dans quel ordre déployer ?", "git pull, la migration (migrate deploy), puis le nouveau conteneur (up -d --build), puis les journaux."], ["Pourquoi la migration d’abord ?", "Le nouveau code démarre sur une base prête ; en échange, les migrations doivent supporter l’ancien code (elles ajoutent)."], ["Peut-on défaire une migration ?", "Non : on écrit une nouvelle migration. Retirer une colonne se fait en deux déploiements."], ["Que fait le site en démarrant ?", "Il garantit ses données indispensables (idempotent, étape par étape) et lance ses tâches de fond."], ["Comment libérer le disque ?", "docker-cleanup.sh : cache de construction et images inutilisées, jamais les volumes."], ["Comment revenir en arrière ?", "Reconstruire l’image du commit précédent ; la base reste migrée, ce que des migrations additives rendent sans danger."]]' />
+
+## À suivre
+
+La production est faite pour les membres. Pour essayer le site sans rien risquer — le montrer, tester une idée, tout casser —, il en faut une copie complète, qui tourne seule.
+
+<Callout type="tip">
+**Chapitre suivant : la sandbox.** Le site entier, sa base, son stockage et sa boîte e-mail dans une seule commande, avec des comptes de démonstration.
+</Callout>

@@ -87,10 +87,19 @@ La troisième ligne est récente. La configuration de la racine ne servait qu’
   fullFileTitle="Voir le fichier complet"
 />
 
-La seconde passe réutilise la configuration du web (`-c apps/web/eslint.config.mjs`) : une seule liste de règles pour tout le dépôt. Deux détails la rendent possible.
+La seconde passe lit la configuration de la **racine**, `eslint.config.mjs`, qui reprend celle du web : une seule liste de règles pour tout le dépôt. C’est aussi celle que l’éditeur applique à un fichier du backend ou des tests, puisqu’il prend la configuration la plus proche du fichier. Elle n’en diffère que d’une règle :
 
-- **Lancée depuis la racine.** ESLint refuse de relire un fichier situé hors du dossier de sa configuration : lancé depuis `apps/web`, il déclare `../../packages` « ignoré ». Avec `-c`, les chemins se lisent depuis le dossier courant, la racine, et les paquets sont à l’intérieur.
-- **Une règle coupée, et une seule.** La règle `@next/next/no-html-link-for-pages` cherche un dossier `pages/` à la racine du projet et affiche un avertissement quand elle n’en trouve pas. Le backend n’écrit aucun lien HTML : la règle est sans objet, elle est coupée pour cette passe, sur la ligne de commande où on la lit.
+<CodeExample
+  language="js"
+  filepath="eslint.config.mjs"
+  filename="eslint.config.mjs"
+  snippetRange="1-7"
+  snippetHighlight="7"
+  snippetTitle="La configuration de la racine"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La règle `@next/next/no-html-link-for-pages` cherche un dossier `pages/` de Next à la racine du projet, et affiche un avertissement quand elle n’en trouve pas. Le backend n’écrit aucun lien HTML : la règle est sans objet hors de l’application, elle est coupée là, avec un commentaire qui dit pourquoi. Ce fichier de la racine était encore celui qu’avait créé `create-next-app` au début du projet, avec d’autres règles : l’éditeur relisait les paquets avec une liste que `pnpm lint` n’appliquait pas.
 
 `--max-warnings 0` vaut pour les deux passes : un paquet n’a pas droit à plus d’avertissements que l’application.
 

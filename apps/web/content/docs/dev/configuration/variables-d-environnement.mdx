@@ -115,15 +115,17 @@ Le code qui s'exécute dans le navigateur n'a pas de `process.env` : le navigate
 
 La conséquence : une variable `NEXT_PUBLIC_` doit exister **pendant `next build`**, dans l'étape de construction de l'image, et pas seulement au démarrage du conteneur. Le Dockerfile la reçoit comme argument de build :
 
-```dockerfile
-# Dockerfile (extrait)
-ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_APP_SHORT_NAME
-ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
-RUN pnpm --filter web build
-```
+<CodeExample
+  language="dockerfile"
+  filepath="Dockerfile"
+  filename="Dockerfile"
+  snippetRange="49-54"
+  snippetHighlight="4-5"
+  snippetTitle="Une NEXT_PUBLIC_, argument de build"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-`ARG` déclare une valeur que `docker compose build` peut fournir (la section `build: args:` du compose) ; `ENV` la rend visible de la commande suivante, le build. Changer cette valeur impose donc de **reconstruire l'image** : redémarrer le conteneur ne suffit pas.
+`ARG` déclare une valeur que `docker compose build` peut fournir (la section `build: args:` du compose), avec ici une valeur par défaut ; `ENV` la rend visible de la commande suivante, le build. Changer cette valeur impose donc de **reconstruire l'image** : redémarrer le conteneur ne suffit pas.
 
 <Callout type="info">
 **La recopie vaut aussi pour le code serveur.** Une vérification sur le code compilé l'a montré : une `NEXT_PUBLIC_` définie au moment du build est remplacée partout où Next.js compile, y compris dans le backend (les e-mails, par exemple). Une `NEXT_PUBLIC_` **absente** au build, au contraire, reste une lecture de `process.env` côté serveur, et vaut `undefined` côté navigateur. C'est le cas de `NEXT_PUBLIC_SITE_URL`, que le build de production ne reçoit pas : le serveur la lit à l'exécution, et sans elle, `SITE_URL` prend sa valeur par défaut.
@@ -140,17 +142,22 @@ export const SITE_URL: string = (
 
 Le stockage des fichiers est rangé sous un dossier racine, nommé d'après le club. Deux morceaux de code ont besoin de ce nom, de part et d'autre de la frontière :
 
-```ts
-// packages/config/app.ts (fichier complet)
-export const APP_ROOT = process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'my_app';
-```
+<CodeExample
+  language="ts"
+  filepath="packages/config/app.ts"
+  filename="app.ts"
+  snippetRange="1-6"
+  snippetHighlight="6"
+  snippetTitle="packages/config/app.ts"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ```ts
 // apps/web/src/instrumentation.ts (extrait)
   const APP_ROOT = process.env.APP_SHORT_NAME || "AKFC";
 ```
 
-`packages/config/app.ts` est lu par l'explorateur de fichiers, dans le navigateur : il lui faut une `NEXT_PUBLIC_`, figée au build. `instrumentation.ts` crée les dossiers racines au démarrage du serveur, et lit `APP_SHORT_NAME`, injectée au lancement du conteneur. Deux variables, deux moments, deux fichiers de configuration différents sur le serveur (les arguments de build et le fichier d'environnement) : si l'une manque ou diffère, le serveur crée `AKFC` pendant que l'explorateur cherche `my_app`, la valeur de secours. C'est arrivé en production, quand les arguments de build avaient disparu du compose.
+`packages/config/app.ts` est lu par l'explorateur de fichiers, dans le navigateur : il lui faut une `NEXT_PUBLIC_`, figée au build. `instrumentation.ts` crée les dossiers racines au démarrage du serveur, et lit `APP_SHORT_NAME`, injectée au lancement du conteneur. Deux variables, deux moments, deux fichiers de configuration différents sur le serveur (les arguments de build et le fichier d'environnement) : si l'une manque ou diffère, le serveur crée une racine pendant que l'explorateur en cherche une autre. C'est arrivé en production, quand les arguments de build avaient disparu du compose : sans argument, le Dockerfile donnait une chaîne **vide**, et l'explorateur tombait sur son repli d'alors, `my_app`, une racine que le serveur ne crée pas. Depuis, l'argument de build a une valeur par défaut, et les deux replis valent `AKFC` : un oubli n'éloigne plus l'explorateur des fichiers (partie « Infrastructure et déploiement »). Les deux variables restent à régler à la même valeur quand le club change de racine.
 
 ## Trois façons de lire une variable
 
