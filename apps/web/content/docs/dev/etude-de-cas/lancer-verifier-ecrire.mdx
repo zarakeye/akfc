@@ -47,7 +47,7 @@ Le tuto lui-même a son test de bout en bout (partie « Qualité », chapitre «
   filename="tutoriel.spec.ts"
   snippetRange="10-46"
   title="e2e/tutoriel.spec.ts"
-  stepsJson='[{"title": "Lancer depuis la page", "body": "Connexion par l’API, la liste des actualités, le bouton « ? », le tuto. Chaque bulle se retrouve par son rôle et son nom (« Créer une actualité — étape 2 sur 6 ») : le test lit la page comme un lecteur d’écran.", "scope": "2-7", "focus": "7-7"}, {"title": "Un clic", "body": "Le clic sur la cible passe par le trou du voile : un clic ailleurs serait capté par un bloqueur, et le test échouerait.", "scope": "9-11", "focus": "11-11"}, {"title": "Une saisie, le curseur déjà là", "body": "Sur une autre page : le curseur est dans le champ (`toBeFocused`), « Suivant » est désactivé tant que le titre est vide, puis s’active.", "scope": "13-20", "focus": "16-18"}, {"title": "Les explications, puis la page créée", "body": "Deux « Suivant » ; puis « Créer » : l’étape passe quand l’adresse devient celle de l’article créé.", "scope": "22-32", "focus": "31-32"}, {"title": "La fin", "body": "« Terminer » range le tuto : plus aucune bulle.", "scope": "34-37", "focus": "35-35"}]'
+  stepsJson='[{"title": "Lancer depuis la page", "body": "Connexion par l’API, la liste des posts, le bouton « ? », le tuto. Chaque bulle se retrouve par son rôle et son nom (« Créer un post — étape 2 sur 6 ») : le test lit la page comme un lecteur d’écran.", "scope": "2-7", "focus": "7-7"}, {"title": "Un clic", "body": "Le clic sur la cible passe par le trou du voile : un clic ailleurs serait capté par un bloqueur, et le test échouerait.", "scope": "9-11", "focus": "11-11"}, {"title": "Une saisie, le curseur déjà là", "body": "Sur une autre page : le curseur est dans le champ (`toBeFocused`), « Suivant » est désactivé tant que le titre est vide, puis s’active.", "scope": "13-20", "focus": "16-18"}, {"title": "Les explications, puis la page créée", "body": "Deux « Suivant » ; puis « Créer » : l’étape passe quand l’adresse devient celle de l’article créé.", "scope": "22-32", "focus": "31-32"}, {"title": "La fin", "body": "« Terminer » range le tuto : plus aucune bulle.", "scope": "34-37", "focus": "35-35"}]'
 />
 
 Un second test vérifie qu’Échap interrompt le tuto. Les deux passent ; le premier n’est pas passé du premier coup.
@@ -65,6 +65,8 @@ Les tutos des visiteurs et des membres ont leur propre fichier, `e2e/tutos-parco
 />
 
 Ce test a été vérifié comme une garde : `optional` retiré de l’étape « Ouvrez un document », il échoue — la bulle finale n’arrive jamais, le tuto attend une cible qui n’existera pas. Ensuite, un tuto n’envoie rien : le test **force** un clic sur le bouton « Envoyer » montré par la dernière étape (`force: true` clique au centre de l’élément, sans vérifier qu’il est accessible), et constate que le message de confirmation n’apparaît pas — le panneau posé sur la cible a reçu le clic.
+
+Les tutos d’administration ont le leur, `e2e/tutos-admin.spec.ts`, sur le même principe. Le clic forcé y vise « Publier » d’une page éditoriale (la page reste en brouillon), et « Créer » d’un utilisateur (aucun compte, aucun e-mail). Une demande est envoyée par l’API au nom d’un membre, puis l’administrateur la suit dans le tuto. Le test de la publication a été vérifié en cassant : l’étape passée de `next` à `click`, le clic forcé publie la page, et le test échoue.
 
 <CodeExample
   language="ts"
