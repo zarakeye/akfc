@@ -16,7 +16,7 @@ Tout le monde ne navigue pas à la souris. Une personne malvoyante utilise un le
 
 Rendre un site accessible revient à se poser quatre questions, élément par élément :
 
-<DocsTable columnsJson='["Question","Exemple dans le projet"]' rowsJson='[["Peut-on l’atteindre et l’utiliser au clavier ?","Les menus du header, le panneau mobile (Échap pour fermer)."],["A-t-il un nom, pour qui ne le voit pas ?","Le bouton burger « Ouvrir le menu », les flèches du carrousel « Précédent » et « Suivant »."],["Annonce-t-il son état ?","aria-expanded sur les boutons qui déroulent un menu, aria-current=\"page\" sur le lien de la page en cours — premier niveau compris, qui l’oubliait."],["Bouge-t-il sans qu’on l’ait demandé ?","Les cloches et le ruban d’actualités, arrêtés si le système demande moins d’animations."]]' />
+<DocsTable columnsJson='["Question","Exemple dans le projet"]' rowsJson='[["Peut-on l’atteindre et l’utiliser au clavier ?","Les menus du header, le panneau mobile (Échap pour fermer)."],["A-t-il un nom, pour qui ne le voit pas ?","Le bouton burger « Ouvrir le menu », les flèches du carrousel « Précédent » et « Suivant »."],["Annonce-t-il son état ?","aria-expanded sur les boutons qui déroulent un menu, aria-current=\"page\" sur le lien de la page en cours — premier niveau compris, qui l’oubliait."],["Bouge-t-il sans qu’on l’ait demandé ?","Les cloches et le ruban des flashs info, arrêtés si le système demande moins d’animations."]]' />
 
 La première information donnée à un lecteur d'écran est la langue de la page : elle choisit la voix et la prononciation. Le layout racine la déclare une fois pour tout le site (`<html lang="fr">`).
 
@@ -83,7 +83,7 @@ Un bouton fait d'une seule icône n'a rien à lire pour un lecteur d'écran, qui
 
 ## Des animations qui s'effacent sur demande
 
-Les systèmes d'exploitation proposent un réglage « réduire les animations ». Le navigateur le transmet par la requête média `prefers-reduced-motion`. Le ruban d'actualités sous le header défile en continu ; avec ce réglage, il devient une liste fixe qu'on fait défiler soi-même :
+Les systèmes d'exploitation proposent un réglage « réduire les animations ». Le navigateur le transmet par la requête média `prefers-reduced-motion`. Le ruban des flashs info sous le header défile en continu ; avec ce réglage, il devient une liste fixe qu'on fait défiler soi-même :
 
 <CodeExample
   language="tsx"

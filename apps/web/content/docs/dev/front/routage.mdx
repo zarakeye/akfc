@@ -15,14 +15,14 @@ import { FileTree, FileTreeItem } from "@/features/docs/ui/FileTree"
 
 Dans l'App Router de Next.js, l'arborescence de `apps/web/src/app` **est** la carte du site. Il n'existe aucune liste de routes à maintenir : chaque dossier crée un segment d'URL, et quelques fichiers aux noms réservés disent ce que ce segment fait. Ajouter une page revient à créer un dossier et un fichier ; la retrouver, à lire son adresse.
 
-<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","app/(public)/agenda/page.tsx répond à /agenda"],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","app/(public)/layout.tsx : header, ruban d’actualité, footer"],["route.ts","Un point d’accès HTTP brut (GET, POST…) au lieu d’une page.","app/api/trpc/[trpc]/route.ts"],["[slug]","Un segment variable, reçu dans params.","/disciplines/tchoy-lee-fut"],["[...slug]","Un segment qui avale tout le reste du chemin.","/docs/dev/front/routage"],["sitemap.ts, robots.ts","Du code qui produit des fichiers.","/sitemap.xml, /robots.txt"]]' />
+<DocsTable columnsJson='["Fichier","Rôle","Dans le projet"]' rowsJson='[["page.tsx","Rend une page : sans lui, le segment n’est pas une adresse visitable.","app/(public)/agenda/page.tsx répond à /agenda"],["layout.tsx","Enveloppe toutes les pages en dessous ; il n’est pas re-rendu quand on navigue entre elles.","app/(public)/layout.tsx : header, ruban des flashs info, footer"],["route.ts","Un point d’accès HTTP brut (GET, POST…) au lieu d’une page.","app/api/trpc/[trpc]/route.ts"],["[slug]","Un segment variable, reçu dans params.","/disciplines/tchoy-lee-fut"],["[...slug]","Un segment qui avale tout le reste du chemin.","/docs/dev/front/routage"],["sitemap.ts, robots.ts","Du code qui produit des fichiers.","/sitemap.xml, /robots.txt"]]' />
 
 Le premier niveau du dossier `app/` :
 
 <FileTree>
   <FileTreeItem name="app/layout.tsx — le layout RACINE, commun à tout" />
   <FileTreeItem name="app/(public) — le site du club">
-    <FileTreeItem name="layout.tsx — header, ruban d’actualité, footer" />
+    <FileTreeItem name="layout.tsx — header, ruban des flashs info, footer" />
     <FileTreeItem name="page.tsx — l’accueil, /" />
     <FileTreeItem name="disciplines/[slug], agenda, gallery, profil, mes-espaces…" />
   </FileTreeItem>
@@ -221,7 +221,7 @@ export default async function PublicLayout({ children }: { children: React.React
 }
 ```
 
-Le ruban d'actualité arrive ainsi dans le HTML initial : la page s'affiche complète, sans bandeau qui apparaîtrait ensuite en poussant le contenu vers le bas. Le logo suit la même règle : lu côté serveur, passé au `Header` comme **valeur initiale**, présent dès la première image. Le header le relit ensuite dans le navigateur, si bien qu'un nouveau logo déposé dans les Réglages apparaît sans recharger.
+Le ruban des flashs info arrive ainsi dans le HTML initial : la page s'affiche complète, sans bandeau qui apparaîtrait ensuite en poussant le contenu vers le bas. Le logo suit la même règle : lu côté serveur, passé au `Header` comme **valeur initiale**, présent dès la première image. Le header le relit ensuite dans le navigateur, si bien qu'un nouveau logo déposé dans les Réglages apparaît sans recharger.
 
 La mise en page laisse défiler le document. `min-h-dvh` garde le footer en bas d'une page courte. Le header est collant ; le ruban, placé sous le bloc collant, défile avec la page au lieu d'occuper de la hauteur en permanence.
 
