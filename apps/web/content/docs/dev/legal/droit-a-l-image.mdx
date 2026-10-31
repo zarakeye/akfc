@@ -13,7 +13,7 @@ stories:
       - label: Depuis la fiche du membre, il demande une autorisation d'envoi pour le formulaire scanné
         call: imageConsent.createUpload
         section: Un formulaire signé, déposé par un administrateur
-      - label: Le formulaire est vérifié et enregistré avec ses usages ; le statut du membre en découle, dans la même transaction
+      - label: Le formulaire est vérifié et enregistré avec ses usages ; s'il porte les droits les plus récents, le statut du membre en découle, dans la même transaction
         call: imageConsent.register
         section: Un statut qui découle du formulaire
   - title: Le membre consulte son autorisation
@@ -74,7 +74,7 @@ L’envoi suit le circuit signé du stockage : le serveur délivre une URL valab
   language="ts"
   filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
   filename="imageConsentForm.service.ts"
-  snippetRange="28-32"
+  snippetRange="30-34"
   snippetHighlight="1"
   snippetTitle="Un rangement hors de l’application"
   fullFileTitle="Voir le fichier complet"
@@ -88,9 +88,9 @@ L’envoi suit le circuit signé du stockage : le serveur délivre une URL valab
   language="ts"
   filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
   filename="imageConsentForm.service.ts"
-  snippetRange="59-131"
+  snippetRange="64-140"
   title="registerImageConsentForm — vérifier, enregistrer, déduire"
-  stepsJson='[{"title": "Dans l’espace de CE membre", "body": "Le chemin renvoyé par le navigateur doit être dans le dossier du membre visé, sans `..`, avec une extension acceptée (qui donne le type attendu). Le serveur ne croit pas deux informations séparées (le membre, le chemin) qui devraient concorder : il vérifie qu’elles concordent.", "scope": "12-16", "focus": "14-14"}, {"title": "Le fichier, tel que le stockage l’a reçu", "body": "Présent, d’une taille raisonnable, du type exact attendu — lus chez le stockage. Un fichier refusé est supprimé.", "scope": "17-25", "focus": "22-23"}, {"title": "Le nom du membre, copié", "body": "Le nom est copié dans le formulaire (`memberName`) : après le départ du membre, le formulaire détaché doit encore dire de qui il est la preuve.", "scope": "27-37", "focus": "36-36"}, {"title": "Le formulaire et le statut, ensemble", "body": "La création du formulaire et la mise à jour du statut se font dans une même transaction : un formulaire enregistré a toujours mis le statut à jour.", "scope": "43-64", "focus": "61-61"}, {"title": "La boîte du club prévenue", "body": "Un avis, avec les usages du formulaire précédent : un RETRAIT d’autorisation (une photo publique à dépublier) se voit d’un coup d’œil. Son échec n’annule rien.", "scope": "65-71", "focus": "70-70"}]'
+  stepsJson='[{"title": "Dans l’espace de CE membre", "body": "Le chemin renvoyé par le navigateur doit être dans le dossier du membre visé, sans `..`, avec une extension acceptée (qui donne le type attendu). Le serveur ne croit pas deux informations séparées (le membre, le chemin) qui devraient concorder : il vérifie qu’elles concordent.", "scope": "12-16", "focus": "14-14"}, {"title": "Le fichier, tel que le stockage l’a reçu", "body": "Présent, d’une taille raisonnable, du type exact attendu — lus chez le stockage. Un fichier refusé est supprimé.", "scope": "17-25", "focus": "22-23"}, {"title": "Le nom du membre, copié", "body": "Le nom est copié dans le formulaire (`memberName`) : après le départ du membre, le formulaire détaché doit encore dire de qui il est la preuve. La même lecture rapporte la date des droits en vigueur (`imageConsentAt`).", "scope": "27-37", "focus": "36-36"}, {"title": "Des droits plus récents, ou une archive", "body": "Un formulaire donne ses droits à sa date de **signature** (à défaut, le jour du dépôt). Il ne change le statut que si cette date n’est pas antérieure aux droits en vigueur. Un formulaire de mars, retrouvé et déposé en octobre après une confirmation en ligne de septembre, est gardé comme preuve, sans rien changer.", "scope": "38-41", "focus": "41-41"}, {"title": "Le formulaire, et le statut s’il change", "body": "La création du formulaire et la mise à jour du statut se font dans une même transaction ; la mise à jour n’y figure que si les droits sont les plus récents. `imageConsentAt` reçoit la date des droits, pas l’heure du dépôt : c’est elle que le prochain dépôt comparera.", "scope": "42-67", "focus": "62-62"}, {"title": "La boîte du club prévenue — si quelque chose a changé", "body": "Un formulaire archivé ne change rien : pas d’avis. Sinon un avis, avec les usages du formulaire précédent (par date des droits) : un RETRAIT d’autorisation (une photo publique à dépublier) se voit d’un coup d’œil. Son échec n’annule rien. `applied` dit à l’écran d’administration lequel des deux messages afficher.", "scope": "68-77", "focus": "68-68"}]'
 />
 
 Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou **Refusée**. Il n’est pas saisi à côté du formulaire, il en est **déduit** :
@@ -105,7 +105,27 @@ Chaque membre a un statut, `imageConsent` : **Non recueillie**, **Accordée** ou
   fullFileTitle="Voir le fichier complet"
 />
 
-Accordée dès qu’un usage est autorisé, refusée sinon. Les anciens formulaires ne sont pas remplacés : un membre qui change d’avis remet un nouveau formulaire, qui s’ajoute à l’historique. **Le plus récent fait foi**, les précédents restent comme preuve de ce qui était autorisé à leur date. Supprimer un formulaire (déposé sur la mauvaise fiche, par exemple) ne modifie pas le statut : l’administrateur le corrige alors lui-même sur la fiche, où il peut aussi le fixer à la main.
+Accordée dès qu’un usage est autorisé, refusée sinon. Les anciens formulaires ne sont pas remplacés : un membre qui change d’avis remet un nouveau formulaire, qui s’ajoute à l’historique. Les précédents restent comme preuve de ce qui était autorisé à leur date.
+
+La règle du club tient en une phrase : **les droits ne changent que si des droits plus récents sont enregistrés**. « Plus récent » se lit à la date des droits — la signature d’un formulaire papier, la confirmation d’un formulaire en ligne, la saisie d’un administrateur — et jamais à la date du dépôt :
+
+<DocsTable columnsJson='["Ce qui arrive", "Le statut"]' rowsJson='[["Un formulaire signé après les droits en vigueur est déposé", "Change, et prend la date de signature."], ["Un formulaire signé AVANT les droits en vigueur est déposé (retrouvé dans un classeur, par exemple)", "Ne change pas : le formulaire est archivé comme preuve ; l’administrateur en est averti."], ["Un formulaire est supprimé (déposé sur la mauvaise fiche…)", "Ne change pas. Si le statut était faux, l’administrateur le corrige sur la fiche, où il peut le fixer à la main."], ["Le membre confirme en ligne (chapitre 4)", "Change : une confirmation est toujours datée du jour, donc la plus récente."]]' />
+
+Les listes de formulaires suivent le même ordre (`byEffectiveDesc`) : sur la fiche comme dans le profil, le premier est celui dont les droits sont les plus récents.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/imageConsent/formOrder.ts"
+  filename="formOrder.ts"
+  snippetRange="14-22"
+  snippetHighlight="3"
+  snippetTitle="L’ordre des formulaires : la date des droits"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="info">
+Une règle qui dépend du temps se décide sur la date **de ce qu’elle décrit**, pas sur la date à laquelle le site l’apprend. Un formulaire de mars déposé en octobre décrit le mois de mars.
+</Callout>
 
 <DocsTable columnsJson='["Où", "Ce qu’on y voit"]' rowsJson='[["Table des utilisateurs (admin)", "Une colonne « Photos » : le statut de chaque membre, en couleur."], ["Fiche du membre (admin)", "Le statut, modifiable ; les formulaires déposés, avec aperçu, et le dépôt d’un nouveau."], ["Profil du membre", "Son statut, les usages autorisés par le dernier formulaire, ses formulaires (aperçu), le formulaire vierge, et la confirmation en ligne s’il est majeur (chapitre 4)."]]' />
 
@@ -133,7 +153,7 @@ Tout autre membre reçoit 404, comme si le formulaire n’existait pas. La répo
   language="ts"
   filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
   filename="imageConsentForm.service.ts"
-  snippetRange="170-183"
+  snippetRange="186-199"
   snippetHighlight="1"
   snippetTitle="Les champs exposés"
   fullFileTitle="Voir le fichier complet"
@@ -147,7 +167,7 @@ Supprimer le compte d’un membre ne supprime pas ses formulaires. Ils servent �
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="259-260"
+  snippetRange="261-262"
   snippetHighlight="2"
   snippetTitle="Détacher, pas effacer"
   fullFileTitle="Voir le fichier complet"
@@ -159,7 +179,7 @@ La relation vers le membre passe alors à `null` (`onDelete: SetNull`) ; `member
   language="ts"
   filepath="packages/backend/src/modules/imageConsent/imageConsentForm.service.ts"
   filename="imageConsentForm.service.ts"
-  snippetRange="145-168"
+  snippetRange="161-184"
   snippetHighlight="5,15,18"
   snippetTitle="La purge des formulaires détachés"
   fullFileTitle="Voir le fichier complet"
@@ -173,7 +193,7 @@ Le club ne prouve rien avec un statut coché : il prouve avec le document signé
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?", "Par un formulaire signé, usage par usage, remis au club ; un administrateur le dépose sur sa fiche (ou, majeur, il confirme en ligne : chapitre 4)."], ["Où est rangé le fichier ?", "Sous _private/image-consent/, hors de l’application ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."], ["D’où vient le statut ?", "Du formulaire le plus récent, dans la même transaction : accordée dès qu’un usage est autorisé, refusée sinon."], ["Le statut empêche-t-il de publier une photo ?", "Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."], ["Que deviennent les formulaires au départ du membre ?", "Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés (fichier d’abord)."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment le membre donne-t-il son accord ?", "Par un formulaire signé, usage par usage, remis au club ; un administrateur le dépose sur sa fiche (ou, majeur, il confirme en ligne : chapitre 4)."], ["Où est rangé le fichier ?", "Sous _private/image-consent/, hors de l’application ; servi par une route au membre concerné et aux administrateurs, 404 pour les autres."], ["D’où vient le statut ?", "Du formulaire déposé, dans la même transaction, si ses droits sont les plus récents : accordée dès qu’un usage est autorisé, refusée sinon."], ["Un vieux formulaire déposé change-t-il le statut ?", "Non : les droits ne changent que pour des droits plus récents (date de signature, pas de dépôt) ; il est archivé comme preuve. Une suppression ne change rien non plus."], ["Le statut empêche-t-il de publier une photo ?", "Non : il informe l’administrateur, qui décide de la visibilité de chaque galerie."], ["Que deviennent les formulaires au départ du membre ?", "Détachés du compte supprimé, gardés cinq ans comme preuve, puis purgés (fichier d’abord)."]]' />
 
 ## À suivre
 
