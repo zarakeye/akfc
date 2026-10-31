@@ -103,7 +103,7 @@ export function BreakingNewsForm({
           onChange={(e) => setBody(e.target.value)}
           maxLength={600}
           rows={4}
-          placeholder="Texte court de l'actualité (600 caractères max)."
+          placeholder="Texte court du flash info (600 caractères max)."
           className="rounded border border-input bg-background px-2 py-1"
         />
       </label>
@@ -146,7 +146,7 @@ export function BreakingNewsForm({
           className="rounded border border-input bg-background px-2 py-1"
         />
         <span className="text-xs text-muted-foreground">
-          Passée cette date, l&apos;actualité disparaît du ruban et de la
+          Passée cette date, le flash info disparaît du ruban et de la
           sidebar. Laisser vide = sans expiration.
         </span>
       </label>

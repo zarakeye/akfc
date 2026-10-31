@@ -4,7 +4,7 @@ import { type JSX } from "react";
 import type { BreakingNews } from "@prisma/client";
 
 /**
- * Ruban défilant des actualités actives — sous le header public.
+ * Ruban défilant des flashs info actifs — sous le header public.
  *
  * Défilement continu (keyframes CSS, contenu dupliqué pour une boucle
  * sans couture), pause au survol et quand un titre a le curseur clavier
@@ -57,7 +57,7 @@ export function BreakingNewsTicker({
 
   return (
     <div
-      aria-label="Actualités du club"
+      aria-label="Flash info du club"
       className="akfc-ticker overflow-hidden bg-emerald-700 py-1.5 text-sm text-white"
     >
       <style>{`

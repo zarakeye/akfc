@@ -15,7 +15,7 @@ import { PollEditor } from "@features/social/PollEditor";
 /**
  * EditPostPage
  *
- * Page d'édition d'un article de la section « Actualités ».
+ * Page d'édition d'un article de la section « Posts » (le mur « Actualités du club »).
  *
  * Récupère l'article via `trpc.post.getByIdAdmin.useQuery()`, affiche un formulaire
  * d'édition (`PostForm`) pré-rempli, et gère les actions de mise à jour et de

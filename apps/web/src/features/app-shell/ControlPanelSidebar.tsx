@@ -121,7 +121,7 @@ export default function ControlPanelSidebar(): JSX.Element {
       items: [
         { label: "Pages éditoriales", href: "/dashboard/pages", badge: editorialDraftCount },
         { label: "Posts", href: "/dashboard/posts", createHref: "/dashboard/posts/create", createAlt: "Créer un post" },
-        { label: "Actualités", href: "/dashboard/breaking-news", createHref: "/dashboard/breaking-news/create", createAlt: "Créer une actualité" },
+        { label: "Flash info", href: "/dashboard/breaking-news", createHref: "/dashboard/breaking-news/create", createAlt: "Créer un flash info" },
       ],
     },
     {

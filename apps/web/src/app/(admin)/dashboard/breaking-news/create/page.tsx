@@ -15,7 +15,7 @@ export default function CreateBreakingNewsPage(): JSX.Element {
         <ArrowLeft className="h-4 w-4" />
         Retour à la liste
       </Link>
-      <h2 className="mb-4 text-2xl font-bold">Créer une actualité</h2>
+      <h2 className="mb-4 text-2xl font-bold">Créer un flash info</h2>
       <CreateBreakingNews />
     </div>
   );

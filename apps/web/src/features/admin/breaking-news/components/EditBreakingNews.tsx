@@ -21,7 +21,7 @@ export function EditBreakingNews({ id }: { id: number }): JSX.Element {
 
   if (isLoading) return <div>Chargement…</div>;
   if (isError || !data)
-    return <div>Erreur lors du chargement de l&apos;actualité.</div>;
+    return <div>Erreur lors du chargement du flash info.</div>;
 
   const handleSubmit = async (input: BreakingNewsFormInput) => {
     await update.mutateAsync({ id, ...input });
@@ -30,7 +30,7 @@ export function EditBreakingNews({ id }: { id: number }): JSX.Element {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Supprimer définitivement cette actualité ?")) return;
+    if (!window.confirm("Supprimer définitivement ce flash info ?")) return;
     await remove.mutateAsync({ id });
     await utils.breakingNews.getAllAdmin.invalidate(undefined, {
       refetchType: "all",
@@ -47,7 +47,7 @@ export function EditBreakingNews({ id }: { id: number }): JSX.Element {
           onClick={handleDelete}
           className="text-sm text-destructive transition-colors hover:underline"
         >
-          Supprimer cette actualité
+          Supprimer ce flash info
         </button>
       </div>
     </div>

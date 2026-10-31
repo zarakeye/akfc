@@ -28,7 +28,7 @@ function statut(publicationDate: Date | null, expiresAt: Date | null): string {
     : `Publiée le ${formatDate(publicationDate)}`;
 }
 
-/** Liste des actualités — clic → édition directe (pas de fiche dédiée). */
+/** Liste des flashs info — clic → édition directe (pas de fiche dédiée). */
 export default function BreakingNewsTable(): JSX.Element {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -36,7 +36,7 @@ export default function BreakingNewsTable(): JSX.Element {
   const { data, isLoading, isError } = trpc.breakingNews.getAllAdmin.useQuery();
 
   if (isLoading) return <div>Chargement…</div>;
-  if (isError) return <div>Erreur lors du chargement des actualités.</div>;
+  if (isError) return <div>Erreur lors du chargement des flashs info.</div>;
 
   const rows: NewsRow[] = (data ?? []).map((n) => ({
     id: n.id,

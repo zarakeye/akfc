@@ -10,7 +10,7 @@ import {
 import type { BreakingNews } from "@prisma/client";
 
 /**
- * Sidebar droite escamotable des actualités (fiches « Announcement »).
+ * Sidebar droite escamotable des flashs info (fiches « Announcement »).
  *
  * Panneau fixed glissant (translate-x), CENTRÉ VERTICALEMENT (il ne
  * couvre pas le héros/carousel, et reste stable sur toutes les pages).
@@ -98,7 +98,7 @@ export function BreakingNewsSidebar({
 
   return (
     <aside
-      aria-label="Panneau des actualités"
+      aria-label="Panneau des flashs info"
       className={`fixed right-0 top-1/2 z-40 transition-transform duration-500 ease-in-out ${
         open
           ? "-translate-y-1/2 translate-x-0"
@@ -130,7 +130,7 @@ export function BreakingNewsSidebar({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        aria-label={open ? "Fermer les actualités" : "Ouvrir les actualités"}
+        aria-label={open ? "Fermer les flashs info" : "Ouvrir les flashs info"}
         className="absolute -left-10 top-1/2 flex h-24 w-10 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-lg bg-gray-50 text-gray-500 shadow-[-3px_0_8px_rgba(0,0,0,0.08)] transition-colors hover:text-gray-800"
       >
         <span aria-hidden className="akfc-tab-fillet akfc-tab-fillet-top" />
@@ -152,10 +152,10 @@ export function BreakingNewsSidebar({
         ref={panelRef}
         className="flex max-h-[70dvh] w-80 flex-col gap-3 overflow-y-auto rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 p-4 shadow-xl"
       >
-        <h2 className="text-base font-bold">Actualités du club</h2>
+        <h2 className="text-base font-bold">Flash info</h2>
         {news.length === 0 ? (
           <p className="text-sm text-gray-500">
-            Aucune actualité en ce moment.
+            Aucun flash info en ce moment.
           </p>
         ) : (
           news.map((n) => (

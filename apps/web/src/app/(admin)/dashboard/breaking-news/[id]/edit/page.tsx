@@ -24,7 +24,7 @@ export default async function EditBreakingNewsPage({
         <ArrowLeft className="h-4 w-4" />
         Retour à la liste
       </Link>
-      <h2 className="mb-4 text-2xl font-bold">Éditer l&apos;actualité</h2>
+      <h2 className="mb-4 text-2xl font-bold">Éditer le flash info</h2>
       <EditBreakingNews id={newsId} />
     </div>
   );

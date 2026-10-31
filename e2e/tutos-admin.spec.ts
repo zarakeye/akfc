@@ -4,7 +4,7 @@ import { loginAs, trpcMutation } from "./helpers";
 import { USERS } from "./data.mjs";
 
 /**
- * Les tutos d'administration : un seul crée quelque chose (une actualité, en brouillon) ; les
+ * Les tutos d'administration : un seul crée quelque chose (un flash info, en brouillon) ; les
  * autres montrent le bouton qui engage — publier, créer un compte, répondre — sans le cliquer.
  */
 const bubble = (page: Page, title: string, n: number, total: number) =>
@@ -32,9 +32,9 @@ test("« Le tableau de bord » se lit d'un bout à l'autre", async ({ page }) =>
   await page.getByRole("button", { name: "Terminer" }).click();
 });
 
-test("« Créer une actualité » enregistre un brouillon", async ({ page }) => {
-  await launch(page, "/dashboard/breaking-news", /Créer une actualité.*ruban/);
-  const t = "Créer une actualité";
+test("« Créer un flash info » enregistre un brouillon", async ({ page }) => {
+  await launch(page, "/dashboard/breaking-news", /Créer un flash info.*ruban/);
+  const t = "Créer un flash info";
   await expect(bubble(page, t, 1, 7)).toBeVisible();
   await page.locator('[data-tour="breaking-news.list.create"]').click();
 
