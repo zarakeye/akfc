@@ -11,6 +11,7 @@ const PAD = 6; // marge autour de la cible (px)
 const BUBBLE_W = 340; // largeur de la bulle (px)
 const GAP = 12; // écart bulle ↔ cible (px)
 const WAIT_MS = 8000; // délai avant d'abandonner une cible introuvable
+const OPTIONAL_WAIT_MS = 1500; // délai avant de passer une étape facultative sans cible
 const DIM = "rgba(15, 23, 42, 0.62)"; // voile
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -19,9 +20,17 @@ const sameRect = (a: Rect | null, b: Rect | null) =>
   a === b ||
   (!!a && !!b && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height);
 
+/**
+ * La cible d'une étape : le premier élément VISIBLE qui porte ce nom. Un même nom peut désigner
+ * deux éléments dont un seul s'affiche selon la largeur de l'écran (la barre du header sur un
+ * grand écran, le bouton du menu sur un téléphone) ; un élément masqué n'a pas de position.
+ */
 function findTarget(name: string | undefined): HTMLElement | null {
   if (!name) return null;
-  return document.querySelector<HTMLElement>(`[data-tour="${CSS.escape(name)}"]`);
+  for (const el of document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(name)}"]`)) {
+    if (el.getClientRects().length > 0) return el;
+  }
+  return null;
 }
 
 function readValue(el: HTMLElement | null): string {
@@ -56,7 +65,12 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
       const el = findTarget(step.target);
       if (step.target && !el) {
         setRect(null);
-        if (performance.now() - started > WAIT_MS) setLost(true);
+        const waited = performance.now() - started;
+        if (step.optional && waited > OPTIONAL_WAIT_MS) {
+          tourStore.next(index); // rien à montrer ici : l'étape s'efface
+          return;
+        }
+        if (waited > WAIT_MS) setLost(true);
       } else if (el) {
         if (!scrolled.current) {
           scrolled.current = true;
@@ -79,7 +93,7 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [step.target, advance]);
+  }, [step.target, step.optional, advance, index]);
 
   // Étape sans cible : la bulle reçoit le curseur dès son affichage.
   useEffect(() => {

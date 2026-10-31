@@ -272,7 +272,7 @@ export default function UpdateMeForm(): JSX.Element {
             )}
           </label>
 
-          <div className="grid gap-2">
+          <div className="grid gap-2" data-tour="profil.form.avatar">
             <span className="text-sm">Photo de profil</span>
             {/* Flux AUTONOME : l'avatar se sauve seul (upload → register →
                 User.avatar), indépendamment du submit de ce formulaire. */}
@@ -283,7 +283,7 @@ export default function UpdateMeForm(): JSX.Element {
         {/* Première connexion comme édition : l'autorisation de droit à l'image à imprimer. */}
         <BlankConsentFormCard />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-tour="profil.form.submit">
           <SubmitButton disabled={!canSubmit} />
           {!isDirty && (
             <span className="text-xs text-slate-500">

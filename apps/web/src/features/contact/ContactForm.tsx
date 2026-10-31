@@ -97,7 +97,7 @@ export function ContactForm(): JSX.Element | null {
       </p>
 
       {categories && categories.length > 1 && (
-        <fieldset className="flex flex-col gap-2 text-sm">
+        <fieldset className="flex flex-col gap-2 text-sm" data-tour="contact.form.category">
           <legend className="mb-1">Votre message concerne <span className="text-red-600">*</span></legend>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {categories.map((c) => (
@@ -117,12 +117,12 @@ export function ContactForm(): JSX.Element | null {
         </fieldset>
       )}
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="contact.form.subject">
         <span>Objet <span className="text-red-600">*</span></span>
         <input className={field} value={subject} maxLength={TICKET_SUBJECT_MAX} onChange={(e) => setSubject(e.target.value)} />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="contact.form.body">
         <span>Message <span className="text-red-600">*</span></span>
         <textarea className={`${field} min-h-40 resize-y`} value={body} maxLength={TICKET_BODY_MAX} onChange={(e) => setBody(e.target.value)} />
       </label>
@@ -143,7 +143,7 @@ export function ContactForm(): JSX.Element | null {
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-tour="contact.form.submit">
         <button
           type="submit"
           disabled={!canSend}

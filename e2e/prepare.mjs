@@ -130,6 +130,9 @@ await prisma.memberDocument.create({
   },
 });
 
+// « Nous contacter » publiée : le formulaire des membres y est (tuto « Contacter le club »).
+await prisma.pageVisibility.create({ data: { key: "contacts", published: true } });
+
 await prisma.user.update({
   where: { id: USERS.droitImage.id },
   data: { imageConsent: "GRANTED", imageConsentAt: new Date(CONSENT_SINCE) },

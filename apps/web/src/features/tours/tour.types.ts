@@ -29,6 +29,11 @@ export interface TourStep {
   /** Explication (une à trois phrases). */
   body: string;
   advance: TourAdvance;
+  /**
+   * Étape facultative : si sa cible n'apparaît pas (une liste vide, un choix qui n'existe que s'il
+   * y a plusieurs options), elle est passée au bout d'un court délai au lieu de bloquer le tuto.
+   */
+  optional?: boolean;
 }
 
 export interface Tour {

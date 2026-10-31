@@ -150,6 +150,7 @@ export function DocumentReaderPanel({
             }
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
             title={isRead ? "Marquer comme non lu" : "Marquer comme lu"}
+            data-tour="documents.reader.read"
           >
             {isRead ? (
               <>
@@ -166,6 +167,7 @@ export function DocumentReaderPanel({
 
           <a
             href={`${src}?download=1`}
+            data-tour="documents.reader.download"
             className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
           >
             <Download className="h-4 w-4" />

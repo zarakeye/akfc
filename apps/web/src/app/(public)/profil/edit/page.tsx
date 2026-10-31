@@ -15,7 +15,7 @@ export default function EditProfilePage(): JSX.Element {
       <Suspense fallback={<div>Chargement…</div>}>
         <UpdateMeForm />
 
-        <section className="mt-12 border-t pt-8">
+        <section className="mt-12 border-t pt-8" data-tour="profil.password">
           <h2 className="mb-4 text-lg font-semibold">Sécurité</h2>
           <ChangePasswordForm />
         </section>

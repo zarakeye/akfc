@@ -1,10 +1,12 @@
 import type { DocPage } from "@features/docs/lib/docs.types"
 
 // Ordre des sections de la barre latérale. L'espace développeur suit le parcours en parties
-// (Démarrer → Étude de cas) ; « Accueil » sert aux espaces guide et admin.
+// (Démarrer → Étude de cas) ; « Accueil » sert aux espaces guide et admin, puis les parties du guide.
 const SECTION_ORDER = [
   "Introduction",
   "Accueil",
+  "Découvrir le site",
+  "Espace membre",
   "Démarrer",
   "Configuration",
   "Fondations front",

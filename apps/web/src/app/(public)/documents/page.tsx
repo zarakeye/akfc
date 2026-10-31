@@ -43,6 +43,7 @@ function DocList({
             <button
               type="button"
               onClick={() => onSelect(d.id)}
+              data-tour="documents.item"
               className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-gray-50"
             >
               <FileText className="h-5 w-5 shrink-0 text-emerald-600" />
@@ -146,29 +147,31 @@ function DocumentsPage() {
         Les documents mis à votre disposition par le club.
       </p>
 
-      {listQuery.isLoading ? (
-        <p className="text-gray-500">Chargement…</p>
-      ) : docs.length === 0 ? (
-        <p className="text-gray-500">Aucun document pour le moment.</p>
-      ) : (
-        <div className="space-y-8">
-          {club.length > 0 && (
-            <Section title="Documents du club">
-              <DocList items={club} onSelect={setSelectedId} />
-            </Section>
-          )}
-          {groupDocs.length > 0 && (
-            <Section title="Documents de groupe">
-              <DocList items={groupDocs} onSelect={setSelectedId} showGroups />
-            </Section>
-          )}
-          {personalDocs.length > 0 && (
-            <Section title="Vos documents personnels">
-              <DocList items={personalDocs} onSelect={setSelectedId} />
-            </Section>
-          )}
-        </div>
-      )}
+      <div data-tour="documents.list">
+        {listQuery.isLoading ? (
+          <p className="text-gray-500">Chargement…</p>
+        ) : docs.length === 0 ? (
+          <p className="text-gray-500">Aucun document pour le moment.</p>
+        ) : (
+          <div className="space-y-8">
+            {club.length > 0 && (
+              <Section title="Documents du club">
+                <DocList items={club} onSelect={setSelectedId} />
+              </Section>
+            )}
+            {groupDocs.length > 0 && (
+              <Section title="Documents de groupe">
+                <DocList items={groupDocs} onSelect={setSelectedId} showGroups />
+              </Section>
+            )}
+            {personalDocs.length > 0 && (
+              <Section title="Vos documents personnels">
+                <DocList items={personalDocs} onSelect={setSelectedId} />
+              </Section>
+            )}
+          </div>
+        )}
+      </div>
 
       <DocumentReaderPanel doc={selected} onClose={() => setSelectedId(null)} />
     </main>

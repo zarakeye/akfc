@@ -48,7 +48,7 @@ export default function ForgotPasswordPage(): JSX.Element {
       </header>
 
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="grid gap-1">
+        <label className="grid gap-1" data-tour="auth.forgot.email">
           <span className="text-sm">Email</span>
           <input
             type="email"
@@ -62,6 +62,7 @@ export default function ForgotPasswordPage(): JSX.Element {
 
         <button
           type="submit"
+          data-tour="auth.forgot.submit"
           className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
           disabled={!isEmailValid || requestReset.isPending}
         >

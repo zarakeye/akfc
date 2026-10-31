@@ -128,7 +128,7 @@ export default function Header({
           négocie rien avec ses voisins et poussait le logo hors de sa place.
           `flex-1` prend ce qui reste, `min-w-0` autorise le rétrécissement
           plutôt que le débordement. */}
-      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex 2xl:gap-6">
+      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex 2xl:gap-6" data-tour="header.nav">
         {visible.map((entry) => {
           if (entry.kind === "activities") {
             return <OurActivitiesMenu key="activities" />;
@@ -149,7 +149,7 @@ export default function Header({
       </nav>
 
       {/* ── Authentification (≥ xl) ───────────────────────────────────── */}
-      <div className="hidden shrink-0 items-center gap-3 pr-4 xl:flex xl:pr-6">
+      <div className="hidden shrink-0 items-center gap-3 pr-4 xl:flex xl:pr-6" data-tour="header.account">
         <ThemeToggle tone="onDark" />
         <Suspense fallback={<div>Chargement...</div>}>
           {user
@@ -166,7 +166,8 @@ export default function Header({
       </div>
 
       {/* ── Cloche + burger (< xl) ────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-3 px-4 xl:hidden">
+      {/* Sur petit écran, les mêmes noms de tuto désignent l'équivalent visible : le menu, et ce qui l'entoure. */}
+      <div className="flex shrink-0 items-center gap-3 px-4 xl:hidden" data-tour="header.account">
         {/* La cloche RESTE visible : son intérêt est d'être vue sans qu'on la
             cherche. L'enfermer dans le panneau la viderait de son sens. */}
         {user && (
@@ -179,6 +180,7 @@ export default function Header({
         <button
           type="button"
           onClick={() => setOpen(true)}
+          data-tour="header.nav"
           aria-label="Ouvrir le menu"
           aria-expanded={open}
           className="p-2 text-white"

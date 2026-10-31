@@ -1,11 +1,23 @@
 import type { Tour, TourAudience } from "./tour.types";
 import { adminPostsCreate } from "./definitions/admin.posts.create";
+import { membreContacterLeClub } from "./definitions/membre.contacter-le-club";
+import { membreDocuments } from "./definitions/membre.documents";
+import { membreProfil } from "./definitions/membre.profil";
+import { publicDecouvrirLeSite } from "./definitions/public.decouvrir-le-site";
+import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie";
 
 /**
  * Registre de TOUS les tutos. Ajouter un tuto = créer son fichier dans `definitions/` et
  * l'ajouter à cette liste.
  */
-export const TOURS: Tour[] = [adminPostsCreate];
+export const TOURS: Tour[] = [
+  publicDecouvrirLeSite,
+  publicMotDePasseOublie,
+  membreProfil,
+  membreDocuments,
+  membreContacterLeClub,
+  adminPostsCreate,
+];
 
 export function getTour(id: string): Tour | undefined {
   return TOURS.find((t) => t.id === id);

@@ -62,6 +62,7 @@ export default function ProfilePage(): JSX.Element {
           </div>
           <Link
             href="/profil/edit?from=profil"
+            data-tour="profil.edit"
             className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
           >
             <Pencil className="h-4 w-4" />
@@ -81,7 +82,7 @@ export default function ProfilePage(): JSX.Element {
         </dl>
 
         {/* Droit d'accès et de portabilité (RGPD) : export JSON de ses propres données. */}
-        <div className="mt-10 rounded-lg border border-border p-4 text-sm">
+        <div className="mt-10 rounded-lg border border-border p-4 text-sm" data-tour="profil.export">
           <p className="font-semibold">Vos données</p>
           <p className="mt-1 text-gray-600">
             Téléchargez tout ce que le site conserve à votre sujet (compte, groupes, demandes, contributions,
@@ -101,7 +102,9 @@ export default function ProfilePage(): JSX.Element {
         </div>
 
         {/* Droit à l'image : formulaire vierge, statut, formulaires signés (aperçu au clic). */}
-        <MyImageConsent />
+        <div data-tour="profil.image-consent">
+          <MyImageConsent />
+        </div>
       </section>
 
       {/* Ne s'affiche que pour un instructeur titulaire (le composant se
