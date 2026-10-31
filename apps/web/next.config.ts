@@ -1,13 +1,21 @@
 import type { NextConfig } from "next"
 import path from "node:path"
 
+/**
+ * Construction des tests de bout en bout (`pnpm e2e`, AKFC_E2E=1) : un dossier à part, pour ne
+ * pas écraser le `.next` de `pnpm dev`, et un serveur `next start` ordinaire (sans sortie autonome).
+ */
+const e2e = process.env.AKFC_E2E === "1"
+
 const nextConfig: NextConfig = {
+  distDir: e2e ? ".next-e2e" : ".next",
+
   /**
    * Sortie AUTONOME : Next produit un dossier contenant son propre serveur et
    * uniquement les dépendances que le code atteint réellement. Sans elle,
    * l'image Docker embarque tout `node_modules` du monorepo.
    */
-  output: "standalone",
+  output: e2e ? undefined : "standalone",
 
   /**
    * React Compiler : au build, chaque composant et chaque hook du projet est

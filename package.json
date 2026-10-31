@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "clean": "rm -rf apps/web/.next node_modules/.cache",
+    "clean": "rm -rf apps/web/.next apps/web/.next-e2e node_modules/.cache",
     "dev:clean": "pnpm clean && pnpm dev",
     "dev:infra": "docker compose -f docker-compose.dev.yml up -d",
     "dev:infra:stop": "docker compose -f docker-compose.dev.yml stop",
@@ -14,8 +14,10 @@
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm --filter web typecheck && pnpm --filter backend typecheck && tsc -p tsconfig.json",
-    "lint": "pnpm --filter web lint && eslint -c apps/web/eslint.config.mjs --rule '@next/next/no-html-link-for-pages: off' --max-warnings 0 packages/backend/src packages/contracts/src packages/finder-core/src",
+    "lint": "pnpm --filter web lint && eslint -c apps/web/eslint.config.mjs --rule '@next/next/no-html-link-for-pages: off' --max-warnings 0 packages/backend/src packages/contracts/src packages/finder-core/src e2e playwright.config.ts",
     "postinstall": "pnpm prisma generate",
+    "e2e": "node e2e/prepare.mjs && playwright test",
+    "e2e:report": "playwright show-report",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
     "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && pnpm clean && pnpm typecheck && pnpm lint"
   },
@@ -109,6 +111,8 @@
     }
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1056.0",
+    "@playwright/test": "1.56.0",
     "@prisma/client": "^6.19.0",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",

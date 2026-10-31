@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+// @ts-check
+/**
+ * Prépare un lancement des tests de bout en bout (`pnpm e2e` l'appelle avant Playwright).
+ *
+ *   1. vérifie que la base et le stockage visés sont locaux et dédiés aux tests ;
+ *   2. crée la base `akfc_e2e` si elle n'existe pas, puis la remet à zéro avec les migrations ;
+ *   3. vide le bucket `akfc-e2e` (créé au besoin) ;
+ *   4. écrit les données de test (`data.mjs`) : comptes, disciplines, un document, des droits.
+ *
+ * Chaque lancement part donc du même état, quel que soit ce qu'a modifié le précédent.
+ * Il se fait AVANT le démarrage de l'application : son initialisation (instrumentation.ts) trouve
+ * une base prête.
+ */
+import { execFileSync } from "node:child_process";
+import bcrypt from "bcryptjs";
+import { PrismaClient } from "@prisma/client";
+import {
+  CreateBucketCommand,
+  DeleteObjectsCommand,
+  HeadBucketCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+
+import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, PASSWORD, TINY_PDF, USERS } from "./data.mjs";
+
+assertLocal();
+
+// ─── 1. La base : créée au besoin, puis remise à zéro par les migrations ───────────
+async function ensureDatabase() {
+  // Prisma lui-même, connecté à la base d'administration `postgres` : pas de client SQL de plus.
+  const admin = new PrismaClient({
+    datasourceUrl: E2E_DATABASE_URL.replace(`/${E2E_DB.database}?`, "/postgres?"),
+  });
+  try {
+    const rows = await admin.$queryRaw`select 1 from pg_database where datname = ${E2E_DB.database}`;
+    if (Array.isArray(rows) && rows.length === 0) await admin.$executeRawUnsafe(`create database "${E2E_DB.database}"`);
+  } catch (err) {
+    console.error("❌ Postgres injoignable sur 127.0.0.1:5435 : lancer « pnpm dev:infra ».");
+    console.error(err instanceof Error ? err.message.split("\n").slice(-3).join("\n") : err);
+    process.exit(1);
+  } finally {
+    await admin.$disconnect();
+  }
+}
+
+await ensureDatabase();
+execFileSync("pnpm", ["exec", "prisma", "migrate", "reset", "--force", "--skip-seed", "--skip-generate"], {
+  stdio: ["ignore", "ignore", "inherit"],
+  env: { ...process.env, DATABASE_URL: E2E_DATABASE_URL, DIRECT_DATABASE_URL: E2E_DATABASE_URL },
+});
+console.log("✓ base akfc_e2e remise à zéro");
+
+// ─── 2. Le stockage : un bucket vide ───────────────────────────────────────────────
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: E2E_STORAGE.endpoint,
+  forcePathStyle: true,
+  credentials: { accessKeyId: E2E_STORAGE.accessKeyId, secretAccessKey: E2E_STORAGE.secretAccessKey },
+});
+const Bucket = E2E_STORAGE.bucket;
+try {
+  await s3.send(new HeadBucketCommand({ Bucket }));
+} catch {
+  await s3.send(new CreateBucketCommand({ Bucket }));
+}
+for (;;) {
+  const page = await s3.send(new ListObjectsV2Command({ Bucket }));
+  const keys = (page.Contents ?? []).flatMap((o) => (o.Key ? [{ Key: o.Key }] : []));
+  if (keys.length === 0) break;
+  await s3.send(new DeleteObjectsCommand({ Bucket, Delete: { Objects: keys } }));
+}
+console.log("✓ bucket akfc-e2e vide");
+
+// ─── 3. Les données de test ────────────────────────────────────────────────────────
+const prisma = new PrismaClient({ datasourceUrl: E2E_DATABASE_URL });
+const hash = await bcrypt.hash(PASSWORD, 10);
+
+for (const u of Object.values(USERS)) {
+  await prisma.user.create({
+    data: { id: u.id, email: u.email, firstName: u.firstName, password: hash, emailVerified: true, isFirstLogin: false },
+  });
+}
+const adminGroup = await prisma.memberGroup.create({
+  data: { name: "Administrateurs", isCollaborative: true, isAdminGroup: true },
+});
+await prisma.memberGroupMembership.create({
+  data: { groupId: adminGroup.id, userId: USERS.admin.id, access: "EDITOR" },
+});
+
+const category = await prisma.category.create({ data: { type: "Cours" } });
+await prisma.discipline.create({
+  data: {
+    ...DISCIPLINES.publiee,
+    type: "MARTIAL_ART",
+    categoryId: category.id,
+    instructorId: USERS.admin.id,
+    publicationDate: new Date("2026-01-01T00:00:00Z"),
+  },
+});
+await prisma.discipline.create({
+  data: { ...DISCIPLINES.brouillon, type: "MARTIAL_ART", categoryId: category.id, instructorId: USERS.admin.id },
+});
+
+const pdf = Buffer.from(TINY_PDF);
+await s3.send(new PutObjectCommand({ Bucket, Key: DOCUMENT_A.key, Body: pdf, ContentType: "application/pdf" }));
+const asset = await prisma.mediaAsset.create({
+  data: {
+    fullPath: DOCUMENT_A.key,
+    mimeType: "application/pdf",
+    format: "pdf",
+    originalFileName: "convocation-membre-a.pdf",
+    bytes: pdf.byteLength,
+    appRoot: "AKFC",
+    status: "published",
+    uploaderUserId: USERS.admin.id,
+  },
+});
+await prisma.memberDocument.create({
+  data: {
+    id: DOCUMENT_A.id,
+    mediaAssetId: asset.id,
+    title: DOCUMENT_A.title,
+    audience: "SPECIFIC",
+    publishedById: USERS.admin.id,
+    recipients: { create: { userId: USERS.membreA.id } },
+  },
+});
+
+await prisma.user.update({
+  where: { id: USERS.droitImage.id },
+  data: { imageConsent: "GRANTED", imageConsentAt: new Date(CONSENT_SINCE) },
+});
+
+await prisma.$disconnect();
+console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 2 disciplines, 1 document`);

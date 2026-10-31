@@ -7,5 +7,5 @@
       "@contracts/*": ["./packages/contracts/src/*"]
     }
   },
-  "include": ["prisma.config.ts", "prisma/**/*.ts"]
+  "include": ["prisma.config.ts", "prisma/**/*.ts", "playwright.config.ts", "e2e/**/*.ts", "e2e/**/*.mjs"]
 }

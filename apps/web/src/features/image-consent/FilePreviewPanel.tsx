@@ -3,7 +3,7 @@
 import type { JSX } from "react";
 import { Download, Printer, X } from "lucide-react";
 
-import { PdfViewer } from "@features/member-documents/PdfViewer";
+import { PdfViewer } from "@features/member-documents/PdfViewerClient";
 import { printFile } from "@features/image-consent/printFile";
 
 /**

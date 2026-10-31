@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { X, Download, BookmarkCheck, BookmarkMinus } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
-import { PdfViewer } from "@features/member-documents/PdfViewer";
+import { PdfViewer } from "@features/member-documents/PdfViewerClient";
 import ReactMarkdown from "react-markdown";
 import { useNodeTextContent } from "@features/finder-core/hooks/useNodeTextContent";
 

@@ -29,5 +29,5 @@
     "../../packages/config",
     "../../packages/finder-core/src/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".next-e2e"]
 }
