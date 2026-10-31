@@ -79,7 +79,7 @@ Un élément masqué par `display: none` (la classe `hidden`, ou `xl:hidden` sur
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="157-167"
+  snippetRange="174-184"
   snippetHighlight="5"
   snippetTitle="Les bloqueurs"
   fullFileTitle="Voir le fichier complet"
@@ -113,13 +113,15 @@ Le clic est écouté sur tout le document, en **phase de capture** (`true`) : av
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="116-133"
-  snippetHighlight="4,10"
-  snippetTitle="Échap, et le curseur gardé"
+  snippetRange="116-150"
+  snippetHighlight="7,13,30,31"
+  snippetTitle="Échap, le curseur gardé, aucun formulaire envoyé"
   fullFileTitle="Voir le fichier complet"
 />
 
-Échap quitte à tout moment. Et le curseur clavier ne sort pas de l’étape : s’il arrive ailleurs (Tab vers un lien caché sous le voile), il est ramené sur la cible ou la bulle. Les bloqueurs arrêtent la souris ; ce garde arrête le clavier. Avec le curseur placé sur la bonne cible à chaque étape (plus haut), le tuto se suit entièrement sans souris (partie « Interface transverse », chapitre « L’accessibilité »).
+Échap quitte à tout moment. Et le curseur clavier ne sort pas de l’étape : s’il arrive ailleurs (Tab vers un lien caché sous le voile), il est ramené sur la cible ou la bulle. Pour une étape d’explication, il n’entre même pas dans la cible : le panneau posé dessus arrête la souris, mais Tab jusqu’au bouton « Envoyer » montré, puis Entrée, l’aurait cliqué. Les bloqueurs arrêtent la souris ; ce garde arrête le clavier.
+
+Reste Entrée dans un champ à remplir : dans un `<form>`, elle envoie le formulaire. Sur la page du mot de passe oublié, l’adresse tapée rend le bouton actif, et Entrée partait avec le lien de réinitialisation. Pendant toute étape qui n’attend ni clic ni page, l’overlay écoute donc l’évènement `submit` en **capture** sur le document et l’annule : l’évènement n’atteint jamais React. Les étapes `click` et `route` le laissent passer — l’enregistrement d’un post, qui attend justement la page de l’article créé, en a besoin. Avec le curseur placé sur la bonne cible à chaque étape (plus haut), le tuto se suit entièrement sans souris (partie « Interface transverse », chapitre « L’accessibilité »).
 
 ### Une étape perdue
 
@@ -127,7 +129,7 @@ Une cible introuvable après huit secondes — un composant renommé sans la gar
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vit l’état du tuto ?", "Dans le sessionStorage de l’onglet, lu par un store externe (useSyncExternalStore) ; le serveur répond « aucun tuto »."], ["Comment une même action ne fait-elle pas sauter deux étapes ?", "next(fromIndex) ne passe que si l’étape en cours est encore fromIndex."], ["Qui fait passer une étape de page ?", "Le fournisseur, monté sur toutes les pages et qui survit à la navigation."], ["Comment l’overlay suit-il la cible ?", "À chaque image (requestAnimationFrame), sans rendu tant qu’elle ne bouge pas."], ["Comment seuls les clics sur la cible passent-ils ?", "Quatre bloqueurs transparents autour du trou ; un cinquième sur la cible pour une explication."], ["Et une cible qui peut manquer ?", "L’étape se déclare optional : absente depuis une seconde et demie, elle passe d’elle-même."], ["Et un nom porté par deux éléments ?", "Le premier visible est retenu (getClientRects non vide)."], ["Et au clavier ?", "Échap quitte ; le curseur va sur la cible ou la bulle, et n’en sort pas."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vit l’état du tuto ?", "Dans le sessionStorage de l’onglet, lu par un store externe (useSyncExternalStore) ; le serveur répond « aucun tuto »."], ["Comment une même action ne fait-elle pas sauter deux étapes ?", "next(fromIndex) ne passe que si l’étape en cours est encore fromIndex."], ["Qui fait passer une étape de page ?", "Le fournisseur, monté sur toutes les pages et qui survit à la navigation."], ["Comment l’overlay suit-il la cible ?", "À chaque image (requestAnimationFrame), sans rendu tant qu’elle ne bouge pas."], ["Comment seuls les clics sur la cible passent-ils ?", "Quatre bloqueurs transparents autour du trou ; un cinquième sur la cible pour une explication."], ["Et une cible qui peut manquer ?", "L’étape se déclare optional : absente depuis une seconde et demie, elle passe d’elle-même."], ["Et un nom porté par deux éléments ?", "Le premier visible est retenu (getClientRects non vide)."], ["Et au clavier ?", "Échap quitte ; le curseur va sur la cible ou la bulle, et n’en sort pas ; pour une explication, il reste dans la bulle."], ["Et Entrée dans un champ ?", "Le submit est annulé en capture pendant toute étape qui n’attend ni clic ni page."]]' />
 
 ## À suivre
 

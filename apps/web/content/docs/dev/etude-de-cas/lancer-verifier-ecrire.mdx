@@ -12,7 +12,7 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 ## Deux portes d’entrée 🚪
 
-<DocsTable columnsJson='["Bouton", "Où", "Ce qu’il propose"]' rowsJson='[["« ? » (TourLauncher)", "En bas à gauche de toute page qui a des tutos.", "Les tutos de cette page, pour ce visiteur."], ["« Lancer le tuto » (TourStartButton)", "Dans une fiche du guide du site ou de la documentation des administrateurs, par le composant MDX <TourStartButton id=\"…\" />.", "Un tuto précis : il conduit à sa page de départ."]]' />
+<DocsTable columnsJson='["Bouton", "Où", "Ce qu’il propose"]' rowsJson='[["« ? » (TourLauncher)", "En bas à gauche de toute page qui a des tutos.", "Les tutos de cette page, pour ce visiteur."], ["« Lancer le tuto » (TourStartButton)", "Dans une fiche du guide du site ou de la documentation des administrateurs, par le composant MDX <TourStartButton id=\"…\" />.", "Un tuto précis : il conduit à sa page de départ."], ["Un parcours (TourList)", "En tête du guide et de la documentation des administrateurs, par <TourList title=\"…\" ids=\"a,b,c\" />.", "Des tutos dans l’ordre où on les suit, numérotés, chacun cliquable, avec un lien vers sa fiche."]]' />
 
 Les deux s’appelaient `TourLauncher` : le premier dans `TourLauncher.tsx`, le second dans `TourStartButton.tsx`, exporté sous le même nom. Deux composants différents sous un même nom, c’est une recherche dans le code qui trouve l’un en cherchant l’autre ; la relecture a donné au second le nom de son fichier.
 
@@ -29,13 +29,29 @@ Les deux s’appelaient `TourLauncher` : le premier dans `TourLauncher.tsx`, le 
   language="tsx"
   filepath="apps/web/src/features/tours/TourStartButton.tsx"
   filename="TourStartButton.tsx"
-  snippetRange="30-33"
-  snippetHighlight="4"
+  snippetRange="30-40"
+  snippetHighlight="1,11"
   snippetTitle="Le bouton des fiches : expliquer plutôt que laisser échouer"
   fullFileTitle="Voir le fichier complet"
 />
 
-Dans une fiche, le bouton est affiché à tous ceux qui lisent la documentation. À un visiteur qui n’a pas le rôle requis, il ne propose pas un tuto qui échouerait sur une page refusée : il est désactivé, et dit pourquoi (« Réservé aux administrateurs connectés »). Un identifiant inconnu affiche « Tuto introuvable » — ce que la garde empêche désormais d’atteindre (chapitre 1).
+Dans une fiche, le bouton est affiché à tous ceux qui lisent la documentation. À un visiteur qui n’a pas le rôle requis, il ne propose pas un tuto qui échouerait sur une page refusée : il est désactivé, et dit pourquoi (« Réservé aux administrateurs connectés »). Un identifiant inconnu affiche « Tuto introuvable » — ce que la garde empêche désormais d’atteindre (chapitre 1). Le droit de suivre (`canFollow`) et la raison d’un refus (`unavailableReason`) viennent du registre : le bouton « ? », celui des fiches et les parcours répondent la même chose au même visiteur.
+
+### Un parcours, numéroté
+
+Une fiche par tuto, c’est une fiche à trouver. L’accueil du guide et celui de la documentation des administrateurs proposent donc les tutos **par parcours** : « Parcours membre », « Le catalogue et le programme »… Chaque parcours est une liste numérotée, dans l’ordre où l’on suit les tutos, et chaque ligne se clique pour lancer le sien :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourList.tsx"
+  filename="TourList.tsx"
+  snippetRange="39-72"
+  snippetHighlight="1,11,15,30"
+  snippetTitle="Une ligne de parcours : un numéro, un lancement, une fiche"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le numéro est aussi dans le nom accessible du bouton (« 3. Créer un stage ») : un lecteur d’écran annonce l’ordre que l’œil voit. Un tuto hors du rôle du visiteur reste dans la liste, grisé, avec sa raison, plutôt que de disparaître — le parcours garde ses numéros. Et « La fiche » vient du champ `doc` du tuto, que la garde vérifie : un parcours ne renvoie jamais vers une page absente.
 
 ## Un tuto se vérifie en le suivant
 
@@ -58,7 +74,7 @@ Les tutos des visiteurs et des membres ont leur propre fichier, `e2e/tutos-parco
   language="ts"
   filepath="e2e/tutos-parcours.spec.ts"
   filename="tutos-parcours.spec.ts"
-  snippetRange="43-54"
+  snippetRange="46-57"
   snippetHighlight="9,10"
   snippetTitle="Une liste vide : les étapes de lecture s’effacent"
   fullFileTitle="Voir le fichier complet"
@@ -66,17 +82,19 @@ Les tutos des visiteurs et des membres ont leur propre fichier, `e2e/tutos-parco
 
 Ce test a été vérifié comme une garde : `optional` retiré de l’étape « Ouvrez un document », il échoue — la bulle finale n’arrive jamais, le tuto attend une cible qui n’existera pas. Ensuite, un tuto n’envoie rien : le test **force** un clic sur le bouton « Envoyer » montré par la dernière étape (`force: true` clique au centre de l’élément, sans vérifier qu’il est accessible), et constate que le message de confirmation n’apparaît pas — le panneau posé sur la cible a reçu le clic.
 
-Les tutos d’administration ont le leur, `e2e/tutos-admin.spec.ts`, sur le même principe. Le clic forcé y vise « Publier » d’une page éditoriale (la page reste en brouillon), et « Créer » d’un utilisateur (aucun compte, aucun e-mail). Une demande est envoyée par l’API au nom d’un membre, puis l’administrateur la suit dans le tuto. Le test de la publication a été vérifié en cassant : l’étape passée de `next` à `click`, le clic forcé publie la page, et le test échoue.
-
 <CodeExample
   language="ts"
   filepath="e2e/tutos-parcours.spec.ts"
   filename="tutos-parcours.spec.ts"
-  snippetRange="115-120"
-  snippetHighlight="3,4"
-  snippetTitle="Le bouton montré ne part pas"
+  snippetRange="118-126"
+  snippetHighlight="3,4,6,7"
+  snippetTitle="Le bouton montré ne part pas, ni à la souris ni au clavier"
   fullFileTitle="Voir le fichier complet"
 />
+
+Le clavier a son test aussi : Tab ne conduit jamais au bouton montré (le curseur reste dans la bulle), et Entrée dans l’adresse du mot de passe oublié n’envoie pas le lien. Ce dernier a été vérifié en cassant : la garde du `submit` désactivée (chapitre 2), Entrée envoie le lien, et le test échoue.
+
+Les tutos d’administration ont le leur, `e2e/tutos-admin.spec.ts`, sur le même principe. Le clic forcé y vise « Publier » d’une page éditoriale (la page reste en brouillon), et « Créer » d’un utilisateur (aucun compte, aucun e-mail). Une demande est envoyée par l’API au nom d’un membre, puis l’administrateur la suit dans le tuto. Le test de la publication a été vérifié en cassant : l’étape passée de `next` à `click`, le clic forcé publie la page, et le test échoue. Les tutos qui parcourent un formulaire — discipline, cours, stage, évènement — sont suivis jusqu’à leur dernière bulle, et « Ajouter des séances » de la liste des stages jusqu’à l’édition de celui des données de test.
 
 ## Ce que le test a trouvé
 
@@ -114,9 +132,15 @@ En production, et dans les tests lancés sur un poste avec Docker, le client Pri
 Un test de bout en bout trouve aussi ce qu’il ne cherche pas. Ce test vérifiait un tuto ; il a trouvé un composant serveur dans le code du navigateur — comme le premier lancement des tests de la partie « Qualité » avait trouvé le visionneur PDF qui faisait échouer le rendu serveur. Les deux problèmes étaient invisibles à l’écran.
 </Callout>
 
+### Ce qu’écrire un tuto a trouvé
+
+Un tuto se rédige en lisant le code de chaque page qu’il traverse : la bulle doit dire ce que fait vraiment le bouton. En écrivant celui des stages, la question « où ajoute-t-on les dates ? » n’avait plus de réponse. Le composant des séances, `SessionsManager`, existait toujours, mais plus aucune page ne l’affichait : lors du déplacement des pages d’administration dans le groupe `(admin)`, les éditions d’un stage et d’un évènement avaient été réécrites sans lui. Depuis, un stage ne pouvait plus recevoir de date — et sans séance à venir, il n’apparaît pas dans l’agenda.
+
+Les deux pages d’édition ont retrouvé leur section **Séances**, branchée sur les procédures `seminarSession.*` et `eventSession.*`. Un test de bout en bout, `e2e/seances.spec.ts`, ajoute une séance au stage des données de test et vérifie qu’elle survit au rechargement : un composant qui disparaît d’une page ne se voit ni au typecheck ni au lint, seulement en suivant le parcours.
+
 ## Écrire un nouveau tuto
 
-<DocsTable columnsJson='["Étape", "Ce qu’on fait", "Ce qui le vérifie"]' rowsJson='[["1. Choisir le parcours", "Une tâche d’un public précis, qui se fait en quelques pages, et qui ne publie, n’envoie ni ne supprime rien : le tuto montre le bouton, l’utilisateur le clique.", "La relecture."], ["2. Poser les noms", "Un data-tour sur chaque élément visé, nommé d’après la page et le rôle (« events.form.title »).", "Rien encore : les noms ne servent à personne."], ["3. Écrire la définition", "Un fichier dans definitions/, typé Tour : public, pages, page de départ, étapes et ce qui les fait passer ; optional sur une étape dont la cible peut manquer.", "TypeScript (une étape route sans match est refusée)."], ["4. L’enregistrer", "L’importer dans tour.registry.ts.", "check-tour-targets : définition enregistrée, cibles présentes."], ["5. Le proposer dans une fiche", "<TourStartButton id=\"…\" /> dans la documentation des administrateurs (ou des membres).", "check-tour-targets : l’identifiant existe."], ["6. Le suivre", "Un test de bout en bout qui le lance et le suit jusqu’au bout.", "pnpm e2e."]]' />
+<DocsTable columnsJson='["Étape", "Ce qu’on fait", "Ce qui le vérifie"]' rowsJson='[["1. Choisir le parcours", "Une tâche d’un public précis, qui se fait en quelques pages, et qui ne publie, n’envoie ni ne supprime rien : le tuto montre le bouton, l’utilisateur le clique.", "La relecture."], ["2. Poser les noms", "Un data-tour sur chaque élément visé, nommé d’après la page et le rôle (« events.form.title »).", "Rien encore : les noms ne servent à personne."], ["3. Écrire la définition", "Un fichier dans definitions/, typé Tour : public, pages, page de départ, étapes et ce qui les fait passer ; optional sur une étape dont la cible peut manquer.", "TypeScript (une étape route sans match est refusée)."], ["4. L’enregistrer", "L’importer dans tour.registry.ts.", "check-tour-targets : définition enregistrée, cibles présentes."], ["5. Le proposer dans une fiche", "Sa fiche, avec <TourStartButton id=\"…\" />, son chemin dans le champ doc du tuto, et sa place dans un parcours (<TourList ids=\"…\" />).", "check-tour-targets : l’identifiant existe, la fiche aussi."], ["6. Le suivre", "Un test de bout en bout qui le lance et le suit jusqu’au bout.", "pnpm e2e."]]' />
 
 <Callout type="tip">
 Un tuto vieillit comme le code qu’il traverse. La garde surveille ses cibles ; le test, son déroulement. Une étape dont le texte ne correspond plus à l’écran (un bouton renommé « Enregistrer ») ne se voit qu’à la relecture : un tuto se relit quand sa page change.
