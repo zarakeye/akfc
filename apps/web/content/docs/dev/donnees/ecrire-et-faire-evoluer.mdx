@@ -215,7 +215,7 @@ La cause était dans l’outillage. Le Dockerfile prévoit une étape dédiée a
   fullFileTitle="Voir le fichier complet"
 />
 
-Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. La partie « Infrastructure et déploiement » y revient (chapitre « Mettre en production »).
+Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. Le compose du serveur a depuis un service `akfc-migrator`, lancé avant le site à chaque déploiement : la partie « Infrastructure et déploiement » le décrit (chapitre « Mettre en production »).
 
 <Callout type="warning">
 Le code et la base doivent évoluer ensemble. Toute mise à jour qui contient un dossier dans `prisma/migrations/` exige un `prisma migrate deploy` en production **avant** que le nouveau code ne serve des requêtes. Le symptôme d’un oubli est toujours le même : une erreur Prisma qui parle d’une colonne ou d’une table qui « n’existe pas ».

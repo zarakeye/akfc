@@ -26,7 +26,7 @@ Les secrets de production se tapent sur le serveur, dans son fichier d’environ
 
 ## L’ordre d’un déploiement 🚀
 
-<DocsTable columnsJson='["Étape", "Commande (sur le serveur)", "Pourquoi à ce moment"]' rowsJson='[["1. Le code", "git pull, dans le clone", "Rien ne change encore pour les visiteurs : le conteneur en service tourne sur son image."], ["2. La migration", "prisma migrate deploy, contre la base de production", "La base passe au nouveau schéma pendant que l’ancien code tourne encore."], ["3. Le nouveau conteneur", "docker compose up -d --build, pour le service du site", "L’image est reconstruite, le conteneur remplacé ; le nouveau code trouve une base déjà prête."], ["4. La vérification", "docker compose logs, pour le service du site", "Les lignes [instrumentation] disent ce que le site a trouvé et réparé en démarrant."]]' />
+<DocsTable columnsJson='["Étape", "Commande (sur le serveur)", "Pourquoi à ce moment"]' rowsJson='[["1. Le code", "git pull, dans le clone", "Rien ne change encore pour les visiteurs : le conteneur en service tourne sur son image."], ["2. La migration, puis le nouveau conteneur", "docker compose up -d --build akfc", "Les deux images sont reconstruites ; akfc-migrator applique les migrations, puis le conteneur du site est remplacé — seulement si la migration a réussi."], ["3. La vérification", "docker compose logs akfc-migrator, puis akfc", "Ce que la migration a appliqué ; puis les lignes [instrumentation] : ce que le site a trouvé et réparé en démarrant."]]' />
 
 ### Pourquoi la migration avant le conteneur
 
@@ -40,11 +40,28 @@ Une migration ne se défait pas. Prisma n’a pas de « migrate down » : reveni
 
 ### Lancer la migration
 
-Le dépôt fournit l’image `migrator` (chapitre 1), dont la seule commande est `prisma migrate deploy`. Elle se lance dans le réseau du compose, où le nom du service Postgres se résout, avec l’adresse de la base de production dans son environnement. La sandbox l’enchaîne ainsi, automatiquement, avant le site (chapitre 3) : un service `migrator`, et le site qui attend qu’il se soit terminé sans erreur (`depends_on: … condition: service_completed_successfully`).
+Le dépôt fournit l’image `migrator` (chapitre 1), dont la seule commande est `prisma migrate deploy`. Le compose du serveur la lance comme un service à part, `akfc-migrator`, et le site en dépend :
 
-Le compose du serveur du club ne lance pas (encore) de service sur cette étape : la migration y est une étape **à la main** du déploiement, et l’oublier met en ligne un code qui attend une base plus récente que la vraie (partie « Données »). Ajouter au compose de l’infrastructure un service `migrator`, comme celui de la sandbox, rendrait l’ordre automatique : la reconstruction lancerait la migration, et le site ne démarrerait qu’une fois la base à jour.
+<CodeSnippet
+  language="yaml"
+  title="docker-compose.yml du serveur (extrait, dépôt d’infrastructure)"
+  kind="pattern"
+  codeJson='"  akfc:\n    # …\n    depends_on:\n      postgres:\n        condition: service_started\n      pgbouncer:\n        condition: service_started\n      akfc-migrator:\n        condition: service_completed_successfully\n\n  akfc-migrator:\n    build:\n      context: ./backends/akfc\n      target: migrator\n    container_name: akfc-migrator\n    restart: \"no\"\n    env_file: ./backends/akfc/.env\n    networks:\n      - web\n      - internal"'
+/>
 
-Une migration peut aussi partir du clone, avec la CLI Prisma de ses dépendances. Le fichier d’environnement désigne alors un hôte (le nom du service Postgres) que le serveur lui-même, hors des conteneurs, ne connaît pas : l’adresse de la base se donne le temps de la commande, pointée sur le conteneur Postgres. `dotenv` ne remplace pas une variable déjà présente : celle donnée sur la ligne de commande l’emporte sur le fichier.
+À chaque `docker compose up` du site, Compose construit l’image du migrateur, la lance dans le réseau interne — où le nom du service Postgres se résout —, attend qu’elle se **termine sans erreur** (`service_completed_successfully`), et seulement alors démarre le nouveau conteneur du site. Sans migration nouvelle, le migrateur le dit et s’arrête :
+
+<CodeSnippet
+  language="txt"
+  title="docker compose logs akfc-migrator"
+  codeJson='"21 migrations found in prisma/migrations\n\nNo pending migrations to apply."'
+/>
+
+Une migration qui échoue arrête la chaîne : le nouveau conteneur ne démarre pas, et le site continue de tourner sur l’ancien. La base, elle, a pu recevoir une partie de la migration — Prisma ne l’enveloppe pas dans une transaction. L’échec est noté dans `_prisma_migrations`, et les déploiements suivants s’arrêtent au même endroit tant qu’il n’a pas été examiné, la base remise d’aplomb, et l’échec résolu (`prisma migrate resolve`). C’est une raison de plus de tester chaque migration sur la base locale, puis dans les tests de bout en bout, qui rejouent toutes les migrations depuis zéro (partie « Qualité »). `restart: "no"` empêche Docker de relancer le migrateur en boucle : il tourne une fois par déploiement.
+
+La sandbox enchaîne déjà ses services ainsi (chapitre 3). Sur le serveur, la migration a longtemps été une étape **à la main** du déploiement, et l’oublier mettait en ligne un code qui attendait une base plus récente que la vraie (partie « Données ») ; elle fait désormais partie du `up`.
+
+En secours, une migration peut aussi partir du clone, avec la CLI Prisma de ses dépendances. Le fichier d’environnement désigne alors un hôte (le nom du service Postgres) que le serveur lui-même, hors des conteneurs, ne connaît pas : l’adresse de la base se donne le temps de la commande, pointée sur le conteneur Postgres. `dotenv` ne remplace pas une variable déjà présente : celle donnée sur la ligne de commande l’emporte sur le fichier.
 
 `migrate deploy` applique les migrations qui manquent, dans l’ordre, et les enregistre dans la table `_prisma_migrations` : relancé, il ne refait rien. Il n’en crée jamais, et ne réinitialise jamais rien — contrairement à `migrate dev` et `migrate reset`, qui n’ont rien à faire en production.
 
@@ -69,7 +86,7 @@ Une donnée dont le site a besoin pour fonctionner (un dossier racine, le groupe
 
 Après un déploiement, les journaux du conteneur disent ce qui s’est passé :
 
-<DocsTable columnsJson='["Ligne", "Ce qu’elle dit"]' rowsJson='[["[instrumentation] ensure…: N …", "Une réparation au démarrage, et combien d’éléments elle a dû créer : zéro, d’ordinaire."], ["[instrumentation] … failed — app will still start", "Une réparation qui a échoué : le site tourne, mais ce qu’elle garantit manque peut-être. À lire en premier."], ["[instrumentation] purge RGPD … / relève … / récapitulatif …", "L’état des tâches de fond : actives ou non, et à quelle heure."], ["[trpc] <procédure> : …", "Une erreur imprévue dans une procédure, avec sa cause complète (le visiteur, lui, reçoit un message neutre ; partie « API »)."]]' />
+<DocsTable columnsJson='["Ligne", "Ce qu’elle dit"]' rowsJson='[["akfc-migrator : No pending migrations to apply / Applying migration …", "Ce que le déploiement a fait à la base : rien, ou les migrations appliquées, une par une."], ["[instrumentation] ensure…: N …", "Une réparation au démarrage, et combien d’éléments elle a dû créer : zéro, d’ordinaire."], ["[instrumentation] … failed — app will still start", "Une réparation qui a échoué : le site tourne, mais ce qu’elle garantit manque peut-être. À lire en premier."], ["[instrumentation] purge RGPD … / relève … / récapitulatif …", "L’état des tâches de fond : actives ou non, et à quelle heure."], ["[trpc] <procédure> : …", "Une erreur imprévue dans une procédure, avec sa cause complète (le visiteur, lui, reçoit un message neutre ; partie « API »)."]]' />
 
 Une erreur de connexion à la base au démarrage (`P1001`, « can’t reach database server ») se lit d’abord dans l’adresse : un hôte `localhost` dans le fichier d’environnement du conteneur, un nom de service mal orthographié, un rôle qui n’existe pas. Chaque erreur corrigée en révèle parfois une autre plus loin : c’est un progrès, pas un échec.
 
@@ -95,7 +112,7 @@ Un déploiement qui casse se défait en reconstruisant l’image du commit préc
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où sont les secrets de production ?", "Dans le fichier d’environnement du site, sur le serveur seulement."], ["Dans quel ordre déployer ?", "git pull, la migration (migrate deploy), puis le nouveau conteneur (up -d --build), puis les journaux."], ["Pourquoi la migration d’abord ?", "Le nouveau code démarre sur une base prête ; en échange, les migrations doivent supporter l’ancien code (elles ajoutent)."], ["Peut-on défaire une migration ?", "Non : on écrit une nouvelle migration. Retirer une colonne se fait en deux déploiements."], ["Que fait le site en démarrant ?", "Il garantit ses données indispensables (idempotent, étape par étape) et lance ses tâches de fond."], ["Comment libérer le disque ?", "docker-cleanup.sh : cache de construction et images inutilisées, jamais les volumes."], ["Comment revenir en arrière ?", "Reconstruire l’image du commit précédent ; la base reste migrée, ce que des migrations additives rendent sans danger."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où sont les secrets de production ?", "Dans le fichier d’environnement du site, sur le serveur seulement."], ["Dans quel ordre déployer ?", "git pull, puis docker compose up -d --build akfc : le service akfc-migrator applique les migrations, et le site ne redémarre que si elles ont réussi ; puis les journaux."], ["Pourquoi la migration d’abord ?", "Le nouveau code démarre sur une base prête ; en échange, les migrations doivent supporter l’ancien code (elles ajoutent)."], ["Peut-on défaire une migration ?", "Non : on écrit une nouvelle migration. Retirer une colonne se fait en deux déploiements."], ["Que fait le site en démarrant ?", "Il garantit ses données indispensables (idempotent, étape par étape) et lance ses tâches de fond."], ["Comment libérer le disque ?", "docker-cleanup.sh : cache de construction et images inutilisées, jamais les volumes."], ["Comment revenir en arrière ?", "Reconstruire l’image du commit précédent ; la base reste migrée, ce que des migrations additives rendent sans danger."]]' />
 
 ## À suivre
 
