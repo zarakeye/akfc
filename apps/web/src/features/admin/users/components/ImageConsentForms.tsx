@@ -40,7 +40,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   const [signedAt, setSignedAt] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<"applied" | "archived" | null>(null);
   const [open, setOpen] = useState<ViewableConsentForm | null>(null);
   const [blankOpen, setBlankOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
   const submit = async (): Promise<void> => {
     if (!file) return;
     setError(null);
-    setDone(false);
+    setDone(null);
     try {
       let toSend = file;
       if (isHeicFile(file)) {
@@ -75,7 +75,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
       const auth = await createUpload.mutateAsync({ userId, mimeType: toSend.type, bytes: toSend.size });
       const res = await fetch(auth.uploadUrl, { method: "PUT", headers: { "Content-Type": toSend.type }, body: toSend });
       if (!res.ok) throw new Error(`Envoi refusé (HTTP ${res.status})`);
-      await register.mutateAsync({
+      const saved = await register.mutateAsync({
         userId,
         path: auth.path,
         fileName: toSend.name,
@@ -84,7 +84,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
         signedAt: signedAt || null,
       });
       reset();
-      setDone(true);
+      setDone(saved.applied ? "applied" : "archived");
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -117,7 +117,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
             <li key={f.id} className="flex flex-wrap items-start gap-2 py-2">
               <div className="min-w-0 flex-1">
                 <p className={i === 0 ? "font-medium" : "text-muted-foreground"}>
-                  {i === 0 ? "En vigueur" : "Ancien"} — {IMAGE_CONSENT_SOURCE_LABEL[f.source]}
+                  {i === 0 ? "Le plus récent" : "Ancien"} — {IMAGE_CONSENT_SOURCE_LABEL[f.source]}
                   {f.source === "PAPER" ? (
                     <>
                       , signé le {formatDate(f.signedAt)}, déposé le {formatDate(f.createdAt)}
@@ -172,7 +172,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
           accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
           onChange={(e) => {
             setFile(e.target.files?.[0] ?? null);
-            setDone(false);
+            setDone(null);
           }}
           className="block w-full text-sm"
         />
@@ -219,7 +219,12 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
             {busy ?? "Déposer"}
           </button>
         </div>
-        {done && <p className="text-emerald-700">Formulaire enregistré ; le statut du membre est à jour.</p>}
+        {done === "applied" && <p className="text-emerald-700">Formulaire enregistré ; le statut du membre est à jour.</p>}
+        {done === "archived" && (
+          <p className="text-amber-700">
+            Formulaire archivé : signé avant les droits en vigueur, il ne change pas le statut du membre.
+          </p>
+        )}
         {error && <p className="text-red-600">{error}</p>}
       </div>
 

@@ -19,6 +19,7 @@ import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/
 import { removeAvatarFile } from "@backend/modules/avatar/avatar.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
 const userProfileSelect = {
@@ -60,8 +61,9 @@ export const userRouter = router({
           memberGroupMemberships: {
             select: { group: { select: { id: true, name: true, isAdminGroup: true } } },
           },
-          // Droit à l'image : voie de la version la plus récente, et demande en attente du parent.
-          imageConsentForms: { orderBy: { createdAt: "desc" }, take: 1, select: { source: true } },
+          // Droit à l'image : voie de la version la plus récente (par date des droits), et demande en
+          // attente du parent.
+          imageConsentForms: { select: { source: true, signedAt: true, createdAt: true } },
           imageConsentRequest: { select: { expiresAt: true } },
         },
       });
@@ -69,7 +71,7 @@ export const userRouter = router({
       return users.map(({ memberGroupMemberships, imageConsentForms, imageConsentRequest, ...u }) => ({
         ...u,
         isDemo: isDemoEmail(u.email),
-        consentProof: (imageConsentForms[0]?.source ??
+        consentProof: (imageConsentForms.sort(byEffectiveDesc)[0]?.source ??
           (imageConsentRequest?.expiresAt && imageConsentRequest.expiresAt > now
             ? "PENDING_GUARDIAN"
             : "NONE")) satisfies ImageConsentProofValue,

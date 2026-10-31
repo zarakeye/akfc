@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { router, protectedProcedure } from "@backend/trpc/core";
@@ -10,6 +11,7 @@ import {
   registerImageConsentForm,
 } from "@backend/modules/imageConsent/imageConsentForm.service";
 import { confirmMemberConsent, onlineConsentState } from "@backend/modules/imageConsent/imageConsentOnline.service";
+import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
 
@@ -23,7 +25,7 @@ export const imageConsentRouter = router({
     .input(z.object({ userId: z.string().min(1), mimeType: z.string().min(1), bytes: z.number().int().positive() }))
     .mutation(({ input }) => createImageConsentFormUpload(input)),
 
-  /** Après l'envoi : enregistre le formulaire et met à jour le statut du membre. */
+  /** Après l'envoi : enregistre le formulaire ; le statut change si ses droits sont les plus récents. */
   register: adminProcedure
     .input(
       z.object({
@@ -36,6 +38,11 @@ export const imageConsentRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Midi UTC : le jour saisi reste le même jour dans tous les fuseaux d'Europe.
+      const signedAt = input.signedAt ? new Date(`${input.signedAt}T12:00:00Z`) : null;
+      if (signedAt && signedAt.getTime() > Date.now() + 24 * 3600 * 1000) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "La date de signature est dans le futur." });
+      }
       return registerImageConsentForm({
         prisma: ctx.prisma,
         userId: input.userId,
@@ -44,18 +51,18 @@ export const imageConsentRouter = router({
         fileName: input.fileName,
         usages: input.usages,
         keepAfterLeave: input.keepAfterLeave,
-        signedAt: input.signedAt ? new Date(`${input.signedAt}T12:00:00Z`) : null,
+        signedAt,
       });
     }),
 
-  /** Formulaires d'un membre, du plus récent au plus ancien (fiche admin). */
-  listForUser: adminProcedure.input(z.object({ userId: z.string().min(1) })).query(({ ctx, input }) =>
-    ctx.prisma.imageConsentForm.findMany({
+  /** Formulaires d'un membre, du plus récent au plus ancien par date des droits (fiche admin). */
+  listForUser: adminProcedure.input(z.object({ userId: z.string().min(1) })).query(async ({ ctx, input }) => {
+    const forms = await ctx.prisma.imageConsentForm.findMany({
       where: { userId: input.userId },
-      orderBy: { createdAt: "desc" },
       select: { ...imageConsentFormSelect, uploadedBy: { select: { firstName: true, lastName: true, email: true } } },
-    }),
-  ),
+    });
+    return forms.sort(byEffectiveDesc);
+  }),
 
   remove: adminProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ ctx, input }) => {
     await deleteImageConsentForm(ctx.prisma, input.id);
@@ -89,13 +96,9 @@ export const imageConsentRouter = router({
     const userId = ctx.sessionClient.user.id;
     const [user, forms] = await Promise.all([
       ctx.prisma.user.findUnique({ where: { id: userId }, select: { imageConsent: true, imageConsentAt: true } }),
-      ctx.prisma.imageConsentForm.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        select: imageConsentFormSelect,
-      }),
+      ctx.prisma.imageConsentForm.findMany({ where: { userId }, select: imageConsentFormSelect }),
     ]);
-    return { consent: user?.imageConsent ?? "UNKNOWN", recordedAt: user?.imageConsentAt ?? null, forms };
+    return { consent: user?.imageConsent ?? "UNKNOWN", recordedAt: user?.imageConsentAt ?? null, forms: forms.sort(byEffectiveDesc) };
   }),
 });
 

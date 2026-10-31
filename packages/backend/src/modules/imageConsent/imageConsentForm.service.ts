@@ -12,6 +12,7 @@ import {
   type ImageUsageValue,
 } from "@contracts/legal/imageConsent";
 import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
+import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
 
 /**
  * Formulaires de droit à l'image SIGNÉS — déposés par un admin sur la fiche d'un membre.
@@ -20,8 +21,9 @@ import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNot
  * n'apparaît pas dans la bibliothèque et n'est servi que par /api/media/image-consent/[id]
  * (le membre concerné et les admins). Envoi direct navigateur → R2 (URL signée), comme l'avatar.
  *
- * Le dépôt fixe User.imageConsent d'après les usages cochés : le formulaire le plus récent fait
- * foi. Les anciens restent (preuve). À la suppression du compte, les formulaires sont détachés et
+ * Le dépôt fixe User.imageConsent d'après les usages cochés, SI ses droits sont les plus récents :
+ * un formulaire signé avant les droits en vigueur est archivé (preuve) sans changer le statut
+ * (formOrder.ts). User.imageConsentAt est la date des droits en vigueur. Les anciens restent (preuve). À la suppression du compte, les formulaires sont détachés et
  * gardés 5 ans, puis effacés par la purge nocturne.
  */
 
@@ -55,7 +57,10 @@ export async function createImageConsentFormUpload(params: { userId: string; mim
   return { uploadUrl, path };
 }
 
-/** Après l'envoi : vérifie le fichier, crée la fiche et met à jour le statut du membre. */
+/**
+ * Après l'envoi : vérifie le fichier, crée la fiche, et met à jour le statut du membre si ce
+ * formulaire porte des droits plus récents que ceux en vigueur (`applied`).
+ */
 export async function registerImageConsentForm(params: {
   prisma: PrismaClient;
   userId: string;
@@ -85,7 +90,7 @@ export async function registerImageConsentForm(params: {
   const usages = [...new Set(params.usages)];
   const member = await prisma.user.findUnique({
     where: { id: userId },
-    select: { firstName: true, lastName: true, pseudo: true, email: true },
+    select: { firstName: true, lastName: true, pseudo: true, email: true, imageConsentAt: true },
   });
   if (!member) {
     await removeObject(path);
@@ -93,11 +98,10 @@ export async function registerImageConsentForm(params: {
   }
   const memberName =
     [member.firstName, member.lastName].filter(Boolean).join(" ").trim() || member.pseudo || member.email;
-  const previous = await prisma.imageConsentForm.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    select: { usages: true },
-  });
+  const previousUsages = await latestFormUsages(prisma, userId);
+  // Les droits ne changent que pour des droits plus récents : sans date de signature, ceux du jour.
+  const effectiveAt = params.signedAt ?? new Date();
+  const applied = !member.imageConsentAt || effectiveAt.getTime() >= member.imageConsentAt.getTime();
   const [form] = await prisma.$transaction([
     prisma.imageConsentForm.create({
       data: {
@@ -114,20 +118,25 @@ export async function registerImageConsentForm(params: {
       },
       select: { id: true },
     }),
-    prisma.user.update({
-      where: { id: userId },
-      data: { imageConsent: consentFromUsages(usages), imageConsentAt: new Date() },
-      select: { id: true },
-    }),
+    ...(applied
+      ? [
+          prisma.user.update({
+            where: { id: userId },
+            data: { imageConsent: consentFromUsages(usages), imageConsentAt: effectiveAt },
+            select: { id: true },
+          }),
+        ]
+      : []),
   ]);
+  if (!applied) return { id: form.id, applied };
   await sendImageConsentNotice({
     userId,
     memberName,
     via: "par formulaire papier déposé par un administrateur",
     usages,
-    previousUsages: previous ? previous.usages : null,
+    previousUsages,
   }).catch((err) => console.error("[droit à l'image] avis au club non envoyé :", err instanceof Error ? err.message : err));
-  return { id: form.id };
+  return { id: form.id, applied };
 }
 
 /** Supprime un formulaire (fichier + fiche). Le statut du membre n'est pas modifié. */

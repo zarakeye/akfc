@@ -33,7 +33,7 @@ export function MyImageConsent(): JSX.Element {
           <p>
             <span className="font-semibold">Votre autorisation : </span>
             {IMAGE_CONSENT_LABEL[data.consent]}
-            {data.recordedAt && <span className="text-gray-500"> (enregistrée le {formatDate(data.recordedAt)})</span>}
+            {data.recordedAt && <span className="text-gray-500"> (depuis le {formatDate(data.recordedAt)})</span>}
           </p>
           {latest && (
             <p className="mt-1 text-gray-600">

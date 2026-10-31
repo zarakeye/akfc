@@ -8,6 +8,7 @@ import { getR2Bucket, getR2Client } from "@backend/modules/storage/adapters/r2/c
 import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNotice";
 import { buildConsentPdf } from "@backend/modules/imageConsent/consentPdf.service";
 import { IMAGE_CONSENT_ROOT } from "@backend/modules/imageConsent/imageConsentForm.service";
+import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
 import {
   IMAGE_CONSENT_TEXT_VERSION,
   IMAGE_USAGE_VALUES,
@@ -63,16 +64,6 @@ async function removeObject(key: string): Promise<void> {
   await getR2Client()
     .send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key }))
     .catch(() => undefined);
-}
-
-/** Usages de la version la plus récente (null : aucune), pour signaler un retrait. */
-async function latestUsages(prisma: PrismaClient, userId: string): Promise<ImageUsageValue[] | null> {
-  const last = await prisma.imageConsentForm.findFirst({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    select: { usages: true },
-  });
-  return last ? last.usages : null;
 }
 
 /** Ce que le profil doit savoir pour proposer (ou non) l'autorisation en ligne. */
@@ -147,7 +138,7 @@ export async function confirmMemberConsent(params: {
       `Texte de l'autorisation : version ${IMAGE_CONSENT_TEXT_VERSION}`,
     ],
   });
-  const previous = await latestUsages(prisma, userId);
+  const previous = await latestFormUsages(prisma, userId);
   const key = await storeReceipt(userId, pdf);
 
   try {

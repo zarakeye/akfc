@@ -40,7 +40,7 @@ export function ImageConsentControl({
       <p className="mb-3 text-muted-foreground">
         Autorisation de publier des photos et vidéos où ce membre est reconnaissable (celle des parents pour un
         mineur). Fixée automatiquement par le dépôt d&apos;un formulaire signé, ci-dessous ; à corriger ici au besoin.
-        {recordedAt && <> Dernière saisie : {new Date(recordedAt).toLocaleDateString("fr-FR")}.</>}
+        {recordedAt && <> En vigueur depuis le {new Date(recordedAt).toLocaleDateString("fr-FR")}.</>}
       </p>
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Droit à l'image">
         {IMAGE_CONSENT_VALUES.map((v) => (

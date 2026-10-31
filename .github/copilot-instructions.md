@@ -15,7 +15,7 @@
 
 - Schema: `prisma/schema.prisma`
 - Prisma client is exported at `src/server/prisma.ts` (use this rather than instantiating new clients)
-- Seed: `pnpm prisma db seed` (runs `prisma/seed.js` via `package.json` `prisma.seed` config)
+- Seed: no production seed (data is entered on the site); demo/sandbox data: `pnpm db:seed:dev` (`prisma/seed.sandbox.mjs`)
 - Generate client / reset guidance: Use `./reset-prisma.sh` to regenerate `@prisma/client` binary-safe client. Useful when changing engine type.
 - Migrate: `pnpm prisma migrate dev` (standard workflow to create/apply migrations)
 
