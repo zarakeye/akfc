@@ -68,6 +68,9 @@ COPY prisma.config.ts package.json ./
 # pnpm (version épinglée par packageManager) téléchargé au BUILD : une migration lancée en
 # production ne dépend plus du registre npm.
 RUN corepack install
+# Ni avis de mise à jour, ni vérification en ligne à chaque migration : la version de Prisma est
+# celle du fichier de verrouillage, elle change par une modification du dépôt, pas au déploiement.
+ENV PRISMA_HIDE_UPDATE_MESSAGE=1 CHECKPOINT_DISABLE=1
 CMD ["pnpm", "prisma", "migrate", "deploy"]
 
 # ─── Service ──────────────────────────────────────────────────────────────
