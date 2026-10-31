@@ -1,0 +1,94 @@
+---
+title: "Un tutoriel, en données"
+description: "Un tutoriel interactif guide l’utilisateur sur la vraie page, étape par étape. Ce chapitre ouvre l’étude de cas : ce qu’est un tuto pour le moteur (des données, pas du code), comment une étape désigne un élément de l’écran par un contrat de nom, comment un tuto choisit ses pages et son public, et comment une garde empêche ce contrat de se rompre sans bruit."
+section: "Étude de cas"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le site est construit, vérifié, mis en production et copiable dans une sandbox. Toutes les parties précédentes ont décrit le projet par couches ; celle-ci suit une fonctionnalité de bout en bout.
+
+Une **étude de cas** prend une fonctionnalité et la traverse de part en part : les types, les données, l’état, l’affichage, l’accessibilité, les vérifications, les tests. Celle-ci suit le moteur des **tutoriels interactifs** : un petit module (`apps/web/src/features/tours/`, six cents lignes) qui touche presque tout ce que les parties précédentes ont décrit.
+
+Un tutoriel ne se lit pas : il se **fait**. Sur la vraie page, l’écran s’assombrit, seul l’élément de l’étape en cours reste éclairé et actif, une bulle dit quoi faire, et l’on passe à l’étape suivante en faisant l’action demandée — cliquer, taper, changer de page. Le premier tuto du projet guide un administrateur dans la création d’une actualité.
+
+## Un tuto est une donnée 📋
+
+Le moteur ne sait rien des actualités. Il sait lire une **description** de tuto, écrite en données : un objet par tuto, dans son propre fichier. Ajouter un tuto, c’est écrire des données, pas du code. Le type de cette description est le contrat entre les auteurs de tutos et le moteur :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/tours/tour.types.ts"
+  filename="tour.types.ts"
+  snippetRange="10-47"
+  title="tour.types.ts"
+  stepsJson='[{"title": "Qui le voit", "body": "Trois publics, du plus large au plus restreint. Le public d’un tuto décide s’il est proposé à un visiteur : un tuto d’administration n’est montré qu’aux administrateurs.", "scope": "1-2", "focus": "2-2"}, {"title": "Ce qui fait passer une étape", "body": "Quatre façons, en **union discriminée** (partie « Contenu éditorial ») : `kind` dit laquelle, et chacune porte ses propres champs — une fonction de validation pour une saisie, un chemin ou un motif pour une page. TypeScript refuse une étape `route` sans `match`.", "scope": "4-13", "focus": "9-11"}, {"title": "Une étape", "body": "Un élément visé (facultatif : sans cible, la bulle est centrée), un titre, une explication, et ce qui la fait passer.", "scope": "15-23", "focus": "17-17"}, {"title": "Un tuto", "body": "Un identifiant stable, un titre et une phrase pour le lanceur, un public, les pages où il est proposé, la page où il commence, et ses étapes.", "scope": "25-38", "focus": "34-36"}]'
+/>
+
+### Le premier tuto
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/tours/definitions/admin.posts.create.ts"
+  filename="admin.posts.create.ts"
+  snippetRange="8-52"
+  title="definitions/admin.posts.create.ts"
+  stepsJson='[{"title": "Qui, où, à partir d’où", "body": "Réservé aux administrateurs ; proposé sur la liste des actualités et sur la page de création ; il commence sur la liste.", "scope": "1-7", "focus": "5-7"}, {"title": "Un clic", "body": "La première étape vise le bouton « Créer un article » et attend qu’on clique dessus.", "scope": "9-14", "focus": "13-13"}, {"title": "Une saisie", "body": "La deuxième attend un titre : « Suivant » ne s’active que quand `validate` accepte la valeur du champ.", "scope": "15-20", "focus": "19-19"}, {"title": "Des explications", "body": "Deux étapes montrent un élément sans rien attendre d’autre qu’un « Suivant » : la date (laissée vide, l’article reste un brouillon) et le constructeur de contenu.", "scope": "21-32", "focus": "25-25"}, {"title": "Une page qui change", "body": "L’enregistrement : l’étape passe quand l’adresse devient celle d’un article (`/dashboard/posts/<numéro>`), c’est-à-dire quand la création a réussi. Un échec de validation laisse l’utilisateur sur le formulaire, et l’étape attend.", "scope": "33-38", "focus": "37-37"}, {"title": "Une fin, sans cible", "body": "La dernière étape n’a pas de cible : une bulle centrée, et « Terminer ».", "scope": "39-45", "focus": "40-40"}]'
+/>
+
+Le tuto **crée** un vrai article, en brouillon : il agit sur les vraies données, et le dit dans ses bulles (« vous pourrez supprimer l’article ensuite »). Un tuto qui publierait quelque chose, ou supprimerait, serait une autre affaire : il ne guiderait pas, il agirait à la place de l’utilisateur.
+
+Le registre réunit les tutos et répond à deux questions :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/tours/tour.registry.ts"
+  filename="tour.registry.ts"
+  snippetRange="4-30"
+  title="tour.registry.ts"
+  stepsJson='[{"title": "Une liste", "body": "Tous les tutos, importés un par un. Un tuto écrit mais non ajouté ici n’existe pour personne — la garde le signale (plus bas).", "scope": "1-5", "focus": "5-5"}, {"title": "Retrouver un tuto", "body": "Par son identifiant : c’est lui qui est gardé pendant que le tuto se déroule (chapitre 2).", "scope": "7-9", "focus": "8-8"}, {"title": "Les tutos d’une page, pour un visiteur", "body": "Ceux dont le public correspond au visiteur, et dont une des pages correspond à l’adresse courante — un chemin exact, ou un motif.", "scope": "11-23", "focus": "20-22"}]'
+/>
+
+<Callout type="info">
+Le public d’un tuto décide de **ce qui est proposé**, pas de ce qui est permis. Un membre qui forcerait le lancement d’un tuto d’administration arriverait sur des pages du tableau de bord, que le proxy et les procédures lui refusent (partie « Authentification et droits ») : le tuto n’ouvre aucun droit.
+</Callout>
+
+## Un contrat de nom entre le tuto et la page
+
+Une étape désigne son élément par un **nom**, pas par sa position dans la page ni par sa classe CSS. L’élément porte ce nom dans un attribut `data-tour` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/posts/forms/PostForm.tsx"
+  filename="PostForm.tsx"
+  snippetRange="116-123"
+  snippetHighlight="7"
+  snippetTitle="Un champ du formulaire d’actualité"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une classe CSS change avec le style, un texte avec la langue ou une reformulation, une position avec la mise en page : un tuto qui s’y accrocherait casserait à chaque retouche. `data-tour` ne sert qu’aux tutos ; il ne change rien à l’affichage, et dit à qui modifie le composant que **quelqu’un dépend de ce nom** (partie « Démarrer », chapitre « Façon de travailler »).
+
+Les noms suivent la page et le rôle de l’élément (`posts.list.create`, `posts.form.title`) : on devine, en lisant le tuto, où se trouve chaque cible.
+
+## Une garde pour le contrat
+
+Un contrat que rien ne vérifie finit rompu. Renommer l’attribut, déplacer le bouton dans un autre composant, retirer un tuto du registre : le code compile, le lint ne dit rien, et le tuto se bloque chez l’utilisateur — ou n’apparaît plus. `scripts/check-tour-targets.mjs`, lancé par `pnpm check` (partie « Qualité », chapitre « Les gardes maison »), cherche trois ruptures :
+
+<DocsTable columnsJson='["Rupture", "Ce que verrait l’utilisateur", "Ce que dit la garde"]' rowsJson='[["Une étape vise un nom qu’aucun élément ne porte.", "Le tuto s’arrête sur « Élément introuvable ».", "Le fichier du tuto et la cible manquante."], ["Une définition n’est pas importée par le registre.", "Le tuto n’apparaît nulle part.", "Le fichier de la définition et le registre."], ["Une fiche de documentation lance un tuto qui n’existe pas.", "« Tuto introuvable » à la place du bouton.", "La fiche et l’identifiant inconnu."]]' />
+
+Les deux dernières vérifications sont nées de la relecture de cette partie : la première seule protégeait les cibles, pas l’existence du tuto lui-même. La garde a été vérifiée comme un test (partie « Qualité ») : l’import retiré du registre, puis un identifiant mal orthographié dans une fiche, chacun a fait échouer `pnpm check` avec son message.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’un tuto pour le moteur ?", "Des données typées (Tour) : un public, des pages, une page de départ, des étapes."], ["Comment une étape passe-t-elle ?", "Par un clic, une saisie validée, une page atteinte, ou un « Suivant » : une union discriminée."], ["Comment une étape désigne-t-elle un élément ?", "Par un nom, porté par l’élément dans data-tour : un contrat entre le tuto et la page."], ["Qui voit un tuto ?", "Son public (public, membre, admin) sur ses pages ; cela décide de ce qui est proposé, jamais de ce qui est permis."], ["Qu’est-ce qui protège le contrat ?", "check-tour-targets : cibles présentes, tutos enregistrés, boutons de fiche valides."]]' />
+
+## À suivre
+
+Un tuto est une liste d’étapes. Le moteur doit la dérouler : se souvenir de l’étape en cours à travers plusieurs pages, trouver l’élément visé, assombrir le reste, et reconnaître l’action attendue.
+
+<Callout type="tip">
+**Chapitre suivant : le moteur.** Un état qui survit aux changements de page, un voile percé autour d’une cible qui bouge, et quatre façons de passer une étape.
+</Callout>

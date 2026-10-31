@@ -1,0 +1,124 @@
+---
+title: "Le moteur"
+description: "Dérouler un tuto : un état qui survit aux changements de page et au rechargement sans écart d’hydratation, un fournisseur qui fait avancer les étapes de page en page, et un voile percé qui suit une cible qui bouge, ne laisse agir qu’elle, et reconnaît l’action attendue — au clavier comme à la souris."
+section: "Étude de cas"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un tuto est une donnée : des étapes qui désignent chacune un élément par son nom data-tour, et disent ce qui les fait passer.
+
+Le moteur tient en trois pièces, chacune avec une responsabilité :
+
+<DocsTable columnsJson='["Pièce", "Fichier", "Responsabilité"]' rowsJson='[["Le store", "tour.store.ts", "Quel tuto, quelle étape : un état qui survit à un changement de page et à un rechargement."], ["Le fournisseur", "TourProvider.tsx", "Monté sur toutes les pages : lit l’état, fait passer les étapes de page, affiche l’overlay ou le lanceur."], ["L’overlay", "TourOverlay.tsx", "Une étape à l’écran : trouver la cible, assombrir le reste, reconnaître l’action, la bulle."]]' />
+
+## Un état qui traverse les pages 🧭
+
+Un tuto commence sur une page et finit sur une autre. Un `useState` dans un composant disparaît quand la page change ; un état global en mémoire, quand la page se recharge. L’état du tuto vit donc dans le `sessionStorage` du navigateur : propre à l’onglet (deux onglets, deux tutos), effacé à sa fermeture.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/tours/tour.store.ts"
+  filename="tour.store.ts"
+  snippetRange="10-64"
+  title="tour.store.ts"
+  stepsJson='[{"title": "Le minimum", "body": "L’identifiant du tuto et le numéro de l’étape : tout le reste (le titre, la cible…) se relit dans la définition. `undefined` signifie « pas encore lu », distinct de `null`, « aucun tuto ».", "scope": "1-8", "focus": "8-8"}, {"title": "Lire avec méfiance", "body": "Le stockage peut contenir n’importe quoi : une ancienne forme, une valeur modifiée à la main, rien. Ce qui n’a pas la forme attendue vaut « aucun tuto ». Et le stockage peut être indisponible (navigation privée) : l’erreur est rattrapée.", "scope": "10-18", "focus": "15-15"}, {"title": "Écrire, puis prévenir", "body": "Chaque changement est écrit dans le stockage, puis signalé à tous les abonnés : les composants qui lisent l’état se mettent à jour.", "scope": "21-30", "focus": "29-29"}, {"title": "Un store externe", "body": "`subscribe` et `getSnapshot` : la forme qu’attend `useSyncExternalStore`, le hook de React pour lire une source extérieure (partie « Interface transverse »). `getServerSnapshot` répond « aucun tuto » : le serveur n’a pas de `sessionStorage`, et le premier rendu du navigateur dit la même chose que le HTML du serveur — pas d’écart d’hydratation.", "scope": "32-43", "focus": "41-41"}, {"title": "Avancer, une seule fois", "body": "`next` ne fait passer l’étape que si l’on est encore à `fromIndex`. Deux signaux pour une même action (un clic, puis la page qui change) ne font pas sauter une étape : le second trouve l’étape déjà passée, et ne fait rien.", "scope": "44-55", "focus": "50-50"}]'
+/>
+
+<Callout type="tip">
+Un état qui doit survivre au-delà d’un composant n’a pas sa place dans un `useState` recopié depuis le stockage par un effet : c’est une source extérieure, que `useSyncExternalStore` lit directement. Le composant n’a rien à synchroniser, et le serveur a sa propre réponse (partie « Qualité », chapitre « Le typecheck et le lint »).
+</Callout>
+
+## Le fournisseur, sur toutes les pages
+
+`TourProvider` est monté une fois, dans les fournisseurs de l’application : il enveloppe toutes les pages, et continue d’exister quand la page change.
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourProvider.tsx"
+  filename="TourProvider.tsx"
+  snippetRange="17-56"
+  title="TourProvider.tsx"
+  stepsJson='[{"title": "Lire l’état", "body": "Le store, par `useSyncExternalStore` ; le tuto et l’étape en cours en découlent, à chaque rendu.", "scope": "1-10", "focus": "2-2"}, {"title": "Ranger ce qui n’existe plus", "body": "Un tuto renommé ou retiré depuis le début du parcours, ou un numéro d’étape au-delà de la dernière : l’état est effacé. Sans cela, un onglet garderait un tuto fantôme jusqu’à sa fermeture.", "scope": "12-16", "focus": "13-13"}, {"title": "Les étapes de page", "body": "Une étape `route` passe quand l’adresse correspond. Le fournisseur la surveille, puisque c’est lui qui survit au changement de page ; `tourStore.next(index)` ne fait passer que l’étape encore en cours.", "scope": "18-23", "focus": "22-22"}, {"title": "L’overlay, ou le lanceur", "body": "Un tuto en cours : son overlay, avec une `key` par étape — chaque étape repart d’un overlay neuf, sans état hérité de la précédente. Sinon : le bouton « ? » qui liste les tutos de la page (chapitre 3).", "scope": "25-40", "focus": "30-30"}]'
+/>
+
+## L’overlay d’une étape
+
+### Suivre une cible qui bouge
+
+La cible d’une étape peut ne pas encore exister (la page charge ses données), bouger (on fait défiler, on redimensionne la fenêtre), ou changer de valeur (on tape). L’overlay ne s’abonne pas à chacun de ces événements : il **regarde** la cible à chaque image, par `requestAnimationFrame`.
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourOverlay.tsx"
+  filename="TourOverlay.tsx"
+  snippetRange="50-82"
+  title="TourOverlay.tsx — le suivi de la cible"
+  stepsJson='[{"title": "Chercher la cible", "body": "Par son nom, `[data-tour=\"…\"]` (le nom est échappé par `CSS.escape`, pour qu’un caractère spécial ne casse pas le sélecteur). Introuvable : on attend ; introuvable depuis huit secondes, l’étape est perdue.", "scope": "6-11", "focus": "10-10"}, {"title": "La première fois", "body": "La cible est amenée au centre de l’écran, et le curseur clavier y va : dans le champ si l’étape attend une saisie, sinon sur la bulle, que le lecteur d’écran lit. Avant la relecture de cette partie, le curseur restait sur le bouton qui avait lancé le tuto — désormais caché sous le voile.", "scope": "12-19", "focus": "18-18"}, {"title": "La position, à chaque image", "body": "Le rectangle de la cible, élargi d’une marge. `setRect` ne reçoit un nouvel objet que si la position a changé (`sameRect`) : immobile, la cible ne provoque aucun rendu, même soixante fois par seconde.", "scope": "20-23", "focus": "22-22"}, {"title": "La saisie, validée en continu", "body": "Pour une étape `input`, la valeur du champ est relue à chaque image et passée à `validate` : « Suivant » s’active dès qu’elle est acceptable.", "scope": "24-27", "focus": "26-26"}, {"title": "Arrêter en partant", "body": "L’effet rend une fonction qui annule la prochaine image : l’étape suivante (un overlay neuf) reprend avec sa propre boucle.", "scope": "29-33", "focus": "32-32"}]'
+/>
+
+### Un voile percé, et des clics bloqués
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourOverlay.tsx"
+  filename="TourOverlay.tsx"
+  snippetRange="143-153"
+  snippetHighlight="5"
+  snippetTitle="Les bloqueurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le voile est un SVG plein écran, percé par un **masque** à l’emplacement de la cible : la cible reste nette, le reste s’assombrit. Mais un voile dessiné ne bloque rien — le SVG laisse passer les clics (`pointer-events-none`). Ce sont quatre panneaux transparents, posés autour du trou, qui captent les clics partout ailleurs : un clic à côté ne déclenche rien, sauf sur la cible.
+
+Pour une étape d’explication (`next`), un cinquième panneau couvre **la cible elle-même** : on la montre, on ne la manipule pas. Sans lui, un clic sur le bouton « Créer » pendant l’étape qui explique la date enverrait le formulaire, et le tuto serait perdu.
+
+<DocsTable columnsJson='["Couche", "z-index", "Rôle"]' rowsJson='[["Le voile (SVG masqué)", "10000", "Assombrir tout sauf la cible ; ne capte rien."], ["Les bloqueurs", "10000", "Capter les clics hors de la cible (et sur elle, pour une explication)."], ["Le liseré", "10001", "Souligner la cible ; ne capte rien."], ["La bulle", "10002", "Le titre, l’explication, « Quitter », « Suivant »."]]' />
+
+### Reconnaître l’action
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourOverlay.tsx"
+  filename="TourOverlay.tsx"
+  snippetRange="89-100"
+  snippetHighlight="7,10"
+  snippetTitle="Un clic sur la cible"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le clic est écouté sur tout le document, en **phase de capture** (`true`) : avant que l’élément cliqué ne le reçoive, et quoi qu’il en fasse — même un composant qui arrête la propagation ne le cache pas au tuto. L’étape passe ensuite, au tour suivant de la boucle d’événements (`setTimeout(…, 0)`) : l’élément a d’abord traité son clic (ouvert le formulaire, suivi le lien).
+
+<DocsTable columnsJson='["Étape", "Ce qui la fait passer", "Qui le constate"]' rowsJson='[["click", "Un clic sur la cible.", "L’overlay, en capture sur le document."], ["input", "« Suivant », actif dès que validate accepte la valeur.", "L’overlay, qui relit la valeur à chaque image."], ["route", "L’arrivée sur une page qui correspond.", "Le fournisseur, qui survit au changement de page."], ["next", "« Suivant » (ou « Terminer » à la dernière étape).", "La bulle."]]' />
+
+### Au clavier
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourOverlay.tsx"
+  filename="TourOverlay.tsx"
+  snippetRange="102-119"
+  snippetHighlight="4,10"
+  snippetTitle="Échap, et le curseur gardé"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Échap quitte à tout moment. Et le curseur clavier ne sort pas de l’étape : s’il arrive ailleurs (Tab vers un lien caché sous le voile), il est ramené sur la cible ou la bulle. Les bloqueurs arrêtent la souris ; ce garde arrête le clavier. Avec le curseur placé sur la bonne cible à chaque étape (plus haut), le tuto se suit entièrement sans souris (partie « Interface transverse », chapitre « L’accessibilité »).
+
+### Une étape perdue
+
+Une cible introuvable après huit secondes — un composant renommé sans la garde, une page en erreur — ne laisse pas l’utilisateur devant un voile muet. La bulle dit « Élément introuvable », n’offre plus que « Quitter », et le voile couvre toute la page : on ne peut ni avancer, ni agir à l’aveugle.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vit l’état du tuto ?", "Dans le sessionStorage de l’onglet, lu par un store externe (useSyncExternalStore) ; le serveur répond « aucun tuto »."], ["Comment une même action ne fait-elle pas sauter deux étapes ?", "next(fromIndex) ne passe que si l’étape en cours est encore fromIndex."], ["Qui fait passer une étape de page ?", "Le fournisseur, monté sur toutes les pages et qui survit à la navigation."], ["Comment l’overlay suit-il la cible ?", "À chaque image (requestAnimationFrame), sans rendu tant qu’elle ne bouge pas."], ["Comment seuls les clics sur la cible passent-ils ?", "Quatre bloqueurs transparents autour du trou ; un cinquième sur la cible pour une explication."], ["Et au clavier ?", "Échap quitte ; le curseur va sur la cible ou la bulle, et n’en sort pas."]]' />
+
+## À suivre
+
+Le moteur déroule un tuto une fois lancé. Reste à le proposer au bon visiteur, au bon endroit — et à vérifier, de bout en bout, qu’il se suit vraiment.
+
+<Callout type="tip">
+**Chapitre suivant : lancer, vérifier, écrire.** Le bouton « ? » et le bouton des fiches, le tuto suivi par un test de bout en bout (et ce qu’il a trouvé), et la recette d’un nouveau tuto.
+</Callout>

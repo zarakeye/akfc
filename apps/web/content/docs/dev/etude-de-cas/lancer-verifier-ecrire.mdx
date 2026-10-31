@@ -1,0 +1,105 @@
+---
+title: "Lancer, vérifier, écrire"
+description: "Un tuto se propose de deux façons — le bouton « ? » de la page et le bouton des fiches de documentation —, se vérifie par un test de bout en bout qui le suit comme un administrateur, et s’écrit en quelques étapes. Ce que le test a trouvé au premier lancement, et la recette d’un nouveau tuto."
+section: "Étude de cas"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le moteur garde l’étape en cours dans l’onglet, fait passer les étapes de page en page, et ne laisse agir que la cible, à la souris comme au clavier.
+
+## Deux portes d’entrée 🚪
+
+<DocsTable columnsJson='["Bouton", "Où", "Ce qu’il propose"]' rowsJson='[["« ? » (TourLauncher)", "En bas à gauche de toute page qui a des tutos.", "Les tutos de cette page, pour ce visiteur."], ["« Lancer le tuto » (TourStartButton)", "Dans une fiche de la documentation des administrateurs, par le composant MDX <TourStartButton id=\"…\" />.", "Un tuto précis : il conduit à sa page de départ."]]' />
+
+Les deux s’appelaient `TourLauncher` : le premier dans `TourLauncher.tsx`, le second dans `TourStartButton.tsx`, exporté sous le même nom. Deux composants différents sous un même nom, c’est une recherche dans le code qui trouve l’un en cherchant l’autre ; la relecture a donné au second le nom de son fichier.
+
+<CodeWalkthrough
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourLauncher.tsx"
+  filename="TourLauncher.tsx"
+  snippetRange="15-68"
+  title="TourLauncher.tsx — le bouton « ? »"
+  stepsJson='[{"title": "Rien à proposer, rien d’affiché", "body": "Les tutos de la page, filtrés par public (chapitre 1). Aucun : le bouton n’existe pas — pas de « ? » qui ouvre une liste vide.", "scope": "1-6", "focus": "6-6"}, {"title": "Lancer", "body": "L’état du tuto est écrit, puis le visiteur est conduit à la page de départ s’il n’y est pas. L’ordre compte : sur la nouvelle page, le fournisseur trouve déjà un tuto en cours.", "scope": "8-12", "focus": "10-11"}, {"title": "Un vrai bouton, qui annonce son état", "body": "`aria-expanded` et un nom (`aria-label`), comme les menus du header (partie « Interface transverse »).", "scope": "43-54", "focus": "46-47"}]'
+/>
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/tours/TourStartButton.tsx"
+  filename="TourStartButton.tsx"
+  snippetRange="30-33"
+  snippetHighlight="4"
+  snippetTitle="Le bouton des fiches : expliquer plutôt que laisser échouer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans une fiche, le bouton est affiché à tous ceux qui lisent la documentation. À un visiteur qui n’a pas le rôle requis, il ne propose pas un tuto qui échouerait sur une page refusée : il est désactivé, et dit pourquoi (« Réservé aux administrateurs connectés »). Un identifiant inconnu affiche « Tuto introuvable » — ce que la garde empêche désormais d’atteindre (chapitre 1).
+
+## Un tuto se vérifie en le suivant
+
+Le tuto lui-même a son test de bout en bout (partie « Qualité », chapitre « Tester de bout en bout ») : un administrateur le lance depuis le bouton « ? » et le suit jusqu’au bout, comme on le ferait.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="e2e/tutoriel.spec.ts"
+  filename="tutoriel.spec.ts"
+  snippetRange="10-46"
+  title="e2e/tutoriel.spec.ts"
+  stepsJson='[{"title": "Lancer depuis la page", "body": "Connexion par l’API, la liste des actualités, le bouton « ? », le tuto. Chaque bulle se retrouve par son rôle et son nom (« Créer une actualité — étape 2 sur 6 ») : le test lit la page comme un lecteur d’écran.", "scope": "2-7", "focus": "7-7"}, {"title": "Un clic", "body": "Le clic sur la cible passe par le trou du voile : un clic ailleurs serait capté par un bloqueur, et le test échouerait.", "scope": "9-11", "focus": "11-11"}, {"title": "Une saisie, le curseur déjà là", "body": "Sur une autre page : le curseur est dans le champ (`toBeFocused`), « Suivant » est désactivé tant que le titre est vide, puis s’active.", "scope": "13-20", "focus": "16-18"}, {"title": "Les explications, puis la page créée", "body": "Deux « Suivant » ; puis « Créer » : l’étape passe quand l’adresse devient celle de l’article créé.", "scope": "22-32", "focus": "31-32"}, {"title": "La fin", "body": "« Terminer » range le tuto : plus aucune bulle.", "scope": "34-37", "focus": "35-35"}]'
+/>
+
+Un second test vérifie qu’Échap interrompt le tuto. Les deux passent ; le premier n’est pas passé du premier coup.
+
+## Ce que le test a trouvé
+
+À son premier lancement, le test s’est arrêté à l’étape 2 : la page de création d’une actualité ne s’affichait pas du tout (« This page couldn’t load »). Ce lancement-là tournait sur la machine de la relecture, sans Docker, où la connexion à la base passait par un module de remplacement. La console du navigateur désignait ce module — le **backend** de connexion à la base, exécuté… dans le navigateur.
+
+La chaîne était la suivante. Le formulaire d’actualité est un composant client ; il importe le constructeur de pages depuis l’entrée `@features/page-builder`. Cette entrée exportait aussi `PageRenderer`, le composant **serveur** qui affiche une page : il lit la base par Prisma et résout les médias. Importer l’entrée, c’était importer `PageRenderer`, donc le backend, dans le code envoyé au navigateur de chaque formulaire d’administration.
+
+En production, et dans les tests lancés sur un poste avec Docker, le client Prisma dispose d’une version pour navigateur : elle se construit sans erreur, et ne lève une erreur qu’à la première requête, que personne ne fait. Rien ne cassait, rien ne se voyait — mais chaque formulaire chargeait du code serveur qui n’avait rien à y faire. Le module de remplacement, lui, n’avait pas de version pour navigateur : il a rendu visible ce qui était là depuis longtemps.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/index.ts"
+  filename="index.ts"
+  snippetRange="1-20"
+  snippetHighlight="2"
+  snippetTitle="@features/page-builder : ce que l’entrée exporte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`PageRenderer` s’importe désormais par son propre chemin, que seuls des composants serveur utilisent. Et il le dit lui-même :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
+  filename="PageRenderer.tsx"
+  snippetRange="1-3"
+  snippetHighlight="3"
+  snippetTitle="PageRenderer.tsx (début)"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`import "server-only"` ne fait rien à l’exécution. Mais si un composant client l’importe, **le build échoue**, avec le nom du fichier fautif. La règle « ce composant ne part jamais au navigateur » n’est plus une convention à retenir : c’est le compilateur qui la tient.
+
+<Callout type="info">
+Un test de bout en bout trouve aussi ce qu’il ne cherche pas. Ce test vérifiait un tuto ; il a trouvé un composant serveur dans le code du navigateur — comme le premier lancement des tests de la partie « Qualité » avait trouvé le visionneur PDF qui faisait échouer le rendu serveur. Les deux problèmes étaient invisibles à l’écran.
+</Callout>
+
+## Écrire un nouveau tuto
+
+<DocsTable columnsJson='["Étape", "Ce qu’on fait", "Ce qui le vérifie"]' rowsJson='[["1. Choisir le parcours", "Une tâche d’un public précis, qui se fait en quelques pages, et qui ne publie ni ne supprime rien.", "La relecture."], ["2. Poser les noms", "Un data-tour sur chaque élément visé, nommé d’après la page et le rôle (« events.form.title »).", "Rien encore : les noms ne servent à personne."], ["3. Écrire la définition", "Un fichier dans definitions/, typé Tour : public, pages, page de départ, étapes et ce qui les fait passer.", "TypeScript (une étape route sans match est refusée)."], ["4. L’enregistrer", "L’importer dans tour.registry.ts.", "check-tour-targets : définition enregistrée, cibles présentes."], ["5. Le proposer dans une fiche", "<TourStartButton id=\"…\" /> dans la documentation des administrateurs (ou des membres).", "check-tour-targets : l’identifiant existe."], ["6. Le suivre", "Un test de bout en bout qui le lance et le suit jusqu’au bout.", "pnpm e2e."]]' />
+
+<Callout type="tip">
+Un tuto vieillit comme le code qu’il traverse. La garde surveille ses cibles ; le test, son déroulement. Une étape dont le texte ne correspond plus à l’écran (un bouton renommé « Enregistrer ») ne se voit qu’à la relecture : un tuto se relit quand sa page change.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment un tuto est-il proposé ?", "Par le bouton « ? » de sa page (filtré par public), ou par un bouton dans une fiche de documentation."], ["Que fait le bouton d’une fiche pour un visiteur sans le rôle ?", "Il est désactivé et dit pourquoi, plutôt que de lancer un tuto qui échouerait."], ["Comment vérifier qu’un tuto se suit ?", "Un test de bout en bout qui le lance et le suit, étape par étape, comme un utilisateur."], ["Qu’a trouvé ce test ?", "Le backend dans le code envoyé au navigateur des formulaires, par l’entrée du constructeur de pages."], ["Comment l’éviter à l’avenir ?", "import \"server-only\" dans les composants serveur : le build échoue si un composant client les importe."], ["Comment écrire un nouveau tuto ?", "Des data-tour, une définition, le registre, un bouton de fiche, un test — chaque étape a sa vérification."]]' />
+
+## Fin du parcours
+
+Cette étude de cas clôt la documentation du développeur. Le moteur des tutoriels a traversé presque toutes ses parties : des données typées et une union discriminée, un état hors de React lu sans écart d’hydratation, un composant serveur tenu hors du navigateur, l’accessibilité au clavier, une garde maison, un test de bout en bout. C’est la méthode de tout le projet, appliquée à une seule fonctionnalité : **décrire en données, vérifier par un outil, et ne pas croire qu’une chose marche avant de l’avoir vue marcher**.
