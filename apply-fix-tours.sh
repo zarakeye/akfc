@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Tutoriels : le curseur suit l'étape, un nom par bouton, une garde plus large ; PageRenderer (serveur)
+# ne part plus au navigateur ; test e2e du tuto. Prérequis : apply-fix-infra.sh. Aucune migration.
+# Usage (racine du repo) : bash apply-fix-tours.sh
+set -euo pipefail
+cd "$(dirname "$0")"
+[ -f pnpm-workspace.yaml ] || { echo "À lancer à la racine du repo."; exit 1; }
+
+if git show HEAD:"apps/web/src/mdx-components.tsx" 2>/dev/null | grep -qF "import { TourStartButton }"; then echo "Déjà appliqué (commité)."; exit 0; fi
+grep -qF "RUN corepack install" "Dockerfile" 2>/dev/null || { echo "❌ lancer d'abord apply-fix-infra.sh"; exit 1; }
+MODIFIED=("apps/web/content/docs/admin/index.mdx" "apps/web/src/app/(public)/about/instructeurs/page.tsx" "apps/web/src/features/page-builder/PageRenderer.tsx" "apps/web/src/features/page-builder/index.ts" "apps/web/src/features/tours/TourOverlay.tsx" "apps/web/src/features/tours/TourStartButton.tsx" "apps/web/src/mdx-components.tsx" "scripts/check-tour-targets.mjs")
+EXPECT=("df818e1538f1:apps/web/content/docs/admin/index.mdx" "7aa08b5bcfd5:apps/web/src/app/(public)/about/instructeurs/page.tsx" "4c93014e1531:apps/web/src/features/page-builder/PageRenderer.tsx" "acaeb13d8b73:apps/web/src/features/page-builder/index.ts" "538292a23648:apps/web/src/features/tours/TourOverlay.tsx" "137469752200:apps/web/src/features/tours/TourStartButton.tsx" "6fc2f338ee79:apps/web/src/mdx-components.tsx" "ab65e80419cf:scripts/check-tour-targets.mjs")
+DIFF=0; for e in "${EXPECT[@]}"; do h=${e%%:*}; f=${e#*:}; c=$(git rev-parse "HEAD:$f" 2>/dev/null | cut -c1-12); if [ "$c" != "$h" ]; then [ $DIFF = 0 ] && echo "❌ ces fichiers ne sont pas dans l'état attendu (rien n'a été touché) :"; echo "   $f"; DIFF=1; fi; done; [ $DIFF = 0 ] || exit 1
+CREATED=("e2e/tutoriel.spec.ts")
+restore(){ git checkout -q -- "${MODIFIED[@]}" 2>/dev/null || true; rm -f "${CREATED[@]}"; echo "  ↩ fichiers restaurés"; }
+if grep -qF "import { TourStartButton }" "apps/web/src/mdx-components.tsx" 2>/dev/null; then echo "  restes d'un essai précédent non commité → nettoyage"; restore; fi
+if ! git diff --quiet HEAD -- "${MODIFIED[@]}" 2>/dev/null; then echo "❌ modifications non commitées dans des fichiers que ce script modifie (rien n'a été touché) :"; git diff --name-only HEAD -- "${MODIFIED[@]}" | head -5; exit 1; fi
+trap 'restore' ERR
+
+mkdir -p "e2e"
+base64 -d > "e2e/tutoriel.spec.ts" <<'B64'
+aW1wb3J0IHsgZXhwZWN0LCB0ZXN0IH0gZnJvbSAiQHBsYXl3cmlnaHQvdGVzdCI7CgppbXBvcnQg
+eyBsb2dpbkFzIH0gZnJvbSAiLi9oZWxwZXJzIjsKaW1wb3J0IHsgVVNFUlMgfSBmcm9tICIuL2Rh
+dGEubWpzIjsKCi8qKgogKiBMZSBtb3RldXIgZGVzIHR1dG9yaWVscywgcGFyY291cnUgY29tbWUg
+dW4gYWRtaW5pc3RyYXRldXIgOiBsYW5jw6kgZGVwdWlzIGxlIGJvdXRvbiDCqyA/IMK7LCBpbAog
+KiB0cmF2ZXJzZSBkZXV4IHBhZ2VzLCBhdHRlbmQgdW4gY2xpYywgdW5lIHNhaXNpZSwgZGVzIMKr
+IFN1aXZhbnQgwrssIHB1aXMgbGEgcGFnZSBjcsOpw6llLgogKi8KdGVzdCgibGUgdHV0byDCqyBD
+csOpZXIgdW5lIGFjdHVhbGl0w6kgwrsgc2Ugc3VpdCBqdXNxdSdhdSBib3V0IiwgYXN5bmMgKHsg
+cGFnZSB9KSA9PiB7CiAgYXdhaXQgbG9naW5BcyhwYWdlLCBVU0VSUy5hZG1pbi5lbWFpbCk7CiAg
+YXdhaXQgcGFnZS5nb3RvKCIvZGFzaGJvYXJkL3Bvc3RzIik7CgogIGF3YWl0IHBhZ2UuZ2V0QnlS
+b2xlKCJidXR0b24iLCB7IG5hbWU6ICJUdXRvcmllbHMgZGUgY2V0dGUgcGFnZSIgfSkuY2xpY2so
+KTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgiYnV0dG9uIiwgeyBuYW1lOiAvQ3LDqWVyIHVuZSBh
+Y3R1YWxpdMOpLipSw6lkaWdlci8gfSkuY2xpY2soKTsKICBjb25zdCBidWJibGUgPSAobjogbnVt
+YmVyKSA9PiBwYWdlLmdldEJ5Um9sZSgiZGlhbG9nIiwgeyBuYW1lOiBgQ3LDqWVyIHVuZSBhY3R1
+YWxpdMOpIOKAlCDDqXRhcGUgJHtufSBzdXIgNmAgfSk7CgogIC8vIDEuIFVuIGNsaWMgc3VyIGxh
+IGNpYmxlIDogc2V1bCBsJ8OpbMOpbWVudCBlbiBsdW1pw6hyZSByw6lwb25kLgogIGF3YWl0IGV4
+cGVjdChidWJibGUoMSkpLnRvQmVWaXNpYmxlKCk7CiAgYXdhaXQgcGFnZS5sb2NhdG9yKCdbZGF0
+YS10b3VyPSJwb3N0cy5saXN0LmNyZWF0ZSJdJykuY2xpY2soKTsKCiAgLy8gMi4gVW5lIHNhaXNp
+ZSwgc3VyIHVuZSBhdXRyZSBwYWdlIDogbGUgY3Vyc2V1ciBlc3QgZMOpasOgIGRhbnMgbGUgY2hh
+bXAuCiAgYXdhaXQgZXhwZWN0KGJ1YmJsZSgyKSkudG9CZVZpc2libGUoKTsKICBjb25zdCB0aXRs
+ZSA9IHBhZ2UubG9jYXRvcignW2RhdGEtdG91cj0icG9zdHMuZm9ybS50aXRsZSJdJyk7CiAgYXdh
+aXQgZXhwZWN0KHRpdGxlKS50b0JlRm9jdXNlZCgpOwogIGNvbnN0IG5leHQgPSBwYWdlLmdldEJ5
+Um9sZSgiYnV0dG9uIiwgeyBuYW1lOiAiU3VpdmFudCIgfSk7CiAgYXdhaXQgZXhwZWN0KG5leHQp
+LnRvQmVEaXNhYmxlZCgpOwogIGF3YWl0IHRpdGxlLmZpbGwoIkV4ZW1wbGUgKHR1dG8pIik7CiAg
+YXdhaXQgbmV4dC5jbGljaygpOwoKICAvLyAzIGV0IDQuIERlcyBleHBsaWNhdGlvbnMgOiDCqyBT
+dWl2YW50IMK7LgogIGF3YWl0IGV4cGVjdChidWJibGUoMykpLnRvQmVWaXNpYmxlKCk7CiAgYXdh
+aXQgbmV4dC5jbGljaygpOwogIGF3YWl0IGV4cGVjdChidWJibGUoNCkpLnRvQmVWaXNpYmxlKCk7
+CiAgYXdhaXQgbmV4dC5jbGljaygpOwoKICAvLyA1LiBMJ2VucmVnaXN0cmVtZW50IDogbCfDqXRh
+cGUgcGFzc2UgcXVhbmQgbGEgcGFnZSBkZSBsJ2FydGljbGUgcydvdXZyZS4KICBhd2FpdCBleHBl
+Y3QoYnViYmxlKDUpKS50b0JlVmlzaWJsZSgpOwogIGF3YWl0IHBhZ2UubG9jYXRvcignW2RhdGEt
+dG91cj0icG9zdHMuZm9ybS5zdWJtaXQiXScpLmNsaWNrKCk7CiAgYXdhaXQgZXhwZWN0KGJ1YmJs
+ZSg2KSkudG9CZVZpc2libGUoeyB0aW1lb3V0OiAxNV8wMDAgfSk7CiAgYXdhaXQgZXhwZWN0KHBh
+Z2UpLnRvSGF2ZVVSTCgvXC9kYXNoYm9hcmRcL3Bvc3RzXC9cZCskLyk7CgogIC8vIDYuIExhIGZp
+biA6IMKrIFRlcm1pbmVyIMK7IHJhbmdlIGxlIHR1dG8uCiAgYXdhaXQgcGFnZS5nZXRCeVJvbGUo
+ImJ1dHRvbiIsIHsgbmFtZTogIlRlcm1pbmVyIiB9KS5jbGljaygpOwogIGF3YWl0IGV4cGVjdChw
+YWdlLmdldEJ5Um9sZSgiZGlhbG9nIiwgeyBuYW1lOiAvQ3LDqWVyIHVuZSBhY3R1YWxpdMOpLyB9
+KSkudG9IYXZlQ291bnQoMCk7Cn0pOwoKdGVzdCgiw4ljaGFwIGludGVycm9tcHQgbGUgdHV0byIs
+IGFzeW5jICh7IHBhZ2UgfSkgPT4gewogIGF3YWl0IGxvZ2luQXMocGFnZSwgVVNFUlMuYWRtaW4u
+ZW1haWwpOwogIGF3YWl0IHBhZ2UuZ290bygiL2Rhc2hib2FyZC9wb3N0cyIpOwogIGF3YWl0IHBh
+Z2UuZ2V0QnlSb2xlKCJidXR0b24iLCB7IG5hbWU6ICJUdXRvcmllbHMgZGUgY2V0dGUgcGFnZSIg
+fSkuY2xpY2soKTsKICBhd2FpdCBwYWdlLmdldEJ5Um9sZSgiYnV0dG9uIiwgeyBuYW1lOiAvQ3LD
+qWVyIHVuZSBhY3R1YWxpdMOpLipSw6lkaWdlci8gfSkuY2xpY2soKTsKICBhd2FpdCBleHBlY3Qo
+cGFnZS5nZXRCeVJvbGUoImRpYWxvZyIsIHsgbmFtZTogL8OpdGFwZSAxIHN1ciA2LyB9KSkudG9C
+ZVZpc2libGUoKTsKICBhd2FpdCBwYWdlLmtleWJvYXJkLnByZXNzKCJFc2NhcGUiKTsKICBhd2Fp
+dCBleHBlY3QocGFnZS5nZXRCeVJvbGUoImRpYWxvZyIsIHsgbmFtZTogL0Nyw6llciB1bmUgYWN0
+dWFsaXTDqS8gfSkpLnRvSGF2ZUNvdW50KDApOwp9KTsK
+B64
+
+python3 - <<'PY'
+import base64
+spec_skip_done = False
+def sub(path, old, new):
+    old, new = base64.b64decode(old).decode(), base64.b64decode(new).decode()
+    s = open(path, encoding="utf-8").read()
+    if s.count(old) == 0 and s.count(new) == 1 and spec_skip_done: return  # déjà fait par un script précédent
+    assert s.count(old) == 1, (path, old[:80], s.count(old))
+    open(path, "w", encoding="utf-8").write(s.replace(old, new))
+sub('apps/web/content/docs/admin/index.mdx', 'Q2hhcXVlIGZpY2hlIHNlIHRlcm1pbmUsIHF1YW5kIGlsIGV4aXN0ZSwgcGFyIHVuIHR1dG9yaWVsIGludGVyYWN0aWYuIElsIHNlIGTDqXJvdWxlIHN1ciBsYSB2cmFpZSBwYWdlIDogbCfDqWNyYW4gcydhc3NvbWJyaXQsIHNldWwgbCfDqWzDqW1lbnQgZGUgbCfDqXRhcGUgZW4gY291cnMgcmVzdGUgYWN0aWYsIGV0IGwnb24gcGFzc2Ugw6AgbCfDqXRhcGUgc3VpdmFudGUgZW4gZmFpc2FudCBsJ2FjdGlvbiBkZW1hbmTDqWUuIMOJY2hhcCBsJ2ludGVycm9tcHQgw6AgdG91dCBtb21lbnQuCgo8VG91ckxhdW5jaGVyIGlkPSJhZG1pbi5wb3N0cy5jcmVhdGUiIC8+Cgo8Q2FsbG91dCB0eXBlPSJ3YXJuaW5nIj4K',
+    'Q2hhcXVlIGZpY2hlIHNlIHRlcm1pbmUsIHF1YW5kIGlsIGV4aXN0ZSwgcGFyIHVuIHR1dG9yaWVsIGludGVyYWN0aWYuIElsIHNlIGTDqXJvdWxlIHN1ciBsYSB2cmFpZSBwYWdlIDogbCfDqWNyYW4gcydhc3NvbWJyaXQsIHNldWwgbCfDqWzDqW1lbnQgZGUgbCfDqXRhcGUgZW4gY291cnMgcmVzdGUgYWN0aWYsIGV0IGwnb24gcGFzc2Ugw6AgbCfDqXRhcGUgc3VpdmFudGUgZW4gZmFpc2FudCBsJ2FjdGlvbiBkZW1hbmTDqWUuIMOJY2hhcCBsJ2ludGVycm9tcHQgw6AgdG91dCBtb21lbnQuCgo8VG91clN0YXJ0QnV0dG9uIGlkPSJhZG1pbi5wb3N0cy5jcmVhdGUiIC8+Cgo8Q2FsbG91dCB0eXBlPSJ3YXJuaW5nIj4K')
+sub('apps/web/src/app/(public)/about/instructeurs/page.tsx', 'aW1wb3J0IHsgcHJpc21hIH0gZnJvbSAiQGJhY2tlbmQvcHJpc21hIjsKaW1wb3J0IHsgZ2V0U2Vzc2lvbkZyb21SZXF1ZXN0IH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9hdXRoL2dldFNlc3Npb25Gcm9tUmVxdWVzdCI7CmltcG9ydCB7IFBhZ2VSZW5kZXJlciB9IGZyb20gIkBmZWF0dXJlcy9wYWdlLWJ1aWxkZXIiOwppbXBvcnQgeyBwYXJzZVBhZ2VDb250ZW50VjEgfSBmcm9tICJAY29udHJhY3RzL3BhZ2UiOwppbXBvcnQgeyBVc2VyUG9ydHJhaXQgfSBmcm9tICJAZmVhdHVyZXMvc29jaWFsL1VzZXJQb3J0cmFpdCI7Cg==',
+    'aW1wb3J0IHsgcHJpc21hIH0gZnJvbSAiQGJhY2tlbmQvcHJpc21hIjsKaW1wb3J0IHsgZ2V0U2Vzc2lvbkZyb21SZXF1ZXN0IH0gZnJvbSAiQGJhY2tlbmQvbW9kdWxlcy9hdXRoL2dldFNlc3Npb25Gcm9tUmVxdWVzdCI7CmltcG9ydCB7IFBhZ2VSZW5kZXJlciB9IGZyb20gIkBmZWF0dXJlcy9wYWdlLWJ1aWxkZXIvUGFnZVJlbmRlcmVyIjsKaW1wb3J0IHsgcGFyc2VQYWdlQ29udGVudFYxIH0gZnJvbSAiQGNvbnRyYWN0cy9wYWdlIjsKaW1wb3J0IHsgVXNlclBvcnRyYWl0IH0gZnJvbSAiQGZlYXR1cmVzL3NvY2lhbC9Vc2VyUG9ydHJhaXQiOwo=')
+sub('apps/web/src/features/page-builder/PageRenderer.tsx', 'aW1wb3J0IHR5cGUgeyBDb21wb25lbnRUeXBlIH0gZnJvbSAicmVhY3QiOwoK',
+    'Ly8gQ29tcG9zYW50IFNFUlZFVVIgKGJhc2UsIG3DqWRpYXMpIDogYHNlcnZlci1vbmx5YCBmYWl0IMOpY2hvdWVyIGxlIGJ1aWxkIHNpIHVuIGNvbXBvc2FudCBjbGllbnQKLy8gbCdpbXBvcnRlLCBhdSBsaWV1IGQnZW52b3llciBsZSBiYWNrZW5kIGF1IG5hdmlnYXRldXIuCmltcG9ydCAic2VydmVyLW9ubHkiOwppbXBvcnQgdHlwZSB7IENvbXBvbmVudFR5cGUgfSBmcm9tICJyZWFjdCI7Cgo=')
+sub('apps/web/src/features/page-builder/index.ts', 'ZXhwb3J0IHsgUGFnZUJ1aWxkZXIsIHR5cGUgUGFnZUJ1aWxkZXJQcm9wcyB9IGZyb20gIi4vUGFnZUJ1aWxkZXIiOwpleHBvcnQgeyBQYWdlUmVuZGVyZXIsIHR5cGUgUGFnZVJlbmRlcmVyUHJvcHMgfSBmcm9tICIuL1BhZ2VSZW5kZXJlciI7CmV4cG9ydCB7CiAgUGFnZUJ1aWxkZXJQcm92aWRlciwK',
+    'Ly8gRW50csOpZSBkZXMgY29tcG9zYW50cyBkdSBjb25zdHJ1Y3RldXIsIGltcG9ydMOpZSBwYXIgbGVzIGZvcm11bGFpcmVzIENMSUVOVCBkZSBsJ2FkbWluaXN0cmF0aW9uLgovLyBQYWdlUmVuZGVyZXIgbid5IGVzdCBQQVMgOiBjb21wb3NhbnQgc2VydmV1ciBxdWkgbGl0IGxhIGJhc2UgKFByaXNtYSkgZXQgbGVzIG3DqWRpYXMsIGlsCi8vIHMnaW1wb3J0ZSBwYXIgc29uIGNoZW1pbiAoYEBmZWF0dXJlcy9wYWdlLWJ1aWxkZXIvUGFnZVJlbmRlcmVyYCkuIEV4cG9ydMOpIGljaSwgaWwgZW50cmHDrm5haXQgbGUKLy8gYmFja2VuZCBkYW5zIGxlIGNvZGUgZW52b3nDqSBhdSBuYXZpZ2F0ZXVyIGRlIGNoYXF1ZSBmb3JtdWxhaXJlIHF1aSB1dGlsaXNlIGxlIGNvbnN0cnVjdGV1ci4KZXhwb3J0IHsgUGFnZUJ1aWxkZXIsIHR5cGUgUGFnZUJ1aWxkZXJQcm9wcyB9IGZyb20gIi4vUGFnZUJ1aWxkZXIiOwpleHBvcnQgewogIFBhZ2VCdWlsZGVyUHJvdmlkZXIsCg==')
+sub('apps/web/src/features/tours/TourOverlay.tsx', 'ICAgICAgICAgIHNjcm9sbGVkLmN1cnJlbnQgPSB0cnVlOwogICAgICAgICAgZWwuc2Nyb2xsSW50b1ZpZXcoeyBibG9jazogImNlbnRlciIsIGlubGluZTogIm5lYXJlc3QiIH0pOwogICAgICAgIH0KICAgICAgICBjb25zdCByID0gZWwuZ2V0Qm91bmRpbmdDbGllbnRSZWN0KCk7Cg==',
+    'ICAgICAgICAgIHNjcm9sbGVkLmN1cnJlbnQgPSB0cnVlOwogICAgICAgICAgZWwuc2Nyb2xsSW50b1ZpZXcoeyBibG9jazogImNlbnRlciIsIGlubGluZTogIm5lYXJlc3QiIH0pOwogICAgICAgICAgLy8gTGUgY3Vyc2V1ciBjbGF2aWVyIHN1aXQgbCfDqXRhcGUgOiBkYW5zIGxlIGNoYW1wIMOgIHJlbXBsaXIsIHNpbm9uIHN1ciBsYSBidWxsZSAobHVlIHBhcgogICAgICAgICAgLy8gdW4gbGVjdGV1ciBkJ8OpY3JhbikuIFNhbnMgY2VsYSwgaWwgcmVzdGFpdCBzdXIgbGUgYm91dG9uIHF1aSBhdmFpdCBsYW5jw6kgbGUgdHV0by4KICAgICAgICAgIGNvbnN0IGZpZWxkID0gYWR2YW5jZS5raW5kID09PSAiaW5wdXQiID8gKGVsLm1hdGNoZXMoImlucHV0LCB0ZXh0YXJlYSwgc2VsZWN0IikgPyBlbCA6IGVsLnF1ZXJ5U2VsZWN0b3I8SFRNTEVsZW1lbnQ+KCJpbnB1dCwgdGV4dGFyZWEsIHNlbGVjdCIpKSA6IG51bGw7CiAgICAgICAgICAoZmllbGQgPz8gYnViYmxlUmVmLmN1cnJlbnQpPy5mb2N1cyh7IHByZXZlbnRTY3JvbGw6IHRydWUgfSk7CiAgICAgICAgfQogICAgICAgIGNvbnN0IHIgPSBlbC5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKTsK')
+sub('apps/web/src/features/tours/TourOverlay.tsx', 'ICAgIHJldHVybiAoKSA9PiBjYW5jZWxBbmltYXRpb25GcmFtZShyYWYpOwogIH0sIFtzdGVwLnRhcmdldCwgYWR2YW5jZV0pOwoKICAvLyDDiXRhcGUgwqsgY2xpY2sgwrsgOiBsZSBjbGljIHN1ciBsYSBjaWJsZSBwYXNzZSDDoCBsJ8OpdGFwZSBzdWl2YW50ZSAoYXByw6hzIHF1ZSBsJ8OpbMOpbWVudCBsJ2EgdHJhaXTDqSkuCg==',
+    'ICAgIHJldHVybiAoKSA9PiBjYW5jZWxBbmltYXRpb25GcmFtZShyYWYpOwogIH0sIFtzdGVwLnRhcmdldCwgYWR2YW5jZV0pOwoKICAvLyDDiXRhcGUgc2FucyBjaWJsZSA6IGxhIGJ1bGxlIHJlw6dvaXQgbGUgY3Vyc2V1ciBkw6hzIHNvbiBhZmZpY2hhZ2UuCiAgdXNlRWZmZWN0KCgpID0+IHsKICAgIGlmICghc3RlcC50YXJnZXQpIGJ1YmJsZVJlZi5jdXJyZW50Py5mb2N1cyh7IHByZXZlbnRTY3JvbGw6IHRydWUgfSk7CiAgfSwgW3N0ZXAudGFyZ2V0XSk7CgogIC8vIMOJdGFwZSDCqyBjbGljayDCuyA6IGxlIGNsaWMgc3VyIGxhIGNpYmxlIHBhc3NlIMOgIGwnw6l0YXBlIHN1aXZhbnRlIChhcHLDqHMgcXVlIGwnw6lsw6ltZW50IGwnYSB0cmFpdMOpKS4K')
+sub('apps/web/src/features/tours/TourStartButton.tsx', 'Ci8qKgogKiBCb3V0b24gwqsgTGFuY2VyIGxlIHR1dG8gwrsgZGVzIGZpY2hlcyBkZSBkb2N1bWVudGF0aW9uIChjb21wb3NhbnQgTURYIGA8VG91ckxhdW5jaGVyIGlkPSLigKYiIC8+YCkuCiAqIETDqW1hcnJlIGxlIHR1dG8gcHVpcyBjb25kdWl0IMOgIHNhIHBhZ2UgZGUgZMOpcGFydC4gU2kgbGUgdmlzaXRldXIgbidhIHBhcyBsZSByw7RsZSByZXF1aXMsIGxlCiAqIGJvdXRvbiBleHBsaXF1ZSBwb3VycXVvaSBhdSBsaWV1IGRlIGxhbmNlciB1biB0dXRvIHF1aSDDqWNob3VlcmFpdC4KICovCmV4cG9ydCBmdW5jdGlvbiBUb3VyTGF1bmNoZXIoeyBpZCB9OiB7IGlkOiBzdHJpbmcgfSk6IEpTWC5FbGVtZW50IHsKICBjb25zdCByb3V0ZXIgPSB1c2VSb3V0ZXIoKTsKICBjb25zdCB1c2VyID0gdXNlU2Vzc2lvblN0b3JlKChzKSA9PiBzLnNlc3Npb24/LnVzZXIpOwo=',
+    'Ci8qKgogKiBCb3V0b24gwqsgTGFuY2VyIGxlIHR1dG8gwrsgZGVzIGZpY2hlcyBkZSBkb2N1bWVudGF0aW9uIChjb21wb3NhbnQgTURYIGA8VG91clN0YXJ0QnV0dG9uIGlkPSLigKYiIC8+YCkuCiAqIMOAIG5lIHBhcyBjb25mb25kcmUgYXZlYyBgVG91ckxhdW5jaGVyYCwgbGUgYm91dG9uIMKrID8gwrsgZmxvdHRhbnQgcXVpIGxpc3RlIGxlcyB0dXRvcyBkZSBsYSBwYWdlLgogKiBEw6ltYXJyZSBsZSB0dXRvIHB1aXMgY29uZHVpdCDDoCBzYSBwYWdlIGRlIGTDqXBhcnQuIFNpIGxlIHZpc2l0ZXVyIG4nYSBwYXMgbGUgcsO0bGUgcmVxdWlzLCBsZQogKiBib3V0b24gZXhwbGlxdWUgcG91cnF1b2kgYXUgbGlldSBkZSBsYW5jZXIgdW4gdHV0byBxdWkgw6ljaG91ZXJhaXQuCiAqLwpleHBvcnQgZnVuY3Rpb24gVG91clN0YXJ0QnV0dG9uKHsgaWQgfTogeyBpZDogc3RyaW5nIH0pOiBKU1guRWxlbWVudCB7CiAgY29uc3Qgcm91dGVyID0gdXNlUm91dGVyKCk7CiAgY29uc3QgdXNlciA9IHVzZVNlc3Npb25TdG9yZSgocykgPT4gcy5zZXNzaW9uPy51c2VyKTsK')
+sub('apps/web/src/mdx-components.tsx', 'aW1wb3J0IFByb3BzUHJvYmUgZnJvbSAiQGZlYXR1cmVzL2RvY3MvdWkvUHJvcHNQcm9iZSIKaW1wb3J0IERvY3NUYWJsZSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Eb2NzVGFibGUiCmltcG9ydCB7IFRvdXJMYXVuY2hlciB9IGZyb20gIkBmZWF0dXJlcy90b3Vycy9Ub3VyU3RhcnRCdXR0b24iCmltcG9ydCB7IFN0b3J5VGFicyB9IGZyb20gIkBmZWF0dXJlcy9kb2NzL2VudGl0aWVzL0VudGl0eUV4cGxvcmVyIgppbXBvcnQgeyBPcywgT3NUYWJzIH0gZnJvbSAiQGZlYXR1cmVzL2RvY3MvdWkvT3NUYWJzIgo=',
+    'aW1wb3J0IFByb3BzUHJvYmUgZnJvbSAiQGZlYXR1cmVzL2RvY3MvdWkvUHJvcHNQcm9iZSIKaW1wb3J0IERvY3NUYWJsZSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Eb2NzVGFibGUiCmltcG9ydCB7IFRvdXJTdGFydEJ1dHRvbiB9IGZyb20gIkBmZWF0dXJlcy90b3Vycy9Ub3VyU3RhcnRCdXR0b24iCmltcG9ydCB7IFN0b3J5VGFicyB9IGZyb20gIkBmZWF0dXJlcy9kb2NzL2VudGl0aWVzL0VudGl0eUV4cGxvcmVyIgppbXBvcnQgeyBPcywgT3NUYWJzIH0gZnJvbSAiQGZlYXR1cmVzL2RvY3MvdWkvT3NUYWJzIgo=')
+sub('apps/web/src/mdx-components.tsx', 'ICBUUlBDRmxvd0RpYWdyYW0sCiAgU3RlcCwKICBUb3VyTGF1bmNoZXIsCiAgU3ZnRGlhZ3JhbSwKICBQcmlzbWFDb3JlRXJkRGlhZ3JhbSwK',
+    'ICBUUlBDRmxvd0RpYWdyYW0sCiAgU3RlcCwKICBUb3VyU3RhcnRCdXR0b24sCiAgU3ZnRGlhZ3JhbSwKICBQcmlzbWFDb3JlRXJkRGlhZ3JhbSwK')
+sub('scripts/check-tour-targets.mjs', 'IyEvdXNyL2Jpbi9lbnYgbm9kZQovLyBHYXJkZSBkZXMgdHV0b3MgaW50ZXJhY3RpZnMgKGxhbmPDqWUgcGFyIGBwbnBtIGNoZWNrYCkuCi8vIENoYXF1ZSDDqXRhcGUgdmlzZSB1biDDqWzDqW1lbnQgcGFyIGB0YXJnZXQ6ICLigKYiYCA7IGwnw6lsw6ltZW50IGRvaXQgcG9ydGVyIGBkYXRhLXRvdXI9IuKApiJgIHF1ZWxxdWUKLy8gcGFydCBkYW5zIGFwcHMvd2ViL3NyYy4gVW5lIGNpYmxlIG9ycGhlbGluZSAoY29tcG9zYW50IHJlbm9tbcOpLCBhdHRyaWJ1dCBzdXBwcmltw6kpIGZlcmFpdAovLyDDqWNob3VlciBsZSB0dXRvIGNoZXogbCd1dGlsaXNhdGV1ciA6IG9uIGxhIHJlZnVzZSBpY2ksIGF2YW50IGxlIGNvbW1pdC4KaW1wb3J0IHsgcmVhZGRpclN5bmMsIHJlYWRGaWxlU3luYywgc3RhdFN5bmMgfSBmcm9tICJub2RlOmZzIjsKaW1wb3J0IHsgam9pbiwgcmVsYXRpdmUgfSBmcm9tICJub2RlOnBhdGgiOwoKY29uc3QgU1JDID0gImFwcHMvd2ViL3NyYyI7CmNvbnN0IERFRlMgPSBqb2luKFNSQywgImZlYXR1cmVzL3RvdXJzL2RlZmluaXRpb25zIik7CgpmdW5jdGlvbiB3YWxrKGRpciwgb3V0ID0gW10pIHsK',
+    'IyEvdXNyL2Jpbi9lbnYgbm9kZQovLyBHYXJkZSBkZXMgdHV0b3MgaW50ZXJhY3RpZnMgKGxhbmPDqWUgcGFyIGBwbnBtIGNoZWNrYCkuIFRyb2lzIGVycmV1cnMgc2lsZW5jaWV1c2VzIDoKLy8gICAtIHVuZSDDqXRhcGUgdmlzZSBgdGFyZ2V0OiAi4oCmImAgc2FucyDDqWzDqW1lbnQgYGRhdGEtdG91cj0i4oCmImAgZGFucyBhcHBzL3dlYi9zcmMgKGNvbXBvc2FudAovLyAgICAgcmVub21tw6ksIGF0dHJpYnV0IHN1cHByaW3DqSkgOiBsZSB0dXRvIHNlIGJsb3F1ZXJhaXQgY2hleiBsJ3V0aWxpc2F0ZXVyIDsKLy8gICAtIHVuZSBkw6lmaW5pdGlvbiAoZGVmaW5pdGlvbnMvKi50cykgYWJzZW50ZSBkdSByZWdpc3RyZSA6IGxlIHR1dG8gbidhcHBhcmHDrnRyYWl0IG51bGxlIHBhcnQgOwovLyAgIC0gdW5lIGZpY2hlIGRlIGRvY3VtZW50YXRpb24gcXVpIGxhbmNlIHVuIHR1dG8gaW5jb25udSAoYDxUb3VyU3RhcnRCdXR0b24gaWQ9IuKApiIgLz5gKS4KaW1wb3J0IHsgcmVhZGRpclN5bmMsIHJlYWRGaWxlU3luYywgc3RhdFN5bmMgfSBmcm9tICJub2RlOmZzIjsKaW1wb3J0IHsgYmFzZW5hbWUsIGpvaW4sIHJlbGF0aXZlIH0gZnJvbSAibm9kZTpwYXRoIjsKCmNvbnN0IFNSQyA9ICJhcHBzL3dlYi9zcmMiOwpjb25zdCBERUZTID0gam9pbihTUkMsICJmZWF0dXJlcy90b3Vycy9kZWZpbml0aW9ucyIpOwpjb25zdCBSRUdJU1RSWSA9IGpvaW4oU1JDLCAiZmVhdHVyZXMvdG91cnMvdG91ci5yZWdpc3RyeS50cyIpOwpjb25zdCBET0NTID0gImFwcHMvd2ViL2NvbnRlbnQvZG9jcyI7CgpmdW5jdGlvbiB3YWxrKGRpciwgb3V0ID0gW10pIHsK')
+sub('scripts/check-tour-targets.mjs', 'fQoKaWYgKGVycm9ycy5sZW5ndGgpIHsKICBmb3IgKGNvbnN0IGUgb2YgZXJyb3JzKSBjb25zb2xlLmVycm9yKGDinJcgdHV0b3MgOiAke2V9YCk7CiAgcHJvY2Vzcy5leGl0KDEpOwp9CmNvbnNvbGUubG9nKGDinJMgdHV0b3MgOiAke2lkcy5zaXplfSB0dXRvKHMpLCAke3N0ZXBzfSBjaWJsZShzKSwgdG91dGVzIHByw6lzZW50ZXMgZGFucyBsZSBjb2RlYCk7Cg==',
+    'fQoKLy8gQ2hhcXVlIGTDqWZpbml0aW9uIGVzdCBlbnJlZ2lzdHLDqWUgOiBpbXBvcnTDqWUgcGFyIGxlIHJlZ2lzdHJlLgpjb25zdCByZWdpc3RyeSA9IHJlYWRGaWxlU3luYyhSRUdJU1RSWSwgInV0ZjgiKTsKZm9yIChjb25zdCBmIG9mIHdhbGsoREVGUykpIHsKICBjb25zdCBiYXNlID0gYmFzZW5hbWUoZikucmVwbGFjZSgvXC50c3g/JC8sICIiKTsKICBpZiAoIXJlZ2lzdHJ5LmluY2x1ZGVzKGAiLi9kZWZpbml0aW9ucy8ke2Jhc2V9ImApKSB7CiAgICBlcnJvcnMucHVzaChgJHtyZWxhdGl2ZSgiLiIsIGYpfSBuJ2VzdCBwYXMgaW1wb3J0w6kgcGFyICR7cmVsYXRpdmUoIi4iLCBSRUdJU1RSWSl9IDogbGUgdHV0byBuJ2FwcGFyYcOudHJhIG51bGxlIHBhcnRgKTsKICB9Cn0KCi8vIENoYXF1ZSBib3V0b24gZGUgbGFuY2VtZW50IGRlIGxhIGRvY3VtZW50YXRpb24gZMOpc2lnbmUgdW4gdHV0byBxdWkgZXhpc3RlLgpsZXQgbGF1bmNoZXJzID0gMDsKZm9yIChjb25zdCBmIG9mIHdhbGsoRE9DUykpIHsKICBmb3IgKGNvbnN0IG0gb2YgcmVhZEZpbGVTeW5jKGYsICJ1dGY4IikubWF0Y2hBbGwoLzxUb3VyU3RhcnRCdXR0b25ccytpZD0iKFteIl0rKSIvZykpIHsKICAgIGxhdW5jaGVycysrOwogICAgaWYgKCFpZHMuaGFzKG1bMV0pKSBlcnJvcnMucHVzaChgJHtyZWxhdGl2ZSgiLiIsIGYpfSA6IDxUb3VyU3RhcnRCdXR0b24gaWQ9IiR7bVsxXX0iIC8+IGTDqXNpZ25lIHVuIHR1dG8gaW5jb25udWApOwogIH0KfQoKaWYgKGVycm9ycy5sZW5ndGgpIHsKICBmb3IgKGNvbnN0IGUgb2YgZXJyb3JzKSBjb25zb2xlLmVycm9yKGDinJcgdHV0b3MgOiAke2V9YCk7CiAgcHJvY2Vzcy5leGl0KDEpOwp9CmNvbnNvbGUubG9nKGDinJMgdHV0b3MgOiAke2lkcy5zaXplfSB0dXRvKHMpLCAke3N0ZXBzfSBjaWJsZShzKSwgJHtsYXVuY2hlcnN9IGJvdXRvbihzKSBkZSBsYW5jZW1lbnQsIHRvdXQgZXhpc3RlYCk7Cg==')
+print("  édits ok (11 substitutions, 1 fichiers créés, 0 remplacés)")
+PY
+trap - ERR
+
+[ "${AKFC_APPLY_ONLY:-0}" = "1" ] && { echo "Appliqué (sans vérification ni commit)."; exit 0; }
+node scripts/build-procedure-map.mjs --write >/dev/null 2>&1 || { echo "❌ carte des procédures : échec"; restore; exit 1; }
+echo "== pnpm check =="
+if pgrep -f "next dev" >/dev/null 2>&1; then
+  echo "  (pnpm dev tourne : vérification sans effacer .next)"
+  CHECK="node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && pnpm typecheck && pnpm lint"
+else
+  CHECK="pnpm check"
+fi
+if ! bash -c "$CHECK" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ check ÉCHOUÉ :"
+  grep -nE "error TS|✗ tutos|ERR_|Error:|EACCES|Permission denied" /tmp/akfc_tc.log | head -12
+  echo "  … fin du journal :"; grep -v '^[[:space:]]*$' /tmp/akfc_tc.log | tail -15
+  restore; exit 1
+fi
+echo "  ✅ check OK"
+git add -- "${MODIFIED[@]}" "${CREATED[@]}" apps/web/src/features/docs/entities/procedureMap.generated.json
+git commit -F - >/tmp/c.log 2>&1 <<'MSG' && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
+fix(tours): le curseur suit l'étape, un nom par bouton, une garde plus large ; le backend ne part plus au navigateur
+
+- TourOverlay : à l'apparition d'une étape, le curseur clavier va dans le champ à remplir, ou sur
+  la bulle (lue par un lecteur d'écran) ; il restait sur le bouton qui avait lancé le tuto
+- Deux composants s'appelaient TourLauncher (le « ? » flottant, et le bouton des fiches) : celui des
+  fiches devient TourStartButton (fichier, export, composant MDX, fiche « Administration du site »)
+- check-tour-targets : une définition absente du registre (le tuto n'apparaîtrait nulle part) et
+  un bouton de fiche qui désigne un tuto inconnu sont refusés, comme une cible orpheline
+- page-builder : PageRenderer (composant serveur : Prisma, médias) retiré de l'entrée
+  @features/page-builder, que les formulaires client importent pour le constructeur ; il
+  entraînait le backend dans le code envoyé au navigateur de chaque formulaire. `server-only` fait
+  désormais échouer le build si un composant client l'importe
+- e2e : le tuto « Créer une actualité » suivi jusqu'au bout (clic, saisie avec le curseur dans le
+  champ, explications, changement de page), et Échap qui l'interrompt
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014LCtjvXtxeMakFEsVHTLca
+MSG
+echo "Aucune migration. Serveur : git pull, puis docker compose up -d --build pour le site. Tests : pnpm e2e (sept parcours)."
