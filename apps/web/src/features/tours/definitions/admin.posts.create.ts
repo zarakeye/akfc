@@ -1,14 +1,14 @@
 import type { Tour } from "../tour.types";
 
 /**
- * Tuto pilote — créer une actualité (admin).
+ * Tuto pilote — créer un post (admin), le mur « Actualités du club » de l'accueil.
  * Fiche de doc associée : même identifiant, « admin.posts.create ».
  * L'article est créé en BROUILLON (date de publication vide) : rien n'est publié.
  */
 export const adminPostsCreate: Tour = {
   id: "admin.posts.create",
-  title: "Créer une actualité",
-  description: "Rédiger un article et l'enregistrer en brouillon, sans le publier.",
+  title: "Créer un post",
+  description: "Rédiger un post pour le mur de l'accueil et l'enregistrer en brouillon, sans le publier.",
   audience: "admin",
   routes: ["/dashboard/posts", "/dashboard/posts/create"],
   startRoute: "/dashboard/posts",
@@ -16,7 +16,7 @@ export const adminPostsCreate: Tour = {
     {
       target: "posts.list.create",
       title: "Ouvrez le formulaire",
-      body: "Toutes les actualités du site sont listées ici. Cliquez sur « Créer un article » pour en rédiger une nouvelle.",
+      body: "Tous les posts du mur « Actualités du club » sont listés ici. Cliquez sur « Créer un article » pour en rédiger un nouveau.",
       advance: { kind: "click" },
     },
     {
@@ -34,7 +34,7 @@ export const adminPostsCreate: Tour = {
     {
       target: "posts.form.content",
       title: "Le contenu de l'article",
-      body: "Ce constructeur assemble le corps de l'article : textes, images, documents. Il a son propre tuto ; ici, un article sans contenu suffit.",
+      body: "Ce constructeur assemble le corps de l'article : textes, images, documents. Pour cet essai, un article sans contenu suffit.",
       advance: { kind: "next" },
     },
     {

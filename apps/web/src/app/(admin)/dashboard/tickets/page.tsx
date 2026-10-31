@@ -43,7 +43,7 @@ export default function TicketsPage(): JSX.Element {
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2" role="tablist">
+      <div className="mb-4 flex flex-wrap gap-2" role="tablist" data-tour="tickets.tabs">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -76,6 +76,7 @@ export default function TicketsPage(): JSX.Element {
             <li key={t.id}>
               <Link
                 href={`/dashboard/tickets/${t.id}`}
+                data-tour="tickets.item"
                 className="grid gap-1 p-4 hover:bg-muted/60 sm:grid-cols-[7rem_minmax(0,1fr)_10rem_9rem] sm:items-center sm:gap-4"
               >
                 <span className="font-mono text-xs text-muted-foreground">{t.ref}</span>

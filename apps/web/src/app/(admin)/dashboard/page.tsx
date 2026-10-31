@@ -33,7 +33,7 @@ export default function DashboardHome(): JSX.Element {
         <UserCard userId={user?.id ?? ""} />
       </div>
 
-      <div className="rounded-lg border p-6 shadow-lg">
+      <div className="rounded-lg border p-6 shadow-lg" data-tour="dashboard.contents">
         <h2 className="mb-4 text-2xl font-bold">Contenus</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link
@@ -94,9 +94,9 @@ export default function DashboardHome(): JSX.Element {
           >
             <Newspaper className="h-6 w-6 text-primary" />
             <div>
-              <p className="font-medium">Actualités</p>
+              <p className="font-medium">Posts</p>
               <p className="text-sm text-muted-foreground">
-                Articles et nouvelles du club
+                Le mur « Actualités du club » de l&apos;accueil
               </p>
             </div>
           </Link>

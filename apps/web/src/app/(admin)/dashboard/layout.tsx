@@ -91,6 +91,7 @@ export default function DashboardLayout({ children }: Props): JSX.Element {
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-expanded={sidebarOpen}
+            data-tour="dashboard.sidebar"
             className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
           >
             <PanelLeft className="h-4 w-4" />
@@ -101,7 +102,8 @@ export default function DashboardLayout({ children }: Props): JSX.Element {
         <div className="flex min-h-0 flex-1">
           {/* Sidebar permanente — à partir de `lg`. Scroll propre si la
               liste dépasse. */}
-          <div className="hidden overflow-y-auto lg:flex [&>aside]:h-full [&>aside]:min-h-full">
+          {/* Même nom de tuto que le bouton du tiroir : le moteur vise celui qui est visible. */}
+          <div className="hidden overflow-y-auto lg:flex [&>aside]:h-full [&>aside]:min-h-full" data-tour="dashboard.sidebar">
             <ControlPanelSidebar />
           </div>
 

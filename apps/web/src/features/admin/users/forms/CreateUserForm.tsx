@@ -66,7 +66,7 @@ export function CreateUserForm({
 
   return (
     <div className="flex max-w-md flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="users.form.email">
         <span className="font-medium">Email</span>
         <input
           type="email"
@@ -76,7 +76,7 @@ export function CreateUserForm({
         />
       </label>
 
-      <fieldset className="flex flex-col gap-1 text-sm">
+      <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.groups">
         <legend className="mb-1 font-medium">Groupes</legend>
         <div className="flex max-h-64 flex-col gap-1 overflow-y-auto rounded border border-input bg-background p-2">
           {[...(groups ?? [])]
@@ -104,14 +104,14 @@ export function CreateUserForm({
         </span>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-1 text-sm">
+      <fieldset className="flex flex-col gap-1 text-sm" data-tour="users.form.legal">
         <legend className="mb-1 font-medium">Majorité</legend>
         <LegalInfoFields value={legal} onChange={setLegal} />
       </fieldset>
 
       {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-tour="users.form.submit">
         <button
           type="button"
           onClick={handleSubmit}

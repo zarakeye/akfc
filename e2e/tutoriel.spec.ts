@@ -7,13 +7,13 @@ import { USERS } from "./data.mjs";
  * Le moteur des tutoriels, parcouru comme un administrateur : lancé depuis le bouton « ? », il
  * traverse deux pages, attend un clic, une saisie, des « Suivant », puis la page créée.
  */
-test("le tuto « Créer une actualité » se suit jusqu'au bout", async ({ page }) => {
+test("le tuto « Créer un post » se suit jusqu'au bout", async ({ page }) => {
   await loginAs(page, USERS.admin.email);
   await page.goto("/dashboard/posts");
 
   await page.getByRole("button", { name: "Tutoriels de cette page" }).click();
-  await page.getByRole("button", { name: /Créer une actualité.*Rédiger/ }).click();
-  const bubble = (n: number) => page.getByRole("dialog", { name: `Créer une actualité — étape ${n} sur 6` });
+  await page.getByRole("button", { name: /Créer un post.*Rédiger/ }).click();
+  const bubble = (n: number) => page.getByRole("dialog", { name: `Créer un post — étape ${n} sur 6` });
 
   // 1. Un clic sur la cible : seul l'élément en lumière répond.
   await expect(bubble(1)).toBeVisible();
@@ -42,15 +42,15 @@ test("le tuto « Créer une actualité » se suit jusqu'au bout", async ({ page 
 
   // 6. La fin : « Terminer » range le tuto.
   await page.getByRole("button", { name: "Terminer" }).click();
-  await expect(page.getByRole("dialog", { name: /Créer une actualité/ })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /Créer un post/ })).toHaveCount(0);
 });
 
 test("Échap interrompt le tuto", async ({ page }) => {
   await loginAs(page, USERS.admin.email);
   await page.goto("/dashboard/posts");
   await page.getByRole("button", { name: "Tutoriels de cette page" }).click();
-  await page.getByRole("button", { name: /Créer une actualité.*Rédiger/ }).click();
+  await page.getByRole("button", { name: /Créer un post.*Rédiger/ }).click();
   await expect(page.getByRole("dialog", { name: /étape 1 sur 6/ })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: /Créer une actualité/ })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /Créer un post/ })).toHaveCount(0);
 });

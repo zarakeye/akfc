@@ -37,7 +37,7 @@ export default function EditorialPagesHub(): JSX.Element {
       {isLoading ? (
         <p className="text-sm text-gray-500">Chargement…</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2" data-tour="pages.list">
           {PAGE_REGISTRY.map((p) => {
             const pub = isPublished(p.key);
             return (
@@ -65,6 +65,7 @@ export default function EditorialPagesHub(): JSX.Element {
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
+                    data-tour="pages.item.edit"
                     onClick={() =>
                       router.push(`/dashboard/site-pages/${p.key}`)
                     }
@@ -74,6 +75,7 @@ export default function EditorialPagesHub(): JSX.Element {
                   </button>
                   <button
                     type="button"
+                    data-tour="pages.item.publish"
                     disabled={busy}
                     onClick={() =>
                       setPublished.mutate({ key: p.key, published: !pub })

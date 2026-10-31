@@ -84,7 +84,7 @@ export function BreakingNewsForm({
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="breaking-news.form.title">
         <span className="font-medium">Titre</span>
         <input
           type="text"
@@ -96,7 +96,7 @@ export function BreakingNewsForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="breaking-news.form.body">
         <span className="font-medium">Corps</span>
         <textarea
           value={body}
@@ -123,7 +123,7 @@ export function BreakingNewsForm({
         </span>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="breaking-news.form.publicationDate">
         <span className="font-medium">Date de publication</span>
         <input
           type="datetime-local"
@@ -137,7 +137,7 @@ export function BreakingNewsForm({
         </span>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm" data-tour="breaking-news.form.expiresAt">
         <span className="font-medium">Date d&apos;expiration</span>
         <input
           type="datetime-local"
@@ -153,7 +153,7 @@ export function BreakingNewsForm({
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div>
+      <div data-tour="breaking-news.form.submit">
         <button
           type="button"
           onClick={handleSubmit}

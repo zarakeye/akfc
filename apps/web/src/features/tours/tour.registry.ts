@@ -1,5 +1,10 @@
 import type { Tour, TourAudience } from "./tour.types";
+import { adminBreakingNewsCreate } from "./definitions/admin.breaking-news.create";
+import { adminPagesPublication } from "./definitions/admin.pages.publication";
 import { adminPostsCreate } from "./definitions/admin.posts.create";
+import { adminTableauDeBord } from "./definitions/admin.tableau-de-bord";
+import { adminTicketsTraiter } from "./definitions/admin.tickets.traiter";
+import { adminUsersCreate } from "./definitions/admin.users.create";
 import { membreContacterLeClub } from "./definitions/membre.contacter-le-club";
 import { membreDocuments } from "./definitions/membre.documents";
 import { membreProfil } from "./definitions/membre.profil";
@@ -16,7 +21,12 @@ export const TOURS: Tour[] = [
   membreProfil,
   membreDocuments,
   membreContacterLeClub,
+  adminTableauDeBord,
   adminPostsCreate,
+  adminBreakingNewsCreate,
+  adminPagesPublication,
+  adminUsersCreate,
+  adminTicketsTraiter,
 ];
 
 export function getTour(id: string): Tour | undefined {

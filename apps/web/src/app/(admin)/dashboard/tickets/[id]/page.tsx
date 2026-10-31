@@ -72,7 +72,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
           </div>
         </dl>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2" data-tour="tickets.actions">
           {!closed && t.assignee?.id !== me && (
             <button
               onClick={() => take.mutate({ id })}
@@ -131,7 +131,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         <ReplyBox ticketId={id} requesterName={t.requester.name} replyTo={t.category.replyTo} onDone={refresh} />
       )}
 
-      <details className="rounded-lg border border-border p-4 text-sm">
+      <details className="rounded-lg border border-border p-4 text-sm" data-tour="tickets.history">
         <summary className="cursor-pointer font-medium">Historique</summary>
         <ul className="mt-3 flex flex-col gap-2">
           {t.events.map((e) => (
@@ -178,6 +178,7 @@ function ReplyBox({
   return (
     <form
       className="mb-6 rounded-lg border border-border p-4"
+      data-tour="tickets.reply"
       onSubmit={(e) => {
         e.preventDefault();
         setNotice(null);

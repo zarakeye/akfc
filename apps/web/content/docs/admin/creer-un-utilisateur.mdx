@@ -1,0 +1,30 @@
+---
+title: "Créer un utilisateur"
+description: "Ouvrir un compte à un nouveau membre : il reçoit son mot de passe par e-mail."
+section: "Membres et demandes"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Donner à un membre l'accès à son espace : profil, documents, espaces de groupe.
+
+**Avant de commencer.** Être administrateur, et connaître l'adresse e-mail du membre et s'il est majeur. Panneau de contrôle → **Membres & accès** → **Utilisateurs**.
+
+## Les étapes
+
+1. Cliquez sur **Créer un utilisateur**.
+2. Son **adresse e-mail** : elle sert à se connecter. Une adresse déjà utilisée par un membre est refusée.
+3. Ses **groupes** : au moins un. Ils décident de ce qu'il voit (documents de groupe, espaces collaboratifs). Le groupe marqué **Admin** donne les droits d'administration.
+4. Sa **majorité** : **Majeur** ou **Mineur**. Pour un mineur, la date de naissance et un **parent référent** (nom et adresse e-mail) sont demandés : c'est lui qui signe le droit à l'image.
+5. Cliquez sur **Créer**.
+
+## Ce que l'on obtient
+
+Le compte est créé, et sa fiche s'ouvre. Le membre reçoit aussitôt un e-mail de bienvenue avec un mot de passe généré par le site — vous ne le voyez jamais. La boîte du club reçoit un avis, sans le mot de passe. À sa première connexion, le membre complète son profil.
+
+<TourStartButton id="admin.users.create" />
+
+<Callout type="info">
+Le tutoriel vous fait remplir l'adresse et vous montre les autres champs, mais ne clique pas sur **Créer** : aucun compte n'est créé, aucun e-mail ne part.
+</Callout>
