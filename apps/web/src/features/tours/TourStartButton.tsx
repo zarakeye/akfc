@@ -9,11 +9,12 @@ import { tourStore } from "./tour.store";
 import { getTour } from "./tour.registry";
 
 /**
- * Bouton « Lancer le tuto » des fiches de documentation (composant MDX `<TourLauncher id="…" />`).
+ * Bouton « Lancer le tuto » des fiches de documentation (composant MDX `<TourStartButton id="…" />`).
+ * À ne pas confondre avec `TourLauncher`, le bouton « ? » flottant qui liste les tutos de la page.
  * Démarre le tuto puis conduit à sa page de départ. Si le visiteur n'a pas le rôle requis, le
  * bouton explique pourquoi au lieu de lancer un tuto qui échouerait.
  */
-export function TourLauncher({ id }: { id: string }): JSX.Element {
+export function TourStartButton({ id }: { id: string }): JSX.Element {
   const router = useRouter();
   const user = useSessionStore((s) => s.session?.user);
   const tour = getTour(id);

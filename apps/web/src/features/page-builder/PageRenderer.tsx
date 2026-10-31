@@ -1,3 +1,6 @@
+// Composant SERVEUR (base, médias) : `server-only` fait échouer le build si un composant client
+// l'importe, au lieu d'envoyer le backend au navigateur.
+import "server-only";
 import type { ComponentType } from "react";
 
 import { prisma } from "@backend/prisma";

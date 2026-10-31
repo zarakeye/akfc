@@ -61,6 +61,10 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
         if (!scrolled.current) {
           scrolled.current = true;
           el.scrollIntoView({ block: "center", inline: "nearest" });
+          // Le curseur clavier suit l'étape : dans le champ à remplir, sinon sur la bulle (lue par
+          // un lecteur d'écran). Sans cela, il restait sur le bouton qui avait lancé le tuto.
+          const field = advance.kind === "input" ? (el.matches("input, textarea, select") ? el : el.querySelector<HTMLElement>("input, textarea, select")) : null;
+          (field ?? bubbleRef.current)?.focus({ preventScroll: true });
         }
         const r = el.getBoundingClientRect();
         const next = { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 };
@@ -76,6 +80,11 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [step.target, advance]);
+
+  // Étape sans cible : la bulle reçoit le curseur dès son affichage.
+  useEffect(() => {
+    if (!step.target) bubbleRef.current?.focus({ preventScroll: true });
+  }, [step.target]);
 
   // Étape « click » : le clic sur la cible passe à l'étape suivante (après que l'élément l'a traité).
   useEffect(() => {

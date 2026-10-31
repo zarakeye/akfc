@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@backend/prisma";
 import { getSessionFromRequest } from "@backend/modules/auth/getSessionFromRequest";
-import { PageRenderer } from "@features/page-builder";
+import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { parsePageContentV1 } from "@contracts/page";
 import { UserPortrait } from "@features/social/UserPortrait";
 import { formatUserName, type DisplayUser } from "@features/social/userDisplay";

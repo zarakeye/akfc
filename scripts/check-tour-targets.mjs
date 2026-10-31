@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-// Garde des tutos interactifs (lancée par `pnpm check`).
-// Chaque étape vise un élément par `target: "…"` ; l'élément doit porter `data-tour="…"` quelque
-// part dans apps/web/src. Une cible orpheline (composant renommé, attribut supprimé) ferait
-// échouer le tuto chez l'utilisateur : on la refuse ici, avant le commit.
+// Garde des tutos interactifs (lancée par `pnpm check`). Trois erreurs silencieuses :
+//   - une étape vise `target: "…"` sans élément `data-tour="…"` dans apps/web/src (composant
+//     renommé, attribut supprimé) : le tuto se bloquerait chez l'utilisateur ;
+//   - une définition (definitions/*.ts) absente du registre : le tuto n'apparaîtrait nulle part ;
+//   - une fiche de documentation qui lance un tuto inconnu (`<TourStartButton id="…" />`).
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 
 const SRC = "apps/web/src";
 const DEFS = join(SRC, "features/tours/definitions");
+const REGISTRY = join(SRC, "features/tours/tour.registry.ts");
+const DOCS = "apps/web/content/docs";
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -39,8 +42,26 @@ for (const f of walk(DEFS)) {
   }
 }
 
+// Chaque définition est enregistrée : importée par le registre.
+const registry = readFileSync(REGISTRY, "utf8");
+for (const f of walk(DEFS)) {
+  const base = basename(f).replace(/\.tsx?$/, "");
+  if (!registry.includes(`"./definitions/${base}"`)) {
+    errors.push(`${relative(".", f)} n'est pas importé par ${relative(".", REGISTRY)} : le tuto n'apparaîtra nulle part`);
+  }
+}
+
+// Chaque bouton de lancement de la documentation désigne un tuto qui existe.
+let launchers = 0;
+for (const f of walk(DOCS)) {
+  for (const m of readFileSync(f, "utf8").matchAll(/<TourStartButton\s+id="([^"]+)"/g)) {
+    launchers++;
+    if (!ids.has(m[1])) errors.push(`${relative(".", f)} : <TourStartButton id="${m[1]}" /> désigne un tuto inconnu`);
+  }
+}
+
 if (errors.length) {
   for (const e of errors) console.error(`✗ tutos : ${e}`);
   process.exit(1);
 }
-console.log(`✓ tutos : ${ids.size} tuto(s), ${steps} cible(s), toutes présentes dans le code`);
+console.log(`✓ tutos : ${ids.size} tuto(s), ${steps} cible(s), ${launchers} bouton(s) de lancement, tout existe`);

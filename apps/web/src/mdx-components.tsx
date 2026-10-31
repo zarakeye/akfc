@@ -22,7 +22,7 @@ import PrismaCoreErdDiagram from "@features/docs/diagrams/PrismaCoreErdDiagram"
 import PrismaCoreMemoryDiagram from "@features/docs/diagrams/PrismaCoreMemoryDiagram"
 import PropsProbe from "@features/docs/ui/PropsProbe"
 import DocsTable from "@features/docs/ui/DocsTable"
-import { TourLauncher } from "@features/tours/TourStartButton"
+import { TourStartButton } from "@features/tours/TourStartButton"
 import { StoryTabs } from "@features/docs/entities/EntityExplorer"
 import { Os, OsTabs } from "@features/docs/ui/OsTabs"
 
@@ -74,7 +74,7 @@ export const mdxComponents: MDXComponents = {
   AuthFlowDiagram,
   TRPCFlowDiagram,
   Step,
-  TourLauncher,
+  TourStartButton,
   SvgDiagram,
   PrismaCoreErdDiagram,
   PrismaCoreMemoryDiagram,
