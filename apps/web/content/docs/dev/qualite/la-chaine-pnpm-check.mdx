@@ -20,8 +20,8 @@ Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain 
   language="json"
   filepath="package.json"
   filename="package.json"
-  snippetRange="16-20"
-  snippetHighlight="5"
+  snippetRange="16-22"
+  snippetHighlight="7"
   snippetTitle="Les scripts de vérification"
   fullFileTitle="Voir le fichier complet"
 />
@@ -58,7 +58,7 @@ L’ordre n’est pas indifférent : les **gardes maison** passent d’abord, pa
 
 Le dépôt n’est pas **un** projet TypeScript mais plusieurs, chacun avec son `tsconfig.json` (partie « Configuration »). `pnpm typecheck` les vérifie l’un après l’autre :
 
-<DocsTable columnsJson='["Projet", "Commande", "Ce qu’il vérifie"]' rowsJson='[["apps/web", "pnpm --filter web typecheck", "L’application, et avec ses propres règles tout ce qu’elle inclut : les contrats, le moteur du Finder, la configuration partagée."], ["packages/backend", "pnpm --filter backend typecheck", "Le backend et les contrats, avec les règles du backend."], ["La racine", "tsc -p tsconfig.json", "prisma.config.ts, et les scripts TypeScript de prisma/."]]' />
+<DocsTable columnsJson='["Projet", "Commande", "Ce qu’il vérifie"]' rowsJson='[["apps/web", "pnpm --filter web typecheck", "L’application, et avec ses propres règles tout ce qu’elle inclut : les contrats, le moteur du Finder, la configuration partagée."], ["packages/backend", "pnpm --filter backend typecheck", "Le backend et les contrats, avec les règles du backend."], ["La racine", "tsc -p tsconfig.json", "prisma.config.ts, les scripts TypeScript de prisma/, et les tests de bout en bout (playwright.config.ts, e2e/, chapitre 4)."]]' />
 
 Les contrats sont donc vérifiés deux fois, une fois par chacun de leurs lecteurs : c’est voulu, chaque projet les compile avec ses propres alias et ses propres options, et une incompatibilité avec l’un des deux doit se voir.
 
@@ -76,7 +76,7 @@ La troisième ligne est récente. La configuration de la racine ne servait qu’
 
 ## Le lint, de tout le code écrit à la main
 
-`pnpm lint` relisait seulement `apps/web`. Le backend, les contrats et le moteur du Finder — la moitié du code, celle qui touche la base et décide des droits — n’étaient relus par aucune règle. Le script de la racine lance maintenant deux passes :
+`pnpm lint` relisait seulement `apps/web`. Le backend, les contrats et le moteur du Finder — la moitié du code, celle qui touche la base et décide des droits — n’étaient relus par aucune règle. Le script de la racine lance maintenant deux passes, la seconde sur les paquets et sur les tests de bout en bout (chapitre 4) :
 
 <CodeExample
   language="json"
@@ -132,7 +132,7 @@ Toutes ces vérifications sont **statiques** : elles lisent le code sans l’ex�
 
 <DocsTable columnsJson='["Ce qui leur échappe", "Exemple"]' rowsJson='[["Une règle métier fausse mais bien typée", "Une page brouillon montrée aux visiteurs : le code compile, il fait simplement la mauvaise chose."], ["Ce qui dépend des données", "Une requête correcte qui renvoie un document à qui ne devrait pas le voir, parce qu’un groupe a été mal rattaché."], ["Ce qui dépend du temps", "Un plan du site figé au démarrage du serveur (partie « Interface transverse ») : rien d’incohérent, juste un résultat qui vieillit."], ["Le comportement dans un navigateur", "Un menu qui ne s’ouvre pas au clavier, un formulaire qui s’envoie deux fois."]]' />
 
-Ces erreurs-là se trouvent en **exécutant** le code : à la main, en relisant (ce qu’ont fait les revues de chaque partie de cette documentation), ou par des tests automatiques, que le projet n’a pas encore.
+Ces erreurs-là se trouvent en **exécutant** le code : à la main, en relisant (ce qu’ont fait les revues de chaque partie de cette documentation), et par les tests de bout en bout du chapitre 4, lancés à part (`pnpm e2e`).
 
 ## Récapitulatif
 

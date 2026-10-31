@@ -26,15 +26,17 @@ Un seul objet, typé par `NextConfig` : l'éditeur complète les noms d'options 
 
 Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarrer, de tout le `node_modules` du projet. Dans un monorepo, c'est plusieurs centaines de mégaoctets, dont l'essentiel ne sert jamais en production (outils de lint, de test, de build).
 
-```ts
-// apps/web/next.config.ts (extrait)
-  /**
-   * Sortie AUTONOME : Next produit un dossier contenant son propre serveur et
-   * uniquement les dépendances que le code atteint réellement. Sans elle,
-   * l'image Docker embarque tout `node_modules` du monorepo.
-   */
-  output: "standalone",
-```
+<CodeExample
+  language="ts"
+  filepath="apps/web/next.config.ts"
+  filename="next.config.ts"
+  snippetRange="4-18"
+  snippetHighlight="15"
+  snippetTitle="La sortie autonome (et la construction des tests)"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La construction des tests de bout en bout (`AKFC_E2E=1`, partie « Qualité ») fait exception : elle a son propre dossier, `.next-e2e`, pour ne pas écraser celui de `pnpm dev`, et se lance avec `next start`, sans sortie autonome. Toute autre construction, celle de l’image Docker comprise, est autonome.
 
 Avec `output: "standalone"`, Next.js suit chaque `import` depuis les pages et les routes, et recopie dans `.next/standalone` uniquement les fichiers réellement atteints, avec un petit `server.js` qui les sert. L'image Docker n'embarque que ce dossier :
 

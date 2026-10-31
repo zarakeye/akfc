@@ -140,12 +140,12 @@ Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du w
   filepath="apps/web/tsconfig.json"
   filename="tsconfig.json"
   snippetRange="23-32"
-  snippetHighlight="6"
+  snippetHighlight="6,10"
   snippetTitle="Ce que vérifie le web"
   fullFileTitle="Voir le fichier complet"
 />
 
-Cette liste a longtemps porté des traces d'un ancien rangement : `app`, `components`, `features`… à la racine de `apps/web`, où ils n'existent pas (tout est sous `src/`). Elles étaient sans effet, et le nettoyage l'a vérifié : `tsc --listFilesOnly` liste exactement les mêmes fichiers avant et après leur retrait (partie « Qualité »).
+Cette liste a longtemps porté des traces d'un ancien rangement : `app`, `components`, `features`… à la racine de `apps/web`, où ils n'existent pas (tout est sous `src/`). Elles étaient sans effet, et le nettoyage l'a vérifié : `tsc --listFilesOnly` liste exactement les mêmes fichiers avant et après leur retrait (partie « Qualité »). `exclude` écarte `node_modules`, et `.next-e2e`, la construction des tests de bout en bout : `**/*.ts` y trouverait les types que Next génère, d’une construction peut-être ancienne.
 
 ## Les fichiers de déclaration
 
@@ -157,22 +157,17 @@ Les pages de cette documentation sont des fichiers `.mdx`, mais aucun n'est impo
 
 ## La configuration de la racine
 
-```json
-// tsconfig.json (fichier complet)
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node"],
-    "noEmit": true,
-    "paths": {
-      "@contracts/*": ["./packages/contracts/src/*"]
-    }
-  },
-  "include": ["prisma.config.ts", "prisma/**/*.ts"]
-}
-```
+<CodeExample
+  language="ts"
+  filepath="tsconfig.json"
+  filename="tsconfig.json"
+  snippetRange="1-11"
+  snippetHighlight="10"
+  snippetTitle="La configuration de la racine"
+  fullFileTitle="Voir le fichier complet"
+/>
 
-Elle couvre `prisma.config.ts` et les scripts TypeScript de `prisma/` : ils ne font partie d'aucun paquet, et sans elle l'éditeur les vérifierait avec des options par défaut. Longtemps lue par l'éditeur seul, elle est aussi vérifiée par `pnpm typecheck` (`tsc -p tsconfig.json`) : un fichier que rien ne vérifie finit par contenir une erreur que personne ne voit.
+Elle couvre `prisma.config.ts`, les scripts TypeScript de `prisma/`, et les tests de bout en bout (`playwright.config.ts`, `e2e/`) : ils ne font partie d'aucun paquet, et sans elle l'éditeur les vérifierait avec des options par défaut. Longtemps lue par l'éditeur seul, elle est aussi vérifiée par `pnpm typecheck` (`tsc -p tsconfig.json`) : un fichier que rien ne vérifie finit par contenir une erreur que personne ne voit.
 
 ## Récapitulatif
 

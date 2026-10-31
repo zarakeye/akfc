@@ -1,0 +1,211 @@
+---
+title: "Tester de bout en bout"
+description: "Un vrai navigateur contre l’application construite pour la production, sur une base et un stockage réservés aux tests : six parcours qui vérifient ce que les gardes statiques ne peuvent pas voir — les droits, les brouillons, la limite d’essais, un e-mail reçu. Comment chaque lancement repart du même état, comment un test prouve qu’il échouerait, et ce que le premier lancement a trouvé."
+section: "Qualité"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les gardes maison, le typecheck et le lint lisent le code sans l’exécuter : ils ne voient ni une règle de droits mal appliquée, ni une page qui répond ce qu’elle ne devrait pas.
+
+Un test **de bout en bout** se place là où se place un utilisateur : devant un navigateur. Il ouvre une page, remplit un formulaire, clique, et vérifie ce que l’écran affiche ou ce que le serveur répond. Entre les deux, tout s’exécute pour de vrai : le composant React, la procédure tRPC, la requête Prisma, la base, le stockage, l’envoi d’un e-mail. Rien n’est simulé ; c’est ce qui le rend lent, et c’est ce qui le rend probant.
+
+Le projet utilise **Playwright**, qui pilote un vrai Chromium. Les tests vivent dans `e2e/` à la racine, et se lancent par une commande à part, `pnpm e2e` : quelques minutes, contre quelques secondes pour `pnpm check`, qui reste la vérification de chaque commit.
+
+<Callout type="info">
+Les tests de bout en bout ne remplacent pas les gardes du chapitre 1 : ils en sont le complément. Une garde statique dit « ce code est cohérent » ; un test de bout en bout dit « ce parcours, sur ce site, fait ce qu’il doit ». Le premier est rapide et exhaustif sur ce qu’il sait lire, le second est lent et ne vérifie que ce qu’on lui a écrit.
+</Callout>
+
+## Une base et un stockage à part 🧪
+
+Un test qui écrit dans la base de développement la salit : un compte de test apparaît dans la liste des membres, un mot de passe change, un document reçu n’est plus « non lu ». Un test qui écrirait en production serait une faute. Les tests ont donc **leur** environnement, décrit dans un seul fichier :
+
+<CodeWalkthrough
+  language="js"
+  filepath="e2e/env.mjs"
+  filename="env.mjs"
+  snippetRange="12-74"
+  title="e2e/env.mjs — l’environnement des tests"
+  stepsJson='[{"title": "Une application à part", "body": "Port 3100 : `pnpm dev` garde le port 3000 et tourne pendant les tests sans être gêné.", "scope": "1-2", "focus": "1-1"}, {"title": "Une base à part", "body": "Le Postgres de développement (docker-compose.dev.yml), mais une autre base : `akfc_e2e`, à côté de `akfc_db`. Les tests la détruisent et la recréent à chaque lancement ; `akfc_db` n’en sait rien.", "scope": "4-11", "focus": "9-9"}, {"title": "Un stockage à part", "body": "Le MinIO de développement, un autre bucket : `akfc-e2e`.", "scope": "13-18", "focus": "17-17"}, {"title": "Les variables de l’application de test", "body": "Elles l’emportent sur `apps/web/.env.local` : Next ne remplace jamais une variable déjà présente dans l’environnement du processus. Chaque adresse est donc posée ici, même celle qui ne change pas — rien ne dépend de ce que contient le `.env.local` de la machine.", "scope": "24-46", "focus": "27-33"}, {"title": "Rien ne tourne seul", "body": "La relève des e-mails, le récapitulatif quotidien, la purge de la nuit sont coupés : un test ne doit pas dépendre de l’heure à laquelle il tourne, et la relève irait lire une vraie boîte si `.env.local` en configurait une.", "scope": "47-52", "focus": "48-48"}, {"title": "Le garde-fou", "body": "Avant toute écriture, `assertLocal` vérifie que la base et le stockage visés sont sur la machine (`127.0.0.1`, `localhost`) et portent les noms réservés aux tests. Si quelqu’un, un jour, colle ici une adresse de serveur, rien ne se lance.", "scope": "55-63", "focus": "57-57"}]'
+/>
+
+<Callout type="warning">
+Les données de production ne servent **jamais** de données de test, même copiées. Un test crée lui-même ce dont il a besoin, avec des comptes `@e2e.test` qui n’existent nulle part ailleurs.
+</Callout>
+
+## Chaque lancement repart du même état
+
+Un test qui dépend de ce qu’a laissé le précédent échoue au hasard : le premier lancement passe, le second trouve un mot de passe déjà changé. `pnpm e2e` commence donc par `e2e/prepare.mjs`, qui remet tout à zéro **avant** que l’application démarre :
+
+<CodeWalkthrough
+  language="js"
+  filepath="e2e/prepare.mjs"
+  filename="prepare.mjs"
+  snippetRange="30-139"
+  title="e2e/prepare.mjs"
+  stepsJson='[{"title": "Le garde-fou, d’abord", "body": "Avant la première connexion à quoi que ce soit.", "scope": "1-1", "focus": "1-1"}, {"title": "La base existe", "body": "`akfc_e2e` est créée au premier lancement, par Prisma lui-même connecté à la base d’administration `postgres` : pas de client SQL de plus à installer. Postgres absent : un message dit quoi faire (« lancer pnpm dev:infra »), plutôt qu’une pile d’erreurs réseau.", "scope": "4-21", "focus": "11-11"}, {"title": "Les migrations, depuis zéro", "body": "`prisma migrate reset` vide la base et rejoue **toutes** les migrations : la base des tests a exactement la structure qu’aura la production après déploiement. Les tests vérifient donc aussi que les migrations s’appliquent.", "scope": "22-26", "focus": "22-22"}, {"title": "Un bucket vide", "body": "Créé au besoin, vidé sinon : les fichiers envoyés par un lancement précédent (un formulaire de droit à l’image) ne restent pas.", "scope": "29-47", "focus": "45-45"}, {"title": "Des comptes", "body": "Six comptes, un par rôle dans les tests : un administrateur, deux membres (le destinataire d’un document et un autre), et trois comptes que leur test modifie (la limite d’essais, le mot de passe oublié, le droit à l’image). Un test qui modifie un compte a le sien : il ne dérange pas les autres.", "scope": "50-63", "focus": "53-53"}, {"title": "Du contenu", "body": "Une discipline publiée, une en brouillon, un document adressé au seul membre A (avec son fichier dans le bucket), et des droits à l’image accordés depuis une date connue.", "scope": "65-107", "focus": "100-100"}]'
+/>
+
+Les données sont écrites directement par Prisma, pas en cliquant dans l’interface : ce n’est pas ce que les tests vérifient, et chaque clic ajouterait une raison d’échouer sans rapport avec le parcours testé. Leurs noms et identifiants sont posés une fois, dans un fichier que les tests importent :
+
+<CodeExample
+  language="js"
+  filepath="e2e/data.mjs"
+  filename="data.mjs"
+  snippetRange="10-17"
+  snippetHighlight="3"
+  snippetTitle="e2e/data.mjs — les comptes de test"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Une application construite comme en production
+
+Les tests tournent contre `next build` puis `next start`, pas contre `pnpm dev`. Le mode développement n’est pas le site que les membres utilisent : il compile à la demande, affiche les erreurs en surimpression, sert les bancs d’essai, et laisse passer des messages d’erreur détaillés que la production remplace par un message neutre.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="playwright.config.ts"
+  filename="playwright.config.ts"
+  snippetRange="15-44"
+  title="playwright.config.ts"
+  stepsJson='[{"title": "Construire, ou réutiliser", "body": "Par défaut, chaque lancement reconstruit l’application : on teste le code tel qu’il est. `E2E_NO_BUILD=1` réutilise la dernière construction, quand seuls les tests ont changé.", "scope": "1-1", "focus": "1-1"}, {"title": "Un test à la fois", "body": "Les tests partagent un serveur et une base. La limite d’essais de connexion, en mémoire du serveur, en est l’exemple : deux tests en parallèle sur le même compte se gêneraient. Un seul navigateur, dans l’ordre des fichiers, rend chaque lancement identique au précédent.", "scope": "4-9", "focus": "7-8"}, {"title": "Des traces quand ça échoue", "body": "Un test qui échoue laisse une capture d’écran et une **trace** : chaque action, l’état de la page avant et après, les requêtes réseau. Le rapport HTML les regroupe (`pnpm e2e:report`).", "scope": "10-18", "focus": "16-16"}, {"title": "Un navigateur de bureau", "body": "Chromium, en français, à l’heure de Paris, sur un écran large : le header affiche sa barre complète, et les dates s’affichent comme pour les membres.", "scope": "19-19", "focus": "19-19"}, {"title": "Playwright lance l’application", "body": "`webServer` construit et démarre l’application dans `apps/web`, avec l’environnement des tests, et attend qu’elle réponde avant le premier test ; il l’arrête à la fin. La sortie d’erreur du serveur s’affiche avec celle des tests : une erreur côté serveur se voit, même quand le test passe.", "scope": "20-29", "focus": "24-24"}]'
+/>
+
+La construction des tests ne doit pas écraser celle de `pnpm dev`. `next.config.ts` lui donne son propre dossier quand `AKFC_E2E=1` :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/next.config.ts"
+  filename="next.config.ts"
+  snippetRange="4-18"
+  snippetHighlight="8,15"
+  snippetTitle="Une construction à part"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`.next-e2e` est exclu du typecheck du web (son `include` couvre tous les `.ts` du dossier, chapitre 1) et effacé par `pnpm clean` avec `.next` : après un `pnpm check`, le prochain `pnpm e2e` reconstruit.
+
+## Six parcours
+
+<DocsTable columnsJson='["Fichier", "Ce qu’il vérifie", "Pourquoi un test de bout en bout"]' rowsJson='[["connexion.spec.ts", "Se connecter depuis le header ; même message pour un mauvais mot de passe et une adresse inconnue ; après dix essais faux, même le bon mot de passe est refusé.", "La limite d’essais vit en mémoire du serveur : seul un serveur qui tourne la montre."], ["brouillons.spec.ts", "Un brouillon répond 404 au visiteur et au membre, s’affiche en aperçu à l’administrateur avec son badge et noindex, et n’entre pas dans le plan du site.", "La règle dépend de qui regarde : trois sessions, une même adresse."], ["documents.spec.ts", "Le destinataire voit et ouvre son document ; un autre membre ne le voit pas et son adresse répond 404 ; sans session, 401.", "Le droit se lit en base à chaque requête : il faut une base, des groupes, une session."], ["avatars.spec.ts", "Un administrateur ne peut pas poser l’avatar d’un autre membre dans une page ; il peut poser le sien.", "La règle est côté serveur : on l’interroge comme le ferait un client modifié, sans passer par l’interface qui ne propose déjà plus l’avatar d’autrui."], ["droit-a-l-image.spec.ts", "Un formulaire signé avant les droits en vigueur est archivé sans changer le statut ; un formulaire récent le change.", "Envoi d’un vrai fichier au stockage, vérification par le serveur, transaction, puis l’écran rafraîchi."], ["mot-de-passe-oublie.spec.ts", "Le lien reçu par e-mail permet de choisir un nouveau mot de passe ; l’ancien ne vaut plus rien ; le lien ne sert qu’une fois.", "Le parcours traverse une boîte e-mail : Mailpit la donne aux tests."]]' />
+
+Chaque parcours vérifie une règle **décidée** pour le club (les brouillons réservés aux administrateurs, un avatar qui ne représente que son titulaire, des droits qui ne changent que pour des droits plus récents), plutôt qu’un détail d’affichage. Un test qui vérifie la couleur d’un bouton casse à chaque retouche et ne protège rien ; un test qui vérifie qu’un membre ne lit pas le document d’un autre protège ce qui compte.
+
+### Se connecter sans formulaire
+
+Seul le test de connexion passe par le formulaire. Les autres ont besoin d’une session, pas de vérifier à nouveau comment on l’obtient : ils appellent la procédure de connexion directement, et le cookie de session se pose dans le navigateur du test.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="e2e/helpers.ts"
+  filename="helpers.ts"
+  snippetRange="10-26"
+  title="e2e/helpers.ts — appeler tRPC, ouvrir une session"
+  stepsJson='[{"title": "Une procédure, comme le navigateur l’appelle", "body": "`POST /api/trpc/<procédure>`, l’entrée enveloppée par superjson (`{ json: … }`). La réponse porte soit `result`, soit `error`, avec son code (`FORBIDDEN`…) et son statut HTTP.", "scope": "1-8", "focus": "2-2"}, {"title": "Une session en une requête", "body": "`page.request` partage les cookies de la page : après la connexion, la page est connectée. Une connexion qui échoue arrête le test sur un message clair (« connexion de … »), plutôt que de le laisser échouer plus loin sur une page de refus.", "scope": "14-17", "focus": "16-16"}]'
+/>
+
+### Un refus vérifié des deux côtés
+
+Le test de la limite d’essais vérifie l’écran, puis le serveur : le message affiché ne suffit pas, il faut aussi qu’aucune session n’ait été ouverte.
+
+<CodeExample
+  language="ts"
+  filepath="e2e/connexion.spec.ts"
+  filename="connexion.spec.ts"
+  snippetRange="35-55"
+  snippetHighlight="14,20"
+  snippetTitle="La limite d’essais"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les dix échecs passent par l’API, pas par le formulaire : la limite compte les essais par adresse, quelle que soit leur origine, et dix soumissions de formulaire n’apprendraient rien de plus. Le onzième essai, avec le **bon** mot de passe, passe par l’écran : c’est ce que verrait un membre.
+
+### 404 et 401 ne disent pas la même chose
+
+<CodeExample
+  language="ts"
+  filepath="e2e/documents.spec.ts"
+  filename="documents.spec.ts"
+  snippetRange="19-32"
+  snippetHighlight="8,13"
+  snippetTitle="Le document des autres"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un membre connecté qui demande le document d’un autre reçoit **404**, comme pour un document qui n’existe pas : le site ne confirme même pas son existence (partie « Membres et collaboration »). Sans session, **401** : la question n’est pas encore de savoir à qui est le document, mais qui demande. Le test fixe les deux réponses ; une modification qui les échangerait le ferait échouer.
+
+### Attendre un e-mail
+
+L’e-mail de réinitialisation part sans faire attendre la réponse du site. Le test interroge donc Mailpit jusqu’à ce qu’il arrive, vingt secondes au plus :
+
+<CodeExample
+  language="ts"
+  filepath="e2e/helpers.ts"
+  filename="helpers.ts"
+  snippetRange="43-60"
+  snippetHighlight="3,8"
+  snippetTitle="e2e/helpers.ts — waitForEmail"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`expect.poll` relance la fonction jusqu’à ce qu’elle rende autre chose que `null`. C’est la bonne façon d’attendre en Playwright : **jamais** une pause fixe (`waitForTimeout(3000)`), trop longue quand tout va bien, trop courte un jour où la machine est chargée. Le filtre `since` écarte les e-mails d’un lancement précédent.
+
+## Un test doit pouvoir échouer
+
+Un test qui passe ne prouve rien tant qu’on ne l’a pas vu **échouer** pour la bonne raison. Une assertion qui ne regarde pas ce qu’on croit (un texte présent ailleurs sur la page, une réponse 200 d’une page d’erreur) passe toujours, et protège d’autant moins qu’elle rassure.
+
+À l’écriture de ces tests, deux règles ont été cassées exprès, le temps d’un lancement :
+
+<DocsTable columnsJson='["Règle cassée", "Test qui a échoué"]' rowsJson='[["La route des documents ne vérifie plus à qui est le document (where: { id } au lieu de la condition d’accès).", "documents.spec.ts : « un autre membre ne le voit pas, et son adresse répond 404 »."], ["Le dépôt d’un formulaire de droit à l’image l’applique toujours (applied = true).", "droit-a-l-image.spec.ts : « un formulaire signé avant les droits en vigueur est archivé »."]]' />
+
+Les deux tests ont échoué, avec un message qui désignait la règle ; le code a été rétabli et ils sont repassés. C’est la vérification d’un test : on casse ce qu’il protège, il doit le dire.
+
+<Callout type="tip">
+Écrire le test d’une règle avant de la corriger, quand c’est possible, donne cette preuve gratuitement : le test échoue d’abord (la règle est fausse), puis passe (elle est corrigée).
+</Callout>
+
+## Ce que le premier lancement a trouvé
+
+Les six parcours sont passés au premier lancement complet. La sortie du serveur, elle, montrait une erreur à chaque ouverture de la fiche d’un membre : `ReferenceError: DOMMatrix is not defined`.
+
+Le visionneur de PDF (react-pdf, sur pdf.js) utilise au chargement de son module une API du navigateur, `DOMMatrix`, que Node n’a pas. Importé directement, il faisait échouer le **rendu serveur** de chaque page qui le contient : la fiche d’un membre, le profil, la page des documents. Next rattrape l’erreur et laisse le navigateur rendre la page — elle s’affiche, le test passe — mais l’erreur se répète dans les journaux à chaque visite, et la page arrive sans son HTML. La vignette PDF du Finder avait déjà rencontré le problème ; le visionneur suit maintenant la même solution :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/member-documents/PdfViewerClient.tsx"
+  filename="PdfViewerClient.tsx"
+  snippetRange="5-14"
+  snippetHighlight="10"
+  snippetTitle="PdfViewerClient.tsx"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`ssr: false` diffère le chargement du module au navigateur ; le visionneur ne s’ouvre de toute façon qu’après un clic. Les deux composants qui l’utilisent importent désormais `PdfViewerClient`.
+
+<Callout type="info">
+Un test qui passe n’est pas toute l’information d’un lancement. La sortie du serveur montre ce que l’écran cache : une erreur rattrapée, un e-mail qui n’est pas parti, une requête lente. Elle se lit à chaque lancement, comme le résultat des tests.
+</Callout>
+
+## Lancer les tests
+
+<DocsTable columnsJson='["Commande", "Ce qu’elle fait"]' rowsJson='[["pnpm dev:infra", "Démarre Postgres, MinIO et Mailpit (une fois par session de travail) ; les tests en ont besoin."], ["pnpm e2e", "Prépare la base et le bucket des tests, construit l’application, lance les six parcours. Quelques minutes, dont l’essentiel pour la construction."], ["E2E_NO_BUILD=1 pnpm e2e", "Même chose sans reconstruire : quand seuls les tests ont changé depuis le dernier lancement."], ["pnpm e2e connexion", "Seulement les fichiers dont le nom contient « connexion »."], ["pnpm e2e:report", "Ouvre le rapport du dernier lancement : pour chaque échec, la capture d’écran et la trace."]]' />
+
+Les tests ne font pas partie de `pnpm check` : ils se lancent avant un déploiement, et après toute modification d’une règle qu’ils couvrent. Plus tard, une intégration continue (GitHub Actions) pourra les lancer à chaque envoi sur GitHub, sur une machine qui monte elle-même Postgres, MinIO et Mailpit.
+
+<Callout type="warning">
+Un test qui échoue « une fois sur dix » n’est pas un test capricieux : c’est un test qui dépend de quelque chose qu’il ne contrôle pas (l’ordre, l’heure, un état laissé par un autre). On cherche cette dépendance ; on n’ajoute pas de nouvel essai automatique pour la masquer.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Avec quel outil ?", "Playwright, qui pilote Chromium ; les tests sont dans e2e/, typés et lintés avec le reste."], ["Contre quelle application ?", "La construction de production (next build, next start), dans apps/web/.next-e2e, sur le port 3100."], ["Sur quelles données ?", "Une base akfc_e2e et un bucket akfc-e2e locaux, remis à zéro à chaque lancement par e2e/prepare.mjs, avec des comptes @e2e.test."], ["Qu’est-ce qui empêche de viser la production ?", "assertLocal : rien ne se lance si la base ou le stockage ne sont pas locaux et dédiés aux tests."], ["Que vérifient les tests ?", "Six parcours, chacun sur une règle décidée pour le club : connexion et limite d’essais, brouillons, documents, avatars, droit à l’image, mot de passe oublié."], ["Comment sait-on qu’un test protège quelque chose ?", "On casse la règle qu’il couvre : il doit échouer, avec un message qui la désigne."], ["Comment attendre un résultat asynchrone ?", "expect.poll, jamais une pause fixe."], ["Les tests tournent-ils à chaque commit ?", "Non : pnpm check reste la vérification de chaque commit ; pnpm e2e se lance avant un déploiement et après toute modification d’une règle couverte."]]' />
+
+## À suivre
+
+La qualité se vérifie sur la machine du développeur. Reste à mettre le site en ligne, et à l’y garder : l’image Docker, le serveur, les variables de production, les sauvegardes.
+
+<Callout type="tip">
+**Partie suivante : infrastructure et déploiement** (à venir).
+</Callout>
