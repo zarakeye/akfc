@@ -116,6 +116,9 @@ services:
       # ── Auth / identité ──
       JWT_SECRET: "sandbox-demo-jwt-secret-change-me-please-0123456789"
       NEXTAUTH_URL: "http://localhost:3010"
+      # Lue au démarrage (le build ne la reçoit pas) : métadonnées, plan du site et robots.txt
+      # désignent la sandbox, pas le site du club.
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3010"
       APP_SHORT_NAME: "AKFC"
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"

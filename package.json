@@ -14,7 +14,7 @@
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm --filter web typecheck && pnpm --filter backend typecheck && tsc -p tsconfig.json",
-    "lint": "pnpm --filter web lint && eslint -c apps/web/eslint.config.mjs --rule '@next/next/no-html-link-for-pages: off' --max-warnings 0 packages/backend/src packages/contracts/src packages/finder-core/src e2e playwright.config.ts",
+    "lint": "pnpm --filter web lint && eslint --max-warnings 0 packages/backend/src packages/contracts/src packages/finder-core/src e2e playwright.config.ts",
     "postinstall": "pnpm prisma generate",
     "e2e": "node e2e/prepare.mjs && playwright test",
     "e2e:report": "playwright show-report",

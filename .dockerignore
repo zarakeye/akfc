@@ -9,6 +9,8 @@ node_modules
 **/node_modules
 .next
 **/.next
+.next-e2e
+**/.next-e2e
 dist
 **/dist
 .turbo
@@ -31,9 +33,16 @@ dist
 .vscode
 *.log
 
+# Tests de bout en bout : ni leur code, ni leurs résultats ne servent à l'image.
+e2e
+playwright.config.ts
+test-results
+playwright-report
+
 # Scripts d'application et sauvegardes qui traînent à la racine.
 step_*.sh
 fix_*.sh
+apply-*.sh
 diag_*.sh
 audit_*.sh
 *.sql

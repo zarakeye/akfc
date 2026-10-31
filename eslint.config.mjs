@@ -1,18 +1,7 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+// Configuration ESLint de la RACINE, pour tout ce qui vit hors de apps/web (packages/*, e2e/) :
+// celle que lisent `pnpm lint` (seconde passe) et l'éditeur. Ce sont les règles du web — une seule
+// liste pour tout le dépôt — moins une règle sans objet ici : `no-html-link-for-pages` cherche un
+// dossier pages/ de Next à la racine, et l'annonce absent à chaque fichier.
+import web from "./apps/web/eslint.config.mjs";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
+export default [...web, { rules: { "@next/next/no-html-link-for-pages": "off" } }];

@@ -47,7 +47,9 @@ RUN rm -rf node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/client \
   node_modules/.prisma/client 2>/dev/null || true
 RUN pnpm prisma generate --schema=prisma/schema.prisma
 ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_APP_SHORT_NAME
+# Défaut = la racine de stockage du club : un argument de build oublié ne fait plus chercher les
+# fichiers sous une autre racine (sans défaut, ENV recevait une chaîne VIDE).
+ARG NEXT_PUBLIC_APP_SHORT_NAME=AKFC
 ENV NEXT_PUBLIC_APP_SHORT_NAME=${NEXT_PUBLIC_APP_SHORT_NAME}
 RUN pnpm --filter web build
 # sharp avec ses dépendances (detect-libc, semver, @img/*) à plat : le traçage Next ne les emporte pas.
@@ -63,6 +65,9 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY prisma ./prisma
 COPY prisma.config.ts package.json ./
+# pnpm (version épinglée par packageManager) téléchargé au BUILD : une migration lancée en
+# production ne dépend plus du registre npm.
+RUN corepack install
 CMD ["pnpm", "prisma", "migrate", "deploy"]
 
 # ─── Service ──────────────────────────────────────────────────────────────
@@ -78,17 +83,19 @@ RUN groupadd --system --gid 1001 nodejs \
   && mkdir -p /home/nextjs/.cache/node/corepack/v1 \
   && chown -R nextjs:nodejs /home/nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
-COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
-
 # ffmpeg : affiches des vidéos stockées sur R2 ; libheif : photos HEIC d'iPhone (service mediaDerivatives).
+# AVANT la copie de l'application : cette couche (la plus lourde) ne change pas d'un déploiement à
+# l'autre et reste en cache ; après la copie, elle était refaite à chaque modification du code.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg libheif-examples \
      $(apt-cache show libheif-plugin-libde265 >/dev/null 2>&1 && echo libheif-plugin-libde265) \
   && (command -v heif-dec || command -v heif-convert) \
   && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
 
 USER nextjs
 EXPOSE 3000
