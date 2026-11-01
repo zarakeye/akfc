@@ -54,7 +54,7 @@ La cible d’une étape peut ne pas encore exister (la page charge ses données)
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="59-96"
+  snippetRange="60-97"
   title="TourOverlay.tsx — le suivi de la cible"
   stepsJson='[{"title": "Chercher la cible", "body": "Par son nom, `[data-tour=\"…\"]` (le nom est échappé par `CSS.escape`, pour qu’un caractère spécial ne casse pas le sélecteur), et seulement si elle est visible (plus bas). Introuvable : on attend ; introuvable depuis huit secondes, l’étape est perdue.", "scope": "6-16", "focus": "15-15"}, {"title": "Une étape facultative s’efface", "body": "Une étape `optional` dont la cible manque depuis une seconde et demie passe d’elle-même, par le même `next(index)` qu’un clic : un membre sans document saute la lecture d’un document, au lieu d’attendre huit secondes un « Élément introuvable ». La boucle s’arrête là (`return`) : l’étape suivante a la sienne.", "scope": "10-14", "focus": "12-12"}, {"title": "La première fois", "body": "La cible est amenée au centre de l’écran, et le curseur clavier y va : dans le champ si l’étape attend une saisie, sinon sur la bulle, que le lecteur d’écran lit. Avant la relecture de cette partie, le curseur restait sur le bouton qui avait lancé le tuto — désormais caché sous le voile.", "scope": "17-24", "focus": "23-23"}, {"title": "La position, à chaque image", "body": "Le rectangle de la cible, élargi d’une marge. `setRect` ne reçoit un nouvel objet que si la position a changé (`sameRect`) : immobile, la cible ne provoque aucun rendu, même soixante fois par seconde.", "scope": "25-28", "focus": "27-27"}, {"title": "La saisie, validée en continu", "body": "Pour une étape `input`, la valeur du champ est relue à chaque image et passée à `validate` : « Suivant » s’active dès qu’elle est acceptable.", "scope": "29-32", "focus": "31-31"}, {"title": "Arrêter en partant", "body": "L’effet rend une fonction qui annule la prochaine image : l’étape suivante (un overlay neuf) reprend avec sa propre boucle. L’effet dépend aussi de `step.optional` et de `index` : la boucle d’une étape facultative fait passer cette étape-là, pas une autre.", "scope": "34-38", "focus": "37-37"}]'
 />
@@ -65,7 +65,7 @@ Une cible n’est retenue que si elle a une position à l’écran. Un même nom
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="23-34"
+  snippetRange="24-35"
   snippetHighlight="9"
   snippetTitle="Le premier élément visible"
   fullFileTitle="Voir le fichier complet"
@@ -79,7 +79,7 @@ Un élément masqué par `display: none` (la classe `hidden`, ou `xl:hidden` sur
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="174-184"
+  snippetRange="185-195"
   snippetHighlight="5"
   snippetTitle="Les bloqueurs"
   fullFileTitle="Voir le fichier complet"
@@ -91,13 +91,15 @@ Pour une étape d’explication (`next`), un cinquième panneau couvre **la cibl
 
 <DocsTable columnsJson='["Couche", "z-index", "Rôle"]' rowsJson='[["Le voile (SVG masqué)", "10000", "Assombrir tout sauf la cible ; ne capte rien."], ["Les bloqueurs", "10000", "Capter les clics hors de la cible (et sur elle, pour une explication)."], ["Le liseré", "10001", "Souligner la cible ; ne capte rien."], ["La bulle", "10002", "Le titre, l’explication, « Quitter », « Suivant »."]]' />
 
+La bulle se pose **sous** la cible s’il y reste au moins 200 pixels (`BUBBLE_ROOM`), sinon **au-dessus**, sinon en bas de l’écran ; sa hauteur est bornée à celle de l’écran, et elle défile si son texte dépasse. Avant cette règle, elle se posait sous la cible quoi qu’il arrive : sous une grande zone comme le contenu de la bibliothèque, elle sortait de l’écran, et « Suivant » avec elle.
+
 ### Reconnaître l’action
 
 <CodeExample
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="103-114"
+  snippetRange="104-115"
   snippetHighlight="7,10"
   snippetTitle="Un clic sur la cible"
   fullFileTitle="Voir le fichier complet"
@@ -113,7 +115,7 @@ Le clic est écouté sur tout le document, en **phase de capture** (`true`) : av
   language="tsx"
   filepath="apps/web/src/features/tours/TourOverlay.tsx"
   filename="TourOverlay.tsx"
-  snippetRange="116-150"
+  snippetRange="117-151"
   snippetHighlight="7,13,30,31"
   snippetTitle="Échap, le curseur gardé, aucun formulaire envoyé"
   fullFileTitle="Voir le fichier complet"
@@ -129,7 +131,7 @@ Une cible introuvable après huit secondes — un composant renommé sans la gar
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vit l’état du tuto ?", "Dans le sessionStorage de l’onglet, lu par un store externe (useSyncExternalStore) ; le serveur répond « aucun tuto »."], ["Comment une même action ne fait-elle pas sauter deux étapes ?", "next(fromIndex) ne passe que si l’étape en cours est encore fromIndex."], ["Qui fait passer une étape de page ?", "Le fournisseur, monté sur toutes les pages et qui survit à la navigation."], ["Comment l’overlay suit-il la cible ?", "À chaque image (requestAnimationFrame), sans rendu tant qu’elle ne bouge pas."], ["Comment seuls les clics sur la cible passent-ils ?", "Quatre bloqueurs transparents autour du trou ; un cinquième sur la cible pour une explication."], ["Et une cible qui peut manquer ?", "L’étape se déclare optional : absente depuis une seconde et demie, elle passe d’elle-même."], ["Et un nom porté par deux éléments ?", "Le premier visible est retenu (getClientRects non vide)."], ["Et au clavier ?", "Échap quitte ; le curseur va sur la cible ou la bulle, et n’en sort pas ; pour une explication, il reste dans la bulle."], ["Et Entrée dans un champ ?", "Le submit est annulé en capture pendant toute étape qui n’attend ni clic ni page."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vit l’état du tuto ?", "Dans le sessionStorage de l’onglet, lu par un store externe (useSyncExternalStore) ; le serveur répond « aucun tuto »."], ["Comment une même action ne fait-elle pas sauter deux étapes ?", "next(fromIndex) ne passe que si l’étape en cours est encore fromIndex."], ["Qui fait passer une étape de page ?", "Le fournisseur, monté sur toutes les pages et qui survit à la navigation."], ["Comment l’overlay suit-il la cible ?", "À chaque image (requestAnimationFrame), sans rendu tant qu’elle ne bouge pas."], ["Comment seuls les clics sur la cible passent-ils ?", "Quatre bloqueurs transparents autour du trou ; un cinquième sur la cible pour une explication."], ["Et une cible qui peut manquer ?", "L’étape se déclare optional : absente depuis une seconde et demie, elle passe d’elle-même."], ["Et un nom porté par deux éléments ?", "Le premier visible est retenu (getClientRects non vide)."], ["Et au clavier ?", "Échap quitte ; le curseur va sur la cible ou la bulle, et n’en sort pas ; pour une explication, il reste dans la bulle."], ["Et Entrée dans un champ ?", "Le submit est annulé en capture pendant toute étape qui n’attend ni clic ni page."], ["Et une grande cible ?", "La bulle va sous la cible, sinon au-dessus, sinon en bas de l’écran : elle reste toujours visible."]]' />
 
 ## À suivre
 
