@@ -73,7 +73,7 @@ Une entité dédiée règle tout cela d’un coup :
   fullFileTitle="Voir le fichier complet"
 />
 
-**L’unicité** du nom et du slug élimine les doublons par construction : le formulaire propose un sélecteur, et on ne crée pas une origine en tapant son nom une deuxième fois. **Les métadonnées** culturelles (pays, région, drapeau, période historique) servent à l’affichage — le drapeau apparaît à côté de l’origine sur la fiche d’un stage. **Le regroupement transverse** devient possible : disciplines, stages et événements pointent vers la même `Origin`, et l’API sait déjà répondre « tous les événements de cette origine » (`event.getAllByOrigin`).
+**L’unicité** du nom et du slug élimine les doublons par construction : le formulaire propose un sélecteur, et on ne crée pas une origine en tapant son nom une deuxième fois. **Les métadonnées** culturelles (pays, région, drapeau, période historique) servent à l’affichage — le drapeau apparaît à côté de l’origine sur la fiche d’un stage. **Le regroupement transverse** devient possible : disciplines, stages et événements pointent vers la même `Origin`, et une seule requête répond à « tous les événements de cette origine » (`where: { originId }`).
 
 La séparation du nom, du pays et de la région permet une nuance utile : « Fujian » peut être une origine à part entière (`name: "Fujian"`, `country: "Chine"`, `region: "Fujian"`), tout en restant géographiquement rattachée à la Chine. Le club pourra présenter les arts du sud de la Chine distinctement de ceux du nord.
 
@@ -138,7 +138,7 @@ La règle se vérifie à **deux endroits**, et la différence entre les deux est
   language="ts"
   filepath="packages/backend/src/modules/seminars/router.ts"
   filename="router.ts"
-  snippetRange="504-546"
+  snippetRange="464-506"
   snippetHighlight="21,25,29,37"
   snippetTitle="seminar.update : la règle, sur l’état fusionné"
   fullFileTitle="Voir le fichier complet"
@@ -152,7 +152,7 @@ L’événement applique la même règle à ses listes : au moins une discipline
   language="ts"
   filepath="packages/backend/src/modules/events/router.ts"
   filename="router.ts"
-  snippetRange="431-455"
+  snippetRange="372-396"
   snippetTitle="event.update : la même règle, avec des listes"
   fullFileTitle="Voir le fichier complet"
 />
@@ -199,7 +199,7 @@ Le slug est **stable** : renommer une discipline ne le change pas, et les liens 
   language="ts"
   filepath="packages/backend/src/modules/disciplines/router.ts"
   filename="router.ts"
-  snippetRange="292-307"
+  snippetRange="258-273"
   snippetTitle="discipline.create : quel champ est en conflit ?"
   fullFileTitle="Voir le fichier complet"
 />
@@ -224,7 +224,7 @@ La correction consiste à **figer le segment de dossier à la création**, dans 
   language="ts"
   filepath="packages/backend/src/modules/disciplines/router.ts"
   filename="router.ts"
-  snippetRange="266-275"
+  snippetRange="232-241"
   snippetTitle="discipline.create : le segment, calculé une seule fois"
   fullFileTitle="Voir le fichier complet"
 />
@@ -247,7 +247,7 @@ Renommer ne change plus que ce que le finder **affiche** : un `FolderLabel` asso
   language="ts"
   filepath="packages/backend/src/modules/disciplines/router.ts"
   filename="router.ts"
-  snippetRange="447-454"
+  snippetRange="413-420"
   snippetTitle="discipline.update : seul le libellé du dossier suit le nom"
   fullFileTitle="Voir le fichier complet"
 />

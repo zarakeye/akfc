@@ -130,7 +130,7 @@ Les administrateurs publient un fichier sans quitter la bibliothèque, par trois
   language="ts"
   filepath="packages/backend/src/modules/memberDocuments/router.ts"
   filename="router.ts"
-  snippetRange="282-350"
+  snippetRange="262-330"
   title="memberDocument.publish"
   stepsJson='[{"title": "Réservé aux administrateurs", "body": "Diffuser un document au nom du club est une action d’administration.", "scope": "1-1", "focus": "1-1"}, {"title": "Une diffusion ciblée a des destinataires", "body": "Pour tous, les listes sont ignorées ; pour une diffusion ciblée, il faut au moins un groupe ou un membre.", "scope": "12-25", "focus": "17-19"}, {"title": "Le fichier, par sa clé", "body": "Le finder manipule des chemins, pas des identifiants : la procédure retrouve le fichier par son chemin, qui EST sa clé (recherche exacte, partie « Stockage et médias »).", "scope": "28-34", "focus": "29-29"}, {"title": "Une seule publication par fichier", "body": "Un fichier déjà publié est refusé avec un message (CONFLICT), avant que la contrainte d’unicité ne lève une erreur interne.", "scope": "36-45", "focus": "40-42"}, {"title": "Des destinataires qui existent", "body": "Un membre ou un groupe supprimé pendant que la boîte de dialogue était ouverte donnerait une erreur de clé étrangère : ils sont comptés en base, doublons écartés.", "scope": "49-55", "focus": "53-53"}, {"title": "La publication et sa diffusion, ensemble", "body": "Une écriture imbriquée crée la ligne et ses destinataires : une publication sans ses destinataires n’existe jamais.", "scope": "57-68", "focus": "63-64"}]'
 />
@@ -147,7 +147,7 @@ Aucune ligne n’est créée à la publication : un document adressé à deux ce
   language="ts"
   filepath="packages/backend/src/modules/memberDocuments/router.ts"
   filename="router.ts"
-  snippetRange="238-256"
+  snippetRange="218-236"
   title="memberDocument.markRead"
   stepsJson='[{"title": "Pouvoir l’ouvrir", "body": "Le document doit satisfaire la condition d’ouverture. Sinon : « Document introuvable », exactement comme s’il n’existait pas — la réponse ne révèle pas qu’il existe.", "scope": "5-12", "focus": "7-7"}, {"title": "Un upsert, une ligne", "body": "La première ouverture crée la ligne, les suivantes la mettent à jour : jamais deux reçus pour un même membre et un même document (clé unique composée).", "scope": "13-17", "focus": "14-16"}]'
 />

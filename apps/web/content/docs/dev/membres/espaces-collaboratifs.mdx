@@ -103,7 +103,7 @@ Après l’envoi, le fichier est dans l’espace. Pour qu’il bénéficie du su
   language="ts"
   filepath="packages/backend/src/modules/memberDocuments/router.ts"
   filename="router.ts"
-  snippetRange="359-410"
+  snippetRange="339-390"
   title="memberDocument.depositToGroupSpace"
   stepsJson='[{"title": "Éditeur du groupe", "body": "La même garde que le dépôt.", "scope": "10-14", "focus": "10-10"}, {"title": "Un fichier de CET espace", "body": "La procédure reçoit deux informations : le chemin du fichier et le groupe. Vérifier seulement le droit sur le groupe ne suffirait pas : un éditeur pourrait publier à son groupe un fichier pris ailleurs (le document personnel d’un autre membre) et le lire par ce biais. Le groupe est donc relu DANS le chemin, et doit être le même.", "scope": "18-23", "focus": "18-18"}, {"title": "Le fichier, par sa clé", "body": "Retrouvé par son chemin exact.", "scope": "25-31", "focus": "26-26"}, {"title": "Idempotent", "body": "Un fichier déjà publié n’est pas republié : la procédure le dit et rend la publication existante. Un double clic ne crée rien.", "scope": "33-39", "focus": "37-38"}, {"title": "Un document du groupe", "body": "Diffusion ciblée sur ce seul groupe ; le déposant est noté comme auteur, et la cloche ne lui signale pas son propre dépôt.", "scope": "41-51", "focus": "45-47"}]'
 />
@@ -136,7 +136,7 @@ La liste de ces espaces vient du serveur :
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="326-350"
+  snippetRange="316-340"
   snippetHighlight="16,21"
   snippetTitle="storage.myCollaborativeSpaces"
   fullFileTitle="Voir le fichier complet"

@@ -140,7 +140,7 @@ Les avatars vivent sous `AKFC/avatars/<identifiant>/`. Le Finder liste le stocka
   fullFileTitle="Voir le fichier complet"
 />
 
-Le dossier n’est plus listé (ni par `storage.list`, ni par `storage.getTree`), et toute opération de la bibliothèque qui le vise — lecture, renommage, déplacement, libellé, corbeille — répond « introuvable », comme pour un dossier qui n’existe pas. Les avatars ne passent plus que par leur circuit : le profil de leur titulaire, et leur route.
+Le dossier n’est plus listé par `storage.getTree`, et toute opération de la bibliothèque qui le vise — lecture, renommage, déplacement, libellé, corbeille — répond « introuvable », comme pour un dossier qui n’existe pas. Les avatars ne passent plus que par leur circuit : le profil de leur titulaire, et leur route.
 
 <Callout type="tip">
 Un objet qui a un **propriétaire** et un **circuit** à lui ne doit pas être aussi manipulable par un outil générique. Deux chemins d’écriture vers la même donnée, c’est deux façons de la rendre incohérente.

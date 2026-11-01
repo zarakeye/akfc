@@ -260,13 +260,13 @@ La règle de visibilité vit désormais **dans les procédures**, en un seul end
   language="ts"
   filepath="packages/backend/src/modules/disciplines/router.ts"
   filename="router.ts"
-  snippetRange="155-192"
-  snippetHighlight="8-11,33-37"
+  snippetRange="161-184"
+  snippetHighlight="2-6,21"
   snippetTitle="visibleTo : la visibilité décidée dans le routeur"
   fullFileTitle="Voir le fichier complet"
 />
 
-Toutes les lectures du routeur (`getAll`, `getAllByCategory`, `getById`, `getBySlug`) appliquent ce filtre. Un administrateur voit tout ; un membre ou un visiteur ne voit que ce qui est publié, et un brouillon demandé par son identifiant répond « introuvable », exactement comme la page publique.
+Les lectures du routeur (`getAll`, `getById`) appliquent ce filtre ; les pages publiques, qui lisent la base elles-mêmes, appliquent la même condition. Un administrateur voit tout ; un membre ou un visiteur ne voit que ce qui est publié, et un brouillon demandé par son identifiant répond « introuvable », exactement comme la page publique.
 
 Une seule lecture fait exception : `getAllForMenu`, qui alimente le menu « Nos disciplines », ne renvoie que les disciplines publiées, **même à un administrateur**. Elle suivait d’abord la règle commune, et un administrateur voyait ses brouillons dans le menu ; mais la page d’un brouillon répond 404 à tout le monde, et ces entrées menaient à des liens morts. Le menu est la navigation publique : il montre ce que voit le public.
 
@@ -288,7 +288,7 @@ Il existe un cas particulièrement révélateur dans le routeur des membres.
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="249-282"
+  snippetRange="230-263"
   snippetHighlight="8-10,24-27"
   snippetTitle="Une règle métier au cœur de la protection"
   fullFileTitle="Voir le fichier complet"

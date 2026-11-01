@@ -65,7 +65,7 @@ Au temps de Cloudinary, renommer un fichier changeait son `public_id` : un renom
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="685-697"
+  snippetRange="580-592"
   snippetHighlight="3-4"
   snippetTitle="Le renommage d’un fichier"
   fullFileTitle="Voir le fichier complet"
@@ -79,7 +79,7 @@ Renommer un **dossier**, en revanche, est un vrai déplacement : sa clé est la 
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="606-752"
+  snippetRange="501-647"
   title="storage.rename — refuser d’abord, déplacer ensuite"
   stepsJson='[{"title": "Le droit d’écrire", "body": "Un administrateur partout, un éditeur dans l’espace de son groupe. Renommer le dossier d’un autre groupe est une écriture comme une autre (fiche 3.11).", "scope": "12-12", "focus": "12-12"}, {"title": "Un nom qui reste un nom", "body": "Ni vide, ni « / » (il créerait un sous-dossier), ni « .. » : un chemin qui en contient un est refusé par toutes les gardes de lecture, et le dossier deviendrait illisible pour tout le monde.", "scope": "15-35", "focus": "30-30"}, {"title": "Les dossiers que le code connaît", "body": "Un dossier-entité (l’espace d’un groupe, d’un membre, un dossier d’avatars) et une racine de contenu (cours, stages…) ont un chemin connu du code : destinations d’envoi, gardes de lecture. Leur « Renommer » édite le libellé (FolderLabel), jamais le chemin.", "scope": "51-71", "focus": "64-64"}, {"title": "L’extension, si c’en est une", "body": "Un point n’est pas forcément un séparateur d’extension : « CNI recto (ep. BAZZE) » en contient un. On ne garde qu’un suffixe qui A LA FORME d’une extension, et jamais pour un dossier.", "scope": "103-106", "focus": "103-104"}, {"title": "Ne rien écraser", "body": "La cible doit être libre partout : chez le stockage, dans MediaAsset, dans Folder. Une seule de ces trois sources ne suffit pas — un dossier vide enregistré n’a aucun objet, un fichier en corbeille n’a plus d’objet mais garde sa ligne.", "scope": "120-130", "focus": "125-125"}, {"title": "Puis déplacer", "body": "Le renommage d’un dossier passe par le même `adapter.move` qu’un déplacement : copie de chaque objet, réécriture du préfixe en base.", "scope": "141-144", "focus": "141-141"}]'
 />
@@ -152,7 +152,7 @@ Le même service refuse de déposer un dossier **dans lui-même** ou dans l’un
   language="ts"
   filepath="packages/backend/src/modules/storage/router.ts"
   filename="router.ts"
-  snippetRange="754-850"
+  snippetRange="649-745"
   title="storage.move — tout vérifier, puis tout exécuter"
   stepsJson='[{"title": "La source ET la cible", "body": "Un éditeur ne sort rien de l’espace de son groupe, et n’y fait rien entrer qui vienne d’ailleurs : le droit d’écriture porte sur les deux bouts.", "scope": "13-19", "focus": "18-18"}, {"title": "Les dossiers que le code connaît", "body": "Dossiers-entités, racines de contenu, corbeille : leur chemin est connu du code. On ne les déplace pas, même au sein d’une sélection.", "scope": "27-48", "focus": "39-41"}, {"title": "Planifier sans rien écrire", "body": "La sélection devient une liste d’opérations. Une opération sur place (déposer un élément dans son propre dossier) est écartée : l’adapter renommerait un objet sur lui-même, le stockage refuserait, et tout le geste échouerait.", "scope": "57-62", "focus": "57-57"}, {"title": "Ne rien écraser", "body": "Deux éléments de la sélection qui arriveraient au même nom, ou une cible déjà occupée (objet, ligne, dossier enregistré) : CONFLICT, avant la moindre copie. Une copie S3 remplace sans prévenir l’objet qui porte la clé cible, et la ligne déplacée heurterait ensuite la contrainte d’unicité : le fichier d’arrivée serait perdu.", "scope": "68-90", "focus": "84-84"}, {"title": "Puis exécuter, une à une", "body": "Séquentiellement : des déplacements simultanés sur des préfixes voisins pourraient se marcher dessus. Tout ou rien : si une opération échoue, les précédentes sont défaites. Un déplacement ne change jamais le statut : c’est une réorganisation, pas une validation.", "scope": "94-96", "focus": "94-94"}]'
 />

@@ -49,7 +49,6 @@ Le plus court du dépôt montre tout ce qu'un paquet déclare :
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
     "./cart": "./src/cart/usePickerCartStore.ts"
   },
   "scripts": {
@@ -61,7 +60,7 @@ Le plus court du dépôt montre tout ce qu'un paquet déclare :
 }
 ```
 
-<DocsTable columnsJson='["Champ", "Ce qu’il dit"]' rowsJson='[["name", "Le nom du paquet, utilisé par --filter et par les dépendances des autres paquets."], ["private: true", "Le paquet ne sera jamais publié sur le registre npm : pnpm refuse de le publier par erreur."], ["type: module", "Ses fichiers .js sont des modules ES (import / export), pas du CommonJS (require)."], ["exports", "Ce qu’un autre paquet a le droit d’importer, et depuis quel fichier : le point d’entrée « . » et le sous-chemin « ./cart »."], ["dependencies", "Les paquets dont il a besoin ; ici un autre paquet du workspace."]]' />
+<DocsTable columnsJson='["Champ", "Ce qu’il dit"]' rowsJson='[["name", "Le nom du paquet, utilisé par --filter et par les dépendances des autres paquets."], ["private: true", "Le paquet ne sera jamais publié sur le registre npm : pnpm refuse de le publier par erreur."], ["type: module", "Ses fichiers .js sont des modules ES (import / export), pas du CommonJS (require)."], ["exports", "Ce qu’un autre paquet a le droit d’importer, et depuis quel fichier : ici le seul sous-chemin « ./cart ». Le point d’entrée « . », qui renvoyait vers un fichier d’index que personne n’importait, a été retiré avec lui."], ["dependencies", "Les paquets dont il a besoin ; ici un autre paquet du workspace."]]' />
 
 `"workspace:*"` est propre aux workspaces pnpm : la dépendance n'est pas téléchargée du registre, c'est le dossier `packages/contracts` lui-même, relié par un lien symbolique dans `node_modules/@workspace/contracts`. Une modification de `contracts` est donc visible immédiatement par les paquets qui en dépendent, sans publication ni réinstallation.
 

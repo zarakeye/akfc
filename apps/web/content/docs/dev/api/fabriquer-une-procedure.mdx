@@ -168,7 +168,7 @@ Le bon candidat est la procédure par laquelle un instructeur enregistre sa pré
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="350-404"
+  snippetRange="331-385"
   snippetHighlight="11-22"
   snippetTitle="Une procédure protégée : saveMyInstructorBio"
   fullFileTitle="Voir le fichier complet"
@@ -182,7 +182,7 @@ Le bon candidat est la procédure par laquelle un instructeur enregistre sa pré
   language="ts"
   filepath="packages/backend/src/modules/users/router.ts"
   filename="router.ts"
-  snippetRange="350-404"
+  snippetRange="331-385"
   title="Une procédure où le contexte est réellement exploité"
   stepsJson='[{"title": "protectedProcedure garantit un membre authentifié", "body": "Contrairement à login, cette procédure exige une session. protectedProcedure bloque les visiteurs et requalifie le contexte : ctx.sessionClient.user devient non nullable.", "scope": "11-55", "focus": "11-11"}, {"title": "L’entrée suit le contrat du constructeur de pages", "body": "bio est validé par pageContentSchemaV1, le schéma de tout contenu du constructeur, défini dans packages/contracts. Un document invalide est refusé avant toute écriture. Le chapitre 7 raconte ce que cette ligne a remplacé.", "scope": "11-55", "focus": "12-19"}, {"title": "userId vient du contexte, pas de l’entrée", "body": "C’est un détail de sécurité crucial. L’entrée ne dit pas quel membre modifier : cela permettrait de réécrire la présentation de quelqu’un d’autre. L’identifiant est lu dans ctx.sessionClient.user.id, garanti par protectedProcedure. Un membre ne peut modifier que la sienne.", "scope": "11-55", "focus": "22-22"}, {"title": "Des règles métier avant l’écriture", "body": "Être authentifié ne suffit pas : on ne pose que son propre avatar (pour tout le monde, administrateurs compris), seul un titulaire a une présentation, et un membre qui n’est pas administrateur n’y montre que ses propres fichiers (une présentation est publique). Ces gardes ne font que lire, et viennent AVANT la transaction : un refus n’a rien à annuler. La partie « Contenu éditorial » les détaille.", "scope": "11-55", "focus": "21-35"}, {"title": "Une écriture et sa conséquence, ensemble", "body": "La présentation et la liste des médias qu’elle utilise sont enregistrées dans la même transaction : sans ce lien, les images de la bio ne seraient ni protégées contre la suppression, ni servies aux visiteurs.", "scope": "11-55", "focus": "36-52"}]'
 />
@@ -260,7 +260,7 @@ Les deux exemples précédents sont courts. Une écriture réelle accumule plus 
   language="ts"
   filepath="packages/backend/src/modules/disciplines/router.ts"
   filename="router.ts"
-  snippetRange="259-321"
+  snippetRange="225-287"
   snippetHighlight="1-5"
   snippetTitle="Écrire la discipline et ses médias, ou rien"
   fullFileTitle="Voir le fichier complet"
