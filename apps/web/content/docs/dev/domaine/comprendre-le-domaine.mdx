@@ -67,7 +67,7 @@ Avant de construire des pages d’administration, des formulaires, des sélecteu
 
 Ce chapitre construit donc une compréhension **conceptuelle** des entités du club : non pas une description des tables, mais une lecture de ce qu’elles représentent dans la vie réelle d’un club d’arts martiaux et de pratiques culturelles asiatiques. Le modèle distingue **ce qui est enseigné** (les disciplines, rangées par catégorie, famille et origine), **quand on le pratique régulièrement** (les cours) et **ce qui se passe ponctuellement** (les stages et les événements, avec leurs séances datées). À côté, l’**actualité** vit sa propre vie.
 
-<DocsTable columnsJson='["Modèle", "Dans l’interface", "Nature", "Exemple"]' rowsJson='[["Category", "Catégorie", "La plus grosse maille de classement ; elle range aussi la bibliothèque de fichiers.", "Cours"], ["Discipline", "Discipline", "Un art enseigné par le club, indépendant du temps et du lieu.", "Tchoy Lee Fut"], ["DisciplineFamily", "Famille", "Un regroupement de disciplines pour le menu.", "Kung-fu"], ["Origin", "Origine", "Les racines culturelles d’une discipline, d’un stage, d’un événement.", "Chine"], ["Course", "Cours", "Un créneau HEBDOMADAIRE : jour, horaire, public. Sans date.", "Le mardi, 18h30–20h, adultes"], ["Seminar", "Stage", "Un rendez-vous ponctuel, avec une présentation, un programme et des séances datées.", "Stage d’armes, deux week-ends de mars"], ["Event", "Événement", "Un rendez-vous plus libre, avec plusieurs disciplines ou aucune.", "Forum des associations"], ["SeminarSession, EventSession", "Séance", "Une date et un horaire précis d’un stage ou d’un événement.", "Samedi 14 mars, 9h–12h"], ["Post", "Actualité", "Un article éditorial, rattaché à rien d’autre du domaine.", "Compte rendu de la démonstration"]]' />
+<DocsTable columnsJson='["Modèle", "Dans l’interface", "Nature", "Exemple"]' rowsJson='[["Category", "Catégorie", "La plus grosse maille de classement, choisie dans une liste fixe (cours, stage, évènement) ; elle range aussi la bibliothèque de fichiers.", "Cours"], ["Discipline", "Discipline", "Un art enseigné par le club, indépendant du temps et du lieu.", "Tchoy Lee Fut"], ["DisciplineFamily", "Famille", "Un regroupement de disciplines pour le menu.", "Kung-fu"], ["Origin", "Origine", "Les racines culturelles d’une discipline, d’un stage, d’un événement.", "Chine"], ["Course", "Cours", "Un créneau HEBDOMADAIRE : jour, horaire, public. Sans date.", "Le mardi, 18h30–20h, adultes"], ["Seminar", "Stage", "Un rendez-vous ponctuel, avec une présentation, un programme et des séances datées.", "Stage d’armes, deux week-ends de mars"], ["Event", "Événement", "Un rendez-vous plus libre, avec plusieurs disciplines ou aucune.", "Forum des associations"], ["SeminarSession, EventSession", "Séance", "Une date et un horaire précis d’un stage ou d’un événement.", "Samedi 14 mars, 9h–12h"], ["Post", "Actualité", "Un article éditorial, rattaché à rien d’autre du domaine.", "Compte rendu de la démonstration"]]' />
 
 <Callout type="warning">
 Dans le code, un **stage** s’appelle `Seminar`. Le modèle s’appelait `Stage` ; il a été renommé pour suivre la convention du projet, qui nomme en anglais le code, les URL et les dossiers de stockage (`courses`, `seminars`, `events`). L’interface, elle, parle français et dit « stage ». La page publique d’un stage est donc `/seminars/[slug]`, et la migration `rename_stage_to_seminar` ne fait que renommer tables, colonnes et contraintes, sans toucher aux données. Le chapitre 3 revient sur ce renommage.
@@ -87,7 +87,7 @@ Cette distinction guide tout le reste du modèle. La `Discipline` porte les info
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="552-662"
+  snippetRange="571-681"
   snippetHighlight="6,14,19,22,35,38,44,53,64,103"
   snippetTitle="Le modèle Discipline"
   fullFileTitle="Voir le fichier complet"
@@ -117,7 +117,7 @@ La discipline est l’**art** au sens conceptuel ; le cours est le **créneau** 
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="672-721"
+  snippetRange="691-740"
   snippetHighlight="9,12,16,20,24,47"
   snippetTitle="Le modèle Course"
   fullFileTitle="Voir le fichier complet"
@@ -131,7 +131,7 @@ Les horaires sont des entiers au format HHMM (`1830` pour 18h30), et non des `Da
 
 **La discipline ne change pas après la création.** Changer la discipline d’un cours reviendrait à en créer un autre ; `course.update` n’accepte donc pas `disciplineId`.
 
-**Le cours doit appartenir à la catégorie des cours.** `course.create` vérifie que la discipline choisie est rangée dans la catégorie dont le dossier est `courses` : une discipline de calligraphie présentée seulement en stage n’a pas de grille hebdomadaire. La vérification lit le segment de stockage de la catégorie, figé, et non son libellé, que l’on peut renommer (chapitre 3).
+**Le cours doit appartenir à la catégorie des cours.** `course.create` vérifie que la discipline choisie est rangée dans la catégorie de clé `course` : une discipline de calligraphie présentée seulement en stage n’a pas de grille hebdomadaire. La vérification lit la clé de la catégorie, choisie dans une liste fixe, et non son libellé, que l’on peut renommer (chapitre 3).
 
 **`requisites`** est une liste de prérequis libres (« 14 ans révolus », « certificat médical ») et **`content`** la présentation complète du cours, au constructeur de pages.
 
@@ -147,7 +147,7 @@ Conséquence : le stage porte **deux contenus séparés**, `description` et `pro
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="736-820"
+  snippetRange="755-839"
   snippetHighlight="6,10,13,22,25,39,42,66,69,80"
   snippetTitle="Le modèle Seminar"
   fullFileTitle="Voir le fichier complet"
@@ -159,7 +159,7 @@ Surtout, un stage n’a **pas de date directe**. Il a des séances (`SeminarSess
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="824-860"
+  snippetRange="843-879"
   snippetHighlight="9,12,31,34"
   snippetTitle="Le modèle SeminarSession"
   fullFileTitle="Voir le fichier complet"
@@ -187,7 +187,7 @@ Si nous nous arrêtions au trio discipline, cours, stage, nous ne pourrions pas 
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="874-949"
+  snippetRange="893-968"
   snippetHighlight="10,27,30,33,37,54,67,71"
   snippetTitle="Le modèle Event"
   fullFileTitle="Voir le fichier complet"
@@ -212,7 +212,7 @@ L’événement est **l’entité la plus libre** du domaine : pas obligatoireme
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="1234-1268"
+  snippetRange="1253-1287"
   snippetHighlight="6,9,12,21,28,32"
   snippetTitle="Le modèle Post"
   fullFileTitle="Voir le fichier complet"

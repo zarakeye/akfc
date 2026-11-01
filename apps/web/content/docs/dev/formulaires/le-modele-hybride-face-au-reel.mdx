@@ -188,11 +188,12 @@ Mais soyons lucides.
 
 #### 🔎 Dans le projet : `packages/contracts/src/forms`
 
-Ce contrat partagé, le projet l'a, même s'il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Le schéma de la catégorie, par exemple :
+Ce contrat partagé, le projet l'a, même s'il utilise des server actions : il vit dans le paquet `packages/contracts`, que le navigateur et le serveur importent tous les deux. Le schéma de la catégorie, par exemple — la catégorie choisie dans la liste fixe, et son libellé :
 
 ```ts
 // packages/contracts/src/forms/saveCategoryForm.schema.ts (fichier complet)
 import { z } from "zod";
+import { CATEGORY_KEYS } from "@contracts/categories/categoryKey";
 
 /**
  * Schéma unifié création + édition.
@@ -200,13 +201,17 @@ import { z } from "zod";
  *   - `id` PRÉSENT → édition
  *
  * `id` est `z.coerce.number()` car il provient d'un input caché (string dans
- * le FormData) et il est EXCLU du resolver client via `.pick({ type: true })`.
- * Le champ saisi (`type`) est le seul validé côté client ; l'action valide le
- * schéma complet.
+ * le FormData) et il est EXCLU du resolver client via `.pick({ key: true, type: true })`.
+ * Les champs saisis (`key`, `type`) sont les seuls validés côté client ; l'action valide
+ * le schéma complet.
+ *
+ * `key` est choisie dans la liste fixe : c'est elle que lit le code. `type` n'est que
+ * le libellé affiché.
  */
 export const saveCategoryFormSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  type: z.string().trim().min(1, "Le type est obligatoire."),
+  key: z.enum(CATEGORY_KEYS, { error: "Choisissez une catégorie de la liste." }),
+  type: z.string().trim().min(1, "Le libellé est obligatoire."),
 });
 
 export type SaveCategoryFormValues = z.infer<typeof saveCategoryFormSchema>;
@@ -214,7 +219,7 @@ export type SaveCategoryFormValues = z.infer<typeof saveCategoryFormSchema>;
 
 Il est utilisé deux fois, de deux façons différentes :
 
-- côté client, par le résolveur de React Hook Form, mais en partie seulement : `.pick({ type: true })` ne garde que `type`, car `id` vient d'un champ caché que l'utilisateur ne saisit pas ;
+- côté client, par le résolveur de React Hook Form, mais en partie seulement : `.pick({ key: true, type: true })` ne garde que les deux champs saisis, car `id` vient d'un champ caché que l'utilisateur ne saisit pas ;
 - côté serveur, par l'action, en entier, `id` compris.
 
 Les messages d'erreur sont écrits dans le schéma, en français, pour l'utilisateur final : ce sont eux qui s'affichent sous les champs, qu'ils viennent du navigateur ou du serveur.

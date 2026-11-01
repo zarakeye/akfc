@@ -90,14 +90,14 @@ Résultat :
 
 ## 🔎 Dans le projet : React Hook Form et un résolveur Zod
 
-Le tableau de bord du club s'appuie sur React Hook Form dans la plupart de ses formulaires simples. Celui d'une catégorie (« Cours », « Stage », « Évènement ») en est le plus petit exemple :
+Le tableau de bord du club s'appuie sur React Hook Form dans la plupart de ses formulaires simples. Celui d'une catégorie (choisie parmi « Cours », « Stage », « Évènement », avec son libellé) en est le plus petit exemple :
 
 ```tsx
 // apps/web/src/features/admin/categories/forms/CategoryForm.tsx (extrait)
-  // Resolver client : on ne valide QUE `type` (l'`id` vient de l'input caché).
+  // Resolver client : on ne valide QUE `key` et `type` (l'`id` vient de l'input caché).
   const form = useForm<FormValues>({
-    resolver: zodResolver(saveCategoryFormSchema.pick({ type: true })),
-    defaultValues: { type: initial?.type ?? "" },
+    resolver: zodResolver(saveCategoryFormSchema.pick({ key: true, type: true })),
+    defaultValues: { key: initial?.key ?? undefined, type: initial?.type ?? "" },
     mode: "onBlur",
   });
 ```

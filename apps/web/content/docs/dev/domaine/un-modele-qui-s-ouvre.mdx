@@ -67,7 +67,7 @@ Une entité dédiée règle tout cela d’un coup :
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="435-486"
+  snippetRange="446-497"
   snippetHighlight="6,9,16,19,22,25,37,41,45"
   snippetTitle="Le modèle Origin"
   fullFileTitle="Voir le fichier complet"
@@ -83,7 +83,7 @@ La **famille** de disciplines a suivi le même chemin, pour la même raison : «
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="523-542"
+  snippetRange="542-561"
   snippetHighlight="5,9"
   snippetTitle="Le modèle DisciplineFamily"
   fullFileTitle="Voir le fichier complet"
@@ -239,7 +239,7 @@ La correction consiste à **figer le segment de dossier à la création**, dans 
   fullFileTitle="Voir le fichier complet"
 />
 
-Le suffixe règle un cas que l’ancien calcul ignorait : « Kung-fu » et « Kung Fu » donnent le même slug, et auraient partagé le même dossier. Toutes les fonctions qui construisent un chemin (envoi d’un fichier, protection des dossiers, suppression d’une discipline, dossiers racines) lisent désormais le segment par une seule fonction, `disciplineSegment` ou `categorySegment`, et la catégorie des cours se reconnaît à son segment (`courses`), non à son libellé.
+Le suffixe règle un cas que l’ancien calcul ignorait : « Kung-fu » et « Kung Fu » donnent le même slug, et auraient partagé le même dossier. Toutes les fonctions qui construisent un chemin (envoi d’un fichier, protection des dossiers, suppression d’une discipline, dossiers racines) lisent désormais le segment par une seule fonction, `disciplineSegment` ou `categorySegment`, et plus aucune ne dépend du libellé.
 
 Renommer ne change plus que ce que le finder **affiche** : un `FolderLabel` associe au dossier le nom actuel.
 
@@ -282,9 +282,39 @@ Entre la migration et ce premier démarrage, rien ne casse : tant que la colonne
 Un nom affiché n’est **jamais** une identité de stockage. Ce qui sert à construire un chemin, une clé ou un lien durable se calcule une fois, se fige, et ne dépend plus du libellé. La même règle a déjà servi aux espaces collaboratifs ; elle sert ici aux catégories et aux disciplines.
 </Callout>
 
+### Une clé pour ce que le code reconnaît
+
+Le segment règle le stockage. Il restait une autre question, que le code pose aux catégories : **laquelle est celle des cours, celle des stages, celle des évènements ?** Les créneaux n’acceptent que les disciplines des cours ; une galerie de la catégorie des stages propose de choisir le stage. Le code y répondait en comparant le libellé à `"Stage"` et à `"Event"`, écrits en dur dans les formulaires des galeries. Une catégorie nommée « Évènement » ou « Stages » ne déclenchait donc jamais le choix — et aucune erreur ne le signalait.
+
+Le segment aurait pu servir de clé, comme il servait déjà pour les cours (`courses`). Mais c’est un nom de dossier, dérivé de ce qui a été tapé à la création (`evenement`, `events`…) : lui donner un sens métier mêle deux rôles. Les catégories du club forment en réalité une **liste fixe** : chacune porte désormais une clé choisie dans l’enum `CategoryKey`.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="508-518"
+  snippetTitle="Category : le libellé s’affiche, la clé se lit"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La clé se choisit à la création, parmi celles qui manquent, et ne change plus ; le libellé (proposé d’après la clé : « Stage » pour `seminar`) reste modifiable sans rien casser. L’unicité garantit une catégorie par clé ; une colonne nullable laisse PostgreSQL accepter plusieurs lignes sans clé.
+
+Pour les catégories existantes, la migration attribue la clé **sans deviner** : par l’usage d’abord (la catégorie des galeries rattachées à un stage), par le libellé ou le dossier ensuite, et seulement quand une seule catégorie la revendique.
+
+<CodeExample
+  language="sql"
+  filepath="prisma/migrations/20261212000000_category_keys/migration.sql"
+  filename="migration.sql"
+  snippetRange="13-33"
+  snippetTitle="L’usage d’abord, et une seule candidate"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une catégorie que la migration n’a pas su attribuer garde une clé vide : la liste des catégories la signale « hors liste », et son édition propose de la rattacher. Un cas ambigu bloque un affichage visible, jamais le déploiement.
+
 ## Récapitulatif
 
-<DocsTable columnsJson='["Évolution", "Ce qu’elle permet", "Garantie par"]' rowsJson='[["Origin et DisciplineFamily, des entités", "Pas de doublons, des métadonnées, des regroupements transverses", "Unicité du nom et du slug ; sélecteurs"], ["Event distinct de Seminar", "Des rendez-vous culturels sans programme ni animateurs ; plusieurs disciplines", "Deux modèles, deux routeurs ; un agenda commun"], ["« Au moins un des trois »", "Des stages et des événements sans discipline du club, mais jamais sans contexte", "refine Zod à la création ; routeur après fusion à la modification"], ["Stage → Seminar", "Un code nommé en anglais, sans exception trompeuse", "Une migration de renommages seuls"], ["Slugs", "Des adresses lisibles et stables", "slugSchema ; unicité ; messages selon la cible du P2002"], ["storageSegment", "Renommer sans déplacer de fichiers, ni perdre la protection d’un dossier", "Segment figé à la création ; complété au démarrage pour l’existant"]]' />
+<DocsTable columnsJson='["Évolution", "Ce qu’elle permet", "Garantie par"]' rowsJson='[["Origin et DisciplineFamily, des entités", "Pas de doublons, des métadonnées, des regroupements transverses", "Unicité du nom et du slug ; sélecteurs"], ["Event distinct de Seminar", "Des rendez-vous culturels sans programme ni animateurs ; plusieurs disciplines", "Deux modèles, deux routeurs ; un agenda commun"], ["« Au moins un des trois »", "Des stages et des événements sans discipline du club, mais jamais sans contexte", "refine Zod à la création ; routeur après fusion à la modification"], ["Stage → Seminar", "Un code nommé en anglais, sans exception trompeuse", "Une migration de renommages seuls"], ["Slugs", "Des adresses lisibles et stables", "slugSchema ; unicité ; messages selon la cible du P2002"], ["storageSegment", "Renommer sans déplacer de fichiers, ni perdre la protection d’un dossier", "Segment figé à la création ; complété au démarrage pour l’existant"], ["Category.key", "Reconnaître les cours, les stages, les évènements quel que soit leur libellé", "Enum CategoryKey, unique ; attribuée par la migration à une seule candidate"]]' />
 
 ## À suivre
 

@@ -265,6 +265,7 @@ L'action de la catégorie, plus courte, contient le même soin en une seule lign
   // `id` absent en création → formData.get renvoie null → undefined → optional.
   const parsed = saveCategoryFormSchema.safeParse({
     id: formData.get("id") ?? undefined,
+    key: formData.get("key")?.toString() ?? "",
     type: formData.get("type")?.toString() ?? "",
   });
 ```
