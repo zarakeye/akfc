@@ -4,8 +4,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const categoryRouter = router({
+  /** Les catégories, pour les sélecteurs : la clé (lue par le code) et le libellé (affiché). */
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.category.findMany({
+      select: { id: true, key: true, type: true },
       orderBy: { id: "asc" },
     });
   }),

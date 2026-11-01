@@ -223,8 +223,24 @@ test("« La bibliothèque » et « Les réglages du site » se lisent d'un bout 
   await nextToEnd(page, "Les réglages du site");
 });
 
+test("« Créer une catégorie » propose la catégorie manquante et ne crée rien", async ({ page }) => {
+  await launch(page, "/dashboard/categories", /Créer une catégorie.*manquante/);
+  await page.locator('[data-tour="categories.list.create"]').click();
+  const key = page.locator('[data-tour="categories.form.key"] select');
+  await expect(key).toBeFocused();
+  // Seule la catégorie qui manque est proposée ; le libellé suit.
+  await expect(key.locator("option:not([disabled])")).toHaveText(["Évènement"]);
+  await key.selectOption("event");
+  await nextButton(page).click();
+  const label = page.locator('[data-tour="categories.form.type"] input');
+  await expect(label).toHaveValue("Évènement");
+  await label.press("Enter");
+  await nextToEnd(page, "Créer une catégorie");
+  await page.goto("/dashboard/categories");
+  await expect(page.getByText("Manquante : Évènement.")).toBeVisible();
+});
+
 for (const [path, title, description, anchor, field] of [
-  ["/dashboard/categories", "Créer une catégorie", "Ajouter", "categories", '[data-tour="categories.form.type"] input'],
   ["/dashboard/discipline-families", "Créer une famille", "Regrouper", "families", '[data-tour="families.form.name"] input'],
   ["/dashboard/origins", "Créer une origine", "Décrire", "origins", '[data-tour="origins.form.name"] input'],
   ["/dashboard/galleries", "Créer une galerie", "Réunir", "galleries", '[data-tour="galleries.form.title"] input'],

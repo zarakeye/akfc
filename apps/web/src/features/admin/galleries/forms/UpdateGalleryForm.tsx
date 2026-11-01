@@ -47,12 +47,6 @@ interface FormValues {
 type FacetName =
   "disciplineId" | "categoryId" | "seminarId" | "eventId" | "originId";
 
-/**
- * Types de catégorie qui débloquent une facette conditionnelle (doit
- * correspondre EXACTEMENT au `Category.type` en base).
- */
-const CATEGORY_TYPE_STAGE = "Stage";
-const CATEGORY_TYPE_EVENT = "Event";
 
 interface UpdateGalleryFormProps {
   gallery: Gallery;
@@ -112,25 +106,25 @@ export function UpdateGalleryForm({ gallery }: UpdateGalleryFormProps): JSX.Elem
   const { data: events } = trpc.event.getAll.useQuery();
   const { data: origins } = trpc.origin.getAll.useQuery();
 
-  // Catégorie sélectionnée → son type. Pilote l'affichage de Stage / Event.
+  // Catégorie sélectionnée → sa clé (jamais son libellé). Pilote l'affichage de Stage / Évènement.
   // useWatch plutôt que form.watch : `watch` renvoie des valeurs que le React Compiler ne sait pas
   // mémoïser (règle react-hooks/incompatible-library), ce qui le faisait renoncer à optimiser tout
   // le composant. useWatch est l'abonnement prévu pour cela.
   const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
   const watchedSeminarId = useWatch({ control: form.control, name: "seminarId" });
   const watchedEventId = useWatch({ control: form.control, name: "eventId" });
-  const selectedCategoryType = (categories ?? []).find(
+  const selectedCategoryKey = (categories ?? []).find(
     (c) => String(c.id) === selectedCategoryId,
-  )?.type;
+  )?.key;
   // On affiche la facette si la catégorie la justifie OU si une valeur est
   // déjà renseignée (galerie existante) — pour ne pas masquer/effacer une
   // donnée au simple affichage. Un changement de catégorie vers une valeur
   // non concernée réinitialise ensuite le champ (useEffect ci-dessous).
   const showStage =
-    selectedCategoryType === CATEGORY_TYPE_STAGE ||
+    selectedCategoryKey === "seminar" ||
     Boolean(watchedSeminarId);
   const showEvent =
-    selectedCategoryType === CATEGORY_TYPE_EVENT ||
+    selectedCategoryKey === "event" ||
     Boolean(watchedEventId);
 
   // Reset d'une facette quand la catégorie ne la justifie plus. On IGNORE le
@@ -145,19 +139,19 @@ export function UpdateGalleryForm({ gallery }: UpdateGalleryFormProps): JSX.Elem
     }
     if (selectedCategoryId === initialCategoryRef.current) return;
     if (
-      selectedCategoryType !== CATEGORY_TYPE_STAGE &&
+      selectedCategoryKey !== "seminar" &&
       form.getValues("seminarId")
     ) {
       form.setValue("seminarId", "");
     }
     if (
-      selectedCategoryType !== CATEGORY_TYPE_EVENT &&
+      selectedCategoryKey !== "event" &&
       form.getValues("eventId")
     ) {
       form.setValue("eventId", "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, selectedCategoryType]);
+  }, [selectedCategoryId, selectedCategoryKey]);
 
   useEffect(() => {
     if (state.success) {

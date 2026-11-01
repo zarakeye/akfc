@@ -3,6 +3,7 @@ import type { JSX } from "react";
 
 import { prisma } from "@backend/prisma";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
+import { CATEGORY_KEY_LABELS } from "@contracts/categories/categoryKey";
 
 /**
  * Présentation admin d'une catégorie — `/(admin)/dashboard/categories/[id]`.
@@ -36,7 +37,11 @@ export default async function CategoryPresentationPage({
     >
       <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <div>
-          <dt className="font-medium text-muted-foreground">Type</dt>
+          <dt className="font-medium text-muted-foreground">Catégorie</dt>
+          <dd>{category.key ? CATEGORY_KEY_LABELS[category.key] : "Hors liste — à rattacher (Éditer)"}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-muted-foreground">Libellé</dt>
           <dd>{category.type}</dd>
         </div>
         <div>

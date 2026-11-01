@@ -70,13 +70,16 @@ Autour d'elles gravitent :
 ### `Category`
 
 Une catégorie est une **grosse maille** de classification des
-disciplines. Aujourd'hui c'est un modèle minimaliste — juste un nom
-(`type: String @unique`) — qui sert de regroupement et d'ancre pour les
-`MediaAsset`.
+disciplines, choisie dans une **liste fixe** : `key` (enum `CategoryKey`),
+`course`, `seminar` ou `event`. C'est cette clé que lit le code : seules
+les disciplines de `course` reçoivent des créneaux, une galerie de
+`seminar` (ou `event`) se rattache à un stage (ou à un évènement).
 
 Le champ `type` est nommé ainsi historiquement, mais sémantiquement
-c'est le **nom de la catégorie** (par exemple « Cours », « Stage »).
-Ce n'est pas un enum — chaque club peut créer ses propres catégories.
+c'est le **libellé affiché** de la catégorie (par défaut « Cours »,
+« Stage », « Évènement »), modifiable sans rien casser : le code ne le
+compare jamais. Une ligne sans clé date d'avant la liste fixe ;
+l'administration la signale « hors liste » pour qu'on la rattache.
 
 Relations :
 

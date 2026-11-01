@@ -38,7 +38,7 @@ function readValue(el: HTMLElement | null): string {
   if (!el) return "";
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)
     return el.value;
-  const inner = el.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea");
+  const inner = el.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
   return inner ? inner.value : (el.textContent ?? "");
 }
 

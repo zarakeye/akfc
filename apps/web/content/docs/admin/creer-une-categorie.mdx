@@ -1,23 +1,28 @@
 ---
 title: "Créer une catégorie"
-description: "Ajouter un type d'activité auquel se rattachent les disciplines."
+description: "Ajouter une catégorie manquante de la liste : Cours, Stage, Évènement."
 section: "Catalogue et programme"
 order: 1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 
-**À quoi ça sert.** Une catégorie est un type d'activité : « Cours », « Stage »… Chaque discipline appartient à une catégorie, choisie à sa création et qui ne se change plus ensuite.
+**À quoi ça sert.** Les catégories forment une liste fixe : **Cours**, **Stage**, **Évènement**. Chaque discipline appartient à l'une d'elles, choisie à sa création et qui ne se change plus ensuite. Le site s'en sert : seules les disciplines des cours reçoivent des créneaux, et une galerie de la catégorie Stage (ou Évènement) propose de choisir le stage (ou l'évènement).
 
-**Avant de commencer.** Être administrateur. Panneau de contrôle → **Catalogue des activités** → **Catégories d'activités**.
+**Avant de commencer.** Être administrateur. Panneau de contrôle → **Catalogue des activités** → **Catégories d'activités**. Le bouton **Créer une catégorie** n'apparaît que s'il en manque une ; la page dit laquelle.
 
 ## Les étapes
 
 1. Cliquez sur **Créer une catégorie**.
-2. Son **type** : un nom unique.
-3. Cliquez sur **Créer**. Son dossier est créé dans la bibliothèque.
+2. La **catégorie** : seules celles qui manquent sont proposées. Elle ne change plus ensuite.
+3. Le **libellé**, le nom affiché : proposé d'après la catégorie, modifiable plus tard sans rien casser.
+4. Cliquez sur **Créer**. Son dossier est créé dans la bibliothèque.
 
 Une catégorie à laquelle des disciplines sont rattachées ne peut pas être supprimée.
+
+<Callout type="info">
+Une ligne marquée **Hors liste — à rattacher** date d'avant la liste fixe. Ouvrez-la, cliquez sur **Éditer**, et choisissez sa catégorie.
+</Callout>
 
 <TourStartButton id="admin.categories.create" />
 

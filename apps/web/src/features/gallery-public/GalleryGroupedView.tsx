@@ -5,6 +5,7 @@ import { ChevronRight, Lock } from "lucide-react";
 
 import { GalleryGrid } from "@features/gallery-public/GalleryGrid";
 import { type LightboxItem } from "@features/gallery-public/GalleryLightbox";
+import { CATEGORY_KEYS, type CategoryKey } from "@contracts/categories/categoryKey";
 
 /**
  * Vue publique groupée des galeries — Structure Y :
@@ -28,7 +29,7 @@ export interface GroupedGallery {
   date: Date | null;
   visibility: string;
   discipline: { id: number; name: string } | null;
-  category: { id: number; type: string } | null;
+  category: { id: number; key: CategoryKey | null; type: string } | null;
   origin: { id: number; name: string } | null;
   items: LightboxItem[];
 }
@@ -48,8 +49,8 @@ const DISCIPLINE_ORDER = [
   "Calligraphie chinoise",
 ];
 
-/** Ordre des catégories (par type). Les autres ne sont pas affichées ici. */
-const CATEGORY_ORDER = ["Cours", "Stage", "Event"];
+/** Ordre des catégories, par clé (jamais par libellé, que l'on peut renommer). */
+const CATEGORY_ORDER = CATEGORY_KEYS;
 
 /** Libellé du groupe « sans discipline » (catégorie General / transverses). */
 const DIVERS_LABEL = "Divers";
@@ -59,10 +60,6 @@ function disciplineRank(name: string): number {
   return i === -1 ? DISCIPLINE_ORDER.length : i;
 }
 
-function categoryRank(type: string): number {
-  const i = CATEGORY_ORDER.indexOf(type);
-  return i === -1 ? CATEGORY_ORDER.length : i;
-}
 
 interface CategoryGroup {
   key: string;
@@ -94,28 +91,31 @@ export function GalleryGroupedView({
   const groups = useMemo<DisciplineGroup[]>(() => {
     // Divers : galeries sans discipline (peu importe la catégorie).
     const divers: GroupedGallery[] = [];
-    // discipline name → (catégorie type → galeries)
-    const byDiscipline = new Map<string, Map<string, GroupedGallery[]>>();
+    // discipline name → (clé de catégorie → galeries)
+    const byDiscipline = new Map<string, Map<CategoryKey, GroupedGallery[]>>();
+    // clé de catégorie → libellé affiché
+    const labels = new Map<CategoryKey, string>();
 
     for (const g of galleries) {
       const discName = g.discipline?.name ?? null;
-      const catType = g.category?.type ?? null;
+      const catKey = g.category?.key ?? null;
 
       // Sans discipline → Divers (contenu transverse / vie du club).
       if (!discName) {
         divers.push(g);
         continue;
       }
-      // Avec discipline mais catégorie hors Cours/Stage/Event → Divers aussi
+      // Avec discipline mais sans catégorie de la liste → Divers aussi
       // (ces galeries n'ont pas de sous-groupe catégorie légitime).
-      if (!catType || !CATEGORY_ORDER.includes(catType)) {
+      if (!catKey) {
         divers.push(g);
         continue;
       }
+      labels.set(catKey, g.category!.type);
       if (!byDiscipline.has(discName)) byDiscipline.set(discName, new Map());
       const cats = byDiscipline.get(discName)!;
-      if (!cats.has(catType)) cats.set(catType, []);
-      cats.get(catType)!.push(g);
+      if (!cats.has(catKey)) cats.set(catKey, []);
+      cats.get(catKey)!.push(g);
     }
 
     const result: DisciplineGroup[] = [];
@@ -127,11 +127,11 @@ export function GalleryGroupedView({
     for (const discName of discNames) {
       const cats = byDiscipline.get(discName)!;
       const catGroups: CategoryGroup[] = [...cats.keys()]
-        .sort((a, b) => categoryRank(a) - categoryRank(b) || a.localeCompare(b))
-        .map((catType) => ({
-          key: `${discName}::${catType}`,
-          label: catType,
-          galleries: cats.get(catType)!,
+        .sort((a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b))
+        .map((catKey) => ({
+          key: `${discName}::${catKey}`,
+          label: labels.get(catKey)!,
+          galleries: cats.get(catKey)!,
         }));
       result.push({
         key: discName,

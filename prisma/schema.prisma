@@ -326,7 +326,17 @@ model AuditLog {
   @@index([action, createdAt])
 }
 
-/// Actions consignées dans AuditLog. ⚠ Inutilisé (voir AuditLog).
+/// Les catégories d'activités du club : une liste fixe, lue par le code.
+/// Le libellé proposé par défaut est dans contracts (CATEGORY_KEY_LABELS).
+enum CategoryKey {
+  /// Les cours réguliers : seules leurs disciplines reçoivent des créneaux.
+  course
+  /// Les stages : une galerie de cette catégorie se rattache à un stage.
+  seminar
+  /// Les évènements : une galerie de cette catégorie se rattache à un évènement.
+  event
+}
+
 /// Droit à l'image d'un membre.
 enum ImageConsent {
   /// Autorisation pas encore recueillie.
@@ -371,6 +381,7 @@ enum ImageUsage {
   PRESS
 }
 
+/// Actions consignées dans AuditLog. ⚠ Inutilisé (voir AuditLog).
 enum AuditAction {
   /// Changement de rôle d'un membre. Notion caduque : User n'a plus de rôle,
   /// l'administration passe par le groupe « Administrateurs ».
@@ -495,8 +506,16 @@ model Category {
   id Int @id @default(autoincrement())
 
   /// Libellé de la catégorie, unique (ex. « Cours »). Nommé `type` pour des
-  /// raisons historiques. Affichage seulement : le dossier suit `storageSegment`.
+  /// raisons historiques. Affichage seulement : le code reconnaît une catégorie à
+  /// sa `key`, et le dossier suit `storageSegment`.
   type String @unique
+
+  /// Clé technique stable, choisie dans la liste fixe (CategoryKey) : c'est elle,
+  /// jamais le libellé, que lit le code (créneaux de cours, galeries de stage ou
+  /// d'évènement). Unique : une catégorie par clé. Choisie à la création, elle ne
+  /// change plus. null seulement pour une ligne antérieure à la colonne que la
+  /// migration n'a pas su attribuer : la liste des catégories la signale « hors liste ».
+  key CategoryKey? @unique
 
   /// Segment du dossier de la catégorie (`${appRoot}/<segment>`, ex. `courses`),
   /// FIGÉ à la création : renommer la catégorie ne déplace aucun fichier. null

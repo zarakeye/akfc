@@ -76,7 +76,7 @@ export const galleryRouter = router({
           discipline: { select: { id: true, name: true } },
           seminar: { select: { id: true, label: true } },
           event: { select: { id: true, label: true } },
-          category: { select: { id: true, type: true } },
+          category: { select: { id: true, key: true, type: true } },
           origin: { select: { id: true, name: true } },
         },
       });
@@ -152,7 +152,7 @@ export const galleryRouter = router({
         // Facettes nécessaires au groupement/filtrage de la vue publique :
         // discipline (niveau 1), catégorie (niveau 2), origine (filtre).
         discipline: { select: { id: true, name: true } },
-        category: { select: { id: true, type: true } },
+        category: { select: { id: true, key: true, type: true } },
         origin: { select: { id: true, name: true } },
       },
     });

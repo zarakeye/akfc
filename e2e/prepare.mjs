@@ -91,7 +91,10 @@ await prisma.memberGroupMembership.create({
   data: { groupId: adminGroup.id, userId: USERS.admin.id, access: "EDITOR" },
 });
 
-const category = await prisma.category.create({ data: { type: "Cours" } });
+const category = await prisma.category.create({ data: { key: "course", type: "Cours" } });
+// La catégorie des stages, sous un libellé qui n'est pas « Stage » : le code la reconnaît à sa clé.
+// L'évènement manque exprès : la liste des catégories propose de le créer.
+await prisma.category.create({ data: { key: "seminar", type: "Stages d'été" } });
 await prisma.discipline.create({
   data: {
     ...DISCIPLINES.publiee,

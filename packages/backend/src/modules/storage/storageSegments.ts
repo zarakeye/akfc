@@ -19,8 +19,8 @@ import slugify from "slugify";
 
 const SLUG_OPTIONS = { lower: true, strict: true } as const;
 
-/** Segment de la catégorie des cours, à laquelle les créneaux doivent appartenir. */
-export const COURSES_SEGMENT = "courses";
+/** Segment historique de la catégorie « Cours » (la catégorie se reconnaît à sa clé, `course`). */
+const COURSES_SEGMENT = "courses";
 
 /** Calcul d'origine pour une catégorie : « Cours » → `courses`, sinon le slug du libellé. */
 export function legacyCategorySegment(type: string): string {

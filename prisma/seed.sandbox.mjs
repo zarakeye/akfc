@@ -69,9 +69,9 @@ async function main() {
 
   // Catégorie « Cours » — physique `courses` via categoryStorageSegment.
   const coursCategory = await prisma.category.upsert({
-    where: { type: "Cours" },
+    where: { key: "course" },
     update: {},
-    create: { type: "Cours" },
+    create: { key: "course", type: "Cours" },
     select: { id: true },
   });
 

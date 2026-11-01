@@ -8,7 +8,6 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 
 import { pageContentSchemaV1 } from "@contracts/page";
 import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
-import { COURSES_SEGMENT, categorySegment } from "@backend/modules/storage/storageSegments";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
 
 /**
@@ -176,7 +175,7 @@ export const courseRouter = router({
         where: { id: input.disciplineId },
         select: {
           id: true,
-          category: { select: { type: true, storageSegment: true } },
+          category: { select: { key: true } },
         },
       });
       if (!discipline) {
@@ -185,9 +184,8 @@ export const courseRouter = router({
           message: `Discipline introuvable (id=${input.disciplineId}).`,
         });
       }
-      // La catégorie des cours se reconnaît à son segment de dossier, figé (`courses`), et non à
-      // son libellé, que l'on peut renommer.
-      if (categorySegment(discipline.category) !== COURSES_SEGMENT) {
+      // La catégorie des cours se reconnaît à sa clé, et non à son libellé, que l'on peut renommer.
+      if (discipline.category.key !== "course") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `La discipline ${input.disciplineId} n’est pas dans la catégorie des cours.`,

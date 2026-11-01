@@ -40,13 +40,6 @@ interface FormValues {
 type FacetName =
   "disciplineId" | "categoryId" | "seminarId" | "eventId" | "originId";
 
-/**
- * Types de catégorie qui débloquent une facette conditionnelle. La valeur
- * doit correspondre EXACTEMENT au `Category.type` en base (String libre,
- * pas d'enum). Centralisé ici pour limiter la fragilité du comparatif.
- */
-const CATEGORY_TYPE_STAGE = "Stage";
-const CATEGORY_TYPE_EVENT = "Event";
 
 /**
  * Création d'une galerie en une étape : métadonnées + images.
@@ -96,11 +89,12 @@ export function CreateGalleryForm(): JSX.Element {
   // mémoïser (règle react-hooks/incompatible-library), ce qui le faisait renoncer à optimiser tout
   // le composant. useWatch est l'abonnement prévu pour cela.
   const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
-  const selectedCategoryType = (categories ?? []).find(
+  // La catégorie choisie se reconnaît à sa clé, jamais à son libellé (renommable).
+  const selectedCategoryKey = (categories ?? []).find(
     (c) => String(c.id) === selectedCategoryId,
-  )?.type;
-  const showStage = selectedCategoryType === CATEGORY_TYPE_STAGE;
-  const showEvent = selectedCategoryType === CATEGORY_TYPE_EVENT;
+  )?.key;
+  const showStage = selectedCategoryKey === "seminar";
+  const showEvent = selectedCategoryKey === "event";
 
   // Quand une facette conditionnelle disparaît (changement de catégorie), on
   // réinitialise sa valeur — sinon on soumettrait un id fantôme incohérent
@@ -314,8 +308,8 @@ export function CreateGalleryForm(): JSX.Element {
         />
 
         {/* Facettes cumulables — "" = aucune ; l'action convertit en null.
-            Stage et Event ne s'affichent que si la catégorie choisie le
-            justifie (type "Stage" ou "Event"). */}
+            Stage et Évènement ne s'affichent que si la catégorie choisie le
+            justifie (clé `seminar` ou `event`). */}
         <div className="space-y-4" data-tour="galleries.form.facets">
           {facetField("disciplineId", "Discipline", disciplines, (d) => d.name)}
           {facetField("categoryId", "Catégorie", categories, (c) => c.type)}

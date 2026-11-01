@@ -34,7 +34,7 @@ export const adminGalleriesCreate: Tour = {
     {
       target: "galleries.form.facets",
       title: "Le rattachement",
-      body: "Discipline, catégorie, stage, évènement, origine : facultatifs et cumulables. Sur la page Galeries, elles sont regroupées par discipline puis par catégorie, et filtrables par origine.",
+      body: "Discipline, catégorie, stage, évènement, origine : facultatifs et cumulables. Le choix du stage (ou de l'évènement) apparaît une fois la catégorie Stage (ou Évènement) choisie. Sur la page Galeries, elles sont regroupées par discipline puis par catégorie, et filtrables par origine.",
       advance: { kind: "next" },
     },
     {

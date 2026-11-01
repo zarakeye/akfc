@@ -17,8 +17,11 @@ export type SaveCategoryFormState = {
 
 /**
  * 🧩 Action unique create + update. S'adapte sur la présence d'`id` :
- *   - absent  → création (refus si le type existe déjà) ;
- *   - présent → mise à jour (refus si un AUTRE enregistrement porte ce type).
+ *   - absent  → création (refus si la clé ou le libellé existe déjà) ;
+ *   - présent → mise à jour (refus si un AUTRE enregistrement porte ce libellé).
+ *
+ * La clé (`course`, `seminar`, `event`) est choisie dans la liste fixe, à la création ; elle
+ * ne change plus ensuite. Seule une catégorie « hors liste » (sans clé) en reçoit une en édition.
  *
  * Le dossier de la catégorie suit son segment de stockage, figé à la création : un
  * renommage ne change que le libellé affiché par le finder (FolderLabel).
@@ -33,24 +36,32 @@ export const saveCategoryFormAction = async (
   // `id` absent en création → formData.get renvoie null → undefined → optional.
   const parsed = saveCategoryFormSchema.safeParse({
     id: formData.get("id") ?? undefined,
+    key: formData.get("key")?.toString() ?? "",
     type: formData.get("type")?.toString() ?? "",
   });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { id, type } = parsed.data;
+  const { id, key, type } = parsed.data;
 
-  // Conflit d'unicité — on exclut soi-même en édition.
-  const existing = await prisma.category.findUnique({ where: { type } });
-  if (existing && existing.id !== id) {
-    return {
-      success: false,
-      error:
-        id === undefined
-          ? "Cette catégorie existe déjà."
-          : "Une autre catégorie porte déjà ce type.",
-    };
+  // La clé d'une catégorie ne change pas : le code des cours et des galeries s'y fie.
+  if (id !== undefined) {
+    const current = await prisma.category.findUnique({ where: { id }, select: { key: true } });
+    if (!current) return { success: false, error: "Catégorie introuvable." };
+    if (current.key !== null && current.key !== key) {
+      return { success: false, error: "La catégorie d'une ligne de la liste ne change pas." };
+    }
+  }
+
+  // Conflits d'unicité — on exclut soi-même en édition.
+  const sameKey = await prisma.category.findUnique({ where: { key }, select: { id: true } });
+  if (sameKey && sameKey.id !== id) {
+    return { success: false, error: "Cette catégorie existe déjà." };
+  }
+  const sameType = await prisma.category.findUnique({ where: { type }, select: { id: true } });
+  if (sameType && sameType.id !== id) {
+    return { success: false, error: "Une autre catégorie porte déjà ce libellé." };
   }
 
   try {
@@ -58,16 +69,16 @@ export const saveCategoryFormAction = async (
       const row =
         id === undefined
           ? await tx.category.create({
-              data: { type, storageSegment: await newCategorySegment(tx, type) },
+              data: { key, type, storageSegment: await newCategorySegment(tx, type) },
             })
-          : await tx.category.update({ where: { id }, data: { type } });
+          : await tx.category.update({ where: { id }, data: { key, type } });
       // Le finder affiche le libellé ; le dossier, lui, ne bouge pas.
       await setFolderLabel(tx, categoryFolderPath(APP_ROOT, row), row.type);
       return row;
     });
     return { success: true, categoryId: saved.id };
   } catch (err) {
-    // Deux enregistrements simultanés du même libellé : la contrainte d'unicité tranche.
+    // Deux enregistrements simultanés de la même clé ou du même libellé : la contrainte tranche.
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return { success: false, error: "Cette catégorie existe déjà." };
     }

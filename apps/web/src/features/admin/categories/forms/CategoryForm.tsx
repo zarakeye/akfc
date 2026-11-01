@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Category } from "@prisma/client";
 
 import { saveCategoryFormSchema } from "@contracts/forms/saveCategoryForm.schema";
+import { CATEGORY_KEYS, CATEGORY_KEY_LABELS, type CategoryKey } from "@contracts/categories/categoryKey";
 import {
   saveCategoryFormAction,
   type SaveCategoryFormState,
@@ -24,6 +25,7 @@ import { trpc } from "@trpc/trpcClient";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
 
 interface FormValues {
+  key: CategoryKey;
   type: string;
 }
 
@@ -37,16 +39,25 @@ interface FormValues {
  *   - libellés.
  * L'action renvoyant toujours `categoryId`, le `SuccessRedirect` est identique
  * dans les deux cas.
+ *
+ * La catégorie se choisit dans la liste fixe (`course`, `seminar`, `event`), parmi celles
+ * qui n'existent pas encore ; une fois choisie, elle ne change plus (affichée, et renvoyée
+ * par un input caché). Le libellé, lui, reste modifiable.
  */
 export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
-  // Resolver client : on ne valide QUE `type` (l'`id` vient de l'input caché).
+  // Resolver client : on ne valide QUE `key` et `type` (l'`id` vient de l'input caché).
   const form = useForm<FormValues>({
-    resolver: zodResolver(saveCategoryFormSchema.pick({ type: true })),
-    defaultValues: { type: initial?.type ?? "" },
+    resolver: zodResolver(saveCategoryFormSchema.pick({ key: true, type: true })),
+    defaultValues: { key: initial?.key ?? undefined, type: initial?.type ?? "" },
     mode: "onBlur",
   });
 
   const utils = trpc.useUtils();
+  const { data: categories } = trpc.category.getAll.useQuery();
+  // Les clés encore libres (et celle de la ligne éditée, si elle en a une).
+  const taken = new Set((categories ?? []).map((c) => c.key).filter((k) => k !== initial?.key));
+  const freeKeys = CATEGORY_KEYS.filter((k) => !taken.has(k));
+  const keyLocked = initial?.key != null;
   const [state, formAction, isPending] = useActionState<
     SaveCategoryFormState,
     FormData
@@ -89,16 +100,61 @@ export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
 
         <FormField
           control={form.control}
+          name="key"
+          render={({ field }) => (
+            <FormItem data-tour="categories.form.key">
+              <FormLabel>Catégorie</FormLabel>
+              {keyLocked ? (
+                <>
+                  <p className="text-sm">{CATEGORY_KEY_LABELS[field.value]}</p>
+                  <input type="hidden" name="key" value={field.value} />
+                </>
+              ) : (
+                <FormControl>
+                  <select
+                    name={field.name}
+                    value={field.value ?? ""}
+                    onBlur={field.onBlur}
+                    onChange={(e) => {
+                      const key = e.target.value as CategoryKey;
+                      field.onChange(key);
+                      // Libellé vide : on propose celui de la liste.
+                      if (!form.getValues("type").trim()) {
+                        form.setValue("type", CATEGORY_KEY_LABELS[key], { shouldValidate: true });
+                      }
+                    }}
+                    className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
+                  >
+                    <option value="" disabled>
+                      — Choisir —
+                    </option>
+                    {freeKeys.map((k) => (
+                      <option key={k} value={k}>
+                        {CATEGORY_KEY_LABELS[k]}
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+              )}
+              <div className="h-6">
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="type"
           render={({ field }) => (
             <FormItem data-tour="categories.form.type">
-              <FormLabel>Type</FormLabel>
+              <FormLabel>Libellé</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   id="type"
                   type="text"
-                  placeholder="Cours, Stage, Évènement…"
+                  placeholder="Le nom affiché sur le site"
                 />
               </FormControl>
               <div className="h-6">
