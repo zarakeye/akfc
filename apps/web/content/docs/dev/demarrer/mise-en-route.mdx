@@ -248,6 +248,31 @@ Aucun de ces deux fichiers n'est versionné : le `.gitignore` les exclut, et seu
 
 Le modèle complet, avec un commentaire par variable, est `.env.example`. Celui de développement n'en garde que l'indispensable ; la relève automatique des réponses aux tickets (`TICKET_IMAP_*`), par exemple, reste éteinte tant que sa variable n'est pas définie.
 
+### Une garde contre la production
+
+Ces deux fichiers sont le seul lien entre notre machine et une base. Il suffit d'y recopier l'adresse du serveur — pour vérifier une donnée, pour aller vite — et tout ce que nous lançons écrit dans la production : `pnpm db:migrate` migre la base des membres hors de l'ordre de déploiement, `pnpm dev` y écrit dès son démarrage (le fichier `instrumentation.ts` garantit dossiers, groupes et segments de stockage), puis à chaque clic dans le site local. Rien ne prévient : l'adresse est valide, la connexion réussit.
+
+Une garde regarde donc **où mène** l'adresse, avant toute écriture. Elle accepte la machine elle-même (`127.0.0.1`, `localhost`) et les noms sans point (`postgres`, `pgbouncer`) : ce sont des services du réseau Docker, ceux du serveur, de la sandbox ou des tests. Tout le reste — une adresse IP, un nom de domaine — est refusé :
+
+```js
+// prisma/db-target.mjs (extrait)
+function isLocalHost(host) {
+  const h = host.replace(/^\[|\]$/g, "").toLowerCase();
+  if (h === "localhost" || h === "::1" || /^127\.\d+\.\d+\.\d+$/.test(h)) return true;
+  return !h.includes(".") && !h.includes(":") && h !== "";
+}
+```
+
+Elle est appelée à trois endroits, chacun devant une porte vers la base :
+
+<DocsTable columnsJson='["Où","Ce qu’elle protège","Ce qui reste permis"]' rowsJson='[["prisma.config.ts","Toute commande Prisma qui touche la base : migrate, db, studio.","generate, validate et format, qui ne lisent que le schéma : l’installation lance prisma generate."],["apps/web/src/instrumentation.ts","pnpm dev : la base (DATABASE_URL) et le stockage (R2_ENDPOINT). Le serveur de développement s’arrête aussitôt, avec le message.","La production elle-même : la garde ne s’applique qu’en développement (NODE_ENV=development)."],["package.json, db:seed:dev","Le seed de démonstration, lancé par node et non par la CLI Prisma.","—"]]' />
+
+Le message nomme l'hôte visé, jamais l'adresse complète : elle contient le mot de passe. Pour une opération voulue sur un serveur distant, `AKFC_ALLOW_REMOTE_DB=1` lève le refus, le temps d'une commande, avec un avertissement.
+
+<Callout type="warning">
+La garde est rangée dans `prisma/`, et non dans `scripts/` : l'étape `migrator` du Dockerfile ne copie que `prisma/` et `prisma.config.ts`. Sur le serveur, la migration s'adresse à `postgres:5432`, un nom du réseau Docker : elle passe.
+</Callout>
+
 ## Les tables
 
 Les **migrations** de `prisma/migrations` décrivent, dans l'ordre, chaque transformation du schéma depuis le début du projet. Les appliquer toutes reconstruit la base telle qu'elle est en production, sans aucune donnée.
@@ -275,7 +300,7 @@ pnpm db:seed:dev
 
 ```json
 // package.json (extrait)
-"db:seed:dev": "node --env-file=.env prisma/seed.sandbox.mjs",
+"db:seed:dev": "node --env-file=.env prisma/db-target.mjs && node --env-file=.env prisma/seed.sandbox.mjs",
 ```
 
 Le script n'importe pas `dotenv` : c'est Node lui-même qui charge le `.env` de la racine, grâce à l'option `--env-file`.
