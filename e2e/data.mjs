@@ -19,6 +19,15 @@ export const USERS = {
 export const DISCIPLINES = {
   publiee: { name: "Discipline publiée (e2e)", slug: "e2e-publiee" },
   brouillon: { name: "Discipline en brouillon (e2e)", slug: "e2e-brouillon" },
+  // Avant « Discipline publiée » dans l'alphabet, mais dans une famille de rang 2 : la galerie
+  // publique la range après (l'ordre du menu, famille d'abord).
+  seconde: { name: "Arnis (e2e)", slug: "e2e-arnis" },
+};
+
+/** Deux familles, rangées à l'inverse de l'alphabet de leurs disciplines. */
+export const FAMILIES = {
+  premiere: { name: "Famille de rang 1 (e2e)", slug: "e2e-famille-1", sortOrder: 1 },
+  seconde: { name: "Famille de rang 2 (e2e)", slug: "e2e-famille-2", sortOrder: 2 },
 };
 
 /** Un document adressé au seul membre A. */
@@ -36,3 +45,7 @@ export const CONSENT_SINCE = "2026-09-01T12:00:00.000Z";
 
 /** Le plus petit PDF qu'un navigateur accepte d'afficher. */
 export const TINY_PDF = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n";
+
+/** Une image PNG d'un pixel, pour les galeries de test. */
+export const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";

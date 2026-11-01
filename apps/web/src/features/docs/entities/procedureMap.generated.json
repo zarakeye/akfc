@@ -13149,6 +13149,19 @@
      ]
     },
     {
+     "model": "DisciplineFamily",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "ctx.prisma.gallery.findMany",
+        "packages/backend/src/modules/galleries/router.ts:141"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "Gallery",
      "op": "read",
      "fields": [],
@@ -13181,7 +13194,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 175,
+   "line": 176,
    "effects": [
     {
      "model": "Gallery",
@@ -13191,7 +13204,7 @@
       [
        [
         "ctx.prisma.gallery.delete",
-        "packages/backend/src/modules/galleries/router.ts:180"
+        "packages/backend/src/modules/galleries/router.ts:181"
        ]
       ]
      ]
@@ -13205,7 +13218,7 @@
       [
        [
         "ctx.prisma.gallery.delete",
-        "packages/backend/src/modules/galleries/router.ts:180"
+        "packages/backend/src/modules/galleries/router.ts:181"
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
@@ -13221,7 +13234,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 191,
+   "line": 192,
    "effects": [
     {
      "model": "Gallery",
@@ -13231,7 +13244,7 @@
       [
        [
         "tx.gallery.findUnique",
-        "packages/backend/src/modules/galleries/router.ts:216"
+        "packages/backend/src/modules/galleries/router.ts:217"
        ]
       ]
      ]
@@ -13244,7 +13257,7 @@
       [
        [
         "tx.galleryItem.createMany",
-        "packages/backend/src/modules/galleries/router.ts:206"
+        "packages/backend/src/modules/galleries/router.ts:207"
        ]
       ]
      ]
@@ -13257,7 +13270,7 @@
       [
        [
         "tx.galleryItem.deleteMany",
-        "packages/backend/src/modules/galleries/router.ts:201"
+        "packages/backend/src/modules/galleries/router.ts:202"
        ]
       ]
      ]

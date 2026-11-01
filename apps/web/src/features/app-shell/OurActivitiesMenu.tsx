@@ -10,6 +10,7 @@ import {
 } from "@features/app-shell/navEntries";
 import { trpc } from "@trpc/trpcClient";
 import { useDisclosure } from "@features/app-shell/useDisclosure";
+import { compareFamilies, compareNames } from "@features/app-shell/disciplineOrder";
 
 /**
  * Menu public « Nos disciplines ».
@@ -53,22 +54,23 @@ export default function OurActivitiesMenu({
     (d): d is MenuDiscipline & { slug: string } => d.slug !== null,
   );
   
-  // On regroupe les disciplines par famille, triées par `sortOrder` pour les familles et par nom pour les disciplines. Les familles sans discipline sont filtrées.
+  // On regroupe les disciplines par famille, dans l'ordre du site (disciplineOrder.ts) : familles
+  // par rang puis par nom, disciplines par nom. Les familles sans discipline sont filtrées.
   const groups = [...families]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .sort(compareFamilies)
     .map((f) => ({
       id: f.id,
       name: f.name,
       disciplines: disciplines
         .filter((d) => d.familyId === f.id)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .sort((a, b) => compareNames(a.name, b.name)),
     }))
     .filter((g) => g.disciplines.length > 0);
 
   // Les disciplines sans famille sont regroupées sous « Autres ».
   const orphans = disciplines
     .filter((d) => d.familyId == null)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => compareNames(a.name, b.name));
   if (orphans.length > 0) {
     groups.push({ id: -1, name: "Autres", disciplines: orphans });
   }

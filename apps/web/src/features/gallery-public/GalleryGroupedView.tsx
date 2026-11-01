@@ -6,6 +6,7 @@ import { ChevronRight, Lock } from "lucide-react";
 import { GalleryGrid } from "@features/gallery-public/GalleryGrid";
 import { type LightboxItem } from "@features/gallery-public/GalleryLightbox";
 import { CATEGORY_KEYS, type CategoryKey } from "@contracts/categories/categoryKey";
+import { compareDisciplines, type FamilyRank } from "@features/app-shell/disciplineOrder";
 
 /**
  * Vue publique groupée des galeries — Structure Y :
@@ -28,7 +29,7 @@ export interface GroupedGallery {
   title: string;
   date: Date | null;
   visibility: string;
-  discipline: { id: number; name: string } | null;
+  discipline: { id: number; name: string; family: FamilyRank | null } | null;
   category: { id: number; key: CategoryKey | null; type: string } | null;
   origin: { id: number; name: string } | null;
   items: LightboxItem[];
@@ -39,26 +40,11 @@ interface GalleryGroupedViewProps {
   onItemClick: (items: LightboxItem[], index: number) => void;
 }
 
-/** Ordre métier des disciplines (par nom). Les absentes suivent, triées
- *  alphabétiquement, avant le groupe « Divers » toujours en dernier. */
-const DISCIPLINE_ORDER = [
-  "Taolus multi-styles",
-  "Tchoy Lee Fut",
-  "Taïchi Chuan",
-  "Kali",
-  "Calligraphie chinoise",
-];
-
 /** Ordre des catégories, par clé (jamais par libellé, que l'on peut renommer). */
 const CATEGORY_ORDER = CATEGORY_KEYS;
 
 /** Libellé du groupe « sans discipline » (catégorie General / transverses). */
 const DIVERS_LABEL = "Divers";
-
-function disciplineRank(name: string): number {
-  const i = DISCIPLINE_ORDER.indexOf(name);
-  return i === -1 ? DISCIPLINE_ORDER.length : i;
-}
 
 
 interface CategoryGroup {
@@ -91,17 +77,20 @@ export function GalleryGroupedView({
   const groups = useMemo<DisciplineGroup[]>(() => {
     // Divers : galeries sans discipline (peu importe la catégorie).
     const divers: GroupedGallery[] = [];
-    // discipline name → (clé de catégorie → galeries)
-    const byDiscipline = new Map<string, Map<CategoryKey, GroupedGallery[]>>();
+    // id de discipline → la discipline, et (clé de catégorie → galeries)
+    const byDiscipline = new Map<
+      number,
+      { discipline: NonNullable<GroupedGallery["discipline"]>; cats: Map<CategoryKey, GroupedGallery[]> }
+    >();
     // clé de catégorie → libellé affiché
     const labels = new Map<CategoryKey, string>();
 
     for (const g of galleries) {
-      const discName = g.discipline?.name ?? null;
+      const discipline = g.discipline;
       const catKey = g.category?.key ?? null;
 
       // Sans discipline → Divers (contenu transverse / vie du club).
-      if (!discName) {
+      if (!discipline) {
         divers.push(g);
         continue;
       }
@@ -112,30 +101,28 @@ export function GalleryGroupedView({
         continue;
       }
       labels.set(catKey, g.category!.type);
-      if (!byDiscipline.has(discName)) byDiscipline.set(discName, new Map());
-      const cats = byDiscipline.get(discName)!;
+      if (!byDiscipline.has(discipline.id)) byDiscipline.set(discipline.id, { discipline, cats: new Map() });
+      const cats = byDiscipline.get(discipline.id)!.cats;
       if (!cats.has(catKey)) cats.set(catKey, []);
       cats.get(catKey)!.push(g);
     }
 
     const result: DisciplineGroup[] = [];
 
-    // Disciplines ordonnées (ordre métier puis alpha).
-    const discNames = [...byDiscipline.keys()].sort(
-      (a, b) => disciplineRank(a) - disciplineRank(b) || a.localeCompare(b),
-    );
-    for (const discName of discNames) {
-      const cats = byDiscipline.get(discName)!;
+    // Disciplines dans l'ordre du menu « Nos disciplines » (disciplineOrder.ts) : famille, puis nom.
+    const ordered = [...byDiscipline.values()].sort((a, b) => compareDisciplines(a.discipline, b.discipline));
+    for (const { discipline, cats } of ordered) {
+      const discKey = `discipline-${discipline.id}`;
       const catGroups: CategoryGroup[] = [...cats.keys()]
         .sort((a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b))
         .map((catKey) => ({
-          key: `${discName}::${catKey}`,
+          key: `${discKey}::${catKey}`,
           label: labels.get(catKey)!,
           galleries: cats.get(catKey)!,
         }));
       result.push({
-        key: discName,
-        label: discName,
+        key: discKey,
+        label: discipline.name,
         isDivers: false,
         categories: catGroups,
         directGalleries: [],

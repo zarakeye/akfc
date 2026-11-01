@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, PASSWORD, SEMINAR, TINY_PDF, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, PASSWORD, SEMINAR, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -95,15 +95,29 @@ const category = await prisma.category.create({ data: { key: "course", type: "Co
 // La catégorie des stages, sous un libellé qui n'est pas « Stage » : le code la reconnaît à sa clé.
 // L'évènement manque exprès : la liste des catégories propose de le créer.
 await prisma.category.create({ data: { key: "seminar", type: "Stages d'été" } });
-await prisma.discipline.create({
+const famille1 = await prisma.disciplineFamily.create({ data: FAMILIES.premiere });
+const famille2 = await prisma.disciplineFamily.create({ data: FAMILIES.seconde });
+const publiee = await prisma.discipline.create({
   data: {
     ...DISCIPLINES.publiee,
     type: "MARTIAL_ART",
     categoryId: category.id,
+    familyId: famille1.id,
     instructorId: USERS.admin.id,
     publicationDate: new Date("2026-01-01T00:00:00Z"),
   },
 });
+const seconde = await prisma.discipline.create({
+  data: {
+    ...DISCIPLINES.seconde,
+    type: "MARTIAL_ART",
+    categoryId: category.id,
+    familyId: famille2.id,
+    instructorId: USERS.admin.id,
+    publicationDate: new Date("2026-01-01T00:00:00Z"),
+  },
+});
+
 await prisma.discipline.create({
   data: { ...DISCIPLINES.brouillon, type: "MARTIAL_ART", categoryId: category.id, instructorId: USERS.admin.id },
 });
@@ -148,6 +162,26 @@ await prisma.memberDocument.create({
   },
 });
 
+// Une galerie publique par discipline publiée, chacune avec une image publiée (la page Galeries
+// n'affiche pas une galerie vide) : elle les range comme le menu « Nos disciplines ».
+const png = Buffer.from(TINY_PNG_BASE64, "base64");
+for (const d of [seconde, publiee]) {
+  const key = `AKFC/e2e/galerie-${d.id}.png`;
+  await s3.send(new PutObjectCommand({ Bucket, Key: key, Body: png, ContentType: "image/png" }));
+  const image = await prisma.mediaAsset.create({
+    data: {
+      fullPath: key, mimeType: "image/png", format: "png", originalFileName: `galerie-${d.id}.png`,
+      bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "published", uploaderUserId: USERS.admin.id,
+    },
+  });
+  await prisma.gallery.create({
+    data: {
+      slug: `e2e-galerie-${d.id}`, title: `Galerie de ${d.name}`, visibility: "PUBLIC",
+      disciplineId: d.id, categoryId: category.id, items: { create: { mediaAssetId: image.id } },
+    },
+  });
+}
+
 // « Nous contacter » publiée : le formulaire des membres y est (tuto « Contacter le club »).
 await prisma.pageVisibility.create({ data: { key: "contacts", published: true } });
 
@@ -157,4 +191,4 @@ await prisma.user.update({
 });
 
 await prisma.$disconnect();
-console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 2 disciplines, 1 stage, 1 document`);
+console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 3 disciplines, 2 familles, 2 galeries, 1 stage, 1 document`);

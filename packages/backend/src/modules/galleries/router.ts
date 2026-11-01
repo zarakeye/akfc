@@ -150,8 +150,9 @@ export const galleryRouter = router({
       include: {
         ...galleryWithItems,
         // Facettes nécessaires au groupement/filtrage de la vue publique :
-        // discipline (niveau 1), catégorie (niveau 2), origine (filtre).
-        discipline: { select: { id: true, name: true } },
+        // discipline (niveau 1, rangée comme le menu : sa famille compte), catégorie (niveau 2),
+        // origine (filtre).
+        discipline: { select: { id: true, name: true, family: { select: { name: true, sortOrder: true } } } },
         category: { select: { id: true, key: true, type: true } },
         origin: { select: { id: true, name: true } },
       },
