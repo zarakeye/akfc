@@ -61,8 +61,8 @@ import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvata
  * ─── Évolution navigation (socle slugs) ───────────────────────────────────
  *
  * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
- * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
- * d'un `getBySlug` public pour la page détail `/seminars/[slug]`. Le slug
+ * `slugify` côté front, validé par `slugSchema`, stable au renommage) pour
+ * la page détail `/seminars/[slug]`, qui le lit elle-même. Le slug
  * étant une 2ᵉ contrainte d'unicité (en plus de `(disciplineId, label)`),
  * les `catch` P2002 distinguent le conflit de slug du conflit de label
  * via `err.meta.target`.
@@ -320,21 +320,6 @@ export const seminarRouter = router({
     }),
 
   /**
-   * Liste publique des stages PUBLIÉS d'une discipline donnée.
-   */
-  getAllByDiscipline: publicProcedure
-    .input(z.object({ disciplineId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.prisma.seminar.findMany({
-        where: {
-          disciplineId: input.disciplineId,
-          publicationDate: { not: null, lte: new Date() },
-        },
-        orderBy: { label: "asc" },
-      });
-    }),
-
-  /**
    * Lookup admin par id — brouillons/programmés inclus.
    * Alimente la page d'édition `/dashboard/seminars/[id]/edit`.
    */
@@ -344,31 +329,6 @@ export const seminarRouter = router({
     .query(async ({ ctx, input }) => {
       const stage = await ctx.prisma.seminar.findUnique({
         where: { id: input.id },
-        relationLoadStrategy: "join",
-        include: {
-          animators: { select: { id: true, firstName: true, lastName: true } },
-          sessions: { orderBy: { date: "asc" } },
-        },
-      });
-      if (!stage) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Stage introuvable." });
-      }
-      return stage;
-    }),
-
-  /**
-   * Lookup public par slug — alimente `/seminars/[slug]`.
-   * Seuls les stages PUBLIÉS sont visibles ; un brouillon/programmé
-   * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
-   */
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const stage = await ctx.prisma.seminar.findFirst({
-        where: {
-          slug: input.slug,
-          publicationDate: { not: null, lte: new Date() },
-        },
         relationLoadStrategy: "join",
         include: {
           animators: { select: { id: true, firstName: true, lastName: true } },

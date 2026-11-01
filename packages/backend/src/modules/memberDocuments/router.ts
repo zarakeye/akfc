@@ -105,26 +105,6 @@ export const memberDocumentRouter = router({
   }),
 
   /**
-   * Compteur de la CLOCHE collaborative : documents non lus ciblant les
-   * groupes collaboratifs accessibles au membre (héritage compris), hors
-   * ses propres dépôts. Distinct de « Documents » (perso/diffusion).
-   */
-  collaborativeUnreadCountForMe: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.sessionClient.user.id;
-    const entries = await collaborativeEntriesForMember(ctx.prisma, userId);
-    const groupIds = entries.map((e) => e.groupId);
-    if (groupIds.length === 0) return 0;
-
-    return ctx.prisma.memberDocument.count({
-      where: {
-        groups: { some: { groupId: { in: groupIds } } },
-        receipts: { none: { userId, readAt: { not: null } } },
-        NOT: { publishedById: userId },
-      },
-    });
-  }),
-
-  /**
    * LISTE des documents non lus des espaces collaboratifs accessibles
    * (héritage compris), hors ses propres dépôts — pour le menu de la cloche.
    */

@@ -100,23 +100,6 @@ export const seminarSessionRouter = router({
       });
     }),
 
-  getById: publicProcedure
-    .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      const session = await ctx.prisma.seminarSession.findFirst({
-        where: { id: input.id, ...visibleTo(ctx) },
-      });
-
-      if (!session) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Séance introuvable.",
-        });
-      }
-
-      return session;
-    }),
-
   create: protectedProcedure
     .use(isAdmin)
     .input(createInput)

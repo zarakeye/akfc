@@ -42,62 +42,9 @@ import { isAdmin } from "@backend/trpc/middleware";
 /*                           SHARED VALIDATION SCHEMAS                        */
 /* -------------------------------------------------------------------------- */
 
-// Slug : minuscules + chiffres + tirets uniquement, pas de tirets aux
-// extrémités. Convention URL-safe stricte.
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(80)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-    message:
-      "Le slug ne contient que des minuscules sans accent, des chiffres et des tirets simples (pas de tiret au début ni à la fin).",
-  });
-
-const createInput = z.object({
-  name: z.string().trim().min(1).max(120),
-  slug: slugSchema,
-  description: z.string().trim().min(1).max(2000).nullable().optional(),
-  country: z.string().trim().min(1).max(120).nullable().optional(),
-  region: z.string().trim().min(1).max(120).nullable().optional(),
-  flag: z.string().trim().min(1).max(16).nullable().optional(),
-  historicalPeriod: z.string().trim().min(1).max(120).nullable().optional(),
-  sortOrder: z.number().int().min(0).default(0),
-});
-
-const updateInput = z.object({
-  id: z.number().int().positive(),
-  name: z.string().trim().min(1).max(120).optional(),
-  slug: slugSchema.optional(),
-  description: z.string().trim().min(1).max(2000).nullable().optional(),
-  country: z.string().trim().min(1).max(120).nullable().optional(),
-  region: z.string().trim().min(1).max(120).nullable().optional(),
-  flag: z.string().trim().min(1).max(16).nullable().optional(),
-  historicalPeriod: z.string().trim().min(1).max(120).nullable().optional(),
-  sortOrder: z.number().int().min(0).optional(),
-});
-
 /* -------------------------------------------------------------------------- */
 /*                          INTERNAL ERROR MAPPING                            */
 /* -------------------------------------------------------------------------- */
-
-/**
- * Mapping P2002 → message précisant le champ unique violé (name ou slug),
- * basé sur le `meta.target` de l'erreur Prisma. Fallback générique si la
- * meta n'est pas renseignée.
- */
-function uniqueViolationMessage(err: Prisma.PrismaClientKnownRequestError): string {
-  const target = err.meta?.target;
-  if (Array.isArray(target)) {
-    if (target.includes("name")) {
-      return "Une origine porte déjà ce nom.";
-    }
-    if (target.includes("slug")) {
-      return "Une origine utilise déjà ce slug.";
-    }
-  }
-  return "Une origine porte déjà ce nom ou ce slug.";
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                  ROUTER                                    */
@@ -130,88 +77,6 @@ export const originRouter = router({
       }
 
       return origin;
-    }),
-
-  /**
-   * Lookup par slug — utile pour les futures pages publiques
-   * `/origines/[slug]`.
-   */
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const origin = await ctx.prisma.origin.findUnique({
-        where: { slug: input.slug },
-      });
-
-      if (!origin) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Origine introuvable.",
-        });
-      }
-
-      return origin;
-    }),
-
-  create: protectedProcedure
-    .use(isAdmin)
-    .input(createInput)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await ctx.prisma.origin.create({
-          data: {
-            name: input.name,
-            slug: input.slug,
-            description: input.description ?? null,
-            country: input.country ?? null,
-            region: input.region ?? null,
-            flag: input.flag ?? null,
-            historicalPeriod: input.historicalPeriod ?? null,
-            sortOrder: input.sortOrder,
-          },
-        });
-      } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: uniqueViolationMessage(err),
-          });
-        }
-        throw err;
-      }
-    }),
-
-  update: protectedProcedure
-    .use(isAdmin)
-    .input(updateInput)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...rest } = input;
-
-      try {
-        return await ctx.prisma.origin.update({
-          where: { id },
-          data: rest,
-        });
-      } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError) {
-          if (err.code === "P2002") {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: uniqueViolationMessage(err),
-            });
-          }
-          if (err.code === "P2025") {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Origine introuvable.",
-            });
-          }
-        }
-        throw err;
-      }
     }),
 
   delete: protectedProcedure

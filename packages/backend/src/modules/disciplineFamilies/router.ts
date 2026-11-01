@@ -5,7 +5,6 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 
-import { slugSchema } from "@contracts/slug/slug.schema";
 
 /**
  * disciplineFamilies/router.ts
@@ -38,37 +37,9 @@ import { slugSchema } from "@contracts/slug/slug.schema";
 /*                           SHARED VALIDATION SCHEMAS                        */
 /* -------------------------------------------------------------------------- */
 
-const createInput = z.object({
-  name: z.string().trim().min(1).max(120),
-  slug: slugSchema,
-  sortOrder: z.number().int().min(0).default(0),
-});
-
-const updateInput = z.object({
-  id: z.number().int().positive(),
-  name: z.string().trim().min(1).max(120).optional(),
-  slug: slugSchema.optional(),
-  sortOrder: z.number().int().min(0).optional(),
-});
-
 /* -------------------------------------------------------------------------- */
 /*                          INTERNAL ERROR MAPPING                            */
 /* -------------------------------------------------------------------------- */
-
-function uniqueViolationMessage(
-  err: Prisma.PrismaClientKnownRequestError,
-): string {
-  const target = err.meta?.target;
-  if (Array.isArray(target)) {
-    if (target.includes("name")) {
-      return "Une famille de disciplines porte déjà ce nom.";
-    }
-    if (target.includes("slug")) {
-      return "Une famille de disciplines utilise déjà ce slug.";
-    }
-  }
-  return "Une famille de disciplines porte déjà ce nom ou ce slug.";
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                  ROUTER                                    */
@@ -98,80 +69,6 @@ export const disciplineFamilyRouter = router({
         });
       }
       return family;
-    }),
-
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const family = await ctx.prisma.disciplineFamily.findUnique({
-        where: { slug: input.slug },
-      });
-      if (!family) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Famille de disciplines introuvable.",
-        });
-      }
-      return family;
-    }),
-
-  create: protectedProcedure
-    .use(isAdmin)
-    .input(createInput)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await ctx.prisma.disciplineFamily.create({
-          data: {
-            name: input.name,
-            slug: input.slug,
-            sortOrder: input.sortOrder,
-          },
-        });
-      } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: uniqueViolationMessage(err),
-          });
-        }
-        throw err;
-      }
-    }),
-
-  update: protectedProcedure
-    .use(isAdmin)
-    .input(updateInput)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...rest } = input;
-      try {
-        return await ctx.prisma.disciplineFamily.update({
-          where: { id },
-          data: {
-            name: rest.name,
-            slug: rest.slug,
-            sortOrder: rest.sortOrder,
-          },
-        });
-      } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError) {
-          if (err.code === "P2002") {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: uniqueViolationMessage(err),
-            });
-          }
-          if (err.code === "P2025") {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Famille de disciplines introuvable.",
-            });
-          }
-        }
-        throw err;
-      }
     }),
 
   delete: protectedProcedure

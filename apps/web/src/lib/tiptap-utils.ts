@@ -1,12 +1,17 @@
 import type { Node as TiptapNode } from "@tiptap/pm/model"
-import type { Transaction } from "@tiptap/pm/state"
 import {
   AllSelection,
   NodeSelection,
   Selection,
   TextSelection,
 } from "@tiptap/pm/state"
-import type { Editor, NodeWithPos } from "@tiptap/react"
+import type { Editor } from "@tiptap/react"
+
+export function cn(
+  ...classes: (string | boolean | undefined | null)[]
+): string {
+  return classes.filter(Boolean).join(" ")
+}
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -25,24 +30,6 @@ export const MAC_SYMBOLS: Record<string, string> = {
   escape: "⎋",
   capslock: "⇪",
 } as const
-
-export const SR_ONLY = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: 0,
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  borderWidth: 0,
-} as const
-
-export function cn(
-  ...classes: (string | boolean | undefined | null)[]
-): string {
-  return classes.filter(Boolean).join(" ")
-}
 
 /**
  * Determines if the current platform is macOS
@@ -458,95 +445,4 @@ export function sanitizeUrl(
     // If URL creation fails, it's considered invalid
   }
   return "#"
-}
-
-/**
- * Update a single attribute on multiple nodes.
- *
- * @param tr - The transaction to mutate
- * @param targets - Array of { node, pos }
- * @param attrName - Attribute key to update
- * @param next - New value OR updater function receiving previous value
- *               Pass `undefined` to remove the attribute.
- * @returns true if at least one node was updated, false otherwise
- */
-export function updateNodesAttr<A extends string = string, V = unknown>(
-  tr: Transaction,
-  targets: readonly NodeWithPos[],
-  attrName: A,
-  next: V | ((prev: V | undefined) => V | undefined)
-): boolean {
-  if (!targets.length) return false
-
-  let changed = false
-
-  for (const { pos } of targets) {
-    // Always re-read from the transaction's current doc
-    const currentNode = tr.doc.nodeAt(pos)
-    if (!currentNode) continue
-
-    const prevValue = (currentNode.attrs as Record<string, unknown>)[
-      attrName
-    ] as V | undefined
-    const resolvedNext =
-      typeof next === "function"
-        ? (next as (p: V | undefined) => V | undefined)(prevValue)
-        : next
-
-    if (prevValue === resolvedNext) continue
-
-    const nextAttrs: Record<string, unknown> = { ...currentNode.attrs }
-    if (resolvedNext === undefined) {
-      // Remove the key entirely instead of setting null
-      delete nextAttrs[attrName]
-    } else {
-      nextAttrs[attrName] = resolvedNext
-    }
-
-    tr.setNodeMarkup(pos, undefined, nextAttrs)
-    changed = true
-  }
-
-  return changed
-}
-
-/**
- * Selects the entire content of the current block node if the selection is empty.
- * If the selection is not empty, it does nothing.
- * @param editor The Tiptap editor instance
- */
-export function selectCurrentBlockContent(editor: Editor) {
-  const { selection, doc } = editor.state
-
-  if (!selection.empty) return
-
-  const $pos = selection.$from
-  let blockNode = null
-  let blockPos = -1
-
-  for (let depth = $pos.depth; depth >= 0; depth--) {
-    const node = $pos.node(depth)
-    const pos = $pos.start(depth)
-
-    if (node.isBlock && node.textContent.trim()) {
-      blockNode = node
-      blockPos = pos
-      break
-    }
-  }
-
-  if (blockNode && blockPos >= 0) {
-    const from = blockPos
-    const to = blockPos + blockNode.nodeSize - 2 // -2 to exclude the closing tag
-
-    if (from < to) {
-      const $from = doc.resolve(from)
-      const $to = doc.resolve(to)
-      const newSelection = TextSelection.between($from, $to, 1)
-
-      if (newSelection && !selection.eq(newSelection)) {
-        editor.view.dispatch(editor.state.tr.setSelection(newSelection))
-      }
-    }
-  }
 }

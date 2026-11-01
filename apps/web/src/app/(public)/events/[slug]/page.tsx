@@ -22,8 +22,7 @@ import type { Metadata } from "next";
  * **Garde de publication** : un Event dont `publicationDate` est `null`
  * (brouillon) ou dans le futur (programmé) n'est pas visible
  * publiquement → `notFound()`. Cohérent avec le filtre du `event.getAll`
- * du router. Le `getBySlug`, lui, ne filtre pas (il peut servir une
- * preview admin), donc le contrôle se fait ici, côté page publique.
+ * du router ; la page lit la base elle-même, le contrôle se fait donc ici.
  */
 
 export async function generateMetadata({

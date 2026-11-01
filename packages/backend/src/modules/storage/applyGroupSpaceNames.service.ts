@@ -54,24 +54,6 @@ function displayNameFor(node: StorageFolderNode, maps: NameMaps): string {
   return node.name;
 }
 
-/** Résout les libellés d'une liste plate (résultat de `list`). */
-export async function applyGroupSpaceNamesToFolders(
-  folders: ReadonlyArray<StorageFolderNode>,
-  prisma: PrismaClient,
-): Promise<StorageFolderNode[]> {
-  const maps = await loadNameMaps(
-    prisma,
-    folders.some((f) => GROUP_SPACE_RE.test(f.path)),
-  );
-  if (maps.labelByPath.size === 0 && maps.groupNameByCuid.size === 0) {
-    return [...folders];
-  }
-  return folders.map((f) => {
-    const name = displayNameFor(f, maps);
-    return name === f.name ? f : { ...f, name };
-  });
-}
-
 /** Résout récursivement les libellés d'un arbre (résultat de `getTree`). */
 export async function applyGroupSpaceNamesToTree(
   root: StorageFolderNode,

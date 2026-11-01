@@ -74,18 +74,3 @@ export function buildChapterGraph(map: EntityMap, declared: ChapterEntities, ext
 
   return { models, links, enums };
 }
-
-/** Ce qu'un en-tête déclare et que le schéma ne connaît pas (entité ou propriété). */
-export function unknownChapterEntities(map: EntityMap, declared: ChapterEntities): string[] {
-  const byName = new Map(map.models.map((m) => [m.name, m]));
-  const errors: string[] = [];
-  for (const [name, fields] of Object.entries(declared)) {
-    const m = byName.get(name);
-    if (!m) {
-      errors.push(name);
-      continue;
-    }
-    for (const f of fields) if (!m.fields.some((x) => x.name === f)) errors.push(`${name}.${f}`);
-  }
-  return errors;
-}

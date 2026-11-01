@@ -38,8 +38,7 @@ import type { Metadata } from "next";
  * rendu intégralement côté serveur (PageRenderer) et clampé visuellement
  * (ExpandableContent) — pas de navigation : le mur est l'unique lieu de
  * vie public d'un post. Les réactions et comptes de commentaires sont hydratés ici
- * en DEUX requêtes batch (esprit anti-N+1 de `getByTargets`, version
- * serveur) : un visiteur anonyme n'émet aucune requête au premier paint.
+ * en DEUX requêtes batch (sans requête par post) : un visiteur anonyme n'émet aucune requête au premier paint.
  * `reactedByMe` est volontairement false côté serveur (pas de session en
  * RSC public) : les îlots le corrigent à l'hydratation pour les membres.
  */

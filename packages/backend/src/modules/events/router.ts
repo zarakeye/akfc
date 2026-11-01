@@ -53,8 +53,8 @@ import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvata
  * ─── Évolution navigation (socle slugs) ───────────────────────────────────
  *
  * Ajout d'un `slug String @unique` saisi par l'admin (pré-rempli via
- * `slugify` côté front, validé par `slugSchema`, stable au renommage) et
- * d'un `getBySlug` public pour la page détail `/events/[slug]`.
+ * `slugify` côté front, validé par `slugSchema`, stable au renommage) pour
+ * la page détail `/events/[slug]`, qui le lit elle-même.
  * Particularité : le slug est la **première** contrainte d'unicité d'Event
  * (il n'en avait aucune). Les mutations gagnent donc une gestion P2002
  * qu'elles n'avaient pas — au create (où il n'y avait aucun `catch`) et à
@@ -241,32 +241,6 @@ export const eventRouter = router({
     });
   }),
 
-  getAllByDiscipline: publicProcedure
-    .input(z.object({ disciplineId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      // Via la jointure : capte AUSSI les événements multi-disciplines,
-      // que l'ancienne colonne `disciplineId` (1 seule) ratait.
-      return ctx.prisma.event.findMany({
-        where: {
-          disciplineLinks: { some: { disciplineId: input.disciplineId } },
-          publicationDate: { not: null, lte: new Date() },
-        },
-        orderBy: { publicationDate: "desc" },
-      });
-    }),
-
-  getAllByOrigin: publicProcedure
-    .input(z.object({ originId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.prisma.event.findMany({
-        where: {
-          originId: input.originId,
-          publicationDate: { not: null, lte: new Date() },
-        },
-        orderBy: { publicationDate: "desc" },
-      });
-    }),
-
   /**
    * Lookup admin par id — brouillons/programmés inclus.
    * Alimente la page d'édition `/dashboard/events/[id]/edit`.
@@ -283,39 +257,6 @@ export const eventRouter = router({
           // Disciplines enseignées (0..N) — alimente le formulaire admin.
           disciplineLinks: {
             select: { disciplineId: true, discipline: { select: { name: true } } },
-          },
-        },
-      });
-      if (!event) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Évènement introuvable." });
-      }
-      return event;
-    }),
-
-  /**
-   * Lookup public par slug — alimente `/events/[slug]`.
-   * Seuls les events PUBLIÉS sont visibles ; un brouillon/programmé
-   * renvoie NOT_FOUND (on ne révèle pas son existence publiquement).
-   */
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const event = await ctx.prisma.event.findFirst({
-        where: {
-          slug: input.slug,
-          publicationDate: { not: null, lte: new Date() },
-        },
-        relationLoadStrategy: "join",
-        include: {
-          sessions: { orderBy: { date: "asc" } },
-          // Disciplines enseignées (0..N) — pour l'affichage public : les seules
-          // PUBLIÉES, le nom d'une discipline en brouillon n'a pas à sortir.
-          disciplineLinks: {
-            where: { discipline: { publicationDate: { not: null, lte: new Date() } } },
-            select: {
-              disciplineId: true,
-              discipline: { select: { name: true, slug: true } },
-            },
           },
         },
       });

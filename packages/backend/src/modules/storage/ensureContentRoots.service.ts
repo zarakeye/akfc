@@ -49,14 +49,3 @@ export async function ensureContentRootsInTree(
     children: [...(root.children ?? []), ...missing],
   };
 }
-
-/** list à la racine : les dossiers des racines manquantes parmi `existingPaths`. */
-export async function missingContentRootFolders(
-  existingPaths: ReadonlyArray<string>,
-  prisma: PrismaClient,
-  appRoot: string,
-): Promise<StorageFolderNode[]> {
-  const required = await requiredRootPaths(prisma, appRoot);
-  const present = new Set(existingPaths);
-  return required.filter((p) => !present.has(p)).map(emptyRootNode);
-}

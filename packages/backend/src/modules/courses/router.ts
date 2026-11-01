@@ -144,19 +144,6 @@ export const courseRouter = router({
     });
   }),
 
-  /**
-   * Liste les cours d'une discipline donnée.
-   * Usage typique : page "Cours de Tchoy-Lee-Fut" sur le site public.
-   */
-  getAllByDiscipline: publicProcedure
-    .input(z.object({ disciplineId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.prisma.course.findMany({
-        where: { disciplineId: input.disciplineId, ...visibleTo(ctx) },
-        orderBy: [{ day: "asc" }, { beginTime: "asc" }],
-      });
-    }),
-
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {

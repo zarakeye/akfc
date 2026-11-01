@@ -39,10 +39,7 @@ function stripBinSubtree(node: StorageFolderNode, binPath: string): void {
     }
   }
 }
-import {
-  enrichFilesWithStatus,
-  enrichTreeWithStatus,
-} from "@backend/modules/storage/services/enrichStatus.service";
+import { enrichTreeWithStatus } from "@backend/modules/storage/services/enrichStatus.service";
 
 import { router, protectedProcedure } from "@backend/trpc";
 import { isAdmin } from "@backend/trpc/middleware";
@@ -77,19 +74,12 @@ import { resolveGroupBaseFolder } from "@backend/modules/media/services/resolveG
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { scopePersoSpaceInTree } from "@backend/modules/storage/scopePersoSpace.service";
 import { collaborativeEntriesForMember } from "@backend/modules/memberGroups/collaborativeEntriesForMember.service";
-import {
-  mergeGroupSpaceFolders,
-  mergeGroupSpaceFoldersIntoTree,
-} from "@backend/modules/storage/mergeGroupSpaceFolders.service";
+import { mergeGroupSpaceFoldersIntoTree } from "@backend/modules/storage/mergeGroupSpaceFolders.service";
 import {
   ensureContentRootsInTree,
-  missingContentRootFolders,
   requiredRootPaths,
 } from "@backend/modules/storage/ensureContentRoots.service";
-import {
-  applyGroupSpaceNamesToFolders,
-  applyGroupSpaceNamesToTree,
-} from "@backend/modules/storage/applyGroupSpaceNames.service";
+import { applyGroupSpaceNamesToTree } from "@backend/modules/storage/applyGroupSpaceNames.service";
 import { assertUploadDestinationAllowed } from '@backend/modules/storage/assertUploadDestinationAllowed.service';
 import { buildUploadFileName } from '@backend/modules/storage/services/buildUploadFileName.service';
 
@@ -352,74 +342,6 @@ export const storageRouter = router({
     );
   }),
 
-  list: protectedProcedure
-    .input(
-      z.object({
-        provider: storageProviderSchema.optional(),
-        path: z.string().min(1),
-        cursor: z.string().optional(),
-        limit: z.number().int().positive().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      await assertCanReadPath({
-        prisma: ctx.prisma,
-        userId: ctx.sessionClient.user.id,
-        path: input.path,
-      });
-      assertOutsideAvatars(ctx.appRoot, [input.path]);
-      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const backend = input.provider
-        ? getAdapter(input.provider, deps)
-        : new VirtualStorage(deps);
-      const reader = backend;
-      const listed = await reader.list({
-        path: input.path,
-        cursor: input.cursor,
-        limit: input.limit,
-      });
-      // Les avatars ne sont pas des médias de la bibliothèque : leur dossier n'est jamais listé.
-      const result = {
-        ...listed,
-        folders: listed.folders.filter((f) => f.path !== avatarsPrefix(ctx.appRoot)),
-      };
-      // Le statut vit en DB depuis l'aplatissement : on le rapatrie ici.
-      await enrichFilesWithStatus(ctx.prisma, ctx.appRoot, result.files);
-      // Espaces de groupe visibles même vides : R2 n'a pas de
-      // vrais dossiers, un espace sans asset s'évaporerait du listing.
-      if (input.path === `${ctx.appRoot}/collaborative-group-spaces`) {
-        const merged = await mergeGroupSpaceFolders({
-          result,
-          prisma: ctx.prisma,
-          appRoot: ctx.appRoot,
-          userId: ctx.sessionClient.user.id,
-        });
-        return {
-          ...merged,
-          folders: await applyGroupSpaceNamesToFolders(
-            merged.folders,
-            ctx.prisma,
-          ),
-        };
-      }
-      // Racine du finder : racines principales visibles même vides (grille).
-      if (input.path === ctx.appRoot) {
-        const missing = await missingContentRootFolders(
-          result.folders.map((f) => f.path),
-          ctx.prisma,
-          ctx.appRoot,
-        );
-        return {
-          ...result,
-          folders: await applyGroupSpaceNamesToFolders(
-            [...result.folders, ...missing],
-            ctx.prisma,
-          ),
-        };
-      }
-      return result;
-    }),
-
   getTree: protectedProcedure
     .input(
       z.object({
@@ -539,33 +461,6 @@ export const storageRouter = router({
         update: { displayName: name },
       });
       return { path: row.path, displayName: row.displayName as string | null };
-    }),
-
-  getNode: protectedProcedure
-    .input(
-      z.object({
-        provider: storageProviderSchema.optional(),
-        path: z.string().min(1),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      await assertCanReadPath({
-        prisma: ctx.prisma,
-        userId: ctx.sessionClient.user.id,
-        path: input.path,
-      });
-      assertOutsideAvatars(ctx.appRoot, [input.path]);
-      const deps = { prisma: ctx.prisma, appRoot: ctx.appRoot };
-      const backend = input.provider
-        ? getAdapter(input.provider, deps)
-        : new VirtualStorage(deps);
-      const reader = backend;
-      if (!reader.getNode) {
-        throw new Error(
-          `Provider "${input.provider ?? "virtual"}" does not support getNode().`
-        );
-      }
-      return reader.getNode(input.path);
     }),
 
   getMetadata: protectedProcedure

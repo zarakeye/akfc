@@ -93,44 +93,6 @@ export const reactionRouter = router({
     }),
 
   /**
-   * Variante batch : réactions de plusieurs cibles d'un même type (ex.
-   * tous les commentaires d'un post), pour éviter le N+1. Renvoie un
-   * dictionnaire `{ [targetId]: GroupedReaction[] }`.
-   */
-  getByTargets: publicProcedure
-    .input(
-      z.object({
-        targetType: z.nativeEnum(ReactionTarget),
-        targetIds: z.array(z.number().int()).max(500),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const result: Record<number, GroupedReaction[]> = {};
-      for (const id of input.targetIds) result[id] = [];
-      if (input.targetIds.length === 0) return result;
-
-      const reactions = await ctx.prisma.reaction.findMany({
-        where: {
-          targetType: input.targetType,
-          targetId: { in: input.targetIds },
-        },
-        orderBy: { createdAt: "asc" },
-        include: { user: { select: userSelect } },
-      });
-
-      const byTarget = new Map<number, ReactionWithUser[]>();
-      for (const r of reactions) {
-        if (!byTarget.has(r.targetId)) byTarget.set(r.targetId, []);
-        byTarget.get(r.targetId)!.push(r);
-      }
-      const currentUserId = ctx.sessionClient?.user?.id;
-      for (const [targetId, list] of byTarget) {
-        result[targetId] = groupReactions(list, currentUserId);
-      }
-      return result;
-    }),
-
-  /**
    * Bascule la réaction (userId, target, emoji) : la crée si absente,
    * la retire si présente. Renvoie l'état final (`active`).
    */

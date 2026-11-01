@@ -71,7 +71,7 @@ import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvata
  *      regroupement de menu (« Kung-fu », etc.) en entité, pour fuir les
  *      doublons orthographiques d'un champ libre.
  *
- *   3. `getBySlug` (publicProcedure) — lookup par slug pour la page détail.
+ *   3. `slug` — l'adresse de la page détail, lue par la page elle-même.
  *
  * Comme `slug` introduit une 2ᵉ contrainte d'unicité (en plus de
  * `(categoryId, name)`), les `catch` P2002 distinguent désormais le conflit
@@ -172,20 +172,6 @@ function visibleTo(ctx: { sessionClient: { user?: { isAdmin?: boolean } | null }
 
 export const disciplineRouter = router({
   /**
-   * Liste toutes les disciplines d'une catégorie donnée.
-   * Usage typique : formulaire d'upload (sélecteur de discipline après choix
-   * de catégorie).
-   */
-  getAllByCategory: publicProcedure
-    .input(z.object({ categoryId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.prisma.discipline.findMany({
-        where: { categoryId: input.categoryId, ...visibleTo(ctx) },
-        orderBy: { name: "asc" },
-      });
-    }),
-
-  /**
    * Liste des disciplines toutes catégories confondues : TOUTES pour un
    * administrateur (vues d'administration, brouillons compris), les seules
    * PUBLIÉES pour les autres (sélecteurs des formulaires membres).
@@ -215,26 +201,6 @@ export const disciplineRouter = router({
       // Brouillon : introuvable pour qui n'est pas administrateur (404, comme la page publique).
       const discipline = await ctx.prisma.discipline.findFirst({
         where: { id: input.id, ...visibleTo(ctx) },
-      });
-
-      if (!discipline) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Discipline introuvable.",
-        });
-      }
-
-      return discipline;
-    }),
-
-  /**
-   * Lookup par slug — alimente la page publique `/disciplines/[slug]`.
-   */
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const discipline = await ctx.prisma.discipline.findFirst({
-        where: { slug: input.slug, ...visibleTo(ctx) },
       });
 
       if (!discipline) {

@@ -1,24 +1,15 @@
 import { z } from "zod";
 
-import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
+import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 
 /**
  * Publication par page (mode « En construction »).
  *
- * `publishedKeys` est PUBLIC : c'est la porte (middleware) qui décide, pour un
- * non-admin, si une route est servie ou renvoyée vers « en construction ».
- * Le reste est réservé aux admins (centre de contrôle).
+ * Réservé aux admins (centre de contrôle). Ce que voit un visiteur, page publiée ou « en
+ * construction », la page le décide elle-même en lisant la base (editorialGate).
  */
 export const pageVisibilityRouter = router({
-  publishedKeys: publicProcedure.query(async ({ ctx }) => {
-    const rows = await ctx.prisma.pageVisibility.findMany({
-      where: { published: true },
-      select: { key: true },
-    });
-    return rows.map((r) => r.key);
-  }),
-
   all: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.pageVisibility.findMany({
       select: { key: true, published: true },
@@ -34,22 +25,6 @@ export const pageVisibilityRouter = router({
         create: { key: input.key, published: input.published },
         update: { published: input.published },
       });
-    }),
-
-  setAll: protectedProcedure
-    .use(isAdmin)
-    .input(z.object({ keys: z.array(z.string().min(1)), published: z.boolean() }))
-    .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.$transaction(
-        input.keys.map((key) =>
-          ctx.prisma.pageVisibility.upsert({
-            where: { key },
-            create: { key, published: input.published },
-            update: { published: input.published },
-          }),
-        ),
-      );
-      return { count: input.keys.length };
     }),
 
   /**

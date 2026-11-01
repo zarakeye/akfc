@@ -10,12 +10,6 @@
 /*  Labels de domaine (enums Prisma → libellés FR)                         */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-/** `DisciplineType` → libellé affichable. */
-export const DISCIPLINE_TYPE_LABELS: Record<string, string> = {
-  MARTIAL_ART: "Art martial",
-  CALLIGRAPHY: "Calligraphie",
-};
-
 /** `Audience` → libellé affichable. */
 export const AUDIENCE_LABELS: Record<string, string> = {
   KIDS: "Enfants",

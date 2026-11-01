@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
+import { router, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { z } from "zod";
 import generateStrongPassword from "@backend/lib/security/generatePassword";
@@ -88,25 +88,6 @@ export const userRouter = router({
     .query(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.id },
-        omit: { password: true },
-      });
-
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Membre introuvable.",
-        });
-      }
-
-      return user;
-    }),
-
-  getByEmail: protectedProcedure
-    .use(isAdmin)
-    .input(z.object({ email: emailSchema }))
-    .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
         omit: { password: true },
       });
 
@@ -323,7 +304,7 @@ export const userRouter = router({
    *
    * Alimente l'éditeur du profil : la section n'apparaît que pour un
    * titulaire, et se pré-remplit avec ce qu'il a déjà écrit. Le critère de
-   * titulaire est le MEME OR que `getInstructors` / `listPublicInstructors`.
+   * titulaire est le MEME OR que `getInstructors` et la page publique des instructeurs.
    */
   getMyInstructorState: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.sessionClient.user.id;
@@ -404,54 +385,10 @@ export const userRouter = router({
     }),
 
   /**
-   * La page publique des instructeurs titulaires.
-   *
-   * PUBLIQUE : elle alimente une page ouverte à tous. Deux filtres —
-   *   1. titulaire : le MEME critere que `getInstructors` (rattachement a
-   *      une discipline, un cours ou un stage). Reutilise, pas redefini.
-   *   2. presente : `instructorBio` non nul, sinon on afficherait une carte
-   *      vide pour un titulaire qui ne s'est pas encore decrit.
-   *
-   * Tri par `instructorOrder` (les nuls en dernier), puis par nom.
-   */
-  listPublicInstructors: publicProcedure.query(async ({ ctx }) => {
-    const rows = await ctx.prisma.user.findMany({
-      where: {
-        AND: [
-          { instructorBio: { not: Prisma.DbNull } },
-          {
-            OR: [
-              { disciplinesAsInstructor: { some: {} } },
-              { coursesAsInstructor: { some: {} } },
-              { seminarsAsPrimaryAnimator: { some: {} } },
-              { seminarsAsAnimator: { some: {} } },
-            ],
-          },
-        ],
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        pseudo: true,
-        avatar: true,
-        instructorBio: true,
-        instructorOrder: true,
-      },
-      orderBy: [
-        { instructorOrder: { sort: "asc", nulls: "last" } },
-        { lastName: "asc" },
-        { firstName: "asc" },
-      ],
-    });
-    return rows;
-  }),
-
-  /**
    * Vivier d'AFFECTATION du select instructeur (≠ « titulaires » réels).
    * Résout l'œuf-et-la-poule : membres du groupe ADMIN (le staff) OU déjà
    * rattachés (pour ne perdre aucun instructeur existant, même non-admin).
-   * `getInstructors` / `listPublicInstructors` restent la vérité publique.
+   * `getInstructors` et la page publique des instructeurs restent la vérité publique.
    */
   getAssignableInstructors: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
     return ctx.prisma.user.findMany({

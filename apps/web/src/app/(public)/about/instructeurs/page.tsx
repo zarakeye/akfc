@@ -14,9 +14,8 @@ import type { Metadata } from "next";
  * /about/instructeurs — les instructeurs TITULAIRES qui se sont présentés.
  *
  * Lecture directe de Prisma (Server Component) : on n'interroge pas sa
- * propre base par HTTP. Le critère est celui de `listPublicInstructors` —
- * rattachement a un enseignement ET bio non nulle — repris ici pour rester
- * un seul rendu serveur sans aller-retour tRPC.
+ * propre base par HTTP. Les titulaires (même critère que `user.getInstructors`)
+ * dont la bio est renseignée, en un seul rendu serveur.
  */
 export const metadata: Metadata = { title: "Nos instructeurs" };
 

@@ -75,15 +75,3 @@ export function toVirtualPath(raw: string): VirtualPath {
   }
   return raw as VirtualPath;
 }
-
-/**
- * Variante qui ne lève pas mais renvoie `null` en cas d'invalidité.
- * Pratique pour les filtres / parsers tolérants.
- */
-export function tryToVirtualPath(raw: string): VirtualPath | null {
-  try {
-    return toVirtualPath(raw);
-  } catch {
-    return null;
-  }
-}

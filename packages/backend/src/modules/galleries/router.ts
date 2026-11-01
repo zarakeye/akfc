@@ -4,7 +4,6 @@ import {
   publicProcedure,
 } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
-import { slugSchema } from "@contracts/slug/slug.schema";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
@@ -20,7 +19,7 @@ import { z } from "zod";
  * recherche. Une galerie sans rattachement au slug réservé
  * `CAROUSEL_SLUG` sert de carousel d'accueil.
  *
- * - Lectures publiques : `getBySlug`, `getCarousel`.
+ * - Lecture publique : `getCarousel`.
  * - Écritures + lectures admin : `isAdmin`.
  */
 
@@ -64,33 +63,6 @@ const galleryWithItems = {
   },
 } satisfies Prisma.GalleryInclude;
 
-const themeFields = {
-  disciplineId: z.number().int().positive().nullable().optional(),
-  seminarId: z.number().int().positive().nullable().optional(),
-  eventId: z.number().int().positive().nullable().optional(),
-  categoryId: z.number().int().positive().nullable().optional(),
-  originId: z.number().int().positive().nullable().optional(),
-};
-
-const createInput = z.object({
-  slug: slugSchema,
-  title: z.string().trim().min(1, "Le titre est obligatoire.").max(120),
-  date: z.coerce.date().nullable().optional(),
-  visibility: z.enum(["PUBLIC", "MEMBERS"]).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-  ...themeFields,
-});
-
-const updateInput = z.object({
-  id: z.number().int().positive(),
-  slug: slugSchema.optional(),
-  title: z.string().trim().min(1).max(120).optional(),
-  date: z.coerce.date().nullable().optional(),
-  visibility: z.enum(["PUBLIC", "MEMBERS"]).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-  ...themeFields,
-});
-
 export const galleryRouter = router({
   /* ----- Lectures admin ----- */
 
@@ -128,26 +100,6 @@ export const galleryRouter = router({
     }),
 
   /* ----- Lectures publiques ----- */
-
-  getBySlug: publicProcedure
-    .input(z.object({ slug: slugSchema }))
-    .query(async ({ ctx, input }) => {
-      const gallery = await ctx.prisma.gallery.findUnique({
-        where: { slug: input.slug },
-        include: galleryWithItems,
-      });
-      if (
-        !gallery ||
-        (gallery.visibility === "MEMBERS" && !ctx.sessionClient?.user)
-      ) {
-        // NOT_FOUND aussi pour MEMBERS+anonyme : ne pas révéler l'existence.
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Galerie introuvable.",
-        });
-      }
-      return gallery;
-    }),
 
   /**
    * Récupère la galerie du carousel d'accueil (slug `CAROUSEL_SLUG`) avec ses
@@ -219,47 +171,6 @@ export const galleryRouter = router({
   }),
 
   /* ----- Écritures ----- */
-
-  create: protectedProcedure
-    .use(isAdmin)
-    .input(createInput)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await ctx.prisma.gallery.create({ data: input });
-      } catch (e) {
-        if (
-          e instanceof Prisma.PrismaClientKnownRequestError &&
-          e.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Ce slug de galerie est déjà utilisé.",
-          });
-        }
-        throw e;
-      }
-    }),
-
-  update: protectedProcedure
-    .use(isAdmin)
-    .input(updateInput)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      try {
-        return await ctx.prisma.gallery.update({ where: { id }, data });
-      } catch (e) {
-        if (
-          e instanceof Prisma.PrismaClientKnownRequestError &&
-          e.code === "P2002"
-        ) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Ce slug de galerie est déjà utilisé.",
-          });
-        }
-        throw e;
-      }
-    }),
 
   delete: protectedProcedure
     .use(isAdmin)

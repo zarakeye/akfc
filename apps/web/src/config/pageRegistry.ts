@@ -50,6 +50,3 @@ export function pageKeyForPath(pathname: string): string | null {
   }
   return null;
 }
-
-/** Toutes les clés du registre (utile pour un traitement en masse). */
-export const ALL_PAGE_KEYS: readonly string[] = PAGE_REGISTRY.map((e) => e.key);

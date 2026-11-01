@@ -15,7 +15,7 @@ import { personalSpaceOwnerId } from "@backend/modules/memberGroups/assertCanTra
 
 /**
  * Titulaire = rattaché à une discipline, un cours ou un stage. Le MÊME critère que
- * `getInstructors` / `listPublicInstructors` et la page publique des instructeurs.
+ * `getInstructors` et la page publique des instructeurs.
  */
 export async function isInstructorUser(prisma: PrismaClient, userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
