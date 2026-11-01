@@ -265,7 +265,7 @@ function isLocalHost(host) {
 
 Elle est appelée à trois endroits, chacun devant une porte vers la base :
 
-<DocsTable columnsJson='["Où","Ce qu’elle protège","Ce qui reste permis"]' rowsJson='[["prisma.config.ts","Toute commande Prisma qui touche la base : migrate, db, studio.","generate, validate et format, qui ne lisent que le schéma : l’installation lance prisma generate."],["apps/web/src/instrumentation.ts","pnpm dev : la base (DATABASE_URL) et le stockage (R2_ENDPOINT). Le serveur de développement s’arrête aussitôt, avec le message.","La production elle-même : la garde ne s’applique qu’en développement (NODE_ENV=development)."],["package.json, db:seed:dev","Le seed de démonstration, lancé par node et non par la CLI Prisma.","—"]]' />
+<DocsTable columnsJson='["Où","Ce qu’elle protège","Ce qui reste permis"]' rowsJson='[["prisma.config.ts","Toute commande Prisma qui touche la base : migrate, db, studio.","generate, validate et format, qui ne lisent que le schéma : l’installation lance prisma generate."],["apps/web/src/instrumentation.ts, qui appelle lib/devTargetGuard.ts","pnpm dev : la base (DATABASE_URL) et le stockage (R2_ENDPOINT). Le serveur de développement s’arrête aussitôt, avec le message.","La production elle-même : la garde ne s’applique qu’en développement (NODE_ENV=development)."],["package.json, db:seed:dev","Le seed de démonstration, lancé par node et non par la CLI Prisma.","—"]]' />
 
 Le message nomme l'hôte visé, jamais l'adresse complète : elle contient le mot de passe. Pour une opération voulue sur un serveur distant, `AKFC_ALLOW_REMOTE_DB=1` lève le refus, le temps d'une commande, avec un avertissement.
 
