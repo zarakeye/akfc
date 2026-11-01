@@ -10,6 +10,7 @@ import type { Tour, TourStep } from "./tour.types";
 const PAD = 6; // marge autour de la cible (px)
 const BUBBLE_W = 340; // largeur de la bulle (px)
 const GAP = 12; // écart bulle ↔ cible (px)
+const BUBBLE_ROOM = 200; // place qu'il faut à la bulle, sous ou au-dessus de la cible (px)
 const WAIT_MS = 8000; // délai avant d'abandonner une cible introuvable
 const OPTIONAL_WAIT_MS = 1500; // délai avant de passer une étape facultative sans cible
 const DIM = "rgba(15, 23, 42, 0.62)"; // voile
@@ -155,13 +156,23 @@ export function TourOverlay({ tour, step, index }: { tour: Tour; step: TourStep;
   const vh = window.innerHeight;
   const hole = step.target ? rect : null;
 
-  // Position de la bulle : sous la cible s'il y a la place, sinon au-dessus ; centrée sans cible.
-  const bubbleStyle: React.CSSProperties = { width: Math.min(BUBBLE_W, vw - 24) };
+  // Position de la bulle : sous la cible s'il y a la place, sinon au-dessus ; une cible qui occupe
+  // presque tout l'écran (le contenu de la bibliothèque) ne laisse de place ni dessous ni dessus :
+  // la bulle se pose alors en bas de l'écran, sur la cible, plutôt que hors de la vue. Centrée sans
+  // cible ; jamais plus haute que l'écran.
+  const bubbleStyle: React.CSSProperties = {
+    width: Math.min(BUBBLE_W, vw - 24),
+    maxHeight: vh - 24,
+    overflowY: "auto",
+  };
   if (hole) {
     const left = Math.max(12, Math.min(hole.left + hole.width / 2 - BUBBLE_W / 2, vw - BUBBLE_W - 12));
     bubbleStyle.left = left;
-    if (hole.top + hole.height + GAP + 200 < vh) bubbleStyle.top = hole.top + hole.height + GAP;
-    else bubbleStyle.bottom = Math.max(12, vh - hole.top + GAP);
+    const below = vh - (hole.top + hole.height) - GAP;
+    const above = hole.top - GAP;
+    if (below >= BUBBLE_ROOM) bubbleStyle.top = hole.top + hole.height + GAP;
+    else if (above >= BUBBLE_ROOM) bubbleStyle.bottom = vh - hole.top + GAP;
+    else bubbleStyle.bottom = 12;
   } else {
     bubbleStyle.left = "50%";
     bubbleStyle.top = "50%";

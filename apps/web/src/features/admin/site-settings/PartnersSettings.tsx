@@ -65,7 +65,7 @@ export function PartnersSettings(): JSX.Element {
   };
 
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8">
+    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.partners">
       <h2 className="mb-1 text-xl font-semibold">Partenaires du club</h2>
       <p className="mb-6 text-sm text-gray-600">
         Structures liées au club (la MJC qui l&apos;accueille, la fédération…). Leurs logos s&apos;affichent dans

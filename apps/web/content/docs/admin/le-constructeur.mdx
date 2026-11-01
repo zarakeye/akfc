@@ -1,0 +1,42 @@
+---
+title: "Le constructeur de pages"
+description: "Composer un contenu en blocs : texte, médias, galerie, documents, audio."
+section: "Publier"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Le constructeur compose le contenu des posts, des disciplines, des cours, des stages, des évènements et des pages éditoriales. Un contenu est une suite de **blocs**, affichés de haut en bas.
+
+**Avant de commencer.** Ouvrir un formulaire qui en contient un : un post, une discipline, une page éditoriale…
+
+## Les blocs
+
+| Bloc | Pour |
+|---|---|
+| **Texte** | Du texte mis en forme : titres, gras, listes, liens, couleurs. |
+| **Médias + texte** | Une ou plusieurs images (ou vidéos) à côté d'un texte. |
+| **Texte enrobant une image** | Un texte qui coule autour d'une image. |
+| **Galerie d'images** | Plusieurs photos, en grille. |
+| **Documents** | Des fichiers à télécharger (PDF…). |
+| **Pistes audio** | Des enregistrements à écouter. |
+
+Certains formulaires n'autorisent qu'une partie des blocs : la présentation synthétique d'une discipline, par exemple, reste courte.
+
+## Les gestes
+
+1. **Ajouter un bloc** ouvre la liste des types ; survoler un type en montre un aperçu.
+2. L'en-tête d'un bloc porte sa **poignée** (à gauche) : glissez-la pour déplacer le bloc.
+3. La **corbeille** de l'en-tête (à droite) supprime le bloc.
+4. Les médias se choisissent dans la [bibliothèque](/docs/admin/la-bibliotheque).
+
+<Callout type="warning">
+Les blocs ne sont enregistrés qu'avec le bouton du formulaire (**Créer**, **Enregistrer**) : quitter la page sans enregistrer perd les changements.
+</Callout>
+
+<TourStartButton id="admin.constructeur" />
+
+<Callout type="info">
+Le tutoriel se déroule sur le formulaire d'un nouveau post. Il y ajoute un bloc de texte, mais ne crée pas le post : quittez la page sans enregistrer, et rien n'aura été créé.
+</Callout>

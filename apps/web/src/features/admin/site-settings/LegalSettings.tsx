@@ -52,7 +52,7 @@ function initialOf(s: Settings): SaveLegalSettingsInput {
 export function LegalSettings(): JSX.Element {
   const settings = trpc.siteSettings.get.useQuery();
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8">
+    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.legal">
       <h2 className="mb-1 text-xl font-semibold">Informations légales</h2>
       <p className="mb-6 text-sm text-gray-600">
         Les pages{" "}

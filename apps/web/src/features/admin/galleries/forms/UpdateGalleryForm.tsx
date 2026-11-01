@@ -1,4 +1,5 @@
 import { useForm, useWatch } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { JSX, startTransition, useActionState, useState, useEffect, useRef } from "react";
 import {
   updateGalleryFormAction,
@@ -55,21 +56,14 @@ const CATEGORY_TYPE_EVENT = "Event";
 
 interface UpdateGalleryFormProps {
   gallery: Gallery;
-  setCreating?: (creating: "GALLERY" | null) => void;
-  setOpenList?: (open: "GALLERIES" | null) => void;
-  setDisplayingMyInfo?: (display: boolean) => void;
 }
 
 /**
  * Édition des métadonnées d'une galerie. Pré-rempli depuis `gallery`,
  * `id` transmis via input caché.
  */
-export function UpdateGalleryForm({
-  gallery,
-  setCreating,
-  setOpenList,
-  setDisplayingMyInfo,
-}: UpdateGalleryFormProps): JSX.Element {
+export function UpdateGalleryForm({ gallery }: UpdateGalleryFormProps): JSX.Element {
+  const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(
       updateGalleryFormSchema.pick({
@@ -368,11 +362,7 @@ export function UpdateGalleryForm({
         <div className="flex gap-3.5 justify-end">
           <Button
             type="button"
-            onClick={() => {
-              if (setCreating) setCreating(null);
-              if (setOpenList) setOpenList("GALLERIES");
-              if (setDisplayingMyInfo) setDisplayingMyInfo(false);
-            }}
+            onClick={() => router.push(`/dashboard/galleries/${gallery.id}`)}
           >
             Annuler
           </Button>

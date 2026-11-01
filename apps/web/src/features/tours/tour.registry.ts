@@ -1,11 +1,18 @@
 import type { Tour, TourAudience } from "./tour.types";
+import { adminBibliotheque } from "./definitions/admin.bibliotheque";
 import { adminBreakingNewsCreate } from "./definitions/admin.breaking-news.create";
+import { adminCategoriesCreate } from "./definitions/admin.categories.create";
+import { adminConstructeur } from "./definitions/admin.constructeur";
 import { adminCoursesCreate } from "./definitions/admin.courses.create";
 import { adminDisciplinesCreate } from "./definitions/admin.disciplines.create";
 import { adminEventsCreate } from "./definitions/admin.events.create";
+import { adminFamiliesCreate } from "./definitions/admin.families.create";
+import { adminGalleriesCreate } from "./definitions/admin.galleries.create";
 import { adminGroupsCreate } from "./definitions/admin.groups.create";
+import { adminOriginsCreate } from "./definitions/admin.origins.create";
 import { adminPagesPublication } from "./definitions/admin.pages.publication";
 import { adminPostsCreate } from "./definitions/admin.posts.create";
+import { adminReglages } from "./definitions/admin.reglages";
 import { adminSeminarsCreate } from "./definitions/admin.seminars.create";
 import { adminSeminarsSeances } from "./definitions/admin.seminars.seances";
 import { adminTableauDeBord } from "./definitions/admin.tableau-de-bord";
@@ -39,6 +46,13 @@ export const TOURS: Tour[] = [
   adminSeminarsCreate,
   adminSeminarsSeances,
   adminEventsCreate,
+  adminConstructeur,
+  adminBibliotheque,
+  adminGalleriesCreate,
+  adminCategoriesCreate,
+  adminFamiliesCreate,
+  adminOriginsCreate,
+  adminReglages,
 ];
 
 export function getTour(id: string): Tour | undefined {

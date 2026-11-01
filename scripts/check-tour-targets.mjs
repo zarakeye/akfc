@@ -26,7 +26,10 @@ function walk(dir, out = []) {
 
 const anchors = new Set();
 for (const f of walk(SRC)) {
-  for (const m of readFileSync(f, "utf8").matchAll(/data-tour=["'{`]+([\w.:-]+)["'`}]/g)) anchors.add(m[1]);
+  const s = readFileSync(f, "utf8");
+  for (const m of s.matchAll(/data-tour=["'{`]+([\w.:-]+)["'`}]/g)) anchors.add(m[1]);
+  // Une ancre posée sous condition : data-tour={kind === "tiptap" ? "builder.add.text" : undefined}.
+  for (const m of s.matchAll(/data-tour=\{[^}]*?\?\s*"([\w.:-]+)"/g)) anchors.add(m[1]);
 }
 
 const errors = [];

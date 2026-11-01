@@ -1,7 +1,9 @@
 "use client";
 
 import { JSX } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { trpc } from "@trpc/trpcClient";
 import { Table, type Column } from "react-ts-tab-lib";
 import type { Category } from "@prisma/client";
@@ -9,8 +11,28 @@ import { deleteColumn } from "@features/admin/common/delete";
 
 type CategoryRow = Category & { supprimer: number };
 
-/** Liste des catégories — clic → `/(admin)/dashboard/categories/[id]`. */
-export default function CategoriesTable(): JSX.Element {
+/** Liste des catégories — `/(admin)/dashboard/categories`. */
+export default function CategoriesPage(): JSX.Element {
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Catégories d&apos;activités</h2>
+        <Link
+          href="/dashboard/categories/create"
+          data-tour="categories.list.create"
+          className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Créer une catégorie
+        </Link>
+      </div>
+      <CategoriesTable />
+    </div>
+  );
+}
+
+/** Les catégories — clic → `/(admin)/dashboard/categories/[id]`. */
+function CategoriesTable(): JSX.Element {
   const router = useRouter();
   const utils = trpc.useUtils();
   const remove = trpc.category.delete.useMutation();

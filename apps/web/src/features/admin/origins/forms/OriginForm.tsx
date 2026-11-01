@@ -111,7 +111,7 @@ export function OriginForm({ initial }: { initial?: Origin }): JSX.Element {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="origins.form.name">
               <FormLabel>Nom</FormLabel>
               <FormControl>
                 <Input
@@ -196,7 +196,7 @@ export function OriginForm({ initial }: { initial?: Origin }): JSX.Element {
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-tour="origins.form.metadata">
           <FormField
             control={form.control}
             name="country"
@@ -286,7 +286,7 @@ export function OriginForm({ initial }: { initial?: Origin }): JSX.Element {
 
         {state.error && <p className="text-red-500">{state.error}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end" data-tour="origins.form.submit">
           <Button type="submit" disabled={isPending}>
             {isPending ? "Enregistrement…" : initial ? "Mettre à jour" : "Créer"}
           </Button>

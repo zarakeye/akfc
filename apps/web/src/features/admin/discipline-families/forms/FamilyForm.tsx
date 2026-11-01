@@ -92,7 +92,7 @@ export function FamilyForm({ initial }: { initial?: DisciplineFamily }): JSX.Ele
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="families.form.name">
               <FormLabel>Nom</FormLabel>
               <FormControl>
                 <Input
@@ -160,7 +160,7 @@ export function FamilyForm({ initial }: { initial?: DisciplineFamily }): JSX.Ele
           control={form.control}
           name="sortOrder"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="families.form.sortOrder">
               <FormLabel>Ordre d&apos;affichage</FormLabel>
               <FormControl>
                 <Input
@@ -180,7 +180,7 @@ export function FamilyForm({ initial }: { initial?: DisciplineFamily }): JSX.Ele
 
         {state.error && <p className="text-red-500">{state.error}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end" data-tour="families.form.submit">
           <Button type="submit" disabled={isPending}>
             {isPending ? "Enregistrement…" : initial ? "Mettre à jour" : "Créer"}
           </Button>

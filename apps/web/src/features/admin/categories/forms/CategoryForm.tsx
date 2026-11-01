@@ -91,7 +91,7 @@ export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
           control={form.control}
           name="type"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="categories.form.type">
               <FormLabel>Type</FormLabel>
               <FormControl>
                 <Input
@@ -110,7 +110,7 @@ export function CategoryForm({ initial }: { initial?: Category }): JSX.Element {
 
         {state.error && <p className="text-red-500">{state.error}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end" data-tour="categories.form.submit">
           <Button type="submit" disabled={isPending}>
             {isPending
               ? "Enregistrement…"

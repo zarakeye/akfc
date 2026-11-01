@@ -180,8 +180,65 @@ test("« Ajouter des séances » conduit de la liste à l'édition d'un stage", 
 test("la doc admin propose les tutos par parcours, numérotés et cliquables", async ({ page }) => {
   await page.goto("/docs/admin");
   const parcours = page.getByRole("region", { name: "3. Le catalogue et le programme" });
-  await expect(parcours.getByRole("button", { name: /^3\. Créer un stage$/ })).toBeVisible();
-  await parcours.getByRole("button", { name: /^1\. Créer une discipline$/ }).click();
+  await expect(parcours.getByRole("button", { name: /^6\. Créer un stage$/ })).toBeVisible();
+  await parcours.getByRole("button", { name: /^4\. Créer une discipline$/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/disciplines$/);
   await expect(bubble(page, "Créer une discipline", 1, 6)).toBeVisible();
 });
+
+/** Suit les bulles d'explication jusqu'à la dernière, puis « Terminer ». */
+async function nextToEnd(page: Page, title: string): Promise<void> {
+  const dialog = page.getByRole("dialog", { name: new RegExp(`^${title} — étape`) });
+  for (let i = 0; i < 12; i++) {
+    await expect(dialog).toBeVisible();
+    const terminer = page.getByRole("button", { name: "Terminer" });
+    if (await terminer.isVisible()) {
+      await terminer.click();
+      await expect(dialog).toHaveCount(0);
+      return;
+    }
+    await nextButton(page).click();
+  }
+  throw new Error(`${title} : pas de dernière étape`);
+}
+
+test("« Le constructeur de pages » ajoute un bloc dans le formulaire, sans créer le post", async ({ page }) => {
+  await launch(page, "/dashboard/posts/create", /Le constructeur de pages.*Composer/);
+  const t = "Le constructeur de pages";
+  await expect(bubble(page, t, 1, 6)).toBeVisible();
+  await nextButton(page).click();
+  await page.locator('[data-tour="builder.add"]').click();
+  await expect(bubble(page, t, 3, 6)).toBeVisible();
+  await page.locator('[data-tour="builder.add.text"]').click();
+  await expect(bubble(page, t, 4, 6)).toBeVisible();
+  await expect(page.locator('[data-tour="builder.block"]')).toHaveCount(1);
+  await nextToEnd(page, t);
+  await expect(page).toHaveURL(/\/dashboard\/posts\/create$/);
+});
+
+test("« La bibliothèque » et « Les réglages du site » se lisent d'un bout à l'autre", async ({ page }) => {
+  await launch(page, "/dashboard/library", /La bibliothèque.*Parcourir/);
+  await nextToEnd(page, "La bibliothèque");
+  await launch(page, "/dashboard/settings", /Les réglages du site.*titres/);
+  await nextToEnd(page, "Les réglages du site");
+});
+
+for (const [path, title, description, anchor, field] of [
+  ["/dashboard/categories", "Créer une catégorie", "Ajouter", "categories", '[data-tour="categories.form.type"] input'],
+  ["/dashboard/discipline-families", "Créer une famille", "Regrouper", "families", '[data-tour="families.form.name"] input'],
+  ["/dashboard/origins", "Créer une origine", "Décrire", "origins", '[data-tour="origins.form.name"] input'],
+  ["/dashboard/galleries", "Créer une galerie", "Réunir", "galleries", '[data-tour="galleries.form.title"] input'],
+] as const) {
+  test(`« ${title} » fait remplir le nom et ne crée rien`, async ({ page }) => {
+    await launch(page, path, new RegExp(`${title}.*${description}`));
+    await page.locator(`[data-tour="${anchor}.list.create"]`).click();
+    const name = page.locator(field);
+    await expect(name).toBeFocused();
+    await name.fill("Exemple du tuto");
+    // Entrée dans le champ : le formulaire ne part pas pendant le tuto.
+    await name.press("Enter");
+    await nextToEnd(page, title);
+    await page.goto(path);
+    await expect(page.getByText("Exemple du tuto")).toHaveCount(0);
+  });
+}

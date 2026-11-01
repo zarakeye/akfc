@@ -589,7 +589,7 @@ export default function Finder({
     <div className="flex flex-col h-full border rounded overflow-hidden">
       {/* ──────────────────────── HEADER : breadcrumb + actions ─────────── */}
       <div className="px-3 py-2 border-b text-sm flex flex-wrap items-center gap-2 min-h-10">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" data-tour="finder.breadcrumb">
           <Breadcrumb adapter={adapter} rootPath={rootPath} />
         </div>
 
@@ -657,7 +657,11 @@ export default function Finder({
           !fileFilter &&
           files.length > 0 && <StatusFilterBar />}
 
-        {currentPath !== `${APP_ROOT}/bin` && <FinderViewModeSwitcher />}
+        {currentPath !== `${APP_ROOT}/bin` && (
+          <div data-tour="finder.views" className="shrink-0">
+            <FinderViewModeSwitcher />
+          </div>
+        )}
 
         {!readOnly && (() => {
           // Ce bouton naviguait vers la corbeille. Elle est déjà atteignable
@@ -680,6 +684,7 @@ export default function Finder({
           return (
             <button
               type="button"
+              data-tour="finder.delete"
               disabled={!canDelete}
               onClick={() => setDeleteConfirmOpen(true)}
               aria-label={deleteButtonLabel}
@@ -804,6 +809,7 @@ export default function Finder({
         <>
         <Panel
           id="tree"
+          data-tour="finder.tree"
           defaultSize="320px"
           minSize="240px"
           maxSize="500px"
@@ -838,6 +844,7 @@ export default function Finder({
         {/* 📁 GRILLE */}
         <Panel
           id="grid"
+          data-tour="finder.content"
           minSize={20}
           className="flex flex-col min-h-0 relative"
         >
@@ -1114,6 +1121,7 @@ export default function Finder({
         {/* 👁️ PREVIEW */}
         <Panel
           id="preview"
+          data-tour="finder.preview"
           panelRef={previewPanelRef}
           defaultSize="420px"
           minSize="300px"

@@ -94,6 +94,7 @@ export function AddBlockMenu({ onAdd, allowedBlocks }: AddBlockMenuProps) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
+        data-tour="builder.add"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
       >
@@ -110,6 +111,7 @@ export function AddBlockMenu({ onAdd, allowedBlocks }: AddBlockMenuProps) {
             <button
               key={def.kind}
               type="button"
+              data-tour={def.kind === "tiptap" ? "builder.add.text" : undefined}
               onClick={() => {
                 onAdd(def.kind);
                 setOpen(false);

@@ -114,7 +114,7 @@ export default function SiteSettingsPage(): JSX.Element {
       </p>
 
       <div className="space-y-5">
-        <label className="block">
+        <label className="block" data-tour="settings.titles">
           <span className="mb-1 block text-sm font-medium">Titre court</span>
           <input
             className={inputClass}
@@ -167,7 +167,7 @@ export default function SiteSettingsPage(): JSX.Element {
         </label>
 
         {/* Logo — upload SVG direct (R2, hors finder) */}
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="settings.logo">
           <span className="block text-sm font-medium">Logo du site</span>
           <div className="flex items-start gap-3">
             {/* Fond choisi d'après la couleur du logo (clair → fond sombre, sombre → fond clair) */}
@@ -217,7 +217,7 @@ export default function SiteSettingsPage(): JSX.Element {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+        <div className="flex items-center gap-3 border-t border-gray-100 pt-4" data-tour="settings.save">
           <button
             type="button"
             disabled={!canSave}

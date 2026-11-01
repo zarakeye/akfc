@@ -23,7 +23,7 @@ const inputClass =
 export function ContactSettings(): JSX.Element {
   const settings = trpc.siteSettings.get.useQuery();
   return (
-    <section className="mt-12 border-t border-gray-200 pt-8">
+    <section className="mt-12 border-t border-gray-200 pt-8" data-tour="settings.contact">
       <h2 className="mb-1 text-xl font-semibold">Coordonnées publiques</h2>
       <p className="mb-6 text-sm text-gray-600">
         Affichées à tous sur la page «&nbsp;Nous contacter&nbsp;» : c&apos;est ainsi que le public et les

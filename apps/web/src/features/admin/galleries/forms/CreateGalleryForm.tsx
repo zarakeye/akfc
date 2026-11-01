@@ -17,6 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@components/ui/form";
+import { useRouter } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
 import { MediaItemsEditor } from "@features/admin/galleries/components/MediaItemsEditor";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
@@ -47,23 +48,14 @@ type FacetName =
 const CATEGORY_TYPE_STAGE = "Stage";
 const CATEGORY_TYPE_EVENT = "Event";
 
-interface CreateGalleryFormProps {
-  setCreating?: (creating: "GALLERY" | null) => void;
-  setOpenList?: (open: "GALLERIES" | null) => void;
-  setDisplayingMyInfo?: (display: boolean) => void;
-}
-
 /**
  * Création d'une galerie en une étape : métadonnées + images.
  * Le slug se génère depuis le titre tant que l'admin n'y a pas touché. Les
  * images choisies (état local) partent dans l'input caché `items` ; la server
  * action crée la galerie et ses items en une transaction.
  */
-export function CreateGalleryForm({
-  setCreating,
-  setOpenList,
-  setDisplayingMyInfo,
-}: CreateGalleryFormProps): JSX.Element {
+export function CreateGalleryForm(): JSX.Element {
+  const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(createGalleryFormSchema),
     defaultValues: {
@@ -195,7 +187,7 @@ export function CreateGalleryForm({
           control={form.control}
           name="title"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="galleries.form.title">
               <FormLabel>Titre</FormLabel>
               <FormControl>
                 <Input
@@ -263,7 +255,7 @@ export function CreateGalleryForm({
           control={form.control}
           name="visibility"
           render={({ field }) => (
-            <FormItem>
+            <FormItem data-tour="galleries.form.visibility">
               <FormLabel>Visibilité</FormLabel>
               <FormControl>
                 <select
@@ -324,29 +316,27 @@ export function CreateGalleryForm({
         {/* Facettes cumulables — "" = aucune ; l'action convertit en null.
             Stage et Event ne s'affichent que si la catégorie choisie le
             justifie (type "Stage" ou "Event"). */}
-        {facetField("disciplineId", "Discipline", disciplines, (d) => d.name)}
-        {facetField("categoryId", "Catégorie", categories, (c) => c.type)}
-        {showStage && facetField("seminarId", "Stage", stages, (s) => s.label)}
-        {showEvent &&
-          facetField("eventId", "Évènement", events, (e) => e.label)}
-        {facetField("originId", "Origine", origins, (o) => o.name)}
+        <div className="space-y-4" data-tour="galleries.form.facets">
+          {facetField("disciplineId", "Discipline", disciplines, (d) => d.name)}
+          {facetField("categoryId", "Catégorie", categories, (c) => c.type)}
+          {showStage && facetField("seminarId", "Stage", stages, (s) => s.label)}
+          {showEvent &&
+            facetField("eventId", "Évènement", events, (e) => e.label)}
+          {facetField("originId", "Origine", origins, (o) => o.name)}
+        </div>
 
         {/* Images — état local envoyé via l'input caché `items` */}
-        <div>
+        <div data-tour="galleries.form.images">
           <input type="hidden" name="items" value={JSON.stringify(mediaIds)} />
           <MediaItemsEditor value={mediaIds} onChange={setMediaIds} />
         </div>
 
         {state.error && <p className="text-red-500">{state.error}</p>}
 
-        <div className="flex gap-3.5 justify-end">
+        <div className="flex gap-3.5 justify-end" data-tour="galleries.form.submit">
           <Button
             type="button"
-            onClick={() => {
-              if (setCreating) setCreating(null);
-              if (setOpenList) setOpenList("GALLERIES");
-              if (setDisplayingMyInfo) setDisplayingMyInfo(false);
-            }}
+            onClick={() => router.push("/dashboard/galleries")}
           >
             Annuler
           </Button>

@@ -81,6 +81,7 @@ export function BlockShell({
   return (
     <div
       ref={shellRef}
+      data-tour="builder.block"
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={clsx(
@@ -92,6 +93,7 @@ export function BlockShell({
       {/* En-tête : seule zone draggable */}
       <div
         draggable
+        data-tour="builder.block.header"
         onDragStart={(e) => {
           if (shellRef.current) {
             e.dataTransfer.setDragImage(shellRef.current, 0, 0);
