@@ -186,7 +186,6 @@ Quatre chapitres ont parcouru le domaine du club : ce qu’il modélise, les con
 - **`Seminar.preRegistered`** contient des prérequis : un renommage (`requisites`, comme pour les créneaux) rendrait le modèle honnête. Il demande une migration de renommage et la mise à jour du formulaire.
 - **Les libellés extérieurs** d’un stage ne sont pas uniques sans discipline du club (`NULL` dans la contrainte) ; seul le slug les distingue. Un index partiel sur `label` quand `disciplineId` est nul fermerait le cas, si le club le juge utile.
 - **La garde de statut des fichiers** ne consulte pas les galeries : remettre en attente une photo d’une galerie publique reste possible. C’est le terrain de la partie « Stockage et médias ».
-- **La galerie publique** range ses disciplines d’après une liste de noms écrite dans le code (`"Tchoy Lee Fut"`, `"Kali"`…) : renommer une discipline la ferait passer en fin de liste. Un rang d’affichage (`sortOrder`, comme pour les familles) serait la bonne clé. Les catégories, elles, sont rangées par leur clé (`course`, `seminar`, `event`) depuis qu’elles en ont une (chapitre 3).
 
 ## Récapitulatif
 

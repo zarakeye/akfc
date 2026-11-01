@@ -77,7 +77,7 @@ Une entité dédiée règle tout cela d’un coup :
 
 La séparation du nom, du pays et de la région permet une nuance utile : « Fujian » peut être une origine à part entière (`name: "Fujian"`, `country: "Chine"`, `region: "Fujian"`), tout en restant géographiquement rattachée à la Chine. Le club pourra présenter les arts du sud de la Chine distinctement de ceux du nord.
 
-La **famille** de disciplines a suivi le même chemin, pour la même raison : « Kung-fu », « Kung Fu » et « kungfu » auraient fait trois entrées de menu.
+La **famille** de disciplines a suivi le même chemin, pour la même raison : « Kung-fu », « Kung Fu » et « kungfu » auraient fait trois entrées de menu. Son rang (`sortOrder`) donne aussi l’ordre des disciplines sur tout le site : les familles par rang puis par nom, les disciplines par nom, celles sans famille à la fin. Le menu « Nos disciplines » et la page Galeries le lisent dans une seule fonction (`disciplineOrder.ts`) ; la galerie suivait auparavant une liste de noms écrite dans le code, où une discipline renommée tombait en fin de liste.
 
 <CodeExample
   language="prisma"
