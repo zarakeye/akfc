@@ -10,7 +10,7 @@
     "dev:infra": "docker compose -f docker-compose.dev.yml up -d",
     "dev:infra:stop": "docker compose -f docker-compose.dev.yml stop",
     "db:migrate": "prisma migrate deploy",
-    "db:seed:dev": "node --env-file=.env prisma/seed.sandbox.mjs",
+    "db:seed:dev": "node --env-file=.env prisma/db-target.mjs && node --env-file=.env prisma/seed.sandbox.mjs",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "typecheck": "pnpm --filter web typecheck && pnpm --filter backend typecheck && tsc -p tsconfig.json",

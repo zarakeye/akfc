@@ -13,6 +13,19 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
+  // `pnpm dev` ne démarre pas sur la base ou le stockage de la production : ce hook y écrirait dès
+  // le démarrage (segments, dossiers, groupes…), puis chaque action du site local.
+  if (process.env.NODE_ENV === "development") {
+    const { assertLocalTarget } = await import("../../../prisma/db-target.mjs");
+    try {
+      assertLocalTarget(process.env.DATABASE_URL, "La base");
+      assertLocalTarget(process.env.R2_ENDPOINT, "Le stockage");
+    } catch (err) {
+      console.error(`\n❌ ${err instanceof Error ? err.message : err}\n`);
+      process.exit(1);
+    }
+  }
+
   const { prisma } = await import("@backend/prisma");
   const { ensureRootFolders } = await import(
     "@backend/modules/storage/services/ensureRootFolders.service"
