@@ -1,0 +1,92 @@
+# Intégration continue d'AKFC : à chaque push et à chaque pull request, la même chose que sur le Mac.
+#
+#   1. Vérifications : pnpm check (gardes maison, typecheck, lint) — ce que lancent les scripts
+#      avant chaque commit.
+#   2. Tests de bout en bout : pnpm e2e, contre Postgres, MinIO et Mailpit démarrés depuis
+#      docker-compose.dev.yml, aux mêmes adresses que sur le Mac (e2e/env.mjs).
+#
+# Aucun secret : tout l'environnement de test est factice et local à la machine de GitHub, et
+# e2e/env.mjs refuse une adresse qui ne serait pas locale. Le workflow ne lit que le code
+# (permissions en lecture seule) et ne déploie rien : la production ne se touche que depuis le
+# serveur, migration d'abord.
+#
+# Les actions externes sont figées à un commit précis (le numéro de version en commentaire) :
+# une nouvelle version, même piégée, ne s'exécute pas sans qu'on l'ait choisie.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Deux pushes rapprochés sur la même branche : seul le dernier va au bout.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Vérifications (pnpm check)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # La version de pnpm vient du champ packageManager de package.json.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Dépendances (exactement celles du lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: pnpm check
+        run: pnpm check
+
+  e2e:
+    name: Tests de bout en bout (pnpm e2e)
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Dépendances (exactement celles du lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Services de test (base, stockage, boîte mail)
+        run: |
+          docker compose -f docker-compose.dev.yml up -d --wait db storage mail
+          # MinIO n'a pas de healthcheck dans le compose : on attend qu'il réponde.
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:9200/minio/health/live >/dev/null && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:9200/minio/health/live >/dev/null
+      - name: Navigateur des tests (Chromium)
+        run: pnpm exec playwright install --with-deps chromium
+      - name: pnpm e2e
+        run: pnpm e2e
+      - name: Rapport des tests (en cas d'échec)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rapport-e2e
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Journaux des services (en cas d'échec)
+        if: failure()
+        run: docker compose -f docker-compose.dev.yml logs --tail 100
