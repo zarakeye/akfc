@@ -1,0 +1,86 @@
+---
+title: "L’intégration continue"
+description: "À chaque push, GitHub refait ce que fait le Mac avant un commit — pnpm check — puis lance les tests de bout en bout sur une machine neuve, sans aucun secret. Comment le workflow est construit, pourquoi il ne déploie rien, et le réflexe à prendre avant un déploiement."
+section: "Qualité"
+order: 5
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** `pnpm check` tourne avant chaque commit ; les tests de bout en bout, eux, demandent Docker et un quart d’heure, et se lancent quand on y pense.
+
+L’intégration continue fait tourner les deux **à chaque push**, sur une machine de GitHub, sans qu’on y pense. Un push qui casse quelque chose se voit avant le déploiement : une croix rouge sur le commit, et un e-mail de GitHub.
+
+## Le workflow
+
+Un seul fichier, `.github/workflows/ci.yml`. Il se déclenche à chaque push, sur une pull request, et à la main depuis l’onglet **Actions** du dépôt.
+
+<CodeExample
+  language="yaml"
+  filepath=".github/workflows/ci.yml"
+  filename="ci.yml"
+  snippetRange="18-29"
+  snippetTitle="Quand il tourne, ce qu’il a le droit de faire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`permissions: contents: read` : le workflow lit le code, rien d’autre — il ne peut ni pousser, ni commenter, ni publier. `concurrency` annule une exécution devenue inutile : deux pushes rapprochés, seul le dernier va au bout.
+
+Il compte deux étapes, la seconde ne partant que si la première passe :
+
+<DocsTable columnsJson='["Étape", "Ce qu’elle fait", "Durée"]' rowsJson='[["Vérifications", "pnpm install --frozen-lockfile (exactement le lockfile), puis pnpm check : gardes maison, typecheck, lint.", "≈ 5 min"], ["Tests de bout en bout", "Postgres, MinIO et Mailpit démarrés depuis docker-compose.dev.yml, le navigateur Chromium installé, puis pnpm e2e.", "≈ 10–15 min"]]' />
+
+### Les mêmes services que sur le Mac
+
+Les tests de bout en bout parlent à des adresses fixes (`e2e/env.mjs`) : Postgres sur le port 5435, MinIO sur 9200, Mailpit sur 1026. Le workflow ne les redéfinit pas : il démarre **le même** `docker-compose.dev.yml` que le Mac.
+
+<CodeExample
+  language="yaml"
+  filepath=".github/workflows/ci.yml"
+  filename="ci.yml"
+  snippetRange="67-75"
+  snippetTitle="Les services de test, depuis le compose de développement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`--wait` attend que chaque service soit prêt ; MinIO n’ayant pas de healthcheck dans le compose, une boucle attend qu’il réponde. Un changement de port ou d’image dans le compose vaut donc aussi pour la CI : il n’y a rien à maintenir en double.
+
+### Quand un test échoue
+
+Le rapport de Playwright — captures, traces pas à pas — et les journaux des services sont joints à l’exécution, téléchargeables sept jours depuis sa page.
+
+<CodeExample
+  language="yaml"
+  filepath=".github/workflows/ci.yml"
+  filename="ci.yml"
+  snippetRange="80-92"
+  snippetTitle="Seulement en cas d’échec : le rapport et les journaux"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Ce que la CI ne fait pas
+
+<Callout type="warning">
+**Aucun secret, aucun déploiement.** Tout l’environnement des tests est factice et local à la machine de GitHub ; `e2e/env.mjs` refuse d’ailleurs une adresse qui ne serait pas locale. Rien dans le workflow ne connaît la production : elle ne se touche que depuis le serveur, migration d’abord.
+</Callout>
+
+Le dépôt est destiné à être public (c’est aussi un portfolio) : n’importe qui pourra lire le workflow et voir ses exécutions. Il ne contient rien à protéger, et c’est voulu — un workflow sans secret ne peut pas en laisser fuir.
+
+Les actions externes (`actions/checkout`, `pnpm/action-setup`…) sont **figées à un commit précis**, le numéro de version en commentaire. Une étiquette comme `v7` peut être déplacée par son auteur, ou par quelqu’un qui aurait pris son compte : la CI exécuterait alors un autre code que celui qu’on a lu. Un commit, lui, ne bouge pas. Monter de version devient un geste choisi : changer le commit et son commentaire.
+
+## Le réflexe avant un déploiement
+
+Avant le `git pull` sur le serveur, un coup d’œil à l’onglet **Actions** : une coche verte sur le dernier commit, on déploie ; une croix rouge, on lit l’étape en échec et on corrige d’abord.
+
+<Callout type="info">
+Pour l’instant, on pousse directement sur la branche principale : la CI prévient **après** le push. Si d’autres contribuent un jour, on passera par des pull requests, et GitHub pourra exiger que la CI passe avant de fusionner — un réglage du dépôt (« branch protection »), le workflow restant le même.
+</Callout>
+
+## À suivre
+
+La qualité se vérifie désormais sur la machine du développeur et à chaque push. Reste à mettre le site en ligne, et à l’y garder : l’image Docker, le serveur, les variables de production, les sauvegardes.
+
+<Callout type="tip">
+**Partie suivante : infrastructure et déploiement.** L’image Docker, la mise en production et la sandbox.
+</Callout>
