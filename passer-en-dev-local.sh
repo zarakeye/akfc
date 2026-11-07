@@ -39,7 +39,7 @@ for i in $(seq 1 40); do
   [ "$i" -eq 40 ] && { echo "❌ Postgres local ne répond pas"; exit 1; }
   sleep 1
 done
-echo "✓ Postgres, MinIO et Mailpit locaux démarrés"
+echo "✓ Postgres, SeaweedFS et Mailpit locaux démarrés"
 
 # ─── 4. Les migrations, sur la base LOCALE ─────────────────────────────────
 is_local "$(host_of .env)" || { echo "❌ .env ne vise plus la base locale : arrêt."; exit 1; }

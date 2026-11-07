@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Le site local sur la copie ANONYMISÉE de la production, déjà sur ce Mac :
 #   base   « akfc-db-local »      (setup-local-db.sh)  — disciplines, pages, comptes @akfc.demo…
-#   photos « akfc-storage-local » (faces-3-local.sh)   — visages de substitution
+#   photos SeaweedFS de docker-compose.dev.yml, bucket akfc-dev — visages de substitution
+#          (recopiées de l'ancien conteneur MinIO « akfc-storage-local » par akfc-recopier-stockage-dev.sh)
 #   e-mails : Mailpit de docker-compose.dev.yml (http://localhost:8026), rien ne part sur internet.
 # Modifie .env et apps/web/.env.local (copie de sauvegarde à côté de chacun). Aucun secret affiché,
 # rien d'écrit sur le serveur, aucun commit.
@@ -12,7 +13,7 @@ cd "$(dirname "$0")"
 if pgrep -f "next dev" >/dev/null 2>&1; then echo "❌ pnpm dev tourne : arrête-le (Ctrl+C), puis relance ce script."; exit 1; fi
 docker info >/dev/null 2>&1 || { echo "❌ Docker ne répond pas : lance Docker Desktop."; exit 1; }
 
-DB=akfc-db-local; ST=akfc-storage-local
+DB=akfc-db-local
 docker container inspect "$DB" >/dev/null 2>&1 || { echo "❌ pas de conteneur $DB sur ce Mac : lance d'abord setup-local-db.sh."; exit 1; }
 envof() { docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$1" | sed -n "s/^$2=//p"; }
 portof() { docker inspect -f "{{(index (index .HostConfig.PortBindings \"$2/tcp\") 0).HostPort}}" "$1"; }
@@ -23,16 +24,12 @@ for _ in $(seq 1 30); do docker exec "$DB" pg_isready -U postgres -q 2>/dev/null
 docker exec "$DB" pg_isready -U postgres -q || { echo "❌ $DB ne répond pas"; exit 1; }
 PG_URL="postgresql://postgres:$(envof "$DB" POSTGRES_PASSWORD)@127.0.0.1:$(portof "$DB" 5432)/akfc_db?schema=public"
 echo "✓ base $DB : 127.0.0.1:$(portof "$DB" 5432)"
-if docker container inspect "$ST" >/dev/null 2>&1; then
-  docker start "$ST" >/dev/null
-  R2E="http://127.0.0.1:$(portof "$ST" 9000)"; R2K=$(envof "$ST" MINIO_ROOT_USER); R2S=$(envof "$ST" MINIO_ROOT_PASSWORD)
-  echo "✓ photos $ST : $R2E"
-else
-  R2E=""; echo "⚠ pas de conteneur $ST : les photos resteront celles du MinIO de dev (vides)"
-fi
-# Le MinIO et le Postgres de docker-compose.dev.yml ne servent plus ; Mailpit, si.
-docker compose -f docker-compose.dev.yml stop db storage >/dev/null 2>&1 || true
-docker compose -f docker-compose.dev.yml up -d mail >/dev/null 2>&1 || { echo "❌ Mailpit ne démarre pas"; exit 1; }
+# Le Postgres de docker-compose.dev.yml ne sert pas ici (la base est $DB) ; son stockage et Mailpit, si.
+# Identifiants du stockage : ceux de docker-compose.dev.yml, publics par nature (dev seulement).
+docker compose -f docker-compose.dev.yml stop db >/dev/null 2>&1 || true
+docker compose -f docker-compose.dev.yml up -d --wait storage mail >/dev/null 2>&1 || { echo "❌ SeaweedFS ou Mailpit ne démarre pas"; exit 1; }
+R2E="http://127.0.0.1:9200"; R2K="akfc-dev"; R2S="akfc-dev-secret"
+echo "✓ photos : SeaweedFS $R2E, bucket akfc-dev"
 
 # ─── 2. Les deux fichiers .env ─────────────────────────────────────────────
 STAMP=$(date +%Y%m%d-%H%M%S)
