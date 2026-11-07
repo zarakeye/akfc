@@ -195,17 +195,23 @@ Comme toutes les commandes `pnpm <nom>` de ce chapitre, c'est un **script** du `
 
 ```json
 // package.json (extrait)
-"dev:infra": "docker compose -f docker-compose.dev.yml up -d",
+"dev:infra": "docker compose -f docker-compose.dev.yml up -d --wait --remove-orphans",
 "dev:infra:stop": "docker compose -f docker-compose.dev.yml stop",
 ```
 
+`--wait` ne rend la main que quand la base et le stockage répondent : la commande suivante (une migration, par exemple) ne part pas trop tôt. `--remove-orphans` retire les conteneurs d'un service que le fichier ne décrit plus.
+
 Docker télécharge les images au premier lancement, puis démarre :
 
-<DocsTable columnsJson='["Service","Rôle","Adresse sur notre machine"]' rowsJson='[["db","PostgreSQL 17, la base de données","127.0.0.1:5435 (utilisateur akfc, mot de passe akfc-dev, base akfc_db)"],["storage","MinIO, un stockage compatible S3 qui joue le rôle de Cloudflare R2","API : 127.0.0.1:9200 · console : http://localhost:9201 (akfc-dev / akfc-dev-secret)"],["storage-init","Crée le bucket akfc-dev au premier démarrage, puis s’arrête","—"],["mail","Mailpit : capture tous les e-mails envoyés par l’application","SMTP : 127.0.0.1:1026 · boîte web : http://localhost:8026"]]' />
+<DocsTable columnsJson='["Service","Rôle","Adresse sur notre machine"]' rowsJson='[["db","PostgreSQL 17, la base de données","127.0.0.1:5435 (utilisateur akfc, mot de passe akfc-dev, base akfc_db)"],["storage","SeaweedFS, un stockage compatible S3 qui joue le rôle de Cloudflare R2 ; crée le bucket akfc-dev à son démarrage","API : 127.0.0.1:9200 (akfc-dev / akfc-dev-secret) · fichiers stockés : http://localhost:9201"],["mail","Mailpit : capture tous les e-mails envoyés par l’application","SMTP : 127.0.0.1:1026 · boîte web : http://localhost:8026"]]' />
 
-Les ports ne sont pas les ports habituels (5432 pour Postgres, 9000 pour MinIO) : ils coexistent ainsi avec un Postgres déjà installé ou avec la sandbox lancée en parallèle. Tout écoute sur `127.0.0.1` seulement, donc rien n'est exposé au réseau.
+Les ports ne sont pas les ports habituels (5432 pour Postgres, 8333 pour SeaweedFS) : ils coexistent ainsi avec un Postgres déjà installé ou avec la sandbox lancée en parallèle. Tout écoute sur `127.0.0.1` seulement, donc rien n'est exposé au réseau.
 
 Les données survivent à un redémarrage, dans des volumes Docker. `pnpm dev:infra:stop` arrête les conteneurs sans rien effacer.
+
+<Callout type="info">
+Jusqu'en novembre 2026, le stockage local était MinIO, qui a retiré ses images de Docker Hub. Une machine qui l'a connu garde son ancien volume, `akfc-dev_akfc-dev-storage` : SeaweedFS ne le lit pas et ne le supprime pas. Les médias envoyés avant le changement n'ont donc plus leur fichier en dev ; on les renvoie depuis la bibliothèque. Quand l'ancien volume ne sert plus : `docker volume rm akfc-dev_akfc-dev-storage`.
+</Callout>
 
 **Mailpit** accepte tous les e-mails que l'application lui confie et les affiche dans une page web, sans jamais les transmettre. Nous pouvons donc tester une réinitialisation de mot de passe ou une notification de ticket de bout en bout, en lisant le message réellement produit, sans aucun risque d'écrire à quelqu'un.
 
@@ -332,7 +338,7 @@ L'application répond sur `http://localhost:3000`. Au démarrage, `apps/web/src/
 Vérifions chaque service séparément :
 
 1. Connectons-nous avec `admin@akfc.demo`. Le menu du compte propose « Dashboard » : la **base** et l'authentification répondent.
-2. Ouvrons la bibliothèque du tableau de bord et déposons une image. Elle apparaît dans la console MinIO (`http://localhost:9201`), bucket `akfc-dev` : le **stockage** répond.
+2. Ouvrons la bibliothèque du tableau de bord et déposons une image. Elle apparaît dans la page des fichiers stockés (`http://localhost:9201`), dossier `buckets/akfc-dev` : le **stockage** répond.
 3. Déconnectons-nous et demandons « Mot de passe oublié » pour `membre@akfc.demo`. Le message arrive dans Mailpit (`http://localhost:8026`) : les **e-mails** fonctionnent.
 
 <Callout type="info">

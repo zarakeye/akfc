@@ -1,6 +1,6 @@
 ---
 title: "Un stockage objet"
-description: "Où vivent les fichiers du club et pourquoi : le stockage local qui s’effondre en production, les familles de services, le passage de Cloudinary à un stockage compatible S3 (R2, MinIO), un stockage sans dossiers, le fichier qui ne passe pas par notre serveur, et le secret qui ne voyage jamais."
+description: "Où vivent les fichiers du club et pourquoi : le stockage local qui s’effondre en production, les familles de services, le passage de Cloudinary à un stockage compatible S3 (R2, SeaweedFS), un stockage sans dossiers, le fichier qui ne passe pas par notre serveur, et le secret qui ne voyage jamais."
 section: "Stockage et médias"
 order: 1
 entities:
@@ -55,7 +55,7 @@ Stocker les médias dans son propre projet n’est pas « garder le contrôle »
 
 L’industrie a résolu ce problème plusieurs fois, et trois philosophies coexistent.
 
-**Le stockage objet brut** — Amazon S3, Cloudflare R2, MinIO. Un stockage très bon marché, très disponible, sans intelligence particulière autour des médias : pour des vignettes, des URL temporaires, une diffusion rapide, il faut construire par-dessus. C’est la solution la plus flexible, et la plus technique.
+**Le stockage objet brut** — Amazon S3, Cloudflare R2, MinIO, SeaweedFS. Un stockage très bon marché, très disponible, sans intelligence particulière autour des médias : pour des vignettes, des URL temporaires, une diffusion rapide, il faut construire par-dessus. C’est la solution la plus flexible, et la plus technique.
 
 **Les services d’envoi tout-en-un** — Uploadthing, Uploadcare. Ils enveloppent un stockage objet derrière une API simple, souvent très bien intégrée à Next.js. En contrepartie, on perd la main sur le nommage, les transformations et les modes d’accès fins.
 
@@ -67,9 +67,9 @@ Le choix dépend du projet, et celui du club a connu les deux derniers temps de 
 
 Le projet a d’abord utilisé **Cloudinary**. Pour une association dont la vitrine vit d’images, c’était un choix naturel : des vignettes obtenues en paramétrant l’URL (`/upload/w_400,f_auto/…`), un mode `authenticated` pour les photos des membres, des envois signés directement depuis le navigateur.
 
-Il l’a ensuite quitté pour un **stockage objet compatible S3** : Cloudflare R2 en production, MinIO sur la machine du développeur et dans la sandbox. La migration s’est faite fichier par fichier ; les colonnes propres à Cloudinary ont ensuite été retirées de `MediaAsset` (il n’en reste que `legacyCloudinaryPublicId`, une trace). Ce que Cloudinary faisait, le projet le fait désormais lui-même, et chacun des chapitres suivants en montre une partie : les envois signés (chapitre 2), le contrôle d’accès et les déclinaisons d’images fabriquées par le serveur (chapitre 4).
+Il l’a ensuite quitté pour un **stockage objet compatible S3** : Cloudflare R2 en production, SeaweedFS sur la machine du développeur et dans la sandbox. La migration s’est faite fichier par fichier ; les colonnes propres à Cloudinary ont ensuite été retirées de `MediaAsset` (il n’en reste que `legacyCloudinaryPublicId`, une trace). Ce que Cloudinary faisait, le projet le fait désormais lui-même, et chacun des chapitres suivants en montre une partie : les envois signés (chapitre 2), le contrôle d’accès et les déclinaisons d’images fabriquées par le serveur (chapitre 4).
 
-Ce que ce choix apporte se voit dans le code. Le protocole S3 est un **standard de fait** : le projet parle à R2 et à MinIO avec le même SDK, `@aws-sdk/client-s3`, et seule la configuration change. Le développement local et la sandbox reproduisent donc exactement la production, sans compte externe ni clé partagée. R2, de son côté, ne facture pas la bande passante sortante, ce qui compte pour un site qui sert surtout des images.
+Ce que ce choix apporte se voit dans le code. Le protocole S3 est un **standard de fait** : le projet parle à R2 et à SeaweedFS avec le même SDK, `@aws-sdk/client-s3`, et seule la configuration change. Le développement local et la sandbox reproduisent donc exactement la production, sans compte externe ni clé partagée. Le standard protège aussi des fournisseurs : en septembre 2026, MinIO, le premier stockage local du projet, a retiré ses images de Docker Hub. Le remplacer par SeaweedFS n’a touché que les fichiers compose, pas une ligne de code (chapitre « L’intégration continue »). R2, de son côté, ne facture pas la bande passante sortante, ce qui compte pour un site qui sert surtout des images.
 
 <CodeExample
   language="ts"
@@ -77,11 +77,11 @@ Ce que ce choix apporte se voit dans le code. Le protocole S3 est un **standard 
   filename="client.ts"
   snippetRange="30-63"
   snippetHighlight="19-20,22,25"
-  snippetTitle="Le client S3, configuré pour R2 ou MinIO"
+  snippetTitle="Le client S3, configuré pour R2 ou le stockage local"
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois réglages méritent une explication. `region: "auto"` est la valeur qu’attend R2, qui n’a pas de régions au sens d’AWS ; une vraie région serait incluse dans la signature des requêtes, et R2 les refuserait. `forcePathStyle` place le nom du bucket dans le chemin de l’URL plutôt que dans le nom de domaine, ce qu’exige MinIO. Et le client est un **singleton** : il garde ses connexions ouvertes d’une requête à l’autre, au lieu de refaire la poignée de main TLS à chaque appel.
+Trois réglages méritent une explication. `region: "auto"` est la valeur qu’attend R2, qui n’a pas de régions au sens d’AWS ; une vraie région serait incluse dans la signature des requêtes, et R2 les refuserait. `forcePathStyle` place le nom du bucket dans le chemin de l’URL plutôt que dans le nom de domaine, ce qu’exige le stockage local. Et le client est un **singleton** : il garde ses connexions ouvertes d’une requête à l’autre, au lieu de refaire la poignée de main TLS à chaque appel.
 
 Un second client sert uniquement à fabriquer des URL destinées au **navigateur** :
 
@@ -95,7 +95,7 @@ Un second client sert uniquement à fabriquer des URL destinées au **navigateur
   fullFileTitle="Voir le fichier complet"
 />
 
-Dans la sandbox, le serveur joint MinIO par son nom de service Docker (`minio:9000`), que le navigateur ne connaît pas : les URL qui lui sont destinées doivent viser une autre adresse (`R2_PUBLIC_ENDPOINT`). Le calcul automatique de somme de contrôle est désactivé, car MinIO refuserait une somme calculée sur un corps vide au moment de signer.
+Dans la sandbox, le serveur joint le stockage par son nom de service Docker (`storage:8333`), que le navigateur ne connaît pas : les URL qui lui sont destinées doivent viser une autre adresse (`R2_PUBLIC_ENDPOINT`). Le calcul automatique de somme de contrôle est désactivé, car MinIO, l’ancien stockage local, refusait une somme calculée sur un corps vide au moment de signer.
 
 ## Un stockage sans dossiers
 
@@ -176,7 +176,7 @@ Une URL présignée n’est pas un accès, c’est une autorisation bornée : «
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vivent les fichiers ?", "Dans un stockage objet compatible S3 : R2 en production, MinIO en développement et en sandbox, avec le même SDK."], ["Pourquoi pas le disque du serveur ?", "Un conteneur est jetable ; sauvegardes, bande passante, déclinaisons et contrôle d’accès seraient à refaire soi-même."], ["Qu’est-ce qu’un dossier ?", "Un préfixe de clé. Un dossier vide n’existe pas pour le stockage ; la seule frontière est un startsWith, d’où le refus des segments « .. »."], ["Par où passent les octets ?", "Directement du navigateur au stockage. Le backend autorise, il ne transporte pas."], ["Comment le navigateur est-il autorisé ?", "Par une URL présignée : une opération, une clé, un type, cinq minutes. Le secret ne quitte jamais le serveur."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où vivent les fichiers ?", "Dans un stockage objet compatible S3 : R2 en production, SeaweedFS en développement et en sandbox, avec le même SDK."], ["Pourquoi pas le disque du serveur ?", "Un conteneur est jetable ; sauvegardes, bande passante, déclinaisons et contrôle d’accès seraient à refaire soi-même."], ["Qu’est-ce qu’un dossier ?", "Un préfixe de clé. Un dossier vide n’existe pas pour le stockage ; la seule frontière est un startsWith, d’où le refus des segments « .. »."], ["Par où passent les octets ?", "Directement du navigateur au stockage. Le backend autorise, il ne transporte pas."], ["Comment le navigateur est-il autorisé ?", "Par une URL présignée : une opération, une clé, un type, cinq minutes. Le secret ne quitte jamais le serveur."]]' />
 
 ## À suivre
 

@@ -29,22 +29,28 @@ Un seul fichier, `.github/workflows/ci.yml`. Il se déclenche à chaque push, su
 
 Il compte deux étapes, la seconde ne partant que si la première passe :
 
-<DocsTable columnsJson='["Étape", "Ce qu’elle fait", "Durée"]' rowsJson='[["Vérifications", "pnpm install --frozen-lockfile (exactement le lockfile), puis pnpm check : gardes maison, typecheck, lint.", "≈ 5 min"], ["Tests de bout en bout", "Postgres, MinIO et Mailpit démarrés depuis docker-compose.dev.yml, le navigateur Chromium installé, puis pnpm e2e.", "≈ 10–15 min"]]' />
+<DocsTable columnsJson='["Étape", "Ce qu’elle fait", "Durée"]' rowsJson='[["Vérifications", "pnpm install --frozen-lockfile (exactement le lockfile), puis pnpm check : gardes maison, typecheck, lint.", "≈ 5 min"], ["Tests de bout en bout", "Postgres, SeaweedFS et Mailpit démarrés depuis docker-compose.dev.yml, le navigateur Chromium installé, puis pnpm e2e.", "≈ 10–15 min"]]' />
 
 ### Les mêmes services que sur le Mac
 
-Les tests de bout en bout parlent à des adresses fixes (`e2e/env.mjs`) : Postgres sur le port 5435, MinIO sur 9200, Mailpit sur 1026. Le workflow ne les redéfinit pas : il démarre **le même** `docker-compose.dev.yml` que le Mac.
+Les tests de bout en bout parlent à des adresses fixes (`e2e/env.mjs`) : Postgres sur le port 5435, le stockage (SeaweedFS) sur 9200, Mailpit sur 1026. Le workflow ne les redéfinit pas : il démarre **le même** `docker-compose.dev.yml` que le Mac.
 
 <CodeExample
   language="yaml"
   filepath=".github/workflows/ci.yml"
   filename="ci.yml"
-  snippetRange="67-75"
+  snippetRange="67-69"
   snippetTitle="Les services de test, depuis le compose de développement"
   fullFileTitle="Voir le fichier complet"
 />
 
-`--wait` attend que chaque service soit prêt ; MinIO n’ayant pas de healthcheck dans le compose, une boucle attend qu’il réponde. Un changement de port ou d’image dans le compose vaut donc aussi pour la CI : il n’y a rien à maintenir en double.
+`--wait` rend la main quand la base et le stockage répondent à leur `healthcheck`, et que Mailpit tourne. Un changement de port ou d’image dans le compose vaut donc aussi pour la CI : il n’y a rien à maintenir en double.
+
+### Ce que la machine neuve a trouvé
+
+La toute première exécution a échoué en une demi-minute, avant le moindre test : `pull access denied for minio/minio`. MinIO, le stockage local de l’époque, avait retiré ses images de Docker Hub en septembre 2026. Le Mac ne s’en était pas aperçu : Docker ne télécharge une image que s’il ne l’a pas déjà, et la sienne était en cache depuis des mois. La machine de GitHub, elle, part de zéro à chaque exécution : elle voit ce que verrait un nouveau développeur, ou un recruteur qui lance la sandbox.
+
+Le message parle de `docker login`, mais se connecter n’y aurait rien changé : Docker répond la même chose pour un dépôt privé et pour un dépôt qui n’existe plus. Le stockage local est passé à SeaweedFS, un logiciel libre, à une **version figée** (partie « Stockage et médias ») ; Mailpit, jusque-là en `latest`, a été figé dans la foulée. C’est le même principe que pour les actions de ce workflow : une dépendance ne change pas sans qu’on l’ait décidé. L’application ne parle que le S3 standard : en changer n’a touché que les fichiers compose, pas une ligne de code.
 
 ### Quand un test échoue
 
@@ -54,7 +60,7 @@ Le rapport de Playwright — captures, traces pas à pas — et les journaux des
   language="yaml"
   filepath=".github/workflows/ci.yml"
   filename="ci.yml"
-  snippetRange="80-92"
+  snippetRange="74-86"
   snippetTitle="Seulement en cas d’échec : le rapport et les journaux"
   fullFileTitle="Voir le fichier complet"
 />
