@@ -11,7 +11,7 @@
 #  Ports choisis pour ne heurter ni la sandbox recruteurs (9000/9001/8025),
 #  ni un Postgres déjà installé (5432). Tout écoute sur 127.0.0.1 seulement.
 #    Postgres  127.0.0.1:5435
-#    MinIO     127.0.0.1:9200 (API S3)  ·  http://localhost:9201 (console)
+#    SeaweedFS 127.0.0.1:9200 (API S3)  ·  http://localhost:9201 (fichiers stockés)
 #    Mailpit   127.0.0.1:1026 (SMTP)    ·  http://localhost:8026 (boîte web)
 #
 #  ⚠ Identifiants de développement, publics par nature : jamais en production.
@@ -37,34 +37,30 @@ services:
       retries: 20
 
   # Stockage compatible S3 : joue le rôle de Cloudflare R2 en local.
+  # SeaweedFS, logiciel libre (Apache 2.0), à une version FIGÉE : on la change par une modification
+  # du dépôt, jamais en silence (MinIO, l'ancien stockage, a retiré ses images en septembre 2026).
+  # « mini » lance tout en un seul processus ; -bucket crée akfc-dev au démarrage s'il manque ;
+  # les identifiants viennent des deux variables AWS_*. Le reste (WebDAV, Iceberg, Lance) est coupé.
   storage:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+    image: ghcr.io/chrislusf/seaweedfs:4.52
+    command: mini -bucket=akfc-dev -webdav=false -s3.port.iceberg=0 -s3.port.lance=0
     environment:
-      MINIO_ROOT_USER: akfc-dev
-      MINIO_ROOT_PASSWORD: akfc-dev-secret
+      AWS_ACCESS_KEY_ID: akfc-dev
+      AWS_SECRET_ACCESS_KEY: akfc-dev-secret
     ports:
-      - "127.0.0.1:9200:9000"
-      - "127.0.0.1:9201:9001"
+      - "127.0.0.1:9200:8333"
+      - "127.0.0.1:9201:8888"
     volumes:
-      - akfc-dev-storage:/data
-
-  # Crée le bucket au premier démarrage, puis s'arrête.
-  storage-init:
-    image: minio/mc:latest
-    depends_on:
-      - storage
-    restart: "no"
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://storage:9000 akfc-dev akfc-dev-secret; do sleep 1; done;
-      mc mb -p local/akfc-dev || true;
-      echo 'bucket akfc-dev prêt';
-      "
+      - akfc-dev-seaweedfs:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   # Capture TOUS les e-mails envoyés par l'app (aucun ne part sur internet).
   mail:
-    image: axllent/mailpit:latest
+    image: ghcr.io/axllent/mailpit:v1.33.0
     ports:
       - "127.0.0.1:1026:1025"
       - "127.0.0.1:8026:8025"
@@ -74,4 +70,4 @@ services:
 
 volumes:
   akfc-dev-pgdata:
-  akfc-dev-storage:
+  akfc-dev-seaweedfs:

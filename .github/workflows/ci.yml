@@ -2,7 +2,7 @@
 #
 #   1. Vérifications : pnpm check (gardes maison, typecheck, lint) — ce que lancent les scripts
 #      avant chaque commit.
-#   2. Tests de bout en bout : pnpm e2e, contre Postgres, MinIO et Mailpit démarrés depuis
+#   2. Tests de bout en bout : pnpm e2e, contre Postgres, SeaweedFS et Mailpit démarrés depuis
 #      docker-compose.dev.yml, aux mêmes adresses que sur le Mac (e2e/env.mjs).
 #
 # Aucun secret : tout l'environnement de test est factice et local à la machine de GitHub, et
@@ -65,14 +65,8 @@ jobs:
       - name: Dépendances (exactement celles du lockfile)
         run: pnpm install --frozen-lockfile
       - name: Services de test (base, stockage, boîte mail)
-        run: |
-          docker compose -f docker-compose.dev.yml up -d --wait db storage mail
-          # MinIO n'a pas de healthcheck dans le compose : on attend qu'il réponde.
-          for i in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:9200/minio/health/live >/dev/null && break
-            sleep 1
-          done
-          curl -fsS http://127.0.0.1:9200/minio/health/live >/dev/null
+        # --wait rend la main quand la base et le stockage répondent (healthcheck) et que Mailpit tourne.
+        run: docker compose -f docker-compose.dev.yml up -d --wait db storage mail
       - name: Navigateur des tests (Chromium)
         run: pnpm exec playwright install --with-deps chromium
       - name: pnpm e2e

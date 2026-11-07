@@ -47,7 +47,7 @@ export function getR2Client(): S3Client {
   cached = new S3Client({
     region: "auto",
     endpoint: readEnv("R2_ENDPOINT"),
-    // MinIO exige le path-style ; R2 (prod) ne définit pas la var → false.
+    // Le stockage local (SeaweedFS) exige le path-style ; R2 (prod) ne définit pas la var → false.
     forcePathStyle: process.env.R2_FORCE_PATH_STYLE === "true",
     credentials: {
       accessKeyId: readEnv("R2_ACCESS_KEY_ID"),
@@ -66,8 +66,8 @@ export function getR2Bucket(): string {
  * Client S3 dédié au PRESIGNING d'URLs consommées par le NAVIGATEUR.
  * En prod : R2_PUBLIC_ENDPOINT absent → endpoint R2 public (Cloudflare),
  * joignable par le client. En sandbox : R2_PUBLIC_ENDPOINT=localhost:9000
- * (car `minio:9000`, nom Docker, n'est pas résoluble côté navigateur).
- * Checksum SDK désactivé (CRC calculé sur corps vide → rejeté par MinIO).
+ * (car `storage:8333`, nom Docker, n'est pas résoluble côté navigateur).
+ * Checksum SDK désactivé (CRC calculé sur corps vide → rejeté par MinIO, l'ancien stockage local).
  */
 let cachedPresign: S3Client | null = null;
 

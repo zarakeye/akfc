@@ -3,7 +3,7 @@
 #
 #  git clone … && docker compose -f docker-compose.sandbox.yml up -d --build
 #    → app sur http://localhost:3010
-#    → console MinIO   http://localhost:9001  (sandbox / sandbox-secret)
+#    → fichiers stockés http://localhost:9001  (SeaweedFS)
 #    → Mailpit (mails) http://localhost:8025
 #
 #  Reset total : docker compose -f docker-compose.sandbox.yml down -v
@@ -26,31 +26,26 @@ services:
       timeout: 3s
       retries: 20
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+  # Stockage compatible S3 (SeaweedFS, version figée) : crée le bucket « documents » au démarrage.
+  storage:
+    image: ghcr.io/chrislusf/seaweedfs:4.52
+    command: mini -bucket=documents -webdav=false -s3.port.iceberg=0 -s3.port.lance=0
     environment:
-      MINIO_ROOT_USER: sandbox
-      MINIO_ROOT_PASSWORD: sandbox-secret
+      AWS_ACCESS_KEY_ID: sandbox
+      AWS_SECRET_ACCESS_KEY: sandbox-secret
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000:8333"      # API S3 (URL signées vues par le navigateur)
+      - "9001:8888"      # fichiers stockés
     volumes:
-      - sandbox_minio:/data
-
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://minio:9000 sandbox sandbox-secret; do sleep 1; done;
-      mc mb -p local/documents || true;
-      echo 'buckets prets';
-      "
+      - sandbox_storage:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: ghcr.io/axllent/mailpit:v1.33.0
     ports:
       - "8025:8025"      # UI web des mails
     environment:
@@ -99,8 +94,8 @@ services:
         condition: service_completed_successfully
       seeder:
         condition: service_completed_successfully
-      minio-init:
-        condition: service_started
+      storage:
+        condition: service_healthy
       mailpit:
         condition: service_started
     ports:
@@ -123,8 +118,8 @@ services:
       APP_FULL_NAME: "AKFC — Sandbox de démonstration"
       APP_SUPPORT_EMAIL: "contact@sandbox.local"
 
-      # ── Stockage (R2) → MinIO : tous les fichiers, bucket « documents ». Path-style. ──
-      R2_ENDPOINT: "http://minio:9000"
+      # ── Stockage (R2) → SeaweedFS : tous les fichiers, bucket « documents ». Path-style. ──
+      R2_ENDPOINT: "http://storage:8333"
       R2_ACCESS_KEY_ID: "sandbox"
       R2_SECRET_ACCESS_KEY: "sandbox-secret"
       R2_BUCKET: "documents"
@@ -140,4 +135,4 @@ services:
 
 volumes:
   sandbox_pgdata:
-  sandbox_minio:
+  sandbox_storage:

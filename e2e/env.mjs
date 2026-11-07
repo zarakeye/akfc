@@ -3,7 +3,7 @@
  * Environnement des tests de bout en bout — un seul endroit pour toutes les adresses.
  *
  * Tout est LOCAL et dédié aux tests : la base `akfc_e2e` du Postgres de développement
- * (docker-compose.dev.yml), le bucket `akfc-e2e` du MinIO de développement, la boîte Mailpit, et
+ * (docker-compose.dev.yml), le bucket `akfc-e2e` du stockage de développement, la boîte Mailpit, et
  * une application construite à part (apps/web/.next-e2e) qui écoute sur le port 3100. Ni la base
  * de développement (`akfc_db`), ni `pnpm dev`, ni la production ne sont touchés : `assertLocal`
  * refuse de continuer si quelqu'un modifie ces valeurs vers autre chose qu'une machine locale.
