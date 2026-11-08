@@ -73,7 +73,8 @@ Au démarrage du serveur Node, Next appelle `register()` dans `instrumentation.t
   language="ts"
   filepath="apps/web/src/instrumentation.ts"
   filename="instrumentation.ts"
-  snippetRange="13-237"
+  snippetStart="export async function register() {"
+  snippetEnd="(fin du bloc)"
   title="instrumentation.ts — register()"
   stepsJson='[{"title": "Pas la production en développement", "body": "Sous `pnpm dev`, la base et le stockage visés doivent être ceux de la machine ou du réseau Docker : une adresse distante arrête le serveur avant la première écriture (partie « Démarrer », chapitre « Mise en route »). En production, la condition sur `NODE_ENV` la laisse de côté. La condition s’écrit en positif (`=== \"nodejs\"`), et la garde vit dans un module à part (`devTargetGuard.ts`) : `instrumentation.ts` est aussi compilé pour l’Edge, et Turbopack y signalait le `process.exit` de la garde, même placé après le `return`. Sous une condition positive, la compilation Edge élimine la branche et le module avec elle.", "scope": "2-9", "focus": "6-6"}, {"title": "Seulement côté Node", "body": "`register()` est aussi appelé pour le moteur Edge de Next, qui n’a ni Prisma ni accès au système de fichiers : la fonction s’arrête là. Les modules du backend sont importés dynamiquement, après ce test, pour ne jamais être chargés ailleurs.", "scope": "1-36", "focus": "11-11"}, {"title": "Des réparations, une par une", "body": "Les segments de stockage, les dossiers racines, l’espace de chaque groupe, le groupe des administrateurs, les catégories de demandes, les partenaires et les pages par défaut. Chacune est **idempotente** : elle crée ce qui manque et ne touche pas à ce qui existe. Le démarrage d’un site neuf et celui du centième déploiement suivent le même chemin.", "scope": "38-151", "focus": "78-78"}, {"title": "Chacune isolée", "body": "Chaque étape a son `try`. Une étape qui échoue est journalisée (« failed — app will still start ») et n’empêche pas les suivantes, ni le site de répondre : un dossier de stockage injoignable ne met pas le site hors ligne.", "scope": "39-54", "focus": "49-52"}, {"title": "Les tâches de fond", "body": "La relève des réponses aux demandes par IMAP (si elle est configurée), la purge des données chaque nuit à 3 h (partie « Légal et RGPD »), le récapitulatif quotidien des demandes. Chacune annonce dans les journaux si elle est active.", "scope": "152-185", "focus": "171-171"}, {"title": "Les dernières réparations", "body": "Les libellés des dossiers de catégories et de disciplines, et les références des médias des présentations d’instructeurs (partie « Contenu éditorial »).", "scope": "187-225", "focus": "215-215"}]'
 />
@@ -98,7 +99,8 @@ Chaque construction laisse des images et un cache de construction. Sur un serveu
   language="bash"
   filepath="docker-cleanup.sh"
   filename="docker-cleanup.sh"
-  snippetRange="1-14"
+  snippetStart="#!/usr/bin/env bash"
+  snippetLines="14"
   snippetHighlight="9,11-12"
   snippetTitle="docker-cleanup.sh"
   fullFileTitle="Voir le fichier complet"

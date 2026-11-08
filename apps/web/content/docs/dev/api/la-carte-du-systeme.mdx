@@ -115,7 +115,8 @@ Ici, ce travail est **centralisé une fois pour toutes**… dans `core.ts`.
   language="ts"
   filepath="packages/backend/src/trpc/core.ts"
   filename="core.ts"
-  snippetRange="1-53"
+  snippetStart="import { initTRPC, TRPCError } from"
+  snippetLines="53"
   snippetHighlight="9-15,39-53"
   snippetTitle="createTRPCContext : le contexte défini une fois"
   fullFileTitle="Voir le fichier complet"
@@ -129,7 +130,8 @@ Ici, ce travail est **centralisé une fois pour toutes**… dans `core.ts`.
   language="ts"
   filepath="packages/backend/src/trpc/core.ts"
   filename="core.ts"
-  snippetRange="1-86"
+  snippetStart="import { initTRPC, TRPCError } from"
+  snippetEnd="export const protectedProcedure = t.procedure.use(isAuthed);"
   title="Comment le contexte est défini, typé et injecté"
   stepsJson='[{"title": "Le type TRPCContext décrit ce qui sera toujours disponible", "body": "Ce type est la promesse du système. Chaque procédure sait qu’elle aura accès à un sessionClient (null pour un visiteur), à prisma, à l’adresse IP et au navigateur de la requête, et à appRoot, la racine du stockage (APP_SHORT_NAME). Écrite une fois, cette définition gouverne tout le backend.", "scope": "9-15", "focus": "9-15"}, {"title": "AuthenticatedTRPCContext est un type plus fort, pour les procédures protégées", "body": "Une fois l’utilisateur authentifié, sessionClient.user ne peut plus être null. Le type requalifié évite d’avoir à écrire partout des vérifications défensives : TypeScript devient complice de l’architecture.", "scope": "17-24", "focus": "17-24"}, {"title": "getIpFromRequest lit l’adresse posée par le proxy", "body": "Derrière le proxy du serveur, l’adresse du visiteur arrive dans l’en-tête x-forwarded-for. Ce n’est pas une preuve : un client peut envoyer cet en-tête lui-même. Le projet ne s’en sert que pour journaliser une demande de réinitialisation de mot de passe, jamais pour décider d’un droit.", "scope": "26-37", "focus": "26-37"}, {"title": "createTRPCContext est la fabrique appelée à chaque requête", "body": "Cette fonction prend la requête, en extrait la session via getSessionFromRequest, ajoute l’accès à prisma, l’IP, le navigateur et la racine du stockage, puis renvoie un objet typé. Elle ne contient aucune logique métier : elle prépare le terrain.", "scope": "39-53", "focus": "39-53"}, {"title": "initTRPC crée l’instance tRPC, avec superjson comme transformer", "body": "superjson remplace l’encodage JSON brut par un encodage capable de préserver les Date, BigInt, Map, Set. Sans lui, une Date envoyée par le serveur arriverait comme une chaîne. Le errorFormatter qui suit décide de ce qu’un navigateur reçoit d’une erreur imprévue : le chapitre 8 y reviendra.", "scope": "55-66", "focus": "55-56"}, {"title": "isAuthed est le middleware qui construit protectedProcedure", "body": "Ce middleware vérifie la présence d’un user dans sessionClient. S’il est absent, il lève UNAUTHORIZED (« Connexion requise. »). S’il est présent, il requalifie le contexte vers AuthenticatedTRPCContext. Tout le reste du backend en profite sans y penser.", "scope": "71-86", "focus": "71-86"}]'
 />
@@ -219,7 +221,8 @@ Dans ce projet, ce rôle est assuré par la route App Router dédiée à tRPC.
   language="ts"
   filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
   filename="route.ts"
-  snippetRange="1-26"
+  snippetStart="import { fetchRequestHandler } from"
+  snippetEnd="export { handler as GET, handler as POST }"
   snippetHighlight="10-24"
   snippetTitle="Le point d’entrée tRPC"
   fullFileTitle="Voir le fichier complet"
@@ -233,7 +236,8 @@ Dans ce projet, ce rôle est assuré par la route App Router dédiée à tRPC.
   language="ts"
   filepath="apps/web/src/app/api/trpc/[trpc]/route.ts"
   filename="route.ts"
-  snippetRange="1-26"
+  snippetStart="import { fetchRequestHandler } from"
+  snippetEnd="export { handler as GET, handler as POST }"
   title="Comment une requête tRPC entre dans le système"
   stepsJson='[{"title": "Le segment dynamique [trpc] capture toutes les procédures", "body": "Le dossier /api/trpc/[trpc] définit une route unique qui reçoit tous les chemins commençant par /api/trpc. La procédure user.create est appelée via /api/trpc/user.create ; plusieurs appels regroupés arrivent en une seule requête (/api/trpc/a,b?batch=1). tRPC lit ce chemin et sait quelles procédures exécuter.", "scope": "1-26", "focus": "10-14"}, {"title": "runtime nodejs : l’environnement complet", "body": "Le runtime Node est celui des routes par défaut ; la ligne le rend explicite. Prisma, bcrypt ou le SDK de stockage ne tournent pas sur le runtime edge, plus léger : la route ne doit jamais y être déplacée.", "scope": "1-26", "focus": "7-7"}, {"title": "dynamic force-dynamic : jamais de cache", "body": "Les appels tRPC dépendent du cookie de session et ne doivent jamais être servis depuis un cache. Depuis Next 15, une route n’est plus mise en cache par défaut ; la directive le garantit explicitement, au cas où ce comportement changerait.", "scope": "1-26", "focus": "8-8"}, {"title": "fetchRequestHandler est le pont officiel entre Next et tRPC", "body": "Cette fonction de @trpc/server/adapters/fetch parle le langage des Request/Response du web standard. Elle reçoit la requête Next, la transmet au routeur tRPC, récupère la réponse et la renvoie. C’est l’adaptateur qui relie les deux mondes.", "scope": "1-26", "focus": "11-14"}, {"title": "createContext fabrique le sac à dos du concierge", "body": "À chaque requête, fetchRequestHandler appelle cette fonction pour obtenir le contexte. Ici, nous lui passons notre createTRPCContext avec la requête. Le résultat est ensuite injecté automatiquement dans la procédure visée.", "scope": "1-26", "focus": "15-15"}, {"title": "onError garde la trace des pannes", "body": "Chaque erreur passe par ici, côté serveur. Seules les erreurs internes sont écrites dans les journaux, sans jamais l’entrée de la procédure, qui peut contenir un mot de passe. Le chapitre 8 raconte pourquoi cette ligne manquait.", "scope": "1-26", "focus": "16-22"}, {"title": "handler est exporté à la fois comme GET et POST", "body": "tRPC utilise GET pour les lectures (query) et POST pour les écritures (mutation). Les deux méthodes passent par le même handler.", "scope": "1-26", "focus": "26-26"}]'
 />

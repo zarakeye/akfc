@@ -29,7 +29,8 @@ L’application de la sandbox est **l’image de production** (chapitre 1), cons
   language="yaml"
   filepath="docker-compose.sandbox.yml"
   filename="docker-compose.sandbox.yml"
-  snippetRange="14-138"
+  snippetStart="services:"
+  snippetEnd="sandbox_storage:"
   title="docker-compose.sandbox.yml"
   stepsJson='[{"title": "Une base qui dit quand elle est prête", "body": "Un conteneur Postgres démarré n’est pas une base prête : elle initialise ses fichiers pendant quelques secondes. Le `healthcheck` interroge `pg_isready` toutes les trois secondes ; les services qui en dépendent attendent qu’il réponde.", "scope": "2-14", "focus": "11-11"}, {"title": "Le stockage, et son bucket", "body": "SeaweedFS parle le protocole S3, comme R2 : le client du site ne voit pas la différence (partie « Stockage et médias »). `-bucket=documents` crée le bucket au démarrage s’il n’existe pas encore ; les identifiants passent par les deux variables `AWS_*`. L’image est **figée** à une version : MinIO, l’ancien stockage, a retiré les siennes de Docker Hub en septembre 2026, et la sandbox ne démarrait plus sur une machine neuve.", "scope": "16-32", "focus": "19-19"}, {"title": "Les e-mails, capturés", "body": "Mailpit accepte tout envoi, avec n’importe quels identifiants, et n’en délivre aucun : un e-mail de bienvenue ou de réinitialisation s’ouvre dans sa page web, jamais dans une vraie boîte.", "scope": "34-40", "focus": "39-39"}, {"title": "Migrer, quand la base est prête", "body": "`depends_on` avec `condition: service_healthy` : le migrateur ne part qu’après le premier `pg_isready` réussi. L’adresse de la base désigne le **service** `postgres` : dans le réseau du compose, c’est son nom.", "scope": "42-54", "focus": "50-50"}, {"title": "Remplir, quand le schéma est là", "body": "`service_completed_successfully` : le seed attend que le migrateur se soit **terminé sans erreur**. Un échec de migration arrête la chaîne là, au lieu de lancer un seed sur une base incomplète.", "scope": "56-70", "focus": "64-64"}, {"title": "Le site, en dernier", "body": "Il attend la migration et le seed (terminés), le stockage (prêt : son `healthcheck` répond) et Mailpit (démarré). Sa racine de stockage est passée en argument de build, comme en production.", "scope": "72-87", "focus": "78-78"}, {"title": "Un environnement complet, et bidon", "body": "Toutes les variables sont dans le fichier, en clair : ce sont des valeurs de démonstration, publiques par nature, qui ne servent nulle part ailleurs. L’adresse du site est celle de la sandbox — sans elle, ses métadonnées et son plan du site désignaient le site du club ; la relecture l’a ajoutée.", "scope": "90-125", "focus": "103-103"}]'
 />
@@ -46,7 +47,9 @@ Le site envoie les fichiers au stockage par des **URL signées** : le navigateur
   language="ts"
   filepath="packages/backend/src/modules/storage/adapters/r2/client.ts"
   filename="client.ts"
-  snippetRange="65-77"
+  snippetStart="* Client S3 dédié au PRESIGNING d'URLs consommées par le NAVIGATEUR."
+  snippetLead="1"
+  snippetEnd="process.env.R2_PUBLIC_ENDPOINT ?? readEnv("
   snippetHighlight="13"
   snippetTitle="Le client des URL signées"
   fullFileTitle="Voir le fichier complet"
@@ -62,7 +65,8 @@ Le seed de la sandbox crée ce qu’il faut pour se connecter et essayer :
   language="js"
   filepath="prisma/seed.sandbox.mjs"
   filename="seed.sandbox.mjs"
-  snippetRange="11-134"
+  snippetStart="async function ensureAdminGroup() {"
+  snippetLines="124"
   title="prisma/seed.sandbox.mjs"
   stepsJson='[{"title": "Le groupe des administrateurs", "body": "Trouvé s’il existe, créé sinon. C’est l’appartenance à ce groupe qui fait un administrateur (partie « Authentification et droits »).", "scope": "1-13", "focus": "3-3"}, {"title": "Un compte, créé ou remis à neuf", "body": "`upsert` par adresse : à chaque démarrage, le mot de passe de démonstration est rétabli, et le premier changement de mot de passe n’est pas exigé (`isFirstLogin: false`). Un visiteur qui a changé le mot de passe ne bloque pas le suivant. Le paramètre `legal` porte le nom, la majorité et, pour un mineur, son parent référent : eux aussi reviennent à leur valeur de démonstration.", "scope": "15-41", "focus": "22-22"}, {"title": "Trois profils", "body": "Un administrateur ; un membre majeur, qui donne lui-même son droit à l’image en ligne ; un membre mineur dont la fiche est complète, pour suivre le circuit du parent. Le parent n’a pas de compte : ses e-mails (parent@akfc.demo) arrivent dans Mailpit. Même mot de passe pour tous, affiché à la fin du seed.", "scope": "43-82", "focus": "66-66"}, {"title": "Quatre disciplines", "body": "La catégorie des cours, retrouvée par sa clé (`course`, pas par son libellé), et les disciplines du club, sans contenu et non publiées : l’administrateur les retrouve dans le tableau de bord, et peut les rédiger, puis les publier.", "scope": "84-117", "focus": "97-97"}]'
 />

@@ -1,6 +1,6 @@
 ---
 title: "Les gardes maison"
-description: "Quatre scripts courts que lance pnpm check, chacun pour une erreur que ni TypeScript ni ESLint ne peuvent voir : un fichier de Next posé où Next ne le lit pas, un tutoriel qui vise un élément disparu, une carte des procédures périmée, une documentation qui cite ce qui n’existe plus. Comment chacun travaille, et comment en écrire un cinquième."
+description: "Cinq scripts courts que lance pnpm check, chacun pour une erreur que ni TypeScript ni ESLint ne peuvent voir : un fichier de Next posé où Next ne le lit pas, un tutoriel qui vise un élément disparu, une carte des procédures périmée, une documentation qui cite ce qui n’existe plus, un extrait de code qui montre les mauvaises lignes. Comment chacun travaille, et comment en écrire un sixième."
 section: "Qualité"
 order: 3
 ---
@@ -22,7 +22,8 @@ Next reconnaît quelques fichiers à leur **nom** : `proxy.ts` (le filtre qui s�
   language="js"
   filepath="scripts/check-next-conventions.mjs"
   filename="check-next-conventions.mjs"
-  snippetRange="8-35"
+  snippetStart="const WEB ="
+  snippetEnd="console.log(`✓ conventions Next : fichiers au bon endroit (${active}/)`);"
   title="check-next-conventions.mjs"
   stepsJson='[{"title": "Les noms qui comptent", "body": "Les quatre fichiers de convention concernés, sous toutes les extensions que Next accepte.", "scope": "1-4", "focus": "2-2"}, {"title": "Où Next regarde, où il ne regarde pas", "body": "Le dossier actif se déduit de la présence de `src/app` : la garde ne suppose rien, elle constate le rangement du projet.", "scope": "6-8", "focus": "6-6"}, {"title": "Un fichier au mauvais endroit est une erreur", "body": "Le message dit ce qui se passe (« IGNORÉ par Next ») et quoi faire (« déplace-le… ou supprime-le »).", "scope": "13-17", "focus": "15-15"}, {"title": "middleware ou proxy, pas les deux", "body": "Next 16 a renommé `middleware` en `proxy`. Les deux à la fois : erreur. L’ancien nom seul : simple avertissement, qui ne bloque pas.", "scope": "18-21", "focus": "20-20"}, {"title": "Le verdict", "body": "Avertissements affichés, erreurs affichées, puis `process.exit(1)` : la sortie en erreur arrête `pnpm check`, puisque ses étapes sont enchaînées par `&&`.", "scope": "23-28", "focus": "26-26"}]'
 />
@@ -37,7 +38,8 @@ Les tutoriels interactifs guident l’utilisateur pas à pas en mettant en valeu
   language="js"
   filepath="scripts/check-tour-targets.mjs"
   filename="check-tour-targets.mjs"
-  snippetRange="17-86"
+  snippetStart="function walk(dir, out = []) {"
+  snippetEnd="console.log(`✓ tutos : ${ids.size} tuto(s), ${steps} cible(s), ${launchers} bouton(s) de lancement, tout existe`);"
   title="check-tour-targets.mjs"
   stepsJson='[{"title": "Parcourir le code", "body": "Tous les fichiers source de `apps/web/src`, sans `node_modules` ni dossiers cachés.", "scope": "1-9", "focus": "6-6"}, {"title": "Relever les ancres", "body": "Chaque `data-tour=\"…\"` (ou `{\"…\"}`) du code. Une expression régulière suffit : la garde n’a pas besoin de comprendre le code, seulement d’y trouver des noms. Une ancre posée sous condition (`data-tour={kind === \"tiptap\" ? \"builder.add.text\" : undefined}`) est relevée par une seconde expression : le nom entre guillemets après le `?`.", "scope": "11-17", "focus": "14-14"}, {"title": "Deux tutoriels, un seul identifiant ? Erreur", "body": "L’identifiant d’un tutoriel sert à mémoriser qu’un membre l’a déjà suivi : deux tutoriels du même nom se confondraient.", "scope": "19-27", "focus": "25-25"}, {"title": "Chaque tuto a sa fiche", "body": "Le champ `doc` d’un tuto nomme sa fiche (« /docs/guide/mon-profil ») : le parcours numéroté d’un espace de documentation y renvoie par « La fiche ». La garde vérifie que le fichier MDX correspondant existe.", "scope": "28-31", "focus": "30-30"}, {"title": "Chaque cible doit exister", "body": "Le message nomme le fichier du tutoriel et la cible manquante : on sait aussitôt quoi rétablir, l’attribut ou l’étape.", "scope": "32-35", "focus": "34-34"}, {"title": "Chaque tuto enregistré", "body": "Une définition que le registre n’importe pas n’existe pour personne : ni le bouton « ? », ni les fiches ne la proposent. La garde cherche l’import de chaque fichier de `definitions/` dans `tour.registry.ts` (partie « Étude de cas »).", "scope": "38-45", "focus": "42-42"}, {"title": "Chaque bouton de fiche", "body": "Une fiche de documentation lance un tuto par `<TourStartButton id=\"…\" />` : l’identifiant doit être celui d’un tuto existant.", "scope": "47-54", "focus": "52-52"}, {"title": "Chaque parcours", "body": "Un parcours `<TourList ids=\"a,b,c\" />` liste des tutos dans l’ordre où on les suit. Chaque identifiant de la liste doit désigner un tuto existant ; il compte parmi les lanceurs du bilan.", "scope": "56-64", "focus": "61-61"}, {"title": "Un bilan, même quand tout va bien", "body": "« 1 tuto(s), 5 cible(s), 1 bouton(s) de lancement » : une garde qui ne dit rien quand elle réussit pourrait aussi bien ne pas avoir tourné.", "scope": "66-70", "focus": "70-70"}]'
 />
@@ -56,7 +58,8 @@ Pour suivre un appel comme `adapter.move(…)` jusqu’à la fonction qui s’ex
   language="js"
   filepath="scripts/build-procedure-map.mjs"
   filename="build-procedure-map.mjs"
-  snippetRange="99-103"
+  snippetStart="const program = ts.createProgram({"
+  snippetEnd="const checker = program.getTypeChecker();"
   snippetHighlight="5"
   snippetTitle="Le backend, chargé comme dans l’éditeur"
   fullFileTitle="Voir le fichier complet"
@@ -68,7 +71,8 @@ Le même script a deux usages. Avec `--write`, il régénère le fichier. Sans o
   language="js"
   filepath="scripts/build-procedure-map.mjs"
   filename="build-procedure-map.mjs"
-  snippetRange="710-722"
+  snippetStart="const json = JSON.stringify({ procedures, functions }, null, 1) +"
+  snippetLines="13"
   title="Écrire, ou vérifier"
   stepsJson='[{"title": "Un résultat, en texte", "body": "La carte entière devient une chaîne JSON. Les fichiers sont parcourus dans un ordre trié : la même base de code donne le même texte sur toutes les machines, et la comparaison a un sens.", "scope": "1-1", "focus": "1-1"}, {"title": "--write : régénérer", "body": "`pnpm docs:procedures` écrit le fichier. Il est versionné, et commité avec le changement du backend qui l’a fait évoluer.", "scope": "3-5", "focus": "4-4"}, {"title": "Sans option : comparer", "body": "Un caractère de différence suffit : le backend a changé depuis la dernière génération. Le message dit quelle commande lancer.", "scope": "6-13", "focus": "8-10"}]'
 />
@@ -87,14 +91,46 @@ Chaque chapitre peut déclarer dans son en-tête les entités de la base qu’il
   language="js"
   filepath="scripts/check-doc-entities.mjs"
   filename="check-doc-entities.mjs"
-  snippetRange="27-108"
+  snippetStart="const fieldsOf = new Map();"
+  snippetEnd="console.log(`✓ entités de la doc : ${chapters} chapitre(s), ${storyCount} parcours, tout existe`);"
   title="check-doc-entities.mjs"
   stepsJson='[{"title": "Les entités du schéma, sans Prisma", "body": "Le schéma est lu comme du texte : `model X {` ouvre une entité, chaque ligne suivante nomme une propriété, `}` la ferme. Pas besoin du client Prisma pour savoir quelles propriétés existent.", "scope": "1-18", "focus": "5-5"}, {"title": "Les appels, depuis la carte des procédures", "body": "Une étape de parcours cite une procédure tRPC ou une fonction exportée : la garde s’appuie sur la carte que la garde précédente vient de vérifier.", "scope": "20-21", "focus": "21-21"}, {"title": "Les ancres, comme la documentation les calcule", "body": "Une étape renvoie à une section par son titre. La garde transforme les titres en ancres avec la même règle que l’affichage : un titre qui donnerait une autre ancre serait un lien mort.", "scope": "23-27", "focus": "23-23"}, {"title": "Chaque entité, chaque propriété", "body": "Une entité inconnue, une liste mal formée, une propriété disparue : chacune a son message, qui nomme le fichier.", "scope": "42-54", "focus": "54-54"}, {"title": "Chaque parcours, chaque étape", "body": "Un parcours sans étape, un appel qui n’existe pas, une section absente du chapitre.", "scope": "57-73", "focus": "67-70"}, {"title": "Le bilan", "body": "« 37 chapitre(s), 51 parcours, tout existe » : la garde dit ce qu’elle a vérifié.", "scope": "78-82", "focus": "82-82"}]'
 />
 
+## Les extraits de code, ancrés sur le texte
+
+Un extrait de la documentation montre des lignes d’un fichier du projet. Longtemps, ces lignes ont été désignées par leurs numéros (`snippetRange="235-247"`). Le défaut est apparu d’un coup : quelques champs ajoutés en haut de `schema.prisma`, et soixante-dix extraits, dans vingt chapitres, montraient le code d’à côté. Sans erreur : un extrait décalé s’affiche très bien.
+
+Un extrait désigne donc désormais son code par son **texte** : la première ligne (`snippetStart`), puis la dernière (`snippetEnd`), ou la fin du bloc qu’ouvre la première (`snippetEnd="(fin du bloc)"`). Des lignes ajoutées au-dessus ne le décalent plus ; des lignes ajoutées dedans l’allongent, et il les montre.
+
+<CodeExample
+  language="mdx"
+  filepath="apps/web/content/docs/dev/auth/le-modele-et-le-contrat.mdx"
+  filename="le-modele-et-le-contrat.mdx"
+  snippetStart="## La session"
+  snippetLines="12"
+  snippetHighlight="7,8"
+  snippetTitle="Le modèle Session, désigné par son texte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une ancre peut à son tour disparaître (la ligne est réécrite) ou devenir ambiguë (une seconde ligne commence pareil). C’est le travail de la cinquième garde :
+
+<CodeWalkthrough
+  language="js"
+  filepath="scripts/check-doc-snippets.mjs"
+  filename="check-doc-snippets.mjs"
+  snippetStart="const errors = [];"
+  snippetEnd="console.log(`✓ extraits de la doc"
+  title="check-doc-snippets.mjs"
+  stepsJson='[{"title": "Chaque bloc de code de chaque chapitre", "body": "Les blocs CodeExample et CodeWalkthrough sont repérés comme du texte, attribut par attribut : pas besoin de compiler le MDX.", "scope": "1-13", "focus": "7-7"}, {"title": "Une ancre, une seule ligne", "body": "Le texte de début doit désigner UNE ligne du fichier. Deux correspondances, et l’extrait pourrait montrer l’une ou l’autre selon l’ordre du fichier : la garde exige un texte plus précis.", "scope": "16-21", "focus": "18-19"}, {"title": "Trois façons de finir", "body": "Jusqu’à la fin du bloc ouvert par l’ancre (une fonction, un modèle Prisma), jusqu’à un texte de fin cherché après le début, ou un nombre de lignes quand la dernière n’a rien d’unique.", "scope": "22-30", "focus": "22-30"}, {"title": "Les anciennes plages, tolérées", "body": "Une plage de numéros reste acceptée (six extraits de fichiers JSON n’ont pas d’ancre possible) ; la garde vérifie seulement qu’elle tient dans le fichier.", "scope": "31-36", "focus": "35-35"}, {"title": "Ce qui est surligné reste dans l’extrait", "body": "Les lignes surlignées et les étapes des lectures guidées sont relatives à l’extrait : une étape qui viserait la ligne 30 d’un extrait de 20 lignes surlignerait du vide.", "scope": "37-47", "focus": "39-39"}, {"title": "Le bilan", "body": "Combien d’extraits, dont combien ancrés : la garde dit ce qu’elle a vérifié.", "scope": "50-55", "focus": "55-55"}]'
+/>
+
+La règle de correspondance d’une ancre est écrite deux fois, dans la garde et dans le composant qui affiche l’extrait (`resolveSnippetBounds`), et un commentaire de chaque côté renvoie à l’autre : la garde, un script Node sans compilation, ne peut pas importer le TypeScript du site.
+
 ## Écrire une garde
 
-Les quatre gardes suivent le même modèle. Il sert de recette quand une nouvelle erreur silencieuse apparaît — et la réponse à une erreur silencieuse rencontrée une fois, c’est une garde de plus.
+Les cinq gardes suivent le même modèle. Il sert de recette quand une nouvelle erreur silencieuse apparaît — et la réponse à une erreur silencieuse rencontrée une fois, c’est une garde de plus.
 
 <DocsTable columnsJson='["Règle", "Pourquoi"]' rowsJson='[["Une garde, une erreur", "Un script qui vérifie une chose se lit en une minute ; on sait quand il se trompe."], ["Lire le code comme du texte quand c’est possible", "Une expression régulière ou une lecture ligne à ligne suffit souvent (data-tour, model X {). Le vérificateur de types est réservé à ce qui l’exige (suivre un appel)."], ["Un message qui dit quoi faire", "Le fichier, ce qui manque, et la correction : « déplace-le », « lance pnpm docs:procedures »."], ["Échouer par le code de sortie", "process.exit(1) : pnpm check s’arrête, et le commit n’a pas lieu."], ["Un bilan en cas de succès", "Ce qui a été vérifié, et combien : une garde muette pourrait ne pas avoir tourné."], ["Rapide", "Quelques secondes au plus : elle passe avant le typecheck, à chaque commit."]]' />
 
@@ -104,7 +140,7 @@ Toutes ces gardes sont **statiques** : elles lisent des fichiers. Une erreur qui
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi des gardes maison ?", "Pour les erreurs propres au projet que ni TypeScript ni ESLint ne voient, et que rien d’autre ne signalerait."], ["Que vérifie check-next-conventions ?", "Que proxy et instrumentation sont dans apps/web/src, où Next les lit, et que middleware et proxy ne coexistent pas."], ["Que vérifie check-tour-targets ?", "Que chaque cible de tutoriel a son data-tour dans le code, que chaque tuto est au registre, que chaque bouton de fiche désigne un tuto existant, et que deux tutoriels n’ont pas le même identifiant."], ["Comment la carte des procédures reste-t-elle juste ?", "Elle est générée depuis le backend (--write) et versionnée ; pnpm check la régénère en mémoire et refuse un écart."], ["Que vérifie check-doc-entities ?", "Les entités, propriétés, procédures et sections citées par l’en-tête de chaque chapitre."], ["Comment écrire une garde ?", "Une erreur, un script court, un message qui dit quoi faire, exit 1, un bilan en cas de succès."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi des gardes maison ?", "Pour les erreurs propres au projet que ni TypeScript ni ESLint ne voient, et que rien d’autre ne signalerait."], ["Que vérifie check-next-conventions ?", "Que proxy et instrumentation sont dans apps/web/src, où Next les lit, et que middleware et proxy ne coexistent pas."], ["Que vérifie check-tour-targets ?", "Que chaque cible de tutoriel a son data-tour dans le code, que chaque tuto est au registre, que chaque bouton de fiche désigne un tuto existant, et que deux tutoriels n’ont pas le même identifiant."], ["Comment la carte des procédures reste-t-elle juste ?", "Elle est générée depuis le backend (--write) et versionnée ; pnpm check la régénère en mémoire et refuse un écart."], ["Que vérifie check-doc-entities ?", "Les entités, propriétés, procédures et sections citées par l’en-tête de chaque chapitre."], ["Que vérifie check-doc-snippets ?", "Que chaque extrait de code désigne des lignes qui existent : une ancre de texte unique, une fin trouvée, des lignes surlignées dans l’extrait."], ["Comment écrire une garde ?", "Une erreur, un script court, un message qui dit quoi faire, exit 1, un bilan en cas de succès."]]' />
 
 ## À suivre
 

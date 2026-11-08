@@ -23,7 +23,8 @@ Nous savons construire une session. Voyons maintenant comment la détruire propr
   language="ts"
   filepath="packages/backend/src/lib/session/session.server.ts"
   filename="session.server.ts"
-  snippetRange="60-74"
+  snippetStart="/** Déconnexion : supprime la ligne Session désignée par le cookie, puis le cookie. */"
+  snippetEnd="(fin du bloc)"
   snippetHighlight="1-15"
   snippetTitle="deleteSessionFromCookie : la ligne, puis le cookie"
   fullFileTitle="Voir le fichier complet"
@@ -37,7 +38,8 @@ Nous savons construire une session. Voyons maintenant comment la détruire propr
   language="ts"
   filepath="packages/backend/src/lib/session/session.server.ts"
   filename="session.server.ts"
-  snippetRange="60-89"
+  snippetStart="/** Déconnexion : supprime la ligne Session désignée par le cookie, puis le cookie. */"
+  snippetLines="30"
   title="Pourquoi une déconnexion fait deux opérations"
   stepsJson='[{"title": "Lire et vérifier le jeton", "body": "Le cookie est lu, puis vérifié par verifyJwt (signature, algorithme, date). Un jeton illisible ne désigne aucune session : il n’y a rien à supprimer en base.", "scope": "1-15", "focus": "3-4"}, {"title": "Supprimer la ligne Session", "body": "C’est la révocation. Le jeton serait encore bien signé, mais il ne désigne plus rien. deleteMany plutôt que delete : si la ligne a déjà disparu (expirée, purgée), ce n’est pas une erreur.", "scope": "1-15", "focus": "6-12"}, {"title": "Une base injoignable n’empêche pas de sortir", "body": "Une erreur de la base est journalisée, et la déconnexion continue : le membre qui veut partir est déconnecté de son navigateur quoi qu’il arrive, et la ligne expirera d’elle-même.", "scope": "1-15", "focus": "9-11"}, {"title": "Supprimer le cookie", "body": "cookieStore.delete demande au navigateur d’oublier le cookie. Sans cela, il continuerait à présenter à chaque requête un jeton devenu inutile.", "scope": "1-15", "focus": "14-14"}, {"title": "verifyJwt, partagé", "body": "La même fonction sert à la déconnexion, au changement de mot de passe (pour retrouver la session en cours) et à getSessionFromRequest. Une seule façon de lire un jeton.", "scope": "22-30", "focus": "22-30"}]'
 />
@@ -81,7 +83,8 @@ La première version du projet confiait ce cas à un `setInterval` qui purgeait 
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="34-63"
+  snippetStart="export async function purgeExpiredData(db: PrismaClient, now = new Date()) {"
+  snippetEnd="};"
   snippetHighlight="7-8"
   snippetTitle="purgeExpiredData : les sessions et les liens expirés, parmi d’autres durées"
   fullFileTitle="Voir le fichier complet"
@@ -95,7 +98,8 @@ La première version du projet confiait ce cas à un `setInterval` qui purgeait 
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="34-124"
+  snippetStart="export async function purgeExpiredData(db: PrismaClient, now = new Date()) {"
+  snippetLines="91"
   title="La purge, de la requête à la minuterie"
   stepsJson='[{"title": "Deux deleteMany", "body": "Toutes les sessions dont expiresAt est passée, et tous les liens de réinitialisation périmés : deux requêtes, chacune atomique.", "scope": "1-31", "focus": "7-8"}, {"title": "Au milieu d’autres durées de conservation", "body": "Les demandes closes depuis longtemps, les vignettes orphelines, les formulaires de droit à l’image d’un compte supprimé : la même purge applique toutes les durées promises par la politique de confidentialité.", "scope": "1-31", "focus": "1-30"}, {"title": "Un journal seulement s’il y a eu du travail", "body": "La ligne [rgpd/purge] n’est écrite que si quelque chose a été supprimé. Une purge soudainement massive serait un signal à regarder.", "scope": "64-91", "focus": "74-80"}, {"title": "Une passe au démarrage, puis chaque nuit à 3 h", "body": "run(new Date()) au lancement, puis une minuterie qui vérifie chaque minute s’il est 3 h à Paris et si la purge du jour n’a pas déjà eu lieu. RETENTION_PURGE_DISABLED=1 la coupe.", "scope": "64-91", "focus": "83-89"}]'
 />
@@ -140,7 +144,8 @@ Le changement de mot de passe est une autre façon, plus ciblée, de faire mouri
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="69-124"
+  snippetStart="  /**"
+  snippetEnd="}),"
   snippetHighlight="42-53"
   snippetTitle="auth.changePassword"
   fullFileTitle="Voir le fichier complet"
@@ -154,7 +159,8 @@ Le changement de mot de passe est une autre façon, plus ciblée, de faire mouri
   language="ts"
   filepath="packages/backend/src/modules/auth/router.ts"
   filename="router.ts"
-  snippetRange="69-124"
+  snippetStart="  /**"
+  snippetEnd="}),"
   title="Changer de mot de passe, et fermer les autres appareils"
   stepsJson='[{"title": "Une procédure protégée", "body": "Seul un membre connecté change son mot de passe ; l’identifiant vient de la session.", "scope": "1-56", "focus": "7-10"}, {"title": "Vérifier le mot de passe actuel", "body": "Une saisie fausse lève BAD_REQUEST. Pas UNAUTHORIZED : le membre est bien connecté, et un 401 pourrait être pris pour une session perdue. Les essais sont limités (assertPasswordOfConnectedUser : cinq essais faux par quart d’heure et par membre) : une session volée ne permet pas d’essayer des mots de passe sans fin.", "scope": "1-56", "focus": "20-28"}, {"title": "Refuser un mot de passe identique", "body": "Changer pour le même mot de passe ne protège de rien ; la procédure le dit plutôt que de faire semblant.", "scope": "1-56", "focus": "30-36"}, {"title": "Retrouver la session en cours", "body": "verifyJwt lit le jeton du cookie pour connaître l’identifiant de la session courante, celle qu’il ne faut pas fermer.", "scope": "1-56", "focus": "38-40"}, {"title": "Une transaction : la nouvelle empreinte, et les autres sessions supprimées", "body": "Les deux écritures réussissent ensemble ou pas du tout. NOT: { id: currentSessionId } épargne l’appareil utilisé.", "scope": "1-56", "focus": "42-53"}]'
 />

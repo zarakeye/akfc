@@ -61,7 +61,8 @@ Le remplissage se fait maintenant **pendant le rendu**, une seule fois, protég�
   language="tsx"
   filepath="apps/web/src/app/(admin)/dashboard/settings/page.tsx"
   filename="page.tsx"
-  snippetRange="48-55"
+  snippetStart="if (!initialized && settings.isSuccess) {"
+  snippetEnd="(fin du bloc)"
   snippetTitle="Remplir le formulaire pendant le rendu, une fois"
   fullFileTitle="Voir le fichier complet"
 />
@@ -78,7 +79,8 @@ Le hook partagé `useResolvedPreviewMedia` garde un seul état, le **résultat**
   language="ts"
   filepath="apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts"
   filename="useResolvedPreviewMedia.ts"
-  snippetRange="58-65"
+  snippetStart="const [fetched, setFetched] = useState<Fetched | null>(null);"
+  snippetEnd="};"
   snippetTitle="Un seul état, le résultat étiqueté par sa clé"
   fullFileTitle="Voir le fichier complet"
 />
@@ -89,7 +91,8 @@ Le hook partagé `useResolvedPreviewMedia` garde un seul état, le **résultat**
   language="ts"
   filepath="apps/web/src/features/page-builder/components/useResolvedPreviewMedia.ts"
   filename="useResolvedPreviewMedia.ts"
-  snippetRange="104-109"
+  snippetStart="if (m == null || key === null) return { media: null, resolution:"
+  snippetEnd="};"
   snippetTitle="« En cours » se déduit"
   fullFileTitle="Voir le fichier complet"
 />
@@ -104,7 +107,8 @@ Le recadrage d'image associe à chaque curseur un champ numérique. Un effet rec
   language="tsx"
   filepath="apps/web/src/features/gallery-crop/components/Cropper.tsx"
   filename="Cropper.tsx"
-  snippetRange="66-72"
+  snippetStart="const [draft, setDraft] = useState<string | null>(null);"
+  snippetEnd="};"
   snippetTitle="Un brouillon pendant la saisie"
   fullFileTitle="Voir le fichier complet"
 />
@@ -119,7 +123,8 @@ React a un hook fait pour lire une source extérieure : `useSyncExternalStore`. 
   language="tsx"
   filepath="apps/web/src/features/breaking-news/BreakingNewsShell.tsx"
   filename="BreakingNewsShell.tsx"
-  snippetRange="70-71"
+  snippetStart="const lastSeenRaw = useSyncExternalStore(subscribeLastSeen, readLastSeen, () => null);"
+  snippetEnd="const unseenCount = lastSeenRaw === null ? 0 : countUnseen(news, lastSeenRaw);"
   snippetTitle="Lire le localStorage comme une source extérieure"
   fullFileTitle="Voir le fichier complet"
 />
@@ -134,7 +139,8 @@ L'envoi de photos personnelles garde ses aperçus dans un ref, pour les libérer
   language="tsx"
   filepath="apps/web/src/features/admin/perso/PersoPhotoUploader.tsx"
   filename="PersoPhotoUploader.tsx"
-  snippetRange="84-87"
+  snippetStart="const itemsRef = useRef<UploadItem[]>([]);"
+  snippetEnd="}, [items]);"
   snippetTitle="Le ref mis à jour après le rendu"
   fullFileTitle="Voir le fichier complet"
 />
@@ -155,7 +161,8 @@ Les formulaires de galerie lisaient leurs champs avec `form.watch()` de react-ho
   language="tsx"
   filepath="apps/web/src/features/admin/galleries/forms/UpdateGalleryForm.tsx"
   filename="UpdateGalleryForm.tsx"
-  snippetRange="113-115"
+  snippetStart="const selectedCategoryId = useWatch({ control: form.control, name:"
+  snippetEnd="const watchedEventId = useWatch({ control: form.control, name:"
   snippetTitle="useWatch"
   fullFileTitle="Voir le fichier complet"
 />
@@ -179,5 +186,5 @@ Désactiver une règle sur une ligne (`// eslint-disable-next-line`) reste possi
 Le typecheck et le lint appliquent des règles générales, écrites pour tous les projets. Certaines erreurs n’appartiennent qu’à celui-ci : un fichier de Next posé au mauvais endroit, un tutoriel qui vise un élément disparu, une documentation qui cite une procédure renommée. Pour elles, le projet a écrit ses propres gardes.
 
 <Callout type="tip">
-**Chapitre suivant : les gardes maison.** Quatre scripts courts, chacun pour une erreur silencieuse, et la façon d’en écrire un cinquième.
+**Chapitre suivant : les gardes maison.** Cinq scripts courts, chacun pour une erreur silencieuse, et la façon d’en écrire un cinquième.
 </Callout>

@@ -212,7 +212,8 @@ Dans les versions récentes de Prisma, la configuration ne vit plus seulement da
   language="ts"
   filepath="prisma.config.ts"
   filename="prisma.config.ts"
-  snippetRange="1-30"
+  snippetStart="import 'dotenv/config'"
+  snippetEnd="})"
   title="prisma.config.ts — relier Prisma au vrai environnement du monorepo"
   stepsJson='[{"title": "Le fichier charge l’environnement dès l’entrée", "body": "L’import de dotenv/config lit le fichier .env de la racine avant toute autre chose. Prisma ne travaille pas dans le vide : il dépend de variables d’environnement réelles (chapitre « Les variables d’environnement »).", "scope": "1-1", "focus": "1-1"}, {"title": "Une garde avant toute commande", "body": "Une commande qui touche la base refuse une adresse distante : un `.env` recopié du serveur migrerait sinon la production depuis le poste de développement. `generate`, `validate` et `format` ne lisent que le schéma et passent (partie « Démarrer », chapitre « Mise en route »).", "scope": "3-12", "focus": "9-12"}, {"title": "La configuration explicite l’emplacement du schéma", "body": "schema: \"prisma/schema.prisma\" ancre clairement le modèle de données à la racine du repo. Prisma sait donc où se trouve la source de vérité du domaine.", "scope": "15-15", "focus": "15-15"}, {"title": "Les URLs de connexion sont distinguées proprement", "body": "Le fichier branche DATABASE_URL et DIRECT_DATABASE_URL. La seconde est une connexion directe à PostgreSQL, que Prisma utilise pour les migrations quand la première passe par un regroupeur de connexions.", "scope": "16-19", "focus": "16-19"}, {"title": "Des blocs commentés, gardés comme mémoire", "body": "Les blocs generators et migrations sont commentés : la configuration effective du client est dans schema.prisma (chapitre suivant). Ils racontent ce qui a été essayé, et restent prêts à resservir.", "scope": "20-29", "focus": "20-29"}]'
 />
@@ -246,7 +247,8 @@ Dans ce projet, le client Prisma est centralisé dans `packages/backend/src/pris
   language="ts"
   filepath="packages/backend/src/prisma.ts"
   filename="prisma.ts"
-  snippetRange="1-11"
+  snippetStart="import { PrismaClient } from"
+  snippetEnd="if (process.env.NODE_ENV !=="
   title="packages/backend/src/prisma.ts — centraliser le client pour stabiliser le backend"
   stepsJson='[
     {

@@ -20,7 +20,8 @@ Un seul fichier, `.github/workflows/ci.yml`. Il se déclenche à chaque push, su
   language="yaml"
   filepath=".github/workflows/ci.yml"
   filename="ci.yml"
-  snippetRange="18-29"
+  snippetStart="on:"
+  snippetEnd="cancel-in-progress: true"
   snippetTitle="Quand il tourne, ce qu’il a le droit de faire"
   fullFileTitle="Voir le fichier complet"
 />
@@ -39,7 +40,8 @@ Les tests de bout en bout parlent à des adresses fixes (`e2e/env.mjs`) : Postgr
   language="yaml"
   filepath=".github/workflows/ci.yml"
   filename="ci.yml"
-  snippetRange="67-69"
+  snippetStart="- name: Services de test (base, stockage, boîte mail)"
+  snippetEnd="run: docker compose -f docker-compose.dev.yml up -d --wait db storage mail"
   snippetTitle="Les services de test, depuis le compose de développement"
   fullFileTitle="Voir le fichier complet"
 />
@@ -60,7 +62,8 @@ Le rapport de Playwright — captures, traces pas à pas — et les journaux des
   language="yaml"
   filepath=".github/workflows/ci.yml"
   filename="ci.yml"
-  snippetRange="74-86"
+  snippetStart="- name: Rapport des tests (en cas d'échec)"
+  snippetEnd="run: docker compose -f docker-compose.dev.yml logs --tail 100"
   snippetTitle="Seulement en cas d’échec : le rapport et les journaux"
   fullFileTitle="Voir le fichier complet"
 />
