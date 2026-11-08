@@ -35,6 +35,9 @@ stories:
       - label: Il enregistre une actualité dont une image a un refus pour le site public ; refusé
         call: post.update
         section: Les contenus des pages
+      - label: Il ouvre le rapport des médias en ligne ; les masqués d’abord, avec l’endroit où ils sont montrés
+        call: mediaPeople.publicReport
+        section: Le rapport « Droit à l’image »
       - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
         call: mediaPeople.remind
         section: Relancer
@@ -185,8 +188,8 @@ Ils sont enregistrés par une douzaine de procédures, mais elles ont déjà un 
   language="ts"
   filepath="packages/backend/src/modules/mediaPeople/publicContentRights.service.ts"
   filename="publicContentRights.service.ts"
-  snippetRange="17-35"
-  snippetHighlight="5,6"
+  snippetRange="17-46"
+  snippetHighlight="5,17,18"
   snippetTitle="Toutes les images de tous les contenus reçus, puis les refus"
   fullFileTitle="Voir le fichier complet"
 />
@@ -205,9 +208,23 @@ Pour l’affichage, un seul endroit rend tous ces contenus : `PageRenderer`. C�
   fullFileTitle="Voir le fichier complet"
 />
 
-<Callout type="info">
-Reste un cas : l’image de résumé d’une discipline, d’un stage ou d’un évènement (`summaryMediaId`), affichée sur les cartes de l’accueil et de l’agenda sans passer par `PageRenderer`. Elle n’est pas encore vérifiée.
-</Callout>
+L’image de résumé d’une discipline, d’un stage ou d’un évènement (`summaryMediaId`) vit hors du contenu, et s’affiche sur les cartes de l’accueil et de l’agenda sans passer par `PageRenderer`. Elle suit la même règle par la porte d’à côté : `assertPublicMediaRights` à l’enregistrement, et les deux pages qui construisent les cartes sautent l’image refusée (la carte s’affiche sans image).
+
+### Le rapport « Droit à l’image »
+
+Masquer automatiquement ne suffit pas : l’administrateur doit savoir **quoi** a été masqué, et où. La page « Droit à l’image » du centre de contrôle (section Médiathèque) liste les médias montrés sur le site public qui demandent une action, en trois listes : masqués (à retirer), en attente d’autorisation, à taguer. Les médias en règle n’y figurent pas. Chaque ligne dit où le média est montré, avec un lien vers la fiche ; un clic sur la vignette ouvre la fenêtre des tags.
+
+Savoir où un média est montré ne demande rien de nouveau : deux registres existent déjà. `PageMediaReference` recense les médias de chaque contenu à chaque enregistrement (images de résumé comprises : c’est ce qui les protège de la corbeille), et `GalleryItem` ceux des galeries.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts"
+  filename="publicRightsReport.service.ts"
+  snippetRange="27-42"
+  snippetHighlight="11,13"
+  snippetTitle="L’usage public, lu dans les registres existants"
+  fullFileTitle="Voir le fichier complet"
+/>
 
 ## Relancer
 
@@ -224,7 +241,7 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer ; les images de carte aussi."], ["Où voir ce qui est masqué ?", "Le rapport « Droit à l’image » du centre de contrôle."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
