@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, PASSWORD, SEMINAR, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -188,6 +188,20 @@ await prisma.pageVisibility.create({ data: { key: "contacts", published: true } 
 await prisma.user.update({
   where: { id: USERS.droitImage.id },
   data: { imageConsent: "GRANTED", imageConsentAt: new Date(CONSENT_SINCE) },
+});
+
+// Un mineur dont le club a tout renseigné : son parent référent peut recevoir le lien.
+await prisma.user.update({
+  where: { id: USERS.mineur.id },
+  data: {
+    lastName: MINOR.lastName,
+    legalAge: "MINOR",
+    birthDate: new Date(MINOR.birthDate),
+    birthDateVerified: true,
+    guardianName: MINOR.guardian.name,
+    guardianEmail: MINOR.guardian.email,
+    guardianRelation: MINOR.guardian.relation,
+  },
 });
 
 await prisma.$disconnect();

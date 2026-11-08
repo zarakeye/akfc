@@ -12,6 +12,8 @@ export const legalInfoInput = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide.").nullable(),
   guardianName: z.string().trim().max(120).nullable(),
   guardianEmail: z.string().trim().toLowerCase().email("Adresse e-mail du parent invalide.").max(254).nullable(),
+  /** Qualité du parent (« mère »…). Absente (ancien formulaire) : la valeur enregistrée est gardée. */
+  guardianRelation: z.string().trim().max(60).nullable().optional(),
 });
 export type LegalInfoInput = z.infer<typeof legalInfoInput>;
 
@@ -34,10 +36,12 @@ export function legalInfoData(input: LegalInfoInput, memberEmail: string, opts: 
       ...(birthDate ? { birthDate, birthDateVerified: true } : {}),
       guardianName: null,
       guardianEmail: null,
+      guardianRelation: null,
     };
   }
   const guardianName = input.guardianName || null;
   const guardianEmail = input.guardianEmail || null;
+  const guardianRelation = input.guardianRelation === undefined ? undefined : input.guardianRelation || null;
   if (opts.requireComplete) {
     if (!birthDate) bad("Pour un mineur, la date de naissance est obligatoire.");
     if (!guardianName) bad("Pour un mineur, le nom du parent référent est obligatoire.");
@@ -52,5 +56,6 @@ export function legalInfoData(input: LegalInfoInput, memberEmail: string, opts: 
     birthDateVerified: birthDate !== null,
     guardianName,
     guardianEmail,
+    ...(guardianRelation === undefined ? {} : { guardianRelation }),
   };
 }

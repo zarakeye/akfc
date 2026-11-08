@@ -72,6 +72,9 @@ model User {
   /// recueillie auprès du parent lui-même. Sert UNIQUEMENT au droit à l'image (lien
   /// d'autorisation, récapitulatif). Jamais modifiable par le membre.
   guardianEmail         String?
+  /// Mineur : qualité du parent référent vis-à-vis du membre (« mère », « père », « tuteur »…),
+  /// saisie par un administrateur avec son nom et son adresse. Portée sur l'autorisation signée.
+  guardianRelation      String?
   /// Numéro de téléphone, saisi par le membre dans son profil. Facultatif.
   phone                 String?
   /// ⚠ Jamais écrit par le code : seulement lu en repli quand `avatar` est vide
@@ -2277,6 +2280,11 @@ model ImageConsentForm {
   signerEmail     String?
   /// Date de naissance du membre au moment de l'autorisation (justifie l'accord parental).
   memberBirthDate DateTime?
+  /// Autorisation donnée par le parent en ligne : les SOUHAITS du membre mineur qu'il a reçus
+  /// pré-cochés, { usages: ImageUsage[], keepAfterLeave: boolean | null }. Les choix du parent
+  /// (usages, keepAfterLeave) font foi ; l'écart est montré dans le PDF et les notifications.
+  /// null : toute autre voie.
+  memberWishes    Json?
   /// Admin qui a déposé le formulaire papier. null en ligne, ou si son compte a été supprimé.
   uploadedById    String?
   /// Admin (N–1, User.imageConsentFormsUploaded). Détaché à sa suppression (SET NULL).

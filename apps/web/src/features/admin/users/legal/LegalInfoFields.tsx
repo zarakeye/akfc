@@ -10,9 +10,17 @@ export type LegalInfoValue = {
   birthDate: string;
   guardianName: string;
   guardianEmail: string;
+  /** Qualité du parent vis-à-vis du membre (« mère », « père », « tuteur »…). */
+  guardianRelation: string;
 };
 
-export const EMPTY_LEGAL_INFO: LegalInfoValue = { legalAge: null, birthDate: "", guardianName: "", guardianEmail: "" };
+export const EMPTY_LEGAL_INFO: LegalInfoValue = {
+  legalAge: null,
+  birthDate: "",
+  guardianName: "",
+  guardianEmail: "",
+  guardianRelation: "",
+};
 
 /** Charge utile de `user.create` / `user.setLegalInfo`. */
 export function toLegalInput(v: LegalInfoValue & { legalAge: LegalAgeValue }) {
@@ -21,6 +29,7 @@ export function toLegalInput(v: LegalInfoValue & { legalAge: LegalAgeValue }) {
     birthDate: v.birthDate || null,
     guardianName: v.guardianName.trim() || null,
     guardianEmail: v.guardianEmail.trim() || null,
+    guardianRelation: v.guardianRelation.trim() || null,
   };
 }
 
@@ -105,6 +114,21 @@ export function LegalInfoFields({
               onChange={(e) => set({ guardianName: e.target.value })}
               className={input}
             />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span>Qualité (mère, père, tuteur…)</span>
+            <input
+              value={value.guardianRelation}
+              disabled={disabled}
+              list="guardian-relations"
+              onChange={(e) => set({ guardianRelation: e.target.value })}
+              className={`${input} max-w-[16rem]`}
+            />
+            <datalist id="guardian-relations">
+              {["mère", "père", "tutrice", "tuteur"].map((r) => (
+                <option key={r} value={r} />
+              ))}
+            </datalist>
           </label>
           <label className="flex flex-col gap-1">
             <span>Adresse e-mail</span>

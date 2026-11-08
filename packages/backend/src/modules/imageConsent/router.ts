@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { router, protectedProcedure } from "@backend/trpc/core";
+import { router, protectedProcedure, publicProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
 import { IMAGE_USAGE_VALUES } from "@contracts/legal/imageConsent";
 import {
@@ -11,9 +11,23 @@ import {
   registerImageConsentForm,
 } from "@backend/modules/imageConsent/imageConsentForm.service";
 import { confirmMemberConsent, onlineConsentState } from "@backend/modules/imageConsent/imageConsentOnline.service";
+import {
+  confirmGuardianConsent,
+  guardianRequestByToken,
+  requestGuardianConsent,
+  resendGuardianLink,
+} from "@backend/modules/imageConsent/imageConsentGuardian.service";
 import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
 
 const adminProcedure = protectedProcedure.use(isAdmin);
+
+/** Choix d'autorisation, tels que le formulaire en ligne les envoie. */
+const choicesInput = z.object({
+  usages: z.array(z.enum(IMAGE_USAGE_VALUES)),
+  keepAfterLeave: z.boolean().nullable(),
+});
+/** Jeton du lien envoyé au parent (forme vérifiée par le service). */
+const tokenInput = z.object({ token: z.string().min(1).max(100) });
 
 /**
  * Droit à l'image : formulaires signés. Dépôt et suppression réservés aux admins ; le membre
@@ -86,6 +100,33 @@ export const imageConsentRouter = router({
         prisma: ctx.prisma,
         userId: ctx.sessionClient.user.id,
         password: input.password,
+        usages: input.usages,
+        keepAfterLeave: input.keepAfterLeave,
+      }),
+    ),
+
+  /** Membre mineur : ses souhaits, et le lien envoyé à son parent référent (remplace le précédent). */
+  requestGuardian: protectedProcedure
+    .input(choicesInput)
+    .mutation(({ ctx, input }) =>
+      requestGuardianConsent({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, ...input }),
+    ),
+
+  /** Admin : renvoie le lien au parent d'un mineur (mêmes souhaits, nouveau lien). */
+  resendGuardianForUser: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .mutation(({ ctx, input }) => resendGuardianLink(ctx.prisma, input.userId)),
+
+  /** Page du parent (sans compte) : le formulaire pré-rempli des souhaits du membre. */
+  guardianRequest: publicProcedure.input(tokenInput).query(({ ctx, input }) => guardianRequestByToken(ctx.prisma, input.token)),
+
+  /** Le parent valide : il se déclare représentant légal ; ses choix font foi. */
+  confirmGuardian: publicProcedure
+    .input(tokenInput.merge(choicesInput).extend({ isLegalRepresentative: z.literal(true) }))
+    .mutation(({ ctx, input }) =>
+      confirmGuardianConsent({
+        prisma: ctx.prisma,
+        token: input.token,
         usages: input.usages,
         keepAfterLeave: input.keepAfterLeave,
       }),

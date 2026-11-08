@@ -15,6 +15,8 @@ export async function sendImageConsentNotice(params: {
   usages: readonly ImageUsageValue[];
   /** Usages de la version précédente ; null : première autorisation. */
   previousUsages: readonly ImageUsageValue[] | null;
+  /** Validation par le parent : ce qu'il a changé par rapport aux souhaits du membre (vide : rien). */
+  guardianChanges?: readonly string[];
 }): Promise<void> {
   const to = mailReplyTo();
   if (!to || !isMailConfigured()) {
@@ -34,6 +36,11 @@ export async function sendImageConsentNotice(params: {
     "",
     `Usages autorisés : ${label(params.usages)}.`,
     ...(params.previousUsages ? [`Version précédente : ${label(params.previousUsages)}.`] : ["Première autorisation enregistrée."]),
+    ...(params.guardianChanges
+      ? params.guardianChanges.length
+        ? ["", "Changements du parent par rapport aux souhaits du membre :", ...params.guardianChanges.map((c) => `- ${c}`)]
+        : ["", "Le parent a gardé tous les souhaits du membre."]
+      : []),
     ...(withdrawn.length
       ? [
           "",

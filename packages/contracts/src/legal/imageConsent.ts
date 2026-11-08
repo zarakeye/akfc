@@ -103,6 +103,7 @@ export function missingForMinor(m: {
   birthDateVerified: boolean;
   guardianName: string | null;
   guardianEmail: string | null;
+  guardianRelation: string | null;
 }): string[] {
   const missing: string[] = [];
   if (!m.lastName?.trim()) missing.push("nom du membre");
@@ -110,10 +111,58 @@ export function missingForMinor(m: {
   if (!m.birthDate || !m.birthDateVerified) missing.push("date de naissance (saisie par un instructeur)");
   if (!m.guardianName?.trim()) missing.push("nom du parent référent");
   if (!m.guardianEmail?.trim()) missing.push("adresse e-mail du parent référent");
+  if (!m.guardianRelation?.trim()) missing.push("qualité du parent référent (mère, père, tuteur…)");
   return missing;
 }
 
 /** Statut déduit d'un formulaire : accordée dès qu'un usage est autorisé. */
 export function consentFromUsages(usages: readonly ImageUsageValue[]): Exclude<ImageConsentValue, "UNKNOWN"> {
   return usages.length > 0 ? "GRANTED" : "REFUSED";
+}
+
+/** Validité du lien envoyé au parent référent, et délai minimal entre deux envois. */
+export const GUARDIAN_LINK_TTL_MS = 7 * 24 * 3600 * 1000;
+export const GUARDIAN_LINK_COOLDOWN_MS = 2 * 60 * 1000;
+
+/** Choix d'autorisation : usages autorisés et choix « après mon départ ». */
+export type ConsentChoices = { usages: readonly ImageUsageValue[]; keepAfterLeave: boolean | null };
+
+/** Une ligne de la comparaison souhaits du membre / choix du parent. */
+export type WishComparisonRow = {
+  /** Usage, ou « après le départ ». */
+  item: ImageUsageValue | "KEEP_AFTER_LEAVE";
+  label: string;
+  /** Réponse souhaitée par le membre, puis retenue par le parent (« Oui », « Non », « Non précisé »). */
+  wished: string;
+  final: string;
+  changed: boolean;
+};
+
+const yesNo = (b: boolean): string => (b ? "Oui" : "Non");
+const keepLabel = (b: boolean | null): string =>
+  b === null ? "Non précisé" : b ? "Images conservées" : "Retrait sous un an";
+
+/**
+ * Compare les souhaits du membre mineur aux choix validés par son parent, ligne par ligne, dans
+ * l'ordre du formulaire (le PDF et les notifications en tirent la mise en évidence des changements).
+ */
+export function compareWishes(wishes: ConsentChoices, final: ConsentChoices): WishComparisonRow[] {
+  const rows: WishComparisonRow[] = IMAGE_USAGE_VALUES.map((u) => {
+    const w = wishes.usages.includes(u);
+    const f = final.usages.includes(u);
+    return { item: u, label: IMAGE_USAGE_LABEL[u], wished: yesNo(w), final: yesNo(f), changed: w !== f };
+  });
+  rows.push({
+    item: "KEEP_AFTER_LEAVE",
+    label: "Après le départ du club",
+    wished: keepLabel(wishes.keepAfterLeave),
+    final: keepLabel(final.keepAfterLeave),
+    changed: wishes.keepAfterLeave !== final.keepAfterLeave,
+  });
+  return rows;
+}
+
+/** Lignes de texte des seuls changements (« Réseaux sociaux du club : souhaité Oui → Non »). */
+export function describeWishChanges(rows: readonly WishComparisonRow[]): string[] {
+  return rows.filter((r) => r.changed).map((r) => `${r.label} : souhaité ${r.wished} → ${r.final}`);
 }

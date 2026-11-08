@@ -51,6 +51,7 @@ export default async function UserPresentationPage({
           birthDate: user.birthDate ? user.birthDate.toISOString().slice(0, 10) : "",
           guardianName: user.guardianName ?? "",
           guardianEmail: user.guardianEmail ?? "",
+          guardianRelation: user.guardianRelation ?? "",
         }}
       />
       {/* Remonté quand un dépôt change le statut, pour repartir de la valeur enregistrée. */}

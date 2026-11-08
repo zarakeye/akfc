@@ -196,4 +196,6 @@ export const imageConsentFormSelect = {
   source: true,
   signerName: true,
   signerQuality: true,
+  /** Validation par le parent : les souhaits du membre mineur (voir ImageConsentForm.memberWishes). */
+  memberWishes: true,
 } as const;

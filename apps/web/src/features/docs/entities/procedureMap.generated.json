@@ -3353,6 +3353,7 @@
       "birthDateVerified",
       "guardianEmail",
       "guardianName",
+      "guardianRelation",
       "legalAge"
      ],
      "trails": [
@@ -3414,7 +3415,7 @@
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:320"
+        "prisma/schema.prisma:323"
        ]
       ],
       [
@@ -3424,7 +3425,7 @@
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:322"
+        "prisma/schema.prisma:325"
        ]
       ]
      ]
@@ -3442,7 +3443,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
-        "prisma/schema.prisma:1766"
+        "prisma/schema.prisma:1769"
        ]
       ]
      ]
@@ -3469,7 +3470,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2248"
+        "prisma/schema.prisma:2251"
        ]
       ],
       [
@@ -3479,7 +3480,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2283"
+        "prisma/schema.prisma:2291"
        ]
       ]
      ]
@@ -3497,7 +3498,7 @@
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
-        "prisma/schema.prisma:2301"
+        "prisma/schema.prisma:2309"
        ]
       ]
      ]
@@ -3534,7 +3535,7 @@
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
-        "prisma/schema.prisma:1721"
+        "prisma/schema.prisma:1724"
        ]
       ]
      ]
@@ -3552,7 +3553,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
-        "prisma/schema.prisma:1746"
+        "prisma/schema.prisma:1749"
        ]
       ]
      ]
@@ -3570,7 +3571,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
-        "prisma/schema.prisma:1857"
+        "prisma/schema.prisma:1860"
        ]
       ]
      ]
@@ -3649,7 +3650,7 @@
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
-        "prisma/schema.prisma:262"
+        "prisma/schema.prisma:265"
        ]
       ]
      ]
@@ -3667,7 +3668,7 @@
        ],
        [
         "onDelete: Cascade (Session → User)",
-        "prisma/schema.prisma:238"
+        "prisma/schema.prisma:241"
        ]
       ]
      ]
@@ -3688,7 +3689,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2097"
+        "prisma/schema.prisma:2100"
        ]
       ],
       [
@@ -3698,7 +3699,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2106"
+        "prisma/schema.prisma:2109"
        ]
       ]
      ]
@@ -3719,7 +3720,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2172"
+        "prisma/schema.prisma:2175"
        ]
       ],
       [
@@ -3729,7 +3730,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2176"
+        "prisma/schema.prisma:2179"
        ]
       ]
      ]
@@ -3749,7 +3750,7 @@
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
-        "prisma/schema.prisma:2142"
+        "prisma/schema.prisma:2145"
        ]
       ]
      ]
@@ -4381,7 +4382,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 24,
+   "line": 38,
    "effects": [],
    "emails": []
   },
@@ -4389,7 +4390,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 29,
+   "line": 43,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4486,7 +4487,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 59,
+   "line": 73,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4496,7 +4497,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:60"
+        "packages/backend/src/modules/imageConsent/router.ts:74"
        ]
       ]
      ]
@@ -4509,7 +4510,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:60"
+        "packages/backend/src/modules/imageConsent/router.ts:74"
        ]
       ]
      ]
@@ -4521,7 +4522,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 67,
+   "line": 81,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4564,8 +4565,29 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 73,
+   "line": 87,
    "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "onlineConsentState",
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:72"
+       ],
+       [
+        "pendingGuardianRequest",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:273"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:274"
+       ]
+      ]
+     ]
+    },
     {
      "model": "User",
      "op": "read",
@@ -4574,11 +4596,11 @@
       [
        [
         "onlineConsentState",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:70"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:72"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:71"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:73"
        ]
       ]
      ]
@@ -4590,7 +4612,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 76,
+   "line": 90,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4614,11 +4636,11 @@
       [
        [
         "confirmMemberConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:97"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:103"
        ],
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:146"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:152"
        ]
       ]
      ]
@@ -4631,7 +4653,7 @@
       [
        [
         "confirmMemberConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:97"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:103"
        ],
        [
         "latestFormUsages",
@@ -4652,11 +4674,11 @@
       [
        [
         "confirmMemberConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:97"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:103"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:105"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:111"
        ]
       ]
      ]
@@ -4672,11 +4694,11 @@
       [
        [
         "confirmMemberConsent",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:97"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:103"
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:164"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:170"
        ]
       ]
      ]
@@ -4686,11 +4708,467 @@
     "sendImageConsentNotice"
    ]
   },
+  "imageConsent.requestGuardian": {
+   "kind": "mutation",
+   "access": "membre",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 109,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:115"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:115"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:115"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:115"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "requestGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:115"
+       ],
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink"
+   ]
+  },
+  "imageConsent.resendGuardianForUser": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 116,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:128"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink"
+   ]
+  },
+  "imageConsent.guardianRequest": {
+   "kind": "query",
+   "access": "public",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 121,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "guardianRequestByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:155"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "guardianRequestByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:155"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "imageConsent.confirmGuardian": {
+   "kind": "mutation",
+   "access": "public",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 124,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "memberWishes",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "signerQuality",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "tx.imageConsentForm.create",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:220"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "latestFormUsages",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:25"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "tx.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:218"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ],
+     "trails": [
+      [
+       [
+        "confirmGuardianConsent",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:173"
+       ],
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:240"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentResultToMember",
+    "sendImageConsentNotice"
+   ]
+  },
   "imageConsent.mine": {
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 95,
+   "line": 136,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4700,7 +5178,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:99"
+        "packages/backend/src/modules/imageConsent/router.ts:140"
        ]
       ]
      ]
@@ -4713,7 +5191,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/router.ts:98"
+        "packages/backend/src/modules/imageConsent/router.ts:139"
        ]
       ]
      ]
@@ -5389,11 +5867,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ],
       [
@@ -5411,11 +5889,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -5441,7 +5919,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ],
       [
@@ -5459,7 +5937,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ]
      ]
@@ -5541,7 +6019,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ],
       [
@@ -5559,7 +6037,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ]
      ]
@@ -5585,11 +6063,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ],
       [
@@ -5607,11 +6085,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -5637,11 +6115,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ],
       [
@@ -5659,11 +6137,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]
@@ -5735,11 +6213,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ],
       [
@@ -5757,11 +6235,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -5808,7 +6286,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ],
       [
@@ -5826,7 +6304,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ]
      ]
@@ -5908,7 +6386,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ],
       [
@@ -5926,7 +6404,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ]
      ]
@@ -5952,11 +6430,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ],
       [
@@ -5974,11 +6452,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -6004,11 +6482,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ],
       [
@@ -6026,11 +6504,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]
@@ -7216,7 +7694,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Discipline)",
-        "prisma/schema.prisma:1635"
+        "prisma/schema.prisma:1638"
        ]
       ]
      ]
@@ -8084,7 +8562,7 @@
        ],
        [
         "onDelete: Cascade (SeminarSession → Seminar)",
-        "prisma/schema.prisma:873"
+        "prisma/schema.prisma:876"
        ]
       ]
      ]
@@ -8794,7 +9272,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Event)",
-        "prisma/schema.prisma:1633"
+        "prisma/schema.prisma:1636"
        ]
       ]
      ]
@@ -8812,7 +9290,7 @@
        ],
        [
         "onDelete: Cascade (EventSession → Event)",
-        "prisma/schema.prisma:1001"
+        "prisma/schema.prisma:1004"
        ]
       ]
      ]
@@ -9313,7 +9791,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1314"
+        "prisma/schema.prisma:1317"
        ]
       ],
       [
@@ -9323,11 +9801,11 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1314"
+        "prisma/schema.prisma:1317"
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1316"
+        "prisma/schema.prisma:1319"
        ]
       ]
      ]
@@ -9436,7 +9914,7 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1378"
+        "prisma/schema.prisma:1381"
        ]
       ]
      ]
@@ -9454,11 +9932,11 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1378"
+        "prisma/schema.prisma:1381"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1395"
+        "prisma/schema.prisma:1398"
        ]
       ]
      ]
@@ -9476,15 +9954,15 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1378"
+        "prisma/schema.prisma:1381"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1395"
+        "prisma/schema.prisma:1398"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1418"
+        "prisma/schema.prisma:1421"
        ]
       ]
      ]
@@ -12527,7 +13005,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1316"
+        "prisma/schema.prisma:1319"
        ]
       ]
      ]
@@ -12876,7 +13354,7 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1395"
+        "prisma/schema.prisma:1398"
        ]
       ]
      ]
@@ -12894,11 +13372,11 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1395"
+        "prisma/schema.prisma:1398"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1418"
+        "prisma/schema.prisma:1421"
        ]
       ]
      ]
@@ -13222,7 +13700,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
-        "prisma/schema.prisma:1573"
+        "prisma/schema.prisma:1576"
        ]
       ]
      ]
@@ -14283,7 +14761,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -14314,7 +14792,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -14332,7 +14810,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]
@@ -14766,7 +15244,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1880"
+        "prisma/schema.prisma:1883"
        ]
       ]
      ]
@@ -14847,7 +15325,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1829"
+        "prisma/schema.prisma:1832"
        ]
       ]
      ]
@@ -14869,7 +15347,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1853"
+        "prisma/schema.prisma:1856"
        ]
       ]
      ]
@@ -15685,10 +16163,419 @@
    ],
    "emails": []
   },
+  "requestGuardianConsent": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
+   "line": 115,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink"
+   ]
+  },
+  "resendGuardianLink": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
+   "line": 126,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:128"
+       ]
+      ],
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink"
+   ]
+  },
+  "guardianRequestByToken": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
+   "line": 155,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "confirmGuardianConsent": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
+   "line": 173,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "create",
+     "fields": [
+      "fileName",
+      "keepAfterLeave",
+      "memberBirthDate",
+      "memberName",
+      "memberWishes",
+      "mimeType",
+      "signedAt",
+      "signerName",
+      "signerQuality",
+      "size",
+      "source",
+      "storageKey",
+      "textVersion",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "tx.imageConsentForm.create",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:220"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "latestFormUsages",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:25"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/imageConsent/formOrder.ts:26"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "tx.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:218"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "findByToken",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:136"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:138"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsent",
+      "imageConsentAt"
+     ],
+     "trails": [
+      [
+       [
+        "tx.user.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:240"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentResultToMember",
+    "sendImageConsentNotice"
+   ]
+  },
+  "pendingGuardianRequest": {
+   "file": "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts",
+   "line": 273,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:274"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "onlineConsentState": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts",
-   "line": 70,
+   "line": 72,
    "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pendingGuardianRequest",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:273"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:274"
+       ]
+      ]
+     ]
+    },
     {
      "model": "User",
      "op": "read",
@@ -15697,7 +16584,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:71"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:73"
        ]
       ]
      ]
@@ -15707,7 +16594,7 @@
   },
   "confirmMemberConsent": {
    "file": "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts",
-   "line": 97,
+   "line": 103,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -15731,7 +16618,7 @@
       [
        [
         "prisma.imageConsentForm.create",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:146"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:152"
        ]
       ]
      ]
@@ -15761,7 +16648,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:105"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:111"
        ]
       ]
      ]
@@ -15777,7 +16664,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:164"
+        "packages/backend/src/modules/imageConsent/imageConsentOnline.service.ts:170"
        ]
       ]
      ]
@@ -16943,7 +17830,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1880"
+        "prisma/schema.prisma:1883"
        ]
       ]
      ]
@@ -17004,7 +17891,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1829"
+        "prisma/schema.prisma:1832"
        ]
       ]
      ]
@@ -17022,7 +17909,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1853"
+        "prisma/schema.prisma:1856"
        ]
       ]
      ]
@@ -17749,7 +18636,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2165"
+        "prisma/schema.prisma:2168"
        ]
       ]
      ]
@@ -17767,7 +18654,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2135"
+        "prisma/schema.prisma:2138"
        ]
       ]
      ]
@@ -17960,7 +18847,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2165"
+        "prisma/schema.prisma:2168"
        ]
       ]
      ]
@@ -17982,7 +18869,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2135"
+        "prisma/schema.prisma:2138"
        ]
       ]
      ]
@@ -22032,11 +22919,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ],
       [
@@ -22050,11 +22937,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -22076,7 +22963,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ],
       [
@@ -22090,7 +22977,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ]
      ]
@@ -22156,7 +23043,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ],
       [
@@ -22170,7 +23057,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ]
      ]
@@ -22192,11 +23079,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ],
       [
@@ -22210,11 +23097,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -22236,11 +23123,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ],
       [
@@ -22254,11 +23141,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]
@@ -22336,11 +23223,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ],
       [
@@ -22354,11 +23241,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -22397,7 +23284,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ],
       [
@@ -22411,7 +23298,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ]
      ]
@@ -22477,7 +23364,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ],
       [
@@ -22491,7 +23378,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ]
      ]
@@ -22513,11 +23400,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ],
       [
@@ -22531,11 +23418,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -22557,11 +23444,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ],
       [
@@ -22575,11 +23462,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]
@@ -23140,11 +24027,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ],
       [
@@ -23154,11 +24041,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1762"
+        "prisma/schema.prisma:1765"
        ]
       ]
      ]
@@ -23176,7 +24063,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ],
       [
@@ -23186,7 +24073,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1578"
+        "prisma/schema.prisma:1581"
        ]
       ]
      ]
@@ -23236,7 +24123,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ],
       [
@@ -23246,7 +24133,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ]
       ]
      ]
@@ -23264,11 +24151,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ],
       [
@@ -23278,11 +24165,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1876"
+        "prisma/schema.prisma:1879"
        ]
       ]
      ]
@@ -23300,11 +24187,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ],
       [
@@ -23314,11 +24201,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1706"
+        "prisma/schema.prisma:1709"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1742"
+        "prisma/schema.prisma:1745"
        ]
       ]
      ]

@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
-import type { ImageUsageValue, LegalAgeValue } from "@contracts/legal/imageConsent";
+import { compareWishes, type ConsentChoices, type ImageUsageValue, type LegalAgeValue } from "@contracts/legal/imageConsent";
 
 /**
  * Formulaire d'autorisation de droit à l'image (apps/web/public/documents), rempli par le serveur.
@@ -46,6 +46,8 @@ export type ConsentPdfMember = {
   birthDate: Date | null;
   legalAge: LegalAgeValue;
   guardianName: string | null;
+  /** Qualité du parent (« mère »…), pré-remplie pour un mineur. */
+  guardianRelation?: string | null;
 };
 
 export type ConsentPdfConfirmation = {
@@ -58,6 +60,11 @@ export type ConsentPdfConfirmation = {
   confirmedAt: Date;
   /** Lignes ajoutées dans le cadre de signature (voie, adresse vérifiée, version du texte). */
   signatureLines: string[];
+  /**
+   * Validation par le parent : les souhaits du membre mineur qu'il a reçus. Une page est ajoutée
+   * à la fin du formulaire : souhaits du membre et choix du parent, côte à côte, changements marqués.
+   */
+  memberWishes?: ConsentChoices | null;
 };
 
 function frDate(d: Date): string {
@@ -71,6 +78,52 @@ function frDateTime(d: Date): string {
 /** Date de naissance : jour stocké à minuit UTC, affiché tel quel (pas de décalage de fuseau). */
 function birthDay(d: Date): string {
   return d.toLocaleDateString("fr-FR", { timeZone: "UTC" });
+}
+
+/** Dernière page : souhaits du membre mineur et choix validés par son parent, ligne par ligne. */
+function drawWishesPage(
+  doc: PDFDocument,
+  font: PDFFont,
+  bold: PDFFont,
+  confirmation: ConsentPdfConfirmation,
+  wishes: ConsentChoices,
+): void {
+  const rows = compareWishes(wishes, confirmation);
+  const page = doc.addPage([595.28, 841.89]);
+  const ink = rgb(0.1, 0.1, 0.1);
+  const grey = rgb(0.35, 0.35, 0.35);
+  const accent = rgb(0.7, 0.1, 0.1);
+  let y = 780;
+  page.drawText("Souhaits du membre et choix du parent", { x: 50, y, size: 15, font: bold, color: ink });
+  y -= 22;
+  const changes = rows.filter((r) => r.changed).length;
+  const intro = [
+    "Le membre mineur a d'abord indiqué ses souhaits ; son parent référent les a reçus pré-cochés,",
+    `pouvait les modifier, et a validé l'autorisation le ${frDateTime(confirmation.confirmedAt)}.`,
+    "Ce sont les choix du parent qui font foi.",
+    changes ? `${changes} réponse(s) modifiée(s) par le parent, marquée(s) ci-dessous.` : "Le parent n'a modifié aucune réponse.",
+  ];
+  for (const line of intro) {
+    page.drawText(line, { x: 50, y, size: 9.5, font, color: grey });
+    y -= 13;
+  }
+  y -= 14;
+  const cols = [50, 260, 380, 500];
+  ["Usage", "Souhait du membre", "Choix du parent", ""].forEach((h, i) =>
+    page.drawText(h, { x: cols[i], y, size: 9.5, font: bold, color: ink }),
+  );
+  y -= 6;
+  page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 0.7, color: grey });
+  y -= 16;
+  for (const r of rows) {
+    const f = r.changed ? bold : font;
+    const c = r.changed ? accent : ink;
+    page.drawText(r.label, { x: cols[0], y, size: 9.5, font: f, color: c, maxWidth: 200 });
+    page.drawText(r.wished, { x: cols[1], y, size: 9.5, font, color: ink });
+    page.drawText(r.final, { x: cols[2], y, size: 9.5, font: f, color: c });
+    if (r.changed) page.drawText("modifié", { x: cols[3], y, size: 9, font: bold, color: accent });
+    y -= 18;
+  }
 }
 
 /**
@@ -101,7 +154,10 @@ export async function buildConsentPdf(
     check("signataire_majeur", !minor);
     check("signataire_representant", minor);
   }
-  if (minor) text("representant_nom", member.guardianName?.trim());
+  if (minor) {
+    text("representant_nom", member.guardianName?.trim());
+    text("representant_qualite", member.guardianRelation?.trim());
+  }
 
   if (confirmation) {
     if (minor) {
@@ -137,6 +193,8 @@ export async function buildConsentPdf(
     }
     form.updateFieldAppearances(font);
     form.flatten();
+
+    if (confirmation.memberWishes) drawWishesPage(doc, font, bold, confirmation, confirmation.memberWishes);
   }
 
   return doc.save();

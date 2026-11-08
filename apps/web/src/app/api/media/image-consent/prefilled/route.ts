@@ -21,7 +21,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     where: { id: userId },
     select: {
       firstName: true, lastName: true, email: true, birthDate: true, birthDateVerified: true,
-      legalAge: true, guardianName: true, guardianEmail: true,
+      legalAge: true, guardianName: true, guardianEmail: true, guardianRelation: true,
     },
   });
   if (!m) return new NextResponse("Not found", { status: 404 });

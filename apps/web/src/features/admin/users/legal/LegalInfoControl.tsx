@@ -20,7 +20,7 @@ export function LegalInfoControl({
 }: {
   userId: string;
   member: { firstName: string | null; lastName: string | null };
-  initial: { legalAge: LegalAgeValue; birthDate: string; guardianName: string; guardianEmail: string };
+  initial: { legalAge: LegalAgeValue; birthDate: string; guardianName: string; guardianEmail: string; guardianRelation: string };
 }): JSX.Element {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -29,6 +29,7 @@ export function LegalInfoControl({
     birthDate: initial.birthDate,
     guardianName: initial.guardianName,
     guardianEmail: initial.guardianEmail,
+    guardianRelation: initial.guardianRelation,
   });
   const save = trpc.user.setLegalInfo.useMutation({
     onSuccess: async () => {
@@ -48,6 +49,7 @@ export function LegalInfoControl({
           birthDateVerified: value.birthDate !== "",
           guardianName: value.guardianName || null,
           guardianEmail: value.guardianEmail || null,
+          guardianRelation: value.guardianRelation || null,
         })
       : [];
   const canDownload = legalAge !== "MINOR" || missing.length === 0;

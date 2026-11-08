@@ -16,6 +16,16 @@ export async function trpcMutation(request: APIRequestContext, path: string, inp
   return { status: res.status(), result: body.result?.data.json, error: body.error?.json };
 }
 
+/** Lit une procédure tRPC (query) : `GET /api/trpc/<procédure>?input=…`, comme le navigateur. */
+export async function trpcQuery(request: APIRequestContext, path: string, input: unknown) {
+  const res = await request.get(`/api/trpc/${path}?input=${encodeURIComponent(JSON.stringify({ json: input }))}`);
+  const body = (await res.json()) as {
+    result?: { data: { json: unknown } };
+    error?: { json: { message: string; data: { code: string; httpStatus: number } } };
+  };
+  return { status: res.status(), result: body.result?.data.json, error: body.error?.json };
+}
+
 /**
  * Ouvre une session par l'API, sans passer par le formulaire : le cookie de session est posé dans
  * le contexte de la page, qui est alors connectée. Le formulaire, lui, a son propre test.

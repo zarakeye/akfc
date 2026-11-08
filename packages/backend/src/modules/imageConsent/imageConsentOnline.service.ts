@@ -9,6 +9,7 @@ import { sendImageConsentNotice } from "@backend/email/templates/imageConsentNot
 import { buildConsentPdf } from "@backend/modules/imageConsent/consentPdf.service";
 import { IMAGE_CONSENT_ROOT } from "@backend/modules/imageConsent/imageConsentForm.service";
 import { latestFormUsages } from "@backend/modules/imageConsent/formOrder";
+import { pendingGuardianRequest } from "@backend/modules/imageConsent/imageConsentGuardian.service";
 import {
   IMAGE_CONSENT_TEXT_VERSION,
   IMAGE_USAGE_VALUES,
@@ -27,10 +28,10 @@ import {
  * (`_private/image-consent/<userId>/`), crée la version (source ONLINE_MEMBER) et met à jour le
  * statut, puis avise la boîte du club.
  *
- * Le circuit du parent référent d'un mineur (lien par e-mail) viendra s'ajouter ici.
+ * Le circuit du parent référent d'un mineur (lien par e-mail) : imageConsentGuardian.service.ts.
  */
 
-const memberSelect = {
+export const memberSelect = {
   firstName: true,
   lastName: true,
   email: true,
@@ -40,19 +41,20 @@ const memberSelect = {
   legalAge: true,
   guardianName: true,
   guardianEmail: true,
+  guardianRelation: true,
 } as const;
 
-function fullName(m: { firstName: string | null; lastName: string | null }): string {
+export function fullName(m: { firstName: string | null; lastName: string | null }): string {
   return [m.firstName, m.lastName].filter(Boolean).join(" ").trim();
 }
 
 /** Usages dédoublonnés, dans l'ordre du formulaire. */
-function normalizeUsages(usages: readonly ImageUsageValue[]): ImageUsageValue[] {
+export function normalizeUsages(usages: readonly ImageUsageValue[]): ImageUsageValue[] {
   return IMAGE_USAGE_VALUES.filter((u) => usages.includes(u));
 }
 
 /** Range un récapitulatif PDF dans l'espace privé du membre et renvoie sa clé. */
-async function storeReceipt(userId: string, bytes: Uint8Array): Promise<string> {
+export async function storeReceipt(userId: string, bytes: Uint8Array): Promise<string> {
   const key = `${IMAGE_CONSENT_ROOT}/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.pdf`;
   await getR2Client().send(
     new PutObjectCommand({ Bucket: getR2Bucket(), Key: key, Body: bytes, ContentType: "application/pdf" }),
@@ -60,7 +62,7 @@ async function storeReceipt(userId: string, bytes: Uint8Array): Promise<string> 
   return key;
 }
 
-async function removeObject(key: string): Promise<void> {
+export async function removeObject(key: string): Promise<void> {
   await getR2Client()
     .send(new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key }))
     .catch(() => undefined);
@@ -83,6 +85,10 @@ export async function onlineConsentState(prisma: PrismaClient, userId: string) {
     birthDateLocked: m.birthDateVerified,
     /** Adresse du parent, masquée (le membre ne la voit pas en entier). */
     guardianEmailMasked: m.guardianEmail ? maskEmail(m.guardianEmail) : null,
+    /** Mineur dont tout est renseigné : il indique ses souhaits, le lien part à son parent. */
+    canRequestGuardian: legalAge === "MINOR" && missing.length === 0,
+    /** Mineur : la demande en cours (souhaits, lien envoyé, validité), ou null. */
+    pendingGuardian: legalAge === "MINOR" ? await pendingGuardianRequest(prisma, userId) : null,
   };
 }
 
