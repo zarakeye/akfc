@@ -1,13 +1,15 @@
 ---
-title: "Le modèle de session et son contrat"
-description: "La table Session lue champ par champ, pourquoi aucun droit n’y est recopié, la chaîne Session → membre → groupe Administrateurs, et le contrat SessionClient qui décide de ce qui part vers le navigateur."
+title: "Les modèles de l’authentification et leur contrat"
+description: "Les tables que l’authentification met en jeu, lues champ par champ : le membre (adresse, empreinte, première connexion, dernière connexion), la session, le jeton de réinitialisation, les groupes et l’adhésion ; ce que la base garde sans s’en servir ; pourquoi aucun droit n’est recopié ; et le contrat SessionClient qui décide de ce qui part vers le navigateur."
 section: "Authentification et droits"
 order: 2
 entities:
-  User: [email, password, lastLoginAt]
-  Session: [userId, expiresAt]
-  MemberGroup: [name, isAdminGroup]
+  User: [email, password, isFirstLogin, lastLoginAt, emailVerified]
+  Session: [userId, createdAt, expiresAt]
+  PasswordResetToken: [tokenHash, createdAt, expiresAt, usedAt, requestIp, userAgent]
+  MemberGroup: [name, isAdminGroup, isCollaborative, parentGroupId]
   MemberGroupMembership: [groupId, userId, access]
+  Verification: [identifier, value, expiresAt]
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -15,15 +17,93 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Toute authentification résout deux problèmes : identifier le membre, puis le reconnaître à chaque requête. Le projet combine bcrypt, un jeton signé et une session en base.
 
-## Le modèle de données : Session, User et les groupes
+## Six tables, et ce que chacune garde
 
-Avant d’écrire la moindre ligne de code d’authentification, regardons ce que la base de données nous offre.
+Avant d’écrire la moindre ligne de code d’authentification, regardons ce que la base de données nous offre. L’authentification n’a pas « sa » table : elle s’appuie sur six modèles, dont un seul lui est entièrement consacré.
+
+<DocsTable columnsJson='["Modèle", "Ce qu’il garde pour l’authentification", "Qui l’écrit"]' rowsJson='[["User", "L’adresse de connexion, l’empreinte du mot de passe, la première connexion, la dernière connexion.", "Un administrateur (création), le membre (profil, mot de passe), la connexion (dernière connexion)."], ["Session", "Une connexion ouverte sur un appareil, et sa date de fin.", "La connexion ; la déconnexion et le changement de mot de passe la suppriment."], ["PasswordResetToken", "L’empreinte d’un lien « mot de passe oublié », sa validité, son usage unique.", "La demande de lien ; la réinitialisation le consomme."], ["MemberGroup", "Le groupe marqué Administrateurs ; les autres groupes, leur arbre.", "Un administrateur ; le démarrage du site (groupe Administrateurs)."], ["MemberGroupMembership", "L’adhésion d’un membre à un groupe, et son droit sur l’espace du groupe.", "Un administrateur."], ["Verification", "Rien : modèle hérité, jamais lu ni écrit.", "Personne."]]' />
+
+Le chapitre « Le noyau » de la partie Données a lu ces modèles comme une architecture : qui dépend de qui, et pourquoi. Ici, nous les relisons avec une seule question en tête : **qu’est-ce que chaque champ change à la connexion, à la session, aux droits ?**
+
+## Le membre, vu par l’authentification
+
+`User` porte plus de soixante champs. Quatre seulement intéressent l’authentification, et ils sont regroupés en deux endroits du modèle. D’abord, l’identité de connexion :
 
 <CodeExample
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="227-239"
+  snippetRange="42-56"
+  snippetHighlight="3,11,15"
+  snippetTitle="L’adresse et l’empreinte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’adresse est **unique** : c’est la clé de recherche de la connexion. Unique, mais sous quelle forme ? Une adresse tapée avec une majuscule doit retrouver son compte. Le projet tranche une fois pour toutes : toute adresse entre en base en minuscules, et c’est le contrat partagé qui s’en charge, pour la connexion, le mot de passe oublié et la création d’un compte.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/auth/auth.schema.ts"
+  filename="auth.schema.ts"
+  snippetRange="15-23"
+  snippetHighlight="7"
+  snippetTitle="Une seule forme d’adresse, dès la saisie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`password` ne contient jamais un mot de passe : c’est une **empreinte bcrypt**, de coût 12 (le chapitre « Qui parle au backend ? » explique ce que ce coût achète). Entre les deux, `emailVerified` attire l’œil : un champ qui semble promettre une vérification d’adresse. Il n’en est rien. Personne ne le lit ; c’est le vestige d’une ancienne librairie d’authentification, que le commentaire du schéma signale honnêtement.
+
+Plus bas dans le modèle, deux dates et un drapeau :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="93-102"
+  snippetHighlight="3,7,10"
+  snippetTitle="Première connexion, dernière connexion"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`isFirstLogin` vaut vrai tant que le membre n’a pas enregistré son profil : la session le transporte jusqu’au navigateur, qui ramène le membre sur son profil à chaque page. `lastLoginAt` sert aux durées de conservation (le registre RGPD signale les comptes inactifs). Sa mise à jour cache une subtilité : `updatedAt` est tenu par Prisma (`@updatedAt`) et veut dire « dernière modification du profil ». Une connexion n’est pas une modification : la passer par Prisma ferait bouger `updatedAt` à chaque connexion. Le projet écrit donc cette date en SQL direct, au moment où il ouvre la session.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/lib/session/session.server.ts"
+  filename="session.server.ts"
+  snippetRange="17-28"
+  snippetHighlight="9,10"
+  snippetTitle="Une écriture qui ne compte pas comme une modification"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le `.catch` n’est pas un oubli de rigueur : une dernière connexion non notée ne doit jamais empêcher quelqu’un de se connecter.
+
+Enfin, les relations du membre vers les tables de l’authentification, regroupées sous un même intertitre :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="127-136"
+  snippetHighlight="5,7,10"
+  snippetTitle="Ce qui part avec le membre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Sessions et jetons sont effacés avec le membre (`Cascade`, posé de l’autre côté de la relation). `preferences` fait exception : un modèle prévu, jamais branché, dont la relation bloquerait la suppression d’un membre s’il existait une ligne. Nous y revenons plus bas.
+
+<Callout type="insight">
+Un champ d’authentification se reconnaît à ce qu’il change : l’adresse retrouve le compte, l’empreinte vérifie le mot de passe, `isFirstLogin` décide d’une redirection, `lastLoginAt` d’une durée de conservation. Tout le reste du membre, l’authentification ne le lit pas.
+</Callout>
+
+## La session
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="235-247"
   snippetHighlight="1-13"
   snippetTitle="Le modèle Session"
   fullFileTitle="Voir le fichier complet"
@@ -37,7 +117,7 @@ Avant d’écrire la moindre ligne de code d’authentification, regardons ce qu
   language="prisma"
   filepath="prisma/schema.prisma"
   filename="schema.prisma"
-  snippetRange="227-239"
+  snippetRange="235-247"
   title="Anatomie d’une session persistée"
   stepsJson='[{"title": "id : un CUID pour chaque session", "body": "Le CUID est un identifiant compact et impossible à deviner. C’est lui que le jeton du cookie embarque, et par lui que la session est retrouvée en base à chaque requête.", "scope": "1-13", "focus": "2-3"}, {"title": "userId : la relation vers le membre", "body": "Une session appartient toujours à un membre. C’est par ce lien que le serveur remonte, à chaque requête, au membre et à ses groupes.", "scope": "1-13", "focus": "4-5"}, {"title": "createdAt : l’ouverture", "body": "La date de connexion. Elle ne sert à aucune décision, mais dit, en cas de doute, quand un appareil a été connecté.", "scope": "1-13", "focus": "6-7"}, {"title": "expiresAt : la durée de vie côté serveur", "body": "Posée à la création, sept jours plus tard (SESSION_DURATION_MS). À chaque requête, le serveur vérifie qu’elle n’est pas dépassée ; sinon, la session est refusée et supprimée, même si le jeton est encore valide.", "scope": "1-13", "focus": "8-10"}, {"title": "onDelete: Cascade : la cohérence référentielle", "body": "Si un membre est supprimé, toutes ses sessions le sont avec lui. La règle est posée dans la base, pas dans le code : aucune session ne peut survivre à son membre.", "scope": "1-13", "focus": "11-12"}]'
 />
@@ -60,6 +140,61 @@ C’est exactement le principe vu dans la partie « Données » : l’autorité 
 
 ---
 
+## Le jeton de réinitialisation
+
+Le mot de passe oublié est le seul moment où le site doit reconnaître quelqu’un **sans** son mot de passe. Il lui faut une autre preuve : un lien envoyé à son adresse. Ce lien est une clé, et une clé se garde comme un mot de passe.
+
+<CodeWalkthrough
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="249-281"
+  title="Un lien qui ne vaut qu’une fois, et pas longtemps"
+  stepsJson='[{"title": "tokenHash : l’empreinte, jamais le jeton", "body": "Le jeton en clair (32 octets aléatoires) n’existe que dans le lien de l’e-mail. La base n’en garde que l’empreinte SHA-256, unique : pour vérifier un lien, le serveur hache le jeton reçu et cherche l’empreinte. Une fuite de la table ne donne aucun lien utilisable.", "scope": "1-33", "focus": "16-18"}, {"title": "createdAt : une date qui freine", "body": "La date d’émission sert aussi d’anti-rafale : une nouvelle demande moins de deux minutes après la précédente n’envoie rien. L’index composé (userId, createdAt) rend cette recherche du dernier jeton immédiate.", "scope": "1-33", "focus": "8-10"}, {"title": "expiresAt : trente minutes", "body": "Au-delà, le jeton est refusé, même intact. Trente minutes suffisent à ouvrir un e-mail ; plus long, le lien traînerait dans une boîte de réception.", "scope": "1-33", "focus": "11-12"}, {"title": "usedAt : usage unique", "body": "Non vide : le jeton a servi, il est refusé ensuite. La réinitialisation le marque dans la même transaction que le nouveau mot de passe (chapitre « Le mot de passe oublié »).", "scope": "1-33", "focus": "13-14"}, {"title": "user : effacé avec le membre", "body": "Un jeton n’a pas de sens sans son membre : Cascade.", "scope": "1-33", "focus": "19-22"}, {"title": "requestIp, userAgent : notés, jamais lus", "body": "L’adresse IP et le navigateur de la demande sont enregistrés pour un éventuel examen, mais aucun code ne les lit. Ce sont des données personnelles : si un jour personne ne s’en sert, elles devront partir.", "scope": "1-33", "focus": "24-27"}, {"title": "Deux index, dont un en attente", "body": "Le premier sert l’anti-rafale. Le second, sur expiresAt, prépare une purge des jetons expirés qui n’existe pas encore : les jetons s’accumulent, inoffensifs (expirés, ils ne valent rien), mais inutiles.", "scope": "1-33", "focus": "29-32"}]'
+/>
+
+## Les groupes : être administrateur, accéder à un espace
+
+Les droits ne vivent ni dans `User` ni dans `Session` : ils passent par les groupes. Pour l’authentification, trois champs de `MemberGroup` comptent.
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1850-1863"
+  snippetHighlight="3,8,14"
+  snippetTitle="Le groupe marqué, l’espace, l’arbre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`isAdminGroup` fait les administrateurs : être administrateur, c’est être membre du groupe qui porte ce drapeau, rien d’autre. Le groupe est créé au démarrage s’il manque (`ensureAdminGroup`), et c’est ce code, non une contrainte de la base, qui garantit qu’il est unique. `isCollaborative` donne au groupe un espace dans le finder, et `parentGroupId` le range dans un arbre où les droits descendent (chapitre « Les droits par les groupes »).
+
+L’adhésion relie le membre au groupe, et porte le seul droit fin du projet :
+
+<CodeExample
+  language="prisma"
+  filepath="prisma/schema.prisma"
+  filename="schema.prisma"
+  snippetRange="1883-1903"
+  snippetHighlight="16,19"
+  snippetTitle="L’adhésion et son droit"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`access` (VIEWER ou EDITOR) ne joue que sur l’espace d’un groupe collaboratif ; il n’a aucun effet sur l’administration ni sur la diffusion des documents. La contrainte `@@unique([groupId, userId])` interdit une double adhésion : sans elle, deux lignes pourraient porter deux droits différents, et il faudrait choisir lequel croire.
+
+## Ce que la base garde sans s’en servir
+
+Un schéma qui a vécu garde des traces. Les voici, toutes signalées dans `schema.prisma` par un ⚠ ; aucune ne sert, aucune ne gêne pour l’instant, toutes sont candidates à une migration de nettoyage.
+
+<DocsTable columnsJson='["Trace", "Ce qu’elle semble promettre", "Ce qu’il en est"]' rowsJson='[["Verification", "Des jetons de vérification génériques.", "Jamais lu ni écrit : vestige d’une ancienne librairie d’authentification."], ["User.emailVerified", "Une adresse vérifiée.", "Jamais lu ; seulement écrit à false par des services de restauration."], ["User.image", "Un portrait.", "Jamais écrit ; lu en repli quand avatar est vide. Le vrai portrait est avatar."], ["Preferences", "Des préférences d’affichage.", "Prévu, pas branché. Sa relation bloquerait la suppression d’un membre (RESTRICT) : à passer en Cascade au branchement."], ["AuditLog", "Un journal des actions sensibles.", "Jamais écrit ni lu."], ["PasswordResetToken.requestIp, userAgent", "Une trace de la demande.", "Écrits, jamais lus."]]' />
+
+<Callout type="warning">
+Supprimer une trace, c’est une migration, donc une décision : vérifier d’abord qu’aucune donnée de production n’y vit (une table vide se supprime sans regret), et supprimer champ et code dans le même commit. Le commentaire ⚠ du schéma est là pour que personne ne bâtisse dessus en attendant.
+</Callout>
+
+---
+
 ## La chaîne Session → User → groupe Administrateurs
 
 `Session` pointe vers `User`. Ce qui nous intéresse vraiment, c’est ce que `User` permet de retrouver, en cascade :
@@ -68,7 +203,18 @@ C’est exactement le principe vu dans la partie « Données » : l’autorité 
   steps="Session | User | adhésions (MemberGroupMembership) | groupe marqué isAdminGroup"
 />
 
-À chaque requête authentifiée, le projet remonte cette chaîne, en une seule requête SQL, pour obtenir tout ce dont le backend a besoin : qui est le membre, et s’il est administrateur. Les droits plus fins — l’accès à l’espace d’un groupe — se calculent à la demande, quand une procédure en a besoin (chapitre 9).
+À chaque requête authentifiée, le projet remonte cette chaîne, en une seule requête SQL, pour obtenir tout ce dont le backend a besoin : qui est le membre, et s’il est administrateur. La sélection le dit en toutes lettres : de l’adhésion, elle ne lit qu’une ligne, celle d’un groupe marqué, si elle existe.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/auth/getSessionFromRequest.ts"
+  filename="getSessionFromRequest.ts"
+  snippetRange="9-33"
+  snippetHighlight="19-21"
+  snippetTitle="Être administrateur, en une ligne au plus"
+  fullFileTitle="Voir le fichier complet"
+/>
+ Les droits plus fins — l’accès à l’espace d’un groupe — se calculent à la demande, quand une procédure en a besoin (chapitre 9).
 
 C’est cette chaîne qui rend possible l’écriture, dans n’importe quelle procédure, de :
 

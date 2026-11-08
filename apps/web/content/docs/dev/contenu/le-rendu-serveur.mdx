@@ -65,9 +65,9 @@ Il lit la base et résout les médias : il ne doit jamais partir dans le code du
   language="ts"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="72-129"
+  snippetRange="73-135"
   title="PageRenderer — préparer, puis rendre"
-  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience demandée : publique par défaut, privée pour l’aperçu d’un brouillon par un administrateur.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "17-18", "focus": "17-18"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "27-35", "focus": "33-33"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "38-58", "focus": "43-45"}]'
+  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience demandée : publique par défaut, privée pour l’aperçu d’un brouillon par un administrateur.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "22-23", "focus": "22-23"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "32-40", "focus": "38-38"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "43-63", "focus": "48-50"}]'
 />
 
 Puis chaque bloc est rendu par la `View` de sa définition, avec ce qui a été préparé :
@@ -76,7 +76,7 @@ Puis chaque bloc est rendu par la `View` de sa définition, avec ce qui a été 
   language="tsx"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="137-162"
+  snippetRange="143-168"
   snippetHighlight="14,21,24"
   snippetTitle="Chaque bloc, avec ce qui a été préparé"
   fullFileTitle="Voir le fichier complet"
@@ -198,7 +198,7 @@ Le **React Compiler** du projet l’interdit : un rendu ne doit modifier aucune 
   language="tsx"
   filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
   filename="PageRenderer.tsx"
-  snippetRange="128-135"
+  snippetRange="134-141"
   snippetHighlight="7"
   snippetTitle="Le côté, d’après le rang"
   fullFileTitle="Voir le fichier complet"

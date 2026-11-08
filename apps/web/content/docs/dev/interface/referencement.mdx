@@ -125,9 +125,9 @@ Le plan du site et les consignes `noindex` disent donc la même chose de deux fa
   language="ts"
   filepath="apps/web/src/app/robots.ts"
   filename="robots.ts"
-  snippetRange="16-33"
+  snippetRange="16-34"
   title="robots.ts"
-  stepsJson='[{"title": "Tout, sauf…", "body": "`allow: \"/\"` : le site vitrine est ouvert à l’exploration.", "scope": "3-6", "focus": "6-6"}, {"title": "…les espaces privés et l’API", "body": "Le tableau de bord, le profil, les documents, les espaces et le dépôt des membres, et l’API : rien à indexer, seulement des pages de connexion à visiter pour rien.", "scope": "7-14", "focus": "7-14"}, {"title": "…mais pas les fichiers publics", "body": "Les images d’une page passent par `/api/media/public/…`. Interdire tout `/api/` interdisait aussi ces images aux moteurs, qui affichent une page avec ses images pour la comprendre (et indexent les images). La règle la plus précise l’emporte : `/api/media/public/` est permis malgré `/api/`. Un fichier servi publiquement n’a rien à cacher.", "scope": "6-6", "focus": "6-6"}, {"title": "Le plan du site", "body": "L’adresse absolue du plan, par la même constante que le reste.", "scope": "16-17", "focus": "16-16"}]'
+  stepsJson='[{"title": "Tout, sauf…", "body": "`allow: \"/\"` : le site vitrine est ouvert à l’exploration.", "scope": "3-6", "focus": "6-6"}, {"title": "…les espaces privés et l’API", "body": "Le tableau de bord, le profil, les documents, les espaces et le dépôt des membres, et l’API : rien à indexer, seulement des pages de connexion à visiter pour rien.", "scope": "7-15", "focus": "7-15"}, {"title": "…mais pas les fichiers publics", "body": "Les images d’une page passent par `/api/media/public/…`. Interdire tout `/api/` interdisait aussi ces images aux moteurs, qui affichent une page avec ses images pour la comprendre (et indexent les images). La règle la plus précise l’emporte : `/api/media/public/` est permis malgré `/api/`. Un fichier servi publiquement n’a rien à cacher.", "scope": "6-6", "focus": "6-6"}, {"title": "Le plan du site", "body": "L’adresse absolue du plan, par la même constante que le reste.", "scope": "17-18", "focus": "17-17"}]'
 />
 
 <Callout type="warning">
