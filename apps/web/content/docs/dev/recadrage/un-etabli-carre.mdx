@@ -1,0 +1,132 @@
+---
+title: "Un établi carré"
+description: "Le recadrage du site, écrit à la main : un établi carré où l’image est zoomée et tournée en CSS, un cadre qu’on déplace au doigt, un masque SVG rond ou carré, un aperçu redessiné dans un canvas avec les mêmes transformations ; un historique par geste ; et les réglages qui en font un recadrage de galerie ou d’avatar."
+section: "Le recadrage"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Trois formulaires d’envoi proposent de recadrer une image avant de l’envoyer : la bibliothèque, le dépôt des membres et l’avatar. Le chapitre « Un fichier, un usage » s’est arrêté à la porte du recadrage, avec sa recette.
+
+Recadrer, c’est répondre à trois questions : quelle partie de l’image garder, à quel zoom, sous quel angle. Il existe d’excellentes bibliothèques pour cela, et le projet en a installé une (Cropper.js 2, et son adaptateur React). Elles ne servent plus : le composant `Cropper` du site est écrit à la main, en un peu moins de quatre cents lignes. Cette partie le démonte en deux chapitres : ici, comment on voit et règle un recadrage ; ensuite, comment on en sort un fichier juste.
+
+<Callout type="warning">
+Les dépendances `cropperjs`, `@cropper/elements` et `react-cropper`, déclarées à la racine du dépôt, ne sont importées nulle part ; le fichier `cropper-elements.d.ts` déclare des balises que rien n’utilise. Ce sont des vestiges d’un premier essai. Les retirer allège l’installation ; c’est une décision à part, qui touche au fichier de verrouillage.
+</Callout>
+
+## Quatre fichiers 🖼️
+
+<DocsTable columnsJson='["Fichier", "Rôle"]' rowsJson='[["components/Cropper.tsx", "Le composant : l’établi, les curseurs, l’aperçu, la production du fichier."], ["components/cropGridOverlay.tsx", "Le cadre, qu’on déplace au pointeur, avec sa grille des tiers."], ["components/cropMaskOverlay.tsx", "Le voile sombre autour du cadre, découpé en rectangle ou en cercle."], ["hooks/useTransformWithUndo.ts", "Une valeur (zoom ou rotation) et son historique, pour le bouton Défaire."]]' />
+
+Tout vit dans `apps/web/src/features/gallery-crop`. Les règles qui décident du fichier produit (sa taille, son nom) sont à part, dans les contrats ; le chapitre suivant les détaille.
+
+## L’établi
+
+L’établi est un carré de 500 px au plus, qui rétrécit avec l’écran. L’image y est posée en `object-contain` : entière, centrée, sans déformation. Le zoom et la rotation ne la redessinent pas : ils s’appliquent en **CSS**, sur l’élément lui-même.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/gallery-crop/components/Cropper.tsx"
+  filename="Cropper.tsx"
+  snippetStart="ref={workspaceRef}"
+  snippetLead="1"
+  snippetLines="13"
+  snippetHighlight="9,10,12,13"
+  snippetTitle="L’établi : l’image transformée, le masque, le cadre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois couches sont empilées. Dessous, l’image, que le navigateur transforme (`scale(z) rotate(r)`, autour de son centre) à chaque mouvement de curseur, sans rien recalculer. Au milieu, le masque. Dessus, le cadre, seul élément qui reçoit le pointeur : l’image a `pointer-events-none`, pour qu’un glissement sur elle ne la sélectionne pas.
+
+## Le cadre et le masque
+
+Le cadre ne change pas de taille : on le **déplace**, et l’on règle la portion gardée avec le zoom. Un seul geste à apprendre, le même au doigt et à la souris.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/gallery-crop/components/cropGridOverlay.tsx"
+  filename="cropGridOverlay.tsx"
+  snippetStart="useEffect(() => {"
+  snippetEnd="}, [setGrid, workspaceRef]);"
+  snippetHighlight="6,7,11,12,16,17"
+  snippetTitle="Déplacer le cadre, sans jamais sortir de l’établi"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le geste commence sur le cadre (`pointerdown`), mais il est suivi sur la **fenêtre** : un doigt qui déborde du cadre en allant trop vite ne le lâche pas. La position est bornée à l’établi. Les événements de pointeur couvrent la souris, le doigt et le stylet ; `touch-none` empêche le téléphone de faire défiler la page pendant le geste.
+
+Le masque est un SVG plein écran, assombri, où le cadre est découpé :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/gallery-crop/components/cropMaskOverlay.tsx"
+  filename="cropMaskOverlay.tsx"
+  snippetStart="<mask id="
+  snippetEnd="</mask>"
+  snippetHighlight="2,4,11"
+  snippetTitle="Un masque : blanc garde, noir découpe"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans un masque SVG, le blanc laisse voir et le noir cache. Le voile est blanc partout, sauf dans le cadre, noir : un rectangle, ou un cercle inscrit pour l’avatar. Le cercle n’est qu’un **affichage** : le fichier produit reste carré, et c’est l’interface (`rounded-full`) qui l’arrondit partout où l’avatar apparaît.
+
+## L’aperçu : redessiner avec les mêmes gestes
+
+À côté de l’établi, une vignette montre le résultat. Elle ne peut pas être une copie de l’établi : il faut extraire la portion du cadre. Elle est **redessinée** dans un canvas, à chaque changement, par la fonction qui produira aussi le fichier final :
+
+<CodeWalkthrough
+  language="ts"
+  filepath="apps/web/src/features/gallery-crop/components/Cropper.tsx"
+  filename="Cropper.tsx"
+  snippetStart="function drawCrop("
+  snippetEnd="(fin du bloc)"
+  title="drawCrop — refaire en canvas ce que le CSS a montré"
+  stepsJson='[{"title": "L’image telle que l’établi la pose", "body": "containScale est l’échelle d’object-contain : la plus petite des deux qui fait tenir l’image dans le carré. drawnW et drawnH sont ses dimensions affichées, imgLeft et imgTop la marge qui la centre.", "scope": "14-18", "focus": "14-14"}, {"title": "La taille du fichier", "body": "outSize, s’il est donné, fixe le côté le plus long du résultat ; scaleOut convertit les pixels de l’établi en pixels du fichier. Pour l’aperçu, 120 px ; pour le fichier, la résolution réelle de la photo (chapitre suivant).", "scope": "19-21", "focus": "19-19"}, {"title": "Un fond, si le format l’exige", "body": "Un JPEG n’a pas de transparence : les marges d’une image dézoomée ou tournée y deviendraient noires. Un fond blanc est peint d’abord quand le format final peut être un JPEG.", "scope": "25-28", "focus": "25-27"}, {"title": "Se placer sur le cadre", "body": "La première translation amène le coin du cadre à l’origine : tout ce qui est hors du cadre tombe hors du canvas.", "scope": "30-31", "focus": "31-31"}, {"title": "Les gestes du CSS, dans le même ordre", "body": "Autour du centre de l’établi : agrandir, puis tourner, puis revenir. C’est exactement ce que fait transform: scale() rotate() autour du centre de l’image. Si l’ordre différait, l’aperçu ne montrerait pas ce que l’établi montre.", "scope": "32-37", "focus": "34-36"}, {"title": "Dessiner", "body": "L’image est dessinée à la place et à la taille qu’object-contain lui donnait. Les transformations accumulées font le reste.", "scope": "38-39", "focus": "38-38"}]'
+/>
+
+<Callout type="insight">
+Une seule fonction pour l’aperçu et pour le fichier : ce que l’on voit dans la vignette est ce que l’on enverra. Deux fonctions finiraient par diverger, et le bug serait invisible tant que personne ne comparerait.
+</Callout>
+
+L’image source est chargée une fois dans un objet `Image` gardé dans un ref : React ne l’affiche pas, le canvas la lit. Un compteur d’état, incrémenté à son chargement, signale à l’effet de dessin qu’elle est prête.
+
+## Défaire un geste, pas un pixel
+
+Le zoom et la rotation ont chacun un bouton « Défaire ». Un curseur émet des dizaines de valeurs pendant un seul glissement ; un historique qui les garderait toutes obligerait à cliquer cinquante fois. `useTransformWithUndo` enregistre donc un **geste** :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/gallery-crop/hooks/useTransformWithUndo.ts"
+  filename="useTransformWithUndo.ts"
+  snippetStart="const startInteraction = () => {"
+  snippetLines="28"
+  snippetHighlight="3,21,22"
+  snippetTitle="Une entrée d’historique par geste"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Au début du geste, la valeur de départ est mise de côté ; à la fin, elle entre dans l’historique. « Défaire » y revient d’un coup. Un geste plus court que le seuil (250 ms pour le cropper) n’est pas enregistré : un tremblement sur le curseur ne doit pas remplir l’historique. La contrepartie existe : un clic franc sur la piste du curseur, qui saute d’une valeur à l’autre en un instant, ne se défait pas ; « Réinitialiser » reste là pour ce cas.
+
+Le début et la fin du geste étaient jusqu’ici écoutés à la souris (`mousedown`, `mouseup`) : au doigt, rien ne s’enregistrait, et « Défaire » ne faisait rien sur téléphone. Ils le sont désormais au pointeur (`pointerdown`, `pointerup`), comme le cadre.
+
+## Un composant, deux recadrages
+
+<DocsTable columnsJson='["Réglage", "Galerie (par défaut)", "Avatar"]' rowsJson='[["controls", "horizontal : les curseurs sous l’établi.", "responsive : curseurs verticaux à droite si le panneau fait 620 px ou plus, sous l’aperçu sinon (ResizeObserver)."], ["Cadre de départ", "200 × 200 px, à 150 px du coin.", "60 % de l’établi, centré."], ["shape / onShapeChange", "Rectangle, sans choix.", "Cercle ou carré, avec deux boutons."], ["enableTheme", "Non.", "Thème sombre ou clair, mémorisé dans le navigateur (useCropperTheme)."], ["initialTransform", "Non.", "La recette d’un recadrage précédent : zoom, rotation et cadre en fractions de l’établi."], ["outputTypes, maxOutputSide", "AVIF, WebP ou JPEG ; 4096 px.", "WebP ou PNG (les formats que l’avatar accepte) ; 1024 px."]]' />
+
+Le cadre de départ de la galerie, en pixels fixes, est un reste de la première version : sur un téléphone, où l’établi fait 350 px, il n’est plus centré. Le cadre de l’avatar, en proportion, n’a pas ce défaut ; aligner la galerie dessus est une petite piste.
+
+La recette est en **fractions** de l’établi, pas en pixels : rouverte sur un écran d’une autre taille, elle replace le cadre au même endroit de l’image. Le cadre n’est posé qu’une fois l’établi mesuré, par un `ResizeObserver`, et non au chargement de l’image : une capture de la caméra est décodée avant que l’établi ait une largeur.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi pas une bibliothèque ?", "Le besoin tient en un cadre, un zoom et une rotation ; le composant maison fait 378 lignes. Les dépendances installées pour un premier essai ne servent plus."], ["Comment l’établi transforme-t-il l’image ?", "En CSS (scale puis rotate, autour du centre) : rien n’est recalculé pendant le geste."], ["Et le cadre ?", "Il se déplace, il ne se redimensionne pas ; le zoom règle la portion gardée."], ["Comment l’aperçu reste-t-il juste ?", "Il est redessiné par drawCrop, la fonction qui produit aussi le fichier, avec les mêmes transformations dans le même ordre."], ["Que défait « Défaire » ?", "Un geste entier, s’il a duré au moins 250 ms."], ["Qu’est-ce qui a changé ?", "Les gestes des curseurs sont écoutés au pointeur : « Défaire » marche au doigt."]]' />
+
+## À suivre
+
+L’aperçu est juste. Le fichier, lui, ne l’était pas : envoyé depuis la bibliothèque, un JPEG recadré était refusé par le serveur, et une photo de 4000 pixels en ressortait à 200.
+
+<Callout type="tip">
+**Chapitre suivant : sortir le bon fichier.** La résolution réelle d’un recadrage, un format choisi parmi ceux que le navigateur sait écrire, et un nom qui dit la vérité sur son contenu.
+</Callout>

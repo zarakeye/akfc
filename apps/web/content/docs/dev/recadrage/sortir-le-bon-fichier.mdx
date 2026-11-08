@@ -1,0 +1,104 @@
+---
+title: "Sortir le bon fichier"
+description: "Ce qu’un recadrage doit rendre : un fichier refusé par le serveur parce que son nom mentait sur son contenu, une photo de 4000 pixels réduite à 200 ; la résolution réelle, calculée à partir du zoom ; un format choisi parmi ceux que le navigateur sait écrire (AVIF, WebP, JPEG) ; un nom qui suit le format ; et ce que reçoit chaque formulaire."
+section: "Le recadrage"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** L’établi montre la portion gardée, et `drawCrop` sait la redessiner dans un canvas, de la taille qu’on lui demande.
+
+Un administrateur glisse `stage-2026.jpg` dans la bibliothèque, le recadre, clique sur Envoyer. Refus : « Le contenu de « stage-2026.jpg » ne correspond pas à son extension .jpg. » Le serveur a raison. Le cropper avait produit un PNG, et l’avait appelé `.jpg`.
+
+L’erreur cachait une perte plus discrète. Même accepté, le fichier aurait fait 200 × 200 pixels : la taille du cadre **à l’écran**, quelle que soit la photo. Ce chapitre raconte comment le cropper rend maintenant le bon fichier.
+
+## Deux défauts, une cause
+
+<DocsTable columnsJson='["", "Avant", "Maintenant"]' rowsJson='[["Format", "Toujours PNG.", "Le premier que le navigateur sait écrire parmi AVIF, WebP, JPEG (WebP ou PNG pour l’avatar)."], ["Nom", "Celui d’origine : photo.jpg pour un PNG.", "Il suit le format : photo.webp."], ["Taille", "Le cadre à l’écran : 200 px dans la bibliothèque, environ 300 px pour l’avatar.", "La résolution réelle de la portion gardée, plafonnée à 4096 px (1024 pour l’avatar)."]]' />
+
+La cause commune est d’avoir écrit le fichier comme on écrit l’aperçu. L’aperçu est une image d’écran ; le fichier est une photo. Le premier défaut n’apparaissait pas tant que le serveur ne vérifiait pas la concordance entre extension et type ; il l’a vérifiée le jour où la liste des formats autorisés a été resserrée (chapitre « Signer un envoi »). L’avatar y échappait : son serveur choisit l’extension d’après le type annoncé, et ignore le nom.
+
+<Callout type="insight">
+Un contrôle ajouté côté serveur révèle les mensonges des clients qui passaient jusque-là. C’est le signe qu’il fallait l’ajouter, et une raison de tester le parcours complet, du navigateur au stockage, et pas seulement la procédure.
+</Callout>
+
+## La résolution réelle
+
+Le cadre est mesuré en pixels de l’établi. Combien de pixels de la photo couvre-t-il ? L’image est affichée réduite (`containScale`), puis agrandie par le zoom. Un pixel de l’établi couvre donc `1 / (containScale × zoom)` pixels de la photo :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/media/cropOutput.ts"
+  filename="cropOutput.ts"
+  snippetStart="export function outputSide(params: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="11,12,13"
+  snippetTitle="outputSide"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une photo de 4000 × 3000, dans un établi de 500 px : `containScale` vaut 0,125, un pixel d’établi couvre 8 pixels de photo, et un cadre de 200 px rend un fichier de 1600 px. Zoomer deux fois resserre le cadre sur la photo : 800 px. Le calcul n’agrandit jamais au-delà de ce que la photo contient, et s’arrête au plafond : 4096 px de côté, assez pour une photo de galerie plein écran, et un canvas que les téléphones savent encore allouer.
+
+Ces règles vivent dans `packages/contracts`, sans React ni DOM : `e2e/recadrage.spec.ts` les teste directement, avec ces mêmes chiffres.
+
+## Le format : demander, puis vérifier
+
+Le format préféré est l’AVIF : le plus léger à qualité égale, et celui dans lequel le serveur fabrique déjà ses vignettes. Mais tous les navigateurs ne savent pas l’**écrire** depuis un canvas, et ceux qui le savent varient d’une version à l’autre. Et `toBlob` ne prévient pas : à un format qu’il ne sait pas écrire, il répond par du PNG, sans erreur.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/gallery-crop/lib/encodeCanvas.ts"
+  filename="encodeCanvas.ts"
+  snippetStart="export async function encodeCanvas(canvas: HTMLCanvasElement, types: readonly string[]): Promise<Blob | null> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,6"
+  snippetTitle="encodeCanvas : le type obtenu, pas le type demandé"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La fonction demande chaque format à son tour, et regarde le type du résultat. AVIF si le navigateur l’écrit, sinon WebP, sinon JPEG, que tout navigateur sait écrire : le dernier de la liste est accepté tel quel. Le cropper ne présume jamais de ce que fait le navigateur ; il constate.
+
+Les formats avec perte sont encodés en qualité 0,9. Un JPEG n’a pas de transparence : quand il fait partie des recours possibles, `drawCrop` peint d’abord un fond blanc, pour que les marges d’une image dézoomée ou tournée aient la même couleur, quel que soit le format obtenu au bout.
+
+## Un nom qui dit la vérité
+
+Le serveur exige que l’extension et le type concordent. Le nom suit donc le **type obtenu**, et pas celui demandé :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/gallery-crop/components/Cropper.tsx"
+  filename="Cropper.tsx"
+  snippetStart="const handleCrop = async () => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="6,13,15,16,24,25"
+  snippetTitle="handleCrop : taille, fond, format, nom"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`stage-2026.jpg` devient `stage-2026.avif` ou `stage-2026.webp` selon ce que le navigateur sait écrire, ou reste `stage-2026.jpg`, un vrai JPEG cette fois. La recette (zoom, rotation, cadre en fractions) accompagne toujours le fichier : l’avatar s’en sert pour rouvrir le recadrage.
+
+<Callout type="warning">
+**Le nom du fichier est une donnée, pas une étiquette.** Le serveur range, sert et filtre d’après lui. Tout code qui transforme un fichier dans le navigateur (conversion HEIC, recadrage, compression) doit rendre un nom dont l’extension correspond au contenu.
+</Callout>
+
+## Ce que reçoit chaque formulaire
+
+<DocsTable columnsJson='["Formulaire", "Formats essayés", "Côté le plus long"]' rowsJson='[["Bibliothèque (DragNDropForm)", "AVIF, WebP, JPEG", "4096 px"], ["Dépôt des membres (CommonRepositoryUpload)", "AVIF, WebP, JPEG", "4096 px"], ["Avatar (AvatarUploader)", "WebP, PNG : les formats qu’avatar.createUpload accepte, transparence gardée", "1024 px : assez pour un portrait affiché en 128 px, et léger"]]' />
+
+Les deux premiers formulaires n’ont rien eu à changer : ils reçoivent un `File` et l’envoient. L’avatar passe deux réglages au cropper. Dans la bibliothèque, « Réinitialiser » rend toujours l’original, intact, puisque le recadrage s’applique à une copie.
+
+Un test de bout en bout couvre le parcours qui cassait : une photo JPEG fabriquée par le navigateur, déposée dans la bibliothèque, recadrée, envoyée, et acceptée.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi le recadrage était-il refusé ?", "Un PNG portait le nom d’origine (.jpg) ; le serveur exige que l’extension et le type concordent."], ["Quelle taille rend un recadrage ?", "La résolution réelle de la portion gardée : cadre ÷ (containScale × zoom), plafonnée à 4096 px (1024 pour l’avatar)."], ["Quel format ?", "Le premier que le navigateur sait écrire parmi ceux demandés ; on lit le type obtenu, car toBlob rend du PNG sans prévenir."], ["Et le nom ?", "Il suit le type obtenu."], ["Pourquoi un fond blanc ?", "Le JPEG n’a pas de transparence ; le fond est le même quel que soit le format obtenu."], ["Où sont les règles ?", "Dans packages/contracts/src/media/cropOutput.ts, testées sans navigateur ; l’encodage est dans gallery-crop/lib/encodeCanvas.ts."]]' />
+
+## À suivre
+
+Les fichiers entrent maintenant justes : au bon format, à la bonne taille, rangés et contrôlés. Un média validé n’est pourtant visible de personne tant qu’il n’est posé nulle part : la route publique exige qu’il soit **placé** dans une page ou une galerie publique.
+
+<Callout type="tip">
+**Partie suivante : le contenu éditorial.** Le constructeur de pages : un format de blocs commun aux pages, aux actualités et aux fiches, son éditeur, son rendu serveur, et la synchronisation des références de médias qui relie une page à ce qu’elle affiche.
+</Callout>
