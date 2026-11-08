@@ -4,6 +4,7 @@ import { adminBreakingNewsCreate } from "./definitions/admin.breaking-news.creat
 import { adminCategoriesCreate } from "./definitions/admin.categories.create";
 import { adminConstructeur } from "./definitions/admin.constructeur";
 import { adminCoursesCreate } from "./definitions/admin.courses.create";
+import { adminDroitImagePhotos } from "./definitions/admin.droit-image.photos";
 import { adminDisciplinesCreate } from "./definitions/admin.disciplines.create";
 import { adminEventsCreate } from "./definitions/admin.events.create";
 import { adminFamiliesCreate } from "./definitions/admin.families.create";
@@ -51,6 +52,7 @@ export const TOURS: Tour[] = [
   adminConstructeur,
   adminBibliotheque,
   adminGalleriesCreate,
+  adminDroitImagePhotos,
   adminCategoriesCreate,
   adminFamiliesCreate,
   adminOriginsCreate,

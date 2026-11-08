@@ -1,0 +1,48 @@
+---
+title: "Le droit à l'image des photos"
+description: "Taguer les personnes d'une photo, lire les pastilles, et régler ce qui est masqué ou en attente."
+section: "Médiathèque"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Chaque membre a un droit à l'image, usage par usage (espace membres, site public, réseaux, imprimés, presse). En indiquant **qui apparaît sur quelle photo**, vous laissez le site comparer automatiquement : vert si toutes les personnes ont dit oui, rouge si l'une a refusé.
+
+**Avant de commencer.** Être administrateur. Les tags sont posés à la main : le site ne reconnaît jamais les visages.
+
+## Taguer une photo
+
+1. Ouvrez une galerie (**Médiathèque** → **Galeries** → une galerie → **Éditer**), ou un bloc « Galerie d'images » d'une page.
+2. Cliquez sur une photo : la fenêtre des tags s'ouvre.
+3. Cochez les personnes reconnaissables. Chaque membre montre déjà ses pastilles, et le verdict se recalcule à chaque case, **avant** d'enregistrer.
+4. Pas de visage (salle, matériel, de dos) : cochez **Aucune personne reconnaissable**.
+5. Cliquez sur **Enregistrer les tags**. Les tags appartiennent à la photo : ils la suivent dans toutes les galeries et pages.
+
+## Lire les pastilles
+
+- ✓ **vert** : accord ;
+- ✕ **rouge** : refus ;
+- ? **orange** : pas encore de réponse ; le bouton **Relancer** de la fenêtre écrit à la personne (ou à son parent), une fois par semaine au plus ;
+- – **gris** : personne n'est tagué.
+
+## Ce qui bloque, ce qui avertit
+
+La **destination** se déduit seule : une galerie publique, le carrousel et toutes les pages vont sur le site public ; une galerie « Membres » reste dans l'espace membres.
+
+- Une photo **non taguée** passe : le site continue d'être alimenté pendant que les autorisations se recueillent.
+- Une personne taguée **sans réponse** : avertissement orange, la photo passe quand même.
+- Une personne taguée qui **refuse** le site public : l'enregistrement est refusé, et si la photo est déjà en ligne, elle y est **masquée** automatiquement (elle revient avec l'accord, ou si vous retirez le tag).
+- Un refus pour l'espace membres : avertissement seulement.
+
+Un membre peut aussi refuser **une** photo précise depuis sa page « Où j'apparais » : elle passe au rouge, les autres restent comme son autorisation le dit. Dans la fenêtre des tags, il porte alors la mention « a refusé cette photo ».
+
+## Le rapport « Droit à l'image »
+
+**Médiathèque** → **Droit à l'image** : les photos montrées sur le site public qui demandent une action, en trois listes (masquées, en attente, à taguer), avec l'endroit où chacune est montrée. Un clic sur la vignette ouvre la fenêtre des tags.
+
+<TourStartButton id="admin.droit-image.photos" />
+
+<Callout type="info">
+Les personnes taguées reçoivent un e-mail une heure après la séance de tags (au plus un par jour), qui les renvoie vers « Où j'apparais ». Si quelqu'un ne se reconnaît pas, il vous l'écrit : retirez son tag.
+</Callout>

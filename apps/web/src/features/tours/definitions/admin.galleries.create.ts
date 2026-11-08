@@ -40,7 +40,7 @@ export const adminGalleriesCreate: Tour = {
     {
       target: "galleries.form.images",
       title: "Les images",
-      body: "« Ajouter des médias » ouvre la bibliothèque pour y choisir les photos.",
+      body: "« Ajouter des médias » ouvre la bibliothèque pour y choisir les photos. Elles s'affichent en tableau : une ligne par photo, une colonne par usage du droit à l'image (celle de la destination de la galerie en avant). Un clic sur une photo ouvre la fenêtre des tags. Seul un refus d'une personne taguée bloque, et seulement pour une galerie publique.",
       advance: { kind: "next" },
     },
     {

@@ -30,8 +30,8 @@ export function MyAppearances(): JSX.Element {
         <h1 className="text-2xl font-bold">Où j&apos;apparais</h1>
         <p className="mt-1 text-sm text-gray-600">
           Les photos et vidéos du club sur lesquelles vous avez été identifié(e). Ce qui en est montré dépend de votre
-          droit à l&apos;image. Une photo ne vous plaît pas ? Refusez-la : elle ne sera diffusée nulle part, quelle que
-          soit votre autorisation pour les autres. Si vous ne vous reconnaissez pas, écrivez au club : il retirera
+          droit à l&apos;image. Une photo ne vous plaît pas ? Refusez-la : elle ne sera plus diffusée hors du club, quelle
+          que soit votre autorisation pour les autres. Si vous ne vous reconnaissez pas, écrivez au club : il retirera
           l&apos;identification.
         </p>
       </div>
@@ -70,7 +70,8 @@ export function MyAppearances(): JSX.Element {
                     </p>
                     {m.refusedByMe ? (
                       <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">
-                        Vous avez refusé cette photo : elle n&apos;est diffusée nulle part.
+                        Vous avez refusé cette photo : elle n&apos;est plus diffusée hors du club (site, réseaux, imprimés, presse).
+                        Dans l&apos;espace membres, réservé au club, les responsables en sont avertis.
                       </p>
                     ) : m.hiddenOnPublicSite && (
                       <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">

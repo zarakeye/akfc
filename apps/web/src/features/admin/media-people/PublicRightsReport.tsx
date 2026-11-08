@@ -9,7 +9,12 @@ import { MediaTagsDialog } from "./MediaTagsDialog";
 
 type Section = "REFUSED" | "MISSING" | "UNTAGGED";
 
-const SECTIONS: ReadonlyArray<{ key: Section; label: string; help: string; tone: string }> = [
+const SECTIONS: ReadonlyArray<{
+  key: Section;
+  label: string;
+  help: string;
+  tone: string;
+}> = [
   {
     key: "REFUSED",
     label: "Masqués : à retirer",
@@ -38,26 +43,40 @@ export function PublicRightsReport(): JSX.Element {
   const utils = trpc.useUtils();
   const report = trpc.mediaPeople.publicReport.useQuery();
   const [chosen, setChosen] = useState<Section | null>(null);
-  const [tagging, setTagging] = useState<{ id: string; url: string; name: string } | null>(null);
+  const [tagging, setTagging] = useState<{
+    id: string;
+    url: string;
+    name: string;
+  } | null>(null);
 
   const rows = report.data ?? [];
-  const count = (k: Section): number => rows.filter((r) => r.verdict === k).length;
+  const count = (k: Section): number =>
+    rows.filter((r) => r.verdict === k).length;
   // Par défaut, la première liste qui n'est pas vide (ce qui est masqué d'abord).
-  const section = chosen ?? SECTIONS.find((s) => count(s.key) > 0)?.key ?? "REFUSED";
+  const section =
+    chosen ?? SECTIONS.find((s) => count(s.key) > 0)?.key ?? "REFUSED";
   const meta = SECTIONS.find((s) => s.key === section)!;
   const shown = rows.filter((r) => r.verdict === section);
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Droit à l&apos;image des médias en ligne</h1>
+        <h1 className="text-2xl font-bold">
+          Droit à l&apos;image des médias en ligne
+        </h1>
         <p className="mt-1 text-sm text-gray-600">
-          Galeries publiques, carrousel d&apos;accueil, contenus des pages et images des cartes : ce qui demande une
-          action. Les médias en règle n&apos;apparaissent pas.
+          Galeries publiques, carrousel d&apos;accueil, contenus des pages et
+          images des cartes : ce qui demande une action. Les médias en règle
+          n&apos;apparaissent pas.
         </p>
       </div>
 
-      <div role="tablist" aria-label="Listes" className="flex flex-wrap gap-2">
+      <div
+        role="tablist"
+        aria-label="Listes"
+        className="flex flex-wrap gap-2"
+        data-tour="droit-image.tabs"
+      >
         {SECTIONS.map((s) => (
           <button
             key={s.key}
@@ -66,7 +85,9 @@ export function PublicRightsReport(): JSX.Element {
             aria-selected={s.key === section}
             onClick={() => setChosen(s.key)}
             className={`rounded-full border px-3 py-1.5 text-sm ${
-              s.key === section ? s.tone + " font-semibold" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+              s.key === section
+                ? s.tone + " font-semibold"
+                : "border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
             {s.label} ({report.data ? count(s.key) : "…"})
@@ -74,60 +95,87 @@ export function PublicRightsReport(): JSX.Element {
         ))}
       </div>
 
-      <p className={`rounded-md border px-3 py-2 text-sm ${meta.tone}`}>{meta.help}</p>
+      <p
+        className={`rounded-md border px-3 py-2 text-sm ${meta.tone}`}
+        data-tour="droit-image.help"
+      >
+        {meta.help}
+      </p>
 
-      {report.isLoading ? (
-        <p className="text-sm text-gray-500">Chargement…</p>
-      ) : shown.length === 0 ? (
-        <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-          Rien dans cette liste.
-        </p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-600">
-              <tr>
-                <th className="px-3 py-2 text-left">Média</th>
-                <th className="px-3 py-2 text-left">Fichier</th>
-                <th className="px-3 py-2 text-left">Personnes</th>
-                <th className="px-3 py-2 text-left">Montré sur</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((r) => (
-                <tr key={r.mediaAssetId} className="border-t border-gray-100 align-top">
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => setTagging({ id: r.mediaAssetId, url: r.thumbUrl, name: r.fileName })}
-                      aria-label={`Taguer les personnes de ${r.fileName}`}
-                      className="h-14 w-14 overflow-hidden rounded-md bg-gray-100 ring-emerald-500 hover:ring-2"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={r.thumbUrl} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 break-all text-gray-800">{r.fileName}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                    {r.people === 0 ? "—" : `${r.people} taguée${r.people > 1 ? "s" : ""}`}
-                  </td>
-                  <td className="px-3 py-2">
-                    <ul className="space-y-0.5">
-                      {r.usages.map((u) => (
-                        <li key={u.href + u.label}>
-                          <Link href={u.href} className="text-emerald-700 hover:underline">
-                            {u.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
+      <div data-tour="droit-image.list">
+        {report.isLoading ? (
+          <p className="text-sm text-gray-500">Chargement…</p>
+        ) : shown.length === 0 ? (
+          <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+            Rien dans cette liste.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 text-left">Média</th>
+                  <th className="px-3 py-2 text-left">Fichier</th>
+                  <th className="px-3 py-2 text-left">Personnes</th>
+                  <th className="px-3 py-2 text-left">Montré sur</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {shown.map((r) => (
+                  <tr
+                    key={r.mediaAssetId}
+                    className="border-t border-gray-100 align-top"
+                  >
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTagging({
+                            id: r.mediaAssetId,
+                            url: r.thumbUrl,
+                            name: r.fileName,
+                          })
+                        }
+                        aria-label={`Taguer les personnes de ${r.fileName}`}
+                        className="h-14 w-14 overflow-hidden rounded-md bg-gray-100 ring-emerald-500 hover:ring-2"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={r.thumbUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 break-all text-gray-800">
+                      {r.fileName}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
+                      {r.people === 0
+                        ? "—"
+                        : `${r.people} taguée${r.people > 1 ? "s" : ""}`}
+                    </td>
+                    <td className="px-3 py-2">
+                      <ul className="space-y-0.5">
+                        {r.usages.map((u) => (
+                          <li key={u.href + u.label}>
+                            <Link
+                              href={u.href}
+                              className="text-emerald-700 hover:underline"
+                            >
+                              {u.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {tagging && (
         <MediaTagsDialog

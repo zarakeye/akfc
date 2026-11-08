@@ -268,3 +268,14 @@ for (const [path, title, description, anchor, field] of [
     await expect(page.getByText("Exemple du tuto")).toHaveCount(0);
   });
 }
+
+test("« Le droit à l'image des photos » parcourt le rapport sans rien modifier", async ({ page }) => {
+  await launch(page, "/dashboard/droit-image", /Le droit à l'image des photos.*masquées/);
+  const t = "Le droit à l'image des photos";
+  for (const n of [1, 2]) {
+    await expect(bubble(page, t, n, 3)).toBeVisible();
+    await nextButton(page).click();
+  }
+  await expect(bubble(page, t, 3, 3)).toBeVisible();
+  await page.getByRole("button", { name: "Terminer" }).click();
+});
