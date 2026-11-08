@@ -39,6 +39,11 @@ export interface PageBuilderProps {
    * disparaître du contenu au motif qu'un réglage a changé.
    */
   allowedBlocks?: readonly PageBlockKindV1[];
+  /**
+   * Droit à l'image des images (pastilles, modale des tags). ABSENT = oui : tous les hôtes sont
+   * des formulaires d'administration, sauf la présentation d'un instructeur, qui passe `false`.
+   */
+  imageRights?: boolean;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -77,6 +82,7 @@ export function PageBuilder({
   appRoot,
   mediaRoot,
   allowedBlocks,
+  imageRights = true,
 }: PageBuilderProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -114,7 +120,7 @@ export function PageBuilder({
   /* ── Rendu ── */
 
   return (
-    <PageBuilderProvider value={{ adapter, appRoot, mediaRoot: mediaRoot ?? appRoot }}>
+    <PageBuilderProvider value={{ adapter, appRoot, mediaRoot: mediaRoot ?? appRoot, imageRights }}>
       <div className="flex flex-col gap-3">
         {value.blocks.length === 0 && (
           <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">

@@ -46,6 +46,35 @@ async function assertMedia(prisma: PrismaClient, mediaAssetId: string) {
   return m;
 }
 
+const NO_CONSENT: PersonConsent = { formUsages: null, status: "UNKNOWN" };
+
+/** État d'une personne pour chacun des usages. */
+function statesOf(c: PersonConsent): Record<ImageUsageValue, PersonUsageState> {
+  return Object.fromEntries(IMAGE_USAGE_VALUES.map((u) => [u, personUsageState(c, u)])) as Record<
+    ImageUsageValue,
+    PersonUsageState
+  >;
+}
+
+/**
+ * Membres que l'on peut taguer (liste de la modale), avec l'état de leur droit à l'image usage par
+ * usage : l'administrateur voit, avant même de cocher, qui fera passer la photo au rouge.
+ */
+export async function tagCandidates(prisma: PrismaClient) {
+  const users = await prisma.user.findMany({
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }, { email: "asc" }],
+    select: { id: true, email: true, firstName: true, lastName: true, legalAge: true, birthDate: true, birthDateVerified: true },
+  });
+  const consents = await consentOf(prisma, users.map((u) => u.id));
+  return users.map((u) => ({
+    id: u.id,
+    name: fullName(u),
+    email: u.email,
+    legalAge: effectiveLegalAge(u),
+    states: statesOf(consents.get(u.id) ?? NO_CONSENT),
+  }));
+}
+
 /** Un média : les personnes taguées, leur état usage par usage, et le verdict. */
 export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string) {
   const media = await assertMedia(prisma, mediaAssetId);
@@ -70,11 +99,8 @@ export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string)
   });
   const consents = await consentOf(prisma, tags.map((t) => t.userId));
   const people = tags.map((t) => {
-    const c = consents.get(t.userId) ?? { formUsages: null, status: "UNKNOWN" as const };
-    const states = Object.fromEntries(IMAGE_USAGE_VALUES.map((u) => [u, personUsageState(c, u)])) as Record<
-      ImageUsageValue,
-      PersonUsageState
-    >;
+    const c = consents.get(t.userId) ?? NO_CONSENT;
+    const states = statesOf(c);
     const remindedAt = t.user.imageConsentRemindedAt;
     return {
       userId: t.userId,

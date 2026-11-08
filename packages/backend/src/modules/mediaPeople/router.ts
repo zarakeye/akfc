@@ -8,6 +8,7 @@ import {
   remindImageConsent,
   setMediaPeople,
   setNoRecognizablePerson,
+  tagCandidates,
 } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 /**
@@ -20,6 +21,9 @@ const mediaInput = z.object({ mediaAssetId: z.string().min(1) });
 export const mediaPeopleRouter = router({
   /** Un média : personnes taguées, état de chacune par usage, verdict. */
   forMedia: adminProcedure.input(mediaInput).query(({ ctx, input }) => mediaPeopleFor(ctx.prisma, input.mediaAssetId)),
+
+  /** Membres à cocher dans la modale, avec l'état de leur droit à l'image. */
+  candidates: adminProcedure.query(({ ctx }) => tagCandidates(ctx.prisma)),
 
   /** Remplace la liste des personnes taguées (cases cochées dans la modale). */
   setTags: adminProcedure

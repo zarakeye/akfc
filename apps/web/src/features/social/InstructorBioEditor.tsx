@@ -115,6 +115,8 @@ export function InstructorBioEditor(): JSX.Element | null {
         // dans une présentation publique (`saveMyInstructorBio`).
         mediaRoot={state.data.mediaRoot}
         allowedBlocks={INSTRUCTOR_BIO_BLOCKS}
+        // Un membre n'a pas accès aux tags de personnes (réservés aux administrateurs).
+        imageRights={false}
       />
 
       {save.isSuccess && (

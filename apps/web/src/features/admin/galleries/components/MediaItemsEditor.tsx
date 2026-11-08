@@ -1,6 +1,7 @@
 'use client';
 
 import { JSX, useState } from 'react';
+import type { inferRouterOutputs } from '@trpc/server';
 import { X, Plus, GripVertical, Play } from 'lucide-react';
 import {
   DndContext,
@@ -14,7 +15,7 @@ import {
 import {
   SortableContext,
   arrayMove,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
 } from '@dnd-kit/sortable';
@@ -25,84 +26,115 @@ import { MediaPicker } from '@features/finder-core/components/MediaPicker';
 import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderStorage.adapter';
 import { APP_ROOT } from '@config/app';
 import type { ResolvedMedia } from '@contracts/page';
+import type { AppRouter } from '@backend/modules';
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES } from '@contracts/legal/imageConsent';
+import { MediaTagsDialog } from '@features/admin/media-people/MediaTagsDialog';
+import { USAGE_SHORT_LABEL, VerdictBadge } from '@features/admin/media-people/RightsBadges';
 
-/** Tuile triable (handle isolé, croix retrait, distance d'activation 5 px). */
-function SortableTile({
+type MediaRights = inferRouterOutputs<AppRouter>['mediaPeople']['verdicts'][string];
+
+const thumbOf = (m: ResolvedMedia): string =>
+  m.kind === 'video' ? m.posterUrl ?? m.url : m.url;
+
+/** Ligne triable du tableau (poignée isolée, croix de retrait, distance d'activation 5 px). */
+function SortableRow({
   id,
   index,
   media,
   loading,
+  rights,
+  onTag,
   onRemove,
 }: {
   id: string;
   index: number;
   media: ResolvedMedia | null;
   loading: boolean;
+  rights: MediaRights | undefined;
+  onTag: () => void;
   onRemove: () => void;
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const style = { transform: CSS.Translate.toString(transform), transition };
+  const label = `Média n° ${index + 1}`;
 
   return (
-    <li
+    <tr
       ref={setNodeRef}
       style={style}
-      className={`relative overflow-hidden rounded-lg border border-gray-200 bg-white ${
-        isDragging ? 'z-10 opacity-80 shadow-lg' : ''
-      }`}
+      className={`border-b border-gray-100 bg-white ${isDragging ? 'relative z-10 opacity-80 shadow-lg' : ''}`}
     >
-      <div className="relative flex aspect-square items-center justify-center bg-gray-50">
-        {media ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={media.kind === 'video' ? media.posterUrl ?? media.url : media.url}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-            {media.kind === 'video' && (
-              <span
-                className="absolute inset-0 flex items-center justify-center"
-                aria-hidden
-              >
-                <span className="rounded-full bg-black/55 p-2 text-white">
-                  <Play className="h-5 w-5" />
+      <td className="px-2 py-2">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label="Déplacer"
+          className="cursor-grab rounded p-1 text-gray-500 hover:bg-gray-100 active:cursor-grabbing"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-2 py-2 font-mono text-xs text-gray-500">{index + 1}</td>
+      <td className="px-2 py-2">
+        <button
+          type="button"
+          onClick={onTag}
+          aria-label={`Taguer les personnes du ${label.toLowerCase()}`}
+          className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md bg-gray-50 ring-emerald-500 hover:ring-2"
+        >
+          {media ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={thumbOf(media)} alt="" className="h-full w-full object-cover" />
+              {media.kind === 'video' && (
+                <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
+                  <span className="rounded-full bg-black/55 p-1.5 text-white">
+                    <Play className="h-4 w-4" />
+                  </span>
                 </span>
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="px-2 text-center text-xs text-gray-400">
-            {loading ? 'Chargement…' : 'Média indisponible'}
-          </span>
-        )}
-      </div>
-
-      <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">
-        {index + 1}
-      </span>
-
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        aria-label="Déplacer"
-        className="absolute right-1 top-1 cursor-grab rounded bg-black/40 p-1 text-white active:cursor-grabbing"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Retirer"
-        className="absolute bottom-1 right-1 rounded bg-white/90 p-1 text-red-600 hover:bg-red-50"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </li>
+              )}
+            </>
+          ) : (
+            <span className="px-1 text-center text-[10px] text-gray-400">
+              {loading ? 'Chargement…' : 'Indisponible'}
+            </span>
+          )}
+        </button>
+      </td>
+      <td className="px-2 py-2">
+        <button
+          type="button"
+          onClick={onTag}
+          className="whitespace-nowrap rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+        >
+          {!rights
+            ? '…'
+            : rights.noRecognizablePerson
+              ? 'Personne de reconnaissable'
+              : rights.count === 0
+                ? 'Taguer'
+                : `${rights.count} personne${rights.count > 1 ? 's' : ''}`}
+        </button>
+      </td>
+      {IMAGE_USAGE_VALUES.map((u) => (
+        <td key={u} className="px-2 py-2 text-center">
+          {rights ? <VerdictBadge usage={u} verdict={rights.verdicts[u]} /> : null}
+        </td>
+      ))}
+      <td className="px-2 py-2 text-right">
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Retirer"
+          className="rounded p-1 text-red-600 hover:bg-red-50"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </td>
+    </tr>
   );
 }
 
@@ -110,6 +142,11 @@ function SortableTile({
  * Éditeur d'items média **contrôlé** (sans persistance) : ajout via le finder
  * (MediaPicker → chemins → `media.resolveByPaths` → ids), aperçus via
  * `media.resolveByIds`, réordonnancement drag-and-drop (@dnd-kit), retrait.
+ *
+ * Tableau : une ligne par média (elle s'ajoute à chaque média ajouté), une
+ * colonne par usage du droit à l'image (`mediaPeople.verdicts`). Un clic sur le
+ * média ouvre la modale des tags. Les tags appartiennent au MÉDIA, pas à la
+ * galerie : ils s'enregistrent tout de suite, sans attendre le formulaire.
  *
  * Réutilisé tel quel par la **création** (état local → input caché) et par
  * l'**édition** (état local → `gallery.setItems`). Il ne connaît rien de la
@@ -123,12 +160,20 @@ export function MediaItemsEditor({
   onChange: (ids: string[]) => void;
 }): JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [tagging, setTagging] = useState<number | null>(null);
 
   const resolveQuery = trpc.media.resolveByIds.useQuery(
     { mediaIds: value },
     { enabled: value.length > 0, staleTime: 0 },
   );
   const resolved: Record<string, ResolvedMedia | null> = resolveQuery.data ?? {};
+  const rightsQuery = trpc.mediaPeople.verdicts.useQuery(
+    { mediaAssetIds: value },
+    { enabled: value.length > 0 },
+  );
+  const rights = rightsQuery.data ?? {};
+  const taggingId = tagging !== null ? value[tagging] : undefined;
+  const taggingMedia = taggingId ? resolved[taggingId] ?? null : null;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -191,21 +236,54 @@ export function MediaItemsEditor({
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={value} strategy={rectSortingStrategy}>
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {value.map((id, index) => (
-                <SortableTile
-                  key={id}
-                  id={id}
-                  index={index}
-                  media={resolved[id] ?? null}
-                  loading={resolveQuery.isLoading}
-                  onRemove={() => removeAt(index)}
-                />
-              ))}
-            </ul>
-          </SortableContext>
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-600">
+                <tr>
+                  <th className="w-8 px-2 py-2"><span className="sr-only">Ordre</span></th>
+                  <th className="w-8 px-2 py-2 text-left">N°</th>
+                  <th className="px-2 py-2 text-left">Média</th>
+                  <th className="px-2 py-2 text-left">Personnes</th>
+                  {IMAGE_USAGE_VALUES.map((u) => (
+                    <th key={u} scope="col" title={IMAGE_USAGE_LABEL[u]} className="px-2 py-2 text-center font-medium">
+                      {USAGE_SHORT_LABEL[u]}
+                    </th>
+                  ))}
+                  <th className="w-8 px-2 py-2"><span className="sr-only">Retirer</span></th>
+                </tr>
+              </thead>
+              <SortableContext items={value} strategy={verticalListSortingStrategy}>
+                <tbody>
+                  {value.map((id, index) => (
+                    <SortableRow
+                      key={id}
+                      id={id}
+                      index={index}
+                      media={resolved[id] ?? null}
+                      loading={resolveQuery.isLoading}
+                      rights={rights[id]}
+                      onTag={() => setTagging(index)}
+                      onRemove={() => removeAt(index)}
+                    />
+                  ))}
+                </tbody>
+              </SortableContext>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            Droit à l&apos;image : ✓ accord · ✕ refus · ? pas encore d&apos;autorisation · – à taguer.
+            Clique sur un média pour indiquer qui y apparaît.
+          </p>
         </DndContext>
+      )}
+
+      {taggingId && (
+        <MediaTagsDialog
+          mediaAssetId={taggingId}
+          previewUrl={taggingMedia ? thumbOf(taggingMedia) : null}
+          title={`média n° ${(tagging ?? 0) + 1}`}
+          onClose={() => setTagging(null)}
+        />
       )}
 
       {pickerOpen && (

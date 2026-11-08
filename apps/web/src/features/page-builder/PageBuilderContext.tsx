@@ -38,6 +38,12 @@ export interface PageBuilderContextValue {
    * présentation — le seul dossier dont il puisse publier les fichiers.
    */
   mediaRoot: string;
+
+  /**
+   * Colonnes du droit à l'image et modale des tags dans les blocs d'images (administrateurs
+   * seulement : les tags sont des données personnelles). ABSENT = non.
+   */
+  imageRights?: boolean;
 }
 
 const PageBuilderContext = createContext<PageBuilderContextValue | null>(null);

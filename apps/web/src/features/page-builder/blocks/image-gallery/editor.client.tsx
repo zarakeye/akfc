@@ -78,6 +78,7 @@ export function ImageGalleryEditor({
           caption: value ?? undefined,
         })}
         textPlaceholder="Légende (optionnelle)"
+        imageRights
         addLabel="Ajouter des images"
         emptyStateLabel="Aucune image — clique sur « Ajouter des images » pour en sélectionner."
         renderPreview={({ resolved, status }) => {

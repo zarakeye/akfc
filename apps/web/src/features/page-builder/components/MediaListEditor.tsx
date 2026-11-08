@@ -10,6 +10,8 @@ import { trpc, trpcClient } from "@/core/trpc/trpcClient";
 import type { AppRouter } from "@backend/modules";
 
 import { usePageBuilderContext } from "@features/page-builder/PageBuilderContext";
+import { MediaTagsDialog } from "@features/admin/media-people/MediaTagsDialog";
+import { VerdictBadges } from "@features/admin/media-people/RightsBadges";
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*  Types                                                                  */
@@ -64,6 +66,22 @@ export interface MediaListEditorProps<TItem extends { mediaId: string }> {
 
   /** Rendu d'aperçu pour un item (variable selon le bloc — image, audio, doc). */
   renderPreview: (props: MediaPreviewProps<TItem>) => ReactNode;
+
+  /**
+   * Blocs d'images : pastilles du droit à l'image et bouton des tags sur chaque ligne (si l'hôte
+   * du builder l'autorise, cf. `PageBuilderContext.imageRights`).
+   */
+  imageRights?: boolean;
+}
+
+type MediaRights = RouterOutputs["mediaPeople"]["verdicts"][string];
+
+/** Libellé du bouton des tags d'une ligne. */
+function peopleLabel(r: MediaRights | undefined): string {
+  if (!r) return "Personnes…";
+  if (r.noRecognizablePerson) return "Personne de reconnaissable";
+  if (r.count === 0) return "Taguer les personnes";
+  return `${r.count} personne${r.count > 1 ? "s" : ""}`;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -124,9 +142,12 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
   addLabel,
   emptyStateLabel,
   renderPreview,
+  imageRights = false,
 }: MediaListEditorProps<TItem>) {
   const ctx = usePageBuilderContext();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [tagging, setTagging] = useState<number | null>(null);
+  const showRights = imageRights && ctx.imageRights === true;
 
   /* ─── Résolution batch des mediaIds en URLs ──────────────────────── */
 
@@ -144,6 +165,13 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
   );
 
   const resolveResult = resolveQuery.data ?? {};
+  const rightsQuery = trpc.mediaPeople.verdicts.useQuery(
+    { mediaAssetIds: mediaIds },
+    { enabled: showRights && mediaIds.length > 0 },
+  );
+  const rights = rightsQuery.data ?? {};
+  const taggingId = tagging !== null ? items[tagging]?.mediaId : undefined;
+  const taggingMedia = taggingId ? (resolveResult[taggingId] ?? null) : null;
   const isResolving = resolveQuery.isLoading && mediaIds.length > 0;
 
   function statusFor(mediaId: string): ResolutionStatus {
@@ -217,6 +245,18 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
                 <code className="block text-xs text-muted-foreground opacity-60">
                   {item.mediaId}
                 </code>
+                {showRights && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTagging(index)}
+                      className="rounded-full border border-input px-2.5 py-0.5 text-xs hover:bg-muted"
+                    >
+                      {peopleLabel(rights[item.mediaId])}
+                    </button>
+                    {rights[item.mediaId] && <VerdictBadges verdicts={rights[item.mediaId].verdicts} />}
+                  </div>
+                )}
               </div>
 
               <Button
@@ -239,6 +279,21 @@ export function MediaListEditor<TItem extends { mediaId: string }>({
           {addLabel}
         </Button>
       </div>
+
+      {taggingId && (
+        <MediaTagsDialog
+          mediaAssetId={taggingId}
+          previewUrl={
+            taggingMedia
+              ? taggingMedia.kind === "video"
+                ? (taggingMedia.posterUrl ?? taggingMedia.url)
+                : taggingMedia.url
+              : null
+          }
+          title={`image n° ${(tagging ?? 0) + 1}`}
+          onClose={() => setTagging(null)}
+        />
+      )}
 
       {pickerOpen && (
         <MediaPicker
