@@ -97,6 +97,7 @@ export function useNodeActions(): {
   const multiSelectActive = useFinderStore((s) => s.multiSelectActive);
   const reloadFolderContent = useFinderStore((s) => s.reloadFolderContent);
   const exitMultiSelect = useFinderStore((s) => s.exitMultiSelect);
+  const setActionError = useFinderStore((s) => s.setActionError);
 
   const utils = trpc.useUtils();
   const trashToBinMutation = trpc.trash.trashToBin.useMutation();
@@ -183,10 +184,17 @@ export function useNodeActions(): {
         // TrashEntry valides et de vestiges dans la sélection.
         const paths = nodes.map((n) => n.path);
 
-        await purgeMutation.mutateAsync({
-          appRoot: APP_ROOT,
-          paths,
-        });
+        try {
+          await purgeMutation.mutateAsync({
+            appRoot: APP_ROOT,
+            paths,
+          });
+        } catch (err) {
+          // Refus du serveur (effacement partiel d'un élément jeté, par exemple) : on l'affiche
+          // dans le bandeau d'erreur du finder plutôt que de le perdre dans la console.
+          setActionError(err instanceof Error ? err.message : "La suppression a échoué.");
+          return;
+        }
 
         // Invalidation supplémentaire pour la vue plate du bin (qui utilise
         // une React Query séparée du contentCache du finder).
@@ -216,6 +224,7 @@ export function useNodeActions(): {
       utils.storage.getAttentionCounts,
       reloadFolderContent,
       exitMultiSelect,
+      setActionError,
     ],
   );
 

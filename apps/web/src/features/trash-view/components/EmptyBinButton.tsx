@@ -8,6 +8,8 @@ import ConfirmDialog from './ConfirmDialog';
 type Props = {
   /** Nombre d'items actuellement dans la corbeille (pour message + désactivation si 0) */
   totalCount: number;
+  /** D'autres éléments existent au-delà de ceux chargés : le nombre exact n'est pas connu. */
+  hasMore?: boolean;
 };
 
 /**
@@ -20,7 +22,7 @@ type Props = {
  *
  * Désactivé si la corbeille est vide.
  */
-export default function EmptyBinButton({ totalCount }: Props): JSX.Element {
+export default function EmptyBinButton({ totalCount, hasMore = false }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const { emptyBin, isEmptying } = useTrashActions();
 
@@ -58,7 +60,7 @@ export default function EmptyBinButton({ totalCount }: Props): JSX.Element {
       <ConfirmDialog
         open={open}
         title="Vider la corbeille"
-        description={`Cette action va supprimer définitivement les ${totalCount} éléments de la corbeille. Cette opération est irréversible.`}
+        description={`Cette action va supprimer définitivement ${hasMore ? `tous les éléments de la corbeille (plus de ${totalCount})` : `les ${totalCount} éléments de la corbeille`}. Cette opération est irréversible.`}
         confirmLabel="Vider définitivement"
         destructive
         requireTypedConfirmation="supprimer"

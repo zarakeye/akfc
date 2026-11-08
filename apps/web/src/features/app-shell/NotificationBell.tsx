@@ -38,6 +38,7 @@ function buildMessage(
   bin: number,
   persoPending: number,
   commonRepositoryPending: number,
+  drafts: number,
 ): string {
   const s = (n: number) => (n > 1 ? "s" : "");
 
@@ -76,13 +77,16 @@ function buildMessage(
     }
   }
 
-  if (attente && bin > 0) {
-    return `Vous avez ${attente} et ${bin} dans la corbeille`;
-  }
-  if (attente) {
-    return `Vous avez ${attente}`;
-  }
-  return `Vous avez ${bin} contenu${s(bin)} dans la corbeille`;
+  // Le libellé annonce tout ce que compte la pastille : attente, brouillons, corbeille. Il oubliait
+  // les brouillons : avec seulement des brouillons, la pastille affichait 5 et le lecteur d'écran
+  // annonçait « 0 contenu dans la corbeille ».
+  const parts: string[] = [];
+  if (attente) parts.push(attente);
+  if (drafts > 0) parts.push(`${drafts} contenu${s(drafts)} non publié${s(drafts)}`);
+  if (bin > 0) parts.push(`${bin} élément${s(bin)} dans la corbeille`);
+  if (parts.length === 0) return "Bibliothèque";
+  const last = parts.pop();
+  return `Vous avez ${parts.length > 0 ? `${parts.join(", ")} et ${last}` : last}`;
 }
 
 export function NotificationBell(): JSX.Element | null {
@@ -175,6 +179,7 @@ export function NotificationBell(): JSX.Element | null {
                 bin,
                 persoPending,
                 commonRepositoryPending,
+                draftTotal,
               )
             : "Bibliothèque"
         }

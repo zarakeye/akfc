@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 import { isTrashStoragePath, normalizePath } from "@backend/modules/trash/utils";
 import { pruneEmptyFolders } from "@backend/modules/storage/services/pruneEmptyFolders.service";
@@ -71,6 +72,8 @@ export async function purge(params: {
   // tout ce qui suit. Si le pattern n'est pas trouvé, le path n'est pas
   // dans la trash storage → on refuse (garde-fou).
   const wrapperPaths = new Set<string>();
+  /** Chemins demandés, par élément jeté (pour refuser un effacement partiel, plus bas). */
+  const askedByWrapper = new Map<string, string[]>();
   const wrapperRegex = /^(.+\/bin\/\.trash\/[^/]+)(?:\/.*)?$/;
 
   for (const path of input.paths) {
@@ -90,6 +93,32 @@ export async function purge(params: {
     }
 
     wrapperPaths.add(wrapper);
+    askedByWrapper.set(wrapper, [...(askedByWrapper.get(wrapper) ?? []), normalizePath(path)]);
+  }
+
+  // ─── Étape 1 bis : un élément jeté s'efface en entier, ou pas du tout ──
+  //
+  // Dans le finder, on peut entrer dans un dossier jeté et y sélectionner un fichier. Ramené à son
+  // élément, ce chemin effaçait TOUT le dossier jeté, alors que la confirmation annonçait « 1 élément ».
+  // On n'accepte donc que l'élément lui-même (le wrapper, ou son storageRoot) ; un chemin plus
+  // profond est refusé, avant toute suppression.
+  for (const wrapperPath of wrapperPaths) {
+    const entry = await prisma.trashEntry.findFirst({
+      where: {
+        appRoot,
+        OR: [{ storageRoot: wrapperPath }, { storageRoot: { startsWith: `${wrapperPath}/` } }],
+        status: "IN_BIN",
+      },
+      select: { storageRoot: true, displayName: true },
+    });
+    if (!entry) continue; // vestige : un fragment sans entrée, effacé en entier
+    const whole = new Set([normalizePath(wrapperPath), normalizePath(entry.storageRoot)]);
+    if ((askedByWrapper.get(wrapperPath) ?? []).some((asked) => !whole.has(asked))) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Ce fichier fait partie de « ${entry.displayName} », jeté en entier : revenez à la corbeille pour effacer « ${entry.displayName} » ou le restaurer.`,
+      });
+    }
   }
 
   const purged: string[] = [];

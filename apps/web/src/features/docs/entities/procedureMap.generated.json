@@ -7953,7 +7953,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -7975,7 +7975,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8004,7 +8004,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "pruneEmptyFolders",
@@ -8026,7 +8026,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8044,7 +8044,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8069,7 +8069,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8083,7 +8083,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8104,7 +8104,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8126,7 +8126,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8144,7 +8144,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8170,7 +8170,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8188,7 +8188,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8214,7 +8214,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8236,7 +8236,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8266,7 +8266,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8288,7 +8288,7 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "deleteAssetRowsOfTrashedItem",
@@ -8317,11 +8317,21 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "prisma.trashEntry.findFirst",
-        "packages/backend/src/modules/trash/services/purge.service.ts:102"
+        "packages/backend/src/modules/trash/services/purge.service.ts:106"
+       ]
+      ],
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
+       ],
+       [
+        "prisma.trashEntry.findFirst",
+        "packages/backend/src/modules/trash/services/purge.service.ts:131"
        ]
       ]
      ]
@@ -8337,11 +8347,11 @@
       [
        [
         "purge",
-        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+        "packages/backend/src/modules/trash/services/purge.service.ts:61"
        ],
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/purge.service.ts:129"
+        "packages/backend/src/modules/trash/services/purge.service.ts:158"
        ]
       ]
      ]
@@ -28543,7 +28553,7 @@
   },
   "purge": {
    "file": "packages/backend/src/modules/trash/services/purge.service.ts",
-   "line": 60,
+   "line": 61,
    "effects": [
     {
      "model": "DocumentReceipt",
@@ -28854,7 +28864,13 @@
       [
        [
         "prisma.trashEntry.findFirst",
-        "packages/backend/src/modules/trash/services/purge.service.ts:102"
+        "packages/backend/src/modules/trash/services/purge.service.ts:106"
+       ]
+      ],
+      [
+       [
+        "prisma.trashEntry.findFirst",
+        "packages/backend/src/modules/trash/services/purge.service.ts:131"
        ]
       ]
      ]
@@ -28870,7 +28886,7 @@
       [
        [
         "prisma.trashEntry.update",
-        "packages/backend/src/modules/trash/services/purge.service.ts:129"
+        "packages/backend/src/modules/trash/services/purge.service.ts:158"
        ]
       ]
      ]

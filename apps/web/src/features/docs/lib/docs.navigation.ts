@@ -22,6 +22,7 @@ const SECTION_ORDER = [
   "Authentification et droits",
   "Stockage et médias",
   "Le finder",
+  "La corbeille",
   "Les envois de fichiers",
   "Le recadrage",
   "Contenu éditorial",

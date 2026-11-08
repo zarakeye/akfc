@@ -68,12 +68,20 @@ export default function FinderBinRootView(): JSX.Element {
   const selectedIds = useTrashStore((s) => s.selectedIds);
   const toggleSelected = useTrashStore((s) => s.toggleSelected);
 
-  const { data, isLoading, isError } = trpc.trash.listBin.useQuery(
-    { appRoot: APP_ROOT, limit: 100 },
-    { refetchOnWindowFocus: false, staleTime: 5_000 }
-  );
+  // Par pages de 100 (le plafond de trash.listBin), les plus récentes d'abord : au-delà de la
+  // première page, « Afficher plus » charge la suivante. Sans elle, les éléments jetés avant les
+  // 100 derniers n'étaient plus ni visibles, ni restaurables depuis le finder.
+  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    trpc.trash.listBin.useInfiniteQuery(
+      { appRoot: APP_ROOT, limit: 100 },
+      {
+        getNextPageParam: (last) => last.nextCursor ?? undefined,
+        refetchOnWindowFocus: false,
+        staleTime: 5_000,
+      }
+    );
 
-  const entries: TrashEntryDTO[] = data?.items ?? [];
+  const entries: TrashEntryDTO[] = data?.pages.flatMap((page) => page.items) ?? [];
 
   function handleEntryClick(entry: TrashEntryDTO) {
     toggleSelected(entry.id);
@@ -99,7 +107,7 @@ export default function FinderBinRootView(): JSX.Element {
         </div>
         <div className="flex-1" />
         <ViewModeSwitcher />
-        <EmptyBinButton totalCount={entries.length} />
+        <EmptyBinButton totalCount={entries.length} hasMore={hasNextPage} />
       </div>
 
       {/* Toolbar de sélection — visible si selectedIds non vide */}
@@ -108,6 +116,18 @@ export default function FinderBinRootView(): JSX.Element {
       {/* Corps : liste rendue selon le mode */}
       <div className="flex-1 overflow-auto min-h-0">
         {renderContent()}
+        {hasNextPage ? (
+          <div className="flex justify-center p-4">
+            <button
+              type="button"
+              onClick={() => void fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {isFetchingNextPage ? 'Chargement…' : 'Afficher plus'}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, TRASHED_FOLDER, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -265,6 +265,22 @@ for (const { user, guardian } of [
       guardianName: guardian.name,
       guardianEmail: guardian.email,
       guardianRelation: guardian.relation,
+    },
+  });
+}
+
+// Un dossier dans la corbeille, avec un fichier : l'effacement définitif porte sur le dossier entier.
+{
+  const png = Buffer.from(TINY_PNG_BASE64, "base64");
+  await s3.send(new PutObjectCommand({ Bucket, Key: TRASHED_FOLDER.fileKey, Body: png, ContentType: "image/png" }));
+  await prisma.trashEntry.create({
+    data: {
+      id: TRASHED_FOLDER.id,
+      appRoot: "AKFC",
+      kind: "folder",
+      displayName: TRASHED_FOLDER.displayName,
+      previousPath: TRASHED_FOLDER.previousPath,
+      storageRoot: TRASHED_FOLDER.storageRoot,
     },
   });
 }

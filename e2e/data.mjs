@@ -74,3 +74,12 @@ export const TINY_PDF = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2
 /** Une image PNG d'un pixel, pour les galeries de test. */
 export const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+/** Un dossier jeté, avec un fichier dedans : on ne l'efface qu'en entier (trash.purge). */
+export const TRASHED_FOLDER = {
+  id: "e2e-corbeille",
+  displayName: "dossier-jete-e2e",
+  previousPath: "AKFC/common-repository/dossier-jete-e2e",
+  storageRoot: "AKFC/bin/.trash/e2e-corbeille/dossier-jete-e2e",
+  fileKey: "AKFC/bin/.trash/e2e-corbeille/dossier-jete-e2e/photo.png",
+};
