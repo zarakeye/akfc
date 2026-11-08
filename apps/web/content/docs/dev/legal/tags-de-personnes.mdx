@@ -1,6 +1,6 @@
 ---
 title: "Les tags de personnes"
-description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, la case « aucune personne reconnaissable », et la relance."
+description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags et la relance."
 section: "Légal et RGPD"
 order: 5
 entities:
@@ -11,18 +11,21 @@ stories:
   - title: Un administrateur tague les personnes d’une photo
     actor: Administrateur
     steps:
-      - label: Il ouvre les tags d’un média ; chaque personne taguée montre son état par usage, et le média son verdict
+      - label: Le tableau d’une galerie lit les verdicts de tous ses médias d’un coup
+        call: mediaPeople.verdicts
+        section: Le tableau des galeries
+      - label: Il clique sur un média ; la modale montre les personnes taguées, leur état par usage, et le verdict
         call: mediaPeople.forMedia
-        section: Un verdict calculé, jamais stocké
+        section: La modale des tags
+      - label: La liste des membres à cocher montre déjà le droit à l’image de chacun
+        call: mediaPeople.candidates
+        section: La modale des tags
       - label: Il coche les personnes reconnaissables ; la liste remplace la précédente
         call: mediaPeople.setTags
         section: Poser et retirer des tags
       - label: Personne de reconnaissable (salle, matériel, de dos) ; tout passe au vert
         call: mediaPeople.setNoRecognizable
         section: Poser et retirer des tags
-      - label: Le tableau d’une galerie lit les verdicts de tous ses médias d’un coup
-        call: mediaPeople.verdicts
-        section: Un verdict calculé, jamais stocké
       - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
         call: mediaPeople.remind
         section: Relancer
@@ -76,7 +79,51 @@ Le formulaire le plus récent (par date des droits) fait foi. Sans formulaire, l
 La modale envoie la liste complète des personnes cochées ; le serveur supprime celles qui n’y sont plus et ajoute les nouvelles, dans une transaction. Un tag déjà posé garde sa date. La case « aucune personne reconnaissable » met tout au vert : elle sert pour une salle vide, du matériel, un groupe de dos.
 
 <Callout type="info">
-Tous les médias déjà publiés sont « à taguer » : la migration n’en retire aucun du site. Ce que le verdict bloque ou signale (site public, espace membres) vient avec le tableau des galeries, dans l’incrément suivant.
+Tous les médias déjà publiés sont « à taguer » : la migration n’en retire aucun du site. Ce que le verdict bloque ou signale (site public, réseaux et presse bloqués, espace membres averti) vient dans l’incrément suivant.
+</Callout>
+
+## Le tableau des galeries
+
+Les images d’une galerie (le carrousel d’accueil en est une) ne sont plus une grille de vignettes mais un **tableau** : une ligne par média, qui s’ajoute à chaque média ajouté, et une colonne par usage du formulaire. On voit d’un coup d’œil ce qui peut partir sur le site public et ce qui doit rester dans l’espace membres. Le glisser-déposer des lignes règle toujours l’ordre.
+
+<DocsTable columnsJson='["Pastille", "Verdict"]' rowsJson='[["✓ vert", "Accord"], ["✕ rouge", "Refus"], ["? orange", "Pas d’autorisation : on attend une réponse, la relance est possible"], ["– gris", "À taguer"]]' />
+
+La couleur n’est jamais seule : chaque pastille porte un symbole et un libellé (« Site public : Refus »), lu au survol et par les lecteurs d’écran. Les en-têtes sont courts (« Réseaux »), le libellé complet du formulaire est au survol.
+
+Les blocs « Galerie d’images » du constructeur de pages ont les mêmes pastilles sous chaque image. Sauf dans la présentation qu’un instructeur rédige lui-même : les tags sont réservés aux administrateurs, et le constructeur reçoit `imageRights={false}`.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/components/MediaListEditor.tsx"
+  filename="MediaListEditor.tsx"
+  snippetRange="145-150"
+  snippetHighlight="1,3,6"
+  snippetTitle="Le bloc le demande, l’hôte du constructeur l’autorise"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## La modale des tags
+
+Un clic sur un média ouvre la modale. En haut, le verdict et la case « aucune personne reconnaissable » ; puis les personnes déjà taguées, avec leur état usage par usage et le bouton de relance ; enfin la liste des membres à cocher, avec une recherche insensible aux accents.
+
+Chaque membre de la liste montre **déjà** son droit à l’image (`mediaPeople.candidates`) : l’administrateur sait, avant de cocher, qui fera passer la photo au rouge. Et le verdict se recalcule à chaque case, avant d’enregistrer, avec la même règle que le serveur :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/media-people/MediaTagsDialog.tsx"
+  filename="MediaTagsDialog.tsx"
+  snippetRange="16-31"
+  snippetHighlight="9,12"
+  snippetTitle="Le verdict des cases cochées, avant enregistrement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette règle existe donc deux fois, côté serveur (`mediaVerdicts`) et dans la modale. La modale ne connaît que l’état de chaque membre, pas son formulaire : elle ne peut pas appeler `mediaVerdicts`, qui part du formulaire. Le test de bout en bout vérifie que l’aperçu et le tableau, relu au serveur après l’enregistrement, disent la même chose.
+
+Les tags appartiennent au **média**, pas à la galerie : ils s’enregistrent tout de suite, sans attendre le bouton du formulaire, et suivent le média dans toutes les galeries et pages où il apparaît.
+
+<Callout type="warning">
+La modale s’ouvre aussi dans un formulaire, celui de la création d’une galerie. Rendue dans ce formulaire, la touche « Entrée » dans la recherche l’enverrait. Elle est donc rendue dans un **portail** (`createPortal` vers `document.body`) : hors de l’arbre DOM du formulaire, plus d’envoi implicite.
 </Callout>
 
 ## Relancer
@@ -87,14 +134,14 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
   language="ts"
   filepath="packages/backend/src/modules/mediaPeople/mediaPeople.service.ts"
   filename="mediaPeople.service.ts"
-  snippetRange="144-181"
+  snippetRange="170-207"
   title="remindImageConsent"
   stepsJson='[{"title": "Sept jours entre deux relances", "body": "La date de la dernière relance est gardée sur le membre (imageConsentRemindedAt). Plus tôt, le refus le dit ; le bouton de la modale, lui, est déjà grisé.", "scope": "21-23", "focus": "21-21"}, {"title": "Un mineur dont le parent attend", "body": "Une demande existe déjà (lien en cours ou expiré) : on renvoie un lien au parent, par le circuit du chapitre précédent. Le mineur n’a rien à refaire.", "scope": "25-27", "focus": "25-25"}, {"title": "Sinon, un e-mail au membre", "body": "Le majeur est invité à répondre en ligne ; le mineur sans demande, à indiquer ses souhaits puis à les envoyer à son parent. L’e-mail ne dit pas sur quelle photo : la personne le verra dans son espace.", "scope": "28-35", "focus": "32-32"}, {"title": "La date, après l’envoi", "body": "Elle n’est notée que si l’envoi a réussi : un échec d’e-mail ne bloque pas la relance pendant sept jours.", "scope": "36-36", "focus": "36-36"}]'
 />
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
