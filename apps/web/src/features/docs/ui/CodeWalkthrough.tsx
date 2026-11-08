@@ -1,4 +1,4 @@
-import { readCodeFile } from "@features/docs/lib/code.utils"
+import { readCodeFile, resolveSnippetBounds } from "@features/docs/lib/code.utils"
 import { renderCodeBlockHtml } from "./CodeBlock"
 import { CodeWalkthroughClient } from "@features/docs/ui/CodeWalktroughClient"
 
@@ -14,21 +14,18 @@ interface CodeWalkthroughProps {
   language?: string
   filename?: string
   snippetRange?: string
+  /** Texte de la première ligne de l'extrait (voir resolveSnippetBounds). À préférer à snippetRange. */
+  snippetStart?: string
+  /** Texte de la dernière ligne, cherchée à partir de la première. */
+  snippetEnd?: string
+  /** Lignes reprises au-dessus de l'ancre de début (un commentaire qui la précède). */
+  snippetLead?: string
+  /** Nombre de lignes à partir de l'ancre de début, sans ancre de fin. */
+  snippetLines?: string
   title?: string
   stepsJson?: string
 }
 
-function parseRange(range?: string): { start?: number; end?: number } {
-  if (!range?.trim()) return {}
-
-  const match = range.trim().match(/^(\d+)\s*-\s*(\d+)$/)
-  if (!match) return {}
-
-  return {
-    start: Number(match[1]),
-    end: Number(match[2]),
-  }
-}
 
 function parseLineExpression(expr?: string): number[] {
   if (!expr?.trim()) return []
@@ -116,6 +113,10 @@ export async function CodeWalkthrough({
   language = "ts",
   filename,
   snippetRange,
+  snippetStart,
+  snippetEnd,
+  snippetLead,
+  snippetLines,
   title = "Code walkthrough",
   stepsJson,
 }: CodeWalkthroughProps) {
@@ -125,8 +126,12 @@ export async function CodeWalkthrough({
     return null
   }
 
-  const source = readCodeFile(filepath)
-  const { start, end } = parseRange(snippetRange)
+  let source = readCodeFile(filepath)
+  const bounds = resolveSnippetBounds(source, { snippetRange, snippetStart, snippetEnd, snippetLead, snippetLines })
+  if (bounds.error) {
+    source = `// ⚠ Extrait introuvable dans ${filepath} : ${bounds.error}\n// Le code a changé depuis la rédaction de ce chapitre.`
+  }
+  const { start, end } = bounds.error ? { start: 1, end: 2 } : bounds
 
   const htmlByStep = await Promise.all(
     steps.map(async (step) => {
