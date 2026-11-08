@@ -22,16 +22,21 @@ async function ensureAdminGroup() {
   return group.id;
 }
 
-async function ensureUser({ email, firstName, hash, admin, adminGroupId }) {
+/**
+ * Un compte de démo, remis à son état connu à chaque passage. `legal` : nom, majorité et, pour un
+ * mineur, son parent référent (le parent n'a pas de compte : ses e-mails arrivent dans Mailpit).
+ */
+async function ensureUser({ email, firstName, hash, admin, adminGroupId, legal = {} }) {
   const user = await prisma.user.upsert({
     where: { email },
-    update: { password: hash, emailVerified: true, isFirstLogin: false },
+    update: { password: hash, emailVerified: true, isFirstLogin: false, ...legal },
     create: {
       email,
       firstName,
       password: hash,
       emailVerified: true,
       isFirstLogin: false,
+      ...legal,
     },
     select: { id: true },
   });
@@ -64,6 +69,25 @@ async function main() {
     hash,
     admin: false,
     adminGroupId,
+    // Majeur : il donne lui-même son autorisation de droit à l'image, en ligne.
+    legal: { lastName: "Démo", legalAge: "ADULT" },
+  });
+  await ensureUser({
+    email: "mineur@akfc.demo",
+    firstName: "Mineur",
+    hash,
+    admin: false,
+    adminGroupId,
+    // Mineur, fiche complète : il indique ses souhaits, le lien part à « son parent ».
+    legal: {
+      lastName: "Démo",
+      legalAge: "MINOR",
+      birthDate: new Date("2012-05-04T00:00:00.000Z"),
+      birthDateVerified: true,
+      guardianName: "Parent Démo",
+      guardianRelation: "mère",
+      guardianEmail: "parent@akfc.demo",
+    },
   });
   console.log("✅ Comptes de démo prêts");
 
@@ -104,7 +128,8 @@ async function main() {
 
   console.log("");
   console.log("   Admin  : admin@akfc.demo  /  " + DEMO_PASSWORD);
-  console.log("   Membre : membre@akfc.demo /  " + DEMO_PASSWORD);
+  console.log("   Membre : membre@akfc.demo /  " + DEMO_PASSWORD + "  (majeur)");
+  console.log("   Mineur : mineur@akfc.demo /  " + DEMO_PASSWORD + "  (parent : parent@akfc.demo, sans compte, e-mails dans Mailpit)");
   console.log("🌱 Seed sandbox terminé");
 }
 
