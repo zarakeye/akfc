@@ -9,6 +9,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 import { pageContentSchemaV1 } from "@contracts/page";
 import { hhmmSchema, END_AFTER_BEGIN_MESSAGE } from "@contracts/time/hhmm.schema";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * courses/router.ts
@@ -165,6 +166,7 @@ export const courseRouter = router({
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content);
+      await assertPublicContentRights(ctx.prisma, input.content);
       // ─── Validations pré-transaction (lectures simples) ────────────────
       //
       // On fait ces lectures hors transaction pour ne pas tenir un lock
@@ -251,6 +253,7 @@ export const courseRouter = router({
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content);
+      await assertPublicContentRights(ctx.prisma, input.content);
       const { id, ...rest } = input;
 
       // ─── Horaires : la règle « fin après début » porte sur le résultat ──

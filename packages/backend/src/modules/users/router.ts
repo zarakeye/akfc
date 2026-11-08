@@ -19,6 +19,7 @@ import { assertBioMediaAllowed, isInstructorUser } from "@backend/modules/users/
 import { removeAvatarFile } from "@backend/modules/avatar/avatar.service";
 import { resolvePersoBaseFolder } from "@backend/modules/media/services/resolvePersoBaseFolder.service";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 import { byEffectiveDesc } from "@backend/modules/imageConsent/formOrder";
 
 /** Les champs du profil, et eux seuls : ni l'empreinte du mot de passe, ni les données légales. */
@@ -349,6 +350,7 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.bio);
+      await assertPublicContentRights(ctx.prisma, input.bio);
       const userId = ctx.sessionClient.user.id;
       // Seul un titulaire a une présentation publique. Un autre membre pourrait sinon référencer des
       // fichiers, et les rendre servis au public, sans qu'aucune page ne les montre.

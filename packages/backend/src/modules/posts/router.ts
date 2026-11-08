@@ -8,6 +8,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 
 import { pageContentSchemaV1 } from "@contracts/page";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * posts/router.ts — refactor v2.
@@ -95,6 +96,7 @@ export const postRouter = router({
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content);
+      await assertPublicContentRights(ctx.prisma, input.content);
       return await ctx.prisma.$transaction(async (tx) => {
         const created = await tx.post.create({
           data: {
@@ -120,6 +122,7 @@ export const postRouter = router({
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content);
+      await assertPublicContentRights(ctx.prisma, input.content);
       const { id, content, ...rest } = input;
 
       return await ctx.prisma.$transaction(async (tx) => {

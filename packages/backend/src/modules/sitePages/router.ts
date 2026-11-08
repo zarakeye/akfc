@@ -7,6 +7,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 
 import { pageContentSchemaV1 } from "@contracts/page";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * Pages de contenu éditoriales du site.
@@ -53,6 +54,7 @@ export const sitePageRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content);
+      await assertPublicContentRights(ctx.prisma, input.content);
       return ctx.prisma.$transaction(async (tx) => {
         const saved = await tx.sitePage.upsert({
           where: { slug: input.slug },

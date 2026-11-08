@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 import { prisma } from "@backend/prisma";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
 import { resolveAvatarsByUserIds } from "@backend/modules/media/services/resolveAvatarsByUserIds.service";
+import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 import {
   extractMediaIdsFromContent,
@@ -83,10 +84,15 @@ export async function PageRenderer({ content, audience = "public" }: PageRendere
   //    `/api/media/public/r2/...` qui valide qu'un PageMediaReference
   //    existe avant de signer (cf. sous-chantier 6c).
   const resolvedMap = await resolveMediaByIds(prisma, mediaIds, audience);
+  // Droit à l'image : tout contenu du constructeur est sur le site public. Un média dont une personne
+  // taguée a refusé le site public est sauté, comme un média introuvable ; le contenu n'est pas
+  // modifié, et le média revient avec l'accord. L'aperçu d'un administrateur le montre encore.
+  const hidden =
+    audience === "public" ? await refusedMediaIds(prisma, mediaIds, "PUBLIC_SITE") : new Set<string>();
 
   // Lookup synchrone fermé sur la map — passé à chaque View.
   const resolveMedia = (mediaId: string): ResolvedMedia | null =>
-    resolvedMap[mediaId] ?? null;
+    hidden.has(mediaId) ? null : (resolvedMap[mediaId] ?? null);
 
   // Résolution des avatars référencés par les blocs media-text ET float-text
   // (référence logique { kind: "avatar", userId } → avatar courant du user).

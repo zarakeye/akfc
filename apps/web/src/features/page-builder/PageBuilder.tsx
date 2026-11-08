@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import type { FileAdapter } from "@contracts/finder";
-import type {
-  PageContentV1,
-  PageBlockV1,
-  PageBlockKindV1,
+import {
+  extractMediaIdsFromContent,
+  type PageContentV1,
+  type PageBlockV1,
+  type PageBlockKindV1,
 } from "@contracts/page";
+import type { ImageUsageValue } from "@contracts/legal/imageConsent";
+import { checkDestinations, type RightsIssue } from "@contracts/legal/mediaPeople";
+import { trpc } from "@trpc/trpcClient";
+import { RightsCheckBanner } from "@features/admin/media-people/RightsCheckBanner";
 
 import { getBlockDefinition } from "./blockRegistry";
 import { PageBuilderProvider } from "./PageBuilderContext";
@@ -44,6 +49,15 @@ export interface PageBuilderProps {
    * des formulaires d'administration, sauf la présentation d'un instructeur, qui passe `false`.
    */
   imageRights?: boolean;
+}
+
+/** Tout contenu du constructeur (discipline, cours, actualité, page…) s'affiche sur le site public. */
+const PAGE_DESTINATIONS = ["PUBLIC_SITE"] as const satisfies readonly ImageUsageValue[];
+
+/** « 2 images de ce contenu » : elles sont réparties dans plusieurs blocs, pas numérotées. */
+function countImages(_ids: readonly string[], issues: readonly RightsIssue[]): string {
+  const n = new Set(issues.map((i) => i.mediaAssetId)).size;
+  return `${n} image${n > 1 ? "s" : ""} de ce contenu`;
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -117,11 +131,34 @@ export function PageBuilder({
     onChange({ ...value, blocks });
   };
 
+  /* ── Droit à l'image : tout contenu du constructeur va sur le site public ── */
+
+  const mediaIds = imageRights ? extractMediaIdsFromContent(value) : [];
+  const rightsQuery = trpc.mediaPeople.verdicts.useQuery(
+    { mediaAssetIds: [...mediaIds] },
+    { enabled: mediaIds.length > 0 },
+  );
+  const rightsCheck = rightsQuery.data
+    ? checkDestinations(
+        Object.fromEntries(Object.entries(rightsQuery.data).map(([id, r]) => [id, r.verdicts])),
+        mediaIds,
+        PAGE_DESTINATIONS,
+      )
+    : null;
+
   /* ── Rendu ── */
 
   return (
     <PageBuilderProvider value={{ adapter, appRoot, mediaRoot: mediaRoot ?? appRoot, imageRights }}>
       <div className="flex flex-col gap-3">
+        {rightsCheck && (
+          <RightsCheckBanner
+            ids={mediaIds}
+            destinations={PAGE_DESTINATIONS}
+            check={rightsCheck}
+            describe={countImages}
+          />
+        )}
         {value.blocks.length === 0 && (
           <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             Cette page est vide. Ajoute un premier bloc pour commencer.

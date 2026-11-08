@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_GALLERY, TAG_MEDIA, TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -225,6 +225,14 @@ await prisma.user.update({
   });
   await prisma.gallery.create({
     data: { slug: TAG_GALLERY.slug, title: TAG_GALLERY.title, visibility: "MEMBERS", items: { create: { mediaAssetId: TAG_GALLERY.mediaId } } },
+  });
+  // Média des contenus du constructeur (une actualité, publiée par le test).
+  await s3.send(new PutObjectCommand({ Bucket, Key: TAG_PAGE_MEDIA.key, Body: png, ContentType: "image/png" }));
+  await prisma.mediaAsset.create({
+    data: {
+      id: TAG_PAGE_MEDIA.id, fullPath: TAG_PAGE_MEDIA.key, mimeType: "image/png", format: "png", originalFileName: "tags-page.png",
+      bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "published", uploaderUserId: USERS.admin.id,
+    },
   });
   // Galerie publique : destination « site public », où un refus bloque et masque.
   await s3.send(new PutObjectCommand({ Bucket, Key: TAG_PUBLIC_GALLERY.key, Body: png, ContentType: "image/png" }));

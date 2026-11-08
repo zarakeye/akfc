@@ -9,6 +9,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
+import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * seminars/router.ts
@@ -346,6 +347,7 @@ export const seminarRouter = router({
     .input(createInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.description, input.program, input.summary);
+      await assertPublicContentRights(ctx.prisma, input.description, input.program, input.summary);
       // ─── Validations pré-transaction ───────────────────────────────────
 
       await assertDisciplineExists(ctx.prisma, input.disciplineId);
@@ -443,6 +445,7 @@ export const seminarRouter = router({
     .input(updateInput)
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.description, input.program, input.summary);
+      await assertPublicContentRights(ctx.prisma, input.description, input.program, input.summary);
       const {
         id,
         coAnimatorIds,
