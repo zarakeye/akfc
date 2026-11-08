@@ -45,9 +45,9 @@ Une durée de conservation annoncée doit être **tenue**. Une politique qui pro
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="31-49"
+  snippetRange="34-64"
   title="purgeExpiredData — ce qui part chaque nuit"
-  stepsJson='[{"title": "Les demandes closes depuis longtemps", "body": "La durée vient des réglages (celle qu’annonce la politique). Une demande part si elle est close depuis cette durée ET sans message depuis : un demandeur qui écrit sur une demande close la rouvre, et repousse l’échéance.", "scope": "2-6", "focus": "5-5"}, {"title": "Ce qui a expiré", "body": "Les sessions expirées et les liens de réinitialisation périmés n’ont plus d’usage : supprimés.", "scope": "7-8", "focus": "7-8"}, {"title": "Les vignettes orphelines", "body": "Les déclinaisons dont l’original a disparu (partie « Stockage et médias ») : une photo supprimée ne survit pas en vignette.", "scope": "10-13", "focus": "10-10"}, {"title": "Les preuves arrivées à échéance", "body": "Les formulaires de droit à l’image d’un compte supprimé depuis cinq ans (chapitre 3). Chaque étape qui touche au stockage est isolée : son échec est journalisé, il n’empêche pas les autres.", "scope": "14-19", "focus": "14-14"}]'
+  stepsJson='[{"title": "Les demandes closes depuis longtemps", "body": "La durée vient des réglages (celle qu’annonce la politique). Une demande part si elle est close depuis cette durée ET sans message depuis : un demandeur qui écrit sur une demande close la rouvre, et repousse l’échéance.", "scope": "2-6", "focus": "5-5"}, {"title": "Ce qui a expiré", "body": "Les sessions expirées et les liens de réinitialisation périmés n’ont plus d’usage : supprimés.", "scope": "7-8", "focus": "7-8"}, {"title": "Les souhaits d’un mineur restés sans réponse", "body": "Le lien envoyé au parent vaut sept jours ; trente jours après son expiration, la demande (les souhaits du mineur) est supprimée. Une demande validée l’est aussitôt, dans la transaction de la validation.", "scope": "9-13", "focus": "11-11"}, {"title": "Les vignettes orphelines", "body": "Les déclinaisons dont l’original a disparu (partie « Stockage et médias ») : une photo supprimée ne survit pas en vignette.", "scope": "14-18", "focus": "15-15"}, {"title": "Les preuves arrivées à échéance", "body": "Les formulaires de droit à l’image d’un compte supprimé depuis cinq ans (chapitre 3). Chaque étape qui touche au stockage est isolée : son échec est journalisé, il n’empêche pas les autres.", "scope": "19-31", "focus": "19-19"}]'
 />
 
 La purge est lancée au démarrage du serveur, puis chaque nuit à 3 heures, heure de Paris :
@@ -56,7 +56,7 @@ La purge est lancée au démarrage du serveur, puis chaque nuit à 3 heures, heu
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="85-109"
+  snippetRange="100-124"
   snippetHighlight="2,21"
   snippetTitle="Une purge par jour, à heure fixe"
   fullFileTitle="Voir le fichier complet"
@@ -64,7 +64,7 @@ La purge est lancée au démarrage du serveur, puis chaque nuit à 3 heures, heu
 
 Pas de planificateur externe : une minuterie vérifie chaque minute s’il est 3 heures et si la purge du jour n’a pas déjà tourné (`lastDay`). `busy` empêche deux passes de se chevaucher. `RETENTION_PURGE_DISABLED=1` la coupe, pour un environnement de démonstration ou une base qu’on examine.
 
-<DocsTable columnsJson='["Données", "Ce que fait la purge"]' rowsJson='[["Demandes closes", "Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."], ["Sessions expirées, liens de réinitialisation périmés", "Supprimés."], ["Vignettes et affiches dont l’original a disparu", "Supprimées du stockage."], ["Formulaires de droit à l’image d’un compte supprimé", "Supprimés cinq ans après la suppression du compte."], ["Comptes", "Jamais supprimés automatiquement : listés aux administrateurs."]]' />
+<DocsTable columnsJson='["Données", "Ce que fait la purge"]' rowsJson='[["Demandes closes", "Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."], ["Souhaits d’un mineur sans réponse du parent", "Supprimés trente jours après l’expiration du lien envoyé au parent ; validés, ils rejoignent aussitôt le formulaire signé."], ["Sessions expirées, liens de réinitialisation périmés", "Supprimés."], ["Vignettes et affiches dont l’original a disparu", "Supprimées du stockage."], ["Formulaires de droit à l’image d’un compte supprimé", "Supprimés cinq ans après la suppression du compte."], ["Comptes", "Jamais supprimés automatiquement : listés aux administrateurs."]]' />
 
 ## Des comptes, jamais supprimés sans décision
 
@@ -74,7 +74,7 @@ Les comptes font exception. Le site ne sait pas quand une adhésion prend fin : 
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="61-67"
+  snippetRange="76-82"
   snippetHighlight="5"
   snippetTitle="Les comptes à examiner"
   fullFileTitle="Voir le fichier complet"

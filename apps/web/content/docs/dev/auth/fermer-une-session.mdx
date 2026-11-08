@@ -81,7 +81,7 @@ La première version du projet confiait ce cas à un `setInterval` qui purgeait 
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="31-48"
+  snippetRange="34-63"
   snippetHighlight="7-8"
   snippetTitle="purgeExpiredData : les sessions et les liens expirés, parmi d’autres durées"
   fullFileTitle="Voir le fichier complet"
@@ -95,9 +95,9 @@ La première version du projet confiait ce cas à un `setInterval` qui purgeait 
   language="ts"
   filepath="packages/backend/src/modules/privacy/retention.service.ts"
   filename="retention.service.ts"
-  snippetRange="31-109"
+  snippetRange="34-124"
   title="La purge, de la requête à la minuterie"
-  stepsJson='[{"title": "Deux deleteMany", "body": "Toutes les sessions dont expiresAt est passée, et tous les liens de réinitialisation périmés : deux requêtes, chacune atomique.", "scope": "1-19", "focus": "7-8"}, {"title": "Au milieu d’autres durées de conservation", "body": "Les demandes closes depuis longtemps, les vignettes orphelines, les formulaires de droit à l’image d’un compte supprimé : la même purge applique toutes les durées promises par la politique de confidentialité.", "scope": "1-19", "focus": "1-18"}, {"title": "Un journal seulement s’il y a eu du travail", "body": "La ligne [rgpd/purge] n’est écrite que si quelque chose a été supprimé. Une purge soudainement massive serait un signal à regarder.", "scope": "52-79", "focus": "62-68"}, {"title": "Une passe au démarrage, puis chaque nuit à 3 h", "body": "run(new Date()) au lancement, puis une minuterie qui vérifie chaque minute s’il est 3 h à Paris et si la purge du jour n’a pas déjà eu lieu. RETENTION_PURGE_DISABLED=1 la coupe.", "scope": "52-79", "focus": "71-77"}]'
+  stepsJson='[{"title": "Deux deleteMany", "body": "Toutes les sessions dont expiresAt est passée, et tous les liens de réinitialisation périmés : deux requêtes, chacune atomique.", "scope": "1-31", "focus": "7-8"}, {"title": "Au milieu d’autres durées de conservation", "body": "Les demandes closes depuis longtemps, les vignettes orphelines, les formulaires de droit à l’image d’un compte supprimé : la même purge applique toutes les durées promises par la politique de confidentialité.", "scope": "1-31", "focus": "1-30"}, {"title": "Un journal seulement s’il y a eu du travail", "body": "La ligne [rgpd/purge] n’est écrite que si quelque chose a été supprimé. Une purge soudainement massive serait un signal à regarder.", "scope": "64-91", "focus": "74-80"}, {"title": "Une passe au démarrage, puis chaque nuit à 3 h", "body": "run(new Date()) au lancement, puis une minuterie qui vérifie chaque minute s’il est 3 h à Paris et si la purge du jour n’a pas déjà eu lieu. RETENTION_PURGE_DISABLED=1 la coupe.", "scope": "64-91", "focus": "83-89"}]'
 />
 
 ---
