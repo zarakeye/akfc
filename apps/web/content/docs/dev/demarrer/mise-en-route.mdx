@@ -311,7 +311,9 @@ pnpm db:seed:dev
 
 Le script n'importe pas `dotenv` : c'est Node lui-même qui charge le `.env` de la racine, grâce à l'option `--env-file`.
 
-<DocsTable columnsJson='["Compte","Mot de passe","Rôle"]' rowsJson='[["admin@akfc.demo","sandbox-demo","administrateur (membre du groupe Administrateurs)"],["membre@akfc.demo","sandbox-demo","simple membre"]]' />
+<DocsTable columnsJson='["Compte","Mot de passe","Rôle"]' rowsJson='[["admin@akfc.demo","sandbox-demo","administrateur (membre du groupe Administrateurs)"],["membre@akfc.demo","sandbox-demo","simple membre, majeur : il donne son droit à l’image en ligne"],["mineur@akfc.demo","sandbox-demo","simple membre, mineur, fiche complète : son parent référent est parent@akfc.demo"]]' />
+
+Le parent d’un mineur n’a pas de compte : c’est voulu, il valide par un lien reçu par e-mail. Ses messages, adressés à `parent@akfc.demo`, arrivent dans Mailpit comme les autres. Pour suivre tout le circuit : se connecter en `mineur@akfc.demo`, « Indiquer mes souhaits », puis ouvrir dans Mailpit l’e-mail du parent et son lien, dans une fenêtre de navigation privée.
 
 C'est le script de la sandbox recruteurs, `prisma/seed.sandbox.mjs`. Il est **idempotent** : le relancer ne crée pas de doublons et remet les mots de passe à leur valeur de démonstration. Nous pouvons donc le relancer à tout moment pour retrouver un état connu. C'est la séparation des bases qui rend ce geste sans danger.
 
