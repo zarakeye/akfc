@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginAs } from "./helpers";
+import { clickUntilUrl, loginAs } from "./helpers";
 import { SEMINAR, USERS } from "./data.mjs";
 
 /**
@@ -11,8 +11,7 @@ import { SEMINAR, USERS } from "./data.mjs";
 test("un administrateur ajoute une séance à un stage depuis son édition", async ({ page }) => {
   await loginAs(page, USERS.admin.email);
   await page.goto("/dashboard/seminars");
-  await page.getByText(SEMINAR.label, { exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard\/seminars\/\d+$/);
+  await clickUntilUrl(page, page.getByText(SEMINAR.label, { exact: true }), /\/dashboard\/seminars\/\d+$/);
   await page.locator('[data-tour="fiche.edit"]').click();
   await expect(page).toHaveURL(/\/dashboard\/seminars\/\d+\/edit$/);
 

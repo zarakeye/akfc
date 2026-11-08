@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 import { MAILPIT_API } from "./env.mjs";
 import { PASSWORD } from "./data.mjs";
@@ -67,4 +67,16 @@ export async function waitForEmail(request: APIRequestContext, to: string, since
     )
     .not.toBeNull();
   return text as unknown as string;
+}
+
+/**
+ * Clique sur une ligne (ou un lien rendu côté client) jusqu'à arriver à `url`. Une ligne de tableau
+ * peut être visible avant que React y ait branché son clic (navigateur tout neuf, données encore en
+ * rechargement) : ce clic-là se perd sans erreur. On recommence tant que l'adresse n'a pas changé.
+ */
+export async function clickUntilUrl(page: Page, target: Locator, url: RegExp): Promise<void> {
+  await expect(async () => {
+    if (!url.test(page.url())) await target.click({ timeout: 2_000 });
+    await expect(page).toHaveURL(url, { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
 }

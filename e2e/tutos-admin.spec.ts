@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { loginAs, trpcMutation } from "./helpers";
+import { clickUntilUrl, loginAs, trpcMutation } from "./helpers";
 import { SEMINAR, USERS } from "./data.mjs";
 
 /**
@@ -97,8 +97,7 @@ test("« Le droit à l'image d'un mineur » conduit à sa fiche et montre où su
   await launch(page, "/dashboard/users", /Le droit à l'image d'un mineur.*parent/);
   const t = "Le droit à l'image d'un mineur";
   await expect(bubble(page, t, 1, 3)).toBeVisible();
-  await page.getByRole("row", { name: new RegExp(USERS.mineur.email) }).click();
-  await expect(page).toHaveURL(new RegExp(`/dashboard/users/${USERS.mineur.id}$`));
+  await clickUntilUrl(page, page.getByRole("row", { name: new RegExp(USERS.mineur.email) }), new RegExp(`/dashboard/users/${USERS.mineur.id}$`));
   await expect(bubble(page, t, 2, 3)).toBeVisible();
   await nextButton(page).click();
   await expect(bubble(page, t, 3, 3)).toBeVisible();
@@ -130,8 +129,7 @@ test("« Traiter une demande » ouvre une demande, et n'y répond pas", async ({
   await expect(bubble(page, t, 1, 6)).toBeVisible();
   await nextButton(page).click();
   await expect(bubble(page, t, 2, 6)).toBeVisible();
-  await page.locator('[data-tour="tickets.item"]', { hasText: "Demande e2e du tuto" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/tickets\/[^/]+$/);
+  await clickUntilUrl(page, page.locator('[data-tour="tickets.item"]', { hasText: "Demande e2e du tuto" }), /\/dashboard\/tickets\/[^/]+$/);
   for (const n of [3, 4, 5]) {
     await expect(bubble(page, t, n, 6)).toBeVisible();
     await nextButton(page).click();
@@ -181,7 +179,7 @@ test("« Ajouter des séances » conduit de la liste à l'édition d'un stage", 
   await launch(page, "/dashboard/seminars", /Ajouter des séances.*agenda/);
   const t = "Ajouter des séances";
   await expect(bubble(page, t, 1, 3)).toBeVisible();
-  await page.getByText(SEMINAR.label, { exact: true }).click();
+  await clickUntilUrl(page, page.getByText(SEMINAR.label, { exact: true }), /\/dashboard\/seminars\/\d+$/);
   await expect(bubble(page, t, 2, 3)).toBeVisible();
   await page.locator('[data-tour="fiche.edit"]').click();
   await expect(bubble(page, t, 3, 3)).toBeVisible();
