@@ -1,6 +1,6 @@
 ---
 title: "Les tags de personnes"
-description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags et la relance."
+description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags, la destination de chaque galerie (ce qui bloque, ce qui avertit) et la relance."
 section: "Légal et RGPD"
 order: 5
 entities:
@@ -26,6 +26,12 @@ stories:
       - label: Personne de reconnaissable (salle, matériel, de dos) ; tout passe au vert
         call: mediaPeople.setNoRecognizable
         section: Poser et retirer des tags
+      - label: Il enregistre les images d’une galerie publique ; un refus d’une personne taguée bloque
+        call: gallery.setItems
+        section: Destinations, blocages et masquage
+      - label: Un visiteur parcourt les galeries ; les médias refusés pour le site public sont sautés
+        call: gallery.getPublicIndex
+        section: Destinations, blocages et masquage
       - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
         call: mediaPeople.remind
         section: Relancer
@@ -79,7 +85,7 @@ Le formulaire le plus récent (par date des droits) fait foi. Sans formulaire, l
 La modale envoie la liste complète des personnes cochées ; le serveur supprime celles qui n’y sont plus et ajoute les nouvelles, dans une transaction. Un tag déjà posé garde sa date. La case « aucune personne reconnaissable » met tout au vert : elle sert pour une salle vide, du matériel, un groupe de dos.
 
 <Callout type="info">
-Tous les médias déjà publiés sont « à taguer » : la migration n’en retire aucun du site. Ce que le verdict bloque ou signale (site public, réseaux et presse bloqués, espace membres averti) vient dans l’incrément suivant.
+Tous les médias déjà publiés sont « à taguer » : la migration n’en retire aucun du site. Un média non tagué n’a aucun effet ; c’est le tag qui fait agir le droit à l’image de la personne (voir « Destinations, blocages et masquage »).
 </Callout>
 
 ## Le tableau des galeries
@@ -126,6 +132,48 @@ Les tags appartiennent au **média**, pas à la galerie : ils s’enregistrent t
 La modale s’ouvre aussi dans un formulaire, celui de la création d’une galerie. Rendue dans ce formulaire, la touche « Entrée » dans la recherche l’enverrait. Elle est donc rendue dans un **portail** (`createPortal` vers `document.body`) : hors de l’arbre DOM du formulaire, plus d’envoi implicite.
 </Callout>
 
+## Destinations, blocages et masquage
+
+Savoir qu’une photo a un refus pour le site public ne sert que si l’on sait **où elle va**. Chaque contenant a donc une destination, déduite de ce qui existe déjà : le carrousel d’accueil et une galerie publique vont sur le site public, une galerie réservée aux membres dans l’espace membres. Rien de plus à saisir.
+
+Les autorisations ne sont pas encore recueillies pour la plupart des membres : le site doit continuer d’être alimenté. Les blocages arrivent donc **au fil des tags et des réponses** :
+
+<DocsTable columnsJson='["Situation, pour la destination", "Effet"]' rowsJson='[["Personne n’est tagué", "Aucun : le média passe, il est simplement « à taguer »."], ["Une personne taguée n’a pas encore répondu", "Avertissement orange ; on publie quand même, et on relance."], ["Une personne taguée a refusé le site public (ou réseaux, imprimés, presse)", "Bloquant : enregistrement refusé, et le média déjà en ligne est masqué."], ["Une personne taguée a refusé l’espace membres", "Avertissement seulement : l’espace membres reste interne au club."]]' />
+
+La règle tient dans une fonction des contrats, lue à la fois par le bandeau du tableau (avant d’enregistrer) et par le serveur (au moment d’enregistrer) :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/mediaPeople.ts"
+  filename="mediaPeople.ts"
+  snippetRange="100-118"
+  snippetHighlight="11,14,15"
+  snippetTitle="checkDestinations : bloquant, avertissement, à taguer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le serveur vérifie à chaque porte d’entrée : `gallery.setItems` (les images d’une galerie existante), et les deux actions serveur du formulaire, création et mise à jour. La mise à jour compte : passer une galerie de « Membres » à « Publique » revérifie les médias déjà présents. Le message dit quels médias, pour quel usage, et quoi faire (« retire ce média, ou réserve la galerie aux membres » ; pour le carrousel, seulement le retirer).
+
+Et un média **déjà en ligne** dont une personne retire son accord ? On ne touche pas à la galerie : l’affichage public le saute. Il revient tout seul si la personne change d’avis ou si l’on retire son tag.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/galleries/router.ts"
+  filename="router.ts"
+  snippetRange="168-185"
+  snippetHighlight="3,18"
+  snippetTitle="getPublicIndex : une galerie publique saute les médias refusés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans le tableau, les colonnes de la destination sont mises en avant et les autres grisées ; au-dessus, un bandeau rappelle la destination et ce que le droit à l’image en dit, et une ligne bloquante passe en rouge.
+
+<Callout type="warning">
+Le slug du carrousel était écrit en dur à trois endroits, et la liste des galeries attendait « accueil » quand tout le reste disait « home-carousel » : le carrousel n’y était ni reconnu ni protégé contre la suppression. Il vit désormais dans les contrats (`CAROUSEL_SLUG`), d’où la destination le lit aussi.
+</Callout>
+
+Les blocs « Galerie d’images » des pages suivront : leur destination se déduira de la page qui les accueille.
+
 ## Relancer
 
 Une personne taguée sans réponse peut être relancée depuis la modale, une fois au plus tous les sept jours.
@@ -134,14 +182,14 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
   language="ts"
   filepath="packages/backend/src/modules/mediaPeople/mediaPeople.service.ts"
   filename="mediaPeople.service.ts"
-  snippetRange="170-207"
+  snippetRange="212-249"
   title="remindImageConsent"
   stepsJson='[{"title": "Sept jours entre deux relances", "body": "La date de la dernière relance est gardée sur le membre (imageConsentRemindedAt). Plus tôt, le refus le dit ; le bouton de la modale, lui, est déjà grisé.", "scope": "21-23", "focus": "21-21"}, {"title": "Un mineur dont le parent attend", "body": "Une demande existe déjà (lien en cours ou expiré) : on renvoie un lien au parent, par le circuit du chapitre précédent. Le mineur n’a rien à refaire.", "scope": "25-27", "focus": "25-25"}, {"title": "Sinon, un e-mail au membre", "body": "Le majeur est invité à répondre en ligne ; le mineur sans demande, à indiquer ses souhaits puis à les envoyer à son parent. L’e-mail ne dit pas sur quelle photo : la personne le verra dans son espace.", "scope": "28-35", "focus": "32-32"}, {"title": "La date, après l’envoi", "body": "Elle n’est notée que si l’envoi a réussi : un échec d’e-mail ne bloque pas la relance pendant sept jours.", "scope": "36-36", "focus": "36-36"}]'
 />
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
