@@ -15,6 +15,7 @@ export const USERS = {
   oubli: { id: "e2e-oubli", email: "oubli@e2e.test", firstName: "Emma" },
   droitImage: { id: "e2e-droit-image", email: "droit-image@e2e.test", firstName: "Fanny" },
   mineur: { id: "e2e-mineur", email: "mineur@e2e.test", firstName: "Gaspard" },
+  mineurPages: { id: "e2e-mineur-pages", email: "mineur-pages@e2e.test", firstName: "Lison" },
 };
 
 /** Le membre « mineur » : son identité et son parent référent, saisis par le club. */
@@ -22,6 +23,8 @@ export const MINOR = {
   lastName: "Martin",
   birthDate: "2012-05-04T00:00:00.000Z",
   guardian: { name: "Hélène Martin", email: "parent-mineur@e2e.test", relation: "mère" },
+  /** Parent du second mineur (parcours par les pages : un autre compte, pour ne pas croiser l'attente entre deux envois). */
+  guardianPages: { name: "Paul Martin", email: "parent-mineur-pages@e2e.test", relation: "père" },
 };
 
 export const DISCIPLINES = {

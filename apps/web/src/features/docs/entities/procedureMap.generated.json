@@ -4382,7 +4382,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 38,
+   "line": 39,
    "effects": [],
    "emails": []
   },
@@ -4390,7 +4390,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 43,
+   "line": 44,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4487,7 +4487,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 73,
+   "line": 74,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4497,7 +4497,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:74"
+        "packages/backend/src/modules/imageConsent/router.ts:75"
        ]
       ]
      ]
@@ -4510,7 +4510,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:74"
+        "packages/backend/src/modules/imageConsent/router.ts:75"
        ]
       ]
      ]
@@ -4522,7 +4522,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 81,
+   "line": 82,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4565,7 +4565,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 87,
+   "line": 88,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -4612,7 +4612,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 90,
+   "line": 91,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -4712,7 +4712,7 @@
    "kind": "mutation",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 109,
+   "line": 110,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -4833,11 +4833,37 @@
     "sendGuardianConsentLink"
    ]
   },
+  "imageConsent.guardianPendingForUser": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/imageConsent/router.ts",
+   "line": 117,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pendingGuardianRequest",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:273"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:274"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "imageConsent.resendGuardianForUser": {
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 116,
+   "line": 122,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -4972,7 +4998,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 121,
+   "line": 127,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -5023,7 +5049,7 @@
    "kind": "mutation",
    "access": "public",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 124,
+   "line": 130,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5168,7 +5194,7 @@
    "kind": "query",
    "access": "membre",
    "file": "packages/backend/src/modules/imageConsent/router.ts",
-   "line": 136,
+   "line": 142,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5178,7 +5204,7 @@
       [
        [
         "ctx.prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/imageConsent/router.ts:140"
+        "packages/backend/src/modules/imageConsent/router.ts:146"
        ]
       ]
      ]
@@ -5191,7 +5217,7 @@
       [
        [
         "ctx.prisma.user.findUnique",
-        "packages/backend/src/modules/imageConsent/router.ts:139"
+        "packages/backend/src/modules/imageConsent/router.ts:145"
        ]
       ]
      ]
@@ -25378,7 +25404,7 @@
   "page /dashboard/users/[id]": {
    "kind": "page",
    "file": "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx",
-   "line": 11,
+   "line": 12,
    "effects": [
     {
      "model": "User",
@@ -25388,7 +25414,7 @@
       [
        [
         "prisma.user.findUnique",
-        "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx:18"
+        "apps/web/src/app/(admin)/dashboard/users/[id]/page.tsx:19"
        ]
       ]
      ]

@@ -14,6 +14,7 @@ import { confirmMemberConsent, onlineConsentState } from "@backend/modules/image
 import {
   confirmGuardianConsent,
   guardianRequestByToken,
+  pendingGuardianRequest,
   requestGuardianConsent,
   resendGuardianLink,
 } from "@backend/modules/imageConsent/imageConsentGuardian.service";
@@ -111,6 +112,11 @@ export const imageConsentRouter = router({
     .mutation(({ ctx, input }) =>
       requestGuardianConsent({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, ...input }),
     ),
+
+  /** Admin : la demande en cours d'un mineur (souhaits, lien envoyé, validité), ou null. */
+  guardianPendingForUser: adminProcedure
+    .input(z.object({ userId: z.string().min(1) }))
+    .query(({ ctx, input }) => pendingGuardianRequest(ctx.prisma, input.userId)),
 
   /** Admin : renvoie le lien au parent d'un mineur (mêmes souhaits, nouveau lien). */
   resendGuardianForUser: adminProcedure

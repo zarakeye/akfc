@@ -1,26 +1,22 @@
 "use client";
 
 import { useState, type JSX } from "react";
-import { FileDown, PenLine } from "lucide-react";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@backend/modules";
+import { FileDown, PenLine, Send } from "lucide-react";
 
 import { trpc } from "@trpc/trpcClient";
-import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "@contracts/legal/imageConsent";
+import type { ImageUsageValue } from "@contracts/legal/imageConsent";
 import { BlankConsentFormPreview } from "@features/image-consent/BlankConsentFormCard";
-
-/** Libellés des usages, tels que sur le formulaire papier. */
-const USAGE_DETAIL: Record<ImageUsageValue, string> = {
-  MEMBER_SPACE: "galeries réservées aux membres connectés",
-  PUBLIC_SITE: "visible par tous",
-  SOCIAL_NETWORKS: "pages ou comptes officiels du club",
-  PRINT: "affiches, plaquettes, supports de la MJC de Chambéry",
-  PRESS: "lors d'un article sur le club ou d'une manifestation",
-};
+import { ConsentChoicesFields } from "@features/image-consent/ConsentChoicesFields";
+import { formatDate } from "@features/image-consent/consentFormat";
 
 /**
  * Profil : autorisation de droit à l'image EN LIGNE.
  * - Majeur : il coche chaque usage (Oui / Non) et le choix après le départ, puis confirme avec son
  *   mot de passe ; le club reçoit un avis, et le récapitulatif PDF rejoint ses formulaires.
- * - Mineur : l'autorisation vient de son parent référent ; la page dit ce qui manque au club.
+ * - Mineur : il indique ses SOUHAITS ; un lien personnel part à son parent référent, qui valide
+ *   (page /autorisation-parent/…). La page dit ce qui manque au club, et où en est la demande.
  * - Majorité non renseignée : le formulaire papier, en attendant.
  * Le formulaire pré-rempli à imprimer est proposé dès que les informations le permettent.
  */
@@ -54,25 +50,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
   ) : null;
 
   if (s.legalAge === "MINOR") {
-    return (
-      <div className="rounded-lg border border-border p-4 text-sm">
-        <p className="font-semibold">Autorisation par votre parent référent</p>
-        <p className="mt-1 text-gray-600">
-          Vous êtes mineur : c&apos;est votre parent référent qui autorise l&apos;usage de votre image
-          {s.guardianEmailMasked ? <> (adresse enregistrée par le club : {s.guardianEmailMasked})</> : null}.
-        </p>
-        {s.missing.length > 0 ? (
-          <p className="mt-2 text-amber-800">
-            Le club doit d&apos;abord renseigner : {s.missing.join(", ")}. Parlez-en à un instructeur.
-          </p>
-        ) : (
-          <p className="mt-2 text-gray-600">
-            Votre parent peut remplir et signer le formulaire pré-rempli, à remettre à un instructeur.
-          </p>
-        )}
-        {prefilled && <p className="mt-3">{prefilled}</p>}
-      </div>
-    );
+    return <MinorWishes state={s} latest={latest} prefilled={prefilled} onText={() => setTextOpen(true)} textOpen={textOpen} onCloseText={() => setTextOpen(false)} />;
   }
 
   if (s.legalAge === "UNKNOWN") {
@@ -117,51 +95,7 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
               Lire le texte complet de l&apos;autorisation
             </button>
           </p>
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-xs text-gray-500">
-                <th className="py-1 font-normal">Usage</th>
-                <th className="w-14 py-1 text-center font-normal">Oui</th>
-                <th className="w-14 py-1 text-center font-normal">Non</th>
-              </tr>
-            </thead>
-            <tbody>
-              {IMAGE_USAGE_VALUES.map((u) => {
-                const yes = usages.includes(u);
-                const set = (v: boolean): void =>
-                  setUsages((prev) => (v ? [...prev.filter((x) => x !== u), u] : prev.filter((x) => x !== u)));
-                return (
-                  <tr key={u} className="border-t border-border">
-                    <td className="py-2">
-                      <span className="font-medium">{IMAGE_USAGE_LABEL[u]}</span>
-                      <span className="block text-xs text-gray-500">{USAGE_DETAIL[u]}</span>
-                    </td>
-                    <td className="text-center">
-                      <input type="radio" name={`usage-${u}`} aria-label={`${IMAGE_USAGE_LABEL[u]} : oui`} checked={yes} onChange={() => set(true)} />
-                    </td>
-                    <td className="text-center">
-                      <input type="radio" name={`usage-${u}`} aria-label={`${IMAGE_USAGE_LABEL[u]} : non`} checked={!yes} onChange={() => set(false)} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <fieldset className="space-y-1.5">
-            <legend className="mb-1 font-medium">Après mon départ du club</legend>
-            <label className="flex items-start gap-2">
-              <input type="radio" name="keep" className="mt-1" checked={!keep} onChange={() => setKeep(false)} />
-              <span>Les photos et vidéos où j&apos;apparais sont retirées et supprimées au plus tard un an après mon départ.</span>
-            </label>
-            <label className="flex items-start gap-2">
-              <input type="radio" name="keep" className="mt-1" checked={keep} onChange={() => setKeep(true)} />
-              <span>
-                Le club peut continuer à utiliser celles déjà prises, pour les seuls usages cochés, afin de garder la
-                mémoire de sa vie. Je peux retirer cet accord à tout moment.
-              </span>
-            </label>
-          </fieldset>
+          <ConsentChoicesFields usages={usages} onUsages={setUsages} keep={keep} onKeep={setKeep} subject="self" />
 
           <label className="flex max-w-xs flex-col gap-1">
             <span className="font-medium">Votre mot de passe, pour signer</span>
@@ -195,6 +129,112 @@ export function OnlineConsentForm({ latest }: { latest: { usages: ImageUsageValu
         </p>
       )}
       {textOpen && <BlankConsentFormPreview onClose={() => setTextOpen(false)} />}
+    </div>
+  );
+}
+
+type OnlineState = inferRouterOutputs<AppRouter>["imageConsent"]["onlineState"];
+
+/**
+ * Mineur : ses souhaits, envoyés à son parent référent par un lien personnel (7 jours, usage
+ * unique). Sans effet sur ses droits tant que le parent n'a pas validé. Renvoyer remplace le lien.
+ */
+function MinorWishes({
+  state: s,
+  latest,
+  prefilled,
+  onText,
+  textOpen,
+  onCloseText,
+}: {
+  state: OnlineState;
+  latest: { usages: ImageUsageValue[]; keepAfterLeave: boolean | null } | null;
+  prefilled: JSX.Element | null;
+  onText: () => void;
+  textOpen: boolean;
+  onCloseText: () => void;
+}): JSX.Element {
+  const utils = trpc.useUtils();
+  const pending = s.pendingGuardian;
+  const start = pending ?? latest;
+  const [open, setOpen] = useState(false);
+  const [usages, setUsages] = useState<ImageUsageValue[]>(start?.usages ?? []);
+  const [keep, setKeep] = useState<boolean>(start?.keepAfterLeave ?? false);
+  const send = trpc.imageConsent.requestGuardian.useMutation({
+    onSuccess: async () => {
+      setOpen(false);
+      await utils.imageConsent.onlineState.invalidate();
+    },
+  });
+
+  return (
+    <div className="rounded-lg border border-border p-4 text-sm">
+      <p className="font-semibold">Autorisation par votre parent référent</p>
+      <p className="mt-1 text-gray-600">
+        Vous êtes mineur : c&apos;est votre parent référent qui autorise l&apos;usage de votre image
+        {s.guardianEmailMasked ? <> (adresse enregistrée par le club : {s.guardianEmailMasked})</> : null}. Vous indiquez vos
+        souhaits ; il les reçoit pré-cochés, peut les modifier, puis valide.
+      </p>
+
+      {s.missing.length > 0 ? (
+        <p className="mt-2 text-amber-800">
+          Le club doit d&apos;abord renseigner : {s.missing.join(", ")}. Parlez-en à un instructeur.
+        </p>
+      ) : pending?.active && !open ? (
+        <div className="mt-3 space-y-2" role="status">
+          <p className="text-emerald-800">
+            En attente de votre parent : lien envoyé à {pending.sentToMasked} le {pending.sentAt ? formatDate(pending.sentAt) : "—"},
+            valable jusqu&apos;au {pending.expiresAt ? formatDate(pending.expiresAt) : "—"}.
+          </p>
+          <button type="button" onClick={() => setOpen(true)} className="rounded-md border border-gray-300 px-3 py-2 hover:bg-gray-50">
+            Modifier mes souhaits et renvoyer le lien
+          </button>
+        </div>
+      ) : !open ? (
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          {pending && !pending.active && <p className="w-full text-amber-800">Le lien envoyé à votre parent a expiré.</p>}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700"
+          >
+            <PenLine className="h-4 w-4" />
+            Indiquer mes souhaits
+          </button>
+        </div>
+      ) : (
+        <form
+          className="mt-3 space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send.mutate({ usages, keepAfterLeave: keep });
+          }}
+        >
+          <p className="text-gray-600">
+            Pour chaque usage, choisissez Oui ou Non : ce sont vos souhaits, votre parent décide.{" "}
+            <button type="button" onClick={onText} className="text-emerald-700 underline">
+              Lire le texte complet de l&apos;autorisation
+            </button>
+          </p>
+          <ConsentChoicesFields usages={usages} onUsages={setUsages} keep={keep} onKeep={setKeep} subject="self" />
+          {send.error && <p className="text-red-600">{send.error.message}</p>}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={send.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" />
+              {send.isPending ? "Envoi…" : "Envoyer à mon parent"}
+            </button>
+            <button type="button" onClick={() => setOpen(false)} className="rounded-md border border-gray-300 px-3 py-2">
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+      {prefilled && <p className="mt-3 text-gray-600">Version papier : {prefilled}</p>}
+      {textOpen && <BlankConsentFormPreview onClose={onCloseText} />}
     </div>
   );
 }

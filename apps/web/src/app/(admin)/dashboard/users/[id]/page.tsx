@@ -5,6 +5,7 @@ import { prisma } from "@backend/prisma";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
 import { ImageConsentControl } from "@features/admin/users/components/ImageConsentControl";
 import { ImageConsentForms } from "@features/admin/users/components/ImageConsentForms";
+import { GuardianLinkPanel } from "@features/admin/users/components/GuardianLinkPanel";
 import { LegalInfoControl } from "@features/admin/users/legal/LegalInfoControl";
 
 /** Présentation admin d'un utilisateur — `/(admin)/dashboard/users/[id]` (lecture seule). */
@@ -61,6 +62,7 @@ export default async function UserPresentationPage({
         initial={user.imageConsent}
         recordedAt={user.imageConsentAt ? user.imageConsentAt.toISOString() : null}
       />
+      <GuardianLinkPanel userId={user.id} />
       <ImageConsentForms userId={user.id} />
     </PresentationShell>
   );

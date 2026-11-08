@@ -190,19 +190,24 @@ await prisma.user.update({
   data: { imageConsent: "GRANTED", imageConsentAt: new Date(CONSENT_SINCE) },
 });
 
-// Un mineur dont le club a tout renseigné : son parent référent peut recevoir le lien.
-await prisma.user.update({
-  where: { id: USERS.mineur.id },
-  data: {
-    lastName: MINOR.lastName,
-    legalAge: "MINOR",
-    birthDate: new Date(MINOR.birthDate),
-    birthDateVerified: true,
-    guardianName: MINOR.guardian.name,
-    guardianEmail: MINOR.guardian.email,
-    guardianRelation: MINOR.guardian.relation,
-  },
-});
+// Deux mineurs dont le club a tout renseigné : leur parent référent peut recevoir le lien.
+for (const { user, guardian } of [
+  { user: USERS.mineur, guardian: MINOR.guardian },
+  { user: USERS.mineurPages, guardian: MINOR.guardianPages },
+]) {
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastName: MINOR.lastName,
+      legalAge: "MINOR",
+      birthDate: new Date(MINOR.birthDate),
+      birthDateVerified: true,
+      guardianName: guardian.name,
+      guardianEmail: guardian.email,
+      guardianRelation: guardian.relation,
+    },
+  });
+}
 
 await prisma.$disconnect();
 console.log(`✓ données de test : ${Object.keys(USERS).length} comptes, 3 disciplines, 2 familles, 2 galeries, 1 stage, 1 document`);

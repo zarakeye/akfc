@@ -11,6 +11,9 @@ import {
   IMAGE_CONSENT_SOURCE_LABEL,
   IMAGE_USAGE_LABEL,
   IMAGE_USAGE_VALUES,
+  compareWishes,
+  describeWishChanges,
+  type ConsentChoices,
   type ImageUsageValue,
 } from "@contracts/legal/imageConsent";
 import { heicFailureMessage, isHeicFile, toBrowserImages } from "@features/media/heic/browserImages";
@@ -19,6 +22,15 @@ import { BlankConsentFormPreview } from "@features/image-consent/BlankConsentFor
 import { formatDate, formatKeepAfterLeave, formatUsages } from "@features/image-consent/consentFormat";
 
 type KeepChoice = "unset" | "remove" | "keep";
+
+/** Souhaits du membre gardés avec une validation par le parent (JSON), ou null. */
+function readWishes(v: unknown): ConsentChoices | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as { usages?: unknown; keepAfterLeave?: unknown };
+  if (!Array.isArray(o.usages)) return null;
+  const usages = o.usages.filter((u): u is ImageUsageValue => (IMAGE_USAGE_VALUES as readonly string[]).includes(String(u)));
+  return { usages, keepAfterLeave: typeof o.keepAfterLeave === "boolean" ? o.keepAfterLeave : null };
+}
 
 /**
  * Fiche d'un utilisateur (admin) : formulaires de droit à l'image signés. Dépôt du PDF ou de la
@@ -134,6 +146,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
                   Usages : {formatUsages(f.usages)}
                   {formatKeepAfterLeave(f.keepAfterLeave) && <> ; {formatKeepAfterLeave(f.keepAfterLeave)}</>}
                 </p>
+                <ParentChanges form={f} />
               </div>
               <button
                 type="button"
@@ -231,5 +244,28 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
       <ImageConsentFormViewer form={open} onClose={() => setOpen(null)} />
       {blankOpen && <BlankConsentFormPreview onClose={() => setBlankOpen(false)} />}
     </fieldset>
+  );
+}
+
+/** Validation par le parent : ce qu'il a changé par rapport aux souhaits du membre. */
+function ParentChanges({
+  form,
+}: {
+  form: { memberWishes: unknown; usages: ImageUsageValue[]; keepAfterLeave: boolean | null };
+}): JSX.Element | null {
+  const wishes = readWishes(form.memberWishes);
+  if (!wishes) return null;
+  const changes = describeWishChanges(compareWishes(wishes, form));
+  return changes.length === 0 ? (
+    <p className="text-muted-foreground">Le parent a gardé tous les souhaits du membre.</p>
+  ) : (
+    <div className="mt-1 text-amber-900">
+      <p>Changements du parent par rapport aux souhaits du membre :</p>
+      <ul className="list-disc pl-5">
+        {changes.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
