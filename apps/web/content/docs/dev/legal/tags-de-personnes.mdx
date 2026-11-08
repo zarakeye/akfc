@@ -32,6 +32,9 @@ stories:
       - label: Un visiteur parcourt les galeries ; les médias refusés pour le site public sont sautés
         call: gallery.getPublicIndex
         section: Destinations, blocages et masquage
+      - label: Il enregistre une actualité dont une image a un refus pour le site public ; refusé
+        call: post.update
+        section: Les contenus des pages
       - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
         call: mediaPeople.remind
         section: Relancer
@@ -172,7 +175,39 @@ Dans le tableau, les colonnes de la destination sont mises en avant et les autre
 Le slug du carrousel était écrit en dur à trois endroits, et la liste des galeries attendait « accueil » quand tout le reste disait « home-carousel » : le carrousel n’y était ni reconnu ni protégé contre la suppression. Il vit désormais dans les contrats (`CAROUSEL_SLUG`), d’où la destination le lit aussi.
 </Callout>
 
-Les blocs « Galerie d’images » des pages suivront : leur destination se déduira de la page qui les accueille.
+### Les contenus des pages
+
+Les contenus du constructeur (disciplines, cours, stages, évènements, actualités, pages du site, présentation d’un instructeur) n’ont pas de visibilité : ils s’affichent **tous sur le site public**, les actualités comprises (le mur de la page d’accueil). Leur destination est donc fixe, sans rien à déduire.
+
+Ils sont enregistrés par une douzaine de procédures, mais elles ont déjà un point commun : chacune appelle `assertOwnAvatars` sur les contenus reçus. La vérification du droit à l’image se pose juste à côté, avec la même signature :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/mediaPeople/publicContentRights.service.ts"
+  filename="publicContentRights.service.ts"
+  snippetRange="17-35"
+  snippetHighlight="5,6"
+  snippetTitle="Toutes les images de tous les contenus reçus, puis les refus"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le message nomme les fichiers (« L’image « stage-2026.jpg » : … ») : une page n’a pas de numéros de médias, ses images sont réparties entre plusieurs blocs. Pour la même raison, le bandeau du constructeur les compte (« 1 image de ce contenu ») au lieu de les numéroter.
+
+Pour l’affichage, un seul endroit rend tous ces contenus : `PageRenderer`. C’est là qu’un média refusé est sauté, comme un média introuvable. L’aperçu d’un administrateur (`audience="admin"`) le montre encore, pour qu’il voie ce qu’il doit retirer.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/PageRenderer.tsx"
+  filename="PageRenderer.tsx"
+  snippetRange="86-95"
+  snippetHighlight="6,10"
+  snippetTitle="Un seul rendu, un seul masquage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="info">
+Reste un cas : l’image de résumé d’une discipline, d’un stage ou d’un évènement (`summaryMediaId`), affichée sur les cartes de l’accueil et de l’agenda sans passer par `PageRenderer`. Elle n’est pas encore vérifiée.
+</Callout>
 
 ## Relancer
 
@@ -189,7 +224,7 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
