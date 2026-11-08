@@ -43,7 +43,7 @@ Un test qui dépend de ce qu’a laissé le précédent échoue au hasard : le p
   language="js"
   filepath="e2e/prepare.mjs"
   filename="prepare.mjs"
-  snippetRange="30-194"
+  snippetRange="30-208"
   title="e2e/prepare.mjs"
   stepsJson='[{"title": "Le garde-fou, d’abord", "body": "Avant la première connexion à quoi que ce soit.", "scope": "1-1", "focus": "1-1"}, {"title": "La base existe", "body": "`akfc_e2e` est créée au premier lancement, par Prisma lui-même connecté à la base d’administration `postgres` : pas de client SQL de plus à installer. Postgres absent : un message dit quoi faire (« lancer pnpm dev:infra »), plutôt qu’une pile d’erreurs réseau.", "scope": "4-21", "focus": "11-11"}, {"title": "Les migrations, depuis zéro", "body": "`prisma migrate reset` vide la base et rejoue **toutes** les migrations : la base des tests a exactement la structure qu’aura la production après déploiement. Les tests vérifient donc aussi que les migrations s’appliquent.", "scope": "22-26", "focus": "22-22"}, {"title": "Un bucket vide", "body": "Créé au besoin, vidé sinon : les fichiers envoyés par un lancement précédent (un formulaire de droit à l’image) ne restent pas.", "scope": "29-47", "focus": "45-45"}, {"title": "Des comptes", "body": "Six comptes, un par rôle dans les tests : un administrateur, deux membres (le destinataire d’un document et un autre), et trois comptes que leur test modifie (la limite d’essais, le mot de passe oublié, le droit à l’image). Un test qui modifie un compte a le sien : il ne dérange pas les autres.", "scope": "50-63", "focus": "53-53"}, {"title": "Du contenu", "body": "Deux catégories, celle des cours et celle des stages sous un libellé qui n’est pas « Stage » (le code la reconnaît à sa clé ; l’évènement manque exprès), deux disciplines publiées dans deux familles rangées à l’inverse de leur alphabet, chacune avec une galerie publique d’une image (pour l’ordre de la page Galeries), une discipline en brouillon, un stage en brouillon sans séance (pour le test des séances), un document adressé au seul membre A (avec son fichier dans le bucket), la page « Nous contacter » publiée (son formulaire sert au tuto « Contacter le club ») et des droits à l’image accordés depuis une date connue.", "scope": "65-162", "focus": "132-132"}]'
 />
@@ -54,7 +54,7 @@ Les données sont écrites directement par Prisma, pas en cliquant dans l’inte
   language="js"
   filepath="e2e/data.mjs"
   filename="data.mjs"
-  snippetRange="10-17"
+  snippetRange="10-18"
   snippetHighlight="3"
   snippetTitle="e2e/data.mjs — les comptes de test"
   fullFileTitle="Voir le fichier complet"
@@ -101,9 +101,9 @@ Seul le test de connexion passe par le formulaire. Les autres ont besoin d’une
   language="ts"
   filepath="e2e/helpers.ts"
   filename="helpers.ts"
-  snippetRange="10-26"
-  title="e2e/helpers.ts — appeler tRPC, ouvrir une session"
-  stepsJson='[{"title": "Une procédure, comme le navigateur l’appelle", "body": "`POST /api/trpc/<procédure>`, l’entrée enveloppée par superjson (`{ json: … }`). La réponse porte soit `result`, soit `error`, avec son code (`FORBIDDEN`…) et son statut HTTP.", "scope": "1-8", "focus": "2-2"}, {"title": "Une session en une requête", "body": "`page.request` partage les cookies de la page : après la connexion, la page est connectée. Une connexion qui échoue arrête le test sur un message clair (« connexion de … »), plutôt que de le laisser échouer plus loin sur une page de refus.", "scope": "14-17", "focus": "16-16"}]'
+  snippetRange="10-36"
+  title="e2e/helpers.ts — appeler tRPC (écrire, lire), ouvrir une session"
+  stepsJson='[{"title": "Une procédure, comme le navigateur l’appelle", "body": "`POST /api/trpc/<procédure>`, l’entrée enveloppée par superjson (`{ json: … }`). La réponse porte soit `result`, soit `error`, avec son code (`FORBIDDEN`…) et son statut HTTP.", "scope": "1-8", "focus": "2-2"}, {"title": "Une lecture, par la même porte", "body": "Une query passe en GET, son entrée sérialisée dans l’adresse : c’est ainsi que le test du parent lit son formulaire, sans session.", "scope": "10-18", "focus": "11-11"}, {"title": "Une session en une requête", "body": "`page.request` partage les cookies de la page : après la connexion, la page est connectée. Une connexion qui échoue arrête le test sur un message clair (« connexion de … »), plutôt que de le laisser échouer plus loin sur une page de refus.", "scope": "24-27", "focus": "26-26"}]'
 />
 
 ### Un refus vérifié des deux côtés
@@ -144,7 +144,7 @@ L’e-mail de réinitialisation part sans faire attendre la réponse du site. Le
   language="ts"
   filepath="e2e/helpers.ts"
   filename="helpers.ts"
-  snippetRange="43-60"
+  snippetRange="53-70"
   snippetHighlight="3,8"
   snippetTitle="e2e/helpers.ts — waitForEmail"
   fullFileTitle="Voir le fichier complet"
