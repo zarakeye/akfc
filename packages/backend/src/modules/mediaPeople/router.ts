@@ -11,15 +11,20 @@ import {
   tagCandidates,
 } from "@backend/modules/mediaPeople/mediaPeople.service";
 import { publicRightsReport } from "@backend/modules/mediaPeople/publicRightsReport.service";
+import { myAppearances } from "@backend/modules/mediaPeople/myAppearances.service";
 
 /**
- * Tags de personnes sur les médias : réservés aux administrateurs. Les tags sont des données
- * personnelles (qui apparaît sur quelle photo) : aucune procédure publique ne les expose.
+ * Tags de personnes sur les médias : posés et lus par les administrateurs. Les tags sont des données
+ * personnelles (qui apparaît sur quelle photo) : aucune procédure publique ne les expose ; un membre
+ * ne lit que les siens (`mine`).
  */
 const adminProcedure = protectedProcedure.use(isAdmin);
 const mediaInput = z.object({ mediaAssetId: z.string().min(1) });
 
 export const mediaPeopleRouter = router({
+  /** « Où j'apparais » : les médias où le membre connecté est tagué (son droit d'accès). */
+  mine: protectedProcedure.query(({ ctx }) => myAppearances(ctx.prisma, ctx.sessionClient.user.id)),
+
   /** Un média : personnes taguées, état de chacune par usage, verdict. */
   forMedia: adminProcedure.input(mediaInput).query(({ ctx, input }) => mediaPeopleFor(ctx.prisma, input.mediaAssetId)),
 

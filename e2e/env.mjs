@@ -60,6 +60,7 @@ export const E2E_APP_ENV = {
   TICKET_ARCHIVE_BCC: "",
   TICKET_RECAP_DISABLED: "1",
   RETENTION_PURGE_DISABLED: "1",
+  MEDIA_TAG_DIGEST_DISABLED: "1",
 };
 
 /** Garde-fou : la base et le stockage des tests sont locaux et dédiés, ou rien ne se lance. */

@@ -5508,11 +5508,329 @@
    ],
    "emails": []
   },
+  "mediaPeople.mine": {
+   "kind": "query",
+   "access": "membre",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 26,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ],
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.discipline.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.event.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:108"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "prisma.galleryItem.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "prisma.galleryItem.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:17"
+       ]
+      ],
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:17"
+       ]
+      ],
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "prisma.pageMediaReference.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:34"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.post.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:106"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.seminar.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:105"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.sitePage.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:109"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ],
+      [
+       [
+        "myAppearances",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:16"
+       ],
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:110"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "mediaPeople.forMedia": {
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 24,
+   "line": 29,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5611,7 +5929,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 27,
+   "line": 32,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5672,7 +5990,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 30,
+   "line": 35,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5831,7 +6149,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 37,
+   "line": 42,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -5965,7 +6283,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 42,
+   "line": 47,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -6050,7 +6368,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 47,
+   "line": 52,
    "effects": [
     {
      "model": "Course",
@@ -6366,7 +6684,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/mediaPeople/router.ts",
-   "line": 50,
+   "line": 55,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -15065,6 +15383,33 @@
         "ctx.prisma.mediaAsset.findMany",
         "packages/backend/src/modules/media/router.ts:197"
        ]
+      ],
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
+       ],
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
+       ],
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
       ]
      ]
     },
@@ -15076,7 +15421,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "isAdminByGroup",
@@ -15090,7 +15435,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "resolveGroupAccessForUser",
@@ -15111,7 +15456,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "isAdminByGroup",
@@ -15125,7 +15470,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "resolveGroupAccessForUser",
@@ -19731,8 +20076,34 @@
   },
   "canReadStorageKey": {
    "file": "packages/backend/src/modules/media/services/canReadStorageKey.service.ts",
-   "line": 18,
+   "line": 19,
    "effects": [
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
+      ]
+     ]
+    },
     {
      "model": "MemberGroup",
      "op": "read",
@@ -20377,6 +20748,39 @@
        [
         "tx.pageMediaReference.findMany",
         "packages/backend/src/modules/media/services/syncPageMediaReferences.service.ts:69"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "consentOf": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 27,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -21234,6 +21638,382 @@
     "sendImageConsentReminder"
    ]
   },
+  "myAppearances": {
+   "file": "packages/backend/src/modules/mediaPeople/myAppearances.service.ts",
+   "line": 16,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ],
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.discipline.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.event.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:108"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Gallery",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.galleryItem.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "GalleryItem",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.galleryItem.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:30"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:17"
+       ]
+      ],
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:17"
+       ]
+      ],
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "PageMediaReference",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.pageMediaReference.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:34"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.post.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:106"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.seminar.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:105"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.sitePage.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:109"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ],
+      [
+       [
+        "pageTitles",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:95"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:110"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "sendTagDigests": {
+   "file": "packages/backend/src/modules/mediaPeople/myAppearances.service.ts",
+   "line": 83,
+   "effects": [
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:84"
+       ]
+      ],
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "update",
+     "fields": [
+      "notifiedAt"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.updateMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:96"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendMediaTagDigest"
+   ]
+  },
+  "startTagDigestSchedule": {
+   "file": "packages/backend/src/modules/mediaPeople/myAppearances.service.ts",
+   "line": 110,
+   "effects": [
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTagDigests",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:83"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:84"
+       ]
+      ],
+      [
+       [
+        "sendTagDigests",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:83"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:90"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "update",
+     "fields": [
+      "notifiedAt"
+     ],
+     "trails": [
+      [
+       [
+        "sendTagDigests",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:83"
+       ],
+       [
+        "prisma.mediaPerson.updateMany",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:102"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "sendTagDigests",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:83"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/myAppearances.service.ts:96"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendMediaTagDigest"
+   ]
+  },
   "assertPublicContentRights": {
    "file": "packages/backend/src/modules/mediaPeople/publicContentRights.service.ts",
    "line": 17,
@@ -21707,6 +22487,110 @@
        [
         "prisma.user.findMany",
         "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "pageTitles": {
+   "file": "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts",
+   "line": 95,
+   "effects": [
+    {
+     "model": "Course",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Discipline",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.course.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:104"
+       ]
+      ],
+      [
+       [
+        "prisma.discipline.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Event",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.event.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:108"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Post",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.post.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:106"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Seminar",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.seminar.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:105"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "SitePage",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.sitePage.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:109"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/publicRightsReport.service.ts:110"
        ]
       ]
      ]
@@ -34598,6 +35482,40 @@
    "line": 56,
    "effects": [
     {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
+       ],
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "canReadStorageKey",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
+       ],
+       [
+        "prisma.mediaPerson.findFirst",
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:27"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberGroup",
      "op": "read",
      "fields": [],
@@ -34605,7 +35523,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "isAdminByGroup",
@@ -34619,7 +35537,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "resolveGroupAccessForUser",
@@ -34640,7 +35558,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "isAdminByGroup",
@@ -34654,7 +35572,7 @@
       [
        [
         "canReadStorageKey",
-        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:18"
+        "packages/backend/src/modules/media/services/canReadStorageKey.service.ts:19"
        ],
        [
         "resolveGroupAccessForUser",

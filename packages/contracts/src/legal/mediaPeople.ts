@@ -137,3 +137,40 @@ export function blockingMessage(ids: readonly string[], blocking: readonly Right
 /** L'autre issue d'une galerie bloquée : la réserver aux membres (pas le carrousel). */
 export const galleryAlternative = (slug: string): string | undefined =>
   slug === CAROUSEL_SLUG ? undefined : "ou réserve la galerie aux membres";
+
+/* ─── Prévenir une personne taguée ──────────────────────────────────────────────────────── */
+
+/** On attend une heure après le premier tag : une séance de tags donne un seul e-mail. */
+export const TAG_DIGEST_DELAY_MS = 60 * 60 * 1000;
+/** Au plus un e-mail par jour et par personne. */
+export const TAG_DIGEST_MIN_GAP_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Qui prévenir maintenant, et de combien de nouveaux médias. Une personne a des tags pas encore
+ * annoncés (`notifiedAt` vide) ; le plus ancien a au moins une heure ; et elle n'a pas reçu d'e-mail
+ * depuis 24 heures (le dernier `notifiedAt` de ses tags). Un tag retiré entre-temps n'est plus là :
+ * rien à annoncer.
+ */
+export function dueTagDigests(
+  tags: readonly { userId: string; createdAt: Date; notifiedAt: Date | null }[],
+  now: Date,
+): Map<string, number> {
+  const byUser = new Map<string, { pending: number; oldest: number; lastSent: number }>();
+  for (const t of tags) {
+    const u = byUser.get(t.userId) ?? { pending: 0, oldest: Infinity, lastSent: -Infinity };
+    if (t.notifiedAt) u.lastSent = Math.max(u.lastSent, t.notifiedAt.getTime());
+    else {
+      u.pending += 1;
+      u.oldest = Math.min(u.oldest, t.createdAt.getTime());
+    }
+    byUser.set(t.userId, u);
+  }
+  const due = new Map<string, number>();
+  for (const [userId, u] of byUser) {
+    if (u.pending === 0) continue;
+    if (now.getTime() - u.oldest < TAG_DIGEST_DELAY_MS) continue;
+    if (now.getTime() - u.lastSent < TAG_DIGEST_MIN_GAP_MS) continue;
+    due.set(userId, u.pending);
+  }
+  return due;
+}

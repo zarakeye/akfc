@@ -114,6 +114,13 @@ export default function UserMenu(): JSX.Element | null {
               className="text-sm text-gray-700"
             />
           </div>
+          <Link
+            href="/profil/ou-j-apparais"
+            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            onClick={menu.close}
+          >
+            Où j&apos;apparais
+          </Link>
           <button
             className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
             onClick={handleLogout}

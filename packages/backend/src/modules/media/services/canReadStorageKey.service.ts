@@ -9,7 +9,8 @@ import { resolveGroupAccessForUser } from "@backend/modules/memberGroups/resolve
  *   - un administrateur : tout ;
  *   - un membre d'un groupe collaboratif (VIEWER ou EDITOR) : les fichiers de l'espace de ce groupe
  *     (`<appRoot>/collaborative-group-spaces/<slug>-<groupId>/…`) ;
- *   - chacun : son propre espace personnel (`<appRoot>/personal-space/<slug>-<userId>/…`).
+ *   - chacun : son propre espace personnel (`<appRoot>/personal-space/<slug>-<userId>/…`) ;
+ *   - chacun : un média où il a été tagué (droit d'accès à son image, page « Où j'apparais »).
  *
  * Tout le reste est refusé. Le chemin est analysé par POSITION (juste après l'appRoot), jamais par
  * simple recherche d'un segment : un dossier nommé « collaborative-group-spaces » ailleurs dans
@@ -23,6 +24,7 @@ export async function canReadStorageKey(params: {
   const { prisma, userId, key } = params;
 
   if (await isAdminByGroup(prisma, userId)) return true;
+  if (await prisma.mediaPerson.findFirst({ where: { userId, mediaAsset: { fullPath: key } }, select: { id: true } })) return true;
 
   const parts = key.split("/").filter(Boolean);
   // parts[0] = appRoot ; parts[1] = l'espace ; parts[2] = son propriétaire.

@@ -104,6 +104,12 @@ export default function ProfilePage(): JSX.Element {
         {/* Droit à l'image : formulaire vierge, statut, formulaires signés (aperçu au clic). */}
         <div data-tour="profil.image-consent">
           <MyImageConsent />
+          <Link
+            href="/profil/ou-j-apparais"
+            className="mt-3 inline-block text-sm font-medium text-emerald-700 hover:underline"
+          >
+            Où j&apos;apparais : les photos et vidéos où le club m&apos;a identifié(e) →
+          </Link>
         </div>
       </section>
 

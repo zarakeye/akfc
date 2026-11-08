@@ -24,7 +24,7 @@ import {
  */
 
 /** Droit à l'image de chaque personne : formulaire le plus récent, sinon statut saisi par le club. */
-async function consentOf(prisma: PrismaClient, userIds: readonly string[]): Promise<Map<string, PersonConsent>> {
+export async function consentOf(prisma: PrismaClient, userIds: readonly string[]): Promise<Map<string, PersonConsent>> {
   const ids = [...new Set(userIds)];
   if (ids.length === 0) return new Map();
   const [users, forms] = await Promise.all([
@@ -50,10 +50,10 @@ async function assertMedia(prisma: PrismaClient, mediaAssetId: string) {
   return m;
 }
 
-const NO_CONSENT: PersonConsent = { formUsages: null, status: "UNKNOWN" };
+export const NO_CONSENT: PersonConsent = { formUsages: null, status: "UNKNOWN" };
 
 /** État d'une personne pour chacun des usages. */
-function statesOf(c: PersonConsent): Record<ImageUsageValue, PersonUsageState> {
+export function statesOf(c: PersonConsent): Record<ImageUsageValue, PersonUsageState> {
   return Object.fromEntries(IMAGE_USAGE_VALUES.map((u) => [u, personUsageState(c, u)])) as Record<
     ImageUsageValue,
     PersonUsageState

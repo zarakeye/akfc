@@ -187,6 +187,16 @@ export async function register() {
   }
 
   try {
+    const { startTagDigestSchedule } = await import(
+      "@backend/modules/mediaPeople/myAppearances.service"
+    );
+    const started = startTagDigestSchedule(prisma);
+    console.log(`[instrumentation] e-mails aux personnes taguées : ${started ? "toutes les 5 min (une heure après le premier tag, au plus un par jour)" : "désactivés"}`);
+  } catch (err) {
+    console.error("[instrumentation] startTagDigestSchedule failed — app will still start", err);
+  }
+
+  try {
     const { startTicketRecapSchedule } = await import(
       "@backend/modules/tickets/recap.service"
     );

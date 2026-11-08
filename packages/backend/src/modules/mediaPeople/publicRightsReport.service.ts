@@ -8,7 +8,7 @@ import { mediaVerdictsFor } from "@backend/modules/mediaPeople/mediaPeople.servi
 /** Où un média est montré sur le site public, avec le lien vers sa fiche d'administration. */
 export type PublicUsage = { label: string; href: string };
 
-const KIND_LABEL: Record<PageReferencerKind, string> = {
+export const KIND_LABEL: Record<PageReferencerKind, string> = {
   COURSE: "Cours",
   SEMINAR_DESCRIPTION: "Stage",
   SEMINAR_PROGRAM: "Stage (programme)",
@@ -92,7 +92,7 @@ export async function publicRightsReport(prisma: PrismaClient) {
 }
 
 /** Titre et lien d'administration de chaque contenu référencé (une requête par type). */
-async function pageTitles(
+export async function pageTitles(
   prisma: PrismaClient,
   refs: readonly { pageType: PageReferencerKind; pageId: string }[],
 ): Promise<Map<string, { title: string; href: string }>> {
