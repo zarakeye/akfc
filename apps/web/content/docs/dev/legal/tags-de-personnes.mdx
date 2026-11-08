@@ -4,7 +4,7 @@ description: "Qui apparaît sur quelle photo : des tags posés à la main par un
 section: "Légal et RGPD"
 order: 5
 entities:
-  MediaPerson: [mediaAssetId, userId, taggedById, createdAt, notifiedAt]
+  MediaPerson: [mediaAssetId, userId, taggedById, createdAt, notifiedAt, refusedAt]
   MediaAsset: [noRecognizablePerson]
   User: [imageConsent, imageConsentRemindedAt]
 stories:
@@ -50,6 +50,9 @@ stories:
       - label: Il ouvre « Où j’apparais » ; ses médias, où ils sont montrés, et son droit à l’image
         call: mediaPeople.mine
         section: Côté membre, « Où j’apparais »
+      - label: Une photo ne lui plaît pas ; il la refuse, elle seule passe au rouge
+        call: mediaPeople.setMyRefusal
+        section: Refuser une photo précise
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -75,8 +78,8 @@ La table `MediaPerson` ne garde que le lien « telle personne, tel média », qu
   language="ts"
   filepath="packages/contracts/src/legal/mediaPeople.ts"
   filename="mediaPeople.ts"
-  snippetRange="38-65"
-  snippetHighlight="7,9,24"
+  snippetRange="43-67"
+  snippetHighlight="7,8,10,25"
   snippetTitle="Une personne, puis un média, usage par usage"
   fullFileTitle="Voir le fichier complet"
 />
@@ -161,7 +164,7 @@ La règle tient dans une fonction des contrats, lue à la fois par le bandeau du
   language="ts"
   filepath="packages/contracts/src/legal/mediaPeople.ts"
   filename="mediaPeople.ts"
-  snippetRange="100-118"
+  snippetRange="106-124"
   snippetHighlight="11,14,15"
   snippetTitle="checkDestinations : bloquant, avertissement, à taguer"
   fullFileTitle="Voir le fichier complet"
@@ -243,7 +246,7 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
   language="ts"
   filepath="packages/backend/src/modules/mediaPeople/mediaPeople.service.ts"
   filename="mediaPeople.service.ts"
-  snippetRange="212-249"
+  snippetRange="225-262"
   title="remindImageConsent"
   stepsJson='[{"title": "Sept jours entre deux relances", "body": "La date de la dernière relance est gardée sur le membre (imageConsentRemindedAt). Plus tôt, le refus le dit ; le bouton de la modale, lui, est déjà grisé.", "scope": "21-23", "focus": "21-21"}, {"title": "Un mineur dont le parent attend", "body": "Une demande existe déjà (lien en cours ou expiré) : on renvoie un lien au parent, par le circuit du chapitre précédent. Le mineur n’a rien à refaire.", "scope": "25-27", "focus": "25-25"}, {"title": "Sinon, un e-mail au membre", "body": "Le majeur est invité à répondre en ligne ; le mineur sans demande, à indiquer ses souhaits puis à les envoyer à son parent. L’e-mail ne dit pas sur quelle photo : la personne le verra dans son espace.", "scope": "28-35", "focus": "32-32"}, {"title": "La date, après l’envoi", "body": "Elle n’est notée que si l’envoi a réussi : un échec d’e-mail ne bloque pas la relance pendant sept jours.", "scope": "36-36", "focus": "36-36"}]'
 />
@@ -264,6 +267,14 @@ Ces médias ne sont pas forcément publiés : une photo d’une galerie réserv�
   fullFileTitle="Voir le fichier complet"
 />
 
+### Refuser une photo précise
+
+Au-delà de son autorisation générale, un membre peut refuser **une** photo (« Je ne souhaite pas que cette photo soit diffusée ») : elle passe au rouge pour tous les usages, et les autres restent comme son autorisation le dit. Il peut revenir sur ce refus à tout moment. C’est son droit d’opposition, photo par photo.
+
+Faut-il craindre que ces exceptions compliquent le respect des autorisations générales ? Non, parce qu’elles ne font que **restreindre** : une photo est autorisée pour un usage si l’autorisation générale dit oui ET si la personne n’a pas refusé cette photo. Un refus général reste un refus ; aucune exception ne rend vert ce que l’autorisation générale met en rouge. Dans le calcul, c’est une ligne, avant toutes les autres (le premier extrait de ce chapitre, ligne 7). Le reste suit sans rien changer : tableau, blocages, masquage, rapport. Dans la fenêtre des tags, la personne porte la mention « a refusé cette photo », pour qu’on sache d’où vient le rouge.
+
+Le refus est une colonne du tag (`MediaPerson.refusedAt`) : il disparaît avec le tag, et un tag reposé par un administrateur (même liste cochée) le garde. Le cas inverse, un accord pour une seule photo malgré un refus général, n’existe pas : il demanderait une trace aussi solide qu’un formulaire signé, alors qu’un refus ne fait courir aucun risque au club.
+
 ### L’e-mail aux personnes taguées
 
 Un e-mail par tag serait du bruit : une séance de tags en pose vingt d’un coup. La colonne `MediaPerson.notifiedAt`, prévue dès la migration, marque les tags déjà annoncés. Toutes les cinq minutes, une tâche de fond cherche qui prévenir, selon une règle pure, dans les contrats :
@@ -272,7 +283,7 @@ Un e-mail par tag serait du bruit : une séance de tags en pose vingt d’un cou
   language="ts"
   filepath="packages/contracts/src/legal/mediaPeople.ts"
   filename="mediaPeople.ts"
-  snippetRange="148-176"
+  snippetRange="154-182"
   snippetHighlight="24,25"
   snippetTitle="Une heure après le premier tag, au plus un e-mail par jour"
   fullFileTitle="Voir le fichier complet"
@@ -282,7 +293,7 @@ Une règle pure se teste sans base ni horloge : le test de bout en bout l’appe
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans « Où j’apparais » et dans son export de données."], ["La personne est-elle prévenue ?", "Par e-mail, une heure après la séance de tags, au plus une fois par jour."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer ; les images de carte aussi."], ["Où voir ce qui est masqué ?", "Le rapport « Droit à l’image » du centre de contrôle."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans « Où j’apparais » et dans son export de données."], ["La personne est-elle prévenue ?", "Par e-mail, une heure après la séance de tags, au plus une fois par jour."], ["Peut-elle refuser une seule photo ?", "Oui, depuis « Où j’apparais » ; l’exception ne fait que restreindre son autorisation générale."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer ; les images de carte aussi."], ["Où voir ce qui est masqué ?", "Le rapport « Droit à l’image » du centre de contrôle."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
