@@ -118,6 +118,13 @@ export default async function ConfidentialitePage(): Promise<JSX.Element> {
             Le compte et les photos d&apos;un mineur sont créés et publiés avec l&apos;accord de ses parents, qui
             exercent ses droits pour lui.
           </p>
+          <p className="mt-2">
+            Pour le droit à l&apos;image, le mineur peut indiquer ses souhaits depuis son espace : son parent référent,
+            dont le club a enregistré le nom et l&apos;adresse d&apos;après le dossier d&apos;inscription, reçoit alors un
+            lien personnel, valable sept jours et utilisable une seule fois. Il peut modifier ces souhaits avant de
+            valider ; c&apos;est son choix qui fait foi, et le mineur comme le club sont informés de ce qu&apos;il a
+            changé.
+          </p>
         </LegalSection>
 
         <p className="mt-8 text-sm text-muted-foreground">

@@ -18557,7 +18557,7 @@
   },
   "purgeExpiredData": {
    "file": "packages/backend/src/modules/privacy/retention.service.ts",
-   "line": 31,
+   "line": 34,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18594,6 +18594,19 @@
      ]
     },
     {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "PasswordResetToken",
      "op": "delete",
      "fields": [],
@@ -18601,7 +18614,7 @@
       [
        [
         "db.passwordResetToken.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:38"
+        "packages/backend/src/modules/privacy/retention.service.ts:41"
        ]
       ]
      ]
@@ -18614,7 +18627,7 @@
       [
        [
         "db.session.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:37"
+        "packages/backend/src/modules/privacy/retention.service.ts:40"
        ]
       ]
      ]
@@ -18644,7 +18657,7 @@
       [
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ]
       ]
      ]
@@ -18658,7 +18671,7 @@
       [
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
@@ -18676,7 +18689,7 @@
       [
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
@@ -18693,7 +18706,7 @@
       [
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ]
       ]
      ]
@@ -18703,7 +18716,7 @@
   },
   "listInactiveAccounts": {
    "file": "packages/backend/src/modules/privacy/retention.service.ts",
-   "line": 61,
+   "line": 76,
    "effects": [
     {
      "model": "SiteSettings",
@@ -18730,7 +18743,7 @@
       [
        [
         "db.user.findMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:64"
+        "packages/backend/src/modules/privacy/retention.service.ts:79"
        ]
       ]
      ]
@@ -18740,7 +18753,7 @@
   },
   "startRetentionSchedule": {
    "file": "packages/backend/src/modules/privacy/retention.service.ts",
-   "line": 85,
+   "line": 100,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18750,7 +18763,7 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "purgeDetachedImageConsentForms",
@@ -18771,7 +18784,7 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "purgeDetachedImageConsentForms",
@@ -18785,6 +18798,23 @@
      ]
     },
     {
+     "model": "ImageConsentRequest",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "purgeExpiredData",
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
+       ],
+       [
+        "db.imageConsentRequest.deleteMany",
+        "packages/backend/src/modules/privacy/retention.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "PasswordResetToken",
      "op": "delete",
      "fields": [],
@@ -18792,11 +18822,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.passwordResetToken.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:38"
+        "packages/backend/src/modules/privacy/retention.service.ts:41"
        ]
       ]
      ]
@@ -18809,11 +18839,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.session.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:37"
+        "packages/backend/src/modules/privacy/retention.service.ts:40"
        ]
       ]
      ]
@@ -18826,7 +18856,7 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "retentionSettings",
@@ -18847,11 +18877,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ]
       ]
      ]
@@ -18865,11 +18895,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
@@ -18887,11 +18917,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
@@ -18908,11 +18938,11 @@
       [
        [
         "purgeExpiredData",
-        "packages/backend/src/modules/privacy/retention.service.ts:31"
+        "packages/backend/src/modules/privacy/retention.service.ts:34"
        ],
        [
         "db.ticket.deleteMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:34"
+        "packages/backend/src/modules/privacy/retention.service.ts:37"
        ]
       ]
      ]
@@ -25243,7 +25273,7 @@
       [
        [
         "listInactiveAccounts",
-        "packages/backend/src/modules/privacy/retention.service.ts:61"
+        "packages/backend/src/modules/privacy/retention.service.ts:76"
        ],
        [
         "retentionSettings",
@@ -25264,11 +25294,11 @@
       [
        [
         "listInactiveAccounts",
-        "packages/backend/src/modules/privacy/retention.service.ts:61"
+        "packages/backend/src/modules/privacy/retention.service.ts:76"
        ],
        [
         "db.user.findMany",
-        "packages/backend/src/modules/privacy/retention.service.ts:64"
+        "packages/backend/src/modules/privacy/retention.service.ts:79"
        ]
       ]
      ]

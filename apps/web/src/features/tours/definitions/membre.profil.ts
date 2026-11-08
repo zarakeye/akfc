@@ -23,7 +23,7 @@ export const membreProfil: Tour = {
     {
       target: "profil.image-consent",
       title: "Votre droit à l'image",
-      body: "Le choix enregistré par le club pour vos photos. Il ne change que lorsqu'un formulaire plus récent est enregistré.",
+      body: "Le choix enregistré pour vos photos. Majeur, vous pouvez le donner en ligne ; mineur, vous indiquez vos souhaits et votre parent référent valide, par un lien reçu par e-mail.",
       advance: { kind: "next" },
     },
     {

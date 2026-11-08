@@ -28,6 +28,9 @@ export async function retentionSettings(db: PrismaClient): Promise<{ ticketMonth
   return { ticketMonths: s?.ticketRetentionMonths ?? 36, accountMonths: s?.accountRetentionMonths ?? 12 };
 }
 
+/** Délai de garde d'une demande au parent après l'expiration de son lien. */
+const GUARDIAN_REQUEST_KEEP_MS = 30 * 24 * 3600 * 1000;
+
 export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
   const { ticketMonths } = await retentionSettings(db);
   const cutoff = monthsAgo(now, ticketMonths);
@@ -36,6 +39,11 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
   });
   const sessions = await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
   const resetTokens = await db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } });
+  // Souhaits d'un mineur dont le lien au parent a expiré depuis plus de 30 jours, sans validation :
+  // le mineur les indiquera de nouveau. (Une demande validée est supprimée aussitôt.)
+  const guardianRequests = await db.imageConsentRequest.deleteMany({
+    where: { expiresAt: { lt: new Date(now.getTime() - GUARDIAN_REQUEST_KEEP_MS) } },
+  });
   // Vignettes et affiches dont la photo ou la vidéo d'origine a disparu (sans R2 configuré : 0).
   const derivatives = await sweepOrphanDerivatives().catch((err) => {
     console.error("[rgpd/purge] déclinaisons :", err instanceof Error ? err.message : err);
@@ -45,7 +53,14 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
     console.error("[rgpd/purge] formulaires de droit à l'image :", err instanceof Error ? err.message : err);
     return 0;
   });
-  return { tickets: tickets.count, sessions: sessions.count, resetTokens: resetTokens.count, derivatives, imageConsentForms };
+  return {
+    tickets: tickets.count,
+    sessions: sessions.count,
+    resetTokens: resetTokens.count,
+    guardianRequests: guardianRequests.count,
+    derivatives,
+    imageConsentForms,
+  };
 }
 
 export type InactiveAccount = {
@@ -91,8 +106,8 @@ export function startRetentionSchedule(db: PrismaClient): boolean {
     lastDay = parisClock(now).day;
     purgeExpiredData(db, now)
       .then((r) => {
-        if (r.tickets || r.sessions || r.resetTokens || r.derivatives || r.imageConsentForms) {
-          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image supprimé(s)`);
+        if (r.tickets || r.sessions || r.resetTokens || r.guardianRequests || r.derivatives || r.imageConsentForms) {
+          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.guardianRequests} demande(s) au parent expirée(s), ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image supprimé(s)`);
         }
       })
       .catch((err) => console.error("[rgpd/purge] échec :", err instanceof Error ? err.message : err))

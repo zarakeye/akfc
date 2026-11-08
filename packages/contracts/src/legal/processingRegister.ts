@@ -114,12 +114,12 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       name: "Photos et vidéos des activités",
       purpose: "Publier les photos et vidéos des cours, stages et événements, en galerie publique ou réservée aux membres.",
       people: "Membres et participants photographiés ; pour un membre mineur, son parent référent",
-      data: "Image et voix des personnes reconnaissables ; formulaire d'autorisation signé (usages choisis, nom et qualité du signataire) ; pour un mineur, nom et e-mail du parent référent",
+      data: "Image et voix des personnes reconnaissables ; formulaire d'autorisation signé (usages choisis, nom et qualité du signataire) ; pour un mineur, nom, qualité et e-mail du parent référent, les souhaits indiqués par le mineur et le lien envoyé à son parent (adresse, date, validité ; seule une empreinte du lien est gardée)",
       legalBasis: "Autorisation de la personne (de ses parents pour un mineur)",
       recipients: "Public ou membres, selon la galerie et les usages autorisés ; le formulaire : la personne et les administrateurs",
       processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
       retention:
-        "Images : tant que l'autorisation n'est pas retirée, et au plus tard un an après le départ sauf accord pour un usage au-delà ; formulaire signé : durée de l'adhésion, puis 5 ans",
+        "Images : tant que l'autorisation n'est pas retirée, et au plus tard un an après le départ sauf accord pour un usage au-delà ; formulaire signé : durée de l'adhésion, puis 5 ans ; souhaits d'un mineur non validés : 30 jours après l'expiration du lien",
     },
     {
       id: "security",

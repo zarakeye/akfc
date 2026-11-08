@@ -120,7 +120,7 @@ export function ImageConsentForms({ userId }: { userId: string }): JSX.Element {
     setUsages((prev) => (prev.includes(u) ? prev.filter((x) => x !== u) : [...prev, u]));
 
   return (
-    <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm">
+    <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm" data-tour="users.image-consent.forms">
       <legend className="px-1 font-medium">Formulaires signés</legend>
 
       {list.data && list.data.length > 0 ? (

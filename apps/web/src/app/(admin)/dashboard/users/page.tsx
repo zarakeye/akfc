@@ -19,7 +19,9 @@ export default function UsersPage(): JSX.Element {
           Créer un utilisateur
         </Link>
       </div>
-      <UsersTable />
+      <div data-tour="users.list">
+        <UsersTable />
+      </div>
     </div>
   );
 }

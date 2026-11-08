@@ -18,6 +18,7 @@ import { adminSeminarsSeances } from "./definitions/admin.seminars.seances";
 import { adminTableauDeBord } from "./definitions/admin.tableau-de-bord";
 import { adminTicketsTraiter } from "./definitions/admin.tickets.traiter";
 import { adminUsersCreate } from "./definitions/admin.users.create";
+import { adminUsersDroitImageMineur } from "./definitions/admin.users.droit-image-mineur";
 import { membreContacterLeClub } from "./definitions/membre.contacter-le-club";
 import { membreDocuments } from "./definitions/membre.documents";
 import { membreProfil } from "./definitions/membre.profil";
@@ -39,6 +40,7 @@ export const TOURS: Tour[] = [
   adminBreakingNewsCreate,
   adminPagesPublication,
   adminUsersCreate,
+  adminUsersDroitImageMineur,
   adminTicketsTraiter,
   adminGroupsCreate,
   adminDisciplinesCreate,

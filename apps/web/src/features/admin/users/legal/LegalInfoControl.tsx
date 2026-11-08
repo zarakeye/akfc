@@ -55,7 +55,7 @@ export function LegalInfoControl({
   const canDownload = legalAge !== "MINOR" || missing.length === 0;
 
   return (
-    <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm">
+    <fieldset className="mt-6 rounded-lg border border-border p-4 text-sm" data-tour="users.legal">
       <legend className="px-1 font-medium">Majorité et parent référent</legend>
       <LegalInfoFields value={value} onChange={setValue} allowUnknown disabled={save.isPending} />
       <div className="mt-3 flex flex-wrap items-center gap-3">

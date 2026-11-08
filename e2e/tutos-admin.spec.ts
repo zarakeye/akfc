@@ -93,6 +93,18 @@ test("« Créer un utilisateur » s'arrête avant de créer le compte", async ({
   await expect(page).toHaveURL(/\/dashboard\/users\/create$/);
 });
 
+test("« Le droit à l'image d'un mineur » conduit à sa fiche et montre où suivre la demande", async ({ page }) => {
+  await launch(page, "/dashboard/users", /Le droit à l'image d'un mineur.*parent/);
+  const t = "Le droit à l'image d'un mineur";
+  await expect(bubble(page, t, 1, 3)).toBeVisible();
+  await page.getByRole("row", { name: new RegExp(USERS.mineur.email) }).click();
+  await expect(page).toHaveURL(new RegExp(`/dashboard/users/${USERS.mineur.id}$`));
+  await expect(bubble(page, t, 2, 3)).toBeVisible();
+  await nextButton(page).click();
+  await expect(bubble(page, t, 3, 3)).toBeVisible();
+  await page.getByRole("button", { name: "Terminer" }).click();
+});
+
 test("« Traiter une demande » saute les étapes d'une demande quand la boîte est vide", async ({ page }) => {
   await launch(page, "/dashboard/tickets", /Traiter une demande.*Trier/);
   const t = "Traiter une demande";
