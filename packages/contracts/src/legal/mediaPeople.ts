@@ -14,6 +14,11 @@ export type PersonConsent = {
   formUsages: readonly ImageUsageValue[] | null;
   /** Statut enregistré par le club (sans formulaire : saisi à la main sur la fiche). */
   status: "UNKNOWN" | "GRANTED" | "REFUSED";
+  /**
+   * La personne a refusé CE média (« Où j'apparais »). Une exception ne fait que restreindre : un
+   * refus général reste un refus, un accord général devient un refus pour ce média seulement.
+   */
+  refusedThisMedia?: boolean;
 };
 
 /** État d'UNE personne pour un usage. */
@@ -41,6 +46,7 @@ export const USAGE_VERDICT_LABEL: Record<UsageVerdict, string> = {
  * écrite recueillie par le club), « non renseigné » = pas d'autorisation.
  */
 export function personUsageState(p: PersonConsent, usage: ImageUsageValue): PersonUsageState {
+  if (p.refusedThisMedia) return "REFUSED";
   if (p.formUsages) return p.formUsages.includes(usage) ? "OK" : "REFUSED";
   if (p.status === "REFUSED") return "REFUSED";
   if (p.status === "GRANTED") return "OK";

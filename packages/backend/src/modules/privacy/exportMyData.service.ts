@@ -26,7 +26,11 @@ export async function exportMyData(db: PrismaClient, userId: string) {
       // Les médias où le membre a été tagué par un administrateur.
       mediaTags: {
         orderBy: { createdAt: "desc" },
-        select: { createdAt: true, mediaAsset: { select: { displayName: true, originalFileName: true, uploadedAt: true } } },
+        select: {
+          createdAt: true,
+          refusedAt: true,
+          mediaAsset: { select: { displayName: true, originalFileName: true, uploadedAt: true } },
+        },
       },
       createdAt: true, updatedAt: true,
       preferences: { select: { displayEmail: true, displayPhone: true, darkMode: true, description: true } },
@@ -95,6 +99,7 @@ export async function exportMyData(db: PrismaClient, userId: string) {
         media: t.mediaAsset.displayName || t.mediaAsset.originalFileName,
         mediaDate: t.mediaAsset.uploadedAt,
         taggedAt: t.createdAt,
+        refusedForThisMediaAt: t.refusedAt,
       })),
     },
     instructorBio: user.instructorBio,

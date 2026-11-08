@@ -6,6 +6,7 @@ import {
   mediaPeopleFor,
   mediaVerdictsFor,
   remindImageConsent,
+  setMyMediaRefusal,
   setMediaPeople,
   setNoRecognizablePerson,
   tagCandidates,
@@ -24,6 +25,11 @@ const mediaInput = z.object({ mediaAssetId: z.string().min(1) });
 export const mediaPeopleRouter = router({
   /** « Où j'apparais » : les médias où le membre connecté est tagué (son droit d'accès). */
   mine: protectedProcedure.query(({ ctx }) => myAppearances(ctx.prisma, ctx.sessionClient.user.id)),
+
+  /** « Je ne souhaite pas que cette photo soit diffusée » : la personne taguée, pour ce média seulement. */
+  setMyRefusal: protectedProcedure
+    .input(mediaInput.extend({ refused: z.boolean() }))
+    .mutation(({ ctx, input }) => setMyMediaRefusal(ctx.prisma, ctx.sessionClient.user.id, input.mediaAssetId, input.refused)),
 
   /** Un média : personnes taguées, état de chacune par usage, verdict. */
   forMedia: adminProcedure.input(mediaInput).query(({ ctx, input }) => mediaPeopleFor(ctx.prisma, input.mediaAssetId)),

@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 import { loginAs, trpcMutation, trpcQuery } from "./helpers";
-import { TAG_PAGE_MEDIA, USERS } from "./data.mjs";
+import { TAG_PAGE_MEDIA, TAG_PUBLIC_GALLERY, USERS } from "./data.mjs";
 import { TAG_DIGEST_DELAY_MS, TAG_DIGEST_MIN_GAP_MS, dueTagDigests } from "../packages/contracts/src/legal/mediaPeople";
 
 /**
  * « Où j'apparais » : un membre voit les médias où le club l'a identifié (son droit d'accès), même
- * non publiés, et personne d'autre ne les ouvre par ce biais. Et la règle des e-mails : une heure
- * après le premier tag, au plus un par jour.
+ * non publiés, et personne d'autre ne les ouvre par ce biais. Il peut refuser un média précis :
+ * rouge partout pour celui-là, quelle que soit son autorisation générale. Et la règle des e-mails :
+ * une heure après le premier tag, au plus un par jour.
  */
 test("la règle des e-mails regroupe une séance de tags et n'écrit pas plus d'une fois par jour", () => {
   const now = new Date("2026-11-08T12:00:00Z");
@@ -27,7 +28,7 @@ test("la règle des e-mails regroupe une séance de tags et n'écrit pas plus d'
   expect([...dueTagDigests(tags, now)]).toEqual([["A", 2]]);
 });
 
-test("un membre voit les médias où il est identifié, et lui seul les ouvre", async ({ page, browser }) => {
+test("un membre voit les médias où il est identifié, lui seul les ouvre, et peut en refuser un", async ({ page, browser }) => {
   await loginAs(page, USERS.admin.email);
   const tag = (userIds: string[]) => trpcMutation(page.request, "mediaPeople.setTags", { mediaAssetId: TAG_PAGE_MEDIA.id, userIds });
   expect((await tag([USERS.tagAccord.id])).error).toBeUndefined();
@@ -44,6 +45,32 @@ test("un membre voit les médias où il est identifié, et lui seul les ouvre", 
   await expect(page.locator(`img[src="${item.thumbUrl}"]`)).toBeVisible();
   const own = await page.request.get(item.thumbUrl, { maxRedirects: 0 });
   expect(own.status(), "il ouvre le fichier").not.toBe(404);
+
+  // Il refuse cette photo-là : elle passe au rouge partout, son autorisation générale n'y change rien.
+  const card = page.getByRole("listitem").filter({ has: page.locator(`img[src="${item.thumbUrl}"]`) });
+  await expect(async () => {
+    await card.getByRole("button", { name: "Je ne souhaite pas que cette photo soit diffusée" }).click({ timeout: 2_000 });
+    await expect(card.getByText("Vous avez refusé cette photo")).toBeVisible({ timeout: 2_000 });
+  }).toPass();
+  const refusedFor = async () => {
+    const admin = await browser.newPage();
+    await loginAs(admin, USERS.admin.email);
+    const r = await trpcQuery(admin.request, "mediaPeople.forMedia", { mediaAssetId: TAG_PAGE_MEDIA.id });
+    await admin.close();
+    return r.result as { verdicts: Record<string, string>; people: { refusedThisMedia: boolean }[] };
+  };
+  const refused = await refusedFor();
+  expect(refused.people[0].refusedThisMedia).toBe(true);
+  expect(Object.values(refused.verdicts)).toEqual(["REFUSED", "REFUSED", "REFUSED", "REFUSED", "REFUSED"]);
+
+  // Il revient sur son refus : son autorisation générale s'applique de nouveau (ici, pas encore de réponse).
+  await card.getByRole("button", { name: "Annuler mon refus pour cette photo" }).click();
+  await expect(card.getByRole("button", { name: "Je ne souhaite pas que cette photo soit diffusée" })).toBeVisible();
+  expect((await refusedFor()).verdicts.PUBLIC_SITE).not.toBe("REFUSED");
+
+  // On ne refuse qu'un média où l'on est identifié.
+  const foreign = await trpcMutation(page.request, "mediaPeople.setMyRefusal", { mediaAssetId: TAG_PUBLIC_GALLERY.mediaId, refused: true });
+  expect(foreign.error?.data.code).toBe("NOT_FOUND");
 
   // Un autre membre : ni dans sa liste, ni par l'adresse du fichier.
   const other = await browser.newPage();

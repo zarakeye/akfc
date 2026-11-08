@@ -1158,6 +1158,9 @@ model MediaPerson {
   createdAt    DateTime   @default(now())
   /// Inclus dans le récapitulatif envoyé à la personne (null : pas encore prévenue).
   notifiedAt   DateTime?
+  /// La personne a refusé la diffusion de CE média (« Où j'apparais ») : rouge pour tous les usages,
+  /// quelle que soit son autorisation générale. Null : son autorisation générale s'applique.
+  refusedAt    DateTime?
 
   @@unique([mediaAssetId, userId])
   @@index([userId])

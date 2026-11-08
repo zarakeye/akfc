@@ -167,6 +167,11 @@ export function MediaTagsDialog({
                     <span className="min-w-40 flex-1 text-gray-800">
                       {p.name}
                       {p.legalAge === "MINOR" && <span className="ml-1 text-xs text-gray-500">(mineur)</span>}
+                      {p.refusedThisMedia && (
+                        <span className="ml-2 rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-800">
+                          a refusé cette photo
+                        </span>
+                      )}
                     </span>
                     <VerdictBadges verdicts={p.states} />
                     {p.canRemind ? (

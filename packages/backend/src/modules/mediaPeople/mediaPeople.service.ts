@@ -88,6 +88,7 @@ export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string)
     select: {
       userId: true,
       createdAt: true,
+      refusedAt: true,
       user: {
         select: {
           email: true,
@@ -102,8 +103,13 @@ export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string)
     },
   });
   const consents = await consentOf(prisma, tags.map((t) => t.userId));
+  // Le droit à l'image de chacun POUR CE MÉDIA : son autorisation générale, sauf refus de ce média.
+  const consentHere = (t: { userId: string; refusedAt: Date | null }): PersonConsent => ({
+    ...(consents.get(t.userId) ?? NO_CONSENT),
+    refusedThisMedia: t.refusedAt !== null,
+  });
   const people = tags.map((t) => {
-    const c = consents.get(t.userId) ?? NO_CONSENT;
+    const c = consentHere(t);
     const states = statesOf(c);
     const remindedAt = t.user.imageConsentRemindedAt;
     return {
@@ -113,6 +119,8 @@ export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string)
       /** D'où vient l'état : le formulaire le plus récent, le statut saisi à la main, ou rien. */
       source: c.formUsages ? ("FORM" as const) : c.status === "UNKNOWN" ? ("NONE" as const) : ("STATUS" as const),
       states,
+      /** Elle a refusé ce média précis (« Où j'apparais ») : rouge partout, quelle que soit son autorisation. */
+      refusedThisMedia: t.refusedAt !== null,
       taggedAt: t.createdAt,
       remindedAt,
       /** Relance possible : au moins un usage sans autorisation, et pas de relance depuis 7 jours. */
@@ -125,7 +133,7 @@ export async function mediaPeopleFor(prisma: PrismaClient, mediaAssetId: string)
     mediaAssetId,
     noRecognizablePerson: media.noRecognizablePerson,
     people,
-    verdicts: mediaVerdicts({ people: people.map((p) => consents.get(p.userId)!), noRecognizablePerson: media.noRecognizablePerson }),
+    verdicts: mediaVerdicts({ people: tags.map(consentHere), noRecognizablePerson: media.noRecognizablePerson }),
   };
 }
 
@@ -160,12 +168,17 @@ export async function mediaVerdictsFor(prisma: PrismaClient, mediaAssetIds: read
   const ids = [...new Set(mediaAssetIds)];
   const [medias, tags] = await Promise.all([
     prisma.mediaAsset.findMany({ where: { id: { in: ids } }, select: { id: true, noRecognizablePerson: true } }),
-    prisma.mediaPerson.findMany({ where: { mediaAssetId: { in: ids } }, select: { mediaAssetId: true, userId: true } }),
+    prisma.mediaPerson.findMany({
+      where: { mediaAssetId: { in: ids } },
+      select: { mediaAssetId: true, userId: true, refusedAt: true },
+    }),
   ]);
   const consents = await consentOf(prisma, tags.map((t) => t.userId));
   return Object.fromEntries(
     medias.map((m) => {
-      const people = tags.filter((t) => t.mediaAssetId === m.id).map((t) => consents.get(t.userId)!);
+      const people = tags
+        .filter((t) => t.mediaAssetId === m.id)
+        .map((t) => ({ ...consents.get(t.userId)!, refusedThisMedia: t.refusedAt !== null }));
       return [m.id, { count: people.length, noRecognizablePerson: m.noRecognizablePerson, verdicts: mediaVerdicts({ people, noRecognizablePerson: m.noRecognizablePerson }) }];
     }),
   );
@@ -246,4 +259,17 @@ export async function remindImageConsent(prisma: PrismaClient, userId: string) {
   }
   await prisma.user.update({ where: { id: userId }, data: { imageConsentRemindedAt: new Date() }, select: { id: true } });
   return result;
+}
+
+/**
+ * « Je ne souhaite pas que cette photo soit diffusée » (ou l'annulation de ce refus), par la personne
+ * taguée elle-même, depuis « Où j'apparais ». Seulement sur un média où elle est taguée.
+ */
+export async function setMyMediaRefusal(prisma: PrismaClient, userId: string, mediaAssetId: string, refused: boolean) {
+  const { count } = await prisma.mediaPerson.updateMany({
+    where: { userId, mediaAssetId },
+    data: { refusedAt: refused ? new Date() : null },
+  });
+  if (count === 0) throw new TRPCError({ code: "NOT_FOUND", message: "Vous n'êtes pas identifié(e) sur ce média." });
+  return { refused };
 }

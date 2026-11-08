@@ -18,7 +18,11 @@ const SOURCE_LABEL = {
  * avec le lien pour le donner ou le modifier.
  */
 export function MyAppearances(): JSX.Element {
+  const utils = trpc.useUtils();
   const { data, isLoading, error } = trpc.mediaPeople.mine.useQuery();
+  const setRefusal = trpc.mediaPeople.setMyRefusal.useMutation({
+    onSuccess: () => utils.mediaPeople.mine.invalidate(),
+  });
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
@@ -26,8 +30,9 @@ export function MyAppearances(): JSX.Element {
         <h1 className="text-2xl font-bold">Où j&apos;apparais</h1>
         <p className="mt-1 text-sm text-gray-600">
           Les photos et vidéos du club sur lesquelles vous avez été identifié(e). Ce qui en est montré dépend de votre
-          droit à l&apos;image. Si vous ne vous reconnaissez pas sur l&apos;une d&apos;elles, écrivez au club : il
-          retirera l&apos;identification.
+          droit à l&apos;image. Une photo ne vous plaît pas ? Refusez-la : elle ne sera diffusée nulle part, quelle que
+          soit votre autorisation pour les autres. Si vous ne vous reconnaissez pas, écrivez au club : il retirera
+          l&apos;identification.
         </p>
       </div>
 
@@ -63,7 +68,11 @@ export function MyAppearances(): JSX.Element {
                     <p className="text-xs text-gray-500">
                       Identifié(e) le {new Date(m.taggedAt).toLocaleDateString("fr-FR")}
                     </p>
-                    {m.hiddenOnPublicSite && (
+                    {m.refusedByMe ? (
+                      <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">
+                        Vous avez refusé cette photo : elle n&apos;est diffusée nulle part.
+                      </p>
+                    ) : m.hiddenOnPublicSite && (
                       <p className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-800">
                         Masqué sur le site public (une personne identifiée l&apos;a refusé).
                       </p>
@@ -80,6 +89,18 @@ export function MyAppearances(): JSX.Element {
                         </ul>
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setRefusal.mutate({ mediaAssetId: m.mediaAssetId, refused: !m.refusedByMe })}
+                      disabled={setRefusal.isPending}
+                      className={`mt-1 rounded-full border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
+                        m.refusedByMe
+                          ? "border-gray-300 text-gray-700 hover:bg-gray-50"
+                          : "border-red-300 text-red-700 hover:bg-red-50"
+                      }`}
+                    >
+                      {m.refusedByMe ? "Annuler mon refus pour cette photo" : "Je ne souhaite pas que cette photo soit diffusée"}
+                    </button>
                   </div>
                 </li>
               ))}

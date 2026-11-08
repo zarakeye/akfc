@@ -20,6 +20,7 @@ export async function myAppearances(prisma: PrismaClient, userId: string) {
     select: {
       mediaAssetId: true,
       createdAt: true,
+      refusedAt: true,
       mediaAsset: { select: { fullPath: true, originalFileName: true, mimeType: true } },
     },
   });
@@ -68,6 +69,8 @@ export async function myAppearances(prisma: PrismaClient, userId: string) {
         fileName: t.mediaAsset.originalFileName,
         thumbUrl: deriveMediaKind(t.mediaAsset.mimeType) === "video" ? `${url}&as=poster` : url,
         taggedAt: t.createdAt,
+        /** J'ai refusé la diffusion de ce média : il n'est montré nulle part. */
+        refusedByMe: t.refusedAt !== null,
         shownOn: shownOn.get(t.mediaAssetId) ?? [],
         /** Masqué sur le site public : une personne taguée (moi, ou une autre) a refusé. */
         hiddenOnPublicSite: verdicts[t.mediaAssetId]?.verdicts.PUBLIC_SITE === "REFUSED",
