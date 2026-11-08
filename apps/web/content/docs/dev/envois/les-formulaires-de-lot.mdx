@@ -1,0 +1,207 @@
+---
+title: "Les formulaires de lot"
+description: "Trois formulaires qui envoient plusieurs fichiers d’un coup : la bibliothèque (vingt fichiers en parallèle, un dialogue unique pour les noms déjà pris, un résultat par fichier, la mise à disposition des PDF), l’espace personnel (un quota lu avant, revérifié à chaque fichier, les doublons ignorés) et le dépôt des membres (une destination en cascade, et une reprise qui ne renvoie plus ce qui est arrivé)."
+section: "Les envois de fichiers"
+order: 2
+entities:
+  MediaAsset: [fullPath, status, originalFileName, bytes, mimeType]
+  MemberDocument: [mediaAssetId]
+stories:
+  - title: Un administrateur ajoute des fichiers à la bibliothèque
+    actor: Administrateur
+    steps:
+      - label: Avant tout envoi, le formulaire demande quels noms existent déjà dans la destination
+        call: storage.checkR2Conflicts
+        section: Un seul dialogue pour tout le lot
+      - label: Les fichiers partent en parallèle, chacun avec son autorisation
+        call: storage.createR2Upload
+        section: En parallèle, un résultat par fichier
+      - label: Chaque arrivée est enregistrée ; un échec n’arrête pas les autres
+        call: storage.registerR2Upload
+        section: En parallèle, un résultat par fichier
+      - label: S’il l’a demandé, les PDF arrivés sont mis à disposition des membres
+        call: memberDocument.publish
+        section: Après le lot
+  - title: Un membre ajoute des photos à son espace personnel
+    actor: Membre
+    steps:
+      - label: Le formulaire lit d’abord la place qui reste
+        call: storage.getPersoPhotoQuota
+        section: "L’espace personnel : un quota, un par un"
+  - title: Un membre dépose des fichiers pour le club
+    actor: Membre
+    steps:
+      - label: Il reprend un de ses dépôts communs, ou en nomme un nouveau
+        call: storage.listMyCommonRepositoryContainers
+        section: "Le dépôt des membres : une cascade"
+      - label: Le nom qu’il a tapé devient le libellé du dossier
+        call: storage.setCommonRepositoryLabel
+        section: "Le dépôt des membres : une cascade"
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Quatre portes du site passent par la famille commune : une destination, un fichier, et `uploadToR2`, qui autorise, envoie et fait enregistrer. Pour **un** fichier.
+
+Un administrateur revient d’un stage avec quarante photos. Il en glisse vingt dans le formulaire. Trois portent un nom déjà pris, une pèse 80 Mo, une autre est refusée par le stockage parce que l’autorisation a expiré pendant qu’il buvait son café. Que doit-il voir ? Que doit-il pouvoir relancer, sans renvoyer ce qui est déjà arrivé ?
+
+Trois formulaires répondent à cette question, chacun à sa manière, parce qu’ils ne servent pas la même personne.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Trois formulaires, trois réglages
+
+<DocsTable columnsJson='["", "Bibliothèque", "Espace personnel", "Dépôt des membres"]' rowsJson='[["Composant", "DragNDropForm", "PersoPhotoUploader", "CommonRepositoryUpload"], ["Formats", "Images, vidéos, sons, documents, archives", "Images seulement", "Tout ce que la bibliothèque accepte"], ["Limites côté navigateur", "20 fichiers ; 50 Mo par image, 500 Mo pour le reste", "20 fichiers, 50 Mo, et la place restante du quota", "Aucune : le serveur juge"], ["Envoi", "En parallèle", "Un par un", "Un par un"], ["Nom déjà pris", "Un dialogue : ignorer ou écraser", "Ignoré, signalé", "Refus du serveur, affiché"], ["Après un échec", "Seuls les fichiers en erreur repartent", "Seuls les fichiers en attente repartent", "Seuls les fichiers non arrivés restent dans la liste"]]' />
+
+Les limites du navigateur ne protègent rien : le serveur refait chaque contrôle à la signature, puis à l’enregistrement. Elles évitent d’envoyer ce qui sera refusé, et de le dire après trois minutes de transfert.
+
+## La bibliothèque : préparer le lot
+
+Un fichier glissé dans la zone de dépôt n’entre pas tel quel dans la liste. Il reçoit d’abord un type, s’il n’en a pas, puis passe les limites :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/library/forms/DragNDropForm.tsx"
+  filename="DragNDropForm.tsx"
+  snippetStart="function ensureMimeType(file: File): File {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3,5"
+  snippetTitle="Donner un type à un fichier qui n’en a pas"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Certains navigateurs ne reconnaissent pas une extension et donnent un type vide. Le formulaire le déduit de l’extension, dans une table qui reprend ses formats acceptés. Ce n’est pas une confiance accordée à l’extension : le serveur exige que l’extension et le type concordent, et cette déduction lui présente simplement une paire cohérente plutôt qu’un type vide.
+
+La taille maximale dépend du type. Au-delà de 60 Mo, le serveur renonce à décliner une image, qu’il devrait charger entière en mémoire : elle serait servie sans vignette. Le formulaire s’arrête donc à 50 Mo pour une image, sous cette borne ; les vidéos et documents montent à 500 Mo. Le lot, enfin, est borné à vingt fichiers, ce qui borne aussi le nombre d’autorisations demandées d’un coup.
+
+Une fois dans la liste, chaque image peut être recadrée. Le recadrage remplace le fichier de l’élément et garde l’original à côté : « Réinitialiser » le rétablit. Le cropper a sa propre partie.
+
+## Un seul dialogue pour tout le lot
+
+Le serveur ne remplace jamais un fichier en silence : sans `allowOverwrite`, une signature pour un nom déjà pris est refusée. Le formulaire pourrait laisser les refus arriver un par un. Il pose plutôt la question **une fois**, avant le premier envoi :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/library/forms/DragNDropForm.tsx"
+  filename="DragNDropForm.tsx"
+  snippetStart="// Un fichier déjà présent → on demande (jamais d'écrasement silencieux)."
+  snippetEnd="const r2ToUpload = toUpload.filter((it) => !skipped.includes(it.id) && !duplicates.has(it.id));"
+  snippetHighlight="4,9,16,20,21"
+  snippetTitle="Les conflits du lot, avant l’envoi"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`storage.checkR2Conflicts` reçoit tous les noms et rend deux listes : ceux qui existent déjà dans la destination, et ceux qui, **dans le lot lui-même**, aboutiraient à la même clé une fois nettoyés (`Photo 1.jpg` et `photo-1.jpg`). Les seconds ne partent pas : le dernier arrivé écraserait l’autre. Ils reçoivent un message qui demande de les renommer.
+
+Le dialogue est une promesse. `askOverwrite` range sa fonction `resolve` dans l’état du composant ; les boutons du dialogue l’appellent ; et `onSubmit`, suspendu sur `await`, reprend avec la réponse :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/library/forms/DragNDropForm.tsx"
+  filename="DragNDropForm.tsx"
+  snippetStart="const [overwritePrompt, setOverwritePrompt] = useState<{"
+  snippetLines="9"
+  snippetHighlight="3,8"
+  snippetTitle="Un dialogue qu’on attend"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="concept">
+**Transformer un dialogue en `await`.** Plutôt que de couper la soumission en deux (avant et après la réponse), on suspend une seule fonction. Le bloc `finally` referme le dialogue s’il est resté ouvert, pour qu’une erreur ne laisse pas l’écran bloqué.
+</Callout>
+
+## En parallèle, un résultat par fichier
+
+Les fichiers retenus partent ensemble, avec `Promise.all`. Le piège classique est connu : `Promise.all` rejette dès la **première** erreur, et l’on perd le résultat des autres, y compris de ceux qui sont arrivés. Le formulaire l’évite en ne laissant jamais un envoi rejeter :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/library/forms/DragNDropForm.tsx"
+  filename="DragNDropForm.tsx"
+  snippetStart="async function uploadR2Single("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="7,15,21,22"
+  snippetTitle="uploadR2Single : jamais de rejet"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque envoi rend un objet `{ ok: true, path }` ou `{ ok: false, error }`. Une fois tous terminés, le formulaire répartit les statuts : `done` pour les arrivés, `error` avec son message pour les autres, `pending` pour ceux que l’administrateur a choisi de ne pas écraser. La vignette de chaque fichier montre son sort.
+
+Relancer est alors sans danger : la soumission ne reprend que les fichiers en `pending` ou en `error`. Ceux qui sont arrivés restent affichés comme tels, et ne repartent pas.
+
+<Callout type="insight">
+`Promise.allSettled` ferait le même travail. Le projet a préféré des résultats typés à sa façon : l’identifiant de l’élément voyage avec le résultat, et le message d’erreur est déjà celui qu’on affichera.
+</Callout>
+
+## Après le lot
+
+Deux suites, seulement si au moins un fichier est arrivé. Le finder recharge le dossier courant, et les compteurs du tableau de bord (fichiers en attente de validation) sont invalidés : un dépôt dans la bibliothèque est toujours **en attente**.
+
+Ensuite, si l’administrateur a coché « mettre les PDF à disposition des membres », chaque PDF arrivé est publié avec `memberDocument.publish`, à tous les membres ou à une liste choisie. Le chemin vient du résultat de l’envoi, pas d’un nouvel appel. Une publication qui échoue (le document l’était déjà, par exemple) n’annule rien : elle est ignorée, et le dépôt reste réussi.
+
+## L’espace personnel : un quota, un par un
+
+L’espace personnel d’un membre a un quota d’images, en attente et validées confondues. Le formulaire lit la place restante avant d’accepter quoi que ce soit, et ne prend dans le lot que ce qui tient :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/admin/perso/PersoPhotoUploader.tsx"
+  filename="PersoPhotoUploader.tsx"
+  snippetStart="const addAccepted = useCallback("
+  snippetEnd="setBanner(null);"
+  snippetHighlight="5,6,7,9"
+  snippetTitle="Ne prendre que ce qui tient"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La place se calcule contre les fichiers **déjà dans la liste** : deux glissements successifs de quinze photos, avec vingt places, n’en prennent que vingt. Le reste est annoncé (« 5 sur 15 photos ajoutées »).
+
+L’envoi se fait ensuite **un par un**, dans une boucle `for … of` avec `await`. Le quota est revérifié par le serveur à chaque signature ; en parallèle, vingt demandes lues au même instant verraient toutes la même place restante, et le quota pourrait être dépassé. En série, chaque signature voit les fichiers enregistrés juste avant.
+
+Pour un nom déjà pris, l’espace personnel ne pose pas de question : le fichier est **ignoré** et marqué comme tel. Dans son propre espace, on ne détruit pas un binaire d’un clic distrait ; supprimer puis redéposer reste possible, et c’est un geste explicite.
+
+## Le dépôt des membres : une cascade
+
+`/deposer` est la porte des membres vers la bibliothèque du club. Le membre choisit un type de destination (une discipline, un stage, un événement, ou le dépôt commun quand rien ne correspond), puis l’entité concernée. Le formulaire en déduit la destination ; pour une discipline, il retrouve sa catégorie, que le contrat exige. Un événement est envoyé sans disciplines : les rattacher est réservé aux administrateurs.
+
+Le dépôt commun accepte un nom de dossier libre, ou la reprise d’un dépôt précédent du même membre. Après l’envoi, le nom tapé est enregistré comme libellé du dossier (`storage.setCommonRepositoryLabel`), pour que l’administrateur lise « Photos du gala » et non un segment technique. Ce libellé est cosmétique : s’il échoue, le dépôt n’échoue pas.
+
+Tout ce qui arrive ici est **en attente** : le membre écrit, il ne lit pas. C’est un administrateur qui valide et range.
+
+## Une reprise qui ne renvoie plus rien
+
+Ce formulaire envoie un par un, sans rien demander avant. Jusqu’ici, il gardait toute la liste tant que le lot n’était pas terminé. Si le troisième fichier sur cinq échouait, les deux premiers étaient arrivés, mais restaient affichés ; « Déposer » à nouveau les renvoyait, et le serveur les refusait, à juste titre : un membre ne remplace pas un fichier déjà déposé. Le dépôt était bloqué sur ses propres réussites.
+
+Chaque fichier arrivé quitte désormais la liste aussitôt :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/common-repository/CommonRepositoryUpload.tsx"
+  filename="CommonRepositoryUpload.tsx"
+  snippetStart="const handleSubmit = async () => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="18,21,42"
+  snippetTitle="Ce qui est arrivé ne reste pas"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Après une erreur, il ne reste que les fichiers qui n’ont pas abouti, et le message dit combien sont partis avant (« 2 fichier(s) déposé(s), puis : … »).
+
+<Callout type="warning">
+**Une règle pour tout formulaire de lot.** Un essai ne renvoie jamais ce qui est arrivé. Soit l’état de chaque fichier est gardé (la bibliothèque), soit ce qui est arrivé sort de la liste (le dépôt). Sans cela, la sécurité du serveur, qui refuse d’écraser, se retourne contre l’utilisateur.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi des limites dans le navigateur ?", "Pour ne pas envoyer ce qui sera refusé. Le serveur refait tous les contrôles."], ["Quand pose-t-on la question des noms déjà pris ?", "Une fois, avant le premier envoi (storage.checkR2Conflicts), pour tout le lot."], ["Et les doublons dans le lot ?", "Écartés avec un message : le second écraserait le premier."], ["Comment envoyer en parallèle sans perdre les résultats ?", "Chaque envoi rend un résultat, succès ou erreur, et ne rejette jamais."], ["Pourquoi l’espace personnel envoie-t-il un par un ?", "Le quota est revérifié à chaque signature ; en parallèle, toutes les demandes verraient la même place."], ["Qu’est-ce qui a changé dans le dépôt des membres ?", "Un fichier arrivé quitte la liste : une reprise ne renvoie que ce qui a échoué."]]' />
+
+## À suivre
+
+Tous ces formulaires acceptent un format qu’aucun ne montre tel quel : le HEIC des iPhone. Une photo prise au téléphone par un parent au bord du tatami arrive dans un format que Chrome et Firefox ne savent pas afficher.
+
+<Callout type="tip">
+**Chapitre suivant : les photos d’iPhone.** Une conversion faite sur l’appareil, sans service tiers, chargée seulement quand il le faut ; où chaque formulaire la place ; et ce que le serveur sait encore faire d’un HEIC arrivé par un autre chemin.
+</Callout>

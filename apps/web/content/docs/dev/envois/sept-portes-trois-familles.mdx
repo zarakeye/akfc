@@ -1,0 +1,150 @@
+---
+title: "Sept portes, trois familles"
+description: "Tous les endroits du site par où un fichier entre, et pourquoi ils ne passent pas tous par le même circuit : la famille commune (une destination, uploadToR2), les circuits dédiés de l’avatar et du formulaire de droit à l’image, les petits fichiers envoyés en base64 ; le contrôle des logos SVG, aligné entre le site et les partenaires ; et comment choisir sa famille pour un nouvel envoi."
+section: "Les envois de fichiers"
+order: 1
+entities:
+  SiteSettings: [logoKey]
+  SitePartner: [logoData, logoMime, logoUpdatedAt]
+  MediaAsset: [fullPath, status, originalFileName]
+stories:
+  - title: Un membre envoie un fichier par la famille commune
+    actor: Membre
+    steps:
+      - label: Le formulaire demande une autorisation pour une destination, jamais pour un chemin
+        call: storage.createR2Upload
+        section: "La famille commune : une destination"
+      - label: Le fichier parti chez le stockage, il fait enregistrer ce qui est arrivé
+        call: storage.registerR2Upload
+        section: "La famille commune : une destination"
+  - title: Un administrateur importe le logo d’un partenaire
+    actor: Administrateur
+    steps:
+      - label: Le fichier, lu dans le navigateur, part en base64 dans la requête ; le serveur vérifie sa signature et son contenu
+        call: sitePartner.setLogo
+        section: "Les petits fichiers : dans la requête"
+  - title: Un administrateur change le logo du site
+    actor: Administrateur
+    steps:
+      - label: Le SVG est refusé s’il contient un script, un événement ou une ressource externe
+        call: siteSettings.uploadLogo
+        section: Une porte restée entrouverte
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La partie « Stockage et médias » a suivi un fichier côté serveur : la signature d’un envoi pour une destination, puis la relecture chez le stockage avant d’écrire la ligne `MediaAsset`. La partie « Le finder » a montré comment on le retrouve. Entre les deux, il manquait le navigateur.
+
+Un site associatif reçoit des fichiers de partout : des photos de stage, des plannings en PDF, un portrait, un formulaire signé photographié au téléphone, le logo d’un partenaire. Chacun arrive par un écran différent, écrit par quelqu’un d’autre, à un moment différent du projet. La tentation est de laisser chaque écran inventer son envoi. Le risque est connu : sept formulaires, sept façons d’oublier un contrôle.
+
+Cette partie fait le tour de ces portes, en quatre chapitres : ici, l’inventaire et les trois circuits qu’elles empruntent ; ensuite, les formulaires qui envoient des lots ; puis les photos d’iPhone, que seul Safari sait lire ; enfin, les envois d’un seul fichier pour un seul usage.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Sept portes 🚪
+
+<DocsTable columnsJson='["Écran", "Qui", "Ce qui entre", "Circuit"]' rowsJson='[["Bibliothèque, Ajouter (/dashboard/library/add)", "Un administrateur", "Jusqu’à 20 fichiers : images, vidéos, sons, documents, archives.", "Commun"], ["Mes photos (/dashboard/mes-photos)", "Un membre connecté", "Des photos, dans son espace personnel, sous quota.", "Commun"], ["Déposer (/deposer)", "Un membre connecté", "Des fichiers pour une discipline, un stage, un événement ou le dépôt commun.", "Commun"], ["Mes espaces (/mes-espaces)", "Un éditeur d’un espace de groupe", "Un PDF, qui devient un document du groupe.", "Commun"], ["Profil, avatar", "Chaque membre, pour lui-même", "Un portrait recadré, depuis un fichier ou la caméra.", "Dédié"], ["Fiche d’un membre, droit à l’image", "Un administrateur", "Le formulaire signé : un PDF ou une photo.", "Dédié"], ["Réglages et partenaires", "Un administrateur", "Le logo du site (SVG) et ceux des partenaires.", "Dans la requête"]]' />
+
+Sept portes, et seulement trois circuits. Le banc d’essai de l’éditeur de texte (`/simpleEditor`) simule aussi un envoi d’image, mais il n’est jamais servi en production : ce n’est pas une porte.
+
+## Trois familles
+
+<DocsTable columnsJson='["Famille", "Où va le fichier", "Ligne en base", "Pourquoi ce choix"]' rowsJson='[["La famille commune", "Dans la bibliothèque, sous un dossier que le serveur déduit d’une destination.", "Une ligne MediaAsset, d’abord en attente.", "Ce sont des médias : on les range, on les valide, on les place dans des pages."], ["Les circuits dédiés", "Sous une clé que le serveur calcule pour un membre précis, hors bibliothèque.", "Un champ du membre (avatar) ou une ligne ImageConsentForm.", "Ce ne sont pas des médias : un portrait, une preuve juridique. Personne ne doit pouvoir les déplacer dans le finder."], ["Dans la requête", "Dans une clé réservée du stockage (logo du site) ou dans la base (logos des partenaires).", "Aucune : un champ de réglage.", "Quelques fichiers de 512 Ko au plus : une URL signée coûterait plus qu’elle ne rapporte."]]' />
+
+Le critère n’est pas technique, il est métier : **qu’est-ce que ce fichier, pour le club ?** Un média vit dans la bibliothèque et suit son cycle (en attente, validé, placé). Un portrait appartient à un membre et à lui seul. Un formulaire signé est une pièce justificative, gardée cinq ans après un départ. Un logo est un réglage. Chaque nature a ses droits, sa place et sa durée de vie ; le circuit en découle.
+
+## La famille commune : une destination
+
+Les quatre premières portes appellent la même fonction, `uploadToR2`, décrite côté serveur dans le chapitre « Signer un envoi ». Son contrat tient dans ses paramètres :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/media/uploadToR2.ts"
+  filename="uploadToR2.ts"
+  snippetStart="export async function uploadToR2<Registered>(params: {"
+  snippetEnd="}): Promise<Registered> {"
+  snippetHighlight="3,5,12"
+  snippetTitle="Ce que uploadToR2 demande à son appelant"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’appelant fournit le fichier et une **destination** (`perso`, `group`, `seminar`, `event`, `existing-discipline`, `common_repository`), jamais un chemin. Il fournit aussi les deux mutations tRPC, `create` et `register`. La fonction pourrait les appeler elle-même ; elle les reçoit, pour que chaque formulaire garde ses états de chargement, ses messages et ses invalidations de cache. Elle écrit la séquence une seule fois, et ne décide de rien d’autre.
+
+Le contrat des destinations en prévoit une septième, `new-discipline`, pour proposer un fichier sous une discipline qui n’existe pas encore. Le serveur sait la traiter ; aucun formulaire ne la propose aujourd’hui.
+
+<Callout type="concept">
+**Injecter les mutations.** Passer `createR2Upload.mutateAsync` en paramètre plutôt que l’appeler dans la fonction : c’est la même idée que l’adaptateur du finder. La séquence ne connaît pas tRPC ; elle connaît deux promesses. Un test pourrait les remplacer par des fonctions en mémoire.
+</Callout>
+
+## Les circuits dédiés
+
+L’avatar et le formulaire signé envoient eux aussi leur fichier **directement** au stockage, avec une URL signée. Mais ils n’appellent pas `uploadToR2`, et ce n’est pas un oubli : leurs procédures n’ont pas la même forme.
+
+<DocsTable columnsJson='["", "Famille commune", "Avatar", "Formulaire signé"]' rowsJson='[["Procédures", "storage.createR2Upload, storage.registerR2Upload", "avatar.createUpload, avatar.register", "imageConsent.createUpload, imageConsent.register"], ["Ce que reçoit la signature", "Une destination, un nom, un type, une taille.", "Un type et une taille. Le membre est lu dans la session.", "Le membre concerné, un type et une taille. Réservé aux administrateurs."], ["Ce que reçoit l’enregistrement", "Le chemin, la taille et le type attendus, la destination, le nom.", "Le chemin seul.", "Le chemin, le nom, les usages cochés, la date de signature, la conservation."], ["Clé calculée", "Un dossier de la bibliothèque et un nom nettoyé.", "Une clé par membre, écrasée à chaque changement.", "Une clé unique par formulaire, hors bibliothèque."]]' />
+
+Les trois temps (autoriser, envoyer, enregistrer) sont donc écrits en clair dans `AvatarUploader` et dans `ImageConsentForms`. Une fonction générique de plus, paramétrée par les deux formes, aurait caché plus qu’elle n’aurait factorisé : chaque circuit dédié n’a qu’un appelant.
+
+<Callout type="insight">
+Factoriser une séquence n’a de sens que si ses appelants partagent un contrat. Quatre formulaires qui parlent de destinations : une fonction. Deux écrans qui ont chacun leurs procédures : deux séquences de dix lignes, lisibles là où elles servent.
+</Callout>
+
+## Les petits fichiers : dans la requête
+
+Un logo pèse quelques dizaines de kilo-octets. Pour lui, le navigateur lit le fichier (`FileReader.readAsDataURL`), en garde la partie base64, et l’envoie **dans la mutation tRPC elle-même**. Pas d’URL signée, pas de second aller-retour, pas de fichier en attente. Le serveur a le fichier entier sous les yeux avant d’écrire quoi que ce soit, ce qui lui permet de le lire, pas seulement de le compter :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/sitePartners/sitePartners.service.ts"
+  filename="sitePartners.service.ts"
+  snippetStart="export function validateLogo(buf: Buffer, mime: LogoMime): void {"
+  snippetEnd="^}"
+  snippetHighlight="6,8,14,17"
+  snippetTitle="validateLogo"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois contrôles. La **taille**, 512 Ko au plus. La **signature** du fichier : ses premiers octets doivent être ceux d’un PNG, d’un JPEG ou d’un WebP, quel que soit le type annoncé. Et, pour un SVG, le **contenu** : un SVG est un document XML, qui peut porter du script, des gestionnaires d’événements, un lien `javascript:` ou une image chargée depuis un autre site. Ceux-là sont refusés.
+
+Les logos des partenaires sont rangés dans la base (`logoData`, en octets) et servis par `/api/site-partners/{id}/logo` ; celui du site, dans une clé réservée du stockage, `system/logo.svg`, hors de l’arborescence du finder, et servi par `/api/media/site-logo`. Dans les deux cas, la réponse porte `Content-Security-Policy: sandbox` et `X-Content-Type-Options: nosniff` : un SVG ouvert directement dans un onglet ne peut rien exécuter.
+
+## Une porte restée entrouverte
+
+En écrivant ce chapitre, la comparaison des deux circuits de logo a montré un écart. Les partenaires passaient par `validateLogo`. Le logo du site, lui, ne vérifiait que la taille : un SVG piégé était refusé à la lecture par la route qui le sert, mais accepté et stocké à l’envoi. La protection tenait par une seule couche.
+
+La procédure appelle maintenant le même contrôle :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/siteSettings/router.ts"
+  filename="router.ts"
+  snippetStart="uploadLogo: protectedProcedure"
+  snippetEnd="    }),"
+  snippetHighlight="2,14,15"
+  snippetTitle="siteSettings.uploadLogo"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Les deux logos actuels du club passent le contrôle tels quels. Un test de bout en bout, `e2e/logos.spec.ts`, envoie trois fichiers refusés (un script, une image externe, un texte qui n’est pas un SVG) et vérifie le message de chaque refus.
+
+<Callout type="warning">
+**Une règle, deux couches.** Ce qui doit être neutralisé à la lecture doit aussi être refusé à l’écriture. La route qui sert un fichier et la procédure qui l’accepte sont deux portes ; si l’une est oubliée un jour (un nouvel affichage, un export, une copie vers un autre site), l’autre tient encore.
+</Callout>
+
+## Pour un nouvel envoi
+
+<DocsTable columnsJson='["Le fichier est…", "Circuit", "Ce qu’il faut écrire"]' rowsJson='[["Un média du club, à ranger et à valider", "Commun", "Rien côté stockage : une destination existante et uploadToR2. Une nouvelle destination se déclare dans le contrat (upload-destination.schema.ts), puis dans resolvePendingUploadFolder et assertUploadDestinationAllowed."], ["Attaché à une personne ou à une pièce, hors bibliothèque", "Dédié", "Deux procédures (signer, enregistrer) qui calculent la clé côté serveur, et une route de lecture qui vérifie les droits."], ["Petit, rare, et qui est un réglage", "Dans la requête", "Une mutation qui reçoit le base64, borne la taille et vérifie le contenu ; une route qui sert le fichier en sandbox."]]' />
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de portes ?", "Sept écrans par où un fichier entre ; trois circuits."], ["Qu’est-ce qui choisit le circuit ?", "La nature du fichier pour le club : un média, un document attaché à une personne, un réglage."], ["Que donne un formulaire de la famille commune ?", "Une destination, un fichier et ses deux mutations. Jamais un chemin."], ["Pourquoi l’avatar n’utilise-t-il pas uploadToR2 ?", "Ses procédures n’ont pas la même forme : pas de destination, une clé par membre."], ["Pourquoi un logo passe-t-il dans la requête ?", "512 Ko au plus : le serveur lit le fichier entier et peut vérifier son contenu avant de l’écrire."], ["Qu’est-ce qui a changé ?", "Le logo du site passe désormais par validateLogo, comme ceux des partenaires."]]' />
+
+## À suivre
+
+La famille commune promet beaucoup à ses formulaires : une séquence sûre, des erreurs lisibles. Elle ne leur dit pas comment envoyer vingt fichiers à la fois, quoi faire quand trois portent un nom déjà pris, ni que faire de ceux qui ont abouti quand le quatrième échoue.
+
+<Callout type="tip">
+**Chapitre suivant : les formulaires de lot.** La bibliothèque, l’espace personnel et le dépôt des membres : trois façons de piloter un lot, en parallèle ou un par un, et ce que chacun fait d’un conflit de nom.
+</Callout>

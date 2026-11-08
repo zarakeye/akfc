@@ -1,0 +1,175 @@
+---
+title: "Un fichier, un usage"
+description: "Les envois d’un seul fichier pour un seul usage : l’avatar et ses trois sources (dépôt, sélecteur, caméra frontale capturée en miroir), une proposition locale qu’on rouvre et qu’on confirme, une image remplacée sans clignoter ; le formulaire signé, qui s’applique ou s’archive ; et le dépôt d’un PDF dans un espace de groupe, en deux procédures."
+section: "Les envois de fichiers"
+order: 4
+entities:
+  User: [avatar, imageConsentAt]
+  ImageConsentForm: [storageKey, fileName, usages, signedAt, keepAfterLeave]
+  MemberDocument: [mediaAssetId]
+stories:
+  - title: Un membre change son avatar
+    actor: Membre
+    steps:
+      - label: Il recadre une photo ou une capture ; rien ne part tant qu’il n’a pas confirmé
+        call: avatar.getMine
+        section: Une proposition qu’on confirme
+      - label: À la confirmation, l’envoi est autorisé pour lui seul
+        call: avatar.createUpload
+        section: Une proposition qu’on confirme
+      - label: Le serveur vérifie l’image arrivée et l’enregistre ; l’ancienne reste affichée jusqu’au chargement de la nouvelle
+        call: avatar.register
+        section: Remplacer sans clignoter
+  - title: Un administrateur dépose le formulaire signé d’un membre
+    actor: Administrateur
+    steps:
+      - label: Il coche les usages autorisés et envoie le fichier
+        call: imageConsent.createUpload
+        section: Le formulaire signé
+      - label: Le formulaire est enregistré ; il s’applique s’il est le plus récent, sinon il est archivé
+        call: imageConsent.register
+        section: Le formulaire signé
+  - title: Un éditeur dépose un PDF dans l’espace de son groupe
+    actor: Membre éditeur d’un espace
+    steps:
+      - label: Le fichier part vers l’espace du groupe, par la famille commune
+        call: storage.createR2Upload
+        section: Un PDF dans un espace de groupe
+      - label: Il devient un document du groupe, que ses membres voient
+        call: memberDocument.depositToGroupSpace
+        section: Un PDF dans un espace de groupe
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Les formulaires de lot pilotent vingt fichiers et leur sort ; les photos d’iPhone y entrent converties. Restent les écrans où il n’y a qu’un fichier, et où ce fichier a un seul usage.
+
+Un seul fichier ne veut pas dire un envoi plus simple. Le portrait d’un membre est vu partout (en-tête, profil, commentaires, pages d’instructeurs) ; il doit être juste du premier coup, et remplacer l’ancien partout à la fois. Un formulaire signé change ce que le site a le droit de publier. Un PDF déposé dans un espace devient un document que d’autres liront. Le côté serveur de chacun est raconté ailleurs (« L’avatar », « Le droit à l’image », « Les espaces collaboratifs ») ; ce chapitre suit le navigateur.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## L’avatar : trois sources, un recadrage 🙂
+
+Un avatar peut venir d’un fichier glissé sur le portrait, d’un fichier choisi avec le bouton, ou de la caméra. Les trois chemins se rejoignent dans la même fonction, `beginFreshCrop`, qui convertit au besoin une photo HEIC et ouvre le recadrage :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/avatar/AvatarUploader.tsx"
+  filename="AvatarUploader.tsx"
+  snippetStart="const { getRootProps, getInputProps, isDragActive } = useDropzone({"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3,4,6"
+  snippetTitle="Une zone de dépôt sur le portrait"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La zone de dépôt accepte **une** image (`multiple: false`) et ne s’ouvre pas au clic (`noClick`) : le portrait reste cliquable pour autre chose, et le choix d’un fichier passe par un bouton explicite. Le recadrage, commun à toutes les images du site, a sa propre partie ; en mode avatar, il produit un carré, affiché en cercle ou en carré arrondi.
+
+## La caméra frontale
+
+`CameraCapture` demande la caméra **frontale** (`getUserMedia({ video: { facingMode: "user" } })`), sans micro. L’aperçu d’une caméra frontale est affiché en miroir : c’est ainsi qu’on se voit. La capture doit donc l’être aussi, sinon la photo enregistrée serait l’inverse de ce que le membre a cadré :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/avatar/CameraCapture.tsx"
+  filename="CameraCapture.tsx"
+  snippetStart="const doCapture = () => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="15,16,17,21,22"
+  snippetTitle="Capturer ce que le membre voit"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’image est dessinée dans un canvas retourné, exportée en PNG, et le flux vidéo est **coupé** aussitôt, comme à la fermeture du composant : le voyant de la caméra s’éteint dès qu’on n’en a plus besoin.
+
+Deux aides au cadrage s’ajoutent. Une grille (règle des tiers) pour centrer le visage. Et un flash : le vrai flash (`torch`) n’existe presque que sur la caméra arrière des téléphones. Quand le matériel ne l’offre pas, l’écran s’illumine en blanc le temps de la capture, ou en continu, pour éclairer le visage.
+
+## Une proposition qu’on confirme
+
+Le recadrage ne déclenche **pas** l’envoi. Il produit une proposition locale, affichée à côté de l’avatar actuel, avec deux boutons : ✓ et ✗.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/avatar/AvatarUploader.tsx"
+  filename="AvatarUploader.tsx"
+  snippetStart="const handleCrop = ({ croppedFile, recipe }: CropResult) => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="7,8,9,10"
+  snippetTitle="Garder le résultat, la recette et l’original"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La proposition garde trois choses : le fichier recadré, qui partira ; l’original, non recadré ; et la **recette** du recadrage (zoom, rotation, position, forme). Toucher la vignette rouvre le recadrage sur l’original, exactement dans l’état laissé. Le membre peut ajuster trois fois avant de confirmer, sans dégrader l’image : on recadre toujours l’original, jamais un recadrage.
+
+À ✓, les trois temps s’enchaînent (`avatar.createUpload`, envoi direct, `avatar.register`), comme le montre le chapitre « L’avatar ». À ✗, la proposition et sa recette sont jetées. Dans les deux cas, la recette est consommée.
+
+<Callout type="concept">
+**Une recette plutôt qu’un résultat.** Garder les paramètres d’une transformation, et non seulement son produit, rend la transformation réversible et rejouable. C’est ce qui permet de rouvrir un recadrage sans perte.
+</Callout>
+
+## Remplacer sans clignoter
+
+Après l’enregistrement, l’URL de l’avatar change de version (`?v=…`), et toutes les vues rechargent l’image. Le portrait du formulaire, lui, aurait un trou : entre l’ancienne image et la nouvelle, le temps que le serveur fabrique la vignette, il afficherait un cadre vide.
+
+Le formulaire garde donc la proposition locale à l’écran, et précharge la nouvelle image en coulisses :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/avatar/AvatarUploader.tsx"
+  filename="AvatarUploader.tsx"
+  snippetStart="{awaitingImage && currentUrl && ("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5,9,10"
+  snippetTitle="Une image cachée, qui dit quand elle est prête"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’image cachée charge l’URL définitive. À son `onLoad` (ou à son `onError`, pour ne jamais rester bloqué), `handleSettled` retire la proposition locale et libère son URL `blob:`. Le membre voit sa photo, puis la même photo, servie par le site.
+
+## Le formulaire signé
+
+Sur la fiche d’un membre, un administrateur dépose le formulaire d’autorisation signé : un PDF ou une photo. Il coche d’abord les usages que le formulaire autorise, la date de signature et, s’il le sait, ce que le membre souhaite pour après son départ. Le fichier suit le circuit dédié : `imageConsent.createUpload`, envoi direct, `imageConsent.register`, qui reçoit aussi ces choix.
+
+Le navigateur fait les contrôles du contrat avant d’envoyer (format, 15 Mo au plus), après avoir converti une photo d’iPhone. Le serveur les refait à l’enregistrement, en relisant chez le stockage la taille et le type du fichier arrivé ; un fichier refusé est supprimé.
+
+La réponse de `register` porte un booléen, `applied`. Un formulaire dont la date est plus récente que les droits en vigueur **s’applique** : le statut du membre change. Un formulaire plus ancien (une archive retrouvée, par exemple) est **gardé** comme pièce, sans rien changer. Le formulaire l’affiche, pour que l’administrateur sache ce que son geste a fait.
+
+## Un PDF dans un espace de groupe
+
+Dans « Mes espaces », un membre éditeur d’un espace voit une barre de dépôt au-dessus du finder. Le dépôt se fait en **deux** procédures, parce qu’il fait deux choses :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/(public)/mes-espaces/[groupId]/page.tsx"
+  filename="page.tsx"
+  snippetStart="const onFileChosen = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="9,11,18"
+  snippetTitle="Envoyer, puis faire un document du groupe"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+D’abord, le fichier entre dans la bibliothèque par la famille commune, avec la destination `{ kind: "group", groupId }`. Puis `memberDocument.depositToGroupSpace` en fait un document du groupe, que ses membres verront dans leurs documents. La seconde procédure revérifie le droit d’écrire, et que le fichier se trouve bien **dans** l’espace de ce groupe : être éditeur d’un groupe ne permet pas d’y diffuser un fichier pris ailleurs.
+
+La destination désigne un groupe, pas un dossier : le fichier arrive à la racine de l’espace, même si le membre regardait un sous-dossier. Le sélecteur ne propose que des PDF ; c’est un choix d’interface, le serveur acceptant dans un espace tous les formats de la bibliothèque.
+
+<Callout type="warning">
+Cette séquence est écrite deux fois : dans la barre de dépôt de `/mes-espaces`, et dans la page d’un espace, `/mes-espaces/[groupId]`, à laquelle aucun lien du site ne mène plus depuis que les espaces s’ouvrent dans le finder. Les deux versions sont identiques aujourd’hui ; elles peuvent diverger demain. Retirer la page, ou partager la fonction, est une piste.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où vient un avatar ?", "D’un fichier déposé, choisi, ou d’une capture de la caméra frontale ; tout passe par le recadrage."], ["Pourquoi capturer en miroir ?", "L’aperçu frontal est en miroir : on enregistre ce que le membre a cadré."], ["Quand l’avatar part-il ?", "À la confirmation seulement. Le recadrage produit une proposition locale."], ["Comment rouvrir un recadrage sans perte ?", "La proposition garde l’original et la recette ; on recadre toujours l’original."], ["Comment éviter le cadre vide au remplacement ?", "La proposition reste affichée jusqu’au chargement de la nouvelle image."], ["Que dit le dépôt d’un formulaire signé ?", "S’il s’applique (plus récent que les droits en vigueur) ou s’il est seulement archivé."], ["Pourquoi deux procédures pour un dépôt de groupe ?", "Entrer dans la bibliothèque, puis devenir un document du groupe : deux gestes, deux contrôles."]]' />
+
+## À suivre
+
+Tous les envois sont maintenant connus : les fichiers entrent, rangés et contrôlés, et le finder les montre à chacun selon ses droits. Un média validé n’est pourtant visible de personne tant qu’il n’est posé nulle part : la route publique exige qu’il soit **placé** dans une page ou une galerie publique.
+
+Ce placement est le travail du constructeur de pages. Une page y est faite de blocs (texte riche, image et texte, galerie…), édités dans le tableau de bord et rendus côté serveur sur le site. Chaque enregistrement doit tenir à jour la liste des médias qu’une page utilise, pour que la route publique sache quoi servir, et pour qu’on ne puisse pas retirer un média encore affiché.
+
+<Callout type="tip">
+**Partie suivante : le contenu éditorial.** Le constructeur de pages : un format de blocs commun aux pages, aux actualités et aux fiches, son éditeur, son rendu serveur, et la synchronisation des références de médias qui relie une page à ce qu’elle affiche.
+</Callout>
