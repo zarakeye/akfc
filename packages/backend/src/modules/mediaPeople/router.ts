@@ -10,6 +10,7 @@ import {
   setNoRecognizablePerson,
   tagCandidates,
 } from "@backend/modules/mediaPeople/mediaPeople.service";
+import { publicRightsReport } from "@backend/modules/mediaPeople/publicRightsReport.service";
 
 /**
  * Tags de personnes sur les médias : réservés aux administrateurs. Les tags sont des données
@@ -41,6 +42,9 @@ export const mediaPeopleRouter = router({
   verdicts: adminProcedure
     .input(z.object({ mediaAssetIds: z.array(z.string().min(1)).max(500) }))
     .query(({ ctx, input }) => mediaVerdictsFor(ctx.prisma, input.mediaAssetIds)),
+
+  /** Médias montrés sur le site public dont le droit à l'image demande une action (masqués, en attente, à taguer). */
+  publicReport: adminProcedure.query(({ ctx }) => publicRightsReport(ctx.prisma)),
 
   /** Relance le droit à l'image d'une personne taguée (une fois au plus tous les 7 jours). */
   remind: adminProcedure

@@ -16,7 +16,7 @@ import {
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { assertPublicContentRights, assertPublicMediaRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * disciplines/router.ts
@@ -220,6 +220,7 @@ export const disciplineRouter = router({
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.description, input.summary);
       await assertPublicContentRights(ctx.prisma, input.description, input.summary);
+      await assertPublicMediaRights(ctx.prisma, [input.summaryMediaId]);
       // Chaque référence doit exister : sinon, un message précis plutôt qu'une erreur de clé étrangère.
       await assertDisciplineReferences(ctx.prisma, {
         categoryId: input.categoryId,
@@ -311,6 +312,7 @@ export const disciplineRouter = router({
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.description, input.summary);
       await assertPublicContentRights(ctx.prisma, input.description, input.summary);
+      await assertPublicMediaRights(ctx.prisma, [input.summaryMediaId]);
       const { id, ...rest } = input;
 
       // Mêmes vérifications qu'à la création, pour les seules références fournies (la catégorie

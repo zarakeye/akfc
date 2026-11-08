@@ -18,7 +18,18 @@ export async function assertPublicContentRights(
   prisma: PrismaClient,
   ...contents: readonly (PageContentV1 | null | undefined)[]
 ): Promise<void> {
-  const ids = [...new Set(contents.flatMap((c) => (c ? extractMediaIdsFromContent(c) : [])))];
+  await assertPublicMediaRights(prisma, contents.flatMap((c) => (c ? extractMediaIdsFromContent(c) : [])));
+}
+
+/**
+ * La même règle pour des médias isolés : l'image de résumé d'une discipline, d'un stage ou d'un
+ * évènement (`summaryMediaId`), montrée sur les cartes de l'accueil et de l'agenda.
+ */
+export async function assertPublicMediaRights(
+  prisma: PrismaClient,
+  mediaIds: readonly (string | null | undefined)[],
+): Promise<void> {
+  const ids = [...new Set(mediaIds.filter((id): id is string => !!id))];
   const refused = await refusedMediaIds(prisma, ids, "PUBLIC_SITE");
   if (refused.size === 0) return;
   const files = await prisma.mediaAsset.findMany({

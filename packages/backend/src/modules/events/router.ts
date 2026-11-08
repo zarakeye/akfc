@@ -9,7 +9,7 @@ import { syncPageMediaReferences } from "@backend/modules/media/services/syncPag
 import { pageContentSchemaV1, parsePageContentV1 } from "@contracts/page";
 import { slugSchema } from "@contracts/slug/slug.schema";
 import { assertOwnAvatars } from "@backend/modules/media/services/assertOwnAvatars.service";
-import { assertPublicContentRights } from "@backend/modules/mediaPeople/publicContentRights.service";
+import { assertPublicContentRights, assertPublicMediaRights } from "@backend/modules/mediaPeople/publicContentRights.service";
 
 /**
  * events/router.ts
@@ -273,6 +273,7 @@ export const eventRouter = router({
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content, input.summary);
       await assertPublicContentRights(ctx.prisma, input.content, input.summary);
+      await assertPublicMediaRights(ctx.prisma, [input.summaryMediaId]);
       // ─── Validations pré-transaction ───────────────────────────────────
 
       const disciplineIds = [...new Set(input.disciplineIds ?? [])];
@@ -353,6 +354,7 @@ export const eventRouter = router({
     .mutation(async ({ ctx, input }) => {
       assertOwnAvatars(ctx.sessionClient.user.id, input.content, input.summary);
       await assertPublicContentRights(ctx.prisma, input.content, input.summary);
+      await assertPublicMediaRights(ctx.prisma, [input.summaryMediaId]);
       const { id, content, summary, ...rest } = input;
 
       // ─── Lecture pré-transaction (pour validation post-merge) ──────────

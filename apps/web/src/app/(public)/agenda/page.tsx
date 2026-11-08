@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { prisma } from "@backend/prisma";
 import { parsePageContentV1 } from "@contracts/page";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
+import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 import { PageRenderer } from "@features/page-builder/PageRenderer";
 import { startOfClubDay } from "@lib/time/clubDay";
@@ -100,13 +101,12 @@ export default async function AgendaPage(): Promise<JSX.Element> {
     .sort((a, b) => (a.date as Date).getTime() - (b.date as Date).getTime());
 
   // Résolution des images de carte en UNE requête, audience publique.
-  const images = await resolveMediaByIds(
-    prisma,
-    entries
-      .map((e) => e.row.summaryMediaId)
-      .filter((id): id is string => id !== null),
-    "public",
-  );
+  const imageIds = entries
+    .map((e) => e.row.summaryMediaId)
+    .filter((id): id is string => id !== null);
+  const images = await resolveMediaByIds(prisma, imageIds, "public");
+  // Droit à l'image : une image de carte refusée pour le site public est sautée (voir l'accueil).
+  const hiddenImages = await refusedMediaIds(prisma, imageIds, "PUBLIC_SITE");
 
   const cards: SummaryCardData[] = entries.map((entry) => ({
     // Clé préfixée par le type : les identifiants de stages et d'événements
@@ -118,9 +118,10 @@ export default async function AgendaPage(): Promise<JSX.Element> {
       ? `/${entry.kind === "seminar" ? "seminars" : "events"}/${entry.row.slug}`
       : null,
     linkLabel: entry.kind === "seminar" ? "Voir le stage" : "Voir l'événement",
-    imageUrl: entry.row.summaryMediaId
-      ? (images[entry.row.summaryMediaId]?.url ?? null)
-      : null,
+    imageUrl:
+      entry.row.summaryMediaId && !hiddenImages.has(entry.row.summaryMediaId)
+        ? (images[entry.row.summaryMediaId]?.url ?? null)
+        : null,
     content: <PageRenderer content={entry.content} />,
   }));
 

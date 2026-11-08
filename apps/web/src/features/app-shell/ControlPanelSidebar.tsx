@@ -129,6 +129,7 @@ export default function ControlPanelSidebar(): JSX.Element {
       items: [
         { label: "Bibliothèque", href: "/dashboard/library", createHref: "/dashboard/library/add", createAlt: "Ajouter une image ou une vidéo" },
         { label: "Galeries", href: "/dashboard/galleries", createHref: "/dashboard/galleries/create", createAlt: "Créer une galerie" },
+        { label: "Droit à l'image", href: "/dashboard/droit-image" },
       ],
     },
     {

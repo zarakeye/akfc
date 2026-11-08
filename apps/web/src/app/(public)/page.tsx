@@ -25,6 +25,7 @@ import {
 } from "@features/common/SummaryCards";
 import { parsePageContentV1 } from "@contracts/page";
 import { resolveMediaByIds } from "@backend/modules/media/services/resolveMediaByIds.service";
+import { refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
 import type { Metadata } from "next";
 
 /**
@@ -89,13 +90,13 @@ export default async function HomePage(): Promise<JSX.Element> {
   // Résolution des images de carte en UNE requête, comme le fait
   // `PageRenderer` pour les médias d'un composite. Audience publique : ces
   // images s'affichent pour un visiteur anonyme.
-  const summaryImages = await resolveMediaByIds(
-    prisma,
-    disciplineRows
-      .map((row) => row.summaryMediaId)
-      .filter((id): id is string => id !== null),
-    "public",
-  );
+  const summaryIds = disciplineRows
+    .map((row) => row.summaryMediaId)
+    .filter((id): id is string => id !== null);
+  const summaryImages = await resolveMediaByIds(prisma, summaryIds, "public");
+  // Droit à l'image : une image de carte refusée pour le site public par une personne taguée est
+  // sautée (la carte s'affiche sans image), comme dans `PageRenderer`.
+  const hiddenSummaries = await refusedMediaIds(prisma, summaryIds, "PUBLIC_SITE");
 
   const disciplineCards: SummaryCardData[] = disciplineRows
     .map((row) => ({ row, content: parsePageContentV1(row.summary) }))
@@ -105,9 +106,10 @@ export default async function HomePage(): Promise<JSX.Element> {
       title: row.name,
       href: row.slug ? `/disciplines/${row.slug}` : null,
       linkLabel: "Voir la discipline",
-      imageUrl: row.summaryMediaId
-        ? (summaryImages[row.summaryMediaId]?.url ?? null)
-        : null,
+      imageUrl:
+        row.summaryMediaId && !hiddenSummaries.has(row.summaryMediaId)
+          ? (summaryImages[row.summaryMediaId]?.url ?? null)
+          : null,
       // Rendu SERVEUR, passé ensuite en ReactNode au composant client qui
       // arbitre le dépliage : « Lire la suite » ne va rien chercher, il lève
       // seulement le clamp.
