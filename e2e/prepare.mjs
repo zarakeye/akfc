@@ -25,7 +25,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { assertLocal, E2E_DATABASE_URL, E2E_DB, E2E_STORAGE } from "./env.mjs";
-import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
+import { CONSENT_SINCE, DISCIPLINES, DOCUMENT_A, FAMILIES, MINOR, PASSWORD, SEMINAR, TAG_MEDIA, TINY_PDF, TINY_PNG_BASE64, USERS } from "./data.mjs";
 
 assertLocal();
 
@@ -189,6 +189,33 @@ await prisma.user.update({
   where: { id: USERS.droitImage.id },
   data: { imageConsent: "GRANTED", imageConsentAt: new Date(CONSENT_SINCE) },
 });
+
+// Tags de personnes : un majeur nommé (il confirmera en ligne), un refus saisi par le club, un
+// mineur dont la fiche est complète mais qui n'a rien demandé à son parent ; et un média à taguer.
+await prisma.user.update({ where: { id: USERS.tagAccord.id }, data: { lastName: "Accord", legalAge: "ADULT" } });
+await prisma.user.update({ where: { id: USERS.tagRefus.id }, data: { imageConsent: "REFUSED", imageConsentAt: new Date(CONSENT_SINCE) } });
+await prisma.user.update({
+  where: { id: USERS.tagMineur.id },
+  data: {
+    lastName: "Mineur",
+    legalAge: "MINOR",
+    birthDate: new Date(MINOR.birthDate),
+    birthDateVerified: true,
+    guardianName: "Karine Mineur",
+    guardianEmail: "parent-tag@e2e.test",
+    guardianRelation: "mère",
+  },
+});
+{
+  const png = Buffer.from(TINY_PNG_BASE64, "base64");
+  await s3.send(new PutObjectCommand({ Bucket, Key: TAG_MEDIA.key, Body: png, ContentType: "image/png" }));
+  await prisma.mediaAsset.create({
+    data: {
+      id: TAG_MEDIA.id, fullPath: TAG_MEDIA.key, mimeType: "image/png", format: "png", originalFileName: "tags.png",
+      bytes: png.byteLength, width: 1, height: 1, appRoot: "AKFC", status: "published", uploaderUserId: USERS.admin.id,
+    },
+  });
+}
 
 // Deux mineurs dont le club a tout renseigné : leur parent référent peut recevoir le lien.
 for (const { user, guardian } of [

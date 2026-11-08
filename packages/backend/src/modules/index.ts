@@ -4,6 +4,7 @@ import { authRouter } from "@backend/modules/auth/router";
 import { userRouter } from "@backend/modules/users/router";
 import { avatarRouter } from "@backend/modules/avatar/router";
 import { imageConsentRouter } from "@backend/modules/imageConsent/router";
+import { mediaPeopleRouter } from "@backend/modules/mediaPeople/router";
 import { trashRouter } from "@backend/modules/trash/router";
 import { categoryRouter } from "@backend/modules/categories/router";
 import { courseRouter } from "@backend/modules/courses/router";
@@ -44,6 +45,7 @@ export const appRouter = router({
   user: userRouter,
   avatar: avatarRouter,
   imageConsent: imageConsentRouter,
+  mediaPeople: mediaPeopleRouter,
   trash: trashRouter,
   category: categoryRouter,
   course: courseRouter,

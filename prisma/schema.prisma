@@ -72,6 +72,11 @@ model User {
   /// recueillie auprès du parent lui-même. Sert UNIQUEMENT au droit à l'image (lien
   /// d'autorisation, récapitulatif). Jamais modifiable par le membre.
   guardianEmail         String?
+  /// Dernière relance du droit à l'image (tags de médias) : une au plus tous les 7 jours.
+  imageConsentRemindedAt DateTime?
+  /// Médias où ce membre est tagué, et tags qu'il a posés (administrateur).
+  mediaTags            MediaPerson[] @relation("MediaPersonTagged")
+  mediaTagsPosted      MediaPerson[] @relation("MediaPersonTagger")
   /// Mineur : qualité du parent référent vis-à-vis du membre (« mère », « père », « tuteur »…),
   /// saisie par un administrateur avec son nom et son adresse. Portée sur l'autorisation signée.
   guardianRelation      String?
@@ -1119,6 +1124,11 @@ model MediaAsset {
   /// Effacée avec le fichier.
   memberDocument MemberDocument?
 
+  /// Personnes taguées sur ce média (admin), comparées à leur droit à l'image.
+  people MediaPerson[]
+  /// Coché par un admin : aucune personne reconnaissable (salle, matériel, de dos) → vert partout.
+  noRecognizablePerson Boolean @default(false)
+
   /// Ancien identifiant Cloudinary d'un fichier migré vers R2 (sortie de
   /// Cloudinary, 2026) : simple trace. null pour un fichier né sur R2.
   legacyCloudinaryPublicId String?
@@ -1130,6 +1140,28 @@ model MediaAsset {
   @@index([uploaderUserId])
   @@index([uploadedAt])
   @@index([appRoot, fullPath])
+}
+
+/// Une personne taguée sur un média, par un administrateur, à la main (jamais de reconnaissance
+/// faciale : ce serait des données biométriques). Le vert / rouge n'est pas stocké : il est calculé
+/// à chaque affichage, à partir du droit à l'image ACTUEL de la personne (contrats, mediaPeople.ts).
+/// Visible des seuls administrateurs (et de la personne elle-même) ; supprimé avec le compte ou le média.
+model MediaPerson {
+  id           String     @id @default(cuid())
+  mediaAssetId String
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation("MediaPersonTagged", fields: [userId], references: [id], onDelete: Cascade)
+  /// L'administrateur qui a posé le tag (null : son compte a été supprimé depuis).
+  taggedById   String?
+  taggedBy     User?      @relation("MediaPersonTagger", fields: [taggedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+  /// Inclus dans le récapitulatif envoyé à la personne (null : pas encore prévenue).
+  notifiedAt   DateTime?
+
+  @@unique([mediaAssetId, userId])
+  @@index([userId])
+  @@index([notifiedAt])
 }
 
 // ============================================================================

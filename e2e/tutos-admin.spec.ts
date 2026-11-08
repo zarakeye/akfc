@@ -97,7 +97,7 @@ test("« Le droit à l'image d'un mineur » conduit à sa fiche et montre où su
   await launch(page, "/dashboard/users", /Le droit à l'image d'un mineur.*parent/);
   const t = "Le droit à l'image d'un mineur";
   await expect(bubble(page, t, 1, 3)).toBeVisible();
-  await clickUntilUrl(page, page.getByRole("row", { name: new RegExp(USERS.mineur.email) }), new RegExp(`/dashboard/users/${USERS.mineur.id}$`));
+  await clickUntilUrl(page, page.getByRole("cell", { name: USERS.mineur.email, exact: true }), new RegExp(`/dashboard/users/${USERS.mineur.id}$`));
   await expect(bubble(page, t, 2, 3)).toBeVisible();
   await nextButton(page).click();
   await expect(bubble(page, t, 3, 3)).toBeVisible();

@@ -23,6 +23,11 @@ export async function exportMyData(db: PrismaClient, userId: string) {
           source: true, textVersion: true, signerName: true, signerQuality: true, signerEmail: true,
         },
       },
+      // Les médias où le membre a été tagué par un administrateur.
+      mediaTags: {
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true, mediaAsset: { select: { displayName: true, originalFileName: true, uploadedAt: true } } },
+      },
       createdAt: true, updatedAt: true,
       preferences: { select: { displayEmail: true, displayPhone: true, darkMode: true, description: true } },
       memberGroupMemberships: { select: { group: { select: { name: true } } } },
@@ -82,7 +87,16 @@ export async function exportMyData(db: PrismaClient, userId: string) {
       updatedAt: user.updatedAt,
       preferences: user.preferences,
     },
-    imageConsent: { value: user.imageConsent, recordedAt: user.imageConsentAt, signedForms: user.imageConsentForms },
+    imageConsent: {
+      value: user.imageConsent,
+      recordedAt: user.imageConsentAt,
+      signedForms: user.imageConsentForms,
+      taggedOnMedia: user.mediaTags.map((t) => ({
+        media: t.mediaAsset.displayName || t.mediaAsset.originalFileName,
+        mediaDate: t.mediaAsset.uploadedAt,
+        taggedAt: t.createdAt,
+      })),
+    },
     instructorBio: user.instructorBio,
     groups: user.memberGroupMemberships.map((m) => m.group.name),
     sessions: user.sessions,

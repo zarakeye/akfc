@@ -16,7 +16,15 @@ export const USERS = {
   droitImage: { id: "e2e-droit-image", email: "droit-image@e2e.test", firstName: "Fanny" },
   mineur: { id: "e2e-mineur", email: "mineur@e2e.test", firstName: "Gaspard" },
   mineurPages: { id: "e2e-mineur-pages", email: "mineur-pages@e2e.test", firstName: "Lison" },
+  // Tags de personnes sur un média : un majeur (formulaire en ligne), un refus saisi par le club,
+  // un mineur sans demande à son parent. À eux seuls, pour ne dépendre d'aucun autre fichier de tests.
+  tagAccord: { id: "e2e-tag-accord", email: "tag-accord@e2e.test", firstName: "Hugo" },
+  tagRefus: { id: "e2e-tag-refus", email: "tag-refus@e2e.test", firstName: "Inès" },
+  tagMineur: { id: "e2e-tag-mineur", email: "tag-mineur@e2e.test", firstName: "Jules" },
 };
+
+/** Le média sur lequel on tague des personnes. */
+export const TAG_MEDIA = { id: "e2e-media-tags", key: "AKFC/e2e/tags.png" };
 
 /** Le membre « mineur » : son identité et son parent référent, saisis par le club. */
 export const MINOR = {

@@ -3415,7 +3415,7 @@
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:323"
+        "prisma/schema.prisma:328"
        ]
       ],
       [
@@ -3425,7 +3425,7 @@
        ],
        [
         "onDelete: SetNull (AuditLog → User)",
-        "prisma/schema.prisma:325"
+        "prisma/schema.prisma:330"
        ]
       ]
      ]
@@ -3443,7 +3443,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → User)",
-        "prisma/schema.prisma:1769"
+        "prisma/schema.prisma:1801"
        ]
       ]
      ]
@@ -3470,7 +3470,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2251"
+        "prisma/schema.prisma:2283"
        ]
       ],
       [
@@ -3480,7 +3480,7 @@
        ],
        [
         "onDelete: SetNull (ImageConsentForm → User)",
-        "prisma/schema.prisma:2291"
+        "prisma/schema.prisma:2323"
        ]
       ]
      ]
@@ -3498,7 +3498,7 @@
        ],
        [
         "onDelete: Cascade (ImageConsentRequest → User)",
-        "prisma/schema.prisma:2309"
+        "prisma/schema.prisma:2341"
        ]
       ]
      ]
@@ -3521,6 +3521,44 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:253"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → User)",
+        "prisma/schema.prisma:1154"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "update",
+     "fields": [
+      "taggedById"
+     ],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "tx.user.delete",
+        "packages/backend/src/modules/users/router.ts:253"
+       ],
+       [
+        "onDelete: SetNull (MediaPerson → User)",
+        "prisma/schema.prisma:1157"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "update",
      "fields": [
@@ -3535,7 +3573,7 @@
        ],
        [
         "onDelete: SetNull (MemberDocument → User)",
-        "prisma/schema.prisma:1724"
+        "prisma/schema.prisma:1756"
        ]
       ]
      ]
@@ -3553,7 +3591,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → User)",
-        "prisma/schema.prisma:1749"
+        "prisma/schema.prisma:1781"
        ]
       ]
      ]
@@ -3571,7 +3609,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → User)",
-        "prisma/schema.prisma:1860"
+        "prisma/schema.prisma:1892"
        ]
       ]
      ]
@@ -3650,7 +3688,7 @@
        ],
        [
         "onDelete: Cascade (PasswordResetToken → User)",
-        "prisma/schema.prisma:265"
+        "prisma/schema.prisma:270"
        ]
       ]
      ]
@@ -3668,7 +3706,7 @@
        ],
        [
         "onDelete: Cascade (Session → User)",
-        "prisma/schema.prisma:241"
+        "prisma/schema.prisma:246"
        ]
       ]
      ]
@@ -3689,7 +3727,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2100"
+        "prisma/schema.prisma:2132"
        ]
       ],
       [
@@ -3699,7 +3737,7 @@
        ],
        [
         "onDelete: SetNull (Ticket → User)",
-        "prisma/schema.prisma:2109"
+        "prisma/schema.prisma:2141"
        ]
       ]
      ]
@@ -3720,7 +3758,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2175"
+        "prisma/schema.prisma:2207"
        ]
       ],
       [
@@ -3730,7 +3768,7 @@
        ],
        [
         "onDelete: SetNull (TicketEvent → User)",
-        "prisma/schema.prisma:2179"
+        "prisma/schema.prisma:2211"
        ]
       ]
      ]
@@ -3750,7 +3788,7 @@
        ],
        [
         "onDelete: SetNull (TicketMessage → User)",
-        "prisma/schema.prisma:2145"
+        "prisma/schema.prisma:2177"
        ]
       ]
      ]
@@ -5225,6 +5263,682 @@
    ],
    "emails": []
   },
+  "mediaPeople.forMedia": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "mediaPeople.setTags": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 25,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "prisma.mediaPerson.createMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:113"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "prisma.mediaPerson.deleteMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:112"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "prisma.user.count",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:109"
+       ]
+      ],
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "setMediaPeople",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:103"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "mediaPeople.setNoRecognizable": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 32,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "noRecognizablePerson"
+     ],
+     "trails": [
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "prisma.mediaAsset.update",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:124"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "setNoRecognizablePerson",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:122"
+       ],
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "mediaPeople.verdicts": {
+   "kind": "query",
+   "access": "admin",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 37,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:132"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "mediaPeople.remind": {
+   "kind": "mutation",
+   "access": "admin",
+   "file": "packages/backend/src/modules/mediaPeople/router.ts",
+   "line": 42,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:151"
+       ]
+      ],
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:128"
+       ]
+      ],
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:151"
+       ]
+      ],
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsentRemindedAt"
+     ],
+     "trails": [
+      [
+       [
+        "remindImageConsent",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+       ],
+       [
+        "prisma.user.update",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:179"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink",
+    "sendImageConsentReminder"
+   ]
+  },
   "trash.listBin": {
    "kind": "query",
    "access": "admin",
@@ -5893,11 +6607,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ],
       [
@@ -5915,11 +6629,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -5945,7 +6659,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ],
       [
@@ -5963,7 +6677,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ]
      ]
@@ -6025,6 +6739,50 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:112"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ],
+      [
+       [
+        "deleteForever",
+        "packages/backend/src/modules/trash/services/deleteForever.service.ts:23"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:128"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -6045,7 +6803,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ],
       [
@@ -6063,7 +6821,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ]
      ]
@@ -6089,11 +6847,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ],
       [
@@ -6111,11 +6869,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -6141,11 +6899,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ],
       [
@@ -6163,11 +6921,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -6239,11 +6997,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ],
       [
@@ -6261,11 +7019,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -6312,7 +7070,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ],
       [
@@ -6330,7 +7088,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ]
      ]
@@ -6392,6 +7150,50 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:112"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ],
+      [
+       [
+        "purge",
+        "packages/backend/src/modules/trash/services/purge.service.ts:60"
+       ],
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:128"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -6412,7 +7214,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ],
       [
@@ -6430,7 +7232,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ]
      ]
@@ -6456,11 +7258,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ],
       [
@@ -6478,11 +7280,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -6508,11 +7310,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ],
       [
@@ -6530,11 +7332,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -7720,7 +8522,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Discipline)",
-        "prisma/schema.prisma:1638"
+        "prisma/schema.prisma:1670"
        ]
       ]
      ]
@@ -8588,7 +9390,7 @@
        ],
        [
         "onDelete: Cascade (SeminarSession → Seminar)",
-        "prisma/schema.prisma:876"
+        "prisma/schema.prisma:881"
        ]
       ]
      ]
@@ -9298,7 +10100,7 @@
        ],
        [
         "onDelete: Cascade (EventDiscipline → Event)",
-        "prisma/schema.prisma:1636"
+        "prisma/schema.prisma:1668"
        ]
       ]
      ]
@@ -9316,7 +10118,7 @@
        ],
        [
         "onDelete: Cascade (EventSession → Event)",
-        "prisma/schema.prisma:1004"
+        "prisma/schema.prisma:1009"
        ]
       ]
      ]
@@ -9817,7 +10619,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1317"
+        "prisma/schema.prisma:1349"
        ]
       ],
       [
@@ -9827,11 +10629,11 @@
        ],
        [
         "onDelete: Cascade (Comment → Post)",
-        "prisma/schema.prisma:1317"
+        "prisma/schema.prisma:1349"
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1319"
+        "prisma/schema.prisma:1351"
        ]
       ]
      ]
@@ -9940,7 +10742,7 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1381"
+        "prisma/schema.prisma:1413"
        ]
       ]
      ]
@@ -9958,11 +10760,11 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1381"
+        "prisma/schema.prisma:1413"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1398"
+        "prisma/schema.prisma:1430"
        ]
       ]
      ]
@@ -9980,15 +10782,15 @@
        ],
        [
         "onDelete: Cascade (Poll → Post)",
-        "prisma/schema.prisma:1381"
+        "prisma/schema.prisma:1413"
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1398"
+        "prisma/schema.prisma:1430"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1421"
+        "prisma/schema.prisma:1453"
        ]
       ]
      ]
@@ -13031,7 +13833,7 @@
        ],
        [
         "onDelete: Cascade (Comment → Comment)",
-        "prisma/schema.prisma:1319"
+        "prisma/schema.prisma:1351"
        ]
       ]
      ]
@@ -13380,7 +14182,7 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1398"
+        "prisma/schema.prisma:1430"
        ]
       ]
      ]
@@ -13398,11 +14200,11 @@
        ],
        [
         "onDelete: Cascade (PollOption → Poll)",
-        "prisma/schema.prisma:1398"
+        "prisma/schema.prisma:1430"
        ],
        [
         "onDelete: Cascade (PollVote → PollOption)",
-        "prisma/schema.prisma:1421"
+        "prisma/schema.prisma:1453"
        ]
       ]
      ]
@@ -13726,7 +14528,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
-        "prisma/schema.prisma:1576"
+        "prisma/schema.prisma:1608"
        ]
       ]
      ]
@@ -14787,7 +15589,7 @@
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -14818,7 +15620,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -14836,7 +15638,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -15270,7 +16072,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1883"
+        "prisma/schema.prisma:1915"
        ]
       ]
      ]
@@ -15351,7 +16153,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1864"
        ]
       ]
      ]
@@ -15373,7 +16175,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1856"
+        "prisma/schema.prisma:1888"
        ]
       ]
      ]
@@ -17414,6 +18216,544 @@
    ],
    "emails": []
   },
+  "mediaPeopleFor": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 50,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "setMediaPeople": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 103,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "create",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.createMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:113"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.deleteMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:112"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.count",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:109"
+       ]
+      ],
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "setNoRecognizablePerson": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 122,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "assertMedia",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+       ],
+       [
+        "prisma.mediaAsset.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "update",
+     "fields": [
+      "noRecognizablePerson"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.update",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:124"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:52"
+       ]
+      ],
+      [
+       [
+        "mediaPeopleFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:50"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "mediaVerdictsFor": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 129,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:132"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "remindImageConsent": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 150,
+   "effects": [
+    {
+     "model": "ImageConsentRequest",
+     "op": "create",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:151"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:128"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:80"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentRequest",
+     "op": "update",
+     "fields": [
+      "expiresAt",
+      "keepAfterLeave",
+      "sentAt",
+      "sentTo",
+      "tokenHash",
+      "usages",
+      "userId"
+     ],
+     "trails": [
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.upsert",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:96"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "issueLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:79"
+       ],
+       [
+        "prisma.imageConsentRequest.update",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:107"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:151"
+       ]
+      ],
+      [
+       [
+        "resendGuardianLink",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:126"
+       ],
+       [
+        "loadMinor",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:65"
+       ],
+       [
+        "prisma.user.findUnique",
+        "packages/backend/src/modules/imageConsent/imageConsentGuardian.service.ts:66"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "update",
+     "fields": [
+      "imageConsentRemindedAt"
+     ],
+     "trails": [
+      [
+       [
+        "prisma.user.update",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:179"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": [
+    "sendGuardianConsentLink",
+    "sendImageConsentReminder"
+   ]
+  },
   "memberDocumentReadableBy": {
    "file": "packages/backend/src/modules/memberDocuments/visibleTo.ts",
    "line": 45,
@@ -17856,7 +19196,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberGroup)",
-        "prisma/schema.prisma:1883"
+        "prisma/schema.prisma:1915"
        ]
       ]
      ]
@@ -17917,7 +19257,7 @@
        ],
        [
         "onDelete: SetNull (MemberGroup → MemberGroup)",
-        "prisma/schema.prisma:1832"
+        "prisma/schema.prisma:1864"
        ]
       ]
      ]
@@ -17935,7 +19275,7 @@
        ],
        [
         "onDelete: Cascade (MemberGroupMembership → MemberGroup)",
-        "prisma/schema.prisma:1856"
+        "prisma/schema.prisma:1888"
        ]
       ]
      ]
@@ -18352,6 +19692,19 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "read",
      "fields": [],
@@ -18482,7 +19835,7 @@
       [
        [
         "db.ticketMessage.count",
-        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:58"
        ]
       ]
      ]
@@ -18514,7 +19867,7 @@
       [
        [
         "db.ticketMessage.count",
-        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:58"
        ]
       ]
      ]
@@ -18675,7 +20028,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2168"
+        "prisma/schema.prisma:2200"
        ]
       ]
      ]
@@ -18693,7 +20046,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2138"
+        "prisma/schema.prisma:2170"
        ]
       ]
      ]
@@ -18903,7 +20256,7 @@
        ],
        [
         "onDelete: Cascade (TicketEvent → Ticket)",
-        "prisma/schema.prisma:2168"
+        "prisma/schema.prisma:2200"
        ]
       ]
      ]
@@ -18925,7 +20278,7 @@
        ],
        [
         "onDelete: Cascade (TicketMessage → Ticket)",
-        "prisma/schema.prisma:2138"
+        "prisma/schema.prisma:2170"
        ]
       ]
      ]
@@ -22975,11 +24328,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ],
       [
@@ -22993,11 +24346,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -23019,7 +24372,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ],
       [
@@ -23033,7 +24386,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ]
      ]
@@ -23083,6 +24436,42 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:112"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ],
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:128"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -23099,7 +24488,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ],
       [
@@ -23113,7 +24502,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ]
      ]
@@ -23135,11 +24524,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ],
       [
@@ -23153,11 +24542,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -23179,11 +24568,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ],
       [
@@ -23197,11 +24586,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -23279,11 +24668,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ],
       [
@@ -23297,11 +24686,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -23340,7 +24729,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ],
       [
@@ -23354,7 +24743,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ]
      ]
@@ -23404,6 +24793,42 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:112"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ],
+      [
+       [
+        "deleteAssetRowsOfTrashedItem",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:105"
+       ],
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:128"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -23420,7 +24845,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ],
       [
@@ -23434,7 +24859,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ]
      ]
@@ -23456,11 +24881,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ],
       [
@@ -23474,11 +24899,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -23500,11 +24925,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ],
       [
@@ -23518,11 +24943,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -24083,11 +25508,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ],
       [
@@ -24097,11 +25522,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (DocumentReceipt → MemberDocument)",
-        "prisma/schema.prisma:1765"
+        "prisma/schema.prisma:1797"
        ]
       ]
      ]
@@ -24119,7 +25544,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ],
       [
@@ -24129,7 +25554,7 @@
        ],
        [
         "onDelete: Cascade (GalleryItem → MediaAsset)",
-        "prisma/schema.prisma:1581"
+        "prisma/schema.prisma:1613"
        ]
       ]
      ]
@@ -24167,6 +25592,34 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "delete",
+     "fields": [],
+     "cascade": true,
+     "trails": [
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:112"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ],
+      [
+       [
+        "prisma.mediaAsset.deleteMany",
+        "packages/backend/src/modules/trash/services/trashedAssets.service.ts:128"
+       ],
+       [
+        "onDelete: Cascade (MediaPerson → MediaAsset)",
+        "prisma/schema.prisma:1152"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "delete",
      "fields": [],
@@ -24179,7 +25632,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ],
       [
@@ -24189,7 +25642,7 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ]
       ]
      ]
@@ -24207,11 +25660,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ],
       [
@@ -24221,11 +25674,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentGroup → MemberDocument)",
-        "prisma/schema.prisma:1879"
+        "prisma/schema.prisma:1911"
        ]
       ]
      ]
@@ -24243,11 +25696,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ],
       [
@@ -24257,11 +25710,11 @@
        ],
        [
         "onDelete: Cascade (MemberDocument → MediaAsset)",
-        "prisma/schema.prisma:1709"
+        "prisma/schema.prisma:1741"
        ],
        [
         "onDelete: Cascade (MemberDocumentRecipient → MemberDocument)",
-        "prisma/schema.prisma:1745"
+        "prisma/schema.prisma:1777"
        ]
       ]
      ]
@@ -27785,6 +29238,23 @@
      ]
     },
     {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "exportMyData",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:11"
+       ],
+       [
+        "db.user.findUnique",
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:12"
+       ]
+      ]
+     ]
+    },
+    {
      "model": "MemberDocument",
      "op": "read",
      "fields": [],
@@ -27986,7 +29456,7 @@
        ],
        [
         "db.ticketMessage.count",
-        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:58"
        ]
       ]
      ]
@@ -28030,7 +29500,7 @@
        ],
        [
         "db.ticketMessage.count",
-        "packages/backend/src/modules/privacy/exportMyData.service.ts:53"
+        "packages/backend/src/modules/privacy/exportMyData.service.ts:58"
        ]
       ]
      ]
