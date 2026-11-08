@@ -21,6 +21,7 @@ const SECTION_ORDER = [
   "API",
   "Authentification et droits",
   "Stockage et médias",
+  "Le finder",
   "Contenu éditorial",
   "Domaine du club",
   "Membres et collaboration",
