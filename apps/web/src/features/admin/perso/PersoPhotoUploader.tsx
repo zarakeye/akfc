@@ -169,7 +169,7 @@ export default function PersoPhotoUploader(): JSX.Element {
     });
   };
 
-  /* ---- Upload : autorisation → POST navigateur → register ---- */
+  /* ---- Upload : autorisation → PUT du navigateur → register ---- */
   const upload = async () => {
     const toUpload = items.filter((it) => it.status === 'pending');
     if (toUpload.length === 0) return;

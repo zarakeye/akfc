@@ -161,8 +161,17 @@ export function CommonRepositoryUpload(): JSX.Element {
     }
     setState("uploading");
     setMessage(null);
+    // Un par un, et chaque fichier arrivé quitte aussitôt la liste : si l'envoi s'arrête en route,
+    // il ne reste que ceux qui n'ont pas abouti, et « Déposer » ne renvoie pas les autres (le
+    // serveur les refuserait : un membre ne remplace pas un fichier déjà déposé).
+    let sent = 0;
     try {
-      for (const it of items) await uploadR2(it);
+      for (const it of items) {
+        await uploadR2(it);
+        sent += 1;
+        URL.revokeObjectURL(it.previewUrl);
+        setItems((prev) => prev.filter((x) => x.id !== it.id));
+      }
 
       // Libellé humain seulement pour le Dépôt commun (les entités ont leur nom).
       if (isCommon) {
@@ -177,13 +186,12 @@ export function CommonRepositoryUpload(): JSX.Element {
         }
       }
       setState("done");
-      setMessage(`${items.length} fichier(s) déposé(s).`);
-      items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
-      setItems([]);
+      setMessage(`${sent} fichier(s) déposé(s).`);
       setContainerName("");
     } catch (err) {
       setState("error");
-      setMessage(err instanceof Error ? err.message : "Échec du dépôt.");
+      const reason = err instanceof Error ? err.message : "Échec du dépôt.";
+      setMessage(sent > 0 ? `${sent} fichier(s) déposé(s), puis : ${reason}` : reason);
     }
   };
 

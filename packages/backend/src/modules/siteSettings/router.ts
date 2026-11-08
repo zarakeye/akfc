@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 
 import { router, publicProcedure, protectedProcedure } from "@backend/trpc/core";
 import { isAdmin } from "@backend/trpc/middleware";
+import { validateLogo } from "@backend/modules/sitePartners/sitePartners.service";
 import { saveSiteContactSchema } from "@contracts/siteContact/siteContact.schema";
 import { compactId, saveLegalSettingsSchema } from "@contracts/legal/legalSettings.schema";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
@@ -148,15 +148,10 @@ export const siteSettingsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const buf = Buffer.from(input.dataBase64, "base64");
-      if (buf.length === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Fichier vide." });
-      }
-      if (buf.length > 512 * 1024) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Logo trop volumineux (max 512 Ko).",
-        });
-      }
+      // Mêmes contrôles que les logos des partenaires : taille, et un SVG sans script, sans
+      // événement, sans ressource externe. La route qui le sert l'enferme déjà (sandbox, nosniff) ;
+      // on ne stocke pas pour autant ce qu'elle devrait neutraliser.
+      validateLogo(buf, input.mimeType);
       await putSiteLogo(buf, input.mimeType);
       await ctx.prisma.siteSettings.upsert({
         where: { id: SETTINGS_ID },

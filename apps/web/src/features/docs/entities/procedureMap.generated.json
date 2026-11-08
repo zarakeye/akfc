@@ -288,7 +288,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:161"
+        "packages/backend/src/modules/siteSettings/router.ts:156"
        ]
       ]
      ]
@@ -304,7 +304,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:161"
+        "packages/backend/src/modules/siteSettings/router.ts:156"
        ]
       ]
      ]
@@ -316,7 +316,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/siteSettings/router.ts",
-   "line": 174,
+   "line": 169,
    "effects": [
     {
      "model": "SiteSettings",
@@ -329,7 +329,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:175"
+        "packages/backend/src/modules/siteSettings/router.ts:170"
        ]
       ]
      ]
@@ -345,7 +345,7 @@
       [
        [
         "ctx.prisma.siteSettings.upsert",
-        "packages/backend/src/modules/siteSettings/router.ts:175"
+        "packages/backend/src/modules/siteSettings/router.ts:170"
        ]
       ]
      ]
