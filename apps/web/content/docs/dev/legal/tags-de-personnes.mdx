@@ -1,0 +1,105 @@
+---
+title: "Les tags de personnes"
+description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, la case « aucune personne reconnaissable », et la relance."
+section: "Légal et RGPD"
+order: 5
+entities:
+  MediaPerson: [mediaAssetId, userId, taggedById, createdAt, notifiedAt]
+  MediaAsset: [noRecognizablePerson]
+  User: [imageConsent, imageConsentRemindedAt]
+stories:
+  - title: Un administrateur tague les personnes d’une photo
+    actor: Administrateur
+    steps:
+      - label: Il ouvre les tags d’un média ; chaque personne taguée montre son état par usage, et le média son verdict
+        call: mediaPeople.forMedia
+        section: Un verdict calculé, jamais stocké
+      - label: Il coche les personnes reconnaissables ; la liste remplace la précédente
+        call: mediaPeople.setTags
+        section: Poser et retirer des tags
+      - label: Personne de reconnaissable (salle, matériel, de dos) ; tout passe au vert
+        call: mediaPeople.setNoRecognizable
+        section: Poser et retirer des tags
+      - label: Le tableau d’une galerie lit les verdicts de tous ses médias d’un coup
+        call: mediaPeople.verdicts
+        section: Un verdict calculé, jamais stocké
+      - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
+        call: mediaPeople.remind
+        section: Relancer
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Chaque membre a un droit à l’image, usage par usage : un formulaire signé (papier ou en ligne), ou, pour un mineur, l’autorisation de son parent.
+
+Savoir ce que chacun autorise ne suffit pas : encore faut-il savoir **qui est sur quelle photo**. Un administrateur tague les personnes reconnaissables d’un média ; le site compare ces tags au droit à l’image de chacune et dit, pour chaque usage, si le média peut être publié.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Pas de reconnaissance faciale 🙈
+
+Les tags sont posés **à la main**, par un administrateur. Reconnaître les visages par algorithme, ce serait traiter des données biométriques, une catégorie sensible du RGPD (article 9) : il faudrait un consentement spécifique et une analyse d’impact, sans commune mesure avec les besoins d’un club. Les tags eux-mêmes sont des données personnelles : ils ne sortent par aucune procédure publique, partent avec le compte ou le média (`onDelete: Cascade`), et figurent dans l’export « mes données ».
+
+## Un verdict calculé, jamais stocké
+
+La table `MediaPerson` ne garde que le lien « telle personne, tel média », qui l’a posé et quand. Le vert ou le rouge se **recalcule à chaque lecture**, à partir du droit à l’image actuel : un membre qui retire son accord fait passer toutes ses photos au rouge, sans rien resynchroniser.
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/mediaPeople.ts"
+  filename="mediaPeople.ts"
+  snippetRange="38-65"
+  snippetHighlight="7,9,24"
+  snippetTitle="Une personne, puis un média, usage par usage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<DocsTable columnsJson='["Verdict d’un usage", "Quand", "Couleur"]' rowsJson='[["Accord", "Toutes les personnes taguées ont dit oui (ou « aucune personne reconnaissable »).", "Vert"], ["Refus", "Au moins une a refusé cet usage : un refus l’emporte toujours.", "Rouge"], ["Pas d’autorisation", "Au moins une n’a pas encore répondu.", "Orange"], ["À taguer", "Personne n’est tagué, et la case n’est pas cochée.", "Gris"]]' />
+
+Le formulaire le plus récent (par date des droits) fait foi. Sans formulaire, le statut saisi par le club sur la fiche : « refusé » vaut refus de tout, « accordé » vaut accord de tout (une autorisation écrite recueillie par le club), « non renseigné » laisse l’orange. Le serveur lit ces droits pour toutes les personnes d’un coup :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/mediaPeople/mediaPeople.service.ts"
+  filename="mediaPeople.service.ts"
+  snippetRange="22-38"
+  snippetHighlight="14,16"
+  snippetTitle="consentOf : deux requêtes, quel que soit le nombre de personnes"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Poser et retirer des tags
+
+La modale envoie la liste complète des personnes cochées ; le serveur supprime celles qui n’y sont plus et ajoute les nouvelles, dans une transaction. Un tag déjà posé garde sa date. La case « aucune personne reconnaissable » met tout au vert : elle sert pour une salle vide, du matériel, un groupe de dos.
+
+<Callout type="info">
+Tous les médias déjà publiés sont « à taguer » : la migration n’en retire aucun du site. Ce que le verdict bloque ou signale (site public, espace membres) vient avec le tableau des galeries, dans l’incrément suivant.
+</Callout>
+
+## Relancer
+
+Une personne taguée sans réponse peut être relancée depuis la modale, une fois au plus tous les sept jours.
+
+<CodeWalkthrough
+  language="ts"
+  filepath="packages/backend/src/modules/mediaPeople/mediaPeople.service.ts"
+  filename="mediaPeople.service.ts"
+  snippetRange="144-181"
+  title="remindImageConsent"
+  stepsJson='[{"title": "Sept jours entre deux relances", "body": "La date de la dernière relance est gardée sur le membre (imageConsentRemindedAt). Plus tôt, le refus le dit ; le bouton de la modale, lui, est déjà grisé.", "scope": "21-23", "focus": "21-21"}, {"title": "Un mineur dont le parent attend", "body": "Une demande existe déjà (lien en cours ou expiré) : on renvoie un lien au parent, par le circuit du chapitre précédent. Le mineur n’a rien à refaire.", "scope": "25-27", "focus": "25-25"}, {"title": "Sinon, un e-mail au membre", "body": "Le majeur est invité à répondre en ligne ; le mineur sans demande, à indiquer ses souhaits puis à les envoyer à son parent. L’e-mail ne dit pas sur quelle photo : la personne le verra dans son espace.", "scope": "28-35", "focus": "32-32"}, {"title": "La date, après l’envoi", "body": "Elle n’est notée que si l’envoi a réussi : un échec d’e-mail ne bloque pas la relance pendant sept jours.", "scope": "36-36", "focus": "36-36"}]'
+/>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+
+## À suivre
+
+La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations et sait qui apparaît sur quelle photo. Restent les mécanismes que toutes les pages partagent : être trouvé, se repérer, être utilisable par tous.
+
+<Callout type="tip">
+**Partie suivante : interface transverse.** Le référencement, le header, l’accessibilité.
+</Callout>
