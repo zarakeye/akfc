@@ -22,7 +22,7 @@ export function DocsPagination({
             Précédent
           </div>
           <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-            ← {prev.title}
+            ← {prev.number ? `${prev.number} ` : ""}{prev.title}
           </div>
         </Link>
       ) : (
@@ -38,7 +38,7 @@ export function DocsPagination({
             Suivant
           </div>
           <div className="mt-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-            {next.title} →
+            {next.number ? `${next.number} ` : ""}{next.title} →
           </div>
         </Link>
       ) : (

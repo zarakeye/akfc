@@ -29,6 +29,7 @@ export const generateDocsIndex = cache((space: DocSpaceId | null = null): DocsIn
     : [
         {
           section: "Espaces",
+          number: null,
           items: DOC_SPACES.map((s, i) => ({ slug: [s.id], title: s.title, section: "Espaces", order: i })),
         },
       ]

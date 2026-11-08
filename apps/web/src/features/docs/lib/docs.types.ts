@@ -13,6 +13,8 @@ export interface DocFrontmatter {
 
 export interface DocPage extends DocFrontmatter {
   slug: string[]
+  /** Numéro du chapitre dans son espace (« 7.2 »), calculé par la navigation ; absent pour l'accueil. */
+  number?: string
 }
 
 export interface TocItem {

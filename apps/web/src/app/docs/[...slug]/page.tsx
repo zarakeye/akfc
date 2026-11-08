@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@features/docs/components/Breadcrumbs"
 import { DocsLayout } from "@features/docs/components/DocsLayout"
 import { DocsPagination } from "@features/docs/components/DocsPagination"
 import { DocsRightAsideDrawer } from "@features/docs/components/DocsRightAsideDrawer"
-import { getPrevNext } from "@features/docs/lib/docs.navigation"
+import { getNumberedDoc, getPrevNext } from "@features/docs/lib/docs.navigation"
 import { docExists, getDocSource } from "@features/docs/lib/docs.source"
 import { extractToc } from "@features/docs/lib/docs.toc"
 import type { DocFrontmatter } from "@features/docs/lib/docs.types"
@@ -57,6 +57,19 @@ export default async function Page({ params }: PageProps) {
 
   const { pages } = generateDocsIndex(space.id)
   const { prev, next } = getPrevNext(pages, slug)
+  // Numéro du chapitre (« 7.2 ») et sa partie, pour le titre et le fil d'Ariane.
+  const numbered = getNumberedDoc(pages, slug)
+  const chapterNumber = numbered?.page.number ?? null
+  const isSpaceHome = slug[slug.length - 1] === "index"
+  const crumbs = [
+    { name: space.title, href: `/docs/${space.id}` },
+    ...(numbered && !isSpaceHome
+      ? [
+          { name: numbered.sectionNumber ? `${numbered.sectionNumber}. ${numbered.section}` : numbered.section },
+          { name: chapterNumber ? `${chapterNumber} ${frontmatter.title}` : frontmatter.title },
+        ]
+      : []),
+  ]
 
   // Blocs de code : situés dans leurs fichiers avant la compilation (numéros de ligne réels,
   // fichier dépliable, navigation entre les extraits d'un même fichier).
@@ -88,11 +101,14 @@ export default async function Page({ params }: PageProps) {
   const header = (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <Breadcrumbs slug={slug} />
+        <Breadcrumbs items={crumbs} />
         <DocsSearch docs={searchDocs} />
       </div>
       <div>
         <h1 className="text-4xl font-bold tracking-tight">
+          {chapterNumber ? (
+            <span className="mr-3 tabular-nums text-muted-foreground">{chapterNumber}</span>
+          ) : null}
           {frontmatter.title}
         </h1>
 

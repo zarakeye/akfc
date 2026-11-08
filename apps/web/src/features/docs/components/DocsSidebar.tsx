@@ -10,6 +10,8 @@ import { OsSelect } from "@features/docs/ui/OsSelect"
 
 type NavigationSection = {
   section: string
+  /** Rang de la partie dans l'espace ; null pour l'accueil. */
+  number?: number | null
   items: DocPage[]
 }
 
@@ -102,15 +104,17 @@ export function DocsSidebar({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
         {open ? (
-          navigation.map(({ section, items }) => (
+          navigation.map(({ section, number, items }) => (
             <div key={section} className="mb-8">
               {/* Titre de partie : en capitales, gras, couleur du texte (noir en clair, blanc en
                   sombre), pour se détacher des chapitres en gris dessous. */}
               <h3 className="mb-3 px-2 text-sm font-bold uppercase tracking-wider text-foreground">
+                {number ? <span className="mr-1.5 tabular-nums">{number}.</span> : null}
                 {section}
               </h3>
 
-              <ul className="space-y-1">
+              {/* Les chapitres, décalés sous leur partie : le plan se lit d'un coup d'œil. */}
+              <ul className={`space-y-1 ${number ? "ml-3 border-l pl-2" : ""}`}>
                 {items.map((doc) => {
                   const slug = `/docs/${doc.slug.join("/")}`
                   const active = currentPath === slug
@@ -122,11 +126,15 @@ export function DocsSidebar({
                         onClick={closeIfOverlay}
                         className={
                           active
-                            ? "block rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-foreground"
-                            : "block rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                            ? "flex gap-1.5 rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-foreground"
+                            : "flex gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                         }
                       >
-                        {doc.title}
+                        {doc.number ? (
+                          // Retrait suspendu : un titre sur deux lignes reste aligné à droite du numéro.
+                          <span className="shrink-0 pt-px text-xs tabular-nums text-muted-foreground">{doc.number}</span>
+                        ) : null}
+                        <span>{doc.title}</span>
                       </Link>
                     </li>
                   )
@@ -136,13 +144,13 @@ export function DocsSidebar({
           ))
         ) : (
           <div className="flex flex-col items-center gap-3">
-            {navigation.map(({ section }) => (
+            {navigation.map(({ section, number }) => (
               <div
                 key={section}
                 className="flex h-8 w-8 items-center justify-center rounded-md text-[10px] font-semibold uppercase text-muted-foreground"
                 title={section}
               >
-                {section.slice(0, 2)}
+                {number ?? section.slice(0, 2)}
               </div>
             ))}
           </div>
