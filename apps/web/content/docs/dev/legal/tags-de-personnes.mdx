@@ -1,6 +1,6 @@
 ---
 title: "Les tags de personnes"
-description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags, la destination de chaque galerie (ce qui bloque, ce qui avertit) et la relance."
+description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags, la destination de chaque galerie (ce qui bloque, ce qui avertit), la relance, et « Où j’apparais » côté membre."
 section: "Légal et RGPD"
 order: 5
 entities:
@@ -41,6 +41,15 @@ stories:
       - label: Une personne n’a pas répondu ; il la relance, une fois au plus tous les sept jours
         call: mediaPeople.remind
         section: Relancer
+  - title: Un membre découvre les photos où il a été identifié
+    actor: Membre
+    steps:
+      - label: Une heure après une séance de tags, il reçoit un e-mail (au plus un par jour)
+        call: sendTagDigests
+        section: Côté membre, « Où j’apparais »
+      - label: Il ouvre « Où j’apparais » ; ses médias, où ils sont montrés, et son droit à l’image
+        call: mediaPeople.mine
+        section: Côté membre, « Où j’apparais »
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -239,9 +248,41 @@ Une personne taguée sans réponse peut être relancée depuis la modale, une fo
   stepsJson='[{"title": "Sept jours entre deux relances", "body": "La date de la dernière relance est gardée sur le membre (imageConsentRemindedAt). Plus tôt, le refus le dit ; le bouton de la modale, lui, est déjà grisé.", "scope": "21-23", "focus": "21-21"}, {"title": "Un mineur dont le parent attend", "body": "Une demande existe déjà (lien en cours ou expiré) : on renvoie un lien au parent, par le circuit du chapitre précédent. Le mineur n’a rien à refaire.", "scope": "25-27", "focus": "25-25"}, {"title": "Sinon, un e-mail au membre", "body": "Le majeur est invité à répondre en ligne ; le mineur sans demande, à indiquer ses souhaits puis à les envoyer à son parent. L’e-mail ne dit pas sur quelle photo : la personne le verra dans son espace.", "scope": "28-35", "focus": "32-32"}, {"title": "La date, après l’envoi", "body": "Elle n’est notée que si l’envoi a réussi : un échec d’e-mail ne bloque pas la relance pendant sept jours.", "scope": "36-36", "focus": "36-36"}]'
 />
 
+## Côté membre, « Où j’apparais »
+
+Une personne taguée a le droit de le savoir : c’est son droit d’accès (RGPD, article 15), et c’est aussi ce qui lui permet de réagir (donner son autorisation, la retirer, signaler qu’elle n’est pas sur la photo). La page « Où j’apparais » (`/profil/ou-j-apparais`, depuis le menu du compte et le profil) liste les médias où elle a été identifiée, où chacun est montré, s’il est masqué sur le site public, et son propre droit à l’image usage par usage, avec le lien pour le modifier.
+
+Ces médias ne sont pas forcément publiés : une photo d’une galerie réservée aux membres, ou encore dans la bibliothèque. La route des fichiers privés les lui ouvre donc, et à lui seul :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/media/services/canReadStorageKey.service.ts"
+  filename="canReadStorageKey.service.ts"
+  snippetRange="19-28"
+  snippetHighlight="9"
+  snippetTitle="Un média où l’on est tagué s’ouvre pour soi"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+### L’e-mail aux personnes taguées
+
+Un e-mail par tag serait du bruit : une séance de tags en pose vingt d’un coup. La colonne `MediaPerson.notifiedAt`, prévue dès la migration, marque les tags déjà annoncés. Toutes les cinq minutes, une tâche de fond cherche qui prévenir, selon une règle pure, dans les contrats :
+
+<CodeExample
+  language="ts"
+  filepath="packages/contracts/src/legal/mediaPeople.ts"
+  filename="mediaPeople.ts"
+  snippetRange="148-176"
+  snippetHighlight="24,25"
+  snippetTitle="Une heure après le premier tag, au plus un e-mail par jour"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une règle pure se teste sans base ni horloge : le test de bout en bout l’appelle directement, avec quatre membres dans quatre situations. L’envoi lui-même ne tourne pas pendant les tests (`MEDIA_TAG_DIGEST_DISABLED=1`, comme le récapitulatif des demandes et la purge) : un e-mail inattendu au milieu d’un autre test le ferait mentir. Un compte de démonstration est marqué annoncé sans e-mail. L’e-mail ne joint aucune image : elles restent derrière la connexion.
+
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans son export de données."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer ; les images de carte aussi."], ["Où voir ce qui est masqué ?", "Le rapport « Droit à l’image » du centre de contrôle."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qui tague ?", "Un administrateur, à la main ; jamais d’algorithme de reconnaissance."], ["Où ?", "Dans la modale, ouverte d’un clic sur un média du tableau d’une galerie ou d’un bloc « Galerie d’images »."], ["Que stocke-t-on ?", "Le lien personne-média, qui l’a posé et quand ; jamais le verdict."], ["Qui voit les tags ?", "Les administrateurs ; la personne, dans « Où j’apparais » et dans son export de données."], ["La personne est-elle prévenue ?", "Par e-mail, une heure après la séance de tags, au plus une fois par jour."], ["Un refus et un oubli sur la même photo ?", "Le refus l’emporte : rouge."], ["Et les photos sans personne ?", "La case « aucune personne reconnaissable » : vert partout."], ["Qu’est-ce qui bloque ?", "Seul un refus d’une personne taguée, pour une destination publique ; une absence de réponse avertit, un média non tagué passe."], ["Et les pages ?", "Toutes publiques : même règle, vérifiée à côté d’assertOwnAvatars, masquage dans PageRenderer ; les images de carte aussi."], ["Où voir ce qui est masqué ?", "Le rapport « Droit à l’image » du centre de contrôle."], ["La relance ?", "Au membre majeur, au mineur sans demande, ou un nouveau lien au parent ; une fois tous les sept jours."]]' />
 
 ## À suivre
 
