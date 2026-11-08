@@ -25,6 +25,7 @@ const SECTION_ORDER = [
   "Les envois de fichiers",
   "Le recadrage",
   "Contenu éditorial",
+  "L’éditeur de texte riche",
   "Domaine du club",
   "Membres et collaboration",
   "Légal et RGPD",

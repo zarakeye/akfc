@@ -1,0 +1,139 @@
+---
+title: "Une image de la bibliothèque dans le texte"
+description: "Le seul nœud Tiptap écrit pour le club : library-image, qui ne garde qu’un identifiant de média et une légende ; sa vue React qui résout l’image et se tait quand elle a disparu ; un sélecteur de médias modal appelé comme une fonction asynchrone ; une légende éditable hors de ProseMirror ; et son double sans React pour le rendu serveur."
+section: "L’éditeur de texte riche"
+order: 2
+entities:
+  MediaAsset: [id, status, fullPath]
+stories:
+  - title: Un administrateur insère une photo dans un texte
+    actor: Administrateur
+    steps:
+      - label: Il choisit une image dans le sélecteur ; son chemin devient un identifiant de média
+        call: media.resolveByPaths
+        section: Un sélecteur appelé comme une fonction
+      - label: La vue du nœud demande l’adresse de l’image, seulement si elle est validée
+        call: media.resolveByIds
+        section: La vue, qui résout et se tait
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** L’éditeur des blocs de texte vient d’un modèle de Tiptap, dont la chaîne d’envoi d’image ne sert qu’au banc d’essai. Il fallait pourtant pouvoir mettre une photo au milieu d’un texte.
+
+Le modèle de Tiptap insère une image par son **adresse** : `<img src="https://…">`, rangée dans le document. Pour le club, c’est exactement ce qu’il ne faut pas faire. Une adresse change quand le fichier est renommé ou déplacé dans la bibliothèque ; elle reste valable quand le fichier est retiré, ou quand il n’a jamais été validé ; et elle ne dit rien au recensement des médias, qui doit savoir qu’une page utilise ce fichier. Le chapitre « Un contenu fait de blocs » l’a posé en règle : **des références, jamais des URLs**.
+
+## Un nœud qui ne connaît qu’un identifiant 🖼️
+
+Le nœud `library-image` porte deux attributs, et pas un de plus :
+
+<DocsTable columnsJson='["Attribut", "Ce qu’il contient"]' rowsJson='[["mediaId", "L’identifiant de la ligne MediaAsset : stable quand le fichier est renommé ou déplacé."], ["caption", "La légende, facultative ; null plutôt qu’une chaîne vide."]]' />
+
+C’est un nœud **atomique** (`atom: true`) : il n’a pas de contenu à l’intérieur, on le sélectionne et on le déplace d’un bloc, comme une seule lettre. Il appartient au groupe `block` : il occupe sa propre ligne, entre deux paragraphes.
+
+L’extension ne sait ni chercher une adresse ni ouvrir un sélecteur. Elle reçoit ces deux capacités en options :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node-extension.ts"
+  filename="library-image-node-extension.ts"
+  snippetStart="export interface LibraryImageNodeOptions {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3"
+  snippetTitle="Deux fonctions injectées"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+C’est encore l’idée de l’adaptateur du finder et de `uploadToR2` : le nœud ne connaît pas tRPC. L’éditeur du constructeur lui fournit `resolveMediaUrl`, qui interroge `media.resolveByIds`, et `openImagePicker`, qui ouvre le sélecteur de médias. Un autre éditeur pourrait lui fournir autre chose.
+
+Copier-coller entre deux blocs de texte fonctionne : le nœud se sérialise en `<div data-type="library-image" data-media-id="…">`, sans adresse, et `parseHTML` le reconnaît à l’arrivée. Une image collée depuis un autre site, elle, ne survit pas : aucune extension de l’éditeur ne connaît la balise `<img>`.
+
+## Un sélecteur appelé comme une fonction
+
+Le sélecteur de médias est un composant **modal**, déclaratif : on l’affiche, l’utilisateur choisit, il appelle `onSubmit`. Le nœud, lui, veut écrire :
+
+```ts
+const mediaId = await options.openImagePicker()
+```
+
+Le pont entre les deux est une promesse dont on garde la fonction `resolve` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/blocks/tiptap/builder-tiptap-editor.tsx"
+  filename="builder-tiptap-editor.tsx"
+  snippetStart="const openImagePicker = useCallback((): Promise<string | null> => {"
+  snippetLines="29"
+  snippetHighlight="3,4,11,12,18,26"
+  snippetTitle="Ouvrir la modale, attendre son verdict"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`openImagePicker` range `resolve` dans une ref et ouvre la modale ; il rend une promesse encore en suspens. À la validation, le chemin choisi est converti en identifiant (`media.resolveByPaths`), et la promesse est résolue avec lui. À la fermeture, elle l’est avec `null`. Dans les deux cas, la ref est vidée avant d’appeler `resolve` : une promesse ne se résout qu’une fois.
+
+Le bouton de la barre d’outils et le bouton « Remplacer » de chaque image appellent la même fonction. Le premier insère un nœud (`insertLibraryImage`), le second change l’attribut `mediaId` du nœud existant.
+
+<Callout type="concept">
+**Une modale qu’on attend.** C’est le même geste que le dialogue des fichiers déjà présents dans la bibliothèque (chapitre « Les formulaires de lot ») : transformer une interface déclarative en `await`, pour que le code qui l’appelle se lise de haut en bas.
+</Callout>
+
+## La vue, qui résout et se tait
+
+Dans l’éditeur, le nœud s’affiche par une vue React (`ReactNodeViewRenderer`). Elle demande l’adresse de l’image à chaque montage et à chaque changement d’identifiant :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/editor-tiptap/node/library-image-node/library-image-node.tsx"
+  filename="library-image-node.tsx"
+  snippetStart="useEffect(() => {"
+  snippetEnd="}, [mediaId, options])"
+  snippetHighlight="6,16,17,33"
+  snippetTitle="Résoudre, sans écrire dans un composant démonté"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois états : en chargement, prête, indisponible. `media.resolveByIds` ne rend une adresse que pour un fichier **validé** : une image encore en attente, ou retirée de la bibliothèque depuis, s’affiche en encadré rouge « Média indisponible », avec son identifiant. L’administrateur le voit dans l’éditeur, avant que la page ne soit publiée sans elle.
+
+Le drapeau `cancelled` règle une course : si l’image est remplacée pendant que la première adresse est encore demandée, la réponse tardive arrive après le démontage de l’effet, et elle est ignorée. Sans lui, l’ancienne image pourrait s’afficher par-dessus la nouvelle.
+
+## Une légende hors de ProseMirror
+
+La légende est un `<input>` ordinaire, posé dans une `<figure>` marquée `contentEditable={false}`. ProseMirror ne gère donc pas ce sous-arbre : il n’intercepte pas les touches, et le curseur du document reste où il était pendant qu’on tape la légende. Chaque frappe met à jour l’attribut `caption` ; une légende effacée devient `null`.
+
+Les deux boutons du nœud, Remplacer et Supprimer, apparaissent au survol et quand le nœud est sélectionné (`group-hover` et `group-data-[selected]`) : au doigt, où le survol n’existe pas, toucher l’image la sélectionne et les fait paraître.
+
+## Le double du rendu serveur
+
+Le rendu public n’a pas de React dans `generateHTML`, et pas de requête à faire : le serveur a déjà résolu tous les médias de la page en une fois. `richTextHtml` déclare donc un **autre** nœud, de même nom et de mêmes attributs, `LibraryImageHtml`, dont `renderHTML` lit l’adresse dans la table résolue :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/page-builder/richTextHtml.ts"
+  filename="richTextHtml.ts"
+  snippetStart="renderHTML({ node }) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,5,13,14"
+  snippetTitle="Le même nœud, sans vue"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un fichier non validé donne `null` à la résolution, et le nœud n’émet qu’un `<span>` caché : la page s’affiche sans l’image, jamais avec une image cassée. Les dimensions connues du fichier sont écrites sur l’`<img>`, pour que la page ne saute pas quand l’image arrive.
+
+<DocsTable columnsJson='["", "Dans l’éditeur", "Sur le site"]' rowsJson='[["Nœud", "LibraryImageNode (library-image-node-extension.ts)", "LibraryImageHtml (richTextHtml.ts)"], ["Affichage", "Une vue React, qui résout l’image elle-même", "Un renderHTML, qui lit la table résolue par le serveur"], ["Fichier non validé", "Encadré « Média indisponible »", "Rien de visible"], ["Légende", "Un champ éditable", "Un figcaption"]]' />
+
+<Callout type="warning">
+**Trois listes, un seul schéma.** L’éditeur, le rendu serveur et la liste blanche de l’assainissement déclarent chacun les nœuds et marques du texte riche. Ajouter une extension à l’éditeur sans l’ajouter aux deux autres, c’est écrire du texte qui disparaît à l’enregistrement (liste blanche) ou qui vide le bloc à l’affichage (rendu). Aujourd’hui, elles sont alignées à la main.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que garde le document pour une image ?", "Un identifiant de média et une légende. Jamais une adresse."], ["Comment le nœud trouve-t-il l’image ?", "Par une fonction injectée (resolveMediaUrl), qui interroge media.resolveByIds."], ["Comment appelle-t-il le sélecteur ?", "Comme une fonction asynchrone : une promesse dont la modale appelle resolve."], ["Que voit-on d’une image non validée ?", "Un encadré « Média indisponible » dans l’éditeur ; rien sur le site."], ["Pourquoi la légende ne gêne-t-elle pas l’édition ?", "Elle est dans un sous-arbre contentEditable={false}, hors de ProseMirror."], ["Pourquoi deux nœuds library-image ?", "L’un a une vue React et résout seul ; l’autre rend du HTML à partir des médias déjà résolus par le serveur."]]' />
+
+## À suivre
+
+Le site a son identité, ses pages et ses actualités, et l’on sait maintenant comment chacun de leurs textes est écrit. Les contenus les plus importants, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements, avec leurs horaires, leurs séances et leurs instructeurs.
+
+<Callout type="tip">
+**Partie suivante : le domaine du club.** Ce que représentent vraiment une discipline, un cours, un stage et un événement, comment ils se relient, et pourquoi un cours n’a pas de date.
+</Callout>

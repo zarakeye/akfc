@@ -1,0 +1,93 @@
+---
+title: "Un modèle adopté, puis taillé"
+description: "L’éditeur de texte riche des blocs : un modèle officiel de Tiptap copié dans le dépôt (boutons, menus, nœuds, styles), ce qui en sert et ce qui ne sert qu’au banc d’essai ; l’éditeur du constructeur, ses extensions et sa barre d’outils ; un éditeur créé une fois, qui lit son contenu au montage et remonte chaque frappe sans boucle."
+section: "L’éditeur de texte riche"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La partie « Contenu éditorial » a suivi le texte riche du côté de la page : un document ProseMirror rangé dans le contenu, assaini par une liste blanche, rendu en HTML sur le serveur. Elle laissait de côté l’endroit où ce document est écrit.
+
+Un éditeur de texte riche est un des composants les plus difficiles à écrire soi-même : la sélection, le presse-papier, l’annulation, les listes imbriquées, la saisie sur mobile. Le projet ne l’a pas écrit. Il s’appuie sur **Tiptap**, une surcouche de ProseMirror, et sur un modèle d’interface que Tiptap publie. Cette partie raconte, en deux chapitres, ce qui a été adopté tel quel, ce qui a été taillé, et le seul nœud écrit pour le club : l’image de la bibliothèque.
+
+## Un modèle copié, pas une dépendance ✍️
+
+Tiptap fournit le moteur (des paquets `@tiptap/*`) mais pas de barre d’outils. Il publie en revanche des **modèles** d’éditeur complets, qu’on copie dans son projet au lieu de les installer : du code qu’on possède et qu’on modifie. Le projet a adopté le *Simple Editor*, dans `apps/web/src/features/editor-tiptap` :
+
+<DocsTable columnsJson='["Dossier", "Ce qu’il contient"]' rowsJson='[["ui-primitive/", "Des composants de base : bouton, menu déroulant, info-bulle, barre d’outils, séparateurs."], ["ui/", "Les boutons de l’éditeur : titres, listes, citation, code, gras et autres marques, surlignage, lien, alignement, annuler et refaire."], ["node/", "Les styles et vues des nœuds : paragraphe, titre, liste, citation, bloc de code, ligne horizontale, image, et library-image, le seul nœud écrit pour le projet."], ["hooks/", "L’accès à l’éditeur courant, la visibilité du curseur."], ["icons/", "Les icônes des boutons."], ["templates/simple/", "L’éditeur d’origine, complet, monté seulement par le banc d’essai /simpleEditor."]]' />
+
+Environ huit mille six cents lignes, dont le projet n’a écrit qu’une petite part. Les adopter plutôt que les installer a un coût : une mise à jour du modèle ne viendra pas toute seule. Et un avantage : chaque bouton se lit, se corrige et se traduit sur place, sans attendre personne.
+
+Toutes ne servent pas en production. Douze fichiers (environ 1 600 lignes) ne sont atteints que par `/simpleEditor` : l’éditeur d’origine, son bouton de thème, et toute la chaîne d’**envoi d’image** (`image-upload-node`, `image-upload-button`), dont la fonction d’envoi, `handleImageUpload`, ne fait que simuler une progression. Le banc d’essai n’est jamais servi en production (le proxy le refuse) ; ces fichiers ne font donc de mal à personne, mais ils ne doivent pas être pris pour un circuit d’envoi réel. Le vrai circuit, dans un bloc de texte, passe par la bibliothèque.
+
+<Callout type="warning">
+**Un modèle adopté se lit avant d’être réutilisé.** Un développeur qui cherche « comment insérer une image dans le texte » tombe d’abord sur `image-upload-node` : 559 lignes, une barre de progression, des fichiers glissés. C’est la démonstration du modèle, pas celle du club.
+</Callout>
+
+## L’éditeur du constructeur
+
+Le bloc de texte du constructeur monte `BuilderTipTapEditor`, dérivé du modèle avec trois différences : une image de la bibliothèque au lieu d’un envoi, pas de plein écran ni de barre mobile (l’éditeur vit dans un bloc, pas dans une page), et une remontée de chaque modification vers le bloc.
+
+Ses extensions décident de ce qu’on peut écrire :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/blocks/tiptap/builder-tiptap-editor.tsx"
+  filename="builder-tiptap-editor.tsx"
+  snippetStart="extensions: ["
+  snippetEnd="content: content as Content,"
+  snippetHighlight="3,5,9,14,15,16,24"
+  snippetTitle="Les extensions de l’éditeur"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<DocsTable columnsJson='["Extension", "Ce qu’elle apporte", "Un bouton ?"]' rowsJson='[["StarterKit", "Paragraphes, titres 1 à 6, listes, citation, bloc de code, gras, italique, barré, souligné, code, lien, annuler et refaire.", "Oui"], ["HorizontalRule (du modèle)", "La ligne horizontale, avec le style du modèle ; celle de StarterKit est désactivée pour ne pas avoir deux nœuds du même nom.", "Non : la saisie de trois tirets la crée."], ["TextAlign", "L’alignement des paragraphes et des titres.", "Oui (gauche, centre, droite)"], ["TaskList, TaskItem", "Les listes de cases à cocher, imbriquables.", "Oui, dans le menu des listes"], ["Highlight", "Le surlignage, en plusieurs couleurs.", "Oui"], ["Typography", "Les remplacements à la frappe : -> devient une flèche, (c) le symbole copyright, les guillemets droits des guillemets courbes.", "Non"], ["Superscript, Subscript", "L’exposant et l’indice.", "Non : seulement les raccourcis clavier."], ["Selection", "Pose une classe sur le texte sélectionné, pour qu’il reste marqué quand l’éditeur perd le focus, par exemple pendant qu’on tape l’adresse d’un lien.", "Non"], ["LibraryImageNode", "Une image de la bibliothèque, par son identifiant (chapitre suivant).", "Oui"]]' />
+
+Le lien se configure à part : `openOnClick: false`, pour qu’un clic dans l’éditeur place le curseur au lieu d’ouvrir la page liée.
+
+Les extensions ne sont pas qu’un choix d’interface : elles définissent le **schéma** du document. Un nœud que l’éditeur sait produire doit être connu du rendu serveur (`richTextHtml`), sinon `generateHTML` lève et le bloc s’affiche vide, et de la liste blanche (`sanitizeRichText`), sinon il est retiré à l’enregistrement. Le chapitre « Le texte riche » décrit ces deux autres listes ; elles sont aujourd’hui alignées sur celle-ci, à la main.
+
+## Créé une fois, nourri au montage
+
+`useEditor` crée l’éditeur au premier rendu, et ne le recrée pas. Deux conséquences dictent la forme du composant.
+
+**Le contenu n’est lu qu’au montage.** Tiptap ne réinitialise pas le document quand la prop `content` change. C’est voulu : à chaque frappe, le bloc parent reçoit le nouveau document et se rend à nouveau ; si l’éditeur relisait sa prop, il remplacerait son document par une copie de lui-même et le curseur sauterait au début. La contrepartie est à connaître : un hôte qui voudrait remplacer le texte d’un bloc déjà monté (rétablir une version enregistrée, par exemple) doit **remonter** l’éditeur, en changeant sa `key`.
+
+**La fonction `onChange` change, l’éditeur non.** Le rappel `onUpdate` est donné à la création ; s’il appelait directement la prop `onChange`, il garderait pour toujours la première, et ses modifications partiraient vers un état périmé. Le composant passe donc par une ref, mise à jour après chaque rendu :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/page-builder/blocks/tiptap/builder-tiptap-editor.tsx"
+  filename="builder-tiptap-editor.tsx"
+  snippetStart="const onChangeRef = useRef(onChange);"
+  snippetLines="4"
+  snippetHighlight="1,3"
+  snippetTitle="Toujours la dernière fonction"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le rappel lit `onChangeRef.current` au moment de la frappe : la fonction la plus récente. La ref est écrite dans un effet, et non pendant le rendu, où le React Compiler l’interdit (un rendu abandonné y laisserait une valeur jamais affichée).
+
+Enfin, `immediatelyRender: false` : l’éditeur ne se dessine pas pendant le rendu serveur. ProseMirror a besoin du DOM du navigateur ; rendu côté serveur, il produirait un HTML que l’hydratation contredirait.
+
+<Callout type="concept">
+**Composant contrôlé, éditeur non contrôlé.** Le constructeur est contrôlé (il reçoit tout son contenu, à chaque rendu). L’éditeur de texte, lui, garde son document : il ne fait que le **signaler**. C’est la seule façon de garder un curseur stable dans un éditeur qui gère sa propre sélection.
+</Callout>
+
+## Le rythme du texte
+
+Le modèle espaçait largement ses paragraphes (20 px) et son interligne (1,6), pensés pour une page d’éditeur plein écran. Dans un bloc du constructeur, le texte doit ressembler à ce qu’affichera le site. Les deux réglages sont posés en utilitaires Tailwind sur l’élément éditable, `leading-snug` et un écart de 8 px entre paragraphes, et les déclarations correspondantes ont été retirées des feuilles de style du modèle, dont les sélecteurs auraient pesé plus lourd.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où vient l’éditeur ?", "Du modèle Simple Editor de Tiptap, copié dans features/editor-tiptap : du code possédé, pas une dépendance."], ["Tout sert-il ?", "Non : douze fichiers, dont la chaîne d’envoi d’image simulée, ne servent qu’au banc d’essai /simpleEditor."], ["Qui décide de ce qu’on peut écrire ?", "Les extensions de l’éditeur ; le rendu serveur et la liste blanche doivent connaître les mêmes nœuds et marques."], ["Pourquoi le contenu n’est-il lu qu’au montage ?", "Pour ne pas remplacer le document à chaque frappe ; pour en changer, on remonte l’éditeur (key)."], ["Pourquoi une ref pour onChange ?", "Le rappel de l’éditeur est figé à sa création ; la ref lui donne toujours la dernière fonction."]]' />
+
+## À suivre
+
+Une seule extension de l’éditeur a été écrite pour le projet. Elle porte la règle qui traverse tout le constructeur : une page ne contient jamais l’adresse d’un fichier, seulement son identifiant.
+
+<Callout type="tip">
+**Chapitre suivant : une image de la bibliothèque dans le texte.** Un nœud qui ne connaît qu’un identifiant, une vue React qui le résout, un sélecteur de médias appelé comme une fonction, et son double sans React pour le rendu serveur.
+</Callout>
