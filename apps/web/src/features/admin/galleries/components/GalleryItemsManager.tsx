@@ -3,6 +3,7 @@
 import { JSX, useState } from 'react';
 import { trpc } from '@trpc/trpcClient';
 import { MediaItemsEditor } from '@features/admin/galleries/components/MediaItemsEditor';
+import type { ImageUsageValue } from '@contracts/legal/imageConsent';
 
 /**
  * Gestion des items d'une galerie **existante** (page d'édition).
@@ -12,9 +13,12 @@ import { MediaItemsEditor } from '@features/admin/galleries/components/MediaItem
 export function GalleryItemsManager({
   galleryId,
   initialMediaIds,
+  destinations,
 }: {
   galleryId: number;
   initialMediaIds: string[];
+  /** Destination de la galerie (`galleryDestinations`) : le tableau confronte les tags au droit à l'image. */
+  destinations: readonly ImageUsageValue[];
 }): JSX.Element {
   const [mediaIds, setMediaIds] = useState<string[]>(initialMediaIds);
   const [saved, setSaved] = useState(false);
@@ -39,6 +43,7 @@ export function GalleryItemsManager({
       <h3 className="mb-4 text-lg font-semibold">Images de la galerie</h3>
 
       <MediaItemsEditor
+        destinations={destinations}
         value={mediaIds}
         onChange={(ids) => {
           setMediaIds(ids);
@@ -53,7 +58,7 @@ export function GalleryItemsManager({
           disabled={setItemsMutation.isPending}
           className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
         >
-          {setItemsMutation.isPending ? 'Enregistrement…' : "Enregistrer l'ordre"}
+          {setItemsMutation.isPending ? 'Enregistrement…' : 'Enregistrer les images'}
         </button>
         {saved && <span className="text-sm text-emerald-600">Enregistré.</span>}
         {error && <span className="text-sm text-red-600">{error}</span>}

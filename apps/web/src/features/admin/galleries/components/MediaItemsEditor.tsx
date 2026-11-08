@@ -27,7 +27,9 @@ import { finderStorageAdapter } from '@/features/finder-adapters/storage/finderS
 import { APP_ROOT } from '@config/app';
 import type { ResolvedMedia } from '@contracts/page';
 import type { AppRouter } from '@backend/modules';
-import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES } from '@contracts/legal/imageConsent';
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from '@contracts/legal/imageConsent';
+import { checkDestinations } from '@contracts/legal/mediaPeople';
+import { RightsCheckBanner } from '@features/admin/media-people/RightsCheckBanner';
 import { MediaTagsDialog } from '@features/admin/media-people/MediaTagsDialog';
 import { USAGE_SHORT_LABEL, VerdictBadge } from '@features/admin/media-people/RightsBadges';
 
@@ -43,6 +45,8 @@ function SortableRow({
   media,
   loading,
   rights,
+  destinations,
+  blocked,
   onTag,
   onRemove,
 }: {
@@ -51,6 +55,8 @@ function SortableRow({
   media: ResolvedMedia | null;
   loading: boolean;
   rights: MediaRights | undefined;
+  destinations: readonly ImageUsageValue[];
+  blocked: boolean;
   onTag: () => void;
   onRemove: () => void;
 }): JSX.Element {
@@ -64,7 +70,7 @@ function SortableRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-b border-gray-100 bg-white ${isDragging ? 'relative z-10 opacity-80 shadow-lg' : ''}`}
+      className={`border-b border-gray-100 ${blocked ? 'bg-red-50' : 'bg-white'} ${isDragging ? 'relative z-10 opacity-80 shadow-lg' : ''}`}
     >
       <td className="px-2 py-2">
         <button
@@ -120,7 +126,10 @@ function SortableRow({
         </button>
       </td>
       {IMAGE_USAGE_VALUES.map((u) => (
-        <td key={u} className="px-2 py-2 text-center">
+        <td
+          key={u}
+          className={`px-2 py-2 text-center ${destinations.length > 0 && !destinations.includes(u) ? 'opacity-35' : ''}`}
+        >
           {rights ? <VerdictBadge usage={u} verdict={rights.verdicts[u]} /> : null}
         </td>
       ))}
@@ -155,9 +164,15 @@ function SortableRow({
 export function MediaItemsEditor({
   value,
   onChange,
+  destinations = [],
 }: {
   value: string[];
   onChange: (ids: string[]) => void;
+  /**
+   * Où ces médias seront montrés (`galleryDestinations`). Leurs colonnes sont mises en avant, les
+   * autres grisées, et le bandeau dit ce que le droit à l'image en pense. Vide : pas de bandeau.
+   */
+  destinations?: readonly ImageUsageValue[];
 }): JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [tagging, setTagging] = useState<number | null>(null);
@@ -172,6 +187,12 @@ export function MediaItemsEditor({
     { enabled: value.length > 0 },
   );
   const rights = rightsQuery.data ?? {};
+  const check = checkDestinations(
+    Object.fromEntries(Object.entries(rights).map(([id, r]) => [id, r.verdicts])),
+    value,
+    destinations,
+  );
+  const blockedIds = new Set(check.blocking.map((b) => b.mediaAssetId));
   const taggingId = tagging !== null ? value[tagging] : undefined;
   const taggingMedia = taggingId ? resolved[taggingId] ?? null : null;
 
@@ -236,6 +257,9 @@ export function MediaItemsEditor({
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
+          {destinations.length > 0 && rightsQuery.data && (
+            <RightsCheckBanner ids={value} destinations={destinations} check={check} />
+          )}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs text-gray-600">
@@ -245,7 +269,18 @@ export function MediaItemsEditor({
                   <th className="px-2 py-2 text-left">Média</th>
                   <th className="px-2 py-2 text-left">Personnes</th>
                   {IMAGE_USAGE_VALUES.map((u) => (
-                    <th key={u} scope="col" title={IMAGE_USAGE_LABEL[u]} className="px-2 py-2 text-center font-medium">
+                    <th
+                      key={u}
+                      scope="col"
+                      title={IMAGE_USAGE_LABEL[u]}
+                      className={`px-2 py-2 text-center font-medium ${
+                        destinations.includes(u)
+                          ? 'bg-emerald-50 text-emerald-900'
+                          : destinations.length > 0
+                            ? 'text-gray-400'
+                            : ''
+                      }`}
+                    >
                       {USAGE_SHORT_LABEL[u]}
                     </th>
                   ))}
@@ -262,6 +297,8 @@ export function MediaItemsEditor({
                       media={resolved[id] ?? null}
                       loading={resolveQuery.isLoading}
                       rights={rights[id]}
+                      destinations={destinations}
+                      blocked={blockedIds.has(id)}
                       onTag={() => setTagging(index)}
                       onRemove={() => removeAt(index)}
                     />

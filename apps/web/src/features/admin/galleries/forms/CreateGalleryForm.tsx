@@ -20,6 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 import { trpc } from "@trpc/trpcClient";
 import { MediaItemsEditor } from "@features/admin/galleries/components/MediaItemsEditor";
+import { galleryDestinations } from "@contracts/legal/mediaPeople";
 import { SuccessRedirect } from "@features/admin/common/components/SuccessRedirect";
 
 interface FormValues {
@@ -89,6 +90,9 @@ export function CreateGalleryForm(): JSX.Element {
   // mémoïser (règle react-hooks/incompatible-library), ce qui le faisait renoncer à optimiser tout
   // le composant. useWatch est l'abonnement prévu pour cela.
   const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
+  // Destination de la future galerie : le tableau des images la confronte au droit à l'image.
+  const visibility = useWatch({ control: form.control, name: "visibility" });
+  const slug = useWatch({ control: form.control, name: "slug" });
   // La catégorie choisie se reconnaît à sa clé, jamais à son libellé (renommable).
   const selectedCategoryKey = (categories ?? []).find(
     (c) => String(c.id) === selectedCategoryId,
@@ -322,7 +326,11 @@ export function CreateGalleryForm(): JSX.Element {
         {/* Images — état local envoyé via l'input caché `items` */}
         <div data-tour="galleries.form.images">
           <input type="hidden" name="items" value={JSON.stringify(mediaIds)} />
-          <MediaItemsEditor value={mediaIds} onChange={setMediaIds} />
+          <MediaItemsEditor
+            value={mediaIds}
+            onChange={setMediaIds}
+            destinations={galleryDestinations({ slug: slug ?? "", visibility: visibility ?? "PUBLIC" })}
+          />
         </div>
 
         {state.error && <p className="text-red-500">{state.error}</p>}

@@ -3,6 +3,7 @@
 import { JSX, use } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { galleryDestinations } from "@contracts/legal/mediaPeople";
 
 import { trpc } from "@trpc/trpcClient";
 import { UpdateGalleryForm } from "@features/admin/galleries/forms/UpdateGalleryForm";
@@ -60,6 +61,7 @@ export default function EditGalleryPage({
       <GalleryItemsManager
         galleryId={galleryId}
         initialMediaIds={gallery.items.map((it) => it.mediaAssetId)}
+        destinations={galleryDestinations(gallery)}
       />
     </div>
   );

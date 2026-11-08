@@ -6,7 +6,7 @@ import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 import { PresentationShell } from "@features/admin/common/components/PresentationShell";
 import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
 
-const CAROUSEL_SLUG = "home-carousel";
+import { CAROUSEL_SLUG } from "@contracts/legal/mediaPeople";
 
 const VISIBILITY_LABELS: Record<string, string> = {
   PUBLIC: "Public",

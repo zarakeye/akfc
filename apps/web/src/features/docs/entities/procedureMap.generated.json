@@ -5277,15 +5277,15 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -5298,15 +5298,15 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -5319,11 +5319,11 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -5336,25 +5336,25 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -5376,15 +5376,15 @@
       [
        [
         "tagCandidates",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:63"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:67"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -5397,25 +5397,25 @@
       [
        [
         "tagCandidates",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:63"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:67"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:64"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:68"
        ]
       ],
       [
        [
         "tagCandidates",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:63"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:67"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -5437,19 +5437,19 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -5462,15 +5462,15 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -5483,11 +5483,11 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "prisma.mediaPerson.createMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:139"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:143"
        ]
       ]
      ]
@@ -5500,11 +5500,11 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "prisma.mediaPerson.deleteMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:138"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:142"
        ]
       ]
      ]
@@ -5517,15 +5517,15 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -5538,43 +5538,43 @@
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "prisma.user.count",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:135"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:139"
        ]
       ],
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "setMediaPeople",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:129"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:133"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -5596,19 +5596,19 @@
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -5621,15 +5621,15 @@
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -5644,11 +5644,11 @@
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:154"
        ]
       ]
      ]
@@ -5661,15 +5661,15 @@
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -5682,33 +5682,33 @@
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "setNoRecognizablePerson",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:148"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:152"
        ],
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -5730,15 +5730,15 @@
       [
        [
         "mediaVerdictsFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:155"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -5751,11 +5751,11 @@
       [
        [
         "mediaVerdictsFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:155"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
        ],
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:158"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
        ]
       ]
      ]
@@ -5768,11 +5768,11 @@
       [
        [
         "mediaVerdictsFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:155"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
        ]
       ]
      ]
@@ -5785,15 +5785,15 @@
       [
        [
         "mediaVerdictsFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:155"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -5823,7 +5823,7 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5848,17 +5848,17 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:177"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:219"
        ]
       ],
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5872,7 +5872,7 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5905,7 +5905,7 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5923,7 +5923,7 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5948,17 +5948,17 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:177"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:219"
        ]
       ],
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "resendGuardianLink",
@@ -5985,11 +5985,11 @@
       [
        [
         "remindImageConsent",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:176"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:218"
        ],
        [
         "prisma.user.update",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:205"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:247"
        ]
       ]
      ]
@@ -14356,7 +14356,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 69,
+   "line": 75,
    "effects": [
     {
      "model": "Category",
@@ -14366,7 +14366,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14379,7 +14379,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14392,7 +14392,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14405,7 +14405,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14418,7 +14418,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14431,7 +14431,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:72"
+        "packages/backend/src/modules/galleries/router.ts:78"
        ]
       ]
      ]
@@ -14443,7 +14443,7 @@
    "kind": "query",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 85,
+   "line": 91,
    "effects": [
     {
      "model": "Gallery",
@@ -14453,7 +14453,7 @@
       [
        [
         "ctx.prisma.gallery.findUnique",
-        "packages/backend/src/modules/galleries/router.ts:89"
+        "packages/backend/src/modules/galleries/router.ts:95"
        ]
       ]
      ]
@@ -14465,7 +14465,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 117,
+   "line": 123,
    "effects": [
     {
      "model": "Gallery",
@@ -14475,7 +14475,99 @@
       [
        [
         "ctx.prisma.gallery.findUnique",
-        "packages/backend/src/modules/galleries/router.ts:118"
+        "packages/backend/src/modules/galleries/router.ts:124"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -14487,7 +14579,7 @@
    "kind": "query",
    "access": "public",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 140,
+   "line": 147,
    "effects": [
     {
      "model": "Category",
@@ -14497,7 +14589,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:141"
+        "packages/backend/src/modules/galleries/router.ts:148"
        ]
       ]
      ]
@@ -14510,7 +14602,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:141"
+        "packages/backend/src/modules/galleries/router.ts:148"
        ]
       ]
      ]
@@ -14523,7 +14615,7 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:141"
+        "packages/backend/src/modules/galleries/router.ts:148"
        ]
       ]
      ]
@@ -14536,7 +14628,74 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:141"
+        "packages/backend/src/modules/galleries/router.ts:148"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
        ]
       ]
      ]
@@ -14549,7 +14708,32 @@
       [
        [
         "ctx.prisma.gallery.findMany",
-        "packages/backend/src/modules/galleries/router.ts:141"
+        "packages/backend/src/modules/galleries/router.ts:148"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "refusedMediaIds",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:202"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -14561,7 +14745,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 176,
+   "line": 191,
    "effects": [
     {
      "model": "Gallery",
@@ -14571,7 +14755,7 @@
       [
        [
         "ctx.prisma.gallery.delete",
-        "packages/backend/src/modules/galleries/router.ts:181"
+        "packages/backend/src/modules/galleries/router.ts:196"
        ]
       ]
      ]
@@ -14585,7 +14769,7 @@
       [
        [
         "ctx.prisma.gallery.delete",
-        "packages/backend/src/modules/galleries/router.ts:181"
+        "packages/backend/src/modules/galleries/router.ts:196"
        ],
        [
         "onDelete: Cascade (GalleryItem → Gallery)",
@@ -14601,7 +14785,7 @@
    "kind": "mutation",
    "access": "admin",
    "file": "packages/backend/src/modules/galleries/router.ts",
-   "line": 192,
+   "line": 207,
    "effects": [
     {
      "model": "Gallery",
@@ -14610,8 +14794,14 @@
      "trails": [
       [
        [
+        "ctx.prisma.gallery.findUnique",
+        "packages/backend/src/modules/galleries/router.ts:216"
+       ]
+      ],
+      [
+       [
         "tx.gallery.findUnique",
-        "packages/backend/src/modules/galleries/router.ts:217"
+        "packages/backend/src/modules/galleries/router.ts:241"
        ]
       ]
      ]
@@ -14624,7 +14814,7 @@
       [
        [
         "tx.galleryItem.createMany",
-        "packages/backend/src/modules/galleries/router.ts:207"
+        "packages/backend/src/modules/galleries/router.ts:231"
        ]
       ]
      ]
@@ -14637,7 +14827,115 @@
       [
        [
         "tx.galleryItem.deleteMany",
-        "packages/backend/src/modules/galleries/router.ts:202"
+        "packages/backend/src/modules/galleries/router.ts:226"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "galleryRightsError",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:189"
+       ],
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "galleryRightsError",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:189"
+       ],
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "galleryRightsError",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:189"
+       ],
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "galleryRightsError",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:189"
+       ],
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18279,7 +18577,7 @@
   },
   "tagCandidates": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 63,
+   "line": 67,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18289,11 +18587,11 @@
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -18306,17 +18604,17 @@
       [
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:64"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:68"
        ]
       ],
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18326,7 +18624,7 @@
   },
   "mediaPeopleFor": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 79,
+   "line": 83,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18336,11 +18634,11 @@
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -18353,11 +18651,11 @@
       [
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -18370,7 +18668,7 @@
       [
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -18383,17 +18681,17 @@
       [
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18403,7 +18701,7 @@
   },
   "setMediaPeople": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 129,
+   "line": 133,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18413,15 +18711,15 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -18434,11 +18732,11 @@
       [
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -18451,7 +18749,7 @@
       [
        [
         "prisma.mediaPerson.createMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:139"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:143"
        ]
       ]
      ]
@@ -18464,7 +18762,7 @@
       [
        [
         "prisma.mediaPerson.deleteMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:138"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:142"
        ]
       ]
      ]
@@ -18477,11 +18775,11 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -18494,31 +18792,31 @@
       [
        [
         "prisma.user.count",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:135"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:139"
        ]
       ],
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18528,7 +18826,7 @@
   },
   "setNoRecognizablePerson": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 148,
+   "line": 152,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18538,15 +18836,15 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -18559,11 +18857,11 @@
       [
        [
         "assertMedia",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:43"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:47"
        ],
        [
         "prisma.mediaAsset.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:44"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:48"
        ]
       ]
      ]
@@ -18578,7 +18876,7 @@
       [
        [
         "prisma.mediaAsset.update",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:150"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:154"
        ]
       ]
      ]
@@ -18591,11 +18889,11 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ]
      ]
@@ -18608,25 +18906,25 @@
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:81"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:85"
        ]
       ],
       [
        [
         "mediaPeopleFor",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:79"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:83"
        ],
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18636,7 +18934,7 @@
   },
   "mediaVerdictsFor": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 155,
+   "line": 159,
    "effects": [
     {
      "model": "ImageConsentForm",
@@ -18646,11 +18944,11 @@
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.imageConsentForm.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:28"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
        ]
       ]
      ]
@@ -18663,7 +18961,7 @@
       [
        [
         "prisma.mediaAsset.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:158"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
        ]
       ]
      ]
@@ -18676,7 +18974,7 @@
       [
        [
         "prisma.mediaPerson.findMany",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
        ]
       ]
      ]
@@ -18689,11 +18987,276 @@
       [
        [
         "consentOf",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:23"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
        ],
        [
         "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "checkMediaDestinations": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 175,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
         "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "galleryRightsError": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 189,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "checkMediaDestinations",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:175"
+       ],
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
+  "refusedMediaIds": {
+   "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
+   "line": 202,
+   "effects": [
+    {
+     "model": "ImageConsentForm",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.imageConsentForm.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:32"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaAsset",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaAsset.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:162"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "MediaPerson",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "prisma.mediaPerson.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:163"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "User",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "mediaVerdictsFor",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:159"
+       ],
+       [
+        "consentOf",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:27"
+       ],
+       [
+        "prisma.user.findMany",
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:31"
        ]
       ]
      ]
@@ -18703,7 +19266,7 @@
   },
   "remindImageConsent": {
    "file": "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts",
-   "line": 176,
+   "line": 218,
    "effects": [
     {
      "model": "ImageConsentRequest",
@@ -18742,7 +19305,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:177"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:219"
        ]
       ],
       [
@@ -18822,7 +19385,7 @@
       [
        [
         "prisma.user.findUnique",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:177"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:219"
        ]
       ],
       [
@@ -18851,7 +19414,7 @@
       [
        [
         "prisma.user.update",
-        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:205"
+        "packages/backend/src/modules/mediaPeople/mediaPeople.service.ts:247"
        ]
       ]
      ]

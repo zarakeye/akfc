@@ -1,4 +1,4 @@
-import { IMAGE_USAGE_VALUES, type ImageUsageValue } from "./imageConsent";
+import { IMAGE_USAGE_LABEL, IMAGE_USAGE_VALUES, type ImageUsageValue } from "./imageConsent";
 
 /**
  * Tags de personnes sur un média, comparés au droit à l'image : ce qui est partagé par le serveur
@@ -66,3 +66,74 @@ export function mediaVerdicts(params: {
 
 /** Délai minimal entre deux relances du droit à l'image d'une même personne. */
 export const IMAGE_CONSENT_REMINDER_COOLDOWN_MS = 7 * 24 * 3600 * 1000;
+
+/* ─── Destinations : où un ensemble de médias sera montré ───────────────────────────────── */
+
+/** Slug réservé de la galerie du carrousel d'accueil (destination : site public, toujours). */
+export const CAROUSEL_SLUG = "home-carousel";
+
+/**
+ * Usages où un REFUS bloque. Pour l'espace membres, interne au club, un refus avertit seulement.
+ * Une absence de réponse n'est jamais bloquante : le site doit pouvoir vivre pendant que les
+ * autorisations se recueillent ; les blocages arrivent au fil des tags et des réponses.
+ */
+export const BLOCKING_USAGES: readonly ImageUsageValue[] = ["PUBLIC_SITE", "SOCIAL_NETWORKS", "PRINT", "PRESS"];
+
+/** Destination d'une galerie : le carrousel et une galerie publique vont sur le site public. */
+export function galleryDestinations(g: { slug: string; visibility: "PUBLIC" | "MEMBERS" }): ImageUsageValue[] {
+  if (g.slug === CAROUSEL_SLUG || g.visibility === "PUBLIC") return ["PUBLIC_SITE"];
+  return ["MEMBER_SPACE"];
+}
+
+/** Un média qui pose problème pour une destination. */
+export type RightsIssue = { mediaAssetId: string; usage: ImageUsageValue; verdict: "REFUSED" | "MISSING" };
+
+export type DestinationCheck = {
+  /** Refus pour une destination bloquante : enregistrement refusé, média masqué à l'affichage. */
+  blocking: RightsIssue[];
+  /** Pas encore d'autorisation, ou refus pour l'espace membres : on prévient, sans bloquer. */
+  warnings: RightsIssue[];
+  /** Médias que personne n'a encore tagués : sans effet pour l'instant. */
+  untagged: string[];
+};
+
+/** Confronte les verdicts de médias aux destinations d'un contenant (galerie, carrousel…). */
+export function checkDestinations(
+  verdictsByMedia: Readonly<Record<string, Readonly<Record<ImageUsageValue, UsageVerdict>> | undefined>>,
+  mediaAssetIds: readonly string[],
+  destinations: readonly ImageUsageValue[],
+): DestinationCheck {
+  const out: DestinationCheck = { blocking: [], warnings: [], untagged: [] };
+  for (const id of new Set(mediaAssetIds)) {
+    const v = verdictsByMedia[id];
+    if (!v) continue;
+    if (destinations.every((u) => v[u] === "UNTAGGED")) out.untagged.push(id);
+    for (const usage of destinations) {
+      const verdict = v[usage];
+      if (verdict === "REFUSED" && BLOCKING_USAGES.includes(usage)) out.blocking.push({ mediaAssetId: id, usage, verdict });
+      else if (verdict === "REFUSED" || verdict === "MISSING") out.warnings.push({ mediaAssetId: id, usage, verdict });
+    }
+  }
+  return out;
+}
+
+/** « Médias n° 2 et 5 » : position (1, 2…) des médias dans la liste, dans l'ordre. */
+export function mediaPositions(ids: readonly string[], issues: readonly RightsIssue[]): string {
+  const pos = [...new Set(issues.map((i) => ids.indexOf(i.mediaAssetId) + 1))].filter((n) => n > 0).sort((a, b) => a - b);
+  if (pos.length === 0) return "";
+  const list = pos.length === 1 ? `${pos[0]}` : `${pos.slice(0, -1).join(", ")} et ${pos[pos.length - 1]}`;
+  return `${pos.length > 1 ? "Médias" : "Média"} n° ${list}`;
+}
+
+/**
+ * Message d'un enregistrement refusé : quels médias, pour quel usage, et quoi faire.
+ * `alternative` : l'autre issue, s'il y en a une (« ou réserve la galerie aux membres »).
+ */
+export function blockingMessage(ids: readonly string[], blocking: readonly RightsIssue[], alternative?: string): string {
+  const usages = [...new Set(blocking.map((b) => `« ${IMAGE_USAGE_LABEL[b.usage]} »`))].join(", ");
+  return `${mediaPositions(ids, blocking)} : une personne taguée a refusé ${usages}. Retire ${new Set(blocking.map((b) => b.mediaAssetId)).size > 1 ? "ces médias" : "ce média"} avant d'enregistrer${alternative ? `, ${alternative}` : ""}.`;
+}
+
+/** L'autre issue d'une galerie bloquée : la réserver aux membres (pas le carrousel). */
+export const galleryAlternative = (slug: string): string | undefined =>
+  slug === CAROUSEL_SLUG ? undefined : "ou réserve la galerie aux membres";

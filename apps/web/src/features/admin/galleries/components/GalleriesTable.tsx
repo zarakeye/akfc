@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { trpc } from '@trpc/trpcClient';
 import { Table, type Column } from 'react-ts-tab-lib';
 import { deleteColumn } from "@features/admin/common/delete";
+// Slug réservé du carrousel : celui des contrats (il valait ici « accueil », que rien n'utilise).
+import { CAROUSEL_SLUG } from '@contracts/legal/mediaPeople';
 
 /**
  * Liste des galeries via `trpc.gallery.getAll.useQuery()`. Clic sur une ligne
@@ -12,9 +14,6 @@ import { deleteColumn } from "@features/admin/common/delete";
  * nombre d'images (`_count.items`), la date et les RATTACHEMENTS CUMULÉS
  * (discipline, catégorie, stage, event, origine — joints par virgule).
  */
-
-/** Slug réservé du carousel d'accueil (aligné sur le backend). */
-const CAROUSEL_SLUG = 'accueil';
 
 const VISIBILITY_LABELS: Record<string, string> = {
   PUBLIC: 'Public',

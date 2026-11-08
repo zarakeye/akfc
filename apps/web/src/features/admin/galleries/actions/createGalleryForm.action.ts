@@ -3,6 +3,7 @@
 import { prisma } from "@backend/prisma";
 import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { createGalleryFormSchema } from "@contracts/forms/createGalleryForm.schema";
+import { galleryRightsError } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 export type CreateGalleryFormState = {
   success: boolean;
@@ -63,6 +64,10 @@ export const createGalleryFormAction = async (
   } catch {
     return { success: false, error: "Format des médias invalide." };
   }
+
+  // Droit à l'image : un refus d'une personne taguée, pour la destination de la galerie, bloque.
+  const rightsError = await galleryRightsError(prisma, result.data, mediaIds);
+  if (rightsError) return { success: false, error: rightsError };
 
   try {
     const created = await prisma.gallery.create({

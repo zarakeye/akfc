@@ -3,6 +3,7 @@
 import { prisma } from "@backend/prisma";
 import { ADMIN_ONLY_MESSAGE, callerIsAdmin } from "@features/admin/common/actions/callerIsAdmin";
 import { updateGalleryFormSchema } from "@contracts/forms/updateGalleryForm.schema";
+import { galleryRightsError } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 export type UpdateGalleryFormState = {
   success: boolean;
@@ -47,6 +48,16 @@ export const updateGalleryFormAction = async (
   if (!result.success) {
     return { success: false, error: result.error.issues[0].message };
   }
+
+  // Droit à l'image : changer de visibilité (membres → public) ou devenir le carrousel revérifie
+  // les médias déjà présents.
+  const items = await prisma.galleryItem.findMany({
+    where: { galleryId: result.data.id },
+    orderBy: { sortOrder: "asc" },
+    select: { mediaAssetId: true },
+  });
+  const rightsError = await galleryRightsError(prisma, result.data, items.map((it) => it.mediaAssetId));
+  if (rightsError) return { success: false, error: rightsError };
 
   try {
     await prisma.gallery.update({

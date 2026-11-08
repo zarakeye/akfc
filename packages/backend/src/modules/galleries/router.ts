@@ -9,6 +9,8 @@ import { Prisma } from "@prisma/client";
 import { buildMediaProxyUrl } from "@backend/modules/media/helpers/media-url";
 import { deriveMediaKind } from "@backend/modules/media/helpers/deriveMediaKind";
 import { z } from "zod";
+import { CAROUSEL_SLUG } from "@contracts/legal/mediaPeople";
+import { galleryRightsError, refusedMediaIds } from "@backend/modules/mediaPeople/mediaPeople.service";
 
 /**
  * Router `gallery`.
@@ -23,8 +25,8 @@ import { z } from "zod";
  * - Écritures + lectures admin : `isAdmin`.
  */
 
-/** Slug réservé pour le carousel de la page d'accueil. */
-export const CAROUSEL_SLUG = "home-carousel";
+/** Slug réservé pour le carousel de la page d'accueil (défini dans les contrats, partagé avec l'admin). */
+export { CAROUSEL_SLUG };
 
 type GalleryItemWithAsset = Prisma.GalleryItemGetPayload<{
   include: { mediaAsset: true };
@@ -33,10 +35,14 @@ type GalleryItemWithAsset = Prisma.GalleryItemGetPayload<{
 /**
  * Items publiés → shape publique (URL proxy audience `public`, kind dérivé,
  * poster vidéo). Partagé par `getCarousel` et `getPublicIndex`.
+ *
+ * `hidden` : médias masqués par le droit à l'image (une personne taguée a refusé
+ * l'usage de la galerie). La galerie n'est pas modifiée : ils reviennent dès que
+ * la personne change d'avis ou que son tag est retiré.
  */
-function mapPublicItems(items: GalleryItemWithAsset[]) {
+function mapPublicItems(items: GalleryItemWithAsset[], hidden: ReadonlySet<string> = new Set()) {
   return items
-    .filter((it) => it.mediaAsset.status === "published")
+    .filter((it) => it.mediaAsset.status === "published" && !hidden.has(it.mediaAssetId))
     .map((it) => {
       const a = it.mediaAsset;
       const kind = deriveMediaKind(a.mimeType);
@@ -120,12 +126,13 @@ export const galleryRouter = router({
       include: galleryWithItems,
     });
     if (!gallery) return null;
+    const hidden = await refusedMediaIds(ctx.prisma, gallery.items.map((it) => it.mediaAssetId), "PUBLIC_SITE");
 
     return {
       id: gallery.id,
       slug: gallery.slug,
       title: gallery.title,
-      items: mapPublicItems(gallery.items),
+      items: mapPublicItems(gallery.items, hidden),
     };
   }),
 
@@ -158,6 +165,14 @@ export const galleryRouter = router({
       },
     });
 
+    // Droit à l'image : une galerie publique saute les médias dont une personne taguée a refusé le
+    // site public. Une galerie réservée aux membres les garde (l'espace membres avertit seulement).
+    const hidden = await refusedMediaIds(
+      ctx.prisma,
+      galleries.filter((g) => g.visibility === "PUBLIC").flatMap((g) => g.items.map((it) => it.mediaAssetId)),
+      "PUBLIC_SITE",
+    );
+
     return galleries.map((g) => ({
       id: g.id,
       slug: g.slug,
@@ -167,7 +182,7 @@ export const galleryRouter = router({
       discipline: g.discipline,
       category: g.category,
       origin: g.origin,
-      items: mapPublicItems(g.items),
+      items: mapPublicItems(g.items, g.visibility === "PUBLIC" ? hidden : undefined),
     }));
   }),
 
@@ -198,6 +213,15 @@ export const galleryRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const gallery = await ctx.prisma.gallery.findUnique({
+        where: { id: input.galleryId },
+        select: { slug: true, visibility: true },
+      });
+      if (!gallery) throw new TRPCError({ code: "NOT_FOUND", message: "Galerie introuvable." });
+      // Droit à l'image : un refus d'une personne taguée, pour la destination de la galerie, bloque.
+      const rightsError = await galleryRightsError(ctx.prisma, gallery, input.mediaAssetIds);
+      if (rightsError) throw new TRPCError({ code: "BAD_REQUEST", message: rightsError });
+
       return ctx.prisma.$transaction(async (tx) => {
         await tx.galleryItem.deleteMany({
           where: { galleryId: input.galleryId },

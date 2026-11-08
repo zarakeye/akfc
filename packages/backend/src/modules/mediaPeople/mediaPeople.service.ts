@@ -8,6 +8,10 @@ import { maskEmail } from "@backend/modules/imageConsent/imageConsentOnline.serv
 import { IMAGE_USAGE_VALUES, effectiveLegalAge, type ImageUsageValue } from "@contracts/legal/imageConsent";
 import {
   IMAGE_CONSENT_REMINDER_COOLDOWN_MS,
+  blockingMessage,
+  checkDestinations,
+  galleryAlternative,
+  galleryDestinations,
   mediaVerdicts,
   personUsageState,
   type PersonConsent,
@@ -165,6 +169,44 @@ export async function mediaVerdictsFor(prisma: PrismaClient, mediaAssetIds: read
       return [m.id, { count: people.length, noRecognizablePerson: m.noRecognizablePerson, verdicts: mediaVerdicts({ people, noRecognizablePerson: m.noRecognizablePerson }) }];
     }),
   );
+}
+
+/** Confronte des médias aux destinations d'un contenant (voir `checkDestinations`). */
+export async function checkMediaDestinations(
+  prisma: PrismaClient,
+  mediaAssetIds: readonly string[],
+  destinations: readonly ImageUsageValue[],
+) {
+  const v = await mediaVerdictsFor(prisma, mediaAssetIds);
+  const verdicts = Object.fromEntries(Object.entries(v).map(([id, m]) => [id, m.verdicts]));
+  return checkDestinations(verdicts, mediaAssetIds, destinations);
+}
+
+/**
+ * Avant d'enregistrer les médias d'une galerie (ou du carrousel) : null si rien ne bloque, sinon le
+ * message à afficher. Seul un REFUS d'une personne taguée bloque ; le reste avertit dans le tableau.
+ */
+export async function galleryRightsError(
+  prisma: PrismaClient,
+  gallery: { slug: string; visibility: "PUBLIC" | "MEMBERS" },
+  mediaAssetIds: readonly string[],
+): Promise<string | null> {
+  const check = await checkMediaDestinations(prisma, mediaAssetIds, galleryDestinations(gallery));
+  return check.blocking.length > 0 ? blockingMessage(mediaAssetIds, check.blocking, galleryAlternative(gallery.slug)) : null;
+}
+
+/**
+ * Médias à masquer pour un usage : une personne taguée l'a refusé. Le contenant n'est pas modifié ;
+ * l'affichage les saute, et ils reviennent si la personne change d'avis ou si on retire son tag.
+ */
+export async function refusedMediaIds(
+  prisma: PrismaClient,
+  mediaAssetIds: readonly string[],
+  usage: ImageUsageValue,
+): Promise<Set<string>> {
+  if (mediaAssetIds.length === 0) return new Set();
+  const v = await mediaVerdictsFor(prisma, mediaAssetIds);
+  return new Set(Object.entries(v).filter(([, m]) => m.verdicts[usage] === "REFUSED").map(([id]) => id));
 }
 
 /**

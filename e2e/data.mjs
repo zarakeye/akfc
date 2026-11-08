@@ -26,6 +26,8 @@ export const USERS = {
 /** Le média sur lequel on tague des personnes. */
 export const TAG_MEDIA = { id: "e2e-media-tags", key: "AKFC/e2e/tags.png" };
 /** Le tableau des droits d'une galerie : un média à elle seule, que l'on tague par la modale. */
+/** Une galerie PUBLIQUE et son média : un refus d'une personne taguée bloque et masque. */
+export const TAG_PUBLIC_GALLERY = { title: "Galerie publique des tags", slug: "e2e-galerie-tags-publique", mediaId: "e2e-media-tags-public", key: "AKFC/e2e/tags-public.png" };
 export const TAG_GALLERY = { title: "Galerie des tags (e2e)", slug: "e2e-galerie-tags", mediaId: "e2e-media-tags-ui", key: "AKFC/e2e/tags-ui.png" };
 
 /** Le membre « mineur » : son identité et son parent référent, saisis par le club. */
