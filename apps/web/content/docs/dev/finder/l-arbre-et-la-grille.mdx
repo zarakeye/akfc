@@ -1,0 +1,215 @@
+---
+title: "L’arbre et la grille"
+description: "Ce que le finder affiche, et comment : trois panneaux qui se souviennent de leur largeur, un arbre chargé par paliers qui nourrit le cache de la grille, la grille en trois vues, la lentille de statut, la recherche récursive, le fil d’Ariane qui parle comme la grille, et l’aperçu qui choisit son lecteur."
+section: "Le finder"
+order: 2
+entities:
+  MediaAsset: [fullPath, status, description, mimeType, format]
+  FolderLabel: [path, displayName]
+stories:
+  - title: Un administrateur cherche une photo dans la bibliothèque
+    actor: Administrateur
+    steps:
+      - label: L’arbre charge deux niveaux, puis un de plus chaque fois qu’il descend
+        call: storage.getTree
+        section: Un arbre chargé par paliers
+      - label: Il tape un mot ; après 300 ms, la recherche part dans tout le dossier courant
+        call: media.searchRecursive
+        section: Chercher dans le dossier courant
+      - label: Le fil d’Ariane montre les libellés des dossiers, comme la grille
+        call: storage.folderLabels
+        section: Un fil d’Ariane qui parle comme la grille
+      - label: Il ouvre l’aperçu et corrige la description, enregistrée toute seule
+        call: media.updateDescription
+        section: L’aperçu choisit son lecteur
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le finder ne connaît pas le stockage : il parle à un adaptateur, qui ne promet que `list` et offre le reste en capacités. Son état vit dans un store Zustand, un seul par page.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Trois panneaux qui se souviennent
+
+L’écran se partage en trois : l’arbre, la grille, l’aperçu. Les séparateurs se déplacent (la librairie `react-resizable-panels`), et la disposition choisie est gardée dans `localStorage` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);"
+  snippetLead="2"
+  snippetLines="9"
+  snippetHighlight="3,6,8"
+  snippetTitle="Relire la disposition, sans jamais casser l’écran"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’aperçu, lui, démarre **replié** à chaque ouverture, même si la largeur sauvegardée le montrait déplié : il ne sert que sur demande, et un écran déjà chargé gagne à commencer simple. Une préférence de largeur, oui ; une préférence d’ouverture, non.
+
+## Un arbre chargé par paliers
+
+L’arbre pose un problème de taille. La bibliothèque contient des centaines de dossiers ; tout charger d’un coup coûterait une longue attente, ne rien charger rendrait chaque dépliage lent. Le compromis : charger **deux niveaux**, puis, chaque fois qu’on déplie plus profond, **deux niveaux sous le dossier le plus profond ouvert**.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart="if (!rootChanged) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,7,8,9"
+  snippetTitle="La profondeur suit le dossier le plus profond"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La profondeur ne fait que monter (une « marque des hautes eaux ») : refermer un dossier ne recharge rien. Le calcul a lieu **pendant le rendu**, pas dans un effet : changer un état pendant le rendu est permis à React tant que c’est conditionnel, et cela évite un rendu intermédiaire à la mauvaise profondeur.
+
+Le chargement lui-même a un effet de bord précieux :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTree.tsx"
+  filename="FinderTree.tsx"
+  snippetStart=".getTree({ path: rootPath, depth: treeDepth })"
+  snippetLead="8"
+  snippetEnd="}, [adapter, rootPath, reloadKey, treeDepth, fileFilter]);"
+  snippetHighlight="12,15,16,17,18,19,20,21,22"
+  snippetTitle="L’arbre remplit le cache de la grille"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+En parcourant l’arbre reçu, il range **chaque dossier chargé** dans le cache de contenu du store (`cacheChildrenAt`). Cliquer ensuite sur un dossier déjà visible dans l’arbre affiche la grille aussitôt : son contenu est déjà là. L’arbre et la grille ne font pas deux fois le même travail.
+
+Trois autres détails de cet effet reviennent partout dans le finder :
+
+- **`cancelled`** : une réponse arrivée après un changement de racine est jetée. Sans lui, une réponse lente pourrait écraser une réponse plus récente.
+- **`reloadKey`** dans les dépendances : après une modification, `reloadFolderContent()` incrémente la clé, et l’arbre se recharge avec la grille.
+- **`fileFilter`** : le sélecteur de médias ne montre que des images et des vidéos ; l’arbre élague les autres fichiers avec le même filtre que la grille.
+
+### Le dossier qui se matérialise
+
+Au-delà de la profondeur chargée, un dossier a `children: undefined` (« pas encore chargé »). L’arbre le sait, et le montre pendant que le palier suivant arrive :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="const isMaterializing ="
+  snippetLines="5"
+  snippetTitle="Ouvert, avec des enfants, mais pas encore chargés"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+<Callout type="warning">
+Cette règle a une conséquence que le projet a payée : un nœud fabriqué à la main, sans `children`, reste « en train de se matérialiser » pour toujours, car aucun palier ne le chargera. Le chapitre « Trois finders en un » raconte comment l’imbrication des espaces de groupe a fait tourner un indicateur sans fin, et la règle qui en est sortie : **ne jamais fabriquer de nœud d’arbre ; réarranger les nœuds réels**.
+</Callout>
+
+## La grille, en trois vues
+
+Le panneau central montre le contenu du dossier courant, en grille de vignettes, en tableau (colonnes triables : nom, type, taille, date, expéditeur) ou en liste compacte. Les trois vues lisent la même liste triée ; seul le composant de ligne change (`GridItem`, `FinderTableRow`, `FinderCompactRow`).
+
+Le tri a **deux niveaux** (un critère principal, un critère secondaire pour départager), et suit la convention des explorateurs : dossiers d’abord. La partie Stockage a montré le comparateur français qui range « photo 2 » avant « photo 10 ».
+
+La **lentille de statut** (« Tous », « En attente », « Validés ») retire des fichiers de la grille, et seulement de la grille :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="const visibleFiles = useMemo(() => {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4"
+  snippetTitle="Une lentille, pas un tri"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ni l’arbre ni les dossiers ne sont filtrés : un dossier n’a pas de statut, et un arbre qui change de forme avec un filtre rendrait indécidable la question « ce dossier a-t-il disparu, ou est-il filtré ? ».
+
+## Chercher dans le dossier courant
+
+La barre de recherche transforme la grille : tant qu’elle contient du texte, la grille montre les **résultats** à la place du dossier, dans tout le sous-arbre du dossier courant. L’arbre, lui, reste un outil de navigation.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useFinderSearch.ts"
+  filename="useFinderSearch.ts"
+  snippetStart="debounceRef.current = window.setTimeout(async () => {"
+  snippetLead="7"
+  snippetLines="11"
+  snippetHighlight="2,8,11,13"
+  snippetTitle="Une requête par pause de frappe, pas par lettre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’indicateur de chargement s’allume **dès la première lettre**, la requête part après 300 ms sans frappe. Les options (casse, mot entier, expression régulière) sont transmises au serveur, qui borne le nombre de résultats (200 par défaut) et le dit (`truncated`) : une liste annoncée incomplète vaut mieux qu’une page qui ne répond plus. Changer de dossier vide la recherche (c’est `setPath` qui s’en charge, chapitre précédent).
+
+Ici, le hook appelle `trpcUtils.media.searchRecursive.fetch` : il est dans un composant, il a accès au client React Query, et il profite de son cache. L’adaptateur, qui n’est pas un composant, n’a pas ce choix.
+
+## Un fil d’Ariane qui parle comme la grille
+
+Le chemin d’un fichier est fait de clés techniques (`collaborative-group-spaces/bureau-cmh2…`). La grille, elle, montre des noms : les libellés que les administrateurs ont donnés aux dossiers (`FolderLabel`), les noms des groupes pour leurs espaces. Le fil d’Ariane doit parler la même langue :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Breadcrumb.tsx"
+  filename="Breadcrumb.tsx"
+  snippetStart="const isMemberRoot = rootPath !== APP_ROOT;"
+  snippetLead="4"
+  snippetEnd="  }));"
+  snippetHighlight="1,5,8,12,13,20,25"
+  snippetTitle="Les mêmes noms partout, et une racine relative"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Trois règles s’y lisent : la **priorité des noms** est celle du serveur (libellé, puis nom d’espace, puis clé brute), l’espace personnel d’un administrateur est **masqué** (il voit « Espace personnel », pas le dossier technique qui le porte), et la **racine est relative au finder** : pour un membre, le fil commence à « Mes espaces », jamais à la racine du stockage qu’il ne peut pas voir. Au-delà de quatre segments, et quelle que soit la taille de l’écran, le fil garde la racine et les deux derniers ; les intermédiaires passent dans un menu « … ». Quatre plutôt que deux, parce que chaque segment visible est aussi une cible de dépôt (chapitre suivant) : on ne lâche pas un fichier sur un « … ».
+
+## L’aperçu choisit son lecteur
+
+Le panneau de droite montre le fichier sélectionné. Le contrat ne distingue que trois sortes de fichiers (image, vidéo, document) ; l’aperçu a besoin de plus fin :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/PreviewPanel.tsx"
+  filename="PreviewPanel.tsx"
+  snippetStart="function getPreviewKind("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5,6,8,10,11,12,13,14"
+  snippetTitle="Un lecteur par format"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une image s’affiche, une vidéo et un son se lisent, un PDF s’ouvre dans un cadre, un texte et un Markdown se lisent en clair, un document Word est converti en HTML **dans le navigateur**. Pour ce dernier, la librairie n’est chargée qu’au besoin :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/PreviewPanel.tsx"
+  filename="PreviewPanel.tsx"
+  snippetStart="const mammoth = await import('mammoth');"
+  snippetLines="2"
+  snippetTitle="Un import dynamique"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`mammoth` pèse lourd ; l’importer en tête de fichier l’ajouterait au chargement de chaque page qui contient un finder. L’`import()` dynamique le place dans un morceau séparé, téléchargé la première fois qu’un `.docx` est ouvert.
+
+Sous l’aperçu, la **description** du fichier s’édite sur place. Pas de bouton « Enregistrer » : elle part quand on quitte le champ, ou 1,5 seconde après la dernière frappe (`media.updateDescription`), avec un indicateur discret (en cours, enregistré, erreur). La valeur locale fait foi pendant la frappe ; le store et la base suivent.
+
+<Callout type="insight">
+Chaque partie de l’écran a sa façon de ne pas faire attendre : l’arbre réutilise ce qu’il a chargé pour la grille, la grille s’affiche avant les fiches de la base, la recherche attend une pause, l’aperçu ne charge ses lecteurs lourds qu’à la demande, et la description s’enregistre seule.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien de niveaux l’arbre charge-t-il ?", "Deux, puis deux sous le dossier le plus profond ouvert ; la profondeur ne redescend jamais."], ["Pourquoi l’arbre remplit-il le cache ?", "Pour qu’un clic sur un dossier visible affiche la grille sans requête."], ["Que filtre la lentille de statut ?", "Les fichiers de la grille, jamais l’arbre ni les dossiers."], ["Quand part la recherche ?", "300 ms après la dernière frappe, dans tout le sous-arbre du dossier courant ; le serveur borne et le dit."], ["D’où viennent les noms du fil d’Ariane ?", "Des mêmes sources que la grille : libellé, nom d’espace, clé brute, dans cet ordre."], ["Comment s’ouvre un .docx ?", "Converti en HTML dans le navigateur, par une librairie chargée à la demande."]]' />
+
+## À suivre
+
+Le finder montre. Il reste à agir : sélectionner beaucoup d’un coup, renommer, déplacer à la souris ou par une boîte, jeter, publier. Chaque geste passe par le serveur, et le finder doit rester juste après.
+
+<Callout type="tip">
+**Chapitre suivant : agir sur les fichiers.** Une sélection qui tient en deux ensembles, le mode sélection, le menu contextuel, le glisser-déposer et son fantôme, et un « supprimer » qui ne veut pas dire la même chose partout.
+</Callout>

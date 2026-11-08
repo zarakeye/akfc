@@ -1,0 +1,208 @@
+---
+title: "Agir sur les fichiers"
+description: "Ce qu’on fait dans le finder, et comment il reste juste après : une sélection tenue en deux ensembles, le mode sélection (appui long, Maj, Échap), le menu contextuel, un « supprimer » qui change de sens dans la corbeille, un renommage qui ne déplace pas les dossiers d’entités, la publication qui n’est pas un déplacement, et le glisser-déposer avec son fantôme."
+section: "Le finder"
+order: 3
+entities:
+  MediaAsset: [fullPath, status]
+  TrashEntry: [status, previousPath, trashedAt, deletedAt]
+  FolderLabel: [path, displayName]
+stories:
+  - title: Un administrateur range et publie une série de photos
+    actor: Administrateur
+    steps:
+      - label: Appui long sur une photo, puis Maj + clic sur la dernière ; il publie la sélection
+        call: media.setStatus
+        section: Publier n’est pas déplacer
+      - label: Il fait glisser la sélection sur un dossier de l’arbre ; les fichiers y sont déplacés
+        call: storage.move
+        section: Le glisser-déposer
+      - label: Il renomme un dossier de discipline ; seul son libellé change
+        call: storage.setFolderLabel
+        section: Renommer sans déplacer
+      - label: Il jette une photo ratée ; elle part à la corbeille
+        call: trash.trashToBin
+        section: Un « supprimer » qui change de sens
+      - label: Dans la corbeille, « supprimer » efface pour de bon, après confirmation
+        call: trash.purge
+        section: Un « supprimer » qui change de sens
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le finder montre : un arbre chargé par paliers, une grille en trois vues, une recherche, un fil d’Ariane et un aperçu, tous nourris par le même store.
+
+Agir sur un fichier, c’est presque toujours appeler une procédure du router `storage`, `media` ou `trash`, que la partie Stockage a décrites côté serveur (« Modifier sans casser »). Ce chapitre regarde l’autre bout : comment le finder **désigne** ce sur quoi on agit, comment il **demande**, et comment il reste **juste** une fois la réponse arrivée.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Une sélection en deux ensembles
+
+Sélectionner un dossier, c’est sélectionner tout ce qu’il contient. Puis décocher une photo dedans. Une liste plate d’identifiants ne sait pas dire cela sans énumérer tout le contenu du dossier, qui n’est peut-être même pas chargé. Le store tient donc la sélection en **deux ensembles** :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/state/useFinderStore.ts"
+  filename="useFinderStore.ts"
+  snippetStart="type SelectionState = {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,3,4"
+  snippetTitle="Des racines, des exclusions, une ancre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`roots` : ce qui a été coché. `excluded` : ce qui a été décoché **à l’intérieur** d’un dossier coché. `anchorId` : le point de départ d’une sélection par plage. Un élément est sélectionné s’il est une racine, ou s’il descend d’une racine sans être exclu :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/utils/resolveSelection.ts"
+  filename="resolveSelection.ts"
+  snippetStart="export function resolveSelection(params: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="12,22,25"
+  snippetTitle="Ce qui est réellement sélectionné"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La même représentation donne à chaque case de l’arbre son état à trois valeurs (`getTriState` : cochée, à moitié, vide) : un dossier dont un seul fichier est coché, ou dont un fichier a été décoché, s’affiche à moitié coché.
+
+Une sélection doit être **retrouvée** au moment d’agir : une case cochée dans l’arbre, dans un dossier que la grille ne montre pas. C’est pourquoi les actions résolvent la sélection dans un réservoir qui réunit la grille, tout le cache de l’arbre et les résultats de recherche (`buildNodePool`), et pas dans le seul dossier affiché : sinon, une action compterait un fichier coché sans le trouver, et s’appliquerait à moins que la sélection.
+
+## Le mode sélection
+
+Un clic sur un fichier l’ouvre dans l’aperçu ; un clic sur un dossier y entre. Pour sélectionner plusieurs éléments, il faut un autre **mode**, et un geste pour y entrer qui marche à la souris comme au doigt : l’**appui long** (500 ms, ce que font iOS et Android ; à 1,5 seconde, l’utilisateur relâche avant).
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/Finder.tsx"
+  filename="Finder.tsx"
+  snippetStart="function handleClick(node: FinderNode, e: React.MouseEvent) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="6,12,19,24,29,30,32"
+  snippetTitle="Un clic, trois sens"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Dans le mode sélection, un clic coche ou décoche, Maj + clic sélectionne une **plage** depuis l’ancre, et un double clic sur un dossier y entre sans quitter le mode. Le sélecteur de médias passe en premier : un clic sur un fichier l’ajoute au panier, quel que soit le mode (chapitre suivant).
+
+Échap quitte le mode, avec deux précautions : pas pendant une saisie (renommer, chercher : Échap y annule la saisie), et pas quand une fenêtre est ouverte par-dessus (menu, aperçu en grand), qui doit se fermer d’abord. Comme ces fenêtres écoutent aussi Échap sur `window`, et que l’ordre d’appel suit l’ordre de montage, le finder ne compte pas sur cet ordre : il regarde dans le DOM si une surface marquée `data-finder-overlay` est ouverte.
+
+## Le menu contextuel
+
+Le clic droit ouvre un menu dont le contenu dépend de ce qui est visé : un fichier, un dossier, une sélection, la corbeille. Les entrées sont construites à la demande, et une action **s’applique à la sélection** si l’élément visé en fait partie, sinon à lui seul (`effectiveNodesFor`) : l’habitude de tous les explorateurs.
+
+Certaines entrées disparaissent pour certains dossiers. Les dossiers d’**entités** (le dossier d’une discipline, d’un stage, d’un évènement) sont créés et nommés par le site ; on ne les jette pas :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="function buildMenuItems(): ContextMenuItem[] {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,22,23,28"
+  snippetTitle="Le menu d’un dossier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## Un « supprimer » qui change de sens
+
+Le même mot ne fait pas la même chose partout. Hors de la corbeille, « supprimer » **met à la corbeille** (réversible). Dans la corbeille, il **efface pour de bon**, après confirmation. Plutôt que de répéter ce choix dans la vignette, la ligne de tableau, le dossier de l’arbre et la barre d’outils, un seul hook le porte, `useNodeActions` :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useNodeActions.ts"
+  filename="useNodeActions.ts"
+  snippetStart="if (firstNodeInBin) {"
+  snippetEnd="exitMultiSelect();"
+  snippetHighlight="1,14,21,28,32,35,36"
+  snippetTitle="Corbeille ou effacement, selon où l’on est"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La confirmation suit la même logique : « Envoyer à la corbeille » d’un côté, « Supprimer définitivement », en rouge et avec le mot irréversible, de l’autre. Poser la même question dans les deux cas habituerait à confirmer sans lire, et l’habitude serait prise le jour où le geste ne se rattrape pas.
+
+Après chaque action, trois gestes, toujours les mêmes : **recharger** (`reloadFolderContent()` vide le cache et fait relire la grille et l’arbre), **invalider** les requêtes React Query qui comptent ce qui a changé (la vue de la corbeille, la cloche des contenus en attente), et **sortir du mode sélection**, dont les identifiants désigneraient des fichiers qui ne sont plus là.
+
+<Callout type="concept">
+Le finder ne corrige pas son affichage à la main après une action (« retirer ce nœud de la liste ») : il relit. Une liste corrigée localement peut diverger du serveur ; une liste relue ne le peut pas. Le prix est une requête de plus, payée seulement après une modification.
+</Callout>
+
+## Renommer sans déplacer
+
+Renommer un fichier est, pour le stockage, un déplacement : la clé change. Pour un dossier ordinaire aussi. Mais un dossier d’entité (`disciplines/kali-…`) ne peut pas changer de chemin : les fiches et les contenus du site le désignent par ce chemin. Le renommage n’y touche donc qu’au **libellé** affiché :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/hooks/useNodeActions.ts"
+  filename="useNodeActions.ts"
+  snippetStart="// Dossier-entité : on n'édite QUE le libellé d'affichage — le chemin"
+  snippetLines="30"
+  snippetHighlight="4,5,6,7,10,22"
+  snippetTitle="Un libellé pour les dossiers d’entités, un vrai renommage pour le reste"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le hook rend `null` en cas de succès, ou le message d’erreur : le projet n’a pas de système de notifications flottantes, et le champ de renommage affiche l’erreur sous lui-même. C’est la convention de toutes les actions du finder : une erreur se montre **là où l’on a agi**, et `actionError` du store sert aux gestes sans champ (un dépôt raté).
+
+## Publier n’est pas déplacer
+
+Un fichier envoyé par un membre arrive « en attente » ; un administrateur le **publie**. Longtemps, le statut d’un fichier était un dossier (`pending/`, `published/`), et publier, c’était déplacer. Ce temps est fini : le statut est une métadonnée, et publier est une procédure à part, `media.setStatus`, que le hook `useStatusChange` appelle pour toute une sélection.
+
+Le serveur peut refuser : dépublier un fichier qu’une page ou une galerie affiche encore la laisserait avec un trou. Il nomme alors les contenus concernés, et le finder affiche ce message tel quel. Le glisser-déposer, lui, ne touche **jamais** au statut, ce que rappellent les commentaires de l’adaptateur et du dépôt : on peut réorganiser des fichiers en attente sans les publier par mégarde.
+
+## Le glisser-déposer
+
+Glisser des fichiers sur un dossier de l’arbre, sur un segment du fil d’Ariane ou sur la corbeille les y déplace. Le navigateur fournit les événements (`dragstart`, `dragover`, `drop`) et un sac pour transporter des données (`DataTransfer`). Le finder y range un **paquet** à lui :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/finder-core/dnd/payload.ts"
+  filename="payload.ts"
+  snippetStart="export function isDropAllowed(targetPath: string, items: DragItem[]): boolean {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,6"
+  snippetTitle="Deux règles de structure, aucune de métier"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le paquet voyage sous un type MIME maison, `application/x-finder-drag`. C’est ce qui distingue un glisser du finder d’une photo glissée depuis le bureau ou un autre onglet : une cible du finder qui ne trouve pas ce type ignore le dépôt, au lieu d’essayer de le lire. Et quand elle le trouve, elle le valide quand même (`tryParsePayload`) : le contenu d’un `DataTransfer` vient d’ailleurs.
+
+Les règles de dépôt sont **structurelles** (pas dans soi-même, pas dans son propre sous-dossier) ; tout ce qui relève des droits et du métier reste au serveur, qui refusera s’il le faut. Une troisième règle évite l’inutile : déposer dans le dossier où l’on est déjà ne fait aucun aller-retour (`isDropEffective`).
+
+Le dépôt lui-même choisit sa procédure selon la cible :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderTreeFolder.tsx"
+  filename="FinderTreeFolder.tsx"
+  snippetStart="async function handleDrop(e: React.DragEvent) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="6,7,13,14,18,20,37,44,46"
+  snippetTitle="La corbeille, ou un déplacement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+### Le fantôme
+
+Pendant le glisser, le navigateur montre une image fantôme de l’élément saisi. Le finder la remplace par la sienne : jusqu’à trois vignettes, un compteur (« +12 ») et un badge vert ou rouge selon que la cible survolée accepte le dépôt. Ce fantôme n’est **pas un composant React** : il suit la souris à chaque événement, et le redessiner par React à cette fréquence saturerait l’application. C’est un petit module impératif, un seul élément DOM en `position: fixed`, déplacé directement.
+
+Pour savoir ce qu’il survole, il interroge le DOM sous le curseur (`document.elementFromPoint`) et remonte jusqu’à un attribut `data-finder-drop-path`, posé par chaque cible (dossier de l’arbre, segment du fil d’Ariane). La règle `isDropAllowed` décide du badge : la même règle que celle du dépôt, ce qui garantit que le badge dit vrai. Il disparaît au `drop` comme au `dragend` : un glisser annulé par Échap ne déclenche pas de `drop`.
+
+<Callout type="insight">
+Le glisser-déposer tient en trois pièces indépendantes : un paquet typé et validé, des cibles qui le reçoivent, un fantôme qui ne fait que regarder. Une nouvelle cible (le fil d’Ariane en est une) n’a besoin que de poser son attribut et d’appeler les mêmes règles.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment tenir « ce dossier sauf cette photo » ?", "Deux ensembles : roots et excluded, plus une ancre pour les plages."], ["Comment entrer dans le mode sélection ?", "Appui long (500 ms) ; Maj + clic pour une plage ; Échap pour sortir."], ["Que veut dire « supprimer » ?", "Mettre à la corbeille, sauf dans la corbeille, où c’est effacer pour de bon."], ["Que se passe-t-il après une action ?", "Relire (reloadFolderContent), invalider les compteurs, sortir du mode sélection."], ["Peut-on renommer un dossier de discipline ?", "Son libellé seulement : son chemin est immuable."], ["Glisser un fichier le publie-t-il ?", "Jamais : publier est media.setStatus, un glisser ne fait que déplacer."], ["Pourquoi un fantôme impératif ?", "Il suit la souris à chaque événement : un rendu React par mouvement serait trop coûteux."]]' />
+
+## À suivre
+
+Tout ce chapitre supposait la bibliothèque, et un administrateur. Le même composant sert aussi à piocher des images depuis un formulaire, et à un membre qui ne doit rien pouvoir modifier, dans des espaces rangés en arbre qui n’existe que dans la base.
+
+<Callout type="tip">
+**Chapitre suivant : trois finders en un.** Le sélecteur de médias et son panier, le mode lecture seule, le finder des membres et sa racine virtuelle, l’imbrication des espaces de groupe, et deux bugs qui ont laissé deux règles.
+</Callout>
