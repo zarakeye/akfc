@@ -10,6 +10,8 @@ import CropGridOverlay from "@/features/gallery-crop/components/cropGridOverlay"
 import CropMaskOverlay from "@/features/gallery-crop/components/cropMaskOverlay";
 import { useTransformWithUndo } from "@/features/gallery-crop/hooks/useTransformWithUndo";
 import { useCropperTheme } from "@/lib/stores/useCropperTheme";
+import { MAX_OUTPUT_SIDE, outputSide, PHOTO_OUTPUT_TYPES, renameForType } from "@contracts/media/cropOutput";
+import { encodeCanvas } from "@/features/gallery-crop/lib/encodeCanvas";
 
 const WORKSPACE = 500;
 const WIDE = 620; // px : au-delà → curseurs verticaux à droite
@@ -26,6 +28,8 @@ function drawCrop(
   rotationDeg: number,
   workspaceSize: number,
   outSize?: number,
+  /** Fond opaque (pour un format sans transparence, JPEG) ; sans lui, les marges restent transparentes. */
+  background?: string,
 ): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -40,6 +44,10 @@ function drawCrop(
   canvas.width = outW;
   canvas.height = outH;
   ctx.clearRect(0, 0, outW, outH);
+  if (background) {
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, outW, outH);
+  }
   ctx.save();
   ctx.scale(scaleOut, scaleOut);
   ctx.translate(-grid.x, -grid.y);
@@ -78,8 +86,8 @@ function SliderField({
   const range = (
     <input
       type="range" min={min} max={max} step={step} value={ctrl.value}
-      onMouseDown={ctrl.startInteraction}
-      onMouseUp={ctrl.endInteraction}
+      onPointerDown={ctrl.startInteraction}
+      onPointerUp={ctrl.endInteraction}
       onChange={(e) => ctrl.set(Number(e.target.value))}
       aria-label={label}
       className={vertical ? "h-36" : "w-40"}
@@ -131,6 +139,8 @@ export default function Cropper({
   shape = "rect",
   onShapeChange,
   initialTransform,
+  outputTypes = PHOTO_OUTPUT_TYPES,
+  maxOutputSide = MAX_OUTPUT_SIDE,
 }: CropperProps) {
   // Hook toujours appelé (règles des hooks) ; utilisé seulement si enableTheme.
   const storeTheme = useCropperTheme((s) => s.theme);
@@ -225,26 +235,35 @@ export default function Cropper({
     drawCrop(canvas, img, grid, zoomValue, rotationValue, workspaceSize(), 120);
   }, [grid, zoomValue, rotationValue, workspaceSize, imgVersion]);
 
-  const handleCrop = () => {
+  const handleCrop = async () => {
     const img = imgRef.current;
     if (!img) return;
     const ws = workspaceSize();
+    // À la résolution de la photo, pas à celle de l'écran (plafonnée par maxOutputSide).
+    const side = outputSide({
+      gridWidth: grid.width, gridHeight: grid.height,
+      imageWidth: img.naturalWidth, imageHeight: img.naturalHeight,
+      workspaceSize: ws, zoom: zoom.value, maxSide: maxOutputSide,
+    });
+    // Un format sans transparence peut être le dernier recours : on peint alors un fond blanc, pour
+    // que les marges (image dézoomée ou tournée) aient la même couleur quel que soit le format obtenu.
+    const opaque = outputTypes.includes("image/jpeg");
     const canvas = document.createElement("canvas");
-    drawCrop(canvas, img, grid, zoom.value, rotation.value, ws);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const gridFrac = {
-        x: grid.x / ws, y: grid.y / ws, width: grid.width / ws, height: grid.height / ws,
-      };
-      onCrop({
-        pictureId: picture.id,
-        croppedFile: new File([blob], picture.file.name, {
-          type: "image/png",
-          lastModified: Date.now(),
-        }),
-        recipe: { zoom: zoom.value, rotation: rotation.value, gridFrac, shape },
-      });
-    }, "image/png");
+    drawCrop(canvas, img, grid, zoom.value, rotation.value, ws, side, opaque ? "#ffffff" : undefined);
+    const blob = await encodeCanvas(canvas, outputTypes);
+    if (!blob) return;
+    const gridFrac = {
+      x: grid.x / ws, y: grid.y / ws, width: grid.width / ws, height: grid.height / ws,
+    };
+    onCrop({
+      pictureId: picture.id,
+      // Le nom suit le format obtenu : le serveur exige que l'extension et le type concordent.
+      croppedFile: new File([blob], renameForType(picture.file.name, blob.type), {
+        type: blob.type,
+        lastModified: Date.now(),
+      }),
+      recipe: { zoom: zoom.value, rotation: rotation.value, gridFrac, shape },
+    });
   };
 
   const resetAll = () => {
@@ -349,7 +368,7 @@ export default function Cropper({
             <div className="flex items-center gap-2">
               <span className="w-14 shrink-0 text-xs font-medium text-gray-500">Zoom</span>
               <input type="range" min={0.1} max={3} step={0.01} value={zoom.value}
-                onMouseDown={zoom.startInteraction} onMouseUp={zoom.endInteraction}
+                onPointerDown={zoom.startInteraction} onPointerUp={zoom.endInteraction}
                 onChange={(e) => zoom.set(Number(e.target.value))}
                 className="h-1.5 w-36 cursor-pointer accent-emerald-600" />
               <button type="button" onClick={zoom.undo} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Défaire</button>
@@ -358,7 +377,7 @@ export default function Cropper({
             <div className="flex items-center gap-2">
               <span className="w-14 shrink-0 text-xs font-medium text-gray-500">Rotation</span>
               <input type="range" min={-180} max={180} step={1} value={rotation.value}
-                onMouseDown={rotation.startInteraction} onMouseUp={rotation.endInteraction}
+                onPointerDown={rotation.startInteraction} onPointerUp={rotation.endInteraction}
                 onChange={(e) => rotation.set(Number(e.target.value))}
                 className="h-1.5 w-36 cursor-pointer accent-emerald-600" />
               <button type="button" onClick={rotation.undo} className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100">Défaire</button>
@@ -370,7 +389,7 @@ export default function Cropper({
 
         <div className="flex justify-end gap-2 mt-4">
           <button type="button" onClick={onCancel} className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${cancelCls}`}>Annuler</button>
-          <button type="button" onClick={handleCrop} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700">Recadrer</button>
+          <button type="button" onClick={() => void handleCrop()} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700">Recadrer</button>
         </div>
       </div>
     </div>

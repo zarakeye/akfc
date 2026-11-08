@@ -18,7 +18,7 @@ export function useTransformWithUndo<T>(
   const interactionStartRef = useRef<T | null>(null);
   const interactionStartTimeRef = useRef<number | null>(null);
 
-  /** ⚡ Appelé au début d’un geste (mousedown / touchstart / focus) */
+  /** ⚡ Appelé au début d’un geste (pointerdown : souris, doigt ou stylet) */
   const startInteraction = () => {
     if (interactionStartRef.current === null) {
       interactionStartRef.current = value;
@@ -31,7 +31,7 @@ export function useTransformWithUndo<T>(
     setValue(nextValue);
   };
 
-  /** ⚡ Appelé à la fin d’un geste (mouseup / touchend / blur) */
+  /** ⚡ Appelé à la fin d’un geste (pointerup) */
   const endInteraction = () => {
     const startValue = interactionStartRef.current;
     const startTime = interactionStartTimeRef.current;

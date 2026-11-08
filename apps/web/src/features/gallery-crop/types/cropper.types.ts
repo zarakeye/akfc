@@ -50,6 +50,10 @@ export type CropperProps = {
     rotation: number;
     gridFrac: GridFraction;
   };
+  /** Formats essayés, dans l'ordre (le premier que le navigateur sait écrire). Défaut : AVIF, WebP, JPEG. */
+  outputTypes?: readonly string[];
+  /** Côté le plus long du fichier produit, en pixels. Défaut : 4096. */
+  maxOutputSide?: number;
 };
 
 export type ViewportTransform = {

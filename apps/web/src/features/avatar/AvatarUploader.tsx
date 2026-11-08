@@ -401,6 +401,9 @@ export function AvatarUploader({
           picture={itemToCrop}
           enableTheme
           controls="responsive"
+          // Formats que avatar.createUpload accepte, transparence gardée ; 1024 px suffisent à un portrait.
+          outputTypes={["image/webp", "image/png"]}
+          maxOutputSide={1024}
           shape={shape}
           onShapeChange={setShape}
           initialTransform={
