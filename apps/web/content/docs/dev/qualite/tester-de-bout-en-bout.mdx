@@ -152,6 +152,22 @@ L’e-mail de réinitialisation part sans faire attendre la réponse du site. Le
 
 `expect.poll` relance la fonction jusqu’à ce qu’elle rende autre chose que `null`. C’est la bonne façon d’attendre en Playwright : **jamais** une pause fixe (`waitForTimeout(3000)`), trop longue quand tout va bien, trop courte un jour où la machine est chargée. Le filtre `since` écarte les e-mails d’un lancement précédent.
 
+### Un clic qui se perd
+
+Une ligne de tableau peut être **visible** avant que React y ait branché son clic : la page est arrivée du serveur, mais le navigateur n'a pas fini de l'« hydrater ». Le clic part, rien ne se passe, aucune erreur. Sur une machine déjà chaude, ça n'arrive presque jamais ; dans un navigateur tout neuf (Playwright en relance un après un test raté), si. Le test « Ajouter des séances » a échoué ainsi juste après un test raté, alors que le site fonctionnait.
+
+<CodeExample
+  language="ts"
+  filepath="e2e/helpers.ts"
+  filename="helpers.ts"
+  snippetRange="72-82"
+  snippetHighlight="8-9"
+  snippetTitle="e2e/helpers.ts — clickUntilUrl"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Le remède ne consiste pas à attendre plus longtemps au hasard, mais à vérifier ce que le clic devait produire (la nouvelle adresse) et à recommencer s'il s'est perdu, dans une limite de temps. Un test qui ne passe qu'en attendant « assez » finit toujours par échouer un jour sur une machine plus lente.
+
 ## Un test doit pouvoir échouer
 
 Un test qui passe ne prouve rien tant qu’on ne l’a pas vu **échouer** pour la bonne raison. Une assertion qui ne regarde pas ce qu’on croit (un texte présent ailleurs sur la page, une réponse 200 d’une page d’erreur) passe toujours, et protège d’autant moins qu’elle rassure.
