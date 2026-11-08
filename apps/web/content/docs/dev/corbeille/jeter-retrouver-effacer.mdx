@@ -1,0 +1,167 @@
+---
+title: "Jeter, retrouver, effacer"
+description: "La corbeille vue du navigateur : une liste plate des éléments jetés posée dans le finder, chargée par pages de cent ; entrer dans un dossier jeté ; qui peut jeter (un administrateur partout, un éditeur dans l’espace de son groupe) et qui seul peut restaurer ou effacer ; effacer par identifiant ou par chemin ; un élément jeté qui ne s’efface qu’en entier ; ce que la corbeille garde, et ce qu’elle ne fait pas."
+section: "La corbeille"
+order: 1
+entities:
+  TrashEntry: [kind, status, displayName, previousPath, storageRoot, trashedAt, deletedAt]
+stories:
+  - title: Un administrateur fait le ménage dans la corbeille
+    actor: Administrateur
+    steps:
+      - label: Il ouvre la corbeille dans le finder ; les éléments jetés arrivent par pages de cent
+        call: trash.listBin
+        section: Une liste plate, par pages de cent
+      - label: Il restaure une photo jetée par erreur
+        call: trash.restoreFromBin
+        section: Qui jette, qui récupère
+      - label: Il efface définitivement un dossier ; un fichier pris dans ce dossier ne s’efface pas seul
+        call: trash.purge
+        section: Un élément jeté s’efface en entier
+  - title: Un éditeur jette un document de l’espace de son groupe
+    actor: Membre éditeur d’un espace
+    steps:
+      - label: Le document part à la corbeille ; seul un administrateur pourra le restaurer
+        call: trash.trashToBin
+        section: Qui jette, qui récupère
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** La partie « Stockage et médias » a décrit la corbeille côté serveur : une quarantaine où l’élément jeté est déplacé avec ses lignes `MediaAsset`, une `TrashEntry` qui garde son nom et son chemin d’origine, une restauration qui ne détruit rien de ce qui a pris sa place. La partie « Le finder » a montré qu’un même « supprimer » y change de sens selon l’endroit.
+
+Une corbeille rassure : on jette sans crainte, puisqu’on peut revenir en arrière. Encore faut-il pouvoir **retrouver** ce qu’on a jeté, savoir **qui** peut le récupérer, et ne pas effacer plus que ce qu’on croit. Ce chapitre suit la corbeille dans le navigateur, et raconte deux corrections faites en l’écrivant.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Une liste plate, par pages de cent 🗑️
+
+Dans le stockage, la corbeille est un dossier, `AKFC/bin/.trash/`, plein de sous-dossiers nommés par un identifiant. Montrés tels quels, ce seraient des noms illisibles. Quand le finder est sur la corbeille, il ne montre donc pas l’arbre du stockage : il pose à la place `FinderBinRootView`, une **liste plate** des `TrashEntry`, avec leur nom d’origine, leur chemin d’avant et leur date.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderBinRootView.tsx"
+  filename="FinderBinRootView.tsx"
+  snippetStart="const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } ="
+  snippetLines="11"
+  snippetHighlight="2,5,11"
+  snippetTitle="Les éléments jetés, page après page"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`trash.listBin` rend au plus cent entrées, les plus récentes d’abord, et un **curseur** pour la suite. La vue ne demandait que la première page. Au cent-unième élément jeté, le plus ancien disparaissait de l’écran : ni visible, ni restaurable depuis le finder, alors qu’il était toujours là. La vue charge désormais les pages avec `useInfiniteQuery`, et un bouton « Afficher plus » demande la suivante tant qu’il y en a une.
+
+« Vider la corbeille », lui, n’avait pas ce défaut : il parcourt toutes les pages avant d’effacer, et demande de taper le mot « supprimer » pour confirmer. Son message annonçait pourtant « les 100 éléments » quand il y en avait davantage ; il dit maintenant « plus de 100 » tant que tout n’est pas chargé.
+
+<Callout type="insight">
+Une liste paginée côté serveur demande une pagination côté client. Une limite qu’on ne voit jamais pendant le développement, où la corbeille contient trois fichiers, se découvre le jour où un administrateur cherche une photo jetée il y a trois mois.
+</Callout>
+
+La même liste existe dans une vue autonome, `TrashView`, avec recherche et navigation interne (`trash.readTrashFolder`). Elle n’est montée que par le banc d’essai `/test-finder/corbeille`, jamais servi en production ; ses composants (grille, tableau, liste compacte, barre de sélection, bouton « Vider ») sont ceux que réutilise la vue du finder.
+
+## Entrer dans un dossier jeté
+
+Un double-clic sur un dossier jeté ne passe pas par une procédure dédiée : il amène le finder sur le vrai chemin de stockage de l’élément, `AKFC/bin/.trash/<identifiant>`.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/finder-core/components/FinderBinRootView.tsx"
+  filename="FinderBinRootView.tsx"
+  snippetStart="function handleEntryDoubleClick(entry: TrashEntryDTO) {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5"
+  snippetTitle="Entrer dans un dossier jeté, avec le finder ordinaire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+À partir de là, c’est le finder ordinaire : la grille, l’aperçu, les sous-dossiers. `storage.getTree` accepte ce chemin, parce que l’arbre ne retire que les **enfants** du nœud de la corbeille, pas les dossiers qu’on lui demande explicitement ; et la garde de lecture le réserve aux administrateurs, comme toute la corbeille. On peut donc regarder dans un dossier jeté avant de décider de le restaurer.
+
+## Qui jette, qui récupère
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/router.ts"
+  filename="router.ts"
+  snippetStart="export const trashRouter = router({"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2,8,14,19,35,41,47"
+  snippetTitle="Une procédure pour les membres, cinq pour les administrateurs"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une seule procédure est ouverte aux membres : **jeter**. Encore faut-il être éditeur de l’espace de groupe où se trouve l’élément :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/memberGroups/assertCanTrashPaths.service.ts"
+  filename="assertCanTrashPaths.service.ts"
+  snippetStart="export async function assertCanTrashPaths(params: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="8,11,18,19"
+  snippetTitle="Jeter : administrateur partout, éditeur dans son groupe"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Lister, regarder, restaurer et effacer restent aux administrateurs. La conséquence se dit en une phrase : **un membre qui jette ne peut pas revenir en arrière seul**. Il ne voit pas la corbeille ; il demande à un administrateur. C’est cohérent avec le reste (la bibliothèque est tenue par les administrateurs), et c’est aussi ce qui rend la corbeille sûre : un éditeur fâché ne peut pas effacer définitivement le travail de son groupe.
+
+La garde a une autre conséquence, moins visible. Un membre ne peut pas jeter dans son **espace personnel** : seul l’espace d’un groupe lui est ouvert. Une photo déposée par erreur dans « Mes photos » reste là, et compte dans son quota, jusqu’à ce qu’un administrateur la jette. Ouvrir la corbeille aux membres pour leur propre espace est une décision à prendre ; ce chapitre se contente de la signaler.
+
+<Callout type="warning">
+**Un geste réversible pour qui ne peut pas le reprendre.** Pour le membre, « Envoyer à la corbeille » est définitif tant qu’aucun administrateur n’intervient. Le texte de confirmation (« Tu pourras le restaurer ensuite ») est écrit pour un administrateur ; pour un éditeur, il promet un peu trop.
+</Callout>
+
+## Effacer par identifiant, effacer par chemin
+
+Deux procédures effacent pour de bon, et elles ne reçoivent pas la même chose :
+
+<DocsTable columnsJson='["", "trash.deleteForever", "trash.purge"]' rowsJson='[["Reçoit", "Des identifiants de TrashEntry.", "Des chemins de stockage sous bin/.trash/."], ["Appelée par", "La liste plate (sélection, « Vider la corbeille »).", "Le finder, quand on supprime depuis l’intérieur de la corbeille : il ne connaît que des chemins."], ["Un identifiant ou un chemin sans entrée", "Erreur : l’entrée doit exister.", "Un vestige : un fragment sans TrashEntry, effacé physiquement."]]' />
+
+Les **vestiges** viennent d’un passé moins soigneux : un déplacement vers la corbeille réussi côté stockage mais pas côté base, des restes de refonte. Avant `purge`, le finder les montrait sans pouvoir les effacer. `purge` les reconnaît (aucune `TrashEntry` sous ce chemin) et les supprime par préfixe. Il ne sort jamais de la corbeille : chaque chemin doit être sous `<racine>/bin/.trash/`, sinon il refuse.
+
+## Un élément jeté s’efface en entier
+
+`purge` ramène chaque chemin à son élément jeté : `bin/.trash/<id>/dossier/photo.jpg` devient `bin/.trash/<id>`, puis l’élément est effacé. C’est voulu pour un vestige. Pour un dossier jeté, c’était un piège : entré dans le dossier, un administrateur sélectionnait **une** photo et confirmait « 1 élément sera supprimé définitivement » ; tout le dossier disparaissait.
+
+La procédure refuse désormais un chemin plus profond que l’élément lui-même, avant toute suppression :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/purge.service.ts"
+  filename="purge.service.ts"
+  snippetStart="// ─── Étape 1 bis : un élément jeté s'efface en entier, ou pas du tout ──"
+  snippetLines="24"
+  snippetHighlight="16,17,18,19"
+  snippetTitle="Tout l’élément, ou rien"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+L’élément entier reste effaçable de deux façons : depuis la liste plate, ou, une fois entré, en sélectionnant le dossier jeté lui-même (son chemin est le `storageRoot` de l’entrée). Le refus arrive dans le finder avec son message (« Ce fichier fait partie de « … », jeté en entier : revenez à la corbeille… ») : `deleteNodes` ne laissait jusqu’ici aucune erreur remonter, elles finissaient dans la console. Elles s’affichent maintenant dans le bandeau d’erreur du finder.
+
+Un test de bout en bout, `e2e/corbeille.spec.ts`, prépare un dossier jeté avec une photo, demande d’effacer la photo seule, et vérifie le refus et que le dossier est toujours dans la corbeille ; un second vérifie qu’un membre ne peut pas lister la corbeille.
+
+<Callout type="concept">
+**Le serveur garde la règle, l’interface la rend lisible.** On aurait pu griser « Supprimer » dans un dossier jeté. Mais une règle qui n’existe que dans l’interface s’oublie au prochain écran : la procédure refuse, et l’interface n’a plus qu’à afficher pourquoi.
+</Callout>
+
+## Ce que la corbeille garde, et ce qu’elle ne fait pas
+
+Une `TrashEntry` n’est jamais effacée. Restaurée, elle passe à `RESTORED` (avec la date et le chemin de retour) ; effacée, à `DELETED` (avec la date). La table est un **journal** de ce qui a été jeté, rendu et détruit, et c’est la seule trace qui reste d’un fichier effacé.
+
+La cloche du tableau de bord compte les éléments dans la corbeille, avec les fichiers en attente et les contenus non publiés. Son libellé pour les lecteurs d’écran oubliait les contenus non publiés : avec seulement cinq brouillons, la pastille affichait 5 et l’annonce était « 0 contenu dans la corbeille ». Il énumère maintenant tout ce que compte la pastille.
+
+Ce que la corbeille ne fait pas : elle ne se vide **jamais d’elle-même**. Pas de durée de conservation, pas de purge nocturne. Elle grossit jusqu’à ce qu’un administrateur la vide. Deux raisons de s’en soucier un jour : la place dans le stockage, et les données personnelles (une photo jetée reste une photo stockée, avec les personnes qu’elle montre). Une rétention de quelques mois, effacée par la tâche nocturne qui existe déjà pour les formulaires signés, serait la suite naturelle ; c’est une décision du club.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où voit-on la corbeille ?", "Dans le finder, en liste plate des TrashEntry (FinderBinRootView). La vue autonome ne sert qu’au banc d’essai."], ["Et au-delà de cent éléments ?", "La liste se charge par pages ; « Afficher plus » demande la suivante."], ["Comment regarder dans un dossier jeté ?", "Le finder va sur son vrai chemin de stockage ; la lecture est réservée aux administrateurs."], ["Qui peut jeter ?", "Un administrateur partout ; un éditeur dans l’espace de son groupe. Pas un membre dans son espace personnel."], ["Qui peut restaurer ou effacer ?", "Les administrateurs seulement."], ["deleteForever ou purge ?", "Par identifiant (la liste) ou par chemin (le finder) ; purge efface aussi les vestiges."], ["Peut-on effacer un fichier d’un dossier jeté ?", "Non : l’élément s’efface en entier, ou pas du tout. La procédure refuse, le finder affiche pourquoi."], ["La corbeille se vide-t-elle seule ?", "Non. Une durée de conservation reste à décider."]]' />
+
+## À suivre
+
+Les fichiers se rangent, se trouvent, se jettent et se rendent. Reste à savoir comment chacun est entré : par quel écran, sous quelles limites, et ce qui arrive quand vingt fichiers partent ensemble et que trois échouent.
+
+<Callout type="tip">
+**Partie suivante : les envois de fichiers.** Les sept portes par où un fichier entre sur le site, les trois circuits qu’elles empruntent, les formulaires de lot, les photos d’iPhone converties sur l’appareil, et les envois d’un seul fichier pour un seul usage.
+</Callout>

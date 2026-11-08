@@ -161,7 +161,7 @@ La place se calcule contre les fichiers **déjà dans la liste** : deux glisseme
 
 L’envoi se fait ensuite **un par un**, dans une boucle `for … of` avec `await`. Le quota est revérifié par le serveur à chaque signature ; en parallèle, vingt demandes lues au même instant verraient toutes la même place restante, et le quota pourrait être dépassé. En série, chaque signature voit les fichiers enregistrés juste avant.
 
-Pour un nom déjà pris, l’espace personnel ne pose pas de question : le fichier est **ignoré** et marqué comme tel. Dans son propre espace, on ne détruit pas un binaire d’un clic distrait ; supprimer puis redéposer reste possible, et c’est un geste explicite.
+Pour un nom déjà pris, l’espace personnel ne pose pas de question : le fichier est **ignoré** et marqué comme tel. Dans son propre espace, on ne détruit pas un binaire d’un clic distrait. Le remplacer demande de le jeter puis de le redéposer, et un membre ne peut pas jeter dans son espace personnel : il passe par un administrateur (chapitre « Jeter, retrouver, effacer »).
 
 ## Le dépôt des membres : une cascade
 
