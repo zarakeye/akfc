@@ -96,8 +96,14 @@ export default function DocsTable({
   // une propriété absente des colonnes ne compare rien (comparateur nul) → ordre d'origine.
   // Couleurs du thème (et non `text-white`, illisible sur le fond clair de la doc) ; cellules
   // à la ligne (`whitespace-normal`) pour les phrases longues.
+  //
+  // En-tête NON collant : la bibliothèque pose `sticky top-0` sur la ligne d'en-tête, pensé pour une
+  // table qui défile dans son propre cadre. Dans la doc, la table n'a pas de cadre qui défile : c'est
+  // la page entière qui défile, et l'en-tête restait suspendu en haut de l'écran, par-dessus le
+  // texte, tant que la table n'était pas sortie de la vue. `[&_thead_tr]:static` l'annule (sélecteur
+  // plus précis que la classe `sticky` de la bibliothèque).
   return (
-    <div className="my-6 w-full text-left">
+    <div className="my-6 w-full text-left [&_thead_tr]:static">
       {title ? (
         <p className="mb-3 text-sm font-semibold text-foreground">{title}</p>
       ) : null}
