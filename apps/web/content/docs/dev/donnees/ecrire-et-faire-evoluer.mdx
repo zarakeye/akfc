@@ -108,6 +108,10 @@ Prisma couvre l’immense majorité des besoins. Le projet descend en SQL dans d
 
 **Une opération que l’API ne sait pas exprimer.** Déplacer un dossier dans le finder, c’est réécrire le début de `fullPath` pour tous les médias qu’il contient (`rewriteAssetPaths`, la seule fonction qui le fait, pour le déplacement comme pour la corbeille). `updateMany` sait donner la même valeur à plusieurs lignes, pas transformer la valeur de chacune :
 
+<Promesse vers="dev/stockage/modifier-sans-casser" section="Déplacer, c’est copier puis supprimer">
+Le **finder** est l’explorateur de fichiers du tableau de bord. Chaque fichier y a, en base, son chemin complet (`fullPath`, par exemple `AKFC/courses/tchoy-lee-fut/salut-final.jpg`) : déplacer un dossier oblige à réécrire le début du chemin de tous les fichiers qu’il contient. Seule la requête SQL compte ici ; le déplacement complet, fichiers compris, est raconté avec le stockage.
+</Promesse>
+
 ```ts
 // packages/backend/src/modules/storage/mediaPaths.ts (extrait)
   const cut = from.length + 1;
@@ -121,7 +125,7 @@ Prisma couvre l’immense majorité des besoins. Le projet descend en SQL dans d
 
 Ce bloc montre aussi que le SQL brut demande plus d’attention que l’API. Dans un `LIKE`, `_` et `%` sont des **jokers** : `_` remplace n’importe quel caractère, `%` n’importe quelle suite. Un dossier nommé `cours_2026`, passé tel quel en préfixe, correspondait aussi à `coursX2026`, et un déplacement pouvait réécrire le chemin de fichiers qui n’étaient pas dans le dossier déplacé. Le préfixe est donc échappé avant d’être donné à `LIKE` : chaque `_`, `%` ou barre oblique inverse est précédé d’une barre oblique inverse, le caractère d’échappement par défaut de PostgreSQL. Seul le `%` ajouté à la fin reste un joker. Avec l’API de Prisma (`startsWith`), cet échappement est fait automatiquement : c’est le prix de la descente en SQL.
 
-**Une écriture qui ne doit pas déclencher `@updatedAt`.** La date de dernière connexion ne doit pas passer pour une modification du profil :
+**Une écriture qui ne doit pas déclencher `@updatedAt`.** Un champ marqué `@updatedAt` dans le schéma est mis à jour par Prisma lui-même, à chaque écriture de la ligne : il dit quand la ligne a changé pour la dernière fois. Or la date de dernière connexion ne doit pas passer pour une modification du profil :
 
 ```ts
 // packages/backend/src/lib/session/session.server.ts (extrait)
@@ -131,7 +135,7 @@ Ce bloc montre aussi que le SQL brut demande plus d’attention que l’API. Dan
     console.error("[session] lastLoginAt non mis à jour :", err instanceof Error ? err.message : err);
 ```
 
-Ces deux requêtes ressemblent à des chaînes de caractères, mais ce n’en sont pas. `$executeRaw` est un **gabarit étiqueté** : les valeurs écrites entre `${…}` ne sont pas collées dans le texte SQL, elles sont transmises à PostgreSQL comme des **paramètres**, à part. Un chemin de dossier contenant une apostrophe ou un fragment de SQL ne peut donc rien injecter. La règle qui en découle : ne jamais construire une requête SQL par concaténation, et ne jamais utiliser `$executeRawUnsafe` avec une valeur venue de l’extérieur.
+Ces deux requêtes ressemblent à des chaînes de caractères, mais ce n’en sont pas. `$executeRaw` est un **gabarit étiqueté** : les valeurs écrites entre `${…}` ne sont pas collées dans le texte SQL, elles sont transmises à PostgreSQL comme des **paramètres**, à part. Un chemin de dossier contenant une apostrophe ou un fragment de SQL ne peut donc rien **injecter**. Une **injection SQL**, c’est une valeur qui, collée telle quelle dans le texte d’une requête, en change le sens : `'; DROP TABLE "User"; --` termine la chaîne attendue et ajoute un ordre de son cru. La règle qui en découle : ne jamais construire une requête SQL par concaténation, et ne jamais utiliser `$executeRawUnsafe` avec une valeur venue de l’extérieur.
 
 <Callout type="info">
 Le SQL brut sort du filet de Prisma : ni le type du résultat ni le nom des colonnes ne sont vérifiés à la compilation. Une colonne renommée dans le schéma casse ces requêtes sans que `pnpm typecheck` le voie. C’est pour cela qu’elles restent rares, courtes, et commentées.
@@ -197,7 +201,7 @@ La table ajoutée par `20261101120000_add_common_repository_label` n’a pas ser
 
 L’étape 5 est celle qui s’oublie, et le projet en a fait l’expérience.
 
-Après une mise à jour, plus personne ne pouvait se connecter au site, et les contenus ne se chargeaient plus. Les journaux du conteneur disaient pourquoi : une colonne `User.birthDateVerified` n’existait pas. Le code venait d’être déployé, le client Prisma avait été généré avec le nouveau schéma, et chaque lecture d’un membre demandait cette colonne… à une base qui n’avait pas reçu la migration `20261209000000_image_consent_online`.
+Après une mise à jour, plus personne ne pouvait se connecter au site, et les contenus ne se chargeaient plus. Les journaux du conteneur (ce que le site écrit pendant qu’il tourne : démarrages, erreurs) disaient pourquoi : une colonne `User.birthDateVerified` n’existait pas. Le code venait d’être déployé, le client Prisma avait été généré avec le nouveau schéma, et chaque lecture d’un membre demandait cette colonne… à une base qui n’avait pas reçu la migration `20261209000000_image_consent_online`.
 
 ```sql
 -- prisma/migrations/20261209000000_image_consent_online/migration.sql (extrait)
@@ -207,7 +211,7 @@ ALTER TABLE "User" ADD COLUMN     "birthDateVerified" BOOLEAN NOT NULL DEFAULT f
 
 Aucune donnée n’était perdue : la base était simplement en retard d’une migration. `prisma migrate deploy`, lancé contre la base de production, a rétabli le site.
 
-La cause était dans l’outillage. Le Dockerfile prévoit une étape dédiée aux migrations :
+La cause était dans l’outillage. Le Dockerfile, la recette qui construit l’image Docker du site, prévoit une étape dédiée aux migrations :
 
 <CodeExample
   language="dockerfile"
@@ -220,7 +224,7 @@ La cause était dans l’outillage. Le Dockerfile prévoit une étape dédiée a
   fullFileTitle="Voir le fichier complet"
 />
 
-Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. Le compose du serveur a depuis un service `akfc-migrator`, lancé avant le site à chaque déploiement.
+Mais le `docker-compose.yml` du serveur, le fichier qui décrit les conteneurs à lancer et dans quel ordre, ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. Le compose du serveur a depuis un service `akfc-migrator`, lancé avant le site à chaque déploiement.
 
 <Promesse vers="dev/infrastructure/mettre-en-production" section="L’ordre d’un déploiement 🚀">
 Un déploiement met en ligne une nouvelle version du site. Sur le serveur, il suit désormais un ordre fixe : construire l’image, appliquer les migrations, puis seulement remplacer le site qui tourne.
@@ -315,9 +319,9 @@ Cela signifie que les formulaires ne partent pas de zéro.
 
 Ils vont :
 
-- s’appuyer sur les types générés  
-- respecter les contraintes du modèle  
-- produire des données directement compatibles avec le backend  
+- respecter les contraintes du modèle, reprises dans des schémas de validation partagés par le navigateur et le serveur  
+- produire des données que le serveur peut écrire sans les retraduire  
+- laisser les types générés par Prisma garder le serveur, qui écrit en base  
 
 ---
 

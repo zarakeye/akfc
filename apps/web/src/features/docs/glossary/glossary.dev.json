@@ -1811,5 +1811,124 @@
    "vers": "dev/moteur-doc/une-page-du-fichier-a-l-ecran",
    "section": "Des parties, et des numéros que personne n’écrit"
   }
+ },
+ {
+  "id": "injection-sql",
+  "terme": "injection SQL",
+  "variantes": [
+   "injection SQL",
+   "injections SQL"
+  ],
+  "definition": "Une valeur qui, collée telle quelle dans le texte d’une requête SQL, en change le sens. On s’en protège en passant les valeurs comme paramètres, jamais par concaténation.",
+  "definiEn": {
+   "vers": "dev/donnees/ecrire-et-faire-evoluer",
+   "section": "Quand Prisma ne suffit pas : le SQL brut"
+  }
+ },
+ {
+  "id": "gabarit-etiquete",
+  "terme": "gabarit étiqueté",
+  "variantes": [
+   "gabarit étiqueté",
+   "gabarits étiquetés"
+  ],
+  "definition": "Une chaîne JavaScript entre accents graves précédée d’une fonction (`$executeRaw`…``) : la fonction reçoit le texte et les valeurs séparément, et peut transmettre les valeurs comme paramètres.",
+  "definiEn": {
+   "vers": "dev/donnees/ecrire-et-faire-evoluer",
+   "section": "Quand Prisma ne suffit pas : le SQL brut"
+  }
+ },
+ {
+  "id": "app-router",
+  "terme": "App Router",
+  "variantes": [
+   "App Router"
+  ],
+  "definition": "L’organisation des pages de Next.js utilisée par le projet : l’arborescence du dossier `app/` est la carte du site, et un formulaire peut appeler directement une fonction du serveur.",
+  "definiEn": {
+   "vers": "dev/front/routage",
+   "section": "Un dossier, une route"
+  }
+ },
+ {
+  "id": "pages-router",
+  "terme": "Pages Router",
+  "variantes": [
+   "Pages Router"
+  ],
+  "definition": "L’organisation d’origine de Next.js (dossier `pages/`), où le serveur s’atteignait par des routes d’API écrites à part.",
+  "definiEn": {
+   "vers": "dev/formulaires/server-actions",
+   "section": "5 — Le changement de paradigme : du Pages Router à l’App Router"
+  }
+ },
+ {
+  "id": "openapi",
+  "terme": "OpenAPI",
+  "variantes": [
+   "OpenAPI"
+  ],
+  "definition": "Un format standard qui décrit une API REST dans un fichier ; des outils en tirent des types et un client.",
+  "definiEn": {
+   "vers": "dev/formulaires/le-modele-hybride-face-au-reel",
+   "section": "6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)"
+  }
+ },
+ {
+  "id": "sdk",
+  "terme": "SDK",
+  "variantes": [
+   "SDK"
+  ],
+  "definition": "*Software Development Kit* : un paquet qui offre des fonctions toutes prêtes pour utiliser une API ou un service.",
+  "definiEn": {
+   "vers": "dev/formulaires/le-modele-hybride-face-au-reel",
+   "section": "6.2 — Réduire la casse (ce que nous ferions dans la vraie vie)"
+  }
+ },
+ {
+  "id": "idempotent",
+  "terme": "idempotent",
+  "variantes": [
+   "idempotent",
+   "idempotente",
+   "idempotents",
+   "idempotentes",
+   "idempotence"
+  ],
+  "definition": "Se dit d’une opération qui donne le même résultat exécutée une fois ou dix (relire une liste) ; la recréer dix fois, elle, ne l’est pas.",
+  "definiEn": {
+   "vers": "dev/api/fabriquer-une-procedure",
+   "section": "Query vs Mutation — une distinction qui compte"
+  }
+ },
+ {
+  "id": "effet-de-bord",
+  "terme": "effet de bord",
+  "variantes": [
+   "effet de bord",
+   "effets de bord"
+  ],
+  "definition": "Tout ce qu’une fonction change en dehors de ce qu’elle renvoie : une ligne écrite en base, un e-mail envoyé.",
+  "definiEn": {
+   "vers": "dev/api/fabriquer-une-procedure",
+   "section": "Query vs Mutation — une distinction qui compte"
+  }
+ },
+ {
+  "id": "bcrypt",
+  "terme": "bcrypt",
+  "variantes": [
+   "bcrypt"
+  ],
+  "definition": "L’algorithme qui calcule l’empreinte des mots de passe du projet : volontairement lent, donc coûteux à attaquer par essais.",
+  "definiEn": {
+   "vers": "dev/api/le-routeur-metier",
+   "section": "1) Le service : la vraie logique métier"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Une empreinte n’est pas un chiffrement"
+  }
  }
 ]

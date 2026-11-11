@@ -311,7 +311,7 @@ Regardons un vrai service du projet, celui qui vérifie un identifiant et un mot
 
 ---
 
-Ce service fait un travail précis : il cherche le membre par son adresse, compare le mot de passe saisi à l’empreinte enregistrée (bcrypt) — à une empreinte factice si l’adresse n’a pas de compte, pour que la réponse prenne le même temps —, puis crée la session — une ligne en base et un jeton signé dans un cookie, que la partie suivante ouvrira en détail. Aucune trace de requête HTTP, aucun cookie lu, aucune procédure : il reçoit deux chaînes et fait son travail.
+Ce service fait un travail précis : il cherche le membre par son adresse, compare le mot de passe saisi à l’empreinte enregistrée (calculée par bcrypt, un algorithme fait exprès pour être lent, et donc coûteux à attaquer) — à une empreinte factice si l’adresse n’a pas de compte, pour que la réponse prenne le même temps —, puis crée la session — une ligne en base et un jeton signé dans un cookie, que la partie suivante ouvrira en détail. Aucune trace de requête HTTP, aucun cookie lu, aucune procédure : il reçoit deux chaînes et fait son travail.
 
 Une seule trace de tRPC subsiste : l’erreur qu’il lève est une `TRPCError`. Un service tout à fait indépendant lèverait sa propre erreur, que la procédure traduirait. Le projet accepte ce raccourci, parce que ses services ne servent que ses procédures ; il faut seulement savoir qu’il existe.
 

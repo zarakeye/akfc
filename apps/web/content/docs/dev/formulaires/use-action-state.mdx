@@ -373,7 +373,7 @@ Le `<form>`, lui, ne se contente plus de `action={formAction}` :
         {initial && <input type="hidden" name="id" value={initial.id} />}
 ```
 
-La validation de React Hook Form est **asynchrone** : `form.trigger()` renvoie une promesse. Or le navigateur envoie le formulaire dès que le gestionnaire `onSubmit` se termine, s'il n'a pas appelé `preventDefault()`. Un `preventDefault()` placé après un `await` arriverait trop tard : l'action serait déjà partie.
+La validation de React Hook Form est **asynchrone** : `form.trigger()` renvoie une promesse (un résultat qui arrivera plus tard, qu’on attend avec `await`). Or le navigateur envoie le formulaire dès que le gestionnaire `onSubmit` se termine, s'il n'a pas appelé `preventDefault()`. Un `preventDefault()` placé après un `await` arriverait trop tard : l'action serait déjà partie.
 
 Le composant suspend donc **toujours** l'envoi, valide, puis relance l'action lui-même :
 

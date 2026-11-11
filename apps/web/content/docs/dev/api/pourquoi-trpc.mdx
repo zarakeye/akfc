@@ -477,7 +477,7 @@ Dans ce contexte, le RPC redevient plus naturel que REST.
 
 
 <Callout type="info">
-tRPC convient ici parce que le front et le back vivent dans le même dépôt, en TypeScript, et sont déployés ensemble. Une API destinée à des clients tiers (une application d’un autre éditeur, un partenaire), ou écrite dans d’autres langages, appellerait plutôt REST ou GraphQL : leurs contrats se publient et se lisent sans partager le code. Le jour où le projet aurait besoin d’une telle API, elle s’ajouterait à côté de tRPC, sans le remplacer.
+tRPC convient ici parce que le front et le back vivent dans le même dépôt, en TypeScript, et sont déployés ensemble. Une API destinée à des clients tiers (une application d’un autre éditeur, un partenaire), ou écrite dans d’autres langages, appellerait plutôt REST ou GraphQL (une autre forme d’API, où le client décrit dans sa requête la forme exacte des données qu’il veut recevoir) : leurs contrats se publient et se lisent sans partager le code. Le jour où le projet aurait besoin d’une telle API, elle s’ajouterait à côté de tRPC, sans le remplacer.
 </Callout>
 
 ---

@@ -110,6 +110,8 @@ La différence semble minime, mais elle porte une sémantique réelle :
 - `.query(...)` → **lecture**, idempotente, sans effet de bord. Peut être mise en cache.  
 - `.mutation(...)` → **écriture**, non idempotente, change l’état du système. Ne doit jamais être mise en cache.
 
+Une opération **idempotente** donne le même résultat qu’on l’exécute une fois ou dix : relire une liste ne change rien, la recréer dix fois créerait dix lignes. Un **effet de bord** est tout ce qu’une fonction change en dehors de ce qu’elle renvoie : une ligne écrite en base, un e-mail envoyé.
+
 Côté HTTP, cela se traduit aussi : les queries passent en GET, les mutations en POST. Mais ce n’est qu’une conséquence. La distinction importante est sémantique : *est-ce que cette procédure modifie quelque chose ?*
 
 ---

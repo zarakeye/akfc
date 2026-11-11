@@ -231,6 +231,8 @@ Et la remarque précédente vaut ici aussi : ce fichier n'exécute rien. Il n'em
 
 #### 2 — Génération via OpenAPI
 
+**OpenAPI** est un format standard qui décrit une API REST (ses adresses, ce qu’elles reçoivent, ce qu’elles renvoient) dans un fichier. Des outils en tirent automatiquement des types et un client pour le navigateur :
+
 <CodeSnippet
   language="yaml"
   title="Extrait OpenAPI"
@@ -250,6 +252,8 @@ Mais encore une fois :
 ---
 
 #### 3 — SDK backend
+
+Un **SDK** (*Software Development Kit*) est ici un petit paquet, publié par l’équipe du backend, qui offre des fonctions toutes prêtes pour appeler son API, au lieu d’écrire chaque `fetch` à la main. La **DX** (*developer experience*) désigne le confort du développeur qui l’utilise.
 
 - client npm
 - fonctions typées
