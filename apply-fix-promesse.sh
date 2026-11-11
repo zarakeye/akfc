@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# Doc : composant <Promesse> (renvoi vers le chapitre qui approfondit un sujet, numéro calculé),
+# encadrés concept/insight enfin stylés, nouvelle garde check-doc-components dans pnpm check.
+# Prérequis : apply-docs-auth-definitions-2.sh. Pas de migration.
+# Usage (racine du repo) : bash apply-fix-promesse.sh
+set -euo pipefail
+cd "$(dirname "$0")"
+[ -f pnpm-workspace.yaml ] || { echo "À lancer à la racine du repo."; exit 1; }
+
+if git show HEAD:"apps/web/src/features/docs/ui/Callout.tsx" 2>/dev/null | grep -qF "CALLOUT_TYPES"; then echo "Déjà appliqué (commité)."; exit 0; fi
+grep -qF "Quelques mots de base de données" "apps/web/content/docs/dev/auth/le-modele-et-le-contrat.mdx" 2>/dev/null || { echo "❌ lancer d'abord apply-docs-auth-definitions-2.sh"; exit 1; }
+MODIFIED=("apps/web/src/features/docs/ui/Callout.tsx" "apps/web/src/mdx-components.tsx" "package.json")
+CREATED=("apps/web/src/features/docs/ui/Promesse.tsx" "scripts/check-doc-components.mjs")
+restore(){ git checkout -q -- "${MODIFIED[@]}" 2>/dev/null || true; rm -f "${CREATED[@]}"; echo "  ↩ fichiers restaurés"; }
+if grep -qF "CALLOUT_TYPES" "apps/web/src/features/docs/ui/Callout.tsx" 2>/dev/null; then echo "  restes d'un essai précédent non commité → nettoyage"; restore; fi
+if ! git diff --quiet HEAD -- "${MODIFIED[@]}" 2>/dev/null; then echo "❌ modifications non commitées dans des fichiers que ce script modifie (rien n'a été touché) :"; git diff --name-only HEAD -- "${MODIFIED[@]}" | head -5; exit 1; fi
+trap 'restore' ERR
+
+mkdir -p "apps/web/src/features/docs/ui"
+base64 -d > "apps/web/src/features/docs/ui/Promesse.tsx" <<'B64'
+aW1wb3J0IExpbmsgZnJvbSAibmV4dC9saW5rIgppbXBvcnQgdHlwZSB7IFJlYWN0Tm9kZSB9IGZy
+b20gInJlYWN0IgoKaW1wb3J0IHsgZ2VuZXJhdGVEb2NzSW5kZXggfSBmcm9tICJAZmVhdHVyZXMv
+ZG9jcy9saWIvZG9jcy5pbmRleCIKaW1wb3J0IHsgZ2V0TnVtYmVyZWREb2MgfSBmcm9tICJAZmVh
+dHVyZXMvZG9jcy9saWIvZG9jcy5uYXZpZ2F0aW9uIgppbXBvcnQgeyBnZXRTcGFjZSB9IGZyb20g
+IkBmZWF0dXJlcy9kb2NzL2xpYi9kb2NzLnNwYWNlcyIKaW1wb3J0IHsgc2x1Z2lmeUhlYWRpbmcg
+fSBmcm9tICJAZmVhdHVyZXMvZG9jcy9saWIvc2x1Z2lmeUhlYWRpbmciCgppbnRlcmZhY2UgUHJv
+bWVzc2VQcm9wcyB7CiAgLyoqIExlIGNoYXBpdHJlIHF1aSBhcHByb2ZvbmRpdCwgY2hlbWluIGNv
+bXBsZXQgc2FucyBleHRlbnNpb24gOiAiZGV2L2F1dGgvbGVzLWRyb2l0cy1wYXItbGVzLWdyb3Vw
+ZXMiLiAqLwogIHZlcnM6IHN0cmluZwogIC8qKiBGYWN1bHRhdGlmIDogbGUgdGl0cmUgZXhhY3Qg
+ZCd1bmUgc2VjdGlvbiBkZSBjZSBjaGFwaXRyZSAodGV4dGUgZGUgc29uIMKrICMjIMK7KS4gKi8K
+ICBzZWN0aW9uPzogc3RyaW5nCiAgLyoqIEwnZXhwbGljYXRpb24gY291cnRlLCBqdXN0ZSBjZSBx
+dSdpbCBmYXV0IHBvdXIgc3VpdnJlIGljaS4gKi8KICBjaGlsZHJlbjogUmVhY3ROb2RlCn0KCi8q
+KgogKiBVbmUgcHJvbWVzc2UgOiBvbiBlZmZsZXVyZSB1biBzdWpldCBzYW5zIHMneSBhcnLDqnRl
+ciwgZXQgbCdvbiBkaXQgb8O5IGlsIGVzdCB0cmFpdMOpIMOgIGZvbmQuCiAqCiAqIExlIGxpZW4g
+cG9ydGUgbGUgbnVtw6lybyBkdSBjaGFwaXRyZSB2aXPDqSwgY2FsY3Vsw6kgcGFyIGxhIG5hdmln
+YXRpb24gKGlsIHN1aXQgbGVzIGTDqXBsYWNlbWVudHMpLAogKiBldCBgc2NyaXB0cy9jaGVjay1k
+b2MtY29tcG9uZW50cy5tanNgIHbDqXJpZmllIHF1ZSBsZSBjaGFwaXRyZSBldCBsYSBzZWN0aW9u
+IGV4aXN0ZW50IDogdW5lCiAqIHByb21lc3NlIG5lIHBldXQgcGFzIHBvaW50ZXIgZGFucyBsZSB2
+aWRlLgogKi8KZXhwb3J0IGZ1bmN0aW9uIFByb21lc3NlKHsgdmVycywgc2VjdGlvbiwgY2hpbGRy
+ZW4gfTogUHJvbWVzc2VQcm9wcykgewogIGNvbnN0IHNsdWcgPSB2ZXJzLnNwbGl0KCIvIikuZmls
+dGVyKEJvb2xlYW4pCiAgY29uc3Qgc3BhY2UgPSBnZXRTcGFjZShzbHVnWzBdKQogIGNvbnN0IHRh
+cmdldCA9IHNwYWNlID8gZ2V0TnVtYmVyZWREb2MoZ2VuZXJhdGVEb2NzSW5kZXgoc3BhY2UuaWQp
+LnBhZ2VzLCBzbHVnKSA6IG51bGwKCiAgcmV0dXJuICgKICAgIDxhc2lkZSBjbGFzc05hbWU9Im15
+LTYgcm91bmRlZC1sZyBib3JkZXIgYm9yZGVyLWRhc2hlZCBib3JkZXItc2xhdGUtMzAwIGJnLXNs
+YXRlLTUwIHAtNCB0ZXh0LXNtIGxlYWRpbmctNyBkYXJrOmJvcmRlci1zbGF0ZS01MDAgZGFyazpi
+Zy1zbGF0ZS0yMDAgZGFyazp0ZXh0LXNsYXRlLTk1MCI+CiAgICAgIDxkaXYgY2xhc3NOYW1lPSJm
+bGV4IGdhcC0yIj4KICAgICAgICA8c3BhbiBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3NOYW1lPSJz
+ZWxlY3Qtbm9uZSB0ZXh0LXNsYXRlLTUwMCI+4oaqPC9zcGFuPgogICAgICAgIDxkaXYgY2xhc3NO
+YW1lPSJtaW4tdy0wIj57Y2hpbGRyZW59PC9kaXY+CiAgICAgIDwvZGl2PgogICAgICA8cCBjbGFz
+c05hbWU9Im10LTIgcGwtNiB0ZXh0LXhzIHRleHQtc2xhdGUtNjAwIj4KICAgICAgICB7dGFyZ2V0
+ID8gKAogICAgICAgICAgPD4KICAgICAgICAgICAgQXBwcm9mb25kaSBlbnsiICJ9CiAgICAgICAg
+ICAgIDxMaW5rCiAgICAgICAgICAgICAgaHJlZj17YC9kb2NzLyR7c2x1Zy5qb2luKCIvIil9JHtz
+ZWN0aW9uID8gYCMke3NsdWdpZnlIZWFkaW5nKHNlY3Rpb24pfWAgOiAiIn1gfQogICAgICAgICAg
+ICAgIGNsYXNzTmFtZT0iZm9udC1tZWRpdW0gdW5kZXJsaW5lIHVuZGVybGluZS1vZmZzZXQtMiBo
+b3Zlcjp0ZXh0LXNsYXRlLTk1MCIKICAgICAgICAgICAgPgogICAgICAgICAgICAgIHt0YXJnZXQu
+cGFnZS5udW1iZXIgPyBgJHt0YXJnZXQucGFnZS5udW1iZXJ9IGAgOiAiIn0KICAgICAgICAgICAg
+ICB7dGFyZ2V0LnBhZ2UudGl0bGV9CiAgICAgICAgICAgICAge3NlY3Rpb24gPyBgIMK3ICR7c2Vj
+dGlvbn1gIDogIiJ9CiAgICAgICAgICAgIDwvTGluaz4KICAgICAgICAgIDwvPgogICAgICAgICkg
+OiAoCiAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9ImZvbnQtc2VtaWJvbGQgdGV4dC1yb3NlLTcw
+MCI+4pqgIFByb21lc3NlIHZlcnMgdW4gY2hhcGl0cmUgaW50cm91dmFibGUgOiB7dmVyc308L3Nw
+YW4+CiAgICAgICAgKX0KICAgICAgPC9wPgogICAgPC9hc2lkZT4KICApCn0K
+B64
+mkdir -p "scripts"
+base64 -d > "scripts/check-doc-components.mjs" <<'B64'
+IyEvdXNyL2Jpbi9lbnYgbm9kZQovKioKICogTGVzIGNvbXBvc2FudHMgZGUgbGEgZG9jIHRpZW5u
+ZW50LWlscyBsZXVycyBwcm9tZXNzZXMgPwogKgogKiAtIENoYXF1ZSA8UHJvbWVzc2UgdmVycz0i
+4oCmIj4gdmlzZSB1biBjaGFwaXRyZSBxdWkgZXhpc3RlIChhcHBzL3dlYi9jb250ZW50L2RvY3Mv
+PHZlcnM+Lm1keCkgZXQsIHNpCiAqICAgZWxsZSBub21tZSB1bmUgc2VjdGlvbiwgdW4gdGl0cmUg
+wqsgIyMgwrsgb3UgwqsgIyMjIMK7IGRlIGNlIGNoYXBpdHJlIHBvcnRhbnQgZXhhY3RlbWVudCBj
+ZSB0ZXh0ZS4KICogLSBDaGFxdWUgPENhbGxvdXQgdHlwZT0i4oCmIj4gdXRpbGlzZSB1biB0eXBl
+IGNvbm51IGR1IGNvbXBvc2FudCAoc2lub24gaWwgcydhZmZpY2hlIHNhbnMgY291bGV1cikuCiAq
+CiAqIFVuZSBwcm9tZXNzZSBzZSBkw6lwbGFjZSBhdmVjIGxhIGRvYyA6IHNvbiBudW3DqXJvIGVz
+dCBjYWxjdWzDqSDDoCBsJ2FmZmljaGFnZSwgbWFpcyBzYSBjaWJsZSBkb2l0CiAqIGV4aXN0ZXIu
+IEMnZXN0IGNlIHF1ZSBjZXR0ZSBnYXJkZSB2w6lyaWZpZSwgw6AgY2hhcXVlIHBucG0gY2hlY2su
+CiAqLwppbXBvcnQgZnMgZnJvbSAibm9kZTpmcyI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0
+aCI7Cgpjb25zdCBST09UID0gcHJvY2Vzcy5jd2QoKTsKY29uc3QgRE9DUyA9IHBhdGguam9pbihS
+T09ULCAiYXBwcy93ZWIvY29udGVudC9kb2NzIik7CmNvbnN0IENBTExPVVQgPSBmcy5yZWFkRmls
+ZVN5bmMocGF0aC5qb2luKFJPT1QsICJhcHBzL3dlYi9zcmMvZmVhdHVyZXMvZG9jcy91aS9DYWxs
+b3V0LnRzeCIpLCAidXRmOCIpOwpjb25zdCBUWVBFUyA9IG5ldyBTZXQoWy4uLihDQUxMT1VULm1h
+dGNoKC9DQUxMT1VUX1RZUEVTID0gXFsoW15cXV0qKVxdLyk/LlsxXSA/PyAiIikubWF0Y2hBbGwo
+LyIoW14iXSspIi9nKV0ubWFwKChtKSA9PiBtWzFdKSk7CgpmdW5jdGlvbiB3YWxrKGRpcikgewog
+IHJldHVybiBmcy5yZWFkZGlyU3luYyhkaXIsIHsgd2l0aEZpbGVUeXBlczogdHJ1ZSB9KS5mbGF0
+TWFwKChkKSA9PgogICAgZC5pc0RpcmVjdG9yeSgpID8gd2FsayhwYXRoLmpvaW4oZGlyLCBkLm5h
+bWUpKSA6IGQubmFtZS5lbmRzV2l0aCgiLm1keCIpID8gW3BhdGguam9pbihkaXIsIGQubmFtZSld
+IDogW10sCiAgKTsKfQpjb25zdCBoZWFkaW5ncyA9IChzcmMpID0+CiAgbmV3IFNldChzcmMuc3Bs
+aXQoIlxuIikuZmlsdGVyKChsKSA9PiAvXiN7MiwzfSAvLnRlc3QobCkpLm1hcCgobCkgPT4gbC5y
+ZXBsYWNlKC9eI3syLDN9IC8sICIiKS50cmltKCkpKTsKCmNvbnN0IGVycm9ycyA9IFtdOwpsZXQg
+cHJvbWlzZXMgPSAwOwpsZXQgY2FsbG91dHMgPSAwOwpmb3IgKGNvbnN0IGZpbGUgb2Ygd2FsayhE
+T0NTKSkgewogIGNvbnN0IHNyYyA9IGZzLnJlYWRGaWxlU3luYyhmaWxlLCAidXRmOCIpOwogIGNv
+bnN0IHJlbCA9IHBhdGgucmVsYXRpdmUoUk9PVCwgZmlsZSk7CiAgZm9yIChjb25zdCBtIG9mIHNy
+Yy5tYXRjaEFsbCgvPFByb21lc3NlXGIoW14+XSopPi9nKSkgewogICAgcHJvbWlzZXMgKz0gMTsK
+ICAgIGNvbnN0IHZlcnMgPSBtWzFdLm1hdGNoKC92ZXJzPSIoW14iXSopIi8pPy5bMV07CiAgICBj
+b25zdCBzZWN0aW9uID0gbVsxXS5tYXRjaCgvc2VjdGlvbj0iKFteIl0qKSIvKT8uWzFdOwogICAg
+aWYgKCF2ZXJzKSB7IGVycm9ycy5wdXNoKGAke3JlbH0gOiA8UHJvbWVzc2U+IHNhbnMgYXR0cmli
+dXQgdmVyc2ApOyBjb250aW51ZTsgfQogICAgY29uc3QgdGFyZ2V0ID0gcGF0aC5qb2luKERPQ1Ms
+IGAke3ZlcnN9Lm1keGApOwogICAgaWYgKCFmcy5leGlzdHNTeW5jKHRhcmdldCkpIHsgZXJyb3Jz
+LnB1c2goYCR7cmVsfSA6IHByb21lc3NlIHZlcnMgwqsgJHt2ZXJzfSDCuywgY2hhcGl0cmUgaW50
+cm91dmFibGVgKTsgY29udGludWU7IH0KICAgIGlmIChzZWN0aW9uICYmICFoZWFkaW5ncyhmcy5y
+ZWFkRmlsZVN5bmModGFyZ2V0LCAidXRmOCIpKS5oYXMoc2VjdGlvbikpIHsKICAgICAgZXJyb3Jz
+LnB1c2goYCR7cmVsfSA6IHByb21lc3NlIHZlcnMgwqsgJHt2ZXJzfSDCuywgc2VjdGlvbiDCqyAk
+e3NlY3Rpb259IMK7IGludHJvdXZhYmxlYCk7CiAgICB9CiAgfQogIGZvciAoY29uc3QgbSBvZiBz
+cmMubWF0Y2hBbGwoLzxDYWxsb3V0XHMrdHlwZT0iKFteIl0qKSIvZykpIHsKICAgIGNhbGxvdXRz
+ICs9IDE7CiAgICBpZiAoIVRZUEVTLmhhcyhtWzFdKSkgZXJyb3JzLnB1c2goYCR7cmVsfSA6IDxD
+YWxsb3V0IHR5cGU9IiR7bVsxXX0iPiBpbmNvbm51ICh0eXBlcyA6ICR7Wy4uLlRZUEVTXS5qb2lu
+KCIsICIpfSlgKTsKICB9Cn0KCmlmIChlcnJvcnMubGVuZ3RoKSB7CiAgY29uc29sZS5lcnJvcihg
+4pyXIGNvbXBvc2FudHMgZGUgbGEgZG9jIDogJHtlcnJvcnMubGVuZ3RofSBwcm9ibMOobWUocylg
+KTsKICBmb3IgKGNvbnN0IGUgb2YgZXJyb3JzLnNsaWNlKDAsIDIwKSkgY29uc29sZS5lcnJvcihg
+ICAtICR7ZX1gKTsKICBwcm9jZXNzLmV4aXQoMSk7Cn0KY29uc29sZS5sb2coYOKckyBjb21wb3Nh
+bnRzIGRlIGxhIGRvYyA6ICR7cHJvbWlzZXN9IHByb21lc3NlKHMpLCAke2NhbGxvdXRzfSBlbmNh
+ZHLDqShzKSwgdG91dCBleGlzdGVgKTsK
+B64
+
+python3 - <<'PY'
+import base64
+spec_skip_done = False
+def sub(path, old, new):
+    old, new = base64.b64decode(old).decode(), base64.b64decode(new).decode()
+    s = open(path, encoding="utf-8").read()
+    if s.count(old) == 0 and s.count(new) == 1 and spec_skip_done: return  # déjà fait par un script précédent
+    assert s.count(old) == 1, (path, old[:80], s.count(old))
+    open(path, "w", encoding="utf-8").write(s.replace(old, new))
+sub('apps/web/src/features/docs/ui/Callout.tsx', 'aW1wb3J0IHR5cGUgeyBSZWFjdE5vZGUgfSBmcm9tICJyZWFjdCIKCnR5cGUgQ2FsbG91dFR5cGUgPQogIHwgImluZm8iCiAgfCAidGlwIgogIHwgIndhcm5pbmciCiAgfCAiZGFuZ2VyIgoKaW50ZXJmYWNlIENhbGxvdXRQcm9wcyB7Cg==',
+    'aW1wb3J0IHR5cGUgeyBSZWFjdE5vZGUgfSBmcm9tICJyZWFjdCIKCi8qKgogKiBUeXBlcyBkJ2VuY2FkcsOpcy4gYGNvbmNlcHRgIHBvc2UgdW5lIGTDqWZpbml0aW9uIDsgYGluc2lnaHRgIHRpcmUgdW5lIGxlw6dvbiBnw6luw6lyYWxlIGR1IGNhcyBsdS4KICogVW4gdHlwZSBpbmNvbm51IHMnYWZmaWNoZXJhaXQgc2FucyBjb3VsZXVyIDogYHNjcmlwdHMvY2hlY2stZG9jLWNvbXBvbmVudHMubWpzYCBsZSByZWZ1c2UuCiAqLwpleHBvcnQgY29uc3QgQ0FMTE9VVF9UWVBFUyA9IFsiaW5mbyIsICJ0aXAiLCAid2FybmluZyIsICJkYW5nZXIiLCAiY29uY2VwdCIsICJpbnNpZ2h0Il0gYXMgY29uc3QKdHlwZSBDYWxsb3V0VHlwZSA9ICh0eXBlb2YgQ0FMTE9VVF9UWVBFUylbbnVtYmVyXQoKaW50ZXJmYWNlIENhbGxvdXRQcm9wcyB7Cg==')
+sub('apps/web/src/features/docs/ui/Callout.tsx', 'ICB3YXJuaW5nOiAiYm9yZGVyLWFtYmVyLTMwMCBiZy1hbWJlci01MCBkYXJrOmJvcmRlci1hbWJlci00MDAgZGFyazpiZy1hbWJlci0xMDAgZGFyazp0ZXh0LWFtYmVyLTk1MCIsCiAgZGFuZ2VyOiAiYm9yZGVyLXJvc2UtMzAwIGJnLXJvc2UtNTAgZGFyazpib3JkZXItcm9zZS00MDAgZGFyazpiZy1yb3NlLTIwMCBkYXJrOnRleHQtcm9zZS05NTAiLAp9Cgo=',
+    'ICB3YXJuaW5nOiAiYm9yZGVyLWFtYmVyLTMwMCBiZy1hbWJlci01MCBkYXJrOmJvcmRlci1hbWJlci00MDAgZGFyazpiZy1hbWJlci0xMDAgZGFyazp0ZXh0LWFtYmVyLTk1MCIsCiAgZGFuZ2VyOiAiYm9yZGVyLXJvc2UtMzAwIGJnLXJvc2UtNTAgZGFyazpib3JkZXItcm9zZS00MDAgZGFyazpiZy1yb3NlLTIwMCBkYXJrOnRleHQtcm9zZS05NTAiLAogIGNvbmNlcHQ6ICJib3JkZXItdmlvbGV0LTMwMCBiZy12aW9sZXQtNTAgZGFyazpib3JkZXItdmlvbGV0LTQwMCBkYXJrOmJnLXZpb2xldC0yMDAgZGFyazp0ZXh0LXZpb2xldC05NTAiLAogIGluc2lnaHQ6ICJib3JkZXItaW5kaWdvLTMwMCBiZy1pbmRpZ28tNTAgZGFyazpib3JkZXItaW5kaWdvLTQwMCBkYXJrOmJnLWluZGlnby0yMDAgZGFyazp0ZXh0LWluZGlnby05NTAiLAp9Cgo=')
+sub('apps/web/src/mdx-components.tsx', 'CmltcG9ydCB7IENhbGxvdXQgfSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9DYWxsb3V0IgppbXBvcnQgeyBDb2RlQmxvY2sgfSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Db2RlQmxvY2siCmltcG9ydCBDb2RlU25pcHBldCBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Db2RlU25pcHBldCIK',
+    'CmltcG9ydCB7IENhbGxvdXQgfSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9DYWxsb3V0IgppbXBvcnQgeyBQcm9tZXNzZSB9IGZyb20gIkBmZWF0dXJlcy9kb2NzL3VpL1Byb21lc3NlIgppbXBvcnQgeyBDb2RlQmxvY2sgfSBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Db2RlQmxvY2siCmltcG9ydCBDb2RlU25pcHBldCBmcm9tICJAZmVhdHVyZXMvZG9jcy91aS9Db2RlU25pcHBldCIK')
+sub('apps/web/src/mdx-components.tsx', 'ZXhwb3J0IGNvbnN0IG1keENvbXBvbmVudHM6IE1EWENvbXBvbmVudHMgPSB7CiAgQ2FsbG91dCwKICBDb2RlQmxvY2ssCiAgQ29kZUV4YW1wbGUsCg==',
+    'ZXhwb3J0IGNvbnN0IG1keENvbXBvbmVudHM6IE1EWENvbXBvbmVudHMgPSB7CiAgQ2FsbG91dCwKICAvLyDCqyBOb3VzIHkgcmV2aWVuZHJvbnMgwrsgOiB1bmUgZXhwbGljYXRpb24gY291cnRlIGV0IGxlIGNoYXBpdHJlIHF1aSBhcHByb2ZvbmRpdCAobnVtw6lybyBjYWxjdWzDqSkuCiAgUHJvbWVzc2UsCiAgQ29kZUJsb2NrLAogIENvZGVFeGFtcGxlLAo=')
+sub('package.json', 'ICAgICJlMmU6cmVwb3J0IjogInBsYXl3cmlnaHQgc2hvdy1yZXBvcnQiLAogICAgImRvY3M6cHJvY2VkdXJlcyI6ICJub2RlIHNjcmlwdHMvYnVpbGQtcHJvY2VkdXJlLW1hcC5tanMgLS13cml0ZSIsCiAgICAiY2hlY2siOiAibm9kZSBzY3JpcHRzL2NoZWNrLW5leHQtY29udmVudGlvbnMubWpzICYmIG5vZGUgc2NyaXB0cy9jaGVjay10b3VyLXRhcmdldHMubWpzICYmIG5vZGUgc2NyaXB0cy9idWlsZC1wcm9jZWR1cmUtbWFwLm1qcyAmJiBub2RlIHNjcmlwdHMvY2hlY2stZG9jLWVudGl0aWVzLm1qcyAmJiBub2RlIHNjcmlwdHMvY2hlY2stZG9jLXNuaXBwZXRzLm1qcyAmJiBwbnBtIGNsZWFuICYmIHBucG0gdHlwZWNoZWNrICYmIHBucG0gbGludCIKICB9LAogICJkZXBlbmRlbmNpZXMiOiB7Cg==',
+    'ICAgICJlMmU6cmVwb3J0IjogInBsYXl3cmlnaHQgc2hvdy1yZXBvcnQiLAogICAgImRvY3M6cHJvY2VkdXJlcyI6ICJub2RlIHNjcmlwdHMvYnVpbGQtcHJvY2VkdXJlLW1hcC5tanMgLS13cml0ZSIsCiAgICAiY2hlY2siOiAibm9kZSBzY3JpcHRzL2NoZWNrLW5leHQtY29udmVudGlvbnMubWpzICYmIG5vZGUgc2NyaXB0cy9jaGVjay10b3VyLXRhcmdldHMubWpzICYmIG5vZGUgc2NyaXB0cy9idWlsZC1wcm9jZWR1cmUtbWFwLm1qcyAmJiBub2RlIHNjcmlwdHMvY2hlY2stZG9jLWVudGl0aWVzLm1qcyAmJiBub2RlIHNjcmlwdHMvY2hlY2stZG9jLXNuaXBwZXRzLm1qcyAmJiBub2RlIHNjcmlwdHMvY2hlY2stZG9jLWNvbXBvbmVudHMubWpzICYmIHBucG0gY2xlYW4gJiYgcG5wbSB0eXBlY2hlY2sgJiYgcG5wbSBsaW50IgogIH0sCiAgImRlcGVuZGVuY2llcyI6IHsK')
+print("  édits ok (5 substitutions, 2 fichiers créés, 0 remplacés)")
+PY
+trap - ERR
+
+[ "${AKFC_APPLY_ONLY:-0}" = "1" ] && { echo "Appliqué (sans vérification ni commit)."; exit 0; }
+node scripts/build-procedure-map.mjs --write >/dev/null 2>&1 || { echo "❌ carte des procédures : échec"; restore; exit 1; }
+echo "== pnpm check =="
+if pgrep -f "next dev" >/dev/null 2>&1; then
+  echo "  (pnpm dev tourne : vérification sans effacer .next)"
+  CHECK="node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && pnpm typecheck && pnpm lint"
+else
+  CHECK="pnpm check"
+fi
+if ! bash -c "$CHECK" > /tmp/akfc_tc.log 2>&1; then
+  echo "❌ check ÉCHOUÉ :"
+  grep -nE "error TS|✗ |ERR_|Error:|EACCES|Permission denied" /tmp/akfc_tc.log | head -12
+  echo "  … fin du journal :"; grep -v '^[[:space:]]*$' /tmp/akfc_tc.log | tail -15
+  restore; exit 1
+fi
+echo "  ✅ check OK"
+git add -- "${MODIFIED[@]}" "${CREATED[@]}" apps/web/src/features/docs/entities/procedureMap.generated.json
+git commit -F - >/tmp/c.log 2>&1 <<'MSG' && echo "✅ commit $(git rev-parse --short HEAD)" || { echo "commit KO"; tail -3 /tmp/c.log; }
+Doc : composant Promesse, encadrés concept/insight stylés, garde check-doc-components
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014AwAatLqGUpv9M26hMLAVF
+MSG
+echo "Ensuite : git push."
