@@ -1610,5 +1610,53 @@
   "definiEn": {
    "vers": "dev/infrastructure/la-sandbox"
   }
+ },
+ {
+  "id": "groupe-collaboratif",
+  "terme": "groupe collaboratif",
+  "variantes": [
+   "groupe collaboratif",
+   "groupes collaboratifs"
+  ],
+  "definition": "Un groupe de membres marqué `isCollaborative`, qui reçoit en plus un espace de fichiers partagé par ses membres.",
+  "definiEn": {
+   "vers": "dev/auth/les-droits-par-les-groupes",
+   "section": "Les droits : des groupes, pas des rôles"
+  },
+  "approfondiEn": {
+   "vers": "dev/membres/les-groupes",
+   "section": "Deux sortes de groupes 👥"
+  }
+ },
+ {
+  "id": "espace-collaboratif",
+  "terme": "espace collaboratif",
+  "variantes": [
+   "espace collaboratif",
+   "espaces collaboratifs",
+   "espace de groupe",
+   "espaces de groupe"
+  ],
+  "definition": "Le dossier de fichiers d’un groupe collaboratif : ses lecteurs le consultent, ses éditeurs y déposent, et les membres des groupes parents y ont accès en remontant l’arbre des groupes.",
+  "definiEn": {
+   "vers": "dev/auth/les-droits-par-les-groupes",
+   "section": "L’accès à l’espace d’un groupe : l’héritage"
+  },
+  "approfondiEn": {
+   "vers": "dev/membres/espaces-collaboratifs"
+  }
+ },
+ {
+  "id": "liste-diffusion",
+  "terme": "liste de diffusion",
+  "variantes": [
+   "liste de diffusion",
+   "listes de diffusion"
+  ],
+  "definition": "L’usage premier d’un groupe : on lui adresse des documents, et chacun de ses membres les reçoit.",
+  "definiEn": {
+   "vers": "dev/membres/les-groupes",
+   "section": "Deux sortes de groupes 👥"
+  }
  }
 ]

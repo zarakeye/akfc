@@ -23,7 +23,11 @@ Les droits ne reposent pas sur un rôle attaché au membre, mais sur ses **group
 
 <DocsTable columnsJson='["Notion","Modèle","Signification"]' rowsJson='[["Groupe","MemberGroup","Un ensemble de membres. S’il est collaboratif (isCollaborative), il a un espace de fichiers."],["Appartenance","MemberGroupMembership","Un membre dans un groupe, avec un niveau d’accès : VIEWER (consulter) ou EDITOR (consulter et déposer)."],["Hiérarchie","MemberGroup.parentGroupId","Un groupe peut avoir un groupe parent ; les membres du parent ont accès aux espaces des descendants."],["Administrateurs","MemberGroup.isAdminGroup","Un groupe unique, créé au démarrage s’il n’existe pas (ensureAdminGroup). Ses membres sont les administrateurs."]]' />
 
-Ce modèle répond aux besoins du club sans nouvelle notion : un groupe « Bureau » qui reçoit certains documents, un groupe par cours avec son espace partagé, des encadrants qui voient les espaces de tous les cours d’une discipline par l’héritage. La partie « Données » a raconté comment il a remplacé les rôles et les permissions du début du projet.
+Ce modèle répond aux besoins du club sans nouvelle notion : un groupe « Bureau » qui reçoit certains documents, un groupe par cours avec son espace partagé, des encadrants qui voient les espaces de tous les cours d’une discipline par l’héritage. La partie « Données (1) » a raconté comment il a remplacé les rôles et les permissions du début du projet.
+
+<Promesse vers="dev/membres/les-groupes" section="Deux sortes de groupes 👥">
+Ce chapitre regarde les groupes du point de vue de la sécurité : qui a le droit de quoi, et quelle garde le vérifie. Ce qu’est un groupe pour le club (une liste de diffusion, un espace de fichiers, une place dans un arbre) et comment l’arbre est tenu se lisent avec l’espace des membres, une fois le site en ligne.
+</Promesse>
 
 ---
 
@@ -62,6 +66,10 @@ Deux règles protègent ce groupe contre une fausse manœuvre, toutes deux dans 
 ## L’accès à l’espace d’un groupe : l’héritage
 
 L’accès à l’espace d’un groupe se calcule en remontant la hiérarchie : on lit l’appartenance au groupe visé, puis à son parent, et ainsi de suite, et l’on garde le meilleur niveau.
+
+<Promesse vers="dev/membres/espaces-collaboratifs" section="Les gardes, tout se déduit du chemin">
+Un **espace collaboratif** est le dossier de fichiers d’un groupe, partagé par ses membres : les lecteurs (`VIEWER`) le consultent, les éditeurs (`EDITOR`) y déposent. Ses gardes reprennent ce calcul pour chaque fichier, à partir de son chemin.
+</Promesse>
 
 <CodeExample
   language="ts"
