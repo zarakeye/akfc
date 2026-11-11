@@ -1,7 +1,7 @@
 ---
 title: "Quand le modèle devient exécutable"
 description: "prisma generate comme point de bascule : ce que Prisma génère (méthodes, types, entrées, noms dérivés des contraintes), la fin de la duplication des types, le passage du typage décoratif au typage structurel dans le code du projet, et la limite des colonnes JSON."
-section: "Données"
+section: "Données (1) : modéliser et lire"
 order: 5
 ---
 
@@ -301,7 +301,7 @@ Nous n’avons plus besoin de :
 
 - redéfinir des types backend  
 - synchroniser des interfaces frontend  
-- maintenir des DTO manuellement  
+- maintenir des DTO manuellement (des *Data Transfer Objects* : des types recopiés à la main pour décrire ce qui voyage entre deux couches)  
 
 👉 le modèle fait tout le travail
 
@@ -321,7 +321,11 @@ Il existe un endroit où cette chaîne de types s’interrompt, et il faut le co
 
 Les contenus éditables au constructeur de pages (la description d’une discipline, d’un stage, d’une page) sont stockés dans des colonnes `Json`. Pour Prisma, et donc pour TypeScript, une telle colonne contient « du JSON », sans forme particulière. PostgreSQL stocke le document sans en connaître la structure.
 
-Cette structure, des blocs versionnés, est donc garantie ailleurs : par un schéma Zod de `packages/contracts` (`pageContentSchemaV1`), que chaque procédure applique avant d’écrire. Le `as Prisma.InputJsonValue` de la transaction du chapitre suivant marque précisément ce passage : la donnée a été validée par Zod, puis remise à Prisma comme un JSON sans type.
+Cette structure, des blocs versionnés, est donc garantie ailleurs : par un schéma Zod de `packages/contracts` (`pageContentSchemaV1`), que chaque procédure applique avant d’écrire. Dans le code qui enregistre une discipline, un `as Prisma.InputJsonValue` marque précisément ce passage : la donnée a été validée par Zod, puis remise à Prisma comme un JSON sans type.
+
+<Promesse vers="dev/contenu/un-contenu-fait-de-blocs" section="Un seul format pour tous les contenus">
+Un contenu de page est une liste de **blocs** (un texte, une galerie, une liste de documents…), rangée dans une enveloppe qui porte un numéro de version. Le domaine du club, juste après, en donne la forme ; la partie « Contenu éditorial » la construit bloc par bloc.
+</Promesse>
 
 Ce choix permet d’ajouter un type de bloc sans migration, au prix d’une règle : on lit un contenu avec les fonctions de `packages/contracts/src/page` (`parseContent`, `extractMediaIds`…), qui connaissent ses versions, plutôt qu’en accédant directement aux propriétés du JSON.
 
@@ -377,7 +381,11 @@ Maintenant que notre modèle vit dans le code, deux questions pratiques apparais
 👉 comment écrire dans plusieurs tables sans laisser la base à moitié modifiée ?
 👉 comment faire évoluer le schéma quand la base de production contient déjà des données ?
 
-C’est exactement ce que nous allons voir dans le chapitre suivant, avant d’ouvrir la porte à la suite du parcours.
+Ces deux questions attendront un peu. Le site public n’écrit rien : il lit des disciplines, des cours, des stages, et les montre. Nous allons d’abord le construire, et revenir à l’écriture quand l’interface aura des données à enregistrer.
+
+<Promesse vers="dev/donnees/ecrire-et-faire-evoluer">
+Retenons pour l’instant qu’une écriture qui touche plusieurs tables passe par une **transaction**, et que le schéma n’évolue jamais sans une **migration**, relue avant d’être appliquée.
+</Promesse>
 
 ---
 
@@ -393,14 +401,14 @@ Nous avons franchi la frontière qui sépare le descriptif de l’exécutable. T
 - **Le typage devient structurel, pas décoratif.** Les types ne sont plus des annotations ajoutées au-dessus du code pour rassurer l’IDE — ils sont générés à partir de la source de vérité, et chaque évolution du schéma les met à jour. Le code compile ou ne compile pas selon ce que la base permet réellement.
 - **La cohérence devient une propriété de la chaîne, pas un effort individuel.** Tant que tout le monde consomme les types générés par Prisma, il n’est plus nécessaire de vérifier à chaque couche que les structures correspondent. La fondation étant typée, les couches au-dessus peuvent se concentrer sur ce qu’elles font — capturer une intention, transporter une donnée, sécuriser un accès.
 
-Le dernier chapitre de cette partie va montrer comment on écrit dans cette fondation sans la casser, et comment on la fait évoluer — puis l’ouvrir vers l’utilisateur.
+La partie « Données (1) » s’arrête ici : nous savons lire le modèle, et le lire avec des types sûrs. C’est exactement ce dont le site public a besoin.
 
 ---
 
 ## À suivre
 
-Le modèle vit dans le code, et le typage est garanti par la chaîne. Reste à écrire dans la base sans la laisser à moitié modifiée, et à la faire évoluer sans perdre ses données.
+Le modèle vit dans le code, et le typage est garanti par la chaîne. Les quatre modèles du noyau disent comment le site connaît ses membres ; ils ne disent rien encore de ce qu’il montre. Un visiteur, lui, cherche un cours, un stage, un horaire.
 
 <Callout type="tip">
-**Chapitre suivant : écrire et faire évoluer la base.** Les transactions, le SQL brut et ses précautions, les migrations, leur relecture, et une migration oubliée en production.
+**Partie suivante : le domaine du club, et ce que le site en montre.** Ce que représentent vraiment une discipline, un cours, un stage et un événement, les conventions qui les relient, et les fiches publiques, l’agenda et les horaires qu’en voit le visiteur.
 </Callout>

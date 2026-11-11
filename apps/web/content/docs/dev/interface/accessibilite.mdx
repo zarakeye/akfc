@@ -1,8 +1,8 @@
 ---
 title: "L'accessibilité"
 description: "Un site utilisable au clavier et avec un lecteur d'écran : la langue de la page, des menus qui s'ouvrent autrement qu'au survol, un lien d'évitement, des noms pour ce qui n'a pas de texte, des animations qui s'effacent sur demande, et ce qui reste à faire."
-section: "Interface transverse"
-order: 3
+section: "Le site public : le header et l’accessibilité"
+order: 2
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -142,8 +142,8 @@ L'accessibilité ne s'ajoute pas à la fin : un élément interactif qui est un 
 
 ## À suivre
 
-La partie « Interface transverse » est complète. Le projet doit maintenant prouver qu'il fonctionne, et continuer à fonctionner après chaque modification : vérifier les types, relire le code, déboguer, tester.
+Le site public est complet : il lit le modèle, montre le domaine du club, et se parcourt à la souris, au doigt, au clavier et à l’oreille. Mais il n’écrit rien. Pour qu’un administrateur publie un stage ou qu’un membre modifie son profil, le serveur doit apprendre à écrire dans sa base sans la laisser à moitié modifiée, et à faire évoluer son schéma sans perdre de données.
 
 <Callout type="tip">
-**Partie suivante : qualité, la suite.** Les vérifications statiques sont en place depuis le début (« Qualité (1) ») ; il reste les gardes écrites pour ce projet, les tests de bout en bout et l’intégration continue.
+**Partie suivante : Données (2), écrire et faire évoluer.** Les transactions, le SQL brut et ses précautions, les migrations et leur relecture, une migration oubliée en production, puis l’ouverture vers les formulaires.
 </Callout>

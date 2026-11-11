@@ -1,7 +1,7 @@
 ---
 title: "Ce que le club modélise"
 description: "Le vocabulaire du domaine : ce que sont vraiment une discipline, un cours, un stage, un événement et une actualité, ce qui les distingue, et les personnes qui les animent."
-section: "Domaine du club"
+section: "Le domaine du club (1) : ce que le site montre"
 order: 1
 entities:
   Category: [type]
@@ -51,7 +51,7 @@ stories:
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les actualités et les pages se construisent avec des blocs, et chaque contenu tient à jour la liste des médias qu’il affiche. L’identité du site et ses coordonnées se règlent dans une ligne unique, depuis le tableau de bord. Les contenus les plus importants du site, pourtant, ne sont pas des pages libres : ce sont les disciplines, les cours, les stages et les événements du club.
+> **Précédemment.** Le modèle vit dans le code : `prisma generate` en a fait un client typé, et le noyau (membres, sessions, groupes) se lit comme une architecture. Mais ce noyau dit comment le site **connaît** ses membres, pas ce qu’il **montre**. Ce que le site montre d’abord, ce sont les disciplines, les cours, les stages et les événements du club.
 
 ## Les parcours du chapitre
 
@@ -70,8 +70,24 @@ Ce chapitre construit donc une compréhension **conceptuelle** des entités du c
 <DocsTable columnsJson='["Modèle", "Dans l’interface", "Nature", "Exemple"]' rowsJson='[["Category", "Catégorie", "La plus grosse maille de classement, choisie dans une liste fixe (cours, stage, évènement) ; elle range aussi la bibliothèque de fichiers.", "Cours"], ["Discipline", "Discipline", "Un art enseigné par le club, indépendant du temps et du lieu.", "Tchoy Lee Fut"], ["DisciplineFamily", "Famille", "Un regroupement de disciplines pour le menu.", "Kung-fu"], ["Origin", "Origine", "Les racines culturelles d’une discipline, d’un stage, d’un événement.", "Chine"], ["Course", "Cours", "Un créneau HEBDOMADAIRE : jour, horaire, public. Sans date.", "Le mardi, 18h30–20h, adultes"], ["Seminar", "Stage", "Un rendez-vous ponctuel, avec une présentation, un programme et des séances datées.", "Stage d’armes, deux week-ends de mars"], ["Event", "Événement", "Un rendez-vous plus libre, avec plusieurs disciplines ou aucune.", "Forum des associations"], ["SeminarSession, EventSession", "Séance", "Une date et un horaire précis d’un stage ou d’un événement.", "Samedi 14 mars, 9h–12h"], ["Post", "Actualité", "Un article éditorial, rattaché à rien d’autre du domaine.", "Compte rendu de la démonstration"]]' />
 
 <Callout type="warning">
-Dans le code, un **stage** s’appelle `Seminar`. Le modèle s’appelait `Stage` ; il a été renommé pour suivre la convention du projet, qui nomme en anglais le code, les URL et les dossiers de stockage (`courses`, `seminars`, `events`). L’interface, elle, parle français et dit « stage ». La page publique d’un stage est donc `/seminars/[slug]`, et la migration `rename_stage_to_seminar` ne fait que renommer tables, colonnes et contraintes, sans toucher aux données. Le chapitre 3 revient sur ce renommage.
+Dans le code, un **stage** s’appelle `Seminar`. Le modèle s’appelait `Stage` ; il a été renommé pour suivre la convention du projet, qui nomme en anglais le code, les URL et les dossiers de stockage (`courses`, `seminars`, `events`). L’interface, elle, parle français et dit « stage ». La page publique d’un stage est donc `/seminars/[slug]`, et la migration `rename_stage_to_seminar` ne fait que renommer tables, colonnes et contraintes, sans toucher aux données. La partie « Le domaine du club (2) » revient sur ce renommage, une fois les migrations connues.
 </Callout>
+
+<Callout type="concept">
+**Trois mots que cette partie emprunte à la suite du parcours.** Le domaine se lit dans le schéma, mais ses règles sont appliquées par des pièces que nous n’avons pas encore construites. Il suffit pour l’instant d’en connaître le rôle :
+
+- une **procédure** (`discipline.update`, `course.create`) est une fonction du serveur que le tableau de bord appelle par son nom, pour lire ou pour écrire ; un **routeur** regroupe les procédures d’une même entité ;
+- un **schéma de validation** (écrit avec la bibliothèque Zod) décrit la forme qu’une donnée doit avoir, et la refuse si elle ne l’a pas ; un `refine` lui ajoute une règle libre, comme « la fin après le début » ;
+- le **constructeur de pages** est l’éditeur du tableau de bord qui assemble un contenu à partir de blocs : un texte, une galerie, une liste de documents.
+</Callout>
+
+<Promesse vers="dev/api/le-routeur-metier" section="Le router métier (là où l’intention devient action)">
+Les procédures, leurs routeurs et leurs schémas forment l’API du projet. Cette partie montre **quelles** règles ils appliquent au domaine ; la partie « API » montre **comment** une procédure est construite, protégée et validée.
+</Promesse>
+
+<Promesse vers="dev/contenu/un-contenu-fait-de-blocs" section="Un seul format pour tous les contenus">
+Le chapitre suivant donne la forme d’un contenu de page, suffisante pour lire le domaine ; la partie « Contenu éditorial » construit le format, l’éditeur et le rendu.
+</Promesse>
 
 ## Une discipline n’est pas un cours : c’est un art
 
@@ -98,7 +114,11 @@ Plusieurs décisions sont visibles dans ce modèle, et chacune répond à une qu
 
 **Un nom unique par catégorie, un slug unique tout court.** Deux catégories peuvent avoir une discipline du même nom (`@@unique([categoryId, name])`) ; l’adresse publique, elle, doit être unique. Le slug est saisi par l’administrateur, pré-rempli à partir du nom, et ne change pas quand on renomme la discipline : les liens déjà partagés restent valides. Il est facultatif en base pour d’anciennes lignes seulement ; le routeur l’exige à la création.
 
-**Famille et origine sont des entités, pas du texte libre.** Un champ texte « Famille » aurait vite contenu « Kung-fu », « Kung Fu » et « kungfu » : trois entrées de menu pour la même famille. Une table, avec un sélecteur dans le formulaire, rend les doublons impossibles. Le chapitre 3 raconte comment l’origine est passée du texte à l’entité, et ce que cela permet.
+**Famille et origine sont des entités, pas du texte libre.** Un champ texte « Famille » aurait vite contenu « Kung-fu », « Kung Fu » et « kungfu » : trois entrées de menu pour la même famille. Une table, avec un sélecteur dans le formulaire, rend les doublons impossibles.
+
+<Promesse vers="dev/domaine/un-modele-qui-s-ouvre" section="Une origine est une entité, pas un texte">
+L’origine n’a pas toujours été une entité : c’était un texte libre, jusqu’au jour où le club a voulu accueillir un calligraphe. Ce passage du texte à l’entité est une évolution du modèle, racontée une fois les migrations connues.
+</Promesse>
 
 **Deux contenus.** `description` est la page complète de la discipline, construite avec les blocs du constructeur de pages. `summary` et `summaryMediaId` forment la carte de la page d’accueil : une image, puis un court texte, avec « Lire la suite ». Une discipline au résumé vide n’a pas de carte. Le chapitre 2 montre comment ces deux contenus et l’image partagent une seule liste de références de médias.
 
@@ -133,7 +153,11 @@ Les horaires sont des entiers au format HHMM (`1830` pour 18h30), et non des `Da
 
 **La discipline ne change pas après la création.** Changer la discipline d’un cours reviendrait à en créer un autre ; `course.update` n’accepte donc pas `disciplineId`.
 
-**Le cours doit appartenir à la catégorie des cours.** `course.create` vérifie que la discipline choisie est rangée dans la catégorie de clé `course` : une discipline de calligraphie présentée seulement en stage n’a pas de grille hebdomadaire. La vérification lit la clé de la catégorie, choisie dans une liste fixe, et non son libellé, que l’on peut renommer (chapitre 3).
+**Le cours doit appartenir à la catégorie des cours.** `course.create` vérifie que la discipline choisie est rangée dans la catégorie de clé `course` : une discipline de calligraphie présentée seulement en stage n’a pas de grille hebdomadaire. La vérification lit la clé de la catégorie, choisie dans une liste fixe, et non son libellé, que l’on peut renommer.
+
+<Promesse vers="dev/domaine/un-modele-qui-s-ouvre" section="Une clé pour ce que le code reconnaît">
+Une catégorie porte une **clé** choisie dans une liste fixe (`course`, `seminar`, `event`…), en plus de son libellé. Le libellé s’affiche et se renomme ; la clé ne change jamais, et c’est elle que le code compare.
+</Promesse>
 
 **`requisites`** est une liste de prérequis libres (« 14 ans révolus », « certificat médical ») et **`content`** la présentation complète du cours, au constructeur de pages.
 
@@ -175,7 +199,11 @@ Trois détails du modèle méritent l’attention.
 
 **L’animation.** Un animateur principal obligatoire (`primaryAnimatorId`), et des co-animateurs. La liste `animators` *contient* l’animateur principal : le routeur reçoit `primaryAnimatorId` et `coAnimatorIds`, refuse qu’une même personne soit les deux ou qu’un co-animateur figure deux fois, puis compose la liste complète.
 
-**Le rattachement.** Un stage peut porter sur une discipline du club (`disciplineId`), sur une discipline que le club n’enseigne pas (`externalDisciplineLabel`, en texte), ou sur une culture (`originId`) — mais il doit avoir **au moins un** de ces trois rattachements. Le chapitre 3 raconte pourquoi, et comment la règle se vérifie à la création et à la modification.
+**Le rattachement.** Un stage peut porter sur une discipline du club (`disciplineId`), sur une discipline que le club n’enseigne pas (`externalDisciplineLabel`, en texte), ou sur une culture (`originId`) — mais il doit avoir **au moins un** de ces trois rattachements.
+
+<Promesse vers="dev/domaine/un-modele-qui-s-ouvre" section="« Au moins un des trois »">
+Un stage sans aucun rattachement n’aurait rien pour être classé ni présenté. La règle est vérifiée à la création comme à la modification ; la seconde demande de relire le stage en base, ce qui la rend plus subtile qu’il n’y paraît.
+</Promesse>
 
 **`preRegistered`.** Malgré son nom, ce champ contient des **prérequis**, un par ligne, affichés sous « Prérequis » sur la page publique : c’est l’équivalent de `Course.requisites`. Le nom est un reste d’une intention abandonnée (une liste d’inscrits) ; le commentaire du schéma le signale, en attendant un renommage.
 

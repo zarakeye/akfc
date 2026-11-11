@@ -19,7 +19,7 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 ## Quelques mots de base de données
 
-Ce chapitre lit des modèles Prisma. Six mots y reviennent sans cesse ; les voici, avec l’exemple de la session.
+Ce chapitre lit des modèles Prisma. Les mots de la base de données ont été posés au début de la partie « Données (1) » ; six d’entre eux reviennent ici sans cesse, et les voici rappelés avec l’exemple de la session.
 
 - Un **modèle** (`model Session { … }` dans `schema.prisma`) décrit une **table** de PostgreSQL. Chaque session ouverte est une **ligne** de cette table ; chaque information de la ligne (`userId`, `expiresAt`) est un **champ**, ou colonne.
 - La **clé primaire** (`id`, marquée `@id`) identifie une ligne de façon unique. C’est elle que le jeton du cookie transporte.
@@ -36,7 +36,7 @@ Avant d’écrire la moindre ligne de code d’authentification, regardons ce qu
 
 <DocsTable columnsJson='["Modèle", "Ce qu’il garde pour l’authentification", "Qui l’écrit"]' rowsJson='[["User", "L’adresse de connexion, l’empreinte du mot de passe, la première connexion, la dernière connexion.", "Un administrateur (création), le membre (profil, mot de passe), la connexion (dernière connexion)."], ["Session", "Une connexion ouverte sur un appareil, et sa date de fin.", "La connexion ; la déconnexion et le changement de mot de passe la suppriment."], ["PasswordResetToken", "L’empreinte d’un lien « mot de passe oublié », sa validité, son usage unique.", "La demande de lien ; la réinitialisation le consomme."], ["MemberGroup", "Le groupe marqué Administrateurs ; les autres groupes, leur arbre.", "Un administrateur ; le démarrage du site (groupe Administrateurs)."], ["MemberGroupMembership", "L’adhésion d’un membre à un groupe, et son droit sur l’espace du groupe.", "Un administrateur."], ["Verification", "Rien : modèle hérité, jamais lu ni écrit.", "Personne."]]' />
 
-Le chapitre « Le noyau » de la partie Données a lu ces modèles comme une architecture : qui dépend de qui, et pourquoi. Ici, nous les relisons avec une seule question en tête : **qu’est-ce que chaque champ change à la connexion, à la session, aux droits ?**
+Le chapitre « Le noyau » de la partie « Données (1) » a lu ces modèles comme une architecture : qui dépend de qui, et pourquoi. Ici, nous les relisons avec une seule question en tête : **qu’est-ce que chaque champ change à la connexion, à la session, aux droits ?**
 
 ## Le membre, vu par l’authentification
 
@@ -157,7 +157,7 @@ Parce que **recopier un droit dans la session crée un problème de cohérence**
 
 Sans copie, **le droit est relu à chaque requête**, à partir des relations du membre. C’est une jointure de plus, mais c’est cohérent : un changement de groupe est appliqué tout de suite, sur toutes les sessions ouvertes.
 
-C’est exactement le principe vu dans la partie « Données » : l’autorité du système réside dans la base, pas dans des copies dispersées.
+C’est exactement le principe vu dans la partie « Données (1) » : l’autorité du système réside dans la base, pas dans des copies dispersées.
 
 ---
 

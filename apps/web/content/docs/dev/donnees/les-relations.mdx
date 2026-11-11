@@ -1,7 +1,7 @@
 ---
 title: "Les relations, des décisions d’architecture"
 description: "Pourquoi une relation n’est jamais technique : isAdmin calculé plutôt que stocké, l’histoire du passage des rôles aux groupes, one-to-many et hiérarchie, many-to-many implicite ou explicite, null qui a un sens, et les règles de suppression (Cascade, SetNull, Restrict)."
-section: "Données"
+section: "Données (1) : modéliser et lire"
 order: 4
 entities:
   User: [email, password, isFirstLogin]
@@ -421,7 +421,11 @@ Le critère de choix : **que perdons-nous si la ligne liée disparaît ?** Une s
 
 Quand `onDelete` n’est pas écrit, Prisma applique sa valeur par défaut : `SetNull` pour une relation facultative, `Restrict` pour une relation obligatoire. C’est le cas de la relation `primaryAnimator` d’un stage, obligatoire : un membre animateur principal d’un stage ne peut pas être supprimé. Le commentaire `///` des relations concernées rend la règle explicite, pour qu’on n’ait pas à connaître les défauts de Prisma.
 
-`PageMediaReference.pageId` n’a **pas** de clé étrangère : selon `pageType`, il désigne une discipline, un stage, une actualité… Une clé étrangère ne peut viser qu’une seule table. L’intégrité de ce côté est donc tenue par le code (`syncPageMediaReferences`, appelé dans la même transaction que chaque enregistrement de contenu, chapitre 6).
+`PageMediaReference.pageId` n’a **pas** de clé étrangère : selon `pageType`, il désigne une discipline, un stage, une actualité… Une clé étrangère ne peut viser qu’une seule table. L’intégrité de ce côté est donc tenue par le code (`syncPageMediaReferences`, appelé dans la même transaction que chaque enregistrement de contenu).
+
+<Promesse vers="dev/donnees/ecrire-et-faire-evoluer" section="Écrire de façon cohérente : les transactions">
+Une transaction regroupe plusieurs écritures en une seule : enregistrer le contenu **et** sa liste de médias réussit en entier, ou pas du tout. C’est ce qui permet au code de tenir une intégrité que la base, ici, ne peut pas garantir seule.
+</Promesse>
 
 <Callout type="warning">
 Une règle de suppression est une règle métier. `Cascade` sur la mauvaise relation efface des données sans prévenir ; `Restrict` partout rend la suppression impossible. Elle se choisit en écrivant la relation, pas le jour où un administrateur clique sur « Supprimer ».

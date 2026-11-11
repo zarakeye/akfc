@@ -1,7 +1,7 @@
 ---
 title: "Pourquoi tout commence par le modèle"
 description: "Pourquoi la donnée précède les routes et les écrans, la chaîne complète du stockage à l’interface, et l’installation de Prisma dans le monorepo : sa place à la racine, ses dépendances, prisma.config.ts et le client unique du backend."
-section: "Données"
+section: "Données (1) : modéliser et lire"
 order: 1
 ---
 
@@ -64,9 +64,41 @@ Et à ce moment-là :
 👉 au lieu de devenir compréhensible
 </Callout>
 
+## Avant de commencer : les mots de cette partie
+
+Cette partie parle de base de données dès sa première page, et les mêmes mots reviennent dans chaque chapitre. Nous les fixons ici, une fois pour toutes, chacun avec un exemple du projet. Les chapitres suivants s’appuieront sur ces définitions sans les répéter.
+
+### La base, la table, la ligne
+
+- Une **base de données** est le programme qui garde les données du site et sait les retrouver vite. Dans le projet, c’est **PostgreSQL** : un conteneur Docker sur la machine du développeur, un autre sur le serveur du club. Le site lui parle par le réseau, avec des **requêtes** écrites en **SQL**, le langage des bases relationnelles : `SELECT` lit, `INSERT` ajoute, `UPDATE` modifie, `DELETE` supprime.
+- Une base **relationnelle** range ses données en **tables**, une par sorte de chose : `User` pour les membres, `Course` pour les créneaux de cours. Chaque élément est une **ligne** de sa table (un membre, un créneau) ; chaque information d’une ligne est une **colonne**, ou **champ** (`email`, `beginTime`). Toutes les lignes d’une table ont les mêmes colonnes.
+- Une colonne a un **type** (texte, entier, date, booléen vrai ou faux, JSON) et elle est **obligatoire** ou **nullable** : `null` veut dire « pas de valeur ».
+
+### Identifier et relier
+
+- La **clé primaire** identifie une ligne, de façon unique et définitive : c’est la colonne `id`, marquée `@id`. Dans le projet, c’est souvent un **cuid** (une chaîne générée, comme `clx3f…`), parfois un entier qui s’incrémente.
+- Une **relation** relie deux tables. La ligne d’un créneau ne recopie pas sa discipline : elle garde l’identifiant de celle-ci dans `disciplineId`, une **clé étrangère**, qui pointe vers une ligne de `Discipline`. La base refuse une clé étrangère qui ne pointe vers rien.
+- Une relation est **un-à-plusieurs** (*one-to-many* : une discipline a plusieurs créneaux, un créneau n’a qu’une discipline) ou **plusieurs-à-plusieurs** (*many-to-many* : un membre est dans plusieurs groupes, un groupe réunit plusieurs membres). La seconde passe par une table intermédiaire, la **table de jointure**, dont chaque ligne relie une ligne de chaque côté.
+- Une **contrainte d’unicité** (`@unique`) interdit que deux lignes aient la même valeur dans une colonne : deux comptes ne peuvent pas avoir la même adresse. C’est la base qui la vérifie, quel que soit le code qui écrit.
+- Un **index** (`@@index([status])`) est une table de recherche que la base tient à jour pour retrouver vite les lignes d’après une colonne. Il ne change pas les données, seulement la vitesse des lectures.
+- Une **énumération** (`enum Day { MONDAY … SUNDAY }`) est un type qui n’accepte qu’une liste fermée de valeurs.
+- Une **jointure** lit plusieurs tables liées en une seule requête : un créneau **avec** sa discipline.
+
+### Prisma, et ce qu’il ajoute
+
+- Un **ORM** (*Object-Relational Mapping*) fait correspondre les tables à des objets du langage : au lieu d’écrire du SQL, le code écrit `prisma.course.findMany({ where: … })`, et l’ORM fabrique la requête. **Prisma** est l’ORM du projet.
+- Le **schéma** (`prisma/schema.prisma`) décrit toutes les tables dans le langage de Prisma. Un **modèle** (`model Course { … }`) y décrit une table.
+- Le **client généré** est le code TypeScript que Prisma produit à partir du schéma : les fonctions pour lire et écrire, et les types qui vont avec.
+- Le **seed** (« la semence ») est un script qui remplit une base vide avec des données de démonstration.
+- Une **migration** est un fichier SQL qui fait passer la base d’une version du schéma à la suivante (ajouter une colonne, renommer une table). Une **transaction** regroupe plusieurs écritures en une seule : soit elles réussissent toutes, soit la base les annule toutes.
+
+<Promesse vers="dev/donnees/ecrire-et-faire-evoluer" section="Faire évoluer la base : les migrations">
+Cette partie **lit** le modèle. Les migrations, les transactions et le SQL écrit à la main servent à **écrire** dans la base et à la faire évoluer : ils ont leur partie à eux, « Données (2) », au moment où le site commence à enregistrer ce que saisissent ses utilisateurs.
+</Promesse>
+
 ## Ce que nous allons faire dans cette partie
 
-Dans cette partie, nous n’allons pas simplement “installer Prisma”. Nous allons intégrer Prisma dans un monorepo moderne, comprendre le rôle du `schema.prisma`, lire les entités réelles du projet, analyser leurs relations, comprendre comment Prisma génère des types, puis voir comment ces types deviennent la base du backend — et comment on écrit dans cette base, et la fait évoluer, sans la casser.
+Dans cette partie, nous n’allons pas simplement “installer Prisma”. Nous allons intégrer Prisma dans un monorepo moderne, comprendre le rôle du `schema.prisma`, lire les entités réelles du projet, analyser leurs relations, comprendre comment Prisma génère des types, puis voir comment ces types deviennent la base du backend.
 
 L’objectif n’est pas seulement technique.
 
@@ -74,23 +106,23 @@ L’objectif n’est pas seulement technique.
 
 À la fin de cette partie, nous ne verrons plus Prisma comme un outil isolé. Nous le verrons comme la fondation du système. Et c’est précisément pour cette raison que cette partie vient avant les formulaires, tRPC et l’authentification.
 
-Parce qu’une fois la donnée correctement modélisée, une nouvelle question apparaît naturellement :
+Parce qu’une fois la donnée correctement modélisée, une première question apparaît naturellement :
 
-👉 **comment l’utilisateur interagit-il avec ce modèle ?**
+👉 **que montre le site de ce modèle ?**
 
-C’est exactement ce que nous aborderons ensuite avec les formulaires.
+C’est ce que traitent les deux parties suivantes : le domaine du club (ce qu’il modélise, et ce qu’en voit le visiteur), puis le header qui mène à tout cela. Viendra ensuite la seconde question, **comment un utilisateur fait-il entrer des données dans ce modèle ?**, avec « Données (2) » et les formulaires. Un site vitrine montre avant d’enregistrer : nous suivons le même ordre.
 
 ---
 
 ## 🗺️ Ce que nous allons traverser
 
-Nous n’allons pas simplement « installer Prisma ». Nous allons reconstruire, étape par étape, la manière dont un modèle de données devient la fondation typée sur laquelle tout le reste de l’application se tient. Trois mouvements, répartis sur six chapitres, puis une ouverture vers la suite.
+Nous n’allons pas simplement « installer Prisma ». Nous allons reconstruire, étape par étape, la manière dont un modèle de données devient la fondation typée sur laquelle tout le reste de l’application se tient. Trois mouvements, répartis sur cinq chapitres.
 
 - **Mouvement 1 — Installer et lire** (ce chapitre et le suivant). Nous branchons Prisma au bon endroit dans le monorepo, puis nous apprenons à lire `schema.prisma` non plus comme un fichier technique, mais comme la carte d’un système.
 - **Mouvement 2 — Modéliser le système** (chapitres 3 et 4). Nous regardons les entités cœur — membres, sessions, groupes — comme une architecture, puis nous voyons les relations pour ce qu’elles sont vraiment : des décisions qui engagent l’avenir du projet. Le projet lui-même en donnera la preuve, avec un modèle qui a dû changer.
-- **Mouvement 3 — Rendre le modèle vivant** (chapitres 5 et 6). Nous franchissons le pas qui transforme un schéma déclaratif en code exécutable, puis nous voyons comment on écrit de façon cohérente dans la base, et comment on la fait évoluer.
+- **Mouvement 3 — Rendre le modèle vivant** (chapitre 5). Nous franchissons le pas qui transforme un schéma déclaratif en code exécutable, typé, que le site peut interroger.
 
-La **section 6**, à la fin du dernier chapitre, ouvrira ensuite la porte vers la suite du parcours — les formulaires, tRPC, l’authentification — pour montrer pourquoi tout cela repose, silencieusement, sur le modèle que nous allons construire.
+Un quatrième temps, écrire de façon cohérente et faire évoluer la base, attendra que le site ait quelque chose à écrire : ce sera la partie « Données (2) », juste avant les formulaires. Elle se termine par une ouverture vers la suite du parcours — les formulaires, tRPC, l’authentification — qui montre pourquoi tout cela repose, silencieusement, sur le modèle que nous allons construire.
 
 ---
 

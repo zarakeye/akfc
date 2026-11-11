@@ -1,7 +1,7 @@
 ---
 title: "Les conventions du domaine"
 description: "Ce qui relie les entités entre elles : les heures au format HHMM et la règle « fin après début », la date pure d’une séance, le composite de contenu et ses références de médias, le statut d’un fichier, les deux instructeurs d’un créneau, et la date de publication — avec tout ce qui en dépend."
-section: "Domaine du club"
+section: "Le domaine du club (1) : ce que le site montre"
 order: 2
 entities:
   Course: [beginTime, endTime, instructorId, disciplineId]
@@ -42,7 +42,7 @@ Le format HHMM range l’heure dans un entier qui se **lit directement** : les d
   codeJson='"SELECT id, \"beginTime\" FROM \"Course\";\n-- id | beginTime\n-- 1  | 1830      ← 18h30\n-- 2  | 1900      ← 19h00\n-- 3  | 905       ← 9h05"'
 />
 
-L’entier se compare et se trie directement (`905 < 1830`), sans conversion, et c’est ce qui rend la règle « la fin après le début » triviale : une comparaison. Il n’a pas de fuseau : c’est l’heure locale du club, et le chapitre 4 montre comment l’agenda personnel des visiteurs la reçoit quand même dans le bon fuseau.
+L’entier se compare et se trie directement (`905 < 1830`), sans conversion, et c’est ce qui rend la règle « la fin après le début » triviale : une comparaison. Il n’a pas de fuseau : c’est l’heure locale du club, et le chapitre 3 montre comment l’agenda personnel des visiteurs la reçoit quand même dans le bon fuseau.
 
 ### Un seul schéma, trois modèles
 
@@ -90,7 +90,11 @@ La règle porte sur ce qui sera **enregistré**. Quand une seule des deux heures
   fullFileTitle="Voir le fichier complet"
 />
 
-Les routeurs des séances font la même chose. C’est le même raisonnement que la règle « au moins un rattachement » des stages (chapitre 3) : une règle qui porte sur plusieurs champs se vérifie sur l’état fusionné, pas sur la seule requête.
+Les routeurs des séances font la même chose. Une règle qui porte sur plusieurs champs se vérifie sur l’état fusionné, pas sur la seule requête.
+
+<Promesse vers="dev/domaine/un-modele-qui-s-ouvre" section="« Au moins un des trois »">
+La règle « au moins un rattachement » des stages suit exactement le même raisonnement, avec trois champs au lieu de deux.
+</Promesse>
 
 <Callout type="info">
 Le format HHMM est la **convention unique** pour toutes les heures de la journée : `Course.beginTime`, `SeminarSession.beginTime`, `EventSession.beginTime` et leurs `endTime`. Compact, lisible en base sans calcul, triable, validé strictement par un seul schéma. Pas de fuseau : heure locale du club.
@@ -182,7 +186,11 @@ Un `PageContentV1` est un **composite de blocs** : une enveloppe avec une versio
 
 L’avantage de l’unification est considérable : un seul constructeur de pages, un seul moteur de rendu, un seul recensement des médias, réutilisables sur les neuf champs. Quand la description d’une discipline est passée du texte simple au composite, il n’y avait rien à inventer côté interface : le constructeur existant fonctionnait tel quel. Les résumés (`summary`) utilisent le même format, avec un constructeur restreint à certains blocs.
 
-Chaque bloc qui montre un média le désigne **par son `mediaId`**, jamais par une URL ni par un chemin. Cette indirection est la clé de l’intégrité : une seule fonction, `extractMediaIdsFromContent`, parcourt un composite et rend la liste des médias qu’il utilise, et chaque enregistrement tient à jour la table `PageMediaReference` (le chapitre « Le constructeur de pages » détaille ce recensement).
+Chaque bloc qui montre un média le désigne **par son `mediaId`**, jamais par une URL ni par un chemin. Cette indirection est la clé de l’intégrité : une seule fonction, `extractMediaIdsFromContent`, parcourt un composite et rend la liste des médias qu’il utilise, et chaque enregistrement tient à jour la table `PageMediaReference`.
+
+<Promesse vers="dev/contenu/le-recensement-des-fichiers" section="Pourquoi recenser 📋">
+Ce **recensement** est une table qui dit, pour chaque fichier, quels contenus l’affichent. C’est elle qui empêche de supprimer une image encore visible sur une page.
+</Promesse>
 
 Le domaine ajoute trois règles à ce mécanisme.
 
@@ -203,6 +211,10 @@ Le domaine ajoute trois règles à ce mécanisme.
 
 **La synchronisation fait partie de la transaction.** Si un composite référence un média qui n’existe pas ou qui n’est pas validé, la synchronisation lève une erreur, et l’enregistrement de la page est annulé avec elle. À la suppression, l’appel avec `newContent: null` retire toutes les références de la page dans la même transaction que la suppression de la ligne. La table n’a pas de clé étrangère vers les pages (une seule table sert neuf types de contenus) : c’est le code qui tient cette intégrité-là.
 
+<Promesse vers="dev/donnees/ecrire-et-faire-evoluer" section="Écrire de façon cohérente : les transactions">
+Une **transaction** regroupe plusieurs écritures en une seule : la page et ses références sont enregistrées ensemble, ou pas du tout. Si la synchronisation échoue, la base annule aussi l’écriture de la page.
+</Promesse>
+
 <Callout type="tip">
 Le `PageContentV1` est une **convention de structure** partagée par tous les contenus riches : une enveloppe versionnée, et une liste de blocs typés qui désignent les médias par leur identifiant. Cette unification rend le constructeur, le moteur de rendu et le recensement des médias **réutilisables sans adaptation** sur toute entité qui adopte le format.
 </Callout>
@@ -220,6 +232,10 @@ La relation `PageMediaReference → MediaAsset` est en `onDelete: Restrict` : un
 
 <Callout type="warning">
 Un fichier référencé par une page **ne peut ni quitter le statut publié, ni être supprimé**. Une limite connue : les galeries (`GalleryItem`) ne sont pas consultées par la garde de statut. Le statut et son ancien lien avec les dossiers de stockage relèvent de la partie « Stockage et médias ».
+
+<Promesse vers="dev/stockage/enregistrer-ce-qui-est-arrive" section="En attente : une promesse faite à l’administrateur">
+Un fichier déposé naît **en attente** : il existe dans le stockage et en base, mais aucune page publique ne peut l’afficher tant qu’un administrateur ne l’a pas validé.
+</Promesse>
 </Callout>
 
 ## Les deux instructeurs d’un créneau
@@ -280,7 +296,11 @@ Chaque routeur l’applique par une petite fonction, `visibleTo`, qui rend un fi
   fullFileTitle="Voir le fichier complet"
 />
 
-Toutes les lectures du routeur l’ajoutent à leur `where`, y compris celles qui servent surtout le tableau de bord : une procédure publique peut être appelée par n’importe qui (chapitre « Protéger une procédure », l’histoire des brouillons).
+Toutes les lectures du routeur l’ajoutent à leur `where`, y compris celles qui servent surtout le tableau de bord : une procédure publique peut être appelée par n’importe qui.
+
+<Promesse vers="dev/api/proteger-une-procedure" section="5) Le piège des lectures publiques : l’histoire des brouillons">
+Une procédure **publique** répond sans demander qui appelle ; une procédure **protégée** exige un membre connecté. Une lecture publique qui oublierait le filtre livrerait les brouillons à quiconque sait l’appeler, même sans passer par le site.
+</Promesse>
 
 ### Ce qui dépend d’un brouillon est un brouillon
 
@@ -330,8 +350,8 @@ Une règle de visibilité porte sur **tout ce qui révèle l’entité** : ses e
 
 ## À suivre
 
-Ce modèle n’a pas toujours été celui-là. Au départ, tout stage appartenait à une discipline du club, et l’origine d’une discipline était un texte libre. Puis le club a voulu accueillir un calligraphe.
+Le modèle est en place, ses conventions aussi. Reste ce que le visiteur en voit : les fiches publiques, ce qu’elles montrent et ce qu’elles taisent, l’agenda qui réunit stages et événements, et le fichier qui les fait entrer dans son agenda personnel.
 
 <Callout type="tip">
-**Chapitre suivant : un modèle qui s’ouvre.** Pourquoi l’origine est devenue une entité, pourquoi l’événement n’est pas un stage, la règle « au moins un rattachement », et le renommage de `Stage` en `Seminar`.
+**Chapitre suivant : ce que voit le visiteur.** Les fiches publiques, l’agenda, le fichier `.ics`, les horaires du pied de page, et la vue d’ensemble de la partie.
 </Callout>

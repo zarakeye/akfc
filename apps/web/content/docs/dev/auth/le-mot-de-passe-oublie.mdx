@@ -154,7 +154,7 @@ Mais la transaction ne règle pas tout. Elle protège contre une erreur **au mil
 
 Les vérifications (le lien existe, n’a pas servi, n’a pas expiré) sont faites **avant** la transaction. Si le même lien est envoyé deux fois au même instant — un double clic, ou un intrus qui a intercepté l’e-mail et agit en même temps que le membre —, les deux requêtes passent toutes les deux les vérifications, puis entrent chacune dans sa transaction. La première version marquait le lien avec un simple `update`, qui réussissait les deux fois : deux mots de passe étaient enregistrés l’un après l’autre, et le dernier gagnait.
 
-La correction est la même idée que l’erreur P2002 de la partie « Données » : confier la règle à la base. `updateMany` avec `usedAt: null` dans sa condition ne marque la ligne **que si elle ne l’était pas encore**. PostgreSQL verrouille la ligne le temps de l’écriture : des deux requêtes, une seule obtient `count === 1` ; l’autre lève une erreur, et sa transaction est annulée, nouveau mot de passe compris.
+La correction est la même idée que l’erreur P2002 de la partie « Données (2) » : confier la règle à la base. `updateMany` avec `usedAt: null` dans sa condition ne marque la ligne **que si elle ne l’était pas encore**. PostgreSQL verrouille la ligne le temps de l’écriture : des deux requêtes, une seule obtient `count === 1` ; l’autre lève une erreur, et sa transaction est annulée, nouveau mot de passe compris.
 
 ---
 

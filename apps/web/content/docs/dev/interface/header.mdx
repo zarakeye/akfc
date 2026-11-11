@@ -1,14 +1,14 @@
 ---
 title: "Le header"
 description: "Une seule liste de liens pour deux rendus (barre et panneau mobile), une session connue dès le HTML, et des signaux qui ne parlent que quand ils ont quelque chose à dire : cloches, badges, menu du membre."
-section: "Interface transverse"
-order: 2
+section: "Le site public : le header et l’accessibilité"
+order: 1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le référencement présente le site aux moteurs : métadonnées, plan du site, consignes d'indexation.
+> **Précédemment.** Le domaine du club est en place, et le visiteur en voit les fiches, l’agenda et les horaires. Il reste à lui donner un chemin vers tout cela.
 
 Le header est la seule partie de l'interface présente sur toutes les pages publiques, et la seule qui change selon la personne qui regarde. Un visiteur y trouve la navigation et le formulaire de connexion. Un membre y trouve en plus son menu, ses documents à lire et la cloche de ses espaces. Un administrateur, la cloche de la bibliothèque et le tableau de bord. Trois questions organisent le composant `Header` : d'où vient la liste des liens, comment l'afficher sur un écran étroit, et comment savoir dès le premier affichage qui est connecté.
 
@@ -86,11 +86,17 @@ L’état actif se **voit** : gras, souligné (`NAV_ACTIVE`). Il doit aussi s’
   fullFileTitle="Voir le fichier complet"
 />
 
-Les sous-menus le portaient déjà ; les liens de premier niveau, dans la barre comme dans le panneau, l’oubliaient — la relecture de cette partie l’a ajouté. Une même information, deux canaux : ce qui ne passe que par l’apparence n’existe pas pour qui ne voit pas la page (chapitre 3).
+Les sous-menus le portaient déjà ; les liens de premier niveau, dans la barre comme dans le panneau, l’oubliaient — la relecture de cette partie l’a ajouté. Une même information, deux canaux : ce qui ne passe que par l’apparence n’existe pas pour qui ne voit pas la page (chapitre suivant).
 
 ## Qui est connecté, dès le premier affichage
 
-Le header est un composant client : il réagit à la connexion et à la déconnexion. La session vit dans un store Zustand (voir « Authentification et droits »). Mais ce store est un module partagé : sur le serveur, il est commun à toutes les requêtes, et ne peut donc pas contenir la session d'un visiteur. Il est vide pendant le rendu serveur. Sans précaution, le HTML arrivait avec un header « non connecté », puis basculait une fois la session chargée.
+Le header est un composant client : il réagit à la connexion et à la déconnexion. La session vit dans un store Zustand.
+
+<Promesse vers="dev/auth/le-navigateur-et-le-proxy" section="Pourquoi deux endroits : un contexte et un store">
+La **session** est ce qui permet au serveur de reconnaître un membre connecté. Côté navigateur, le projet en garde une copie dans un **store** : un objet partagé par tous les composants, qui les prévient quand il change (Zustand est la bibliothèque qui le fournit). La partie « Authentification et droits » construit la session de bout en bout.
+</Promesse>
+
+Mais ce store est un module partagé : sur le serveur, il est commun à toutes les requêtes, et ne peut donc pas contenir la session d'un visiteur. Il est vide pendant le rendu serveur. Sans précaution, le HTML arrivait avec un header « non connecté », puis basculait une fois la session chargée.
 
 Le layout racine lit donc la session côté serveur et la transmet par un contexte React, propre à chaque requête. Le header la lit par `useCurrentUser` :
 
@@ -127,6 +133,10 @@ Une cloche qui a quelque chose à signaler s'agite brièvement toutes les six se
 />
 
 Les compteurs viennent de requêtes tRPC (`useQuery`), donc du cache de React Query. Une action qui change un compteur (un dépôt, une validation, une lecture) invalide la requête correspondante, et la cloche se met à jour sans rien savoir de l'action. Une version antérieure faisait un seul appel au montage, rangé dans un `useState` : hors du cache, aucune invalidation ne pouvait l'atteindre, et il fallait recharger la page pour voir un compteur juste.
+
+<Promesse vers="dev/api/le-circuit-complet" section="🖥️ Côté navigateur : deux clients">
+Une requête tRPC appelle une procédure du serveur depuis le navigateur. Sa réponse est gardée dans un **cache** (celui de React Query), partagé par tous les composants qui posent la même question. **Invalider** une requête, c’est déclarer sa réponse périmée : chaque composant qui l’affiche la redemande, et se met à jour.
+</Promesse>
 
 ## Le menu du membre
 

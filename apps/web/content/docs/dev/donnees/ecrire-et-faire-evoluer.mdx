@@ -1,8 +1,8 @@
 ---
 title: "Écrire de façon cohérente, faire évoluer la base"
 description: "Les transactions et l’erreur d’unicité P2002, le SQL brut paramétré et ses pièges, les migrations (création, relecture d’un renommage, correction par une nouvelle migration), une migration oubliée en production, puis l’ouverture vers les formulaires."
-section: "Données"
-order: 6
+section: "Données (2) : écrire et faire évoluer"
+order: 1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -12,13 +12,13 @@ import { CodeWalkthrough } from "@/features/docs/ui/CodeWalkthrough"
 import PrismaCoreErdDiagram from "@/features/docs/diagrams/PrismaCoreErdDiagram"
 import PrismaCoreMemoryDiagram from "@/features/docs/diagrams/PrismaCoreMemoryDiagram"
 
-> **Précédemment.** `prisma generate` a fait du schéma un client typé : les types viennent du modèle, et une incohérence ne compile plus. Le système est cohérent en lecture.
+> **Précédemment.** Le site public est en place : il **lit** le modèle, typé par `prisma generate`, et montre les disciplines, les cours, les stages et les événements du club, derrière un header commun. Il n’écrit encore rien. La partie « Données (1) » avait laissé deux questions en suspens pour ce moment : écrire dans plusieurs tables sans laisser la base à moitié modifiée, et faire évoluer le schéma quand la base contient déjà des données.
 
-Le modèle vit dans le code. Reste à l’écrire **correctement** : une opération métier touche souvent plusieurs tables, l’API de Prisma ne sait pas tout exprimer, et le schéma lui-même change au fil des mois. Ce chapitre traite ces trois questions avec le code du projet, puis ouvre sur la suite.
+Nous reprenons donc le modèle là où nous l’avions laissé. Il vit dans le code ; reste à y écrire **correctement** : une opération métier touche souvent plusieurs tables, l’API de Prisma ne sait pas tout exprimer, et le schéma lui-même change au fil des mois. Ce chapitre traite ces trois questions avec le code du projet, puis ouvre sur la suite.
 
 ## Écrire de façon cohérente : les transactions
 
-Une opération métier touche souvent plusieurs tables. Enregistrer une discipline, c’est écrire la discipline **et** recalculer les médias qu’elle utilise (la table `PageMediaReference` du chapitre 4, qui empêche de supprimer une image affichée). Si la seconde étape échoue, la première ne doit pas rester à moitié faite : une discipline enregistrée dont les images ne sont pas protégées est un piège pour plus tard.
+Une opération métier touche souvent plusieurs tables. Enregistrer une discipline, c’est écrire la discipline **et** recalculer les médias qu’elle utilise (la table `PageMediaReference` du chapitre « Les relations », qui empêche de supprimer une image affichée). Si la seconde étape échoue, la première ne doit pas rester à moitié faite : une discipline enregistrée dont les images ne sont pas protégées est un piège pour plus tard.
 
 ```ts
 // packages/backend/src/modules/disciplines/router.ts (extrait)
@@ -91,6 +91,10 @@ Dans la fonction passée à `$transaction`, toutes les requêtes passent par `tx
 Deux détails de ce bloc valent d’être lus.
 
 **L’erreur P2002.** Le `catch` qui entoure la création reconnaît une erreur précise de Prisma : `P2002`, une violation de contrainte d’unicité. Le schéma déclare le slug unique (`@unique`) ; plutôt que de vérifier l’unicité avant d’écrire (une vérification qu’une autre requête pourrait rendre fausse entre-temps), le code laisse la base refuser, puis traduit son refus en erreur lisible (`CONFLICT`). C’est la contrainte du schéma qui fait foi, pas le code.
+
+<Promesse vers="dev/api/gerer-les-erreurs" section="4) Les codes d’erreur tRPC ne sont pas arbitraires">
+Ce code vit dans une **procédure** : une fonction du serveur que le tableau de bord appelle par son nom, et qui reçoit `ctx.prisma`, le client Prisma de la requête. `TRPCError` est la façon dont elle répond « non » ; son `code` (`CONFLICT`, `NOT_FOUND`…) dit à l’interface quel genre de refus c’est.
+</Promesse>
 
 **Le commentaire « UNION des deux composites ».** Une discipline a deux contenus (sa description et sa présentation synthétique) et une image de carte. `syncPageMediaReferences` recalcule la liste **complète** des médias utilisés : lui passer un seul des contenus ferait passer les images de l’autre pour orphelines. Le commentaire explique un bug avant qu’il n’arrive.
 
@@ -216,7 +220,11 @@ La cause était dans l’outillage. Le Dockerfile prévoit une étape dédiée a
   fullFileTitle="Voir le fichier complet"
 />
 
-Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. Le compose du serveur a depuis un service `akfc-migrator`, lancé avant le site à chaque déploiement : la partie « Infrastructure et déploiement » le décrit (chapitre « Mettre en production »).
+Mais le `docker-compose.yml` du serveur ne lançait pas de service construit sur cette étape. Les migrations ne s’appliquaient donc qu’à la main, et une mise à jour sans cette étape mettait en ligne un code qui attendait une base plus récente que la vraie. Le compose du serveur a depuis un service `akfc-migrator`, lancé avant le site à chaque déploiement.
+
+<Promesse vers="dev/infrastructure/mettre-en-production" section="L’ordre d’un déploiement 🚀">
+Un déploiement met en ligne une nouvelle version du site. Sur le serveur, il suit désormais un ordre fixe : construire l’image, appliquer les migrations, puis seulement remplacer le site qui tourne.
+</Promesse>
 
 <Callout type="warning">
 Le code et la base doivent évoluer ensemble. Toute mise à jour qui contient un dossier dans `prisma/migrations/` exige un `prisma migrate deploy` en production **avant** que le nouveau code ne serve des requêtes. Le symptôme d’un oubli est toujours le même : une erreur Prisma qui parle d’une colonne ou d’une table qui « n’existe pas ».

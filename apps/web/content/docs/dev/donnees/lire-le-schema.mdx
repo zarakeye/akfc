@@ -1,7 +1,7 @@
 ---
 title: "Lire schema.prisma comme une carte"
 description: "Le schéma comme description d’un système : datasource et generator (avec les réglages du projet), modèles et relations, la convention des commentaires ///, la lecture d’un modèle réel, et ce que Prisma génère à partir de tout cela."
-section: "Données"
+section: "Données (1) : modéliser et lire"
 order: 2
 ---
 
@@ -178,7 +178,7 @@ Parce que ce client :
 C’est ici que la promesse “type-safe de bout en bout” commence réellement à prendre forme.
 
 <Callout type="info">
-Sans generator, Prisma resterait un DSL de base de données.
+Sans generator, Prisma resterait un DSL de base de données : un petit langage dédié (*domain-specific language*), qui décrit des tables et rien d’autre.
 
 Avec lui :
 
@@ -285,6 +285,10 @@ Pour s’entraîner sur un modèle plus fourni, prenons celui qui décrit un fic
 <DocsTable columnsJson='["Élément","Ce qu’il dit"]' rowsJson='[["@id @default(cuid())","Identifiant texte généré, impossible à deviner. Les entités éditoriales simples (Discipline, Category) utilisent plutôt un entier autoincrémenté."],["fullPath @unique","Deux lignes ne peuvent pas désigner la même clé de stockage ; c’est sur ce champ que s’appuient les upsert."],["displayName String?","Le ? rend le champ facultatif (NULL en base, null en TypeScript)."],["@updatedAt","Prisma tient la date à jour à chaque modification."],["@relation(fields, references)","La clé étrangère et le champ qu’elle vise ; le champ de relation (category) n’existe pas en base, il sert aux requêtes."],["MediaAsset? / MediaAsset[]","Le côté opposé d’une relation : 0 ou 1, ou une liste."],["@@index([status])","Un index pour les filtres fréquents par statut."]]' />
 
 `status` est un `String`, pas une énumération : les valeurs autorisées (`pending`, `published`) sont garanties par le code (les schémas Zod des procédures), et le commentaire du champ le dit. Une énumération Prisma est préférée quand l’ensemble des valeurs est stable ; ici, il a évolué plusieurs fois.
+
+<Promesse vers="dev/api/valider-l-entree" section="Où vit la validation ?">
+Un **schéma Zod** décrit la forme qu’une donnée doit avoir (« une chaîne parmi `pending` et `published` »), et la vérifie au moment où elle arrive, avant toute écriture. Une **procédure** est une fonction du serveur que le navigateur appelle par son nom. Il suffit ici de savoir que la règle existe, et qu’elle vit dans le code plutôt que dans la base.
+</Promesse>
 
 ---
 

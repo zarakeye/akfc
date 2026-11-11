@@ -1,7 +1,7 @@
 ---
 title: "Le noyau : membres, sessions, groupes"
 description: "Les modèles cœur du projet lus comme une architecture : User, central mais pas souverain ; MemberGroup, charnière entre identité et autorisation ; le niveau d’accès porté par l’adhésion ; la table de jointure ; Session ; une vue technique et une vue mentale du même noyau."
-section: "Données"
+section: "Données (1) : modéliser et lire"
 order: 3
 entities:
   User: [email, password, isFirstLogin]
@@ -62,7 +62,7 @@ Ce schéma ne doit pas être lu comme une décoration. Il montre la vérité tec
 
 Il y a ici un premier enseignement très important.
 
-Dans beaucoup de projets juniors, l’authentification et les droits sont pensés tardivement, parfois presque “rajoutés” au-dessus du métier. Ici, ce n’est pas le cas. Ils sont déjà visibles dans le modèle de données. Cela signifie que la sécurité ne viendra pas seulement de middlewares ou de conditions écrites dans le code. Elle est déjà préparée au niveau structurel.
+Dans beaucoup de projets juniors, l’authentification et les droits sont pensés tardivement, parfois presque “rajoutés” au-dessus du métier. Ici, ce n’est pas le cas. Ils sont déjà visibles dans le modèle de données. Cela signifie que la sécurité ne viendra pas seulement de middlewares (des fonctions qui s’intercalent avant le traitement de chaque requête) ou de conditions écrites dans le code. Elle est déjà préparée au niveau structurel.
 
 <Callout type="info">
 Le schéma relationnel raconte déjà une partie de l’architecture applicative.
@@ -205,7 +205,7 @@ C’est exactement pour cela que nous avons deux diagrammes dans ce chapitre. Le
 
 ### 3.6 — `Session` : la présence persistée du membre
 
-La session est un autre modèle très révélateur. Beaucoup de développeurs comprennent l’authentification uniquement à travers le prisme du JWT ou du cookie. Mais dans notre projet, le modèle de données montre autre chose : la session est aussi une entité en base.
+La session est un autre modèle très révélateur. Beaucoup de développeurs comprennent l’authentification uniquement à travers le prisme du JWT (un jeton signé que le navigateur présente à chaque requête) ou du cookie. Mais dans notre projet, le modèle de données montre autre chose : la session est aussi une entité en base.
 
 ```prisma
 // prisma/schema.prisma (extrait)
@@ -231,6 +231,10 @@ model Session {
 C’est essentiel, parce que cela signifie que l’authentification n’est pas pensée comme un simple jeton flottant côté client. Elle a un ancrage serveur. Elle expire (`expiresAt`). Elle est relue à chaque requête. Elle peut être invalidée : se déconnecter, changer de mot de passe, c’est supprimer des lignes de cette table. Elle devient un objet réel du système.
 
 Et cela prépare directement la partie « Authentification et droits ». On voit déjà ici que l’authentification ne sera pas “juste un middleware”. Elle s’appuiera sur une structure de persistance explicite. Encore une fois, le schéma prépare la suite du système avant même que le code applicatif ne la déroule.
+
+<Promesse vers="dev/auth/pourquoi-une-chaine" section="Avant de commencer : les mots de cette partie">
+Pour lire ce chapitre, une idée suffit : une **session** est la période pendant laquelle le serveur reconnaît un membre déjà connecté, sans lui redemander son mot de passe. Une ligne de `Session` en garde la trace ; la supprimer met fin à la session.
+</Promesse>
 
 ---
 

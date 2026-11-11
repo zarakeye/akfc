@@ -1,8 +1,8 @@
 ---
 title: "Un modèle qui s’ouvre"
 description: "Comment le modèle a accueilli ce qui ne rentrait pas dans ses cases : l’origine et la famille devenues des entités, l’événement distinct du stage, la règle « au moins un des trois » vérifiée à la création et à la modification, le renommage de Stage en Seminar, des slugs stables, et des dossiers qui ne dépendent plus d’un nom affiché."
-section: "Domaine du club"
-order: 3
+section: "Le domaine du club (2) : un modèle qui s’ouvre"
+order: 1
 entities:
   Origin: [name, slug, country, region, flag, historicalPeriod, sortOrder]
   DisciplineFamily: [name, slug, sortOrder]
@@ -32,7 +32,7 @@ stories:
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Six conventions relient les entités du domaine : les heures HHMM, la date pure d’une séance, le composite de contenu, le statut d’un fichier, la hiérarchie des instructeurs et la date de publication, que suivent tous les dépendants d’un brouillon.
+> **Précédemment.** Le site sait maintenant écrire, migrer sa base, recevoir et ranger des fichiers, et composer des pages de blocs. La partie « Le domaine du club (1) » avait présenté le modèle tel qu’il est aujourd’hui : la discipline et le cours, le stage et l’événement, six conventions qui les relient. Elle avait laissé de côté une histoire, que nous pouvons maintenant lire en entier : comment ce modèle s’est ouvert.
 
 ## Le besoin qui a tout déclenché
 
@@ -105,7 +105,7 @@ Nous avons choisi la seconde, parce que **le stage et l’événement ont des se
 
 <DocsTable columnsJson='["Aspect", "Stage (Seminar)", "Événement (Event)"]' rowsJson='[["Contenus", "Deux : description et programme (plus un résumé)", "Un : content (plus un résumé)"], ["Animation", "Un animateur principal et des co-animateurs", "Un organisateur"], ["Disciplines du club", "Au plus une (disciplineId)", "Autant que voulu (table EventDiscipline)"], ["Disciplines extérieures", "Un nom (externalDisciplineLabel)", "Une liste (externalDisciplineLabels)"], ["Fichiers déposés par les membres", "Non", "Oui (mediaAssets)"], ["Séances", "SeminarSession", "EventSession, de même structure"], ["Rattachement", "Au moins un des trois", "Au moins un des trois"]]' />
 
-L’option « un seul modèle » nous aurait donné un stage avec deux contenus dont l’un serait souvent vide, deux niveaux d’animation dont l’un serait rarement rempli, et une liste de disciplines qui n’a de sens que pour certains rendez-vous. Aucun gain de simplicité, et une perte de clarté : l’administrateur ne saurait plus quel champ remplir. Le prix de la séparation est faible — deux modèles de séances de même structure — et l’agenda public les réunit de toute façon dans une seule liste (chapitre 4).
+L’option « un seul modèle » nous aurait donné un stage avec deux contenus dont l’un serait souvent vide, deux niveaux d’animation dont l’un serait rarement rempli, et une liste de disciplines qui n’a de sens que pour certains rendez-vous. Aucun gain de simplicité, et une perte de clarté : l’administrateur ne saurait plus quel champ remplir. Le prix de la séparation est faible — deux modèles de séances de même structure — et l’agenda public les réunit de toute façon dans une seule liste (chapitre « Ce que voit le visiteur »).
 
 <Callout type="info">
 La règle que nous appliquons : **deux modèles distincts quand le sens métier diverge**, même si la structure technique se ressemble. La duplication de structure coûte peu ; la confusion de sens coûte à chaque formulaire.
@@ -163,7 +163,7 @@ L’événement applique la même règle à ses listes : au moins une discipline
   fullFileTitle="Voir le fichier complet"
 />
 
-Ce n’est pas une particularité des stages : c’est la règle générale de toute validation qui porte sur **plusieurs champs**, et le chapitre précédent l’a appliquée aux horaires (« la fin après le début »). Une règle sur plusieurs champs se vérifie sur l’état qui sera enregistré, pas sur la requête seule.
+Ce n’est pas une particularité des stages : c’est la règle générale de toute validation qui porte sur **plusieurs champs**, et la partie « Le domaine du club (1) » l’a appliquée aux horaires (« la fin après le début »). Une règle sur plusieurs champs se vérifie sur l’état qui sera enregistré, pas sur la requête seule.
 
 <Callout type="tip">
 « Au moins un des trois » est la **règle de cohérence** des rendez-vous qui ne sont plus obligatoirement rattachés à une discipline du club. Elle se vérifie dans le schéma à la création, et dans le routeur, après fusion avec l’état en base, à la modification.
@@ -335,8 +335,8 @@ Une catégorie que la migration n’a pas su attribuer garde une clé vide : la 
 
 ## À suivre
 
-Le modèle est en place, ses conventions aussi. Reste ce que le visiteur en voit : les fiches publiques, ce qu’elles montrent et ce qu’elles taisent, l’agenda qui réunit stages et événements, et le fichier qui les fait entrer dans son agenda personnel.
+Les disciplines, les stages et les événements sont les contenus du club. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
 
 <Callout type="tip">
-**Chapitre suivant : ce que voit le visiteur.** Les fiches publiques, l’agenda, le fichier `.ics`, et la vue d’ensemble de la partie.
+**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
 </Callout>

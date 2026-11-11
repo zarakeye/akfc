@@ -1,8 +1,8 @@
 ---
 title: "Ce que voit le visiteur"
 description: "Le domaine vu du site public : les fiches des disciplines, des cours, des stages et des événements, ce qu’elles montrent et ce qu’elles taisent, l’agenda qui réunit stages et événements, le fichier .ics, les horaires du pied de page — puis la vue d’ensemble de la partie, ses pièges et ce qui reste à faire."
-section: "Domaine du club"
-order: 4
+section: "Le domaine du club (1) : ce que le site montre"
+order: 3
 entities:
   Discipline: [slug, publicationDate, instructorId]
   Course: [disciplineId, day, beginTime, endTime, instructorId]
@@ -38,7 +38,7 @@ stories:
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le modèle s’est ouvert aux intervenants extérieurs et aux événements culturels : l’origine et la famille sont devenues des entités, l’événement s’est distingué du stage, la règle « au moins un des trois » garde un contexte à chaque rendez-vous, et les dossiers de fichiers ne dépendent plus d’un nom affiché.
+> **Précédemment.** Six conventions relient les entités du domaine : les heures HHMM, la date pure d’une séance, le composite de contenu, le statut d’un fichier, la hiérarchie des instructeurs et la date de publication, que suivent tous les dépendants d’un brouillon.
 
 ## Les parcours du chapitre
 
@@ -62,7 +62,7 @@ Lire la base sans passer par l’API a une conséquence : **les gardes de l’AP
   fullFileTitle="Voir le fichier complet"
 />
 
-Puis dans la page elle-même, qui répond « introuvable » à un brouillon comme à un slug inconnu — le visiteur ne peut pas distinguer les deux, et c’est voulu. Un administrateur, lui, voit le brouillon : `draftAccess` rend `"preview"`, la page affiche le badge « Page non publiée » et ses fichiers passent par la route privée (la route publique ne sert pas les fichiers d’un brouillon, partie « Contenu éditorial ») :
+Puis dans la page elle-même, qui répond « introuvable » à un brouillon comme à un slug inconnu — le visiteur ne peut pas distinguer les deux, et c’est voulu. Un administrateur, lui, voit le brouillon : `draftAccess` rend `"preview"`, la page affiche le badge « Page non publiée » et ses fichiers passent par la route privée (la route publique ne sert pas les fichiers d’un brouillon) :
 
 <CodeExample
   language="tsx"
@@ -74,6 +74,10 @@ Puis dans la page elle-même, qui répond « introuvable » à un brouillon comm
   snippetTitle="La page d’une discipline : la garde de publication"
   fullFileTitle="Voir le fichier complet"
 />
+
+<Promesse vers="dev/contenu/le-rendu-serveur" section="Une URL pour qui ?">
+Un fichier du site s’affiche par une adresse de l’application, pas par celle du stockage. Il y en a deux : une **route publique**, qui ne sert que les fichiers validés d’un contenu publié, et une **route privée**, réservée aux membres connectés. L’aperçu d’un brouillon passe par la seconde.
+</Promesse>
 
 Le chapitre 2 a montré que la règle ne s’arrête pas à l’entité. Les fiches l’appliquent aussi à ce qu’elles **mentionnent** : la fiche d’un créneau exige que sa discipline soit publiée (un créneau d’un brouillon répond 404) ; celle d’un événement ne nomme que ses disciplines publiées ; celle d’un stage n’affiche sa discipline que si elle l’est :
 
@@ -185,9 +189,9 @@ La mise en forme est une fonction pure, `buildFooterSchedule` : disciplines par 
 
 ## Vue d’ensemble de la partie
 
-Quatre chapitres ont parcouru le domaine du club : ce qu’il modélise, les conventions qui relient ses entités, l’évolution qui l’a ouvert, et ce qu’en voit le visiteur. La relecture du code pour les écrire a relevé plusieurs défauts, corrigés en même temps.
+Trois chapitres ont parcouru le domaine du club : ce qu’il modélise, les conventions qui relient ses entités, et ce qu’en voit le visiteur. Un quatrième, l’évolution qui a ouvert le modèle aux intervenants extérieurs, viendra quand nous saurons écrire et migrer : c’est la partie « Le domaine du club (2) ». La relecture du code pour écrire ces chapitres a relevé plusieurs défauts, corrigés en même temps ; le tableau les réunit tous, y compris celui que raconte la seconde partie.
 
-<DocsTable columnsJson='["Piège", "Ce qui se passait", "La correction", "Chapitre"]' rowsJson='[["Valider une règle multi-champs sur la seule requête", "Modifier seulement l’heure de début pouvait enregistrer un créneau de 19h à 18h", "La règle est vérifiée sur la combinaison finale, relue en base", "2"], ["Comparer une date pure à un instant", "Les séances du jour disparaissaient de l’agenda dès 13h ou 14h", "Comparaison au début du jour, dans le fuseau du club ; date normalisée à midi UTC par le serveur", "2"], ["Oublier les dépendants d’un brouillon", "Créneaux, séances, disciplines liées et nom de discipline d’un brouillon sortaient publiquement", "Filtre par le parent dans l’API et dans les fiches", "2, 4"], ["Appliquer une hiérarchie à moitié", "Un cours sans instructeur attitré s’affichait sans animateur", "Les pages lisent les deux instructeurs ; « — Celui de la discipline — » dans le formulaire", "2"], ["Un vivier incomplet", "Un organisateur ni admin ni instructeur disparaissait du sélecteur", "Les organisateurs font partie du vivier", "1"], ["Un nom affiché comme identité de stockage", "Renommer une discipline ou la catégorie « Cours » changeait de dossier, perdait la protection, bloquait les créneaux", "storageSegment figé à la création ; FolderLabel pour l’affichage", "3"], ["Un repli qui publie l’e-mail", "Un membre sans nom ni pseudo voyait son adresse sur les fiches publiques", "Plus d’e-mail lu ni affiché ; pas de nom plutôt qu’une adresse", "4"], ["Un catch muet", "Une panne de base aurait vidé les horaires sans laisser de trace", "Journalisation avant le repli (pied de page, catégories)", "4"], ["Recopier une règle", "Le schéma HHMM en trois exemplaires, l’affichage des heures et des jours en cinq", "Un schéma dans contracts ; lib/time et lib/format", "2"]]' />
+<DocsTable columnsJson='["Piège", "Ce qui se passait", "La correction", "Chapitre"]' rowsJson='[["Valider une règle multi-champs sur la seule requête", "Modifier seulement l’heure de début pouvait enregistrer un créneau de 19h à 18h", "La règle est vérifiée sur la combinaison finale, relue en base", "2"], ["Comparer une date pure à un instant", "Les séances du jour disparaissaient de l’agenda dès 13h ou 14h", "Comparaison au début du jour, dans le fuseau du club ; date normalisée à midi UTC par le serveur", "2"], ["Oublier les dépendants d’un brouillon", "Créneaux, séances, disciplines liées et nom de discipline d’un brouillon sortaient publiquement", "Filtre par le parent dans l’API et dans les fiches", "2, 3"], ["Appliquer une hiérarchie à moitié", "Un cours sans instructeur attitré s’affichait sans animateur", "Les pages lisent les deux instructeurs ; « — Celui de la discipline — » dans le formulaire", "2"], ["Un vivier incomplet", "Un organisateur ni admin ni instructeur disparaissait du sélecteur", "Les organisateurs font partie du vivier", "1"], ["Un nom affiché comme identité de stockage", "Renommer une discipline ou la catégorie « Cours » changeait de dossier, perdait la protection, bloquait les créneaux", "storageSegment figé à la création ; FolderLabel pour l’affichage", "Domaine (2)"], ["Un repli qui publie l’e-mail", "Un membre sans nom ni pseudo voyait son adresse sur les fiches publiques", "Plus d’e-mail lu ni affiché ; pas de nom plutôt qu’une adresse", "3"], ["Un catch muet", "Une panne de base aurait vidé les horaires sans laisser de trace", "Journalisation avant le repli (pied de page, catégories)", "3"], ["Recopier une règle", "Le schéma HHMM en trois exemplaires, l’affichage des heures et des jours en cinq", "Un schéma dans contracts ; lib/time et lib/format", "2"]]' />
 
 ### Ce qui reste à faire
 
@@ -201,8 +205,8 @@ Quatre chapitres ont parcouru le domaine du club : ce qu’il modélise, les con
 
 ## À suivre
 
-Les disciplines, les stages et les événements sont les contenus du club. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
+Le visiteur trouve une fiche, un agenda, des horaires. Encore faut-il qu’il y arrive : sur toutes les pages, c’est le header qui mène au reste du site, et c’est la seule partie de l’interface qui change selon la personne qui regarde.
 
 <Callout type="tip">
-**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
+**Partie suivante : le site public, le header et l’accessibilité.** Une navigation décrite une fois et rendue deux fois, ce que le header sait de la personne connectée dès le premier affichage, puis le clavier, les lecteurs d’écran et les animations.
 </Callout>
