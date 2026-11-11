@@ -215,6 +215,10 @@ Le ratio entre l'image et le texte d'un bloc média-texte est un **préréglage*
 
 ### L'enregistrement : une ligne en base, réservée aux administrateurs
 
+<Promesse vers="dev/api/proteger-une-procedure">
+Une **procédure** est une fonction du serveur que le navigateur appelle par son nom ; une procédure **réservée aux administrateurs** refuse tout appel qui ne vient pas d’un administrateur, même s’il contourne l’interface. La partie « API » montre comment cette protection est construite.
+</Promesse>
+
 « Appliquer au site » enregistre le jeu complet dans une ligne unique, `SiteStyle`. Les variables y sont stockées en JSON : ajouter un curseur au laboratoire ne demande pas de migration.
 
 Ces valeurs finiront dans une balise `<style>` servie à tous les visiteurs. Le routeur contrôle donc strictement ce qui peut y entrer :

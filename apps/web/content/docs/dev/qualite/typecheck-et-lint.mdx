@@ -1,7 +1,7 @@
 ---
 title: "Le typecheck et le lint"
 description: "Deux vérifications automatiques, deux questions : les types sont-ils cohérents, et le code respecte-t-il les règles de React ? Le lint ramené à zéro et ajouté à pnpm check, et ce que les règles du React Compiler apprennent sur la façon d'écrire un composant."
-section: "Qualité"
+section: "Qualité (1) : vérifier avant d’enregistrer"
 order: 2
 ---
 
@@ -12,6 +12,10 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 Une erreur qu'un outil peut trouver ne devrait jamais attendre qu'un humain la croise. Ce chapitre présente les deux vérifications que `pnpm check` lance avant chaque commit : le **typecheck**, qui compare les types de tout le projet, et le **lint**, qui relit le code à la recherche de motifs que l'on sait fautifs. Il raconte aussi comment le lint a été ramené à zéro, parce que chaque correction enseigne une règle de React.
 
+<Callout type="info">
+**Des exemples venus de plus loin.** Les corrections racontées ici touchent des écrans que nous verrons plus tard : le recadrage d’images, les aperçus du constructeur de pages, le bandeau d’actualités. Chacun est présenté en une phrase ; ce qui compte ici est la **règle de React** qu’il illustre, valable pour n’importe quel composant. Les écrans eux-mêmes ont leurs parties.
+</Callout>
+
 ## Deux vérifications, deux questions
 
 <DocsTable columnsJson='["Vérification", "Question posée", "Exemple de ce qu’elle trouve"]' rowsJson='[["Typecheck (tsc)", "Les types sont-ils cohérents d’un bout à l’autre ?", "Une procédure qui renvoie un champ renommé, et un composant qui lit encore l’ancien nom."], ["Lint (ESLint)", "Le code respecte-t-il les règles d’usage du langage et de React ?", "Un état modifié dans un effet, un ref écrit pendant le rendu, une variable jamais lue."]]' />
@@ -20,7 +24,7 @@ Le typecheck ne connaît que les types : un composant parfaitement typé peut qu
 
 ## Le lint dans pnpm check
 
-Le lint s'exécute à la fin de `pnpm check`, sur `apps/web` puis sur les paquets (chapitre 1), et n'accepte **aucun** avertissement :
+Le lint s'exécute à la fin de `pnpm check`, sur `apps/web` puis sur les paquets (chapitre précédent), et n'accepte **aucun** avertissement :
 
 <CodeExample
   language="json"
@@ -183,8 +187,14 @@ Désactiver une règle sur une ligne (`// eslint-disable-next-line`) reste possi
 
 ## À suivre
 
-Le typecheck et le lint appliquent des règles générales, écrites pour tous les projets. Certaines erreurs n’appartiennent qu’à celui-ci : un fichier de Next posé au mauvais endroit, un tutoriel qui vise un élément disparu, une documentation qui cite une procédure renommée. Pour elles, le projet a écrit ses propres gardes.
+Le typecheck et le lint appliquent des règles générales, écrites pour tous les projets. Certaines erreurs n’appartiennent qu’à celui-ci : un fichier de Next posé au mauvais endroit, un tutoriel qui vise un élément disparu, une documentation qui cite une procédure renommée.
+
+<Promesse vers="dev/qualite/les-gardes-maison">
+Pour ces erreurs-là, le projet a écrit ses propres **gardes** : de petits scripts lancés par `pnpm check`, chacun pour une erreur qu’aucun outil général ne voit. Chacune sera présentée avec son sujet ; la plus simple, celle des fichiers de Next, dès le routage.
+</Promesse>
+
+Les outils sont en place. Nous pouvons ouvrir le code de l’application, en commençant par ce que voit chaque visiteur : une adresse, et la page qui lui répond.
 
 <Callout type="tip">
-**Chapitre suivant : les gardes maison.** Cinq scripts courts, chacun pour une erreur silencieuse, et la façon d’en écrire un cinquième.
+**Partie suivante : les fondations du front, en commençant par le routage.** Des dossiers qui deviennent des adresses, des groupes de routes invisibles, trois layouts aux rôles opposés, et la défense en profondeur du tableau de bord.
 </Callout>

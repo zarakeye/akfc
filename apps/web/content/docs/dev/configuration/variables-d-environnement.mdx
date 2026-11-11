@@ -105,6 +105,10 @@ Le `.gitignore` empêche de committer un fichier `.env`, à l'exception des deux
 
 ## En production : au démarrage, ou au build
 
+<Promesse vers="dev/infrastructure/mettre-en-production">
+Sur le serveur, l'application tourne dans un conteneur Docker, lancé par un fichier `docker-compose.yml` qui ne quitte jamais le serveur. Le déploiement complet, et ce qui vit uniquement là-bas, a sa partie.
+</Promesse>
+
 L'image ne contient donc aucune variable secrète. Le serveur les lui donne au moment de lancer le conteneur : le fichier `docker-compose.yml` du serveur désigne, pour le service de l'application, un fichier d'environnement (`env_file:`) qui ne quitte jamais le serveur. Le code lit ces valeurs au démarrage et à chaque requête, exactement comme en développement.
 
 Une famille de variables échappe à cette règle : celles dont le nom commence par `NEXT_PUBLIC_`.
@@ -232,8 +236,8 @@ Sans `TICKET_IMAP_HOST`, la fonction renvoie `null` et la relève reste éteinte
 
 ## À suivre
 
-La partie « Configuration » s'achève : nous savons d'où viennent les paquets, les types, le build et les réglages. Il est temps d'ouvrir l'application elle-même, par la question que se pose tout visiteur sans le savoir : quand il tape une adresse, quel fichier lui répond ?
+La partie « Configuration » s'achève : nous savons d'où viennent les paquets, les types, le build et les réglages. Avant d'écrire le moindre composant, installons ce qui vérifiera chacune de nos modifications : dès qu'on écrit du TypeScript, on peut se tromper sans que rien ne s'affiche.
 
 <Callout type="tip">
-**Partie suivante : les fondations du front, en commençant par le routage.** Des dossiers qui deviennent des adresses, des groupes de routes invisibles, trois layouts aux rôles opposés, et la défense en profondeur du tableau de bord.
+**Partie suivante : Qualité (1), vérifier avant d’enregistrer.** La commande `pnpm check`, maillon par maillon ; puis le typecheck et le lint, et ce que les règles de React apprennent sur la façon d'écrire un composant.
 </Callout>

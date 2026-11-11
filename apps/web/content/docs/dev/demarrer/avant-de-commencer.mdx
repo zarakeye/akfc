@@ -27,7 +27,17 @@ L'idée directrice : **une seule source de vérité**, servie à deux publics. C
 
 ## Comment lire cette documentation
 
-Les parties suivent l'ordre dans lequel un développeur découvre le projet : l'installer, apprendre à travailler avec, puis descendre couche par couche (le front, les données, l'API, l'authentification, le stockage) jusqu'au déploiement.
+Cette documentation s'adresse d'abord à un développeur qui débute. Elle ne suppose pas que nous maîtrisons déjà les sujets qu'elle traite : chaque notion est définie au moment où elle sert pour la première fois, avec ce qu'elle est **dans ce projet**.
+
+Ses parties suivent l'ordre dans lequel on **construirait** le projet, pas celui de ses dossiers. On ne bâtit pas tout à la fois : on installe le socle, on ouvre une vitrine publique, on permet d'écrire des données, on reconnaît qui se connecte, on administre le contenu et ses fichiers, on met en ligne, puis on accueille les membres. Un même sujet peut donc revenir plusieurs fois, quand le projet en a de nouveau besoin : « Qualité (1) » vérifie le code dès qu'on en écrit, « Qualité (2) » ajoute les tests quand un besoin que la relecture ne peut pas couvrir apparaît. Ces **reprises** sont voulues : elles montrent dans quel ordre les décisions se prennent.
+
+Il arrive qu'une partie ait besoin d'un sujet traité plus loin. Quand quelques lignes suffisent pour suivre, elle les donne, dans un encadré comme celui-ci, avec le chapitre qui l'approfondit :
+
+<Promesse vers="dev/api/pourquoi-trpc">
+**tRPC** permet au navigateur d'appeler une fonction du serveur par son nom, avec des types vérifiés des deux côtés, sans écrire d'adresse d'API à la main. C'est tout ce qu'il faut savoir pour lire la suite de ce chapitre.
+</Promesse>
+
+Le numéro du chapitre visé est calculé : il reste juste quand la documentation évolue. Et un chapitre ne s'interrompt pour traiter d'abord un autre sujet que lorsque c'est indispensable pour le comprendre ; il le dit alors explicitement.
 
 Chaque chapitre part d'un besoin concret, présente le choix retenu et ce qu'il permet, puis montre le code qui l'implémente. Les encadrés résument ce qu'il faut retenir ; la fin de chaque chapitre annonce la question que traite le suivant.
 
@@ -74,6 +84,14 @@ Suivons ce qui se passe quand un administrateur publie une actualité. Ce trajet
 2. La requête arrive au routeur `post` de `packages/backend`. Le middleware `isAdmin` vérifie la session ; Zod valide le type du titre et du contenu.
 3. Prisma écrit l'article dans PostgreSQL, dans une transaction qui enregistre aussi les médias qu'il référence.
 4. Le front invalide son cache : la liste des actualités se recharge d'elle-même.
+
+Ce trajet emploie déjà plusieurs mots que la suite définira en détail. Pour le lire aujourd'hui, une phrase chacun suffit :
+
+<DocsTable columnsJson='["Mot", "En une phrase"]' rowsJson='[["Procédure tRPC", "Une fonction du serveur que le navigateur appelle par son nom (post.create), comme une fonction locale."], ["Middleware", "Une fonction exécutée avant la procédure, qui peut l’arrêter : isAdmin refuse quiconque n’est pas administrateur."], ["Zod", "Une bibliothèque qui décrit la forme attendue d’une donnée et refuse ce qui ne la respecte pas."], ["Prisma", "La bibliothèque qui traduit nos appels TypeScript en requêtes SQL vers PostgreSQL, avec des types tirés du schéma de la base."], ["Transaction", "Plusieurs écritures en base qui réussissent toutes ensemble, ou dont aucune n’est appliquée."], ["Cache", "Les réponses déjà reçues que le navigateur garde pour ne pas les redemander ; l’invalider, c’est lui dire qu’elles sont périmées."]]' />
+
+<Promesse vers="dev/api/la-carte-du-systeme">
+Le trajet complet d'une procédure, du clic à la base et retour, a sa partie : « API ». Nous y suivrons chacun de ces maillons dans le code.
+</Promesse>
 
 Les fichiers prennent un autre chemin, détaillé dans la partie « Stockage et médias ». Un fichier lourd ne transite pas par notre API : le backend délivre une autorisation signée, et le navigateur envoie le fichier directement au stockage compatible S3 (Cloudflare R2 en production, SeaweedFS sur notre machine). Le serveur n'a ainsi jamais à tenir un fichier de plusieurs dizaines de mégaoctets en mémoire.
 

@@ -152,6 +152,10 @@ Cette règle a été appliquée en relisant toutes les données qui traversent v
 Avant de passer un objet à un composant client, ou de le renvoyer d'une procédure publique, on se demande : **que lirait un inconnu qui affiche la source de la page ?** Un `select` explicite et un type de projection (`SessionClient`, `DisplayUser`) répondent à cette question une fois pour toutes.
 </Callout>
 
+<Promesse vers="dev/auth/le-modele-et-le-contrat" section="Le contrat partagé : `SessionClient`">
+Un **select** dit à la base quels champs lire ; un **type de projection** décrit la forme exacte de ce qui sort, champ par champ. `SessionClient` est le modèle du genre : la partie sur l’authentification le lit en détail.
+</Promesse>
+
 ## L'hydratation : le même rendu des deux côtés
 
 Un composant client est rendu deux fois : sur le serveur, pour le premier HTML, puis dans le navigateur, où React reprend ce HTML et y attache les événements. C'est l'**hydratation**. Pour qu'elle réussisse, les deux rendus doivent produire le même résultat. Sinon React signale une erreur et refait le rendu côté client, avec un clignement visible.

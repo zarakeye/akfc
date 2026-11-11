@@ -63,6 +63,12 @@ Un nom entre parenthèses n'existe que dans les fichiers. Partout où l'on raiso
 
 Le tableau de bord contient des données personnelles. Son accès est contrôlé à trois niveaux, chacun avec un rôle précis.
 
+Cette section emploie des mots de l’authentification, traitée plus loin. Pour la suivre, il suffit de ceci :
+
+<Promesse vers="dev/auth/pourquoi-une-chaine" section="Avant de commencer : les mots de cette partie">
+Quand un membre se connecte, le serveur lui confie un **cookie de session** : une petite donnée que son navigateur renvoie à chaque requête, et qui contient un **jeton signé**, que personne ne peut fabriquer sans le secret du serveur. Lire ce cookie, c’est savoir qui fait la requête.
+</Promesse>
+
 ### Le proxy : écarter les visiteurs sans session
 
 `apps/web/src/proxy.ts` s'exécute avant les pages. Son `matcher` déclare les adresses qu'il surveille, écrites en URL réelles :
@@ -306,6 +312,10 @@ export { handler as GET, handler as POST }
 Le segment `[trpc]` reçoit le nom de la procédure (`post.create`, `discipline.getAll`…) et l'aiguille vers le bon routeur de `packages/backend`. Le front n'écrit jamais d'URL : il appelle des fonctions typées. La partie consacrée à l'API détaillera ce mécanisme.
 
 ## La session dès le premier affichage
+
+<Promesse vers="dev/auth/le-navigateur-et-le-proxy" section="Pourquoi deux endroits : un contexte et un store">
+Ce qui suit est un aperçu : le chapitre qui l’approfondit lit `SessionLoader` ligne par ligne, et explique pourquoi la session vit à deux endroits dans le navigateur.
+</Promesse>
 
 Revenons à la session lue par le layout racine.
 

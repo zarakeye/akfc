@@ -187,6 +187,10 @@ pnpm install
 
 ## La base, le stockage et la boîte mail
 
+<Callout type="concept">
+**Quatre mots de Docker.** Une **image** est un modèle figé : un système minimal avec un programme déjà installé (PostgreSQL, par exemple). Un **conteneur** est une image **en marche**, isolée du reste de la machine, que l'on démarre et arrête à volonté ; plusieurs conteneurs peuvent naître de la même image. Un **volume** est un espace disque que Docker garde à part : les données y survivent quand le conteneur s'arrête ou est recréé. Un **port** est le numéro par lequel on joint un programme sur une machine : la base écoute sur un port, notre application s'y connecte. Le fichier `docker-compose.dev.yml` décrit, en une fois, les conteneurs à lancer, leurs volumes et leurs ports.
+</Callout>
+
 ```bash
 pnpm dev:infra
 ```
@@ -294,7 +298,11 @@ pnpm db:migrate
 
 `prisma migrate deploy` applique les migrations manquantes et n'en crée aucune. C'est la commande utilisée en production : notre base se construit exactement de la même façon que celle du serveur.
 
-`prisma migrate dev`, elle, compare le schéma à la base et **écrit une nouvelle migration**. Nous l'utiliserons dans la partie « Données », quand nous modifierons le schéma.
+`prisma migrate dev`, elle, compare le schéma à la base et **écrit une nouvelle migration**. Nous l'utiliserons quand nous modifierons le schéma.
+
+<Promesse vers="dev/donnees/ecrire-et-faire-evoluer" section="Faire évoluer la base : les migrations">
+Une **migration** est un fichier SQL qui fait passer la base d'une version du schéma à la suivante. Elles s'appliquent une fois chacune, dans l'ordre : c'est ainsi que notre base, celle des tests et celle du serveur restent identiques.
+</Promesse>
 
 ## Les données de démonstration
 

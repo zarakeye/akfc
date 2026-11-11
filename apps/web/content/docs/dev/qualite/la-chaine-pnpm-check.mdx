@@ -1,16 +1,22 @@
 ---
 title: "pnpm check, une chaîne de gardes"
 description: "Une seule commande avant chaque commit : des gardes rapides d’abord, puis les types de trois projets TypeScript et le lint de tout le code écrit à la main. Ce que chaque étape couvre, ce qu’elle ne voit pas, et ce que l’extension du lint aux paquets a trouvé dès son premier passage."
-section: "Qualité"
+section: "Qualité (1) : vérifier avant d’enregistrer"
 order: 1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le site est utilisable au clavier et avec un lecteur d’écran. Toutes les fonctions sont en place ; reste à garantir qu’elles continuent de marcher après chaque modification.
+> **Précédemment.** La configuration est posée : les paquets, les `tsconfig`, le build de Next et les variables d’environnement. Nous allons bientôt écrire du code ; avant, installons ce qui le vérifiera à chaque modification.
 
-Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain la croise. Cette partie présente les vérifications automatiques du projet. Ce chapitre les prend ensemble, comme une chaîne : ce que lance `pnpm check`, dans quel ordre, et ce que chaque maillon couvre. Le chapitre 2 entre dans le typecheck et le lint, le chapitre 3 dans les gardes écrites pour ce projet.
+Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain la croise. Cette partie présente les vérifications **statiques** du projet : celles qui lisent le code sans l’exécuter. Ce chapitre les prend ensemble, comme une chaîne : ce que lance `pnpm check`, dans quel ordre, et ce que chaque maillon couvre. Le chapitre suivant entre dans le typecheck et le lint.
+
+Le projet est décrit ici tel qu’il est aujourd’hui : la chaîne compte des gardes qui vérifient des sujets que nous n’avons pas encore vus (les tutoriels, la documentation). Une phrase suffit pour chacune ; elles seront détaillées quand leur sujet viendra.
+
+<Callout type="concept">
+**Deux mots.** Le **typecheck** fait vérifier par TypeScript que les types de tout le projet sont cohérents : qu’on n’appelle pas une fonction avec un argument du mauvais type, qu’on ne lit pas un champ qui n’existe pas. Le **lint** relit le code à la recherche de motifs connus pour être fautifs, même quand les types sont justes : un hook React appelé dans une condition, une variable jamais utilisée.
+</Callout>
 
 ## Une commande, lancée avant chaque commit ✅
 
@@ -28,7 +34,7 @@ Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain 
 
 L’ordre n’est pas indifférent : les **gardes maison** passent d’abord, parce qu’elles prennent une seconde et qu’elles expliquent l’erreur en une phrase. Le typecheck et le lint, qui relisent des centaines de fichiers, viennent ensuite. Une erreur bon marché à trouver est trouvée tôt.
 
-<DocsTable columnsJson='["Étape", "Question posée", "Si elle échoue"]' rowsJson='[["check-next-conventions", "Les fichiers de convention de Next (proxy, instrumentation) sont-ils là où Next les lit ?", "Un fichier ignoré sans un mot de Next : le filtre d’authentification ne s’exécuterait pas."], ["check-tour-targets", "Chaque étape d’un tutoriel interactif vise-t-elle un élément qui existe, et chaque tuto est-il enregistré et bien désigné par les fiches ?", "Un tutoriel bloqué chez l’utilisateur, ou introuvable."], ["build-procedure-map", "La carte des procédures de la documentation correspond-elle au backend ?", "Des parcours de la doc qui décrivent un code disparu."], ["check-doc-entities", "Les entités, procédures et sections citées par la doc existent-elles ?", "Une carte des entités fausse, sans erreur visible."], ["check-doc-snippets", "Chaque extrait de code de la doc désigne-t-il des lignes qui existent ?", "Un extrait qui montre le code d’à côté, sans erreur visible."], ["pnpm clean", "—", "Efface .next : les types générés périmés n’entrent pas dans le typecheck."], ["pnpm typecheck", "Les types sont-ils cohérents, dans les trois projets TypeScript ?", "Une procédure et le composant qui l’appelle ne parlent plus de la même chose."], ["pnpm lint", "Le code respecte-t-il les règles de React et du langage, sans un seul avertissement ?", "Un motif fautif, du code mort, un composant que le React Compiler renonce à optimiser."]]' />
+<DocsTable columnsJson='["Étape", "Question posée", "Si elle échoue"]' rowsJson='[["check-next-conventions", "Les fichiers de convention de Next (proxy, instrumentation) sont-ils là où Next les lit ?", "Un fichier ignoré sans un mot de Next : le filtre d’authentification ne s’exécuterait pas."], ["check-tour-targets", "Chaque étape d’un tutoriel interactif vise-t-elle un élément qui existe, et chaque tuto est-il enregistré et bien désigné par les fiches ?", "Un tutoriel bloqué chez l’utilisateur, ou introuvable."], ["build-procedure-map", "La carte des procédures de la documentation correspond-elle au backend ?", "Des parcours de la doc qui décrivent un code disparu."], ["check-doc-entities", "Les entités, procédures et sections citées par la doc existent-elles ?", "Une carte des entités fausse, sans erreur visible."], ["check-doc-snippets", "Chaque extrait de code de la doc désigne-t-il des lignes qui existent ?", "Un extrait qui montre le code d’à côté, sans erreur visible."], ["check-doc-components", "Chaque promesse de la doc vise-t-elle un chapitre et une section qui existent, et chaque encadré un type connu ?", "Un renvoi vers un chapitre déplacé ou disparu ; un encadré sans couleur."], ["pnpm clean", "—", "Efface .next : les types générés périmés n’entrent pas dans le typecheck."], ["pnpm typecheck", "Les types sont-ils cohérents, dans les trois projets TypeScript ?", "Une procédure et le composant qui l’appelle ne parlent plus de la même chose."], ["pnpm lint", "Le code respecte-t-il les règles de React et du langage, sans un seul avertissement ?", "Un motif fautif, du code mort, un composant que le React Compiler renonce à optimiser."]]' />
 
 <Callout type="info">
 `pnpm check` passe **avant** chaque commit, pas seulement avant une mise en production. Un commit qui ne passe pas les vérifications en cache d’autres : la prochaine erreur se trouvera au milieu de celles qu’on a laissées.
@@ -143,7 +149,11 @@ Toutes ces vérifications sont **statiques** : elles lisent le code sans l’ex�
 
 <DocsTable columnsJson='["Ce qui leur échappe", "Exemple"]' rowsJson='[["Une règle métier fausse mais bien typée", "Une page brouillon montrée aux visiteurs : le code compile, il fait simplement la mauvaise chose."], ["Ce qui dépend des données", "Une requête correcte qui renvoie un document à qui ne devrait pas le voir, parce qu’un groupe a été mal rattaché."], ["Ce qui dépend du temps", "Un plan du site figé au démarrage du serveur (partie « Interface transverse ») : rien d’incohérent, juste un résultat qui vieillit."], ["Le comportement dans un navigateur", "Un menu qui ne s’ouvre pas au clavier, un formulaire qui s’envoie deux fois."]]' />
 
-Ces erreurs-là se trouvent en **exécutant** le code : à la main, en relisant (ce qu’ont fait les revues de chaque partie de cette documentation), et par les tests de bout en bout du chapitre 4, lancés à part (`pnpm e2e`).
+Ces erreurs-là se trouvent en **exécutant** le code : à la main, en relisant (ce qu’ont fait les revues de chaque partie de cette documentation), et par les tests de bout en bout, lancés à part (`pnpm e2e`).
+
+<Promesse vers="dev/qualite/tester-de-bout-en-bout">
+Un test de bout en bout pilote un vrai navigateur contre l’application, comme le ferait un utilisateur, et vérifie ce qui s’affiche. Il arrivera quand le projet en aura vraiment besoin : avec la connexion, dont les règles (limite d’essais, session révoquée) ne se voient qu’en faisant tourner le site.
+</Promesse>
 
 ## Récapitulatif
 

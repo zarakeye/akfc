@@ -15,6 +15,7 @@ const SECTION_ORDER = [
   "Réglages",
   "Démarrer",
   "Configuration",
+  "Qualité (1) : vérifier avant d’enregistrer",
   "Fondations front",
   "Données",
   "Formulaires",

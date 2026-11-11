@@ -24,6 +24,12 @@ Un seul objet, typé par `NextConfig` : l'éditeur complète les noms d'options 
 
 ## Le build autonome
 
+Deux mots, avant d'entrer dans ce réglage. **Construire** l'application (`next build`), c'est transformer tout notre code en fichiers prêts à être servis, optimisés et vérifiés, une fois pour toutes ; c'est ce qui tourne en production. L'**image Docker** de production est le paquet qui contient ce résultat et de quoi le lancer, que le serveur exécute tel quel.
+
+<Promesse vers="dev/infrastructure/l-image-docker">
+L'image est construite en plusieurs étapes par le `Dockerfile` ; ici, il suffit de savoir qu'elle doit être aussi petite que possible et ne contenir que ce qui s'exécute.
+</Promesse>
+
 Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarrer, de tout le `node_modules` du projet. Dans un monorepo, c'est plusieurs centaines de mégaoctets, dont l'essentiel ne sert jamais en production (outils de lint, de test, de build).
 
 <CodeExample
