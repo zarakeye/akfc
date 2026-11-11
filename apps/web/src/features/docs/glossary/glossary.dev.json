@@ -1658,5 +1658,92 @@
    "vers": "dev/membres/les-groupes",
    "section": "Deux sortes de groupes 👥"
   }
+ },
+ {
+  "id": "droit-image",
+  "terme": "droit à l’image",
+  "variantes": [
+   "droit à l’image",
+   "droits à l’image",
+   "droit à l'image"
+  ],
+  "definition": "L’accord écrit d’une personne reconnaissable pour la diffusion de son image, usage par usage (galerie des membres, site public, réseaux sociaux…), signé par un parent pour un mineur.",
+  "definiEn": {
+   "vers": "dev/legal/droit-a-l-image"
+  },
+  "approfondiEn": {
+   "vers": "dev/legal/droit-a-l-image",
+   "section": "Un statut qui découle du formulaire"
+  }
+ },
+ {
+  "id": "ayant-droit",
+  "terme": "ayant droit",
+  "variantes": [
+   "ayant droit",
+   "ayants droit"
+  ],
+  "definition": "Une personne qui a le droit d’accéder à un document : pour un formulaire de droit à l’image signé, le membre concerné et les administrateurs, et personne d’autre.",
+  "definiEn": {
+   "vers": "dev/legal/droit-a-l-image",
+   "section": "Servi aux seuls ayants droit"
+  }
+ },
+ {
+  "id": "parent-referent",
+  "terme": "parent référent",
+  "variantes": [
+   "parent référent",
+   "parents référents"
+  ],
+  "definition": "Le parent (ou tuteur) d’un membre mineur, enregistré par le club d’après le dossier d’inscription, qui donne l’autorisation de droit à l’image par un lien reçu par e-mail.",
+  "definiEn": {
+   "vers": "dev/legal/consentement-en-ligne",
+   "section": "Et les mineurs : le parent valide"
+  }
+ },
+ {
+  "id": "tag-personne",
+  "terme": "tag de personne",
+  "variantes": [
+   "tag de personne",
+   "tags de personnes",
+   "tag",
+   "tags"
+  ],
+  "definition": "Le lien posé à la main par un administrateur entre une personne et un média où elle est reconnaissable ; le site le compare à son droit à l’image pour chaque usage.",
+  "definiEn": {
+   "vers": "dev/legal/tags-de-personnes"
+  },
+  "approfondiEn": {
+   "vers": "dev/legal/tags-de-personnes",
+   "section": "Un verdict calculé, jamais stocké"
+  }
+ },
+ {
+  "id": "droit-acces",
+  "terme": "droit d’accès",
+  "variantes": [
+   "droit d’accès",
+   "droit d'accès"
+  ],
+  "definition": "Le droit, donné par le RGPD, d’obtenir toutes les données qu’un site garde sur soi ; ici, un fichier JSON téléchargé depuis son profil.",
+  "definiEn": {
+   "vers": "dev/legal/donnees-personnelles",
+   "section": "Le droit d’accès, télécharger ses données"
+  }
+ },
+ {
+  "id": "duree-conservation",
+  "terme": "durée de conservation",
+  "variantes": [
+   "durée de conservation",
+   "durées de conservation"
+  ],
+  "definition": "Le temps pendant lequel une donnée est gardée, annoncé par la politique de confidentialité et tenu par une purge chaque nuit.",
+  "definiEn": {
+   "vers": "dev/legal/donnees-personnelles",
+   "section": "Des durées de conservation appliquées 🗓️"
+  }
  }
 ]
