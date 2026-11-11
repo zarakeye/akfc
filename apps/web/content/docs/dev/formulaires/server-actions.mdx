@@ -288,7 +288,11 @@ Prenons-la dans l'ordre.
 
 **Les règles que seul le serveur connaît.** La catégorie se choisit dans une liste fixe (`course`, `seminar`, `event`), et ne change plus une fois choisie : le formulaire ne la propose plus, mais une requête fabriquée le pourrait, alors l'action le refuse. L'unicité de la clé et du libellé ne peut pas non plus être vérifiée dans le navigateur : il faudrait connaître toutes les catégories existantes. C'est le serveur, avec Prisma, qui la vérifie, en s'excluant lui-même en édition.
 
-**L'écriture**, création ou mise à jour selon la présence d'`id`, dans une transaction. À la création, la catégorie reçoit son **segment de stockage** (le nom de son dossier, `courses` pour « Cours »), figé une fois pour toutes : la renommer ne change ensuite que le libellé que le finder affiche, jamais le dossier où vivent ses fichiers (partie « Domaine du club », chapitre 3). L'état de retour donne l'identifiant de la catégorie : le composant s'en sert pour rediriger vers sa fiche.
+**L'écriture**, création ou mise à jour selon la présence d'`id`, dans une transaction. À la création, la catégorie reçoit son **segment de stockage** (le nom de son dossier, `courses` pour « Cours »), figé une fois pour toutes : la renommer ne change ensuite que le libellé que le finder affiche, jamais le dossier où vivent ses fichiers. L'état de retour donne l'identifiant de la catégorie : le composant s'en sert pour rediriger vers sa fiche.
+
+<Promesse vers="dev/domaine/un-modele-qui-s-ouvre" section="Le nom affiché n’est pas une identité">
+Un libellé est fait pour être lu et renommé ; un dossier de fichiers doit rester où il est. Dériver l’un de l’autre déplacerait les fichiers à chaque renommage : d’où un segment calculé une fois, à la création.
+</Promesse>
 
 **Les erreurs.** La vérification préalable de l'unicité donne un message clair dans le cas courant ; si deux enregistrements simultanés la passent tous les deux, c'est la contrainte de la base qui tranche (`P2002`), avec le même message. Toute autre erreur est **journalisée** avant de renvoyer un message générique : un `catch` muet cacherait une base injoignable derrière « Enregistrement impossible ».
 

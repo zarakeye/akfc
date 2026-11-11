@@ -842,5 +842,257 @@
   "approfondiEn": {
    "vers": "dev/contenu/un-contenu-fait-de-blocs"
   }
+ },
+ {
+  "id": "formdata",
+  "terme": "FormData",
+  "variantes": [
+   "FormData"
+  ],
+  "definition": "L’objet JavaScript qui contient les valeurs d’un formulaire soumis, lues par le nom des champs (`formData.get(\"email\")`). Toutes sont des chaînes, ou des fichiers.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Le formulaire, côté navigateur"
+  },
+  "approfondiEn": {
+   "vers": "dev/formulaires/les-pieges-du-modele-hybride"
+  }
+ },
+ {
+  "id": "serialiser",
+  "terme": "sérialiser",
+  "variantes": [
+   "sérialiser",
+   "sérialise",
+   "sérialisent",
+   "sérialisé",
+   "sérialisée",
+   "sérialisés",
+   "sérialisation",
+   "désérialiser",
+   "désérialisation"
+  ],
+  "definition": "Transformer une valeur du programme en texte, pour l’envoyer ou la stocker (un formulaire en `a=1&b=2`, un objet en JSON) ; désérialiser fait l’inverse.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Le formulaire, côté navigateur"
+  }
+ },
+ {
+  "id": "hook",
+  "terme": "hook",
+  "variantes": [
+   "hook",
+   "hooks"
+  ],
+  "definition": "Une fonction de React dont le nom commence par `use` (`useState`, `useActionState`) et qui donne une capacité à un composant : garder une valeur, suivre un envoi.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que React ajoute"
+  }
+ },
+ {
+  "id": "re-render",
+  "terme": "re-render",
+  "variantes": [
+   "re-render",
+   "re-renders"
+  ],
+  "definition": "Le nouveau calcul de l’affichage d’un composant, déclenché quand son état ou ses props changent.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que React ajoute"
+  }
+ },
+ {
+  "id": "etat-controle",
+  "terme": "état contrôlé",
+  "variantes": [
+   "état contrôlé",
+   "champ contrôlé",
+   "champs contrôlés"
+  ],
+  "definition": "Une saisie tenue dans un état React, mis à jour à chaque frappe, plutôt que laissée dans le champ du navigateur.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que React ajoute"
+  },
+  "approfondiEn": {
+   "vers": "dev/formulaires/choisir-son-modele"
+  }
+ },
+ {
+  "id": "server-action",
+  "terme": "server action",
+  "variantes": [
+   "server action",
+   "server actions"
+  ],
+  "definition": "Une fonction d’un fichier marqué `\"use server\"`, exécutée sur le serveur, qu’un formulaire peut appeler directement : Next.js fabrique la requête.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que le serveur reprend"
+  },
+  "approfondiEn": {
+   "vers": "dev/formulaires/server-actions"
+  }
+ },
+ {
+  "id": "mutation",
+  "terme": "mutation",
+  "variantes": [
+   "mutation",
+   "mutations"
+  ],
+  "definition": "Une opération qui modifie des données côté serveur (créer, modifier, supprimer). Dans tRPC, une procédure d’écriture, par opposition à une query.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que le serveur reprend"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce que tRPC apporte"
+  }
+ },
+ {
+  "id": "schema-partage",
+  "terme": "schéma partagé",
+  "variantes": [
+   "schéma partagé",
+   "schémas partagés"
+  ],
+  "definition": "Un schéma Zod écrit une fois dans `packages/contracts` et importé des deux côtés : par le formulaire pour prévenir, par le serveur pour décider.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Ce que le serveur reprend"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/valider-l-entree",
+   "section": "Où vit la validation ?"
+  }
+ },
+ {
+  "id": "api",
+  "terme": "API",
+  "variantes": [
+   "API",
+   "APIs"
+  ],
+  "definition": "*Application Programming Interface* : l’ensemble des fonctions qu’un programme offre à d’autres. Dans le projet, surtout ce que le serveur offre au navigateur.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce qui circule entre le navigateur et le serveur"
+  }
+ },
+ {
+  "id": "rest",
+  "terme": "REST",
+  "variantes": [
+   "REST"
+  ],
+  "definition": "La forme d’API la plus répandue : chaque fonction est une adresse et une méthode HTTP (`GET /api/disciplines`), que le navigateur construit et dont il interprète la réponse.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce qui circule entre le navigateur et le serveur"
+  }
+ },
+ {
+  "id": "endpoint",
+  "terme": "endpoint",
+  "variantes": [
+   "endpoint",
+   "endpoints"
+  ],
+  "definition": "Dans une API REST, une adresse et une méthode HTTP qui correspondent à une fonction du serveur.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce qui circule entre le navigateur et le serveur"
+  }
+ },
+ {
+  "id": "json",
+  "terme": "JSON",
+  "variantes": [
+   "JSON"
+  ],
+  "definition": "Le format texte dans lequel voyagent les données (`{\"name\":\"Tchoy Lee Fut\"}`). Il ne connaît ni les dates ni les `Map`.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce qui circule entre le navigateur et le serveur"
+  }
+ },
+ {
+  "id": "superjson",
+  "terme": "superjson",
+  "variantes": [
+   "superjson",
+   "transformateur",
+   "transformateurs"
+  ],
+  "definition": "Le transformateur que tRPC utilise des deux côtés : il ajoute à JSON de quoi reconstruire les dates et autres types à l’arrivée.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce qui circule entre le navigateur et le serveur"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/la-carte-du-systeme"
+  }
+ },
+ {
+  "id": "query",
+  "terme": "query",
+  "variantes": [
+   "query",
+   "queries"
+  ],
+  "definition": "Dans tRPC, une procédure de lecture (`.query`). Sa réponse est gardée en cache dans le navigateur.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce que tRPC apporte"
+  }
+ },
+ {
+  "id": "react-query",
+  "terme": "React Query",
+  "variantes": [
+   "React Query"
+  ],
+  "definition": "La bibliothèque du navigateur qui garde en cache les réponses des procédures et les redemande quand elles sont invalidées ; tRPC s’y branche.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce que tRPC apporte"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/le-circuit-complet",
+   "section": "🖥️ Côté navigateur : deux clients"
+  }
+ },
+ {
+  "id": "inference",
+  "terme": "inférence de types",
+  "variantes": [
+   "inférence de types",
+   "inférence"
+  ],
+  "definition": "TypeScript qui déduit lui-même un type au lieu qu’on l’écrive : le type de l’entrée se déduit du schéma Zod, celui de toute l’API du type de `appRouter`.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce que TypeScript y gagne"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/valider-l-entree"
+  }
+ },
+ {
+  "id": "bout-en-bout",
+  "terme": "typage de bout en bout",
+  "variantes": [
+   "typage de bout en bout"
+  ],
+  "definition": "Des types partagés du serveur au navigateur : un champ renommé dans une procédure fait échouer le typecheck du composant qui l’utilise.",
+  "definiEn": {
+   "vers": "dev/api/pourquoi-trpc",
+   "section": "Ce que TypeScript y gagne"
+  }
  }
 ]

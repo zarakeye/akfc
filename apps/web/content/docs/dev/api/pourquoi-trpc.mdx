@@ -109,6 +109,34 @@ Elle apparaît lorsque la donnée est **forcée de changer de nature** pour circ
 
 ---
 
+## Avant de commencer : les mots de cette partie
+
+Cette partie construit l’**API** du projet. Les mots qui suivent y reviennent à chaque page.
+
+### Ce qui circule entre le navigateur et le serveur
+
+- Une **API** (*Application Programming Interface*) est l’ensemble des fonctions qu’un programme offre à d’autres. Ici : ce que le serveur offre au navigateur, pour lire et pour écrire.
+- Une API **REST**, la forme la plus répandue, expose ses fonctions comme des adresses : chaque **endpoint** est une URL et une méthode HTTP (`GET /api/disciplines` pour lire, `POST` pour créer). Le navigateur doit construire l’adresse, puis interpréter la réponse.
+- **JSON** est le format texte dans lequel voyagent les données (`{"name":"Tchoy Lee Fut"}`). **Sérialiser**, c’est transformer une valeur du programme en texte JSON ; désérialiser, c’est faire l’inverse. JSON ne connaît ni les dates ni les `Map` : une date y devient une simple chaîne.
+- Un **transformateur** comme **superjson** ajoute à JSON de quoi reconstruire ces types de l’autre côté : une `Date` envoyée arrive en `Date`.
+
+### Ce que tRPC apporte
+
+- **tRPC** remplace les adresses par des **procédures** : le navigateur appelle `discipline.list` par son nom, comme une fonction, et TypeScript connaît ce qu’elle attend et ce qu’elle renvoie.
+- Une procédure est une **query** (une lecture, `.query`) ou une **mutation** (une écriture, `.mutation`). La différence compte côté navigateur : une lecture se met en cache, une écriture invalide ce qu’elle a changé.
+- L’**entrée** d’une procédure (`.input(schéma)`) est la donnée qu’elle reçoit, vérifiée par un schéma Zod avant toute logique. Sa **sortie** est ce qu’elle renvoie.
+- Le **contexte** (`ctx`) est l’objet fabriqué une fois par requête et remis à chaque procédure : le client Prisma, la session de l’appelant, son adresse IP et son navigateur.
+- Un **routeur** regroupe les procédures d’un domaine ; **`appRouter`** assemble tous les routeurs en une seule API, servie par une seule route de Next.js, `/api/trpc`.
+- Un **service** est une fonction métier, sans rien de tRPC, que plusieurs procédures (ou une server action) appellent : la logique vit à un seul endroit.
+- **`TRPCError`** est l’erreur qu’une procédure lève pour refuser, avec un **code** (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`…) qui dit au navigateur quel genre de refus c’est.
+
+### Ce que TypeScript y gagne
+
+- L’**inférence de types** : TypeScript déduit lui-même un type au lieu qu’on l’écrive. Avec Zod, le type de l’entrée se déduit du schéma ; avec tRPC, le navigateur déduit les types de toute l’API du seul type de `appRouter`.
+- Le **typage de bout en bout** en est la conséquence : un champ renommé dans une procédure fait échouer le typecheck dans le composant qui l’utilise, avant même l’exécution.
+
+---
+
 ## 🎯 Ce que nous allons faire
 
 Nous n’allons pas simplement apprendre tRPC.

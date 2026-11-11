@@ -99,7 +99,7 @@ Ce code vit dans une **procédure** : une fonction du serveur que le tableau de 
 **Le commentaire « UNION des deux composites ».** Une discipline a deux contenus (sa description et sa présentation synthétique) et une image de carte. `syncPageMediaReferences` recalcule la liste **complète** des médias utilisés : lui passer un seul des contenus ferait passer les images de l’autre pour orphelines. Le commentaire explique un bug avant qu’il n’arrive.
 
 <Callout type="warning">
-Dans un bloc `$transaction(async (tx) => …)`, on n’utilise que `tx`. Une requête faite par erreur avec `prisma` dans ce bloc s’exécuterait **en dehors** de la transaction, et ne serait pas annulée. Les services appelés depuis une transaction reçoivent `tx` en paramètre (leur signature accepte `PrismaClient | Prisma.TransactionClient`).
+Dans un bloc `$transaction(async (tx) => …)`, on n’utilise que `tx`. Une requête faite par erreur avec `prisma` dans ce bloc s’exécuterait **en dehors** de la transaction, et ne serait pas annulée. Les services (les fonctions métier que plusieurs procédures se partagent) appelés depuis une transaction reçoivent `tx` en paramètre (leur signature accepte `PrismaClient | Prisma.TransactionClient`).
 </Callout>
 
 ## Quand Prisma ne suffit pas : le SQL brut

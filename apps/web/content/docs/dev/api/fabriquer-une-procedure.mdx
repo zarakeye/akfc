@@ -238,7 +238,11 @@ Il faut être très net sur ces termes. Ils sont souvent confondus, et cette con
 - ensuite nous savons **s’il a le droit** (administrateur, ou niveau d’accès à l’espace visé)  
 - enfin nous exécutons **ce qu’il veut faire** (intention)
 
-Le troisième niveau ne peut pas vivre dans la chaîne : pour savoir si un membre peut écrire dans un dossier, il faut connaître le dossier, c’est-à-dire l’entrée. Les procédures du finder commencent donc par une garde qui reçoit le chemin (`assertCanReadPath`, `assertCanTrashPaths`…) ; la partie « Stockage et médias » les détaille.
+Le troisième niveau ne peut pas vivre dans la chaîne : pour savoir si un membre peut écrire dans un dossier, il faut connaître le dossier, c’est-à-dire l’entrée. Les procédures du finder commencent donc par une garde qui reçoit le chemin (`assertCanReadPath`, `assertCanTrashPaths`…).
+
+<Promesse vers="dev/finder/trois-finders-en-un" section="Lire, et déposer quand on en a le droit">
+Le **finder** est l’explorateur de fichiers du tableau de bord : des dossiers, des fichiers, des droits qui dépendent du dossier. Ses gardes se lisent avec lui.
+</Promesse>
 
 ---
 

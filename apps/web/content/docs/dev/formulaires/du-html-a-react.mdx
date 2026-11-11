@@ -35,6 +35,35 @@ Et c’est précisément ici que les formulaires entrent en jeu.
 
 ---
 
+## Avant de commencer : les mots de cette partie
+
+Les formulaires sont le point où le navigateur, React et le serveur se rencontrent : chacun apporte ses mots. Les voici, une fois pour toutes, avant le détour historique.
+
+### Le formulaire, côté navigateur
+
+- Un **formulaire** (`<form>`) regroupe des champs de saisie (`<input>`, `<select>`, `<textarea>`). Chaque champ porte un attribut **`name`** : le nom sous lequel sa valeur sera envoyée.
+- **Soumettre** le formulaire (cliquer sur le bouton `type="submit"`, ou appuyer sur Entrée dans un champ) déclenche l’**évènement `submit`**. Sans JavaScript, le navigateur rassemble alors les valeurs, les **sérialise** (les met à plat en texte : `email=a%40b.fr&password=…`) et les envoie au serveur dans une requête `POST`, à l’adresse que donne l’attribut `action`. Le serveur répond par une nouvelle page.
+- **`FormData`** est l’objet qui contient ces valeurs côté JavaScript : on y lit un champ par son nom (`formData.get("email")`). Toutes ses valeurs sont des chaînes de caractères (ou des fichiers) : un nombre, une date ou une case cochée doivent être reconvertis.
+- **`preventDefault()`** empêche le comportement par défaut d’un évènement. Appelé sur `submit`, il arrête l’envoi natif : c’est JavaScript qui reprend la main, et tout ce que faisait le navigateur est désormais à sa charge.
+
+### Ce que React ajoute
+
+- Un **hook** est une fonction de React dont le nom commence par `use` (`useState`, `useActionState`, `useForm`) et qui donne une capacité à un composant : garder une valeur, réagir à un évènement, suivre un envoi.
+- Un **état** (*state*, créé par `useState`) est une valeur qu’un composant garde d’un affichage à l’autre ; la modifier provoque un nouveau calcul de l’affichage, un **re-render**.
+- Un champ **contrôlé** affiche une valeur gardée dans un état React et mise à jour à chaque frappe ; un formulaire en **état contrôlé** tient ainsi toute sa saisie dans React. L’autre façon de faire laisse la valeur dans le champ du navigateur et ne la lit qu’au besoin : c’est celle de React Hook Form.
+
+### Ce que le serveur reprend
+
+- Une **server action** est une fonction d’un fichier marqué `"use server"`. Elle s’exécute sur le serveur, mais un formulaire peut l’appeler directement (`<form action={…}>`) : Next.js fabrique la requête à notre place.
+- Une **mutation** est une opération qui modifie des données côté serveur : créer, modifier, supprimer. Le contraire d’une lecture.
+- Un **schéma partagé** est un schéma Zod écrit une fois dans `packages/contracts`, le paquet que se partagent le navigateur et le serveur, et importé des deux côtés : par le formulaire pour prévenir, par le serveur pour décider.
+
+<Promesse vers="dev/api/pourquoi-trpc">
+Une autre façon d’atteindre le serveur, tRPC, apparaît dans les deux derniers chapitres, là où une server action ne suffit plus. Il suffit pour l’instant de savoir qu’elle existe : la partie suivante la construit entièrement.
+</Promesse>
+
+---
+
 ## 🧠 Une idée fondamentale
 
 Un formulaire n’est pas une couche UI.
