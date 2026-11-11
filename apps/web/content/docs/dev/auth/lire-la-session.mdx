@@ -51,6 +51,8 @@ Nous avons vu le service. Voyons maintenant comment il est exposé par tRPC.
 
 ---
 
+Rappel de la partie « API » : une **procédure** est une fonction du serveur que le navigateur appelle par son nom (`auth.login`), avec une entrée validée. Une procédure **publique** (`publicProcedure`) peut être appelée par n’importe qui ; une procédure **protégée** (`protectedProcedure`) refuse tout appel sans session valide.
+
 Le routeur `auth` expose **six procédures** :
 
 - `login` (publique)
@@ -169,6 +171,8 @@ Sans la double vérification, aucun de ces trois scénarios ne serait possible. 
 ## La sélection et la projection : de la base au `SessionClient`
 
 Nous avons vu le contrat `SessionClient`. Voyons maintenant comment la donnée de Prisma est projetée vers ce contrat.
+
+Deux étapes, à ne pas confondre. La **sélection** (`sessionSelect`) dit à Prisma **quels champs lire** dans la base : ce qui n’est pas sélectionné n’est jamais chargé en mémoire. La **projection** (`mapSessionDBToSessionClient`) **met en forme** ce qui a été lu, pour respecter le contrat (chapitre 2). La sélection protège en amont, la projection façonne en aval.
 
 <CodeExample
   language="ts"

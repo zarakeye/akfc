@@ -16,6 +16,10 @@ Nous avons construit `getSessionFromRequest`. Mais cette fonction est inerte tan
 
 Qui l’appelle ? `createTRPCContext`, exactement comme nous l’avons vu dans la partie « API ».
 
+<Callout type="concept">
+**Définition — le contexte d’une requête.** Le **contexte** (`ctx`) est un objet fabriqué **une fois par requête**, avant que la procédure ne s’exécute, et passé à toutes les fonctions qui la traitent. Il contient ce que la requête « sait » d’elle-même : l’accès à la base (`ctx.prisma`), la racine de l’application, et surtout **qui** l’envoie (`ctx.sessionClient`). C’est comme le dossier qui accompagne un client d’un guichet à l’autre : chaque guichet le lit, personne n’a à reposer les mêmes questions.
+</Callout>
+
 <CodeExample
   language="ts"
   filepath="packages/backend/src/trpc/core.ts"
@@ -78,6 +82,8 @@ Rappel, depuis `core.ts` :
 
 ---
 
+Un **middleware**, dans tRPC, est une fonction qui s’exécute **avant** la procédure, avec le même contexte. Elle peut arrêter la requête (en levant une erreur), ou la laisser continuer, éventuellement avec un contexte enrichi. Plusieurs middlewares s’enchaînent : `protectedProcedure.use(isAdmin)` exécute d’abord la vérification de session, puis celle des droits, puis la procédure.
+
 Ce middleware fait deux choses :
 
 **1) Il bloque les requêtes anonymes.**  
@@ -85,6 +91,8 @@ Si `ctx.sessionClient?.user` est absent, il lève `UNAUTHORIZED` (« Connexion r
 
 **2) Il resserre le type du contexte.**  
 Le `as AuthenticatedSessionClient` n’est pas un cast aveugle : il est justifié par la vérification qui le précède. À partir de ce point, `ctx.sessionClient.user` n’est plus nullable, et TypeScript le sait.
+
+Deux mots de TypeScript, ici. Un champ **nullable** peut valoir `null` : TypeScript oblige alors à vérifier sa présence avant de s’en servir (`ctx.sessionClient?.user`). **Resserrer** un type, c’est passer d’un type large (« une session ou rien ») à un type plus précis (« une session avec un membre »), une fois qu’une vérification l’a prouvé. Un **cast** (`as …`) impose un type à TypeScript sans qu’il puisse le vérifier : il n’est acceptable que lorsque, comme ici, la ligne précédente vient de faire la preuve.
 
 ---
 

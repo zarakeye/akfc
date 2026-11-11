@@ -26,6 +26,10 @@ Mais l’authentification n’est jamais purement backend. Elle touche au naviga
 
 Côté navigateur, la question « qui est connecté ? » se pose dès le premier affichage. Le header doit montrer, tout de suite, soit le bouton « Se connecter », soit l’avatar du membre. Une réponse qui arrive après coup se voit : le header affiche « visiteur », puis bascule sur « connecté » une fraction de seconde plus tard.
 
+<Callout type="concept">
+**Définition — rendu serveur et hydratation.** Avec Next, une page est d’abord **rendue sur le serveur** : le serveur exécute les composants React et envoie au navigateur du **HTML** déjà rempli, que le navigateur affiche aussitôt. Puis le JavaScript de la page arrive, et React « reprend la main » sur ce HTML pour le rendre interactif : c’est l’**hydratation**. Tout ce que le serveur connaît au moment du rendu (la session, par exemple) peut donc être dans le premier affichage ; ce qui n’arrive qu’après, par un appel depuis le navigateur, provoque un second affichage.
+</Callout>
+
 La première version du projet avait exactement ce défaut. Un composant, `SessionLoader`, appelait `getSession` après le montage de l’application, et le header attendait la réponse. Le projet lit désormais la session **côté serveur**, dans le layout racine, et la transmet au navigateur avec la page :
 
 ```tsx
@@ -75,7 +79,9 @@ La session lue part ensuite dans `SessionLoader`, qui alimente deux endroits à 
 
 ## Pourquoi deux endroits : un contexte et un store
 
-`SessionLoader` range la session dans un **store Zustand** (`useSessionStore`), et la confie aussi à un **contexte React** (`InitialSessionProvider`). Ce doublon apparent répond à une contrainte précise du rendu serveur :
+`SessionLoader` range la session dans un **store Zustand** (`useSessionStore`), et la confie aussi à un **contexte React** (`InitialSessionProvider`).
+
+Deux outils pour partager une valeur entre composants, sans la passer de parent en enfant. Un **contexte React** est fourni par un composant (un *provider*) à tous ceux qu’il englobe : sa valeur vit dans l’arbre de composants, donc dans **un** rendu. Un **store** Zustand est un petit objet global, défini dans un module JavaScript, auquel n’importe quel composant peut s’abonner : sa valeur vit **hors** de l’arbre. Ce doublon apparent répond à une contrainte précise du rendu serveur :
 
 <CodeExample
   language="tsx"
@@ -174,6 +180,8 @@ Deux appels, deux responsabilités. Le coût est imperceptible pour le membre ; 
 ## Le proxy : pré-filtre à l’entrée des pages protégées
 
 Avant que le tableau de bord ou le profil ne soient rendus, la requête passe par `proxy.ts`.
+
+Le **proxy**, dans Next, est un fichier spécial (`apps/web/src/proxy.ts`) dont la fonction s’exécute sur le serveur **avant** qu’une page ne soit rendue. Il voit la requête (son adresse, ses cookies) et peut la laisser passer, la rediriger, ou y répondre lui-même. Son `matcher` dit pour quelles adresses il s’exécute : partout ailleurs, il n’est même pas appelé.
 
 <CodeExample
   language="ts"

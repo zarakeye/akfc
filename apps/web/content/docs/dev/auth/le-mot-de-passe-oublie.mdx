@@ -140,13 +140,19 @@ C’est ici que le motif se révèle dans toute sa rigueur.
 
 ## 🔭 Pour aller plus loin — pourquoi une transaction, et pourquoi `updateMany` ?
 
+<Callout type="concept">
+**Définition — une transaction.** Une **transaction** regroupe plusieurs écritures en base pour qu’elles soient **atomiques** : soit toutes sont appliquées, soit aucune ne l’est. Si une erreur survient au milieu, la base annule ce qui avait déjà été écrit (on dit qu’elle fait un *rollback*), et revient exactement à l’état d’avant. Vu de l’extérieur, il n’existe jamais d’état « à moitié fait ».
+</Callout>
+
 Sans transaction, imaginons que les opérations s’exécutent l’une après l’autre et qu’une erreur survienne au milieu.
 
 **Le scénario à éviter** : le mot de passe est changé, puis le serveur s’arrête juste avant que le lien soit marqué comme utilisé. Le lien reste valable, et celui qui le détient — peut-être pas le membre — peut changer le mot de passe à nouveau.
 
 Avec `ctx.prisma.$transaction`, soit **les trois opérations réussissent ensemble**, soit **aucune n’est appliquée**. Cette atomicité est garantie par PostgreSQL : la transaction est un mécanisme du moteur, pas une convention du code.
 
-Mais la transaction ne règle pas tout. Les vérifications (le lien existe, n’a pas servi, n’a pas expiré) sont faites **avant** elle. Si le même lien est envoyé deux fois au même instant — un double clic, ou un intrus qui a intercepté l’e-mail et agit en même temps que le membre —, les deux requêtes passent toutes les deux les vérifications, puis entrent chacune dans sa transaction. La première version marquait le lien avec un simple `update`, qui réussissait les deux fois : deux mots de passe étaient enregistrés l’un après l’autre, et le dernier gagnait.
+Mais la transaction ne règle pas tout. Elle protège contre une erreur **au milieu** ; elle ne protège pas contre deux requêtes qui arrivent **en même temps**. On parle d’**accès concurrents**, et le défaut qu’ils provoquent s’appelle une **condition de course** (*race condition*) : le résultat dépend de l’ordre, imprévisible, dans lequel les deux requêtes avancent.
+
+Les vérifications (le lien existe, n’a pas servi, n’a pas expiré) sont faites **avant** la transaction. Si le même lien est envoyé deux fois au même instant — un double clic, ou un intrus qui a intercepté l’e-mail et agit en même temps que le membre —, les deux requêtes passent toutes les deux les vérifications, puis entrent chacune dans sa transaction. La première version marquait le lien avec un simple `update`, qui réussissait les deux fois : deux mots de passe étaient enregistrés l’un après l’autre, et le dernier gagnait.
 
 La correction est la même idée que l’erreur P2002 de la partie « Données » : confier la règle à la base. `updateMany` avec `usedAt: null` dans sa condition ne marque la ligne **que si elle ne l’était pas encore**. PostgreSQL verrouille la ligne le temps de l’écriture : des deux requêtes, une seule obtient `count === 1` ; l’autre lève une erreur, et sa transaction est annulée, nouveau mot de passe compris.
 

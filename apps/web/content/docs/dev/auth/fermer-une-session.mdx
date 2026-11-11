@@ -108,12 +108,12 @@ La première version du projet confiait ce cas à un `setInterval` qui purgeait 
 
 ## 🔭 Pour aller plus loin — les limites d’une minuterie dans le serveur
 
-Cette purge vit dans le processus Node du site. Cela fonctionne parce que le projet tourne sur **un seul** serveur, dans un conteneur Docker qui reste allumé.
+Cette purge vit dans le **processus** Node du site, c’est-à-dire dans le programme qui sert les pages, et qui reste lancé tant que le site tourne. Elle repose sur une **minuterie** (`setInterval`) : une fonction rappelée à intervalle régulier (ici, chaque minute, pour vérifier s’il est 3 h). Cela fonctionne parce que le projet tourne sur **un seul** serveur, dans un conteneur Docker qui reste allumé.
 
 Deux situations la mettraient en défaut :
 
 **1) Un hébergement « serverless ».**  
-Sur ce type de plateforme, le code ne tourne qu’à la demande et s’arrête aussitôt : aucune minuterie ne survit entre deux requêtes.
+Sur ce type de plateforme, le code ne tourne qu’à la demande et s’arrête aussitôt : aucune minuterie ne survit entre deux requêtes. Il n’y a pas de « programme qui reste lancé ».
 
 **2) Plusieurs instances du site.**  
 Chaque instance lancerait sa propre purge à 3 h. Pour un `deleteMany`, ce n’est pas grave, mais c’est inutile.

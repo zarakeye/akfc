@@ -21,6 +21,10 @@ Entrons dans le flux de connexion.
 
 Tout commence par une frontière simple : valider la forme des identifiants envoyés par le navigateur.
 
+<Callout type="concept">
+**Définition — un schéma de validation.** Un **schéma** Zod décrit la forme attendue d’une donnée (« un objet avec une adresse e-mail et une chaîne d’au moins douze caractères ») et sait vérifier qu’une donnée reçue la respecte. `schema.parse(x)` renvoie la donnée nettoyée (espaces retirés, minuscules) ou lève une erreur ; `safeParse` renvoie un résultat sans lever. Valider, ce n’est pas encore vérifier que le compte existe : c’est seulement refuser ce qui n’a pas la bonne forme, avant d’aller plus loin.
+</Callout>
+
 <CodeExample
   language="ts"
   filepath="packages/contracts/src/auth/auth.schema.ts"
@@ -160,6 +164,8 @@ Une protection contre l’énumération se vérifie sur **tout** ce que le serve
 
 bcrypt freine chaque essai, mais ne les compte pas. Rien n’empêchait un script d’essayer des milliers de mots de passe sur une même adresse, quatre par seconde, jour et nuit. Le service limite désormais les **échecs** : dix par quart d’heure et par adresse. Au-delà, il refuse sans même chercher le compte (`TOO_MANY_ATTEMPTS`), jusqu’à ce que la fenêtre glisse ; une connexion réussie efface les échecs de l’adresse.
 
+La **fenêtre glissante** se comprend ainsi : à chaque tentative, on ne compte que les échecs des quinze **dernières** minutes. Un échec vieux de seize minutes ne compte plus. Il n’y a donc pas d’heure de remise à zéro : le blocage se lève de lui-même, à mesure que les plus anciens échecs sortent de la fenêtre.
+
 Trois choix méritent d’être expliqués.
 
 **La clé est l’adresse, pas l’adresse IP.** L’IP du visiteur arrive dans un en-tête (`x-forwarded-for`) qu’un client peut écrire lui-même : un attaquant changerait d’« adresse » à chaque essai. Et une limite par IP bloquerait tout un club derrière la même box. L’adresse e-mail, elle, est exactement ce qu’on veut protéger.
@@ -214,13 +220,13 @@ C’est le rôle de `createSessionJWT`.
 Chaque option du cookie joue un rôle de sécurité précis. Les oublier, c’est ouvrir des failles.
 
 **`httpOnly: true`**  
-Le cookie est invisible pour le JavaScript de la page : `document.cookie` ne le voit pas. Si un attaquant parvient à injecter un script dans une page (une faille XSS), il ne pourra pas emporter la session.
+Le cookie est invisible pour le JavaScript de la page : `document.cookie` ne le voit pas. Si un attaquant parvient à injecter un script dans une page (une faille **XSS**, pour *cross-site scripting* : un texte piégé, par exemple dans un commentaire, que le site afficherait sans le neutraliser et que le navigateur exécuterait), il ne pourra pas emporter la session.
 
 **`secure: process.env.NODE_ENV === "production"`**  
 Le cookie ne circule que sur des connexions HTTPS. En développement local (HTTP), la contrainte est levée, sinon le cookie ne serait jamais transmis. En production, elle est non négociable.
 
 **`sameSite: "lax"`**  
-C’est la protection contre la falsification de requête (CSRF). Avec `lax`, le cookie n’accompagne pas les requêtes qu’un autre site déclenche en arrière-plan (un formulaire envoyé en POST, un `fetch`). Il reste envoyé quand on suit un lien vers le site. C’est le bon compromis entre sécurité et confort.
+C’est la protection contre la falsification de requête (**CSRF**, pour *cross-site request forgery*). Le scénario : un membre connecté visite un autre site, piégé ; une page de ce site envoie en silence une requête vers le site du club (« change l’adresse e-mail du compte »). Sans protection, le navigateur y joindrait le cookie du membre, et le site du club croirait que c’est lui qui le demande. Avec `lax`, le cookie n’accompagne pas les requêtes qu’un autre site déclenche en arrière-plan (un formulaire envoyé en POST, un `fetch`). Il reste envoyé quand on suit un lien vers le site. C’est le bon compromis entre sécurité et confort.
 
 **`expires: expiresAt`**  
 Aligne la durée de vie du cookie sur celle de la session en base. Quand la session expire, le navigateur oublie le cookie de lui-même.

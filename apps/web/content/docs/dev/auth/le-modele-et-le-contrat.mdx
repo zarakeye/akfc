@@ -17,6 +17,19 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Toute authentification résout deux problèmes : identifier le membre, puis le reconnaître à chaque requête. Le projet combine bcrypt, un jeton signé et une session en base.
 
+## Quelques mots de base de données
+
+Ce chapitre lit des modèles Prisma. Six mots y reviennent sans cesse ; les voici, avec l’exemple de la session.
+
+- Un **modèle** (`model Session { … }` dans `schema.prisma`) décrit une **table** de PostgreSQL. Chaque session ouverte est une **ligne** de cette table ; chaque information de la ligne (`userId`, `expiresAt`) est un **champ**, ou colonne.
+- La **clé primaire** (`id`, marquée `@id`) identifie une ligne de façon unique. C’est elle que le jeton du cookie transporte.
+- Une **relation** relie deux tables. La ligne `Session` ne recopie pas le membre : elle garde son identifiant dans `userId`, une **clé étrangère**, qui pointe vers une ligne de `User`. Un membre peut ainsi avoir plusieurs sessions, et chacune sait à qui elle appartient.
+- `@unique` interdit que deux lignes aient la même valeur dans ce champ : deux comptes ne peuvent pas avoir la même adresse.
+- `onDelete: Cascade`, posé sur une relation, dit ce qui arrive aux lignes qui pointent vers une ligne supprimée : elles sont supprimées avec elle. Un membre effacé emporte ses sessions.
+- Une **jointure** lit plusieurs tables liées en une seule requête : la session, son membre, et les groupes du membre. Prisma l’écrit avec `include` ou un `select` imbriqué.
+
+Enfin, une **migration** est un fichier SQL qui fait passer la base d’une version du schéma à la suivante (ajouter un champ, en retirer un). Elle s’applique une fois, dans l’ordre, sur chaque base : celle du développeur, celle des tests, celle du club.
+
 ## Six tables, et ce que chacune garde
 
 Avant d’écrire la moindre ligne de code d’authentification, regardons ce que la base de données nous offre. L’authentification n’a pas « sa » table : elle s’appuie sur six modèles, dont un seul lui est entièrement consacré.
@@ -250,6 +263,10 @@ Mais avant d’arriver là, nous devons d’abord décider de ce que cette struc
 
 Avant de manipuler la session, posons une frontière : que recevra exactement le navigateur ?
 
+<Callout type="concept">
+**Contrat et projection, deux mots à distinguer.** Un **contrat** est la description, partagée par le serveur et le navigateur, de la **forme** d’une donnée : ses champs et leurs types. Il vit dans `packages/contracts`, que les deux côtés importent, et TypeScript vérifie que chacun le respecte. Une **projection** est l’**opération** qui fabrique cette forme à partir des données de la base : choisir certains champs, en écarter d’autres, en calculer un (ici, `isAdmin`). Le contrat dit *ce qui doit sortir* ; la projection, *comment on le produit*. Nous lirons la projection au chapitre 4.
+</Callout>
+
 Le projet définit cette frontière dans `packages/contracts`, partagé entre frontend et backend.
 
 <CodeExample
@@ -280,9 +297,7 @@ Le projet définit cette frontière dans `packages/contracts`, partagé entre fr
 ---
 
 <Callout type="tip">
-`SessionClient` est un contrat, pas une projection.
-
-Il décrit ce que le système promet d’exposer, et garantit qu’aucune information sensible ne fuit accidentellement.
+`SessionClient` est un contrat : il décrit ce que le système promet d’exposer au navigateur, et rien de plus. La projection qui le remplit (chapitre 4) ne peut rien y ajouter que le contrat ne prévoie : TypeScript refuserait.
 </Callout>
 
 ---

@@ -92,6 +92,8 @@ L’accès à l’espace d’un groupe se calcule en remontant la hiérarchie : 
 
 ## Les gardes
 
+Une **garde** est une fonction qui vérifie un droit **avant** une action, et qui l’arrête si le droit manque, en levant une erreur (`FORBIDDEN`). Elle ne fait rien d’autre : si elle laisse passer, l’action s’exécute normalement. `isAdmin` est une garde posée dans la chaîne d’une procédure ; `assertCanWritePaths` en est une autre, appelée en tête d’une procédure avec le chemin visé.
+
 Les gardes du projet s’appuient toutes sur ces deux règles — administrateur, accès à un espace :
 
 <DocsTable columnsJson='["Garde","Règle"]' rowsJson='[["assertCanReadPath","Lire un dossier du finder : administrateur, ou accès à l’espace du groupe visé."],["assertCanWriteGroupSpace","Déposer dans l’espace d’un groupe : administrateur, ou EDITOR."],["canReadStorageKey","Obtenir un fichier privé : administrateur, accès à l’espace du groupe, ou propriétaire de l’espace personnel."],["assertCanTrashPaths","Jeter : administrateur partout, EDITOR dans l’espace de son groupe."],["Layout serveur (admin)","Ouvrir le tableau de bord : administrateur, ou traitant d’au moins une catégorie de demandes."]]' />
@@ -106,7 +108,7 @@ Les gardes d’espace ne peuvent pas vivre dans la chaîne d’une procédure, c
 
 ## Le tableau de bord : une garde pour l’interface
 
-Les procédures d’administration se protègent elles-mêmes. Mais l’**interface** du tableau de bord mérite aussi sa garde : sans elle, un membre qui ouvre `/dashboard` verrait le squelette des écrans, avec des listes vides et des erreurs. Un layout serveur, placé au-dessus de tout le tableau de bord, s’exécute avant le moindre rendu :
+Les procédures d’administration se protègent elles-mêmes. Mais l’**interface** du tableau de bord mérite aussi sa garde : sans elle, un membre qui ouvre `/dashboard` verrait le squelette des écrans, avec des listes vides et des erreurs. Un **layout**, dans Next, est un composant qui enveloppe toutes les pages d’un dossier (`app/(admin)/dashboard/layout.tsx` enveloppe chaque page du tableau de bord). Rendu sur le serveur, il s’exécute avant elles, et peut refuser de les afficher. C’est ce que fait celui-ci :
 
 <CodeExample
   language="tsx"
