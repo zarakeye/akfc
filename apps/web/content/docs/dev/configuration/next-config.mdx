@@ -43,7 +43,7 @@ Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarre
   fullFileTitle="Voir le fichier complet"
 />
 
-La construction des tests de bout en bout (`AKFC_E2E=1`, partie « Qualité ») fait exception : elle a son propre dossier, `.next-e2e`, pour ne pas écraser celui de `pnpm dev`, et se lance avec `next start`, sans sortie autonome. Toute autre construction, celle de l’image Docker comprise, est autonome.
+La construction des tests de bout en bout (`AKFC_E2E=1`, partie « Qualité (2) ») fait exception : elle a son propre dossier, `.next-e2e`, pour ne pas écraser celui de `pnpm dev`, et se lance avec `next start`, sans sortie autonome. Toute autre construction, celle de l’image Docker comprise, est autonome.
 
 Avec `output: "standalone"`, Next.js suit chaque `import` depuis les pages et les routes, et recopie dans `.next/standalone` uniquement les fichiers réellement atteints, avec un petit `server.js` qui les sert. L'image Docker n'embarque que ce dossier :
 

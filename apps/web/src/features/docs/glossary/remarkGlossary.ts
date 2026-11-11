@@ -34,7 +34,8 @@ export interface GlossaryOccurrence {
  * compter (l'index du glossaire). Les deux passent par cette seule fonction : les ancres
  * `t-<id>-<n>` que l'index cite sont exactement celles que la page porte.
  *
- * Un terme n'est pas lié dans la section qui le définit : il y est déjà expliqué.
+ * Un terme n'est pas lié dans la section qui le définit (ou dans l'introduction du chapitre, quand
+ * c'est elle qui le définit) : il y est déjà expliqué.
  */
 export function collectGlossary(tree: MdNode, slug: string[], transform: boolean): GlossaryOccurrence[] {
   const page = slug.join("/")
@@ -61,7 +62,7 @@ export function collectGlossary(tree: MdNode, slug: string[], transform: boolean
       for (const match of findTerms(text)) {
         const entry = glossaryEntry(match.id)
         if (!entry) continue
-        if (entry.definiEn.vers === page && entry.definiEn.section === section) continue
+        if (entry.definiEn.vers === page && (entry.definiEn.section ?? null) === section) continue
         const n = (counters.get(match.id) ?? 0) + 1
         counters.set(match.id, n)
         const anchor = `t-${match.id}-${n}`

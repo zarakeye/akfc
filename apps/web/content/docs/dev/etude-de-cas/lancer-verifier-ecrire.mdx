@@ -58,7 +58,7 @@ Le numéro est aussi dans le nom accessible du bouton (« 3. Créer un stage »)
 
 ## Un tuto se vérifie en le suivant
 
-Le tuto lui-même a son test de bout en bout (partie « Qualité », chapitre « Tester de bout en bout ») : un administrateur le lance depuis le bouton « ? » et le suit jusqu’au bout, comme on le ferait.
+Le tuto lui-même a son test de bout en bout (partie « Qualité (2) », chapitre « Tester de bout en bout ») : un administrateur le lance depuis le bouton « ? » et le suit jusqu’au bout, comme on le ferait.
 
 <CodeWalkthrough
   language="ts"
@@ -139,7 +139,7 @@ En production, et dans les tests lancés sur un poste avec Docker, le client Pri
 `import "server-only"` ne fait rien à l’exécution. Mais si un composant client l’importe, **le build échoue**, avec le nom du fichier fautif. La règle « ce composant ne part jamais au navigateur » n’est plus une convention à retenir : c’est le compilateur qui la tient.
 
 <Callout type="info">
-Un test de bout en bout trouve aussi ce qu’il ne cherche pas. Ce test vérifiait un tuto ; il a trouvé un composant serveur dans le code du navigateur — comme le premier lancement des tests de la partie « Qualité » avait trouvé le visionneur PDF qui faisait échouer le rendu serveur. Les deux problèmes étaient invisibles à l’écran.
+Un test de bout en bout trouve aussi ce qu’il ne cherche pas. Ce test vérifiait un tuto ; il a trouvé un composant serveur dans le code du navigateur — comme le premier lancement des tests de la partie « Qualité (2) » avait trouvé le visionneur PDF qui faisait échouer le rendu serveur. Les deux problèmes étaient invisibles à l’écran.
 </Callout>
 
 ### Ce qu’écrire un tuto a trouvé

@@ -296,8 +296,8 @@ C’est une infrastructure silencieuse, qui fait son travail en arrière-plan po
 
 ## À suivre
 
-Nous savons qui fait chaque requête et ce qu’il a le droit de faire. Ces règles prennent tout leur poids sur les fichiers : un espace de groupe ne doit s’ouvrir qu’à ses membres, une photo personnelle qu’à son propriétaire, et un fichier ne devient public que par un geste délibéré.
+Nous savons qui fait chaque requête et ce qu’il a le droit de faire. Ces règles sont les plus graves du projet : une erreur ne se voit pas, elle laisse simplement passer quelqu’un. Le typecheck et le lint n’en verront jamais rien ; il faut, d’une part, des vérifications écrites pour ce projet, et d’autre part des tests qui se connectent, demandent et se font refuser, comme le ferait un membre.
 
 <Callout type="tip">
-**Partie suivante : le stockage et les médias.** Comment un fichier part du navigateur vers le stockage sans passer par notre serveur, comment il est vérifié, et comment les règles de cette partie décident de qui peut le lire.
+**Partie suivante : qualité, la suite.** Les gardes écrites pour ce projet, puis les tests de bout en bout : un vrai navigateur, une base réservée, et des parcours qui vérifient les règles de droits de cette partie.
 </Callout>

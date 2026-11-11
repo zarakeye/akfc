@@ -69,7 +69,6 @@ for (const entry of GLOSSARY) {
   ids.add(entry.id);
   if (!entry.definition?.trim()) errors.push(`${where} : définition courte vide`);
   if (!entry.variantes?.length) errors.push(`${where} : aucune variante à reconnaître`);
-  if (!entry.definiEn?.section) errors.push(`${where} : « défini en » sans section`);
   checkTarget(`${where} (défini en)`, entry.definiEn);
   if (entry.approfondiEn) checkTarget(`${where} (approfondi en)`, entry.approfondiEn);
   for (const v of entry.variantes ?? []) {

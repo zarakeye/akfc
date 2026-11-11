@@ -145,7 +145,7 @@ Le symptôme typique : « Cannot find module '@backend/…' » au typecheck du w
   fullFileTitle="Voir le fichier complet"
 />
 
-Cette liste a longtemps porté des traces d'un ancien rangement : `app`, `components`, `features`… à la racine de `apps/web`, où ils n'existent pas (tout est sous `src/`). Elles étaient sans effet, et le nettoyage l'a vérifié : `tsc --listFilesOnly` liste exactement les mêmes fichiers avant et après leur retrait (partie « Qualité »). `exclude` écarte `node_modules`, et `.next-e2e`, la construction des tests de bout en bout : `**/*.ts` y trouverait les types que Next génère, d’une construction peut-être ancienne.
+Cette liste a longtemps porté des traces d'un ancien rangement : `app`, `components`, `features`… à la racine de `apps/web`, où ils n'existent pas (tout est sous `src/`). Elles étaient sans effet, et le nettoyage l'a vérifié : `tsc --listFilesOnly` liste exactement les mêmes fichiers avant et après leur retrait (partie « Qualité (1) »). `exclude` écarte `node_modules`, et `.next-e2e`, la construction des tests de bout en bout : `**/*.ts` y trouverait les types que Next génère, d’une construction peut-être ancienne.
 
 ## Les fichiers de déclaration
 

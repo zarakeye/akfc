@@ -152,8 +152,8 @@ Certaines données publiques attirent les robots collecteurs, qui parcourent le 
 
 ## À suivre
 
-Le site est présenté aux visiteurs comme aux moteurs. Le projet doit maintenant prouver qu'il fonctionne, et continuer à fonctionner après chaque modification. Les vérifications statiques sont en place depuis le début ; il manque celles qui connaissent ce projet, et celles qui l’essaient pour de vrai.
+Le site est présenté aux visiteurs comme aux moteurs. Il est presque prêt à partir en ligne ; avant, une dernière vérification doit cesser de dépendre de notre mémoire. `pnpm check` tourne avant chaque commit, mais les tests de bout en bout se lancent quand on y pense.
 
 <Callout type="tip">
-**Partie suivante : qualité, la suite.** Les gardes écrites pour ce projet, les tests de bout en bout et l’intégration continue.
+**Partie suivante : l’intégration continue.** GitHub refait `pnpm check` et les tests de bout en bout à chaque push, sans aucun secret.
 </Callout>

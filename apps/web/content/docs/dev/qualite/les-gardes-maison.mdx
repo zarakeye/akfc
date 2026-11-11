@@ -1,18 +1,18 @@
 ---
 title: "Les gardes maison"
 description: "Cinq scripts courts que lance pnpm check, chacun pour une erreur que ni TypeScript ni ESLint ne peuvent voir : un fichier de Next posé où Next ne le lit pas, un tutoriel qui vise un élément disparu, une carte des procédures périmée, une documentation qui cite ce qui n’existe plus, un extrait de code qui montre les mauvaises lignes. Comment chacun travaille, et comment en écrire un sixième."
-section: "Qualité"
-order: 3
+section: "Qualité (2) : gardes maison et tests de bout en bout"
+order: 1
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Le référencement présente le site aux moteurs. Côté qualité, nous en étions restés à « Qualité (1) » : le typecheck vérifie la cohérence des types, le lint les règles de React et du langage. Tous deux appliquent des règles générales, écrites pour n’importe quel projet.
+> **Précédemment.** Le site sait qui fait chaque requête et ce qu’il a le droit de faire. Côté qualité, nous en étions restés à « Qualité (1) » : le typecheck vérifie la cohérence des types, le lint les règles de React et du langage. Tous deux appliquent des règles générales, écrites pour n’importe quel projet ; aucun ne voit une règle de droits mal appliquée.
 
 Certaines erreurs n’appartiennent qu’à ce projet. Elles ont un point commun : **rien ne les signale**. Le code compile, le lint ne dit rien, la page s’affiche — et pourtant quelque chose ne fonctionne plus, ou la documentation ment. Pour chacune, le projet a écrit une garde : un script de quelques dizaines de lignes, lancé au début de `pnpm check`, qui cherche cette erreur-là et l’explique en français quand il la trouve.
 
-<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."]]' />
+<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."], ["check-doc-snippets.mjs", "Un extrait de code de la documentation dont l’ancre a disparu ou est devenue ambiguë : il montrerait le code d’à côté."], ["check-doc-components.mjs", "Une promesse vers un chapitre ou une section qui n’existe plus, un encadré d’un type inconnu, un terme du glossaire sans définition ou revendiqué deux fois."]]' />
 
 ## Les fichiers que Next lit en silence 🧭
 
@@ -32,7 +32,12 @@ C’est la garde la plus courte, et la plus typique : **une** erreur, cherchée 
 
 ## Les cibles des tutoriels
 
-Les tutoriels interactifs guident l’utilisateur pas à pas en mettant en valeur un élément de l’écran. Chaque étape désigne son élément par un nom (`target: "posts.form.title"`), et l’élément porte ce nom dans un attribut : `data-tour="posts.form.title"`. C’est un **contrat** entre deux fichiers que rien ne relie pour TypeScript : renommer l’attribut casse le tutoriel, et le compilateur n’en sait rien.
+Les tutoriels interactifs guident l’utilisateur pas à pas en mettant en valeur un élément de l’écran.
+
+<Promesse vers="dev/etude-de-cas/un-tutoriel-en-donnees" section="Un contrat de nom entre le tuto et la page">
+Le moteur des tutoriels est construit en fin de parcours, comme une étude de cas. Pour lire cette garde, il suffit de savoir qu’un tutoriel est une liste d’étapes, et que chaque étape désigne un élément de l’écran par un nom.
+</Promesse>
+ Chaque étape désigne son élément par un nom (`target: "posts.form.title"`), et l’élément porte ce nom dans un attribut : `data-tour="posts.form.title"`. C’est un **contrat** entre deux fichiers que rien ne relie pour TypeScript : renommer l’attribut casse le tutoriel, et le compilateur n’en sait rien.
 
 <CodeWalkthrough
   language="js"
@@ -128,9 +133,19 @@ Une ancre peut à son tour disparaître (la ligne est réécrite) ou devenir amb
 
 La règle de correspondance d’une ancre est écrite deux fois, dans la garde et dans le composant qui affiche l’extrait (`resolveSnippetBounds`), et un commentaire de chaque côté renvoie à l’autre : la garde, un script Node sans compilation, ne peut pas importer le TypeScript du site.
 
+## Les renvois, les encadrés et le glossaire
+
+La documentation se réorganise au fil du projet : des chapitres changent de partie, des sections changent de titre. Trois choses en dépendent sans que rien ne les relie pour TypeScript : les **promesses** (le composant `Promesse`, un renvoi vers le chapitre qui approfondit un sujet : son attribut `vers` désigne le chapitre, `section` une de ses sections), les **encadrés** (le composant `Callout`, dont l’attribut `type` choisit la couleur), et le **glossaire** (chaque terme renvoie au chapitre et à la section qui le définissent).
+
+`check-doc-components.mjs` relit ces trois contrats à chaque `pnpm check` : une promesse vers un chapitre déplacé, un encadré d’un type que le composant ne connaît pas, un terme dont la définition a disparu ou une forme revendiquée par deux termes arrêtent la chaîne. Les types d’encadré ne sont pas recopiés dans la garde : elle les lit dans `Callout.tsx`, là où le composant les déclare.
+
+<Callout type="info">
+Le numéro affiché par une promesse (« Approfondi en 10.7 ») n’est écrit nulle part : le composant le calcule au rendu, à partir du menu. C’est ce qui permet de réordonner les parties sans réécrire les renvois ; la garde, elle, vérifie seulement que la cible existe.
+</Callout>
+
 ## Écrire une garde
 
-Les cinq gardes suivent le même modèle. Il sert de recette quand une nouvelle erreur silencieuse apparaît — et la réponse à une erreur silencieuse rencontrée une fois, c’est une garde de plus.
+Les six gardes suivent le même modèle. Il sert de recette quand une nouvelle erreur silencieuse apparaît — et la réponse à une erreur silencieuse rencontrée une fois, c’est une garde de plus.
 
 <DocsTable columnsJson='["Règle", "Pourquoi"]' rowsJson='[["Une garde, une erreur", "Un script qui vérifie une chose se lit en une minute ; on sait quand il se trompe."], ["Lire le code comme du texte quand c’est possible", "Une expression régulière ou une lecture ligne à ligne suffit souvent (data-tour, model X {). Le vérificateur de types est réservé à ce qui l’exige (suivre un appel)."], ["Un message qui dit quoi faire", "Le fichier, ce qui manque, et la correction : « déplace-le », « lance pnpm docs:procedures »."], ["Échouer par le code de sortie", "process.exit(1) : pnpm check s’arrête, et le commit n’a pas lieu."], ["Un bilan en cas de succès", "Ce qui a été vérifié, et combien : une garde muette pourrait ne pas avoir tourné."], ["Rapide", "Quelques secondes au plus : elle passe avant le typecheck, à chaque commit."]]' />
 
@@ -147,5 +162,5 @@ Toutes ces gardes sont **statiques** : elles lisent des fichiers. Une erreur qui
 Les gardes, le typecheck et le lint lisent le code sans l’exécuter. Ce qui ne se voit qu’à l’exécution — une règle de droits, un brouillon montré à qui ne devrait pas le voir, un e-mail qui n’arrive pas — demande d’exécuter le site, dans un vrai navigateur.
 
 <Callout type="tip">
-**Chapitre suivant : tester de bout en bout.** Playwright contre l’application construite pour la production, une base et un stockage réservés aux tests, et six parcours sur les règles du club.
+**Chapitre suivant : tester de bout en bout.** Playwright contre l’application construite pour la production, une base et un stockage réservés aux tests, et dix parcours sur les règles du club.
 </Callout>

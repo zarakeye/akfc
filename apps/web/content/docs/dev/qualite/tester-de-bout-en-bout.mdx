@@ -1,8 +1,8 @@
 ---
 title: "Tester de bout en bout"
 description: "Un vrai navigateur contre l’application construite pour la production, sur une base et un stockage réservés aux tests : sept parcours qui vérifient ce que les gardes statiques ne peuvent pas voir — les droits, les brouillons, la limite d’essais, un e-mail reçu. Comment chaque lancement repart du même état, comment un test prouve qu’il échouerait, et ce que le premier lancement a trouvé."
-section: "Qualité"
-order: 4
+section: "Qualité (2) : gardes maison et tests de bout en bout"
+order: 2
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -90,9 +90,13 @@ La construction des tests ne doit pas écraser celle de `pnpm dev`. `next.config
   fullFileTitle="Voir le fichier complet"
 />
 
-`.next-e2e` est exclu du typecheck du web (son `include` couvre tous les `.ts` du dossier, chapitre 1) et effacé par `pnpm clean` avec `.next` : après un `pnpm check`, le prochain `pnpm e2e` reconstruit.
+`.next-e2e` est exclu du typecheck du web (son `include` couvre tous les `.ts` du dossier) et effacé par `pnpm clean` avec `.next` : après un `pnpm check`, le prochain `pnpm e2e` reconstruit.
 
 ## Dix parcours
+
+<Callout type="concept">
+Ces parcours vérifient des règles de tout le site, y compris de parties que nous n’avons pas encore construites : les documents des membres, leur avatar, les séances des stages. Lisons-les ici pour **ce qu’ils vérifient** et pour la façon dont ils sont écrits ; chaque partie concernée y renverra quand elle présentera sa règle. Les tests ajoutés depuis suivent les mêmes principes.
+</Callout>
 
 <DocsTable columnsJson='["Fichier", "Ce qu’il vérifie", "Pourquoi un test de bout en bout"]' rowsJson='[["connexion.spec.ts", "Se connecter depuis le header ; même message pour un mauvais mot de passe et une adresse inconnue ; après dix essais faux, même le bon mot de passe est refusé.", "La limite d’essais vit en mémoire du serveur : seul un serveur qui tourne la montre."], ["brouillons.spec.ts", "Un brouillon répond 404 au visiteur et au membre, s’affiche en aperçu à l’administrateur avec son badge et noindex, et n’entre pas dans le plan du site.", "La règle dépend de qui regarde : trois sessions, une même adresse."], ["documents.spec.ts", "Le destinataire voit et ouvre son document ; un autre membre ne le voit pas et son adresse répond 404 ; sans session, 401.", "Le droit se lit en base à chaque requête : il faut une base, des groupes, une session."], ["avatars.spec.ts", "Un administrateur ne peut pas poser l’avatar d’un autre membre dans une page ; il peut poser le sien.", "La règle est côté serveur : on l’interroge comme le ferait un client modifié, sans passer par l’interface qui ne propose déjà plus l’avatar d’autrui."], ["droit-a-l-image.spec.ts", "Un formulaire signé avant les droits en vigueur est archivé sans changer le statut ; un formulaire récent le change.", "Envoi d’un vrai fichier au stockage, vérification par le serveur, transaction, puis l’écran rafraîchi."], ["tutoriel.spec.ts", "Le tuto « Créer une actualité » se suit jusqu’au bout (clic, saisie, explications, changement de page) ; Échap l’interrompt.", "Un tuto traverse deux pages, une base, et le clavier : il n’existe qu’en marchant (partie « Étude de cas »)."], ["tutos-parcours.spec.ts", "Les tutos des visiteurs et des membres : lancés depuis une fiche du guide ou le bouton « ? » ; les étapes facultatives sautées quand leur cible manque ; aucun n’envoie le formulaire qu’il montre.", "Une étape facultative se décide sur la page réelle (une liste vide, un seul destinataire) ; et « rien n’est envoyé » ne se constate qu’en essayant de cliquer."], ["tutos-admin.spec.ts", "Les tutos d’administration : un brouillon de flash info créé ; une page, un compte, une réponse montrés sans être envoyés ; une demande suivie de la boîte à sa page ; constructeur, bibliothèque, réglages, catégories, familles, origines, galeries suivis jusqu’au bout sans rien créer.", "Que rien ne parte se vérifie sur la vraie base : la page toujours en brouillon après un clic forcé, aucun compte créé."], ["categories.spec.ts", "Une galerie de la catégorie des stages propose le stage, même sous le libellé « Stages d’été » ; la liste des catégories nomme celle qui manque.", "Ce qui affiche le choix du stage se lit sur la page réelle, avec une catégorie renommée : l’ancienne comparaison au libellé échoue ici (vérifié en la remettant)."], ["galerie-ordre.spec.ts", "La page Galeries range ses disciplines comme le menu : la famille d’abord, puis le nom.", "L’ordre se lit sur la page réelle ; l’ancienne liste de noms écrite dans le code le fait échouer (vérifié en la remettant)."], ["seances.spec.ts", "Un administrateur ajoute une séance à un stage depuis son édition ; elle survit au rechargement.", "Le formulaire des séances avait disparu d’une page sans qu’aucun outil le remarque : seul un parcours suivi le voit."], ["mot-de-passe-oublie.spec.ts", "Le lien reçu par e-mail permet de choisir un nouveau mot de passe ; l’ancien ne vaut plus rien ; le lien ne sert qu’une fois.", "Le parcours traverse une boîte e-mail : Mailpit la donne aux tests."]]' />
 
@@ -144,7 +148,11 @@ Les dix échecs passent par l’API, pas par le formulaire : la limite compte le
   fullFileTitle="Voir le fichier complet"
 />
 
-Un membre connecté qui demande le document d’un autre reçoit **404**, comme pour un document qui n’existe pas : le site ne confirme même pas son existence (partie « Membres et collaboration »). Sans session, **401** : la question n’est pas encore de savoir à qui est le document, mais qui demande. Le test fixe les deux réponses ; une modification qui les échangerait le ferait échouer.
+Un membre connecté qui demande le document d’un autre reçoit **404**, comme pour un document qui n’existe pas : le site ne confirme même pas son existence. Sans session, **401** : la question n’est pas encore de savoir à qui est le document, mais qui demande. Le test fixe les deux réponses ; une modification qui les échangerait le ferait échouer.
+
+<Promesse vers="dev/membres/documents-des-membres" section="Servir le fichier à ceux qui peuvent l’ouvrir">
+Un membre reçoit des documents du club (une attestation, un formulaire à signer), que lui seul peut ouvrir. La règle du 404 se lit avec eux, dans la partie « Membres et collaboration ».
+</Promesse>
 
 ### Attendre un e-mail
 
@@ -214,7 +222,12 @@ Le visionneur de PDF (react-pdf, sur pdf.js) utilise au chargement de son module
 
 `ssr: false` diffère le chargement du module au navigateur ; le visionneur ne s’ouvre de toute façon qu’après un clic. Les deux composants qui l’utilisent importent désormais `PdfViewerClient`.
 
-Le septième parcours, ajouté plus tard pour le moteur des tutoriels, a trouvé le problème inverse : un composant **serveur** envoyé au navigateur avec les formulaires d’administration. La partie « Étude de cas » le raconte.
+Le septième parcours, ajouté plus tard pour le moteur des tutoriels, a trouvé le problème inverse : un composant **serveur** envoyé au navigateur avec les formulaires d’administration. 
+
+<Promesse vers="dev/etude-de-cas/lancer-verifier-ecrire" section="Ce que le test a trouvé">
+Un composant serveur importé par erreur dans un composant client finit dans le code envoyé au navigateur, avec tout ce qu’il importe. Le test d’un tutoriel l’a révélé ; l’étude de cas raconte comment.
+</Promesse>
+
 
 <Callout type="info">
 Un test qui passe n’est pas toute l’information d’un lancement. La sortie du serveur montre ce que l’écran cache : une erreur rattrapée, un e-mail qui n’est pas parti, une requête lente. Elle se lit à chaque lancement, comme le résultat des tests.
@@ -224,7 +237,12 @@ Un test qui passe n’est pas toute l’information d’un lancement. La sortie 
 
 <DocsTable columnsJson='["Commande", "Ce qu’elle fait"]' rowsJson='[["pnpm dev:infra", "Démarre Postgres, SeaweedFS et Mailpit, et attend qu’ils répondent (une fois par session de travail) ; les tests en ont besoin."], ["pnpm e2e", "Prépare la base et le bucket des tests, construit l’application, lance les sept parcours. Quelques minutes, dont l’essentiel pour la construction."], ["E2E_NO_BUILD=1 pnpm e2e", "Même chose sans reconstruire : quand seuls les tests ont changé depuis le dernier lancement."], ["pnpm e2e connexion", "Seulement les fichiers dont le nom contient « connexion »."], ["pnpm e2e:report", "Ouvre le rapport du dernier lancement : pour chaque échec, la capture d’écran et la trace."]]' />
 
-Les tests ne font pas partie de `pnpm check` : ils se lancent avant un déploiement, et après toute modification d’une règle qu’ils couvrent. Plus tard, une intégration continue (GitHub Actions) pourra les lancer à chaque envoi sur GitHub, sur une machine qui monte elle-même Postgres, SeaweedFS et Mailpit.
+Les tests ne font pas partie de `pnpm check` : ils se lancent avant un déploiement, et après toute modification d’une règle qu’ils couvrent. 
+
+<Promesse vers="dev/qualite/l-integration-continue" section="Le workflow">
+L’**intégration continue** les relance à chaque envoi sur GitHub, sur une machine qui monte elle-même Postgres, SeaweedFS et Mailpit. Elle arrive avec la mise en ligne, quand une erreur ne doit plus pouvoir partir en production sans avoir été vue.
+</Promesse>
+
 
 <Callout type="warning">
 Un test qui échoue « une fois sur dix » n’est pas un test capricieux : c’est un test qui dépend de quelque chose qu’il ne contrôle pas (l’ordre, l’heure, un état laissé par un autre). On cherche cette dépendance ; on n’ajoute pas de nouvel essai automatique pour la masquer.
@@ -236,8 +254,8 @@ Un test qui échoue « une fois sur dix » n’est pas un test capricieux : c’
 
 ## À suivre
 
-Ces tests demandent Docker et un quart d’heure : sur le Mac, on les lance quand on y pense. Le chapitre suivant les fait tourner à chaque push.
+Les règles de droits sont maintenant vérifiées par des parcours qui s’exécutent. Elles prennent tout leur poids sur les fichiers : un espace de groupe ne doit s’ouvrir qu’à ses membres, une photo personnelle qu’à son propriétaire, et un fichier ne devient public que par un geste délibéré.
 
 <Callout type="tip">
-**Chapitre suivant : l’intégration continue.** GitHub refait pnpm check et les tests de bout en bout à chaque push, sans aucun secret.
+**Partie suivante : le stockage et les médias.** Comment un fichier part du navigateur vers le stockage sans passer par notre serveur, comment il est vérifié, et comment les règles de droits décident de qui peut le lire.
 </Callout>

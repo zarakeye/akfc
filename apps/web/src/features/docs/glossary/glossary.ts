@@ -13,8 +13,11 @@ export interface GlossaryEntry {
   variantes: string[]
   /** La définition courte, en une ou deux phrases : `code`, **gras** et *italique* permis. */
   definition: string
-  /** Le chapitre et la section où le terme est défini pour la première fois dans le parcours. */
-  definiEn: { vers: string; section: string }
+  /**
+   * Le chapitre et la section où le terme est défini pour la première fois dans le parcours.
+   * Sans section : l'introduction du chapitre, avant son premier titre.
+   */
+  definiEn: { vers: string; section?: string }
   /** Facultatif : le chapitre qui l'approfondit. */
   approfondiEn?: { vers: string; section?: string }
 }

@@ -1094,5 +1094,93 @@
    "vers": "dev/api/pourquoi-trpc",
    "section": "Ce que TypeScript y gagne"
   }
+ },
+ {
+  "id": "authentification",
+  "terme": "authentification",
+  "variantes": [
+   "authentification"
+  ],
+  "definition": "Relier une requête à un compte, de façon fiable, à chaque fois : répondre à « qui est-ce ? ».",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Deux questions, pas une"
+  }
+ },
+ {
+  "id": "autorisation",
+  "terme": "autorisation",
+  "variantes": [
+   "autorisation",
+   "autorisations"
+  ],
+  "definition": "Décider, pour un compte déjà identifié, si l’action demandée est permise : répondre à « a-t-il le droit ? ».",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Deux questions, pas une"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/les-droits-par-les-groupes"
+  }
+ },
+ {
+  "id": "test-e2e",
+  "terme": "test de bout en bout",
+  "variantes": [
+   "test de bout en bout",
+   "tests de bout en bout"
+  ],
+  "definition": "Un test qui se place devant un vrai navigateur : il ouvre une page, remplit, clique, et vérifie ce qu’affiche l’écran ou ce que répond le serveur. Tout s’exécute pour de vrai.",
+  "definiEn": {
+   "vers": "dev/qualite/tester-de-bout-en-bout"
+  }
+ },
+ {
+  "id": "playwright",
+  "terme": "Playwright",
+  "variantes": [
+   "Playwright"
+  ],
+  "definition": "La bibliothèque qui pilote un vrai navigateur (Chromium) pour les tests de bout en bout du projet, lancés par `pnpm e2e`.",
+  "definiEn": {
+   "vers": "dev/qualite/tester-de-bout-en-bout"
+  }
+ },
+ {
+  "id": "assertion",
+  "terme": "assertion",
+  "variantes": [
+   "assertion",
+   "assertions"
+  ],
+  "definition": "La vérification qu’un test fait sur le résultat (`expect(…).toBe(…)`) : si elle est fausse, le test échoue et dit pourquoi.",
+  "definiEn": {
+   "vers": "dev/qualite/tester-de-bout-en-bout",
+   "section": "Un test doit pouvoir échouer"
+  }
+ },
+ {
+  "id": "integration-continue",
+  "terme": "intégration continue",
+  "variantes": [
+   "intégration continue",
+   "CI"
+  ],
+  "definition": "Des vérifications relancées automatiquement à chaque envoi du code sur GitHub (`pnpm check`, puis les tests de bout en bout), sur une machine neuve.",
+  "definiEn": {
+   "vers": "dev/qualite/l-integration-continue"
+  }
+ },
+ {
+  "id": "garde-maison",
+  "terme": "garde maison",
+  "variantes": [
+   "garde maison",
+   "gardes maison"
+  ],
+  "definition": "Un petit script du projet, lancé par `pnpm check`, qui cherche une erreur propre à ce projet qu’aucun outil général ne voit.",
+  "definiEn": {
+   "vers": "dev/qualite/les-gardes-maison"
+  }
  }
 ]

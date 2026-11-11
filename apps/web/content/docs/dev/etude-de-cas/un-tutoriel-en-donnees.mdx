@@ -112,11 +112,11 @@ Le moteur prend le premier élément **visible** qui porte le nom (chapitre 2). 
 
 ## Une garde pour le contrat
 
-Un contrat que rien ne vérifie finit rompu. Renommer l’attribut, déplacer le bouton dans un autre composant, retirer un tuto du registre : le code compile, le lint ne dit rien, et le tuto se bloque chez l’utilisateur — ou n’apparaît plus. `scripts/check-tour-targets.mjs`, lancé par `pnpm check` (partie « Qualité », chapitre « Les gardes maison »), cherche trois ruptures :
+Un contrat que rien ne vérifie finit rompu. Renommer l’attribut, déplacer le bouton dans un autre composant, retirer un tuto du registre : le code compile, le lint ne dit rien, et le tuto se bloque chez l’utilisateur — ou n’apparaît plus. `scripts/check-tour-targets.mjs`, lancé par `pnpm check` (partie « Qualité (2) », chapitre « Les gardes maison »), cherche trois ruptures :
 
 <DocsTable columnsJson='["Rupture", "Ce que verrait l’utilisateur", "Ce que dit la garde"]' rowsJson='[["Une étape vise un nom qu’aucun élément ne porte.", "Le tuto s’arrête sur « Élément introuvable ».", "Le fichier du tuto et la cible manquante."], ["Une définition n’est pas importée par le registre.", "Le tuto n’apparaît nulle part.", "Le fichier de la définition et le registre."], ["Une fiche de documentation lance un tuto qui n’existe pas.", "« Tuto introuvable » à la place du bouton.", "La fiche et l’identifiant inconnu."]]' />
 
-Les deux dernières vérifications sont nées de la relecture de cette partie : la première seule protégeait les cibles, pas l’existence du tuto lui-même. La garde a été vérifiée comme un test (partie « Qualité ») : l’import retiré du registre, puis un identifiant mal orthographié dans une fiche, chacun a fait échouer `pnpm check` avec son message.
+Les deux dernières vérifications sont nées de la relecture de cette partie : la première seule protégeait les cibles, pas l’existence du tuto lui-même. La garde a été vérifiée comme un test (partie « Qualité (2) ») : l’import retiré du registre, puis un identifiant mal orthographié dans une fiche, chacun a fait échouer `pnpm check` avec son message.
 
 ## Récapitulatif
 
