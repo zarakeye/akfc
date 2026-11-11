@@ -1,0 +1,115 @@
+---
+title: "Du code cité au code montré"
+description: "Comment un chapitre montre le vrai code du projet : un extrait lu sur le disque à chaque visite et désigné par son texte, jamais par ses numéros de ligne ; des lectures guidées pas à pas ; des parcours dont les effets sur la base sont relevés dans le code ; et les gardes qui empêchent tout cela de mentir en silence."
+section: "Étude de cas (2) : le moteur de la documentation"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Une page est un fichier MDX, rangé dans une partie par son en-tête, numéroté par la navigation, et compilé à chaque visite en composants React, presque tous rendus sur le serveur.
+
+Une documentation de code a un ennemi : le temps. Le chapitre est écrit un jour ; le code continue de changer. Un extrait **recopié** dans le texte devient faux sans que personne le voie, et le lecteur apprend un code qui n’existe plus. Cette documentation ne recopie donc presque jamais : elle **cite**.
+
+## Un extrait lu sur le disque 🔎
+
+`CodeExample` ne contient pas de code. Il désigne un fichier du dépôt et un passage de ce fichier ; à chaque visite, le composant serveur lit le fichier, découpe le passage, le colore, et envoie au navigateur l’extrait **et** le fichier complet, que le lecteur peut déplier pour voir l’extrait dans son contexte.
+
+```mdx
+<CodeExample
+  filepath="packages/backend/src/modules/auth/services/auth.service.ts"
+  snippetStart="export async function loginService("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4-6"
+/>
+```
+
+La coloration est faite par **Shiki**, côté serveur, avec les mêmes grammaires que l’éditeur VS Code : le navigateur reçoit du HTML déjà coloré, sans bibliothèque de coloration à charger. Les lignes à surligner (`snippetHighlight`) sont comptées **dans l’extrait** (1 pour sa première ligne) : elles restent justes quand l’extrait se déplace dans le fichier.
+
+## Désigner un passage par son texte
+
+La première version désignait le passage par ses numéros de ligne : `snippetRange="235-247"`. Le défaut est apparu d’un coup : quelques champs ajoutés en haut de `schema.prisma`, et soixante-dix extraits, dans vingt chapitres, montraient le code d’à côté. Aucune erreur : un extrait décalé s’affiche aussi bien qu’un extrait juste.
+
+Un extrait désigne désormais son passage par son **texte** :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/lib/code.utils.ts"
+  filename="code.utils.ts"
+  snippetStart="export function resolveSnippetBounds("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="13,15,20-23,25"
+  snippetTitle="Trouver le passage : une ancre de début, puis une fin"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La ligne qui **commence** par `snippetStart` ouvre le passage. Il se termine de trois façons possibles :
+
+<DocsTable columnsJson='["Fin", "Écrite", "Quand l’utiliser"]' rowsJson='[["Un nombre de lignes", "snippetLines=\"12\"", "Un passage sans bloc fermant : une suite d’imports, quelques lignes d’une fonction."], ["La fin du bloc", "snippetEnd=\"(fin du bloc)\"", "Une fonction, un type, un objet : le passage s’arrête à l’accolade qui referme ce que la première ligne ouvre."], ["Une seconde ancre", "snippetEnd=\"return result\"", "Un passage qui s’arrête au milieu d’un bloc, sur une ligne reconnaissable."]]' />
+
+`snippetLead` remonte de quelques lignes avant l’ancre (un commentaire qui précède une fonction), et une ancre qui commence par `^` doit commencer la ligne exactement, indentation comprise, quand plusieurs lignes se ressemblent.
+
+Des lignes ajoutées **au-dessus** ne décalent plus rien ; des lignes ajoutées **dans** le passage l’allongent, et il les montre : c’est le comportement voulu, puisque ce sont de nouvelles lignes de la fonction citée.
+
+<Callout type="concept">
+Une **ancre de texte** remplace une coordonnée (un numéro de ligne, qui change dès qu’on écrit ailleurs) par un **contenu** (la ligne elle-même, qui ne change que si l’on modifie ce qu’on cite). C’est le même principe qu’un lien vers une section par son titre plutôt que par sa position : on désigne la chose, pas l’endroit où elle se trouve aujourd’hui.
+</Callout>
+
+## Quand l’ancre disparaît
+
+Une ancre peut à son tour disparaître (la ligne est réécrite) ou devenir ambiguë (une seconde ligne commence pareil). Le composant ne plante pas : il affiche à la place de l’extrait un commentaire « ⚠ Extrait introuvable », et la page reste lisible. Mais un avertissement affiché n’est vu que si quelqu’un ouvre la page.
+
+La garde `check-doc-snippets.mjs` relit donc, à chaque `pnpm check`, toutes les ancres de toute la documentation : chaque fichier cité doit exister, chaque ancre de début et de fin doit s’y trouver, et chaque surlignage doit tenir dans l’extrait.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/lib/code.utils.ts"
+  filename="code.utils.ts"
+  snippetStart="export function snippetLineMatches("
+  snippetEnd="(fin du bloc)"
+  snippetTitle="La règle de correspondance d’une ancre"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Cette règle est écrite **deux fois** : dans le composant (TypeScript) et dans la garde (un script Node sans compilation, qui ne peut pas importer le TypeScript du site). Un commentaire de chaque côté renvoie à l’autre. Deux copies d’une règle sont un risque ; documentées et courtes, elles restent un compromis acceptable face à une étape de compilation de plus dans `pnpm check`.
+
+## Les lectures guidées
+
+Un extrait montre ; une **lecture guidée** (`CodeWalkthrough`) explique. Elle reprend le même passage, désigné de la même façon, et le parcourt en étapes : chaque étape a un titre, un texte, une portée (`scope`, les lignes affichées) et un point d’attention (`focus`, les lignes éclairées). Le lecteur choisit une étape dans la liste, et le code reste à sa place pendant que l’explication et l’éclairage changent.
+
+Les étapes sont écrites en JSON dans un attribut (`stepsJson`), comme les lignes d’un tableau (`rowsJson`). Ce format a une contrainte que tout auteur rencontre une fois : l’attribut est délimité par des apostrophes droites `'`, donc le texte utilise l’apostrophe typographique `’`.
+
+## Les parcours et la carte des procédures
+
+Un chapitre peut déclarer dans son en-tête les **entités** de la base qu’il concerne, et des **parcours** : des cas d’utilisation racontés en étapes, chacune reliée à l’appel qui la réalise et à la section du chapitre qui l’explique.
+
+```yaml
+stories:
+  - title: Un membre dépose une demande
+    actor: Membre connecté
+    steps:
+      - label: Le membre envoie le formulaire ; accusé de réception et avis à la catégorie
+        call: ticket.submit
+        section: Déposer une demande
+```
+
+Ce que fait `ticket.submit` à la base (créer un `Ticket`, lire une `TicketCategory`, envoyer deux e-mails) n’est **pas** écrit dans le chapitre. Le script `build-procedure-map.mjs` le relève dans le code du backend : il charge le projet avec le vérificateur de types de TypeScript, suit chaque procédure de fonction en fonction jusqu’aux appels Prisma, et écrit le résultat dans `procedureMap.generated.json`. La page lit ce fichier pour afficher les effets de chaque étape, avec la piste des appels traversés.
+
+Deux gardes tiennent ces déclarations justes : `check-doc-entities.mjs` vérifie que chaque entité, propriété, procédure et section citée existe ; `build-procedure-map.mjs`, sans option, vérifie que le fichier généré correspond encore au code.
+
+<Promesse vers="dev/qualite/les-gardes-maison" section="La carte des procédures, toujours à jour">
+Le motif « un fichier généré, versionné, et une garde qui vérifie qu’il est à jour » est présenté avec les autres gardes du projet.
+</Promesse>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où vient le code d’un extrait ?", "Du fichier du dépôt, lu à chaque visite : rien n’est recopié."], ["Comment désigne-t-on le passage ?", "Par une ancre de texte (snippetStart), puis une fin : un nombre de lignes, la fin du bloc, ou une seconde ancre."], ["Et si l’ancre disparaît ?", "La page affiche un avertissement, et check-doc-snippets arrête pnpm check."], ["Où sont comptés les surlignages ?", "Dans l’extrait : ils suivent le passage quand il se déplace."], ["Qui écrit les effets d’un parcours ?", "Le code, relevé par build-procedure-map.mjs ; le chapitre ne cite que l’appel."]]' />
+
+## À suivre
+
+Le code est cité sans mentir. Reste ce qui relie les chapitres entre eux : les renvois d’une partie à une autre, et les mots techniques qu’un chapitre emploie avant que le lecteur ne les ait tous rencontrés.
+
+<Callout type="tip">
+**Chapitre suivant : relier les chapitres.** Des promesses dont le numéro se calcule, un glossaire qui repère ses termes dans tout le texte, une carte au survol, et un retour à l’endroit exact où l’on lisait.
+</Callout>

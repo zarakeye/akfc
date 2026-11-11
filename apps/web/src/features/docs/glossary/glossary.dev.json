@@ -1745,5 +1745,71 @@
    "vers": "dev/legal/donnees-personnelles",
    "section": "Des durées de conservation appliquées 🗓️"
   }
+ },
+ {
+  "id": "mdx",
+  "terme": "MDX",
+  "variantes": [
+   "MDX"
+  ],
+  "definition": "Du Markdown dans lequel on peut écrire des composants React (`<Callout>`, `<CodeExample>`) : le format de chaque page de cette documentation.",
+  "definiEn": {
+   "vers": "dev/moteur-doc/une-page-du-fichier-a-l-ecran",
+   "section": "Un fichier par page 📄"
+  }
+ },
+ {
+  "id": "frontmatter",
+  "terme": "frontmatter",
+  "variantes": [
+   "frontmatter"
+  ],
+  "definition": "L’en-tête d’un fichier MDX, entre deux lignes `---` : titre, description, partie, rang, entités et parcours du chapitre. Il décrit la page au site sans s’afficher tel quel.",
+  "definiEn": {
+   "vers": "dev/moteur-doc/une-page-du-fichier-a-l-ecran",
+   "section": "Un fichier par page 📄"
+  }
+ },
+ {
+  "id": "plugin-remark",
+  "terme": "plugin remark",
+  "variantes": [
+   "plugin remark",
+   "plugins remark"
+  ],
+  "definition": "Une fonction qui transforme l’arbre d’un texte Markdown pendant sa compilation ; le glossaire en est un.",
+  "definiEn": {
+   "vers": "dev/moteur-doc/une-page-du-fichier-a-l-ecran",
+   "section": "La compilation, à chaque visite"
+  },
+  "approfondiEn": {
+   "vers": "dev/moteur-doc/relier-les-chapitres",
+   "section": "Repérer les termes dans l’arbre du texte"
+  }
+ },
+ {
+  "id": "shiki",
+  "terme": "Shiki",
+  "variantes": [
+   "Shiki"
+  ],
+  "definition": "La bibliothèque qui colore le code des extraits côté serveur, avec les grammaires de VS Code : le navigateur reçoit du HTML déjà coloré.",
+  "definiEn": {
+   "vers": "dev/moteur-doc/du-code-cite-au-code-montre",
+   "section": "Un extrait lu sur le disque 🔎"
+  }
+ },
+ {
+  "id": "donnee-derivee",
+  "terme": "donnée dérivée",
+  "variantes": [
+   "donnée dérivée",
+   "données dérivées"
+  ],
+  "definition": "Une donnée qu’on ne stocke pas mais qu’on recalcule à partir de sa source (un numéro de chapitre, un verdict de droit à l’image) : recopiée, elle finirait par la contredire.",
+  "definiEn": {
+   "vers": "dev/moteur-doc/une-page-du-fichier-a-l-ecran",
+   "section": "Des parties, et des numéros que personne n’écrit"
+  }
  }
 ]

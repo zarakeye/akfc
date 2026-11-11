@@ -39,7 +39,8 @@ const SECTION_ORDER = [
   "Infrastructure et déploiement",
   "Membres et collaboration",
   "Légal (2) : les données et l’image des membres",
-  "Étude de cas",
+  "Étude de cas (1) : les tutoriels interactifs",
+  "Étude de cas (2) : le moteur de la documentation",
   "Annexe : glossaire",
 ] as const
 

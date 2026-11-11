@@ -1,0 +1,98 @@
+---
+title: "Une page, du fichier à l’écran"
+description: "Ce qu’est une page de cette documentation pour le site : un fichier MDX et son en-tête, un espace, une partie et un rang ; une navigation qui numérote tout elle-même ; une compilation, à chaque visite, qui transforme le texte en composants React. Le chemin complet d’un fichier jusqu’à l’écran."
+section: "Étude de cas (2) : le moteur de la documentation"
+order: 1
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le moteur des tutoriels a traversé presque toutes les couches du projet : des données typées, un état hors de React, un composant serveur tenu hors du navigateur, une garde maison, un test de bout en bout.
+
+Cette documentation est elle-même une fonctionnalité du site. Elle vit dans le même dépôt, se construit avec le même Next.js, passe par le même `pnpm check`, et elle a eu ses propres bugs : des extraits qui montraient le code d’à côté, des renvois vers des chapitres déplacés, des encadrés sans couleur. Cette seconde étude de cas la traverse comme la première a traversé les tutoriels, en trois chapitres :
+
+<DocsTable columnsJson='["Chapitre", "La question"]' rowsJson='[["1. Une page, du fichier à l’écran", "Qu’est-ce qu’une page pour le site, et comment devient-elle ce qu’on lit ?"], ["2. Du code cité au code montré", "Comment un chapitre montre le vrai code du projet, sans jamais montrer celui d’à côté ?"], ["3. Relier les chapitres", "Comment un chapitre renvoie à un autre, et comment un mot renvoie à sa définition, sans que rien ne casse quand la documentation bouge ?"]]' />
+
+Le lecteur la connaît déjà de l’extérieur : il l’a lue jusqu’ici. Il s’agit maintenant de l’ouvrir.
+
+## Un fichier par page 📄
+
+Chaque page est un fichier **MDX** sous `apps/web/content/docs/`. MDX est du Markdown dans lequel on peut écrire des composants React : un encadré `Callout`, un extrait `CodeExample`, une promesse `Promesse`. Le texte reste lisible dans un éditeur ordinaire, et les composants apportent ce que le Markdown ne sait pas faire : un extrait de code tiré du vrai fichier, un tableau triable, une carte des entités.
+
+Le premier dossier sous `content/docs/` est l’**espace** : `guide` pour les visiteurs et les membres, `admin` pour les administrateurs, `dev` pour cette documentation. Chaque espace a sa propre barre latérale, sa propre recherche et sa propre numérotation ; aucune page d’un espace n’apparaît dans un autre. Le reste du chemin donne l’adresse : `content/docs/dev/auth/se-connecter.mdx` est servie à `/docs/dev/auth/se-connecter`.
+
+En tête du fichier, entre deux lignes `---`, un **en-tête** (le *frontmatter*) décrit la page au site sans être affiché tel quel :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/lib/docs.types.ts"
+  filename="docs.types.ts"
+  snippetStart="export interface DocFrontmatter {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="2-5"
+  snippetTitle="Ce qu’un en-tête de page peut dire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`title` et `description` s’affichent en tête de page et servent à la recherche. `section` range la page dans une **partie**, `order` lui donne son rang dans la partie. `entities` et `stories` alimentent la carte des entités et les parcours d’un chapitre : le chapitre suivant y revient.
+
+`getAllDocs` parcourt le dossier au démarrage de chaque requête qui en a besoin, lit chaque en-tête avec `gray-matter`, et rend la liste des pages. Rien n’est enregistré nulle part : ajouter un fichier, c’est ajouter une page.
+
+## Des parties, et des numéros que personne n’écrit
+
+Une partie n’est déclarée qu’à un endroit : sa place dans `SECTION_ORDER`, la liste ordonnée de toutes les parties, dans `docs.navigation.ts`. L’ordre du menu, c’est l’ordre de cette liste ; l’ordre des chapitres d’une partie, c’est leur `order`. Les numéros (« 11.3 ») ne sont écrits dans aucun fichier : la navigation les calcule.
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/lib/docs.navigation.ts"
+  filename="docs.navigation.ts"
+  snippetStart="  let partNumber = 0"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,4,6"
+  snippetTitle="La numérotation : les parties dans l’ordre, les chapitres dans leur partie"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Quelques parties n’ont pas de numéro : l’accueil de chaque espace, en tête, et le glossaire, à la fin. Elles sont listées dans `UNNUMBERED_SECTIONS` et sautées par le compteur.
+
+Ce choix a rendu possible la réorganisation de toute la documentation selon l’ordre de construction du projet. Déplacer une partie, c’est déplacer une ligne de `SECTION_ORDER` et changer quelques `section` dans les en-têtes : tous les numéros suivent, dans le menu, les titres, le fil d’Ariane, les liens « précédent / suivant » et les promesses. Un numéro écrit à la main (« voir le chapitre 7.3 ») aurait été faux dès la première réorganisation.
+
+<Callout type="concept">
+Un **numéro calculé** est une donnée **dérivée** : on ne la stocke pas, on la recalcule à partir de sa source (l’ordre des parties et des chapitres). Une donnée dérivée qu’on recopie finit toujours par contredire sa source. Le projet applique la même règle au verdict vert ou rouge d’un tag de personne, recalculé à chaque lecture plutôt qu’enregistré.
+</Callout>
+
+## La compilation, à chaque visite
+
+Une page n’est pas construite à l’avance. Quand un lecteur ouvre `/docs/dev/auth/se-connecter`, le composant serveur de la route `app/docs/[...slug]/page.tsx` lit le fichier, en extrait la table des matières (les titres `##` et `###`), puis le **compile** avec `next-mdx-remote` :
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/app/docs/[...slug]/page.tsx"
+  filename="page.tsx"
+  snippetStart="  const compiled = await compileMDX<DocFrontmatter>({"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,11"
+  snippetTitle="Du texte MDX aux composants React"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Compiler, c’est faire trois choses. **Analyser** le texte en un arbre (l’arbre *mdast* : des paragraphes, des titres, des listes, du texte, et les composants écrits dans le texte). **Transformer** cet arbre, par des *plugins remark* : c’est là que le glossaire repère ses termes (chapitre 3). Puis **produire** des composants React, en remplaçant chaque nom (`Callout`, `CodeExample`, mais aussi `h2` ou `pre`) par le composant que donne la table `mdxComponents`.
+
+Les composants de la documentation sont pour la plupart des **composants serveur** : `CodeExample` lit le fichier cité sur le disque, `Promesse` consulte la navigation, `Terme` prépare une définition. Le navigateur ne reçoit que leur résultat. Les seules parties interactives (ouvrir le fichier complet, survoler un terme, parcourir un walkthrough) sont de petits composants client, glissés dans ce résultat.
+
+<Callout type="info">
+Compiler à chaque visite coûte quelques centaines de millisecondes par page, mais laisse la documentation **vivante** : un extrait montre le code tel qu’il est au moment de la lecture, et une page modifiée s’affiche sans reconstruire le site. La rapidité se gagnerait par un cache ; la justesse, elle, ne se rattrape pas.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Qu’est-ce qu’une page ?", "Un fichier MDX sous content/docs/espace/…, son chemin donne son adresse."], ["Qui décide de l’ordre du menu ?", "SECTION_ORDER pour les parties, order pour les chapitres d’une partie."], ["Où sont écrits les numéros ?", "Nulle part : la navigation les calcule, et tout ce qui les affiche les lui demande."], ["Quand une page est-elle compilée ?", "À chaque visite, par next-mdx-remote, côté serveur."], ["Où brancher un traitement du texte ?", "Dans un plugin remark, passé à la compilation ; c’est ainsi que fonctionne le glossaire."]]' />
+
+## À suivre
+
+Une page compilée affiche du texte et des composants. Le plus délicat de ces composants est celui qui montre le code du projet : il doit montrer le **vrai** code, et le bon passage, même quand le fichier a changé depuis l’écriture du chapitre.
+
+<Callout type="tip">
+**Chapitre suivant : du code cité au code montré.** Des extraits ancrés sur le texte plutôt que sur des numéros de ligne, des lectures guidées, des parcours dont les effets sont relevés dans le code, et les gardes qui les tiennent justes.
+</Callout>

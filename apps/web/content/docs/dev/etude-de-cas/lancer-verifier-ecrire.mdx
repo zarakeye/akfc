@@ -1,7 +1,7 @@
 ---
 title: "Lancer, vérifier, écrire"
 description: "Un tuto se propose de deux façons — le bouton « ? » de la page et le bouton des fiches de documentation —, se vérifie par un test de bout en bout qui le suit comme un administrateur, et s’écrit en quelques étapes. Ce que le test a trouvé au premier lancement, et la recette d’un nouveau tuto."
-section: "Étude de cas"
+section: "Étude de cas (1) : les tutoriels interactifs"
 order: 3
 ---
 
@@ -160,6 +160,12 @@ Un tuto vieillit comme le code qu’il traverse. La garde surveille ses cibles ;
 
 <DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment un tuto est-il proposé ?", "Par le bouton « ? » de sa page (filtré par public), ou par un bouton dans une fiche de documentation."], ["Que fait le bouton d’une fiche pour un visiteur sans le rôle ?", "Il est désactivé et dit pourquoi, plutôt que de lancer un tuto qui échouerait."], ["Comment vérifier qu’un tuto se suit ?", "Un test de bout en bout qui le lance et le suit, étape par étape, comme un utilisateur."], ["Qu’a trouvé ce test ?", "Le backend dans le code envoyé au navigateur des formulaires, par l’entrée du constructeur de pages."], ["Comment l’éviter à l’avenir ?", "import \"server-only\" dans les composants serveur : le build échoue si un composant client les importe."], ["Comment écrire un nouveau tuto ?", "Des data-tour, une définition, le registre, un bouton de fiche, un test — chaque étape a sa vérification."]]' />
 
-## Fin du parcours
+## À suivre
 
-Cette étude de cas clôt la documentation du développeur. Le moteur des tutoriels a traversé presque toutes ses parties : des données typées et une union discriminée, un état hors de React lu sans écart d’hydratation, un composant serveur tenu hors du navigateur, l’accessibilité au clavier, une garde maison, un test de bout en bout. C’est la méthode de tout le projet, appliquée à une seule fonctionnalité : **décrire en données, vérifier par un outil, et ne pas croire qu’une chose marche avant de l’avoir vue marcher**.
+Le moteur des tutoriels a traversé presque toutes ses parties : des données typées et une union discriminée, un état hors de React lu sans écart d’hydratation, un composant serveur tenu hors du navigateur, l’accessibilité au clavier, une garde maison, un test de bout en bout. C’est la méthode de tout le projet, appliquée à une seule fonctionnalité : **décrire en données, vérifier par un outil, et ne pas croire qu’une chose marche avant de l’avoir vue marcher**.
+
+Une autre fonctionnalité du site applique la même méthode, et le lecteur la connaît déjà de l’extérieur : cette documentation elle-même.
+
+<Callout type="tip">
+**Partie suivante : étude de cas, le moteur de la documentation.** Une page du fichier à l’écran, des extraits de code ancrés sur le texte, des promesses dont le numéro se calcule, et un glossaire qui repère ses termes dans tout le texte.
+</Callout>

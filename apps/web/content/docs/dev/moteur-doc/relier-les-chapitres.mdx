@@ -1,0 +1,126 @@
+---
+title: "Relier les chapitres"
+description: "Comment un chapitre renvoie à un autre sans écrire de numéro : la promesse, dont la cible est vérifiée et le numéro calculé. Comment un mot renvoie à sa définition : un glossaire en données, un repérage dans l’arbre du texte à la compilation, une carte au survol, un retour à l’endroit exact, et un index des pages qui le citent, calculé par le même repérage."
+section: "Étude de cas (2) : le moteur de la documentation"
+order: 3
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Un extrait de code est lu sur le disque à chaque visite et désigné par son texte ; une garde vérifie toutes les ancres à chaque `pnpm check`.
+
+Cette documentation suit l’ordre dans lequel on construit le projet. Elle rencontre donc sans cesse le même problème : un chapitre a besoin d’un sujet traité plus loin, ou d’un mot défini ailleurs. Deux mécanismes y répondent, l’un pour les sujets, l’autre pour les mots.
+
+## La promesse : effleurer, et dire où approfondir ↪
+
+Quand un chapitre a besoin d’une notion qui sera traitée plus tard, il ne s’interrompt pas pour la traiter (sauf si c’est indispensable pour le comprendre) : il en donne l’essentiel en quelques lignes, et **promet** le reste.
+
+```mdx
+<Promesse vers="dev/api/valider-l-entree" section="Où vit la validation ?">
+Un schéma Zod décrit la forme qu’une donnée doit avoir, et la refuse si elle ne l’a pas.
+</Promesse>
+```
+
+Le composant affiche l’explication, puis « Approfondi en 10.7 Valider l’entrée · Où vit la validation ? », en lien vers la section. Le numéro n’est écrit nulle part : il le demande à la navigation, comme le menu.
+
+<CodeExample
+  language="tsx"
+  filepath="apps/web/src/features/docs/ui/Promesse.tsx"
+  filename="Promesse.tsx"
+  snippetStart="export function Promesse("
+  snippetLines="4"
+  snippetHighlight="4"
+  snippetTitle="Le numéro de la cible, demandé à la navigation"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une promesse vers un chapitre déplacé reste juste : son numéro suit. Une promesse vers un chapitre **supprimé**, ou vers une section **retitrée**, pointerait dans le vide. `check-doc-components.mjs` relit toutes les promesses à chaque `pnpm check` et vérifie que le fichier visé existe et contient un titre `##` ou `###` exactement égal à `section`.
+
+## Le glossaire : une liste de termes, en données 📖
+
+Les mots techniques sont définis une fois, là où le parcours les rencontre pour la première fois. Le glossaire les réunit dans un fichier de données, `glossary.dev.json` :
+
+```json
+{
+  "id": "transaction",
+  "terme": "transaction",
+  "variantes": ["transaction", "transactions"],
+  "definition": "Plusieurs écritures regroupées en une seule : soit elles réussissent toutes, soit la base les annule toutes.",
+  "definiEn": { "vers": "dev/donnees/pourquoi-le-modele", "section": "Prisma, et ce qu’il ajoute" },
+  "approfondiEn": { "vers": "dev/donnees/ecrire-et-faire-evoluer", "section": "Écrire de façon cohérente : les transactions" }
+}
+```
+
+La définition est **courte** : elle sert à la carte du survol et à l’entrée du glossaire, et renvoie au chapitre qui définit vraiment le terme (`definiEn`), et à celui qui l’approfondit. Les `variantes` sont les formes que le repérage reconnaît dans le texte.
+
+Choisir un terme demande du soin. « Ligne », « champ » ou « index » ont trop de sens dans cette documentation (une ligne de code, un champ de formulaire, l’index de la doc) : un lien sur chaque occurrence se tromperait souvent. Ils restent hors du glossaire, définis dans leur chapitre.
+
+## Repérer les termes dans l’arbre du texte
+
+Le repérage se fait à la compilation, par un **plugin remark** : il parcourt l’arbre du chapitre (chapitre 1) et remplace chaque occurrence d’un terme par un composant `<Terme>`. Travailler sur l’arbre plutôt que sur le texte brut permet de savoir **où** l’on est :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/glossary/remarkGlossary.ts"
+  filename="remarkGlossary.ts"
+  snippetStart="const SKIP_TYPES = new Set("
+  snippetLines="2"
+  snippetTitle="Là où un terme n’est jamais lié"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un terme n’est jamais lié dans un titre, un lien, du code, ni dans les composants qui affichent du code ou un tableau. Il ne l’est pas non plus dans la **section qui le définit** : le lecteur y est déjà.
+
+La reconnaissance elle-même est une expression régulière par sorte de variante : les sigles (deux majuscules ou plus, comme `SQL` ou `tRPC`) tels quels, le reste sans tenir compte de la casse. Les formes les plus longues sont essayées d’abord, pour que « table de jointure » l’emporte sur « table » ; et un terme n’est reconnu que comme mot entier, jamais au milieu d’un autre :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/glossary/glossary.ts"
+  filename="glossary.ts"
+  snippetStart="function wordRegex("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,4"
+  snippetTitle="Les plus longues d’abord, et des mots entiers"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+## La carte au survol, et le retour exact
+
+`Terme` est un composant serveur : il prépare la définition et le libellé de son chapitre (« Défini en 5.1 … »), puis les confie à `TermeCarte`, un petit composant client. Celui-ci affiche le terme souligné en pointillés, ouvre une carte au survol ou au focus clavier (un premier appui suffit au doigt, faute de survol), et mène au glossaire au clic.
+
+Chaque occurrence porte une ancre (`t-transaction-3` : la troisième occurrence du terme dans la page). Avant de quitter la page, le clic note cette ancre :
+
+<CodeExample
+  language="ts"
+  filepath="apps/web/src/features/docs/glossary/glossaryReturn.ts"
+  filename="glossaryReturn.ts"
+  snippetStart="export function rememberTermOrigin("
+  snippetEnd="(fin du bloc)"
+  snippetTitle="Noter l’endroit exact du terme cliqué"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Ce petit **state** du glossaire vit dans le `sessionStorage` de l’onglet : il survit à un rechargement et aux allers-retours d’un terme à l’autre dans le glossaire, mais pas à la fermeture. Le bouton « Retour » du glossaire le lit avec `useSyncExternalStore`, la façon de lire une source extérieure à React sans écart entre le rendu serveur (où il n’y a pas d’origine) et le navigateur.
+
+<Promesse vers="dev/qualite/typecheck-et-lint" section="Une source extérieure : useSyncExternalStore">
+`useSyncExternalStore` abonne un composant à une source qui vit hors de React (ici le stockage de l’onglet), au lieu de recopier sa valeur dans un état. Les règles du React Compiler y ont conduit le projet à plusieurs endroits.
+</Promesse>
+
+## L’index des pages qui citent un terme
+
+L’entrée d’un terme dans le glossaire liste toutes les pages qui l’emploient, avec le nombre d’occurrences et un lien vers la première. Cette liste est calculée en relisant chaque chapitre avec le **même analyseur** que la compilation, et la **même fonction** de repérage, appelée cette fois sans transformer l’arbre. C’est ce qui garantit que l’ancre citée par l’index est exactement celle que porte la page : deux repérages écrits séparément auraient fini par diverger, et l’index aurait mené à côté.
+
+<Callout type="concept">
+Quand deux résultats doivent toujours concorder (l’ancre posée dans la page, l’ancre citée par l’index), on ne les calcule pas par deux chemins : on les fait sortir de la **même fonction**. Le projet le fait aussi pour les règles de validation, écrites une fois dans un schéma partagé par le formulaire et le serveur.
+</Callout>
+
+La garde `check-doc-components.mjs` vérifie enfin le glossaire lui-même : chaque terme a une définition, son « défini en » et son « approfondi en » visent une section qui existe, et aucune variante n’est revendiquée par deux termes.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment renvoyer à un chapitre plus loin ?", "Par une promesse : une explication courte, et un lien dont le numéro est calculé."], ["Qui vérifie qu’une promesse ne pointe pas dans le vide ?", "check-doc-components.mjs, à chaque pnpm check."], ["Où vivent les définitions du glossaire ?", "Dans glossary.dev.json : une définition courte, ses variantes, le chapitre qui la définit."], ["Quand les termes sont-ils repérés ?", "À la compilation, par un plugin remark qui parcourt l’arbre du texte."], ["Comment le glossaire ramène-t-il au bon endroit ?", "Le clic note l’ancre de l’occurrence dans le sessionStorage de l’onglet ; le bouton Retour y mène."], ["Pourquoi l’index des citations est-il toujours juste ?", "Il est calculé par la même fonction de repérage que la page."]]' />
+
+## Fin du parcours
+
+Les deux études de cas ferment la documentation du développeur. La seconde a montré que la documentation suit les règles du code qu’elle décrit : elle **cite** au lieu de recopier, **calcule** ce qui se dérive au lieu de l’écrire, et fait **vérifier** par une garde tout ce qui pourrait se mettre à mentir en silence. Un chapitre écrit aujourd’hui doit rester juste quand le code et l’ordre des chapitres auront changé ; c’est ce que tout ce moteur cherche à garantir.
