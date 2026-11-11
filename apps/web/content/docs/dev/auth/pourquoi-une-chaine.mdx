@@ -1,6 +1,6 @@
 ---
 title: "Qui parle au backend ? Une chaîne, pas une fonction"
-description: "Les questions que pose toute authentification (identification, persistance, révocation, intégrité), la différence entre authentification et autorisation, les trois mécanismes que le projet combine — bcrypt, jeton signé, session en base — et pourquoi aucun ne suffit seul."
+description: "Les mots de l’authentification définis avant d’être employés (requête sans état, cookie, session, jeton signé, empreinte, expiration, révocation), une session AKFC suivie de bout en bout, les questions que pose toute authentification, la différence entre authentification et autorisation, et les trois mécanismes que le projet combine : bcrypt, jeton signé, session en base."
 section: "Authentification et droits"
 order: 1
 ---
@@ -36,6 +36,97 @@ Mais elle contient en réalité plusieurs sous-questions, et chacune appelle une
 🧠 L'authentification, c'est l'ensemble des mécanismes qui répondent à ces questions.
 
 Et c'est précisément parce qu'elle répond à plusieurs questions distinctes qu'elle ne peut **jamais** se résumer à un seul fichier.
+
+---
+
+## Avant de commencer : les mots de cette partie
+
+Cette partie emploie, dès ses premières lignes, une poignée de mots que l’on croit connaître : *requête*, *cookie*, *session*, *jeton*, *signature*, *empreinte*, *expiration*, *révocation*. Mal compris, ils rendent chaque chapitre plus obscur qu’il ne l’est. Nous les fixons donc ici, une fois pour toutes, chacun avec ce qu’il est **dans ce projet**. Les chapitres suivants s’appuieront sur ces définitions sans les répéter.
+
+### Une requête, et un serveur qui oublie
+
+Le navigateur et le serveur ne se parlent pas en continu. Ils échangent des **requêtes** et des **réponses** HTTP : le navigateur envoie une requête (« donne-moi la page /profil », « exécute la procédure `auth.changePassword` »), le serveur répond, et l’échange est terminé. Chaque clic, chaque chargement de page, chaque appel tRPC est une requête **indépendante**.
+
+HTTP est dit **sans état** : le serveur ne garde, d’une requête à l’autre, aucun souvenir de celui qui lui parle. La deuxième requête d’un membre lui arrive exactement comme la première d’un inconnu. Si rien d’autre n’existait, il faudrait renvoyer son adresse et son mot de passe à chaque clic.
+
+Toute l’authentification qui suit sert à **réparer cet oubli**, sans redemander le mot de passe.
+
+### Le cookie : une petite mémoire que le navigateur porte
+
+Un **cookie** est une donnée courte (un nom, une valeur, quelques réglages) que le **serveur demande au navigateur de garder**, par un en-tête de sa réponse (`Set-Cookie`). Ensuite, à **chaque** requête vers le même site, le navigateur la renvoie de lui-même, dans l’en-tête `Cookie`. Le serveur n’a rien à redemander : la donnée revient toute seule.
+
+Dans le projet, un seul cookie concerne l’authentification. Il s’appelle `__session`, et ses réglages ont chacun une raison :
+
+<DocsTable columnsJson='["Réglage", "Ce qu’il veut dire", "Ce qu’il protège"]' rowsJson='[["HttpOnly", "Le JavaScript de la page ne peut pas lire le cookie ; seul le navigateur l’envoie.", "Un script malveillant injecté dans une page ne peut pas le voler."], ["Secure (en production)", "Le cookie ne voyage que sur une connexion chiffrée (HTTPS).", "Personne sur le réseau (un wifi public) ne peut le lire en passant."], ["SameSite=Lax", "Le cookie n’accompagne pas les requêtes envoyées depuis un autre site, sauf un simple lien suivi.", "Un autre site ne peut pas faire agir le membre à son insu avec sa propre session."], ["Expires", "Le navigateur l’efface à cette date : sept jours après la connexion.", "Un cookie oublié ne vit pas indéfiniment."], ["Path=/", "Le cookie accompagne toutes les pages du site.", "Rien : c’est un choix de portée."]]' />
+
+Le chapitre 3 revient sur chacun de ces réglages, au moment où le cookie est posé.
+
+### La session : une confiance qui dure
+
+Voici la définition qui sert de fil à toute la partie :
+
+> Une **session**, c’est la période pendant laquelle le serveur accepte qu’une suite de requêtes vient d’**une même personne, déjà identifiée**, sans lui redemander de preuve.
+
+Elle commence au moment où le membre prouve qui il est (il se connecte) ; elle finit quand elle expire ou quand on y met fin. Entre les deux, chaque requête est reliée à son compte.
+
+Une session a toujours **deux moitiés**, qui doivent se correspondre :
+
+- **côté serveur, un registre** : dans le projet, une ligne de la table `Session`, avec un identifiant, le membre concerné, une date de création et une date de fin (`expiresAt`). C’est la source de vérité : tant que la ligne existe et n’a pas expiré, la session est ouverte ;
+- **côté navigateur, de quoi la désigner** : le cookie `__session`, qui transporte, sous une forme protégée, l’identifiant de cette ligne. Il ne contient ni le mot de passe, ni le nom, ni les droits.
+
+L’analogie la plus juste est celle du **vestiaire**. On dépose son manteau (on prouve son identité), on reçoit un ticket numéroté (le cookie). Le ticket seul ne vaut rien : c’est le registre du vestiaire (la table `Session`) qui dit à quoi il correspond. Et si le vestiaire raye le numéro du registre, le ticket ne rend plus rien, même intact.
+
+**Ce qu’une session demande** — et chacun de ces besoins a son chapitre :
+
+<DocsTable columnsJson='["Besoin", "Dans le projet", "Chapitre"]' rowsJson='[["Naître après une preuve d’identité", "La connexion vérifie le mot de passe, puis crée la ligne Session et pose le cookie.", "3"], ["Être conservée", "Une ligne de la table Session.", "2"], ["Voyager à chaque requête", "Le cookie __session, renvoyé par le navigateur.", "3"], ["Être vérifiée à chaque requête", "Le jeton du cookie est contrôlé, puis la ligne est cherchée en base.", "4 et 5"], ["Finir à une date prévue", "Sept jours après la connexion, sans prolongation.", "2 et 6"], ["Pouvoir être interrompue avant", "Supprimer la ligne : déconnexion, changement ou réinitialisation du mot de passe.", "6 et 7"], ["Être nettoyée", "Les lignes expirées sont supprimées chaque nuit, et au passage quand un navigateur présente une session expirée.", "6"]]' />
+
+**Ce qu’une session permet** : savoir, à chaque requête, **qui** parle (`ctx.sessionClient.user.id` dans une procédure) ; ne pas redemander le mot de passe pendant une semaine ; décider ensuite de ce que ce membre a le droit de faire ; et **couper l’accès** d’un coup, sur un appareil ou sur tous.
+
+**Ce qu’une session n’est pas** :
+
+- ce n’est pas le **compte** : un membre a un compte, mais autant de sessions que d’appareils où il s’est connecté (son téléphone et son ordinateur ont chacun la leur) ;
+- ce n’est pas le **cookie** : le cookie n’est que le ticket ; sans la ligne en base, il ne vaut rien ;
+- ce n’est pas un **droit** : la session dit *qui* est là, pas *ce qu’il peut faire*. Cette seconde question, l’autorisation, a son propre chapitre (le 9).
+
+### Le jeton signé : un ticket infalsifiable
+
+Le cookie ne contient pas l’identifiant de session tel quel : il contient un **jeton**, au format **JWT** (*JSON Web Token*). Un JWT est une chaîne en trois parties séparées par des points : un en-tête (l’algorithme employé), un **contenu** (dans le projet : l’identifiant de la session, la date d’émission et la date d’expiration), et une **signature**.
+
+La signature est calculée à partir du contenu et d’un **secret** que seul le serveur connaît (`JWT_SECRET`, algorithme HS256). Changer une seule lettre du contenu rend la signature fausse, et refaire une signature juste exige le secret. À chaque requête, le serveur recalcule la signature : si elle ne correspond pas, le jeton est rejeté sans même interroger la base.
+
+<Callout type="warning">
+**Signé ne veut pas dire chiffré.** Le contenu d’un JWT est simplement encodé : n’importe qui peut le décoder et le lire. La signature garantit qu’il n’a pas été **modifié**, pas qu’il est **secret**. C’est pourquoi le projet n’y met que l’identifiant de la session : rien de personnel, rien qui donne un droit.
+</Callout>
+
+### Une empreinte n’est pas un chiffrement
+
+Le mot de passe, lui, n’est jamais stocké. La base garde son **empreinte** (un *hash*) : le résultat d’un calcul **à sens unique**. On peut toujours recalculer l’empreinte d’un mot de passe et la comparer à celle de la base ; on ne peut pas, à partir de l’empreinte, retrouver le mot de passe. Un **chiffrement**, au contraire, est réversible par qui possède la clé. Pour un mot de passe, on ne veut **pas** de retour possible : même la base volée, même l’administrateur, ne doivent pas pouvoir le lire. La section « bcrypt », plus bas, détaille comment.
+
+### Expirer, révoquer
+
+Deux façons pour une session de finir, à ne pas confondre :
+
+- l’**expiration** est **prévue** : une date de fin, fixée à la naissance (sept jours ici). Personne n’a à intervenir ;
+- la **révocation** est une **décision**, prise avant cette date : le membre se déconnecte, change son mot de passe, ou le réinitialise. Dans le projet, révoquer, c’est **supprimer la ligne** `Session` : le cookie, même intact et bien signé, ne désigne plus rien.
+
+C’est précisément pour pouvoir révoquer que la session vit en base, et pas seulement dans le jeton (« Pour aller plus loin », plus bas).
+
+## Une session AKFC, de bout en bout
+
+Avec ces mots, suivons une session réelle du projet, du clic sur « Se connecter » à la requête suivante. Les valeurs sont des exemples.
+
+1. **La preuve.** Le membre envoie son adresse et son mot de passe. Le serveur retrouve son compte et compare l’empreinte du mot de passe fourni à celle de la base. Elles correspondent.
+2. **Le registre.** Le serveur crée une ligne `Session` : identifiant `cm3x…`, membre `ck9a…`, fin le 18 novembre à 14 h 02, sept jours plus tard.
+3. **Le ticket.** Il fabrique un jeton dont le contenu est `{ "sessionId": "cm3x…", "iat": …, "exp": … }`, le signe avec `JWT_SECRET`, et répond avec `Set-Cookie: __session=eyJhbGciOiJIUzI1NiJ9.eyJzZXNzaW9uSWQiOi….k3Jf…; HttpOnly; Secure; SameSite=Lax; Expires=…; Path=/`.
+4. **La requête suivante.** Le membre ouvre son profil. Son navigateur ajoute de lui-même `Cookie: __session=eyJ…` à la requête.
+5. **La vérification.** Le serveur contrôle la signature du jeton et sa date ; il en lit l’identifiant `cm3x…` ; il cherche la ligne en base ; elle existe et n’a pas expiré.
+6. **L’identité.** Il construit, à partir de cette ligne et du membre, un objet `SessionClient`, et le place dans le **contexte** de la requête. Toute procédure peut alors lire `ctx.sessionClient.user.id` : la requête sait qui parle.
+
+Si une seule étape de la vérification échoue (signature fausse, date dépassée, ligne absente), la requête est traitée comme celle d’un visiteur anonyme.
+
+<Callout type="concept">
+**Deux moitiés, deux contrôles.** La signature prouve que le ticket vient bien du serveur ; la ligne en base prouve que la session est toujours ouverte. Le projet exige les deux, à chaque requête. Ces six étapes sont, à peu de chose près, le plan des chapitres 3 à 5.
+</Callout>
 
 ---
 
@@ -131,7 +222,7 @@ Si oui, l'utilisateur est identifié.
 
 C'est ici que le piège se referme sur les développeurs débutants.
 
-Parce que HTTP est un protocole **sans état**. Chaque requête est indépendante. Le serveur n'a aucune mémoire entre deux requêtes du même utilisateur.
+Parce que HTTP est **sans état**, nous l’avons vu : le serveur ne se souvient de rien d’une requête à l’autre.
 
 Si nous nous arrêtions au login, l'utilisateur devrait fournir email + mot de passe à chaque clic. Inacceptable.
 
@@ -203,12 +294,12 @@ Toute l'information vit dans le JWT lui-même. Le backend ne stocke rien. À cha
 Le serveur génère un identifiant aléatoire, le stocke en base, et le renvoie au client (souvent dans un cookie). À chaque requête, il fait un lookup DB.
 
 - Avantage : révocation immédiate (suppression de la ligne en base)
-- Inconvénient : aucune information dans le cookie lui-même — un attaquant peut tenter du brute-force sur les IDs
+- Inconvénient : tout repose sur l’identifiant. Il doit être impossible à deviner, car qui le connaît possède la session ; un identifiant fabriqué pour être unique (comme les `cuid` de Prisma) n’est pas forcément fabriqué pour être secret
 
 **Stratégie 3 — Hybride JWT + Session DB (le choix du projet)**  
 On combine les deux. Le JWT contient seulement un `sessionId`, signé. La session est stockée en base.
 
-- Avantage 1 : signature cryptographique → impossible de forger un JWT valide sans connaître `JWT_SECRET`
+- Avantage 1 : signature cryptographique → impossible de forger un JWT valide sans connaître `JWT_SECRET`, même en devinant un identifiant de session
 - Avantage 2 : présence en base → révocable instantanément en supprimant la ligne `Session`
 - Avantage 3 : on peut faire expirer côté serveur indépendamment du JWT
 
@@ -247,6 +338,10 @@ Ce fichier est récent. Jusqu’ici, le coût `12` était recopié dans quatre f
 ---
 
 👉 **Où nous en sommes :** nous avons identifié les trois outils du coffre. Pour vraiment comprendre comment ils coopèrent, nous devons maintenant descendre dans la base de données et regarder la structure qui porte tout cela.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Mot", "Ce qu’il veut dire dans le projet"]' rowsJson='[["Requête sans état", "Chaque échange HTTP est indépendant : sans aide, le serveur ne reconnaît personne d’une requête à l’autre."], ["Cookie", "Une donnée que le serveur confie au navigateur, renvoyée à chaque requête. Le nôtre : __session, HttpOnly, Secure en production, SameSite=Lax, sept jours."], ["Session", "La période où le serveur reconnaît un membre déjà identifié, sans redemander de preuve. Deux moitiés : une ligne Session en base, un cookie qui la désigne."], ["Jeton (JWT)", "Le contenu du cookie : l’identifiant de la session, signé avec JWT_SECRET. Lisible par tous, impossible à modifier sans le secret."], ["Empreinte", "Le résultat à sens unique du mot de passe, calculé par bcrypt. On compare, on ne déchiffre jamais."], ["Expiration", "La fin prévue d’une session, sept jours après la connexion."], ["Révocation", "La fin décidée avant l’heure : la ligne Session est supprimée, le cookie ne désigne plus rien."], ["Authentification", "Savoir qui parle."], ["Autorisation", "Décider ce que cette personne a le droit de faire."]]' />
 
 ## À suivre
 
