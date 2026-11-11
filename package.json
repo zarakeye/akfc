@@ -19,7 +19,7 @@
     "e2e": "node e2e/prepare.mjs && playwright test",
     "e2e:report": "playwright show-report",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
-    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && pnpm clean && pnpm typecheck && pnpm lint"
+    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && pnpm clean && pnpm typecheck && pnpm lint"
   },
   "dependencies": {
     "@cropper/elements": "^2.1.0",

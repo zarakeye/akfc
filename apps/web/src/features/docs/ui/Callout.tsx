@@ -1,10 +1,11 @@
 import type { ReactNode } from "react"
 
-type CalloutType =
-  | "info"
-  | "tip"
-  | "warning"
-  | "danger"
+/**
+ * Types d'encadrés. `concept` pose une définition ; `insight` tire une leçon générale du cas lu.
+ * Un type inconnu s'afficherait sans couleur : `scripts/check-doc-components.mjs` le refuse.
+ */
+export const CALLOUT_TYPES = ["info", "tip", "warning", "danger", "concept", "insight"] as const
+type CalloutType = (typeof CALLOUT_TYPES)[number]
 
 interface CalloutProps {
   type?: CalloutType
@@ -19,6 +20,8 @@ const styles: Record<CalloutType, string> = {
   tip: "border-emerald-300 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-200 dark:text-emerald-950",
   warning: "border-amber-300 bg-amber-50 dark:border-amber-400 dark:bg-amber-100 dark:text-amber-950",
   danger: "border-rose-300 bg-rose-50 dark:border-rose-400 dark:bg-rose-200 dark:text-rose-950",
+  concept: "border-violet-300 bg-violet-50 dark:border-violet-400 dark:bg-violet-200 dark:text-violet-950",
+  insight: "border-indigo-300 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-200 dark:text-indigo-950",
 }
 
 export function Callout({
