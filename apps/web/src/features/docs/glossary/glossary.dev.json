@@ -1447,5 +1447,168 @@
    "vers": "dev/interface/referencement",
    "section": "Le plan du site, généré depuis la base"
   }
+ },
+ {
+  "id": "rgpd",
+  "terme": "RGPD",
+  "variantes": [
+   "RGPD"
+  ],
+  "definition": "Le Règlement général sur la protection des données : le texte européen qui encadre ce qu’un site fait des données personnelles (informer, conserver un temps limité, permettre l’accès et l’effacement).",
+  "definiEn": {
+   "vers": "dev/legal/documents-legaux-et-donnees"
+  },
+  "approfondiEn": {
+   "vers": "dev/legal/donnees-personnelles"
+  }
+ },
+ {
+  "id": "politique-confidentialite",
+  "terme": "politique de confidentialité",
+  "variantes": [
+   "politique de confidentialité",
+   "politiques de confidentialité"
+  ],
+  "definition": "La page qui explique aux personnes ce que le site fait de leurs données : pourquoi, combien de temps, qui les reçoit, et comment exercer leurs droits.",
+  "definiEn": {
+   "vers": "dev/legal/documents-legaux-et-donnees"
+  }
+ },
+ {
+  "id": "registre-traitements",
+  "terme": "registre des traitements",
+  "variantes": [
+   "registre des traitements",
+   "registre des activités de traitement"
+  ],
+  "definition": "Le document interne exigé par le RGPD (article 30) qui décrit chaque traitement de données : finalité, personnes, données, durée, destinataires.",
+  "definiEn": {
+   "vers": "dev/legal/documents-legaux-et-donnees"
+  }
+ },
+ {
+  "id": "mentions-legales",
+  "terme": "mentions légales",
+  "variantes": [
+   "mentions légales"
+  ],
+  "definition": "La page obligatoire qui dit qui édite le site, qui en est responsable et qui l’héberge.",
+  "definiEn": {
+   "vers": "dev/legal/documents-legaux-et-donnees",
+   "section": "Des pages générées depuis les réglages ⚖️"
+  }
+ },
+ {
+  "id": "dockerfile",
+  "terme": "Dockerfile",
+  "variantes": [
+   "Dockerfile",
+   "Dockerfiles"
+  ],
+  "definition": "La recette d’une image Docker : les instructions que Docker exécute pour la construire.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Une image, des étapes 🐳"
+  }
+ },
+ {
+  "id": "multi-stage",
+  "terme": "construction en plusieurs étapes",
+  "variantes": [
+   "multi-stage",
+   "construction en plusieurs étapes"
+  ],
+  "definition": "Un Dockerfile qui enchaîne plusieurs images : les premières installent et compilent, la dernière ne recopie que le résultat.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Une image, des étapes 🐳"
+  }
+ },
+ {
+  "id": "docker-compose",
+  "terme": "Docker Compose",
+  "variantes": [
+   "Docker Compose",
+   "compose"
+  ],
+  "definition": "L’outil qui décrit dans un fichier plusieurs conteneurs qui fonctionnent ensemble (des services : le site, la base, le stockage) et les démarre dans l’ordre.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  }
+ },
+ {
+  "id": "deploiement",
+  "terme": "déploiement",
+  "variantes": [
+   "déploiement",
+   "déploiements",
+   "déployer",
+   "déploie"
+  ],
+  "definition": "Le remplacement de la version du site qui tourne sur le serveur par une nouvelle, sans perdre de données.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/mettre-en-production",
+   "section": "L’ordre d’un déploiement 🚀"
+  }
+ },
+ {
+  "id": "migrateur",
+  "terme": "migrateur",
+  "variantes": [
+   "migrateur"
+  ],
+  "definition": "Le conteneur lancé à chaque déploiement, avant le site, qui applique les migrations en attente puis s’arrête.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/mettre-en-production",
+   "section": "Pourquoi la migration avant le conteneur"
+  }
+ },
+ {
+  "id": "journaux",
+  "terme": "journaux",
+  "variantes": [
+   "journaux",
+   "logs",
+   "journaliser",
+   "journalisé",
+   "journalisée"
+  ],
+  "definition": "Ce que le site écrit pendant qu’il tourne : démarrages, erreurs, tâches de la nuit. Sur un serveur, le seul moyen de savoir ce qui s’est passé.",
+  "definiEn": {
+   "vers": "dev/infrastructure/l-image-docker",
+   "section": "Avant de commencer : les mots de cette partie"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/mettre-en-production",
+   "section": "Lire les journaux"
+  }
+ },
+ {
+  "id": "sandbox",
+  "terme": "sandbox",
+  "variantes": [
+   "sandbox"
+  ],
+  "definition": "Une copie complète et autonome du site (application, base, stockage, boîte e-mail), lancée par une seule commande, pour l’essayer sans rien risquer.",
+  "definiEn": {
+   "vers": "dev/infrastructure/la-sandbox"
+  }
  }
 ]

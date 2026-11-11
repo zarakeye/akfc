@@ -8,9 +8,21 @@ order: 1
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** La qualité se vérifie sur la machine du développeur : pnpm check à chaque commit, les tests de bout en bout avant un déploiement. Reste à mettre le site en ligne.
+> **Précédemment.** La qualité se vérifie sur la machine du développeur, `pnpm check` à chaque commit, et sur GitHub à chaque push, tests de bout en bout compris. Reste à mettre le site en ligne.
 
 Cette partie suit le site de la machine du développeur jusqu’au serveur : l’**image** qui le contient (ce chapitre), sa **mise en production** (chapitre 2), et la **sandbox**, une copie complète et autonome pour l’essayer sans rien risquer (chapitre 3).
+
+## Avant de commencer : les mots de cette partie
+
+Les mots de Docker vus à la mise en route (image, conteneur, volume, port) suffisaient à lancer une base sur sa machine. Mettre un site en ligne en ajoute quelques-uns.
+
+- Un **Dockerfile** est la recette d’une image : une suite d’instructions (partir de telle image, copier ces fichiers, lancer cette commande) que Docker exécute pour la construire.
+- Une construction **en plusieurs étapes** (*multi-stage*) enchaîne plusieurs images dans un même Dockerfile : les premières installent et compilent, la dernière ne recopie que le résultat. Les outils de construction ne partent pas en production.
+- **Docker Compose** décrit dans un fichier (`docker-compose.yml`) plusieurs conteneurs qui fonctionnent ensemble, appelés **services** : le site, la base, le stockage. Une commande les démarre tous, dans l’ordre.
+- Un **déploiement** remplace la version du site qui tourne sur le serveur par une nouvelle, sans perdre de données.
+- Le **migrateur** est un conteneur à part, lancé à chaque déploiement avant le site : il applique les migrations en attente, puis s’arrête.
+- Un **serveur web** placé devant le site (ici, Caddy) reçoit les visiteurs, s’occupe du HTTPS, et transmet leurs requêtes au conteneur du site.
+- Les **journaux** (*logs*) sont ce que le site écrit pendant qu’il tourne : les démarrages, les erreurs, les tâches de la nuit. Sur un serveur, c’est le seul moyen de savoir ce qui s’est passé.
 
 ## Une image, des étapes 🐳
 

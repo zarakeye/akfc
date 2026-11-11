@@ -34,10 +34,11 @@ const SECTION_ORDER = [
   "L’éditeur de texte riche",
   "Le domaine du club (2) : un modèle qui s’ouvre",
   "Le référencement",
-  "Membres et collaboration",
-  "Légal et RGPD",
+  "Légal (1) : les pages légales",
   "Qualité (3) : l’intégration continue",
   "Infrastructure et déploiement",
+  "Membres et collaboration",
+  "Légal (2) : les données et l’image des membres",
   "Étude de cas",
   "Annexe : glossaire",
 ] as const

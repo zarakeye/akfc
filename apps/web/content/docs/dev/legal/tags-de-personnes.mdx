@@ -1,8 +1,8 @@
 ---
 title: "Les tags de personnes"
 description: "Qui apparaît sur quelle photo : des tags posés à la main par un administrateur, comparés au droit à l’image actuel de chaque personne, usage par usage ; un verdict jamais stocké, le tableau des galeries, la modale des tags, la destination de chaque galerie (ce qui bloque, ce qui avertit), la relance, et « Où j’apparais » côté membre."
-section: "Légal et RGPD"
-order: 5
+section: "Légal (2) : les données et l’image des membres"
+order: 4
 entities:
   MediaPerson: [mediaAssetId, userId, taggedById, createdAt, notifiedAt, refusedAt]
   MediaAsset: [noRecognizablePerson]
@@ -313,8 +313,8 @@ Une règle pure se teste sans base ni horloge : le test de bout en bout l’appe
 
 ## À suivre
 
-La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations et sait qui apparaît sur quelle photo. Il est prêt à partir en ligne ; avant, une dernière vérification doit cesser de dépendre de notre mémoire. `pnpm check` tourne avant chaque commit, mais les tests de bout en bout se lancent quand on y pense.
+La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations et sait qui apparaît sur quelle photo. Le site est construit, vérifié et en ligne. Reste à suivre une fonctionnalité de bout en bout, d’un seul tenant, à travers toutes les couches que la documentation a présentées une à une.
 
 <Callout type="tip">
-**Partie suivante : l’intégration continue.** GitHub refait `pnpm check` et les tests de bout en bout à chaque push, sans aucun secret.
+**Partie suivante : étude de cas, les tutoriels interactifs.** Un tuto décrit en données, le moteur qui le déroule à travers les pages, et la façon de le vérifier en le suivant.
 </Callout>

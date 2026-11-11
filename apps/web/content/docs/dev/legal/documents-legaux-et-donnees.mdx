@@ -1,7 +1,7 @@
 ---
 title: "Les pages légales"
 description: "Des mentions légales et une politique de confidentialité générées depuis les réglages, qui annoncent ce qui manque au lieu de l’inventer ; des coordonnées légales distinctes des coordonnées publiques ; et un registre des traitements décrit une seule fois pour deux publics."
-section: "Légal et RGPD"
+section: "Légal (1) : les pages légales"
 order: 1
 entities:
   SiteSettings: [legalName, legalRna, legalSiret, legalAddress, legalPhone, legalEmail, publicationDirector, hostName, storageRegion, accountRetentionMonths, ticketRetentionMonths, legalUpdatedAt]
@@ -24,7 +24,7 @@ stories:
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les membres reçoivent les documents du club, partagent leurs fichiers et s’adressent au club par des demandes suivies. Tout cela repose sur des données personnelles.
+> **Précédemment.** Le site public est complet, et les moteurs de recherche le trouvent. Il recueille pourtant déjà des données personnelles : les comptes, les sessions, les messages adressés au club. Avant de le mettre en ligne, il doit dire ce qu’il en fait.
 
 Un site qui collecte des données personnelles doit dire qui l’édite, ce qu’il fait de ces données, combien de temps il les garde, et permettre à chacun d’exercer ses droits. Cette partie suit ces obligations une à une : les pages légales, puis ce que le site fait réellement des données (durées tenues, export), enfin l’image des personnes, par formulaire papier et en ligne.
 
@@ -143,6 +143,12 @@ Le registre décrit ce que le **code** fait. Toute procédure qui enregistre une
 
 Les pages disent ce que le site fait des données. Encore faut-il qu’il le fasse : garder chaque donnée le temps annoncé, pas plus, et permettre à chacun de récupérer les siennes.
 
+<Promesse vers="dev/legal/donnees-personnelles" section="Des durées de conservation appliquées 🗓️">
+Tenir ces promesses demande de connaître les données des membres : leurs documents, leurs demandes, leurs groupes. La purge de la nuit et l’export des données se lisent donc après l’espace des membres.
+</Promesse>
+
+Le site a ses pages légales : il peut partir en ligne. Avant, une dernière vérification doit cesser de dépendre de notre mémoire. `pnpm check` tourne avant chaque commit, mais les tests de bout en bout se lancent quand on y pense.
+
 <Callout type="tip">
-**Chapitre suivant : les données personnelles.** Une purge chaque nuit qui tient les durées annoncées, des comptes jamais supprimés sans décision humaine, et l’export de ses données par chaque membre.
+**Partie suivante : l’intégration continue.** GitHub refait `pnpm check` et les tests de bout en bout à chaque push, sans aucun secret.
 </Callout>
