@@ -207,7 +207,7 @@ Le fichier est ensuite lu dans le stockage et transmis **par la route elle-même
   fullFileTitle="Voir le fichier complet"
 />
 
-Deux raisons à ce choix plutôt qu’une redirection vers une URL signée. L’aperçu des PDF (pdf.js) télécharge le fichier en JavaScript, ce qu’une redirection vers un autre domaine bloquerait (CORS). Et chaque accès repasse par la vérification : il n’existe aucun lien qu’un membre pourrait transmettre à quelqu’un d’autre. `private, no-store` interdit à tout cache intermédiaire de le garder ; `?download=1` sert le même fichier en pièce jointe, sous son nom lisible.
+Deux raisons à ce choix plutôt qu’une redirection vers une URL signée. L’aperçu des PDF (pdf.js) télécharge le fichier en JavaScript, ce qu’une redirection vers un autre domaine bloquerait (CORS : la règle par laquelle le navigateur empêche une page de lire en JavaScript une réponse venue d’un autre domaine, sauf autorisation explicite). Et chaque accès repasse par la vérification : il n’existe aucun lien qu’un membre pourrait transmettre à quelqu’un d’autre. `private, no-store` interdit à tout cache intermédiaire de le garder ; `?download=1` sert le même fichier en pièce jointe, sous son nom lisible.
 
 Seuls les types sans danger s’affichent dans le navigateur : PDF, images (hors SVG), texte, audio et vidéo. Tout autre type est servi en pièce jointe. `nosniff` interdit au navigateur de deviner un autre type que celui annoncé, et une politique `sandbox` empêche toute exécution de script — sauf pour un PDF, dont le lecteur intégré des navigateurs refuse de s’afficher dans un document « sandboxé ».
 

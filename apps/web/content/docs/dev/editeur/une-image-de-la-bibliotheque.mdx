@@ -70,7 +70,7 @@ Le pont entre les deux est une promesse dont on garde la fonction `resolve` :
   fullFileTitle="Voir le fichier complet"
 />
 
-`openImagePicker` range `resolve` dans une ref et ouvre la modale ; il rend une promesse encore en suspens. À la validation, le chemin choisi est converti en identifiant (`media.resolveByPaths`), et la promesse est résolue avec lui. À la fermeture, elle l’est avec `null`. Dans les deux cas, la ref est vidée avant d’appeler `resolve` : une promesse ne se résout qu’une fois.
+`openImagePicker` range `resolve` dans une ref et ouvre la modale (la fenêtre qui s’ouvre par-dessus la page et bloque le reste tant qu’on n’a pas choisi) ; il rend une promesse encore en suspens. À la validation, le chemin choisi est converti en identifiant (`media.resolveByPaths`), et la promesse est résolue avec lui. À la fermeture, elle l’est avec `null`. Dans les deux cas, la ref est vidée avant d’appeler `resolve` : une promesse ne se résout qu’une fois.
 
 Le bouton de la barre d’outils et le bouton « Remplacer » de chaque image appellent la même fonction. Le premier insère un nœud (`insertLibraryImage`), le second change l’attribut `mediaId` du nœud existant.
 

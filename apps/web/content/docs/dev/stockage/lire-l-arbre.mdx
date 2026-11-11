@@ -139,7 +139,7 @@ La recherche (`media.searchRecursive`) parcourt le dossier courant et tous ses s
 
 La première version lisait « les 1 000 premières lignes du sous-arbre », puis filtrait. Tout fichier correspondant au-delà de ces 1 000 était **introuvable**, sans que rien ne le signale. La lecture se fait maintenant par **paquets** triés par chemin, avec un curseur (`cursor` + `skip: 1` reprend juste après la dernière ligne lue), jusqu’à épuisement du sous-arbre ou à une borne de 10 000 lignes — auquel cas le résultat est marqué **tronqué**, et l’interface le dit.
 
-Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière réservée aux administrateurs (une expression mal construite peut bloquer le serveur, chapitre 4 et fiche 1.8).
+Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière (un motif de recherche dans du texte, comme `^photo-\d+`) réservée aux administrateurs (une expression mal construite peut bloquer le serveur, chapitre 4 et fiche 1.8).
 
 ## Côté navigateur : un cache par dossier
 

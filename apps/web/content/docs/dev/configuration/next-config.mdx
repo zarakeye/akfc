@@ -144,7 +144,7 @@ Un paquet de `serverExternalPackages` n'est pas recopié dans les bundles : il r
   reactCompiler: true,
 ```
 
-Le React Compiler n'est pas le compilateur de React : React n'en a pas besoin, le JSX est transformé en JavaScript par SWC, l'outil intégré à Next.js. C'est une **étape d'optimisation supplémentaire**, que Next.js n'active pas d'office, pour deux raisons : elle ralentit le build, et elle peut modifier le comportement d'un composant qui contourne les règles de React. Il faut l'option et le paquet `babel-plugin-react-compiler`, déclaré dans les `devDependencies` de `apps/web/package.json`.
+Le React Compiler n'est pas le compilateur de React : React n'en a pas besoin, le JSX (la syntaxe qui écrit des balises comme `<Header />` au milieu du code des composants) est transformé en JavaScript par SWC, l'outil intégré à Next.js. C'est une **étape d'optimisation supplémentaire**, que Next.js n'active pas d'office, pour deux raisons : elle ralentit le build, et elle peut modifier le comportement d'un composant qui contourne les règles de React. Il faut l'option et le paquet `babel-plugin-react-compiler`, déclaré dans les `devDependencies` de `apps/web/package.json`.
 
 Au build, il analyse chaque composant et chaque hook, puis les réécrit pour qu'ils gardent en mémoire leurs calculs, leurs fonctions et leur JSX tant que leurs entrées ne changent pas. C'est le travail de `useMemo`, `useCallback` et `React.memo`, fait automatiquement et plus finement. Un composant qui enfreint une règle n'est pas cassé : il est laissé tel quel, sans optimisation. Ces règles sont celles que vérifie `pnpm lint`, et le chapitre « Typecheck et lint » en détaille les motifs.
 

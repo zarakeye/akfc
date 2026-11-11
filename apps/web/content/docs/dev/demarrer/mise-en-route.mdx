@@ -234,7 +234,7 @@ cp .env.dev.example apps/web/.env.local
 
 Deux programmes différents lisent la configuration, chacun dans son dossier :
 
-- la CLI Prisma (migrations, seed) se lance à la racine du dépôt ; son fichier `prisma.config.ts` commence par `import 'dotenv/config'` et charge le `.env` **de la racine**, où il trouve l'adresse de la base :
+- la CLI Prisma (son outil en ligne de commande, `pnpm prisma …`, qui lance les migrations et le seed) se lance à la racine du dépôt ; son fichier `prisma.config.ts` commence par `import 'dotenv/config'` et charge le `.env` **de la racine**, où il trouve l'adresse de la base :
 
 ```ts
 // prisma.config.ts (extrait)

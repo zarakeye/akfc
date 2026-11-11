@@ -49,6 +49,10 @@ On pourrait valider ce chemin : vérifier un préfixe, interdire `..`, consulter
 
 Le contrat d’entrée de `createR2Upload` ne contient pas de chemin. Il contient une **destination** : une intention métier, exprimée par une union discriminée partagée entre le navigateur et le serveur.
 
+<Callout type="concept">
+Une **union discriminée** est un type qui peut prendre plusieurs formes, chacune reconnaissable à un même champ, le **discriminant** (ici `kind`) : `{ kind: "existing-discipline", … }`, `{ kind: "perso", … }`, `{ kind: "group", … }`… Selon la valeur de `kind`, TypeScript sait quels autres champs existent, et Zod refuse un mélange des formes. `z.discriminatedUnion("kind", […])` la déclare.
+</Callout>
+
 <CodeExample
   language="ts"
   filepath="packages/contracts/src/storage/upload-destination.schema.ts"

@@ -189,7 +189,7 @@ function readEnv(name: string): string {
 
 **Facultative, avec une valeur par défaut.** `??` (ou `||`) donne une valeur de secours : `SITE_URL` vaut `https://akfc.fr` sans `NEXT_PUBLIC_SITE_URL`, le récapitulatif des demandes part à 8 h sans `TICKET_RECAP_HOUR`. La différence entre les deux opérateurs compte : `??` ne remplace que `undefined` ou `null`, `||` remplace aussi une chaîne vide, ce qui est souvent ce qu'on veut pour une variable écrite `TICKET_RECAP_HOUR=` dans un fichier.
 
-**Une fonction activée par sa présence.** La relève des réponses aux demandes par IMAP ne démarre que si son serveur est configuré :
+**Une fonction activée par sa présence.** La relève des réponses aux demandes par IMAP (le protocole qui lit une boîte de réception) ne démarre que si son serveur est configuré :
 
 ```ts
 // packages/backend/src/modules/tickets/imapIntake.service.ts (extrait)
@@ -201,7 +201,7 @@ function readEnv(name: string): string {
   if (!user || !password) return null;
 ```
 
-Sans `TICKET_IMAP_HOST`, la fonction renvoie `null` et la relève reste éteinte, ce que le journal de démarrage signale. Les identifiants retombent sur ceux du SMTP, puisque c'est en général la même boîte. Les tâches planifiées suivent la logique inverse, avec un interrupteur : `TICKET_RECAP_DISABLED=1`, `RETENTION_PURGE_DISABLED=1` ou `MEDIA_TAG_DIGEST_DISABLED=1` les coupent, par exemple sur une copie de la base où l'on ne veut ni envoyer de récapitulatif ni purger de données.
+Sans `TICKET_IMAP_HOST`, la fonction renvoie `null` et la relève reste éteinte, ce que le journal de démarrage signale. Les identifiants retombent sur ceux du SMTP (le protocole d’envoi des e-mails), puisque c'est en général la même boîte. Les tâches planifiées suivent la logique inverse, avec un interrupteur : `TICKET_RECAP_DISABLED=1`, `RETENTION_PURGE_DISABLED=1` ou `MEDIA_TAG_DIGEST_DISABLED=1` les coupent, par exemple sur une copie de la base où l'on ne veut ni envoyer de récapitulatif ni purger de données.
 
 ## NODE_ENV, la variable qu'on ne règle pas
 

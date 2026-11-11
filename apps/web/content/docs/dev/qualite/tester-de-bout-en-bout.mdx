@@ -1,6 +1,6 @@
 ---
 title: "Tester de bout en bout"
-description: "Un vrai navigateur contre l’application construite pour la production, sur une base et un stockage réservés aux tests : sept parcours qui vérifient ce que les gardes statiques ne peuvent pas voir — les droits, les brouillons, la limite d’essais, un e-mail reçu. Comment chaque lancement repart du même état, comment un test prouve qu’il échouerait, et ce que le premier lancement a trouvé."
+description: "Un vrai navigateur contre l’application construite pour la production, sur une base et un stockage réservés aux tests : dix parcours qui vérifient ce que les gardes statiques ne peuvent pas voir — les droits, les brouillons, la limite d’essais, un e-mail reçu. Comment chaque lancement repart du même état, comment un test prouve qu’il échouerait, et ce que le premier lancement a trouvé."
 section: "Qualité (2) : gardes maison et tests de bout en bout"
 order: 2
 ---
@@ -12,7 +12,7 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 Un test **de bout en bout** se place là où se place un utilisateur : devant un navigateur. Il ouvre une page, remplit un formulaire, clique, et vérifie ce que l’écran affiche ou ce que le serveur répond. Entre les deux, tout s’exécute pour de vrai : le composant React, la procédure tRPC, la requête Prisma, la base, le stockage, l’envoi d’un e-mail. Rien n’est simulé ; c’est ce qui le rend lent, et c’est ce qui le rend probant.
 
-Le projet utilise **Playwright**, qui pilote un vrai Chromium. Les tests vivent dans `e2e/` à la racine, et se lancent par une commande à part, `pnpm e2e` : quelques minutes, contre quelques secondes pour `pnpm check`, qui reste la vérification de chaque commit.
+Le projet utilise **Playwright**, qui pilote un vrai Chromium (le navigateur libre sur lequel Chrome est construit). Les tests vivent dans `e2e/` à la racine, et se lancent par une commande à part, `pnpm e2e` : quelques minutes, contre quelques secondes pour `pnpm check`, qui reste la vérification de chaque commit.
 
 <Callout type="info">
 Les tests de bout en bout ne remplacent pas les gardes du chapitre 1 : ils en sont le complément. Une garde statique dit « ce code est cohérent » ; un test de bout en bout dit « ce parcours, sur ce site, fait ce qu’il doit ». Le premier est rapide et exhaustif sur ce qu’il sait lire, le second est lent et ne vérifie que ce qu’on lui a écrit.

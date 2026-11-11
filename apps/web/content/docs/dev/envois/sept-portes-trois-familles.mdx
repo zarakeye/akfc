@@ -93,7 +93,7 @@ Factoriser une séquence n’a de sens que si ses appelants partagent un contrat
 
 ## Les petits fichiers : dans la requête
 
-Un logo pèse quelques dizaines de kilo-octets. Pour lui, le navigateur lit le fichier (`FileReader.readAsDataURL`), en garde la partie base64, et l’envoie **dans la mutation tRPC elle-même**. Pas d’URL signée, pas de second aller-retour, pas de fichier en attente. Le serveur a le fichier entier sous les yeux avant d’écrire quoi que ce soit, ce qui lui permet de le lire, pas seulement de le compter :
+Un logo pèse quelques dizaines de kilo-octets. Pour lui, le navigateur lit le fichier (`FileReader.readAsDataURL`), en garde la partie base64 (le fichier écrit en texte, avec 64 caractères sûrs, un tiers plus long que l’original), et l’envoie **dans la mutation tRPC elle-même**. Pas d’URL signée, pas de second aller-retour, pas de fichier en attente. Le serveur a le fichier entier sous les yeux avant d’écrire quoi que ce soit, ce qui lui permet de le lire, pas seulement de le compter :
 
 <CodeExample
   language="ts"

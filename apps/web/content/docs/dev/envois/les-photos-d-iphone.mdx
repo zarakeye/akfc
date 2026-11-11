@@ -26,7 +26,7 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Les formulaires de lot préparent leurs fichiers avant l’envoi : un type, une taille, un éventuel recadrage. Ils en préparent un de plus que les autres : la photo d’iPhone.
 
-Depuis 2017, un iPhone enregistre ses photos en **HEIC** (une image HEIF, compressée en HEVC) : environ deux fois plus léger qu’un JPEG à qualité égale. Safari l’affiche. Chrome et Firefox non. Une photo de stage envoyée telle quelle depuis un iPhone serait donc visible pour l’administrateur qui l’a déposée depuis son Mac, et cassée pour la plupart des visiteurs.
+Depuis 2017, un iPhone enregistre ses photos en **HEIC** (une image au format HEIF, compressée avec HEVC, le codec des vidéos récentes) : environ deux fois plus léger qu’un JPEG à qualité égale. Safari l’affiche. Chrome et Firefox non. Une photo de stage envoyée telle quelle depuis un iPhone serait donc visible pour l’administrateur qui l’a déposée depuis son Mac, et cassée pour la plupart des visiteurs.
 
 Deux réponses possibles : convertir sur le serveur, ou dans le navigateur. Le projet fait les deux, dans cet ordre de préférence.
 
@@ -49,7 +49,7 @@ Le module `browserImages.ts` remplace chaque HEIC par un JPEG avant qu’il n’
   fullFileTitle="Voir le fichier complet"
 />
 
-La conversion s’appuie sur **libheif**, la bibliothèque de référence du format, compilée en WebAssembly (le paquet `heic-to`). Trois choix la cadrent.
+La conversion s’appuie sur **libheif**, la bibliothèque de référence du format, compilée en WebAssembly (un format qui fait tourner dans le navigateur du code écrit en C ou en Rust, presque à sa vitesse d’origine) (le paquet `heic-to`). Trois choix la cadrent.
 
 **Sur l’appareil, pas ailleurs.** Des services en ligne convertissent du HEIC en un appel. Ce serait envoyer les photos des membres, souvent des enfants, à un tiers. La règle du projet est inverse : les vraies photos ne quittent pas l’appareil de l’adhérent et le serveur du club. Le WebAssembly tourne dans l’onglet ; rien ne sort.
 

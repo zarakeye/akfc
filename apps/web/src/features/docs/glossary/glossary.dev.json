@@ -1930,5 +1930,119 @@
    "vers": "dev/auth/pourquoi-une-chaine",
    "section": "Une empreinte n’est pas un chiffrement"
   }
+ },
+ {
+  "id": "dom",
+  "terme": "DOM",
+  "variantes": [
+   "DOM"
+  ],
+  "definition": "*Document Object Model* : la page telle que le navigateur la tient en mémoire, un arbre d’éléments que JavaScript lit et modifie, et qui émet des évènements.",
+  "definiEn": {
+   "vers": "dev/formulaires/du-html-a-react",
+   "section": "Le formulaire, côté navigateur"
+  }
+ },
+ {
+  "id": "jsx",
+  "terme": "JSX",
+  "variantes": [
+   "JSX"
+  ],
+  "definition": "La syntaxe qui écrit des balises (`<Header />`) au milieu du code des composants React ; elle est transformée en JavaScript avant d’être exécutée.",
+  "definiEn": {
+   "vers": "dev/configuration/next-config",
+   "section": "Le React Compiler"
+  }
+ },
+ {
+  "id": "cli",
+  "terme": "CLI",
+  "variantes": [
+   "CLI"
+  ],
+  "definition": "*Command-line interface* : un outil qui se lance en ligne de commande, dans un terminal (`pnpm prisma migrate dev`).",
+  "definiEn": {
+   "vers": "dev/demarrer/mise-en-route",
+   "section": "La configuration : deux fichiers, deux lecteurs"
+  }
+ },
+ {
+  "id": "smtp",
+  "terme": "SMTP",
+  "variantes": [
+   "SMTP"
+  ],
+  "definition": "Le protocole d’envoi des e-mails : le site remet ses messages à un serveur SMTP, qui les achemine.",
+  "definiEn": {
+   "vers": "dev/configuration/variables-d-environnement",
+   "section": "Trois façons de lire une variable"
+  }
+ },
+ {
+  "id": "imap",
+  "terme": "IMAP",
+  "variantes": [
+   "IMAP"
+  ],
+  "definition": "Le protocole qui lit une boîte de réception : le site relève ainsi les réponses aux demandes.",
+  "definiEn": {
+   "vers": "dev/configuration/variables-d-environnement",
+   "section": "Trois façons de lire une variable"
+  },
+  "approfondiEn": {
+   "vers": "dev/membres/demandes",
+   "section": "Les réponses par e-mail"
+  }
+ },
+ {
+  "id": "union-discriminee",
+  "terme": "union discriminée",
+  "variantes": [
+   "union discriminée",
+   "unions discriminées"
+  ],
+  "definition": "Un type qui prend plusieurs formes, reconnaissables à un même champ (le discriminant, souvent `kind`) ; selon sa valeur, TypeScript sait quels autres champs existent.",
+  "definiEn": {
+   "vers": "dev/stockage/signer-un-envoi",
+   "section": "Ce que le client a le droit de demander"
+  }
+ },
+ {
+  "id": "cors",
+  "terme": "CORS",
+  "variantes": [
+   "CORS"
+  ],
+  "definition": "La règle par laquelle le navigateur empêche une page de lire en JavaScript une réponse venue d’un autre domaine, sauf autorisation explicite de ce domaine.",
+  "definiEn": {
+   "vers": "dev/membres/documents-des-membres",
+   "section": "Servir le fichier à ceux qui peuvent l’ouvrir"
+  }
+ },
+ {
+  "id": "webassembly",
+  "terme": "WebAssembly",
+  "variantes": [
+   "WebAssembly"
+  ],
+  "definition": "Un format qui fait tourner dans le navigateur du code écrit en C ou en Rust, presque à sa vitesse d’origine.",
+  "definiEn": {
+   "vers": "dev/envois/les-photos-d-iphone",
+   "section": "Convertir sur l’appareil 📱"
+  }
+ },
+ {
+  "id": "etag",
+  "terme": "ETag",
+  "variantes": [
+   "ETag",
+   "ETags"
+  ],
+  "definition": "L’empreinte qu’un stockage ou un serveur donne à un fichier ; elle change quand le contenu change, ce qui permet de reconnaître une version.",
+  "definiEn": {
+   "vers": "dev/stockage/servir-un-fichier",
+   "section": "Les déclinaisons"
+  }
  }
 ]

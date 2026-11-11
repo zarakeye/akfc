@@ -44,6 +44,7 @@ Les formulaires sont le point où le navigateur, React et le serveur se rencontr
 - Un **formulaire** (`<form>`) regroupe des champs de saisie (`<input>`, `<select>`, `<textarea>`). Chaque champ porte un attribut **`name`** : le nom sous lequel sa valeur sera envoyée.
 - **Soumettre** le formulaire (cliquer sur le bouton `type="submit"`, ou appuyer sur Entrée dans un champ) déclenche l’**évènement `submit`**. Sans JavaScript, le navigateur rassemble alors les valeurs, les **sérialise** (les met à plat en texte : `email=a%40b.fr&password=…`) et les envoie au serveur dans une requête `POST`, à l’adresse que donne l’attribut `action`. Le serveur répond par une nouvelle page.
 - **`FormData`** est l’objet qui contient ces valeurs côté JavaScript : on y lit un champ par son nom (`formData.get("email")`). Toutes ses valeurs sont des chaînes de caractères (ou des fichiers) : un nombre, une date ou une case cochée doivent être reconvertis.
+- Le **DOM** (*Document Object Model*) est la page telle que le navigateur la tient en mémoire : un arbre d’éléments (le formulaire, ses champs, ses boutons) que JavaScript peut lire et modifier, et qui émet des évènements.
 - **`preventDefault()`** empêche le comportement par défaut d’un évènement. Appelé sur `submit`, il arrête l’envoi natif : c’est JavaScript qui reprend la main, et tout ce que faisait le navigateur est désormais à sa charge.
 
 ### Ce que React ajoute

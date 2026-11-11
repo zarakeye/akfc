@@ -36,7 +36,7 @@ Deux parcours traversent ce chapitre : le club qui renseigne ses informations l�
 
 ## Des pages générées depuis les réglages ⚖️
 
-L’association n’a pas toutes ses informations légales sous la main d’un coup : le siège, le numéro RNA, l’hébergeur se renseignent au fil de l’eau. Les pages « Mentions légales » et « Politique de confidentialité » ne sont donc pas rédigées à la main : ce sont des composants serveur qui lisent la rubrique « Informations légales » des Réglages du site, à chaque affichage.
+L’association n’a pas toutes ses informations légales sous la main d’un coup : le siège, le numéro RNA (l’identifiant de l’association au Répertoire national des associations), l’hébergeur se renseignent au fil de l’eau. Les pages « Mentions légales » et « Politique de confidentialité » ne sont donc pas rédigées à la main : ce sont des composants serveur qui lisent la rubrique « Informations légales » des Réglages du site, à chaque affichage.
 
 <CodeWalkthrough
   language="ts"
@@ -73,7 +73,7 @@ La page annonce ce qui manque au lieu de l’inventer :
   fullFileTitle="Voir le fichier complet"
 />
 
-Une page à moitié remplie le **dit**, plutôt que de paraître complète avec de fausses valeurs. Une mention facultative (le numéro RNA, le SIRET) n’apparaît que si elle existe ; une mention obligatoire absente est annoncée « en cours de renseignement ».
+Une page à moitié remplie le **dit**, plutôt que de paraître complète avec de fausses valeurs. Une mention facultative (le numéro RNA, le SIRET, le numéro d’établissement attribué par l’Insee, nécessaire notamment pour employer ou recevoir une subvention) n’apparaît que si elle existe ; une mention obligatoire absente est annoncée « en cours de renseignement ».
 
 Chaque page légale accepte enfin un **complément libre**, rédigé dans le constructeur de pages (une page de contenu du même slug) et affiché à la suite. Ces pages n’ont pas d’interrupteur de publication : elles sont publiques dès qu’elles existent, leurs fichiers aussi (partie « Contenu éditorial »).
 

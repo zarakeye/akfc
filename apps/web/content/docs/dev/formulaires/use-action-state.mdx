@@ -333,7 +333,7 @@ Mais :
 
 ## 🧱 Ce que React Hook Form ne bloque pas
 
-Relisons le `LoginForm` pédagogique avec un œil plus sévère. React Hook Form y affiche bien ses erreurs (`Email requis`) quand l'utilisateur quitte un champ vide. Mais rien, dans ce composant, n'empêche l'envoi : le `<form>` est branché sur `formAction`, et React l'appelle dès que le bouton est cliqué. Les règles de `register` sont vérifiées quand un champ perd le focus, pour afficher l'erreur ; seul `handleSubmit` les vérifie avant d'envoyer, et `handleSubmit` n'est appelé nulle part.
+Relisons le `LoginForm` pédagogique avec un œil plus sévère. React Hook Form y affiche bien ses erreurs (`Email requis`) quand l'utilisateur quitte un champ vide. Mais rien, dans ce composant, n'empêche l'envoi : le `<form>` est branché sur `formAction`, et React l'appelle dès que le bouton est cliqué. Les règles de `register` sont vérifiées quand un champ perd le focus (quand le curseur du clavier le quitte), pour afficher l'erreur ; seul `handleSubmit` les vérifie avant d'envoyer, et `handleSubmit` n'est appelé nulle part.
 
 👉 le formulaire affiche l'erreur… et part quand même
 
