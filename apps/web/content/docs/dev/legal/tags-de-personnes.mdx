@@ -313,8 +313,8 @@ Une règle pure se teste sans base ni horloge : le test de bout en bout l’appe
 
 ## À suivre
 
-La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations et sait qui apparaît sur quelle photo. Restent les mécanismes que toutes les pages partagent : être trouvé, se repérer, être utilisable par tous.
+La partie légale est complète : le site dit ce qu’il fait des données, tient ses durées, garde la preuve des autorisations et sait qui apparaît sur quelle photo. Il est prêt à partir en ligne ; avant, une dernière vérification doit cesser de dépendre de notre mémoire. `pnpm check` tourne avant chaque commit, mais les tests de bout en bout se lancent quand on y pense.
 
 <Callout type="tip">
-**Partie suivante : interface transverse.** Le référencement, le header, l’accessibilité.
+**Partie suivante : l’intégration continue.** GitHub refait `pnpm check` et les tests de bout en bout à chaque push, sans aucun secret.
 </Callout>

@@ -8,7 +8,7 @@ order: 1
 import { Callout } from "@/features/docs/ui/Callout"
 import DocsTable from "@/features/docs/ui/DocsTable"
 
-> **Précédemment.** Les parties précédentes ont construit ce que le site écrit, protège et conserve, jusqu’à ses obligations légales. Reste ce que le monde extérieur en voit, avant même d’ouvrir une page.
+> **Précédemment.** Le site a tous ses contenus publics : des pages et des actualités faites de blocs, des disciplines, des stages et des événements, et les fichiers qu’ils montrent. Reste ce que le monde extérieur en voit, avant même d’ouvrir une page.
 
 Les pages publiques ont deux lecteurs de plus que les visiteurs : les moteurs de recherche, qui décident de ce qu'ils indexent et de la façon de le présenter, et les réseaux sociaux ou les messageries, qui affichent un aperçu quand on partage un lien. Les deux lisent les **métadonnées** de la page (titre, description, image), et les moteurs consultent en plus deux fichiers à la racine du site : `robots.txt` et `sitemap.xml`. Next.js produit tout cela à partir de code, dans le même projet que les pages.
 
@@ -152,8 +152,8 @@ Certaines données publiques attirent les robots collecteurs, qui parcourent le 
 
 ## À suivre
 
-Le site est présenté aux visiteurs comme aux moteurs. Il est presque prêt à partir en ligne ; avant, une dernière vérification doit cesser de dépendre de notre mémoire. `pnpm check` tourne avant chaque commit, mais les tests de bout en bout se lancent quand on y pense.
+Les disciplines, les stages et les événements sont les contenus du club. Les membres, eux, ont leur propre espace : leur profil, les documents que le club leur transmet, les espaces de fichiers de leurs groupes, et les demandes qu’ils adressent au club.
 
 <Callout type="tip">
-**Partie suivante : l’intégration continue.** GitHub refait `pnpm check` et les tests de bout en bout à chaque push, sans aucun secret.
+**Partie suivante : les membres et la collaboration.** Le profil et la première connexion, les documents des membres et leur suivi de lecture, les espaces collaboratifs, et le système de demandes.
 </Callout>

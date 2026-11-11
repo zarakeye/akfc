@@ -1182,5 +1182,270 @@
   "definiEn": {
    "vers": "dev/qualite/les-gardes-maison"
   }
+ },
+ {
+  "id": "blob",
+  "terme": "Blob",
+  "variantes": [
+   "Blob",
+   "Blobs"
+  ],
+  "definition": "En JavaScript, un bloc de données binaires avec son type ; un fichier choisi par l’utilisateur (`File`) en est un. `URL.createObjectURL` lui donne une adresse `blob:` temporaire.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le fichier, côté navigateur"
+  }
+ },
+ {
+  "id": "canvas",
+  "terme": "canvas",
+  "variantes": [
+   "canvas"
+  ],
+  "definition": "Une surface de dessin du navigateur (`<canvas>`) : on y dessine une image, ou la partie qu’on en garde, puis on en tire un nouveau fichier. C’est le cœur du recadrage.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le fichier, côté navigateur"
+  },
+  "approfondiEn": {
+   "vers": "dev/recadrage/sortir-le-bon-fichier"
+  }
+ },
+ {
+  "id": "type-mime",
+  "terme": "type MIME",
+  "variantes": [
+   "type MIME",
+   "types MIME"
+  ],
+  "definition": "Ce qu’annonce un fichier de son contenu (`image/jpeg`, `application/pdf`). Une annonce du navigateur : elle se vérifie.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Ce qui accompagne un fichier sur le réseau"
+  },
+  "approfondiEn": {
+   "vers": "dev/stockage/signer-un-envoi"
+  }
+ },
+ {
+  "id": "en-tete-http",
+  "terme": "en-tête HTTP",
+  "variantes": [
+   "en-tête HTTP",
+   "en-têtes HTTP"
+  ],
+  "definition": "Une ligne qui accompagne une requête ou une réponse : `Content-Type` (le type), `Content-Length` (la taille), `Cache-Control` (combien de temps la garder).",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Ce qui accompagne un fichier sur le réseau"
+  }
+ },
+ {
+  "id": "metadonnees",
+  "terme": "métadonnées",
+  "variantes": [
+   "métadonnées",
+   "métadonnée"
+  ],
+  "definition": "Ce qu’on sait d’une chose sans l’ouvrir : la taille, le type, la date d’un fichier ; le titre et la description d’une page, pour les moteurs et les aperçus de liens.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Ce qui accompagne un fichier sur le réseau"
+  },
+  "approfondiEn": {
+   "vers": "dev/interface/referencement",
+   "section": "Les métadonnées d'une page"
+  }
+ },
+ {
+  "id": "stockage-objet",
+  "terme": "stockage objet",
+  "variantes": [
+   "stockage objet",
+   "stockages objet"
+  ],
+  "definition": "Un service qui garde des fichiers (des objets) dans un espace plat, chacun sous une clé, sans vrais dossiers : Cloudflare R2 en production, SeaweedFS en local.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le stockage"
+  },
+  "approfondiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Un stockage sans dossiers"
+  }
+ },
+ {
+  "id": "bucket",
+  "terme": "bucket",
+  "variantes": [
+   "bucket",
+   "buckets"
+  ],
+  "definition": "Le conteneur des objets d’un stockage objet : un nom, des droits, un fournisseur.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le stockage"
+  }
+ },
+ {
+  "id": "s3",
+  "terme": "S3",
+  "variantes": [
+   "S3"
+  ],
+  "definition": "L’API du stockage d’Amazon, devenue un standard : R2 et SeaweedFS la parlent, et le même code fonctionne avec chacun.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le stockage"
+  }
+ },
+ {
+  "id": "url-presignee",
+  "terme": "URL présignée",
+  "variantes": [
+   "URL présignée",
+   "URL présignées",
+   "URL signée",
+   "URL signées"
+  ],
+  "definition": "Une adresse signée par le serveur, qui autorise une seule opération sur une seule clé pendant quelques minutes : le navigateur envoie le fichier directement au stockage.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Le stockage"
+  },
+  "approfondiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Pourquoi le fichier ne passe pas par notre serveur"
+  }
+ },
+ {
+  "id": "avif",
+  "terme": "AVIF",
+  "variantes": [
+   "AVIF"
+  ],
+  "definition": "Un format d’image récent, bien plus léger que le JPEG à qualité égale. Le site le préfère pour ce qu’il sert, avec WebP en secours.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Les formats d’image"
+  },
+  "approfondiEn": {
+   "vers": "dev/stockage/servir-un-fichier"
+  }
+ },
+ {
+  "id": "webp",
+  "terme": "WebP",
+  "variantes": [
+   "WebP"
+  ],
+  "definition": "Un format d’image léger, compris par tous les navigateurs récents ; le secours quand l’AVIF n’est pas accepté.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Les formats d’image"
+  }
+ },
+ {
+  "id": "heic",
+  "terme": "HEIC",
+  "variantes": [
+   "HEIC"
+  ],
+  "definition": "Le format des photos d’iPhone, que beaucoup de navigateurs ne savent pas afficher : le site le convertit.",
+  "definiEn": {
+   "vers": "dev/stockage/un-stockage-objet",
+   "section": "Les formats d’image"
+  },
+  "approfondiEn": {
+   "vers": "dev/envois/les-photos-d-iphone"
+  }
+ },
+ {
+  "id": "prosemirror",
+  "terme": "ProseMirror",
+  "variantes": [
+   "ProseMirror",
+   "document ProseMirror",
+   "documents ProseMirror"
+  ],
+  "definition": "Le moteur d’édition de texte sur lequel repose Tiptap ; un texte riche y est un document JSON, un arbre de nœuds et de marques.",
+  "definiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Un document dans le document"
+  }
+ },
+ {
+  "id": "tiptap",
+  "terme": "Tiptap",
+  "variantes": [
+   "Tiptap"
+  ],
+  "definition": "L’éditeur de texte riche du projet, construit sur ProseMirror ; chaque possibilité (titre, lien, liste) y est une extension.",
+  "definiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Un document dans le document"
+  },
+  "approfondiEn": {
+   "vers": "dev/editeur/un-modele-adopte-puis-taille"
+  }
+ },
+ {
+  "id": "liste-blanche",
+  "terme": "liste blanche",
+  "variantes": [
+   "liste blanche",
+   "listes blanches"
+  ],
+  "definition": "Une règle qui n’accepte que ce qu’elle connaît, et écarte tout le reste ; le contraire d’une liste noire, qui retire seulement ce qu’on sait dangereux.",
+  "definiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Une liste blanche"
+  }
+ },
+ {
+  "id": "assainir",
+  "terme": "assainir",
+  "variantes": [
+   "assainir",
+   "assaini",
+   "assainie",
+   "assainis",
+   "assainit",
+   "assainissement"
+  ],
+  "definition": "Réécrire une donnée venue de l’extérieur pour n’en garder que ce qui est sûr, avant de l’afficher ou de l’enregistrer.",
+  "definiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Une liste blanche"
+  },
+  "approfondiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Assainir à l’entrée, et à la lecture"
+  }
+ },
+ {
+  "id": "xss",
+  "terme": "XSS",
+  "variantes": [
+   "XSS"
+  ],
+  "definition": "*Cross-site scripting* : une faille où un attaquant fait exécuter son script dans la page d’un autre utilisateur, par exemple en glissant du HTML dans un texte.",
+  "definiEn": {
+   "vers": "dev/contenu/le-texte-riche",
+   "section": "Ce que generateHTML recopie sans vérifier ⚠️"
+  }
+ },
+ {
+  "id": "plan-du-site",
+  "terme": "plan du site",
+  "variantes": [
+   "plan du site",
+   "sitemap"
+  ],
+  "definition": "La liste des adresses publiques du site, offerte aux moteurs de recherche (`/sitemap.xml`) ; ici, calculée depuis la base à chaque demande.",
+  "definiEn": {
+   "vers": "dev/interface/referencement",
+   "section": "Le plan du site, généré depuis la base"
+  }
  }
 ]

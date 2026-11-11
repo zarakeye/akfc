@@ -22,6 +22,33 @@ La question est donc simple à poser : **comment faire passer ce fichier du navi
 
 <DocsTable columnsJson='["Chapitre","La question"]' rowsJson='[["1. Un stockage objet","Où vivent les fichiers, et pourquoi le serveur n’est pas sur leur route"],["2. Signer un envoi","Qui décide où va un fichier, et que vaut l’autorisation donnée au navigateur"],["3. Enregistrer ce qui est arrivé","Comment le serveur reconstruit la vérité de ce qui a été déposé"],["4. Servir un fichier","Qui peut voir quoi, et sous quelle forme"]]' />
 
+## Avant de commencer : les mots de cette partie
+
+Un fichier traverse trois mondes : le navigateur qui le choisit, le réseau qui le transporte, le stockage qui le garde. Chacun a son vocabulaire ; le voici, avant de suivre le premier envoi.
+
+### Le fichier, côté navigateur
+
+- Un fichier choisi par l’utilisateur est, en JavaScript, un `File` : une sorte de **Blob**, un bloc de données binaires accompagné de son type. `URL.createObjectURL(blob)` lui donne une adresse temporaire en `blob:`, qui permet de l’afficher avant même qu’il ne soit envoyé.
+- Un **canvas** (`<canvas>`) est une surface de dessin du navigateur. On y dessine une image (ou la partie d’une image que l’on garde), puis on en tire un nouveau fichier (`toBlob`) : c’est ainsi que fonctionne le recadrage.
+
+### Ce qui accompagne un fichier sur le réseau
+
+- Le **type MIME** (`image/jpeg`, `application/pdf`) dit ce que contient un fichier. Il est **annoncé** par le navigateur : une annonce se vérifie, elle ne se croit pas.
+- Un **en-tête HTTP** est une ligne qui accompagne une requête ou une réponse : `Content-Type` porte le type MIME, `Content-Length` la taille, `Cache-Control` la durée pendant laquelle un navigateur peut garder la réponse sans la redemander.
+- Les **métadonnées** d’un fichier sont ce qu’on sait de lui sans l’ouvrir : sa taille, son type, sa date, ses dimensions.
+
+### Le stockage
+
+- Un **stockage objet** garde des fichiers, appelés **objets**, dans un espace plat : chacun sous une **clé** (`AKFC/courses/tchoy-lee-fut/salut-final.jpg`), sans vrais dossiers. Ce chapitre montre ce que cela change.
+- Un **bucket** est le conteneur de ces objets : un nom, des droits, un fournisseur.
+- **S3** est l’API du stockage d’Amazon, devenue un standard : Cloudflare **R2**, en production, et **SeaweedFS**, sur la machine du développeur, dans les tests et la sandbox, la parlent tous deux. Le même code fonctionne avec chacun.
+- Une **URL présignée** est une adresse fabriquée et signée par le serveur, qui autorise **une** opération sur **une** clé pendant quelques minutes. Le navigateur s’en sert pour envoyer le fichier directement au stockage.
+
+### Les formats d’image
+
+- **AVIF** et **WebP** sont des formats d’image récents, bien plus légers que le JPEG à qualité égale ; le site les préfère pour ce qu’il sert.
+- **HEIC** est le format des photos d’iPhone. Beaucoup de navigateurs ne savent pas l’afficher : il faut le convertir.
+
 ## Le premier réflexe : garder les fichiers chez soi
 
 Quand on débute, la tentation est forte de garder la maîtrise de tout. Une photo envoyée ? On l’écrit dans `public/uploads/`. Un PDF ? Dans un dossier `storage/`. Le reste du projet y accède comme à n’importe quel fichier statique.
