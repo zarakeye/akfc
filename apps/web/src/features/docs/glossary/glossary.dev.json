@@ -1,0 +1,846 @@
+[
+ {
+  "id": "monorepo",
+  "terme": "monorepo",
+  "variantes": [
+   "monorepo",
+   "monorepos"
+  ],
+  "definition": "Un seul dépôt Git qui contient plusieurs paquets (l’application web, le backend, les contrats…), installés ensemble par pnpm et qui se connaissent par leur nom.",
+  "definiEn": {
+   "vers": "dev/demarrer/avant-de-commencer",
+   "section": "La carte du dépôt"
+  },
+  "approfondiEn": {
+   "vers": "dev/configuration/package-json-et-monorepo"
+  }
+ },
+ {
+  "id": "image-docker",
+  "terme": "image Docker",
+  "variantes": [
+   "image docker",
+   "images docker"
+  ],
+  "definition": "Un modèle figé : un système minimal avec un programme déjà installé (PostgreSQL, ou le site lui-même). On ne la modifie pas : on en démarre des conteneurs.",
+  "definiEn": {
+   "vers": "dev/demarrer/mise-en-route",
+   "section": "La base, le stockage et la boîte mail"
+  },
+  "approfondiEn": {
+   "vers": "dev/infrastructure/l-image-docker"
+  }
+ },
+ {
+  "id": "conteneur",
+  "terme": "conteneur",
+  "variantes": [
+   "conteneur",
+   "conteneurs"
+  ],
+  "definition": "Une image Docker **en marche**, isolée du reste de la machine, que l’on démarre et que l’on arrête. La base de développement tourne dans un conteneur.",
+  "definiEn": {
+   "vers": "dev/demarrer/mise-en-route",
+   "section": "La base, le stockage et la boîte mail"
+  }
+ },
+ {
+  "id": "volume",
+  "terme": "volume",
+  "variantes": [
+   "volume",
+   "volumes"
+  ],
+  "definition": "Un dossier géré par Docker qui survit à l’arrêt et à la suppression d’un conteneur : c’est là que PostgreSQL garde ses données.",
+  "definiEn": {
+   "vers": "dev/demarrer/mise-en-route",
+   "section": "La base, le stockage et la boîte mail"
+  }
+ },
+ {
+  "id": "port",
+  "terme": "port",
+  "variantes": [
+   "port",
+   "ports"
+  ],
+  "definition": "Un numéro de « porte » sur une machine, par lequel un programme écoute (5435 pour la base de développement, 3000 pour le site).",
+  "definiEn": {
+   "vers": "dev/demarrer/mise-en-route",
+   "section": "La base, le stockage et la boîte mail"
+  }
+ },
+ {
+  "id": "build",
+  "terme": "build",
+  "variantes": [
+   "build",
+   "builds"
+  ],
+  "definition": "La construction de la version de production du site : Next.js compile les pages et le code, une fois, avant la mise en ligne (`pnpm build`).",
+  "definiEn": {
+   "vers": "dev/configuration/next-config",
+   "section": "Le build autonome"
+  }
+ },
+ {
+  "id": "variable-environnement",
+  "terme": "variable d’environnement",
+  "variantes": [
+   "variable d’environnement",
+   "variables d’environnement",
+   "variable d'environnement",
+   "variables d'environnement"
+  ],
+  "definition": "Une valeur donnée au programme par son environnement (un fichier `.env`, le serveur), et non écrite dans le code : l’adresse de la base, un secret, l’adresse du site.",
+  "definiEn": {
+   "vers": "dev/configuration/variables-d-environnement",
+   "section": "En développement : deux fichiers, trois lecteurs"
+  }
+ },
+ {
+  "id": "typecheck",
+  "terme": "typecheck",
+  "variantes": [
+   "typecheck",
+   "typechecks"
+  ],
+  "definition": "La vérification par TypeScript que les types du code sont cohérents, sans l’exécuter : une propriété qui n’existe pas, un argument du mauvais type.",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Deux vérifications, deux questions"
+  }
+ },
+ {
+  "id": "lint",
+  "terme": "lint",
+  "variantes": [
+   "lint",
+   "linter"
+  ],
+  "definition": "La relecture automatique du code par ESLint, selon des règles de style et de bon usage (React, le langage) que les types ne voient pas.",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Deux vérifications, deux questions"
+  }
+ },
+ {
+  "id": "layout",
+  "terme": "layout",
+  "variantes": [
+   "layout",
+   "layouts"
+  ],
+  "definition": "Dans Next.js, le fichier `layout.tsx` d’un dossier de routes : l’enveloppe commune (header, pied de page, garde) de toutes les pages de ce dossier.",
+  "definiEn": {
+   "vers": "dev/front/routage",
+   "section": "Un dossier, une route"
+  }
+ },
+ {
+  "id": "groupe-de-routes",
+  "terme": "groupe de routes",
+  "variantes": [
+   "groupe de routes",
+   "groupes de routes"
+  ],
+  "definition": "Un dossier entre parenthèses, comme `(public)`, qui range des routes et leur donne un layout sans ajouter de segment à l’adresse.",
+  "definiEn": {
+   "vers": "dev/front/routage",
+   "section": "Les groupes de routes"
+  }
+ },
+ {
+  "id": "composant-serveur",
+  "terme": "composant serveur",
+  "variantes": [
+   "composant serveur",
+   "composants serveur"
+  ],
+  "definition": "Un composant React rendu sur le serveur seulement : il peut lire la base ou un secret, et son code ne part jamais dans le navigateur. C’est le défaut dans Next.js.",
+  "definiEn": {
+   "vers": "dev/front/frontiere-serveur-client",
+   "section": "Deux mondes dans le même dépôt"
+  }
+ },
+ {
+  "id": "composant-client",
+  "terme": "composant client",
+  "variantes": [
+   "composant client",
+   "composants client"
+  ],
+  "definition": "Un composant React qui s’exécute aussi dans le navigateur (fichier marqué `\"use client\"`) : il peut réagir aux clics, garder un état, utiliser des hooks.",
+  "definiEn": {
+   "vers": "dev/front/frontiere-serveur-client",
+   "section": "Ce que déclare « use client »"
+  }
+ },
+ {
+  "id": "hydratation",
+  "terme": "hydratation",
+  "variantes": [
+   "hydratation"
+  ],
+  "definition": "Le moment où React, dans le navigateur, reprend le HTML envoyé par le serveur et y rattache ses gestionnaires d’évènements. Les deux rendus doivent être identiques.",
+  "definiEn": {
+   "vers": "dev/front/frontiere-serveur-client",
+   "section": "L'hydratation : le même rendu des deux côtés"
+  }
+ },
+ {
+  "id": "rendu-serveur",
+  "terme": "rendu serveur",
+  "variantes": [
+   "rendu serveur",
+   "rendu côté serveur"
+  ],
+  "definition": "La fabrication du HTML d’une page sur le serveur, avant de l’envoyer : le visiteur voit le contenu tout de suite, avant que le JavaScript ne s’exécute.",
+  "definiEn": {
+   "vers": "dev/front/frontiere-serveur-client",
+   "section": "L'hydratation : le même rendu des deux côtés"
+  }
+ },
+ {
+  "id": "base-de-donnees",
+  "terme": "base de données",
+  "variantes": [
+   "base de données",
+   "bases de données"
+  ],
+  "definition": "Le programme qui garde les données du site et sait les retrouver vite. Dans le projet : PostgreSQL.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "La base, la table, la ligne"
+  }
+ },
+ {
+  "id": "sql",
+  "terme": "SQL",
+  "variantes": [
+   "SQL"
+  ],
+  "definition": "Le langage des bases relationnelles : `SELECT` lit, `INSERT` ajoute, `UPDATE` modifie, `DELETE` supprime.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "La base, la table, la ligne"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/ecrire-et-faire-evoluer",
+   "section": "Quand Prisma ne suffit pas : le SQL brut"
+  }
+ },
+ {
+  "id": "requete",
+  "terme": "requête",
+  "variantes": [
+   "requête",
+   "requêtes"
+  ],
+  "definition": "Une demande adressée à un serveur : au site par le navigateur (une requête HTTP, suivie d’une réponse), ou à la base par le site (une requête SQL).",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "La base, la table, la ligne"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Une requête, et un serveur qui oublie"
+  }
+ },
+ {
+  "id": "table",
+  "terme": "table",
+  "variantes": [
+   "table",
+   "tables"
+  ],
+  "definition": "Dans une base relationnelle, l’ensemble des lignes d’une même sorte (`User`, `Course`), qui ont toutes les mêmes colonnes.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "La base, la table, la ligne"
+  }
+ },
+ {
+  "id": "nullable",
+  "terme": "nullable",
+  "variantes": [
+   "nullable",
+   "nullables"
+  ],
+  "definition": "Se dit d’une colonne ou d’un champ qui accepte `null`, c’est-à-dire « pas de valeur ». Le contraire : obligatoire.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "La base, la table, la ligne"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/les-relations",
+   "section": "4.5 — Nullable ou obligatoire : une décision silencieuse mais critique"
+  }
+ },
+ {
+  "id": "cle-primaire",
+  "terme": "clé primaire",
+  "variantes": [
+   "clé primaire",
+   "clés primaires"
+  ],
+  "definition": "La colonne qui identifie une ligne de façon unique et définitive : `id`, marquée `@id` dans le schéma.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "cle-etrangere",
+  "terme": "clé étrangère",
+  "variantes": [
+   "clé étrangère",
+   "clés étrangères"
+  ],
+  "definition": "Une colonne qui garde l’identifiant d’une ligne d’une autre table (`disciplineId` d’un créneau) : c’est ainsi qu’une relation est enregistrée.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "relation",
+  "terme": "relation",
+  "variantes": [
+   "relation",
+   "relations"
+  ],
+  "definition": "Le lien entre deux tables, enregistré par une clé étrangère : un créneau appartient à une discipline, une discipline a plusieurs créneaux.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/les-relations"
+  }
+ },
+ {
+  "id": "one-to-many",
+  "terme": "un-à-plusieurs",
+  "variantes": [
+   "un-à-plusieurs",
+   "one-to-many"
+  ],
+  "definition": "Une relation où une ligne d’un côté correspond à plusieurs de l’autre (une discipline, ses créneaux). La clé étrangère est du côté « plusieurs ».",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/les-relations",
+   "section": "4.3 — One-to-many : structurer sans rigidifier"
+  }
+ },
+ {
+  "id": "many-to-many",
+  "terme": "plusieurs-à-plusieurs",
+  "variantes": [
+   "plusieurs-à-plusieurs",
+   "many-to-many"
+  ],
+  "definition": "Une relation où chaque côté a plusieurs lignes de l’autre (des membres, des groupes). Elle passe par une table de jointure.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/les-relations",
+   "section": "4.4 — Many-to-many : introduire de la flexibilité… avec un coût"
+  }
+ },
+ {
+  "id": "table-de-jointure",
+  "terme": "table de jointure",
+  "variantes": [
+   "table de jointure",
+   "tables de jointure"
+  ],
+  "definition": "La table intermédiaire d’une relation plusieurs-à-plusieurs : chacune de ses lignes relie une ligne de chaque côté (`MemberGroupMembership`).",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/le-noyau-du-modele",
+   "section": "3.5 — La table de jointure : indispensable techniquement, secondaire mentalement"
+  }
+ },
+ {
+  "id": "contrainte-unicite",
+  "terme": "contrainte d’unicité",
+  "variantes": [
+   "contrainte d’unicité",
+   "contraintes d’unicité",
+   "contrainte d'unicité"
+  ],
+  "definition": "Une règle de la base (`@unique`) qui interdit que deux lignes aient la même valeur dans une colonne. C’est la base qui la vérifie, quel que soit le code.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "enumeration",
+  "terme": "énumération",
+  "variantes": [
+   "énumération",
+   "énumérations"
+  ],
+  "definition": "Un type qui n’accepte qu’une liste fermée de valeurs (`enum Day { MONDAY … SUNDAY }`).",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "jointure",
+  "terme": "jointure",
+  "variantes": [
+   "jointure",
+   "jointures"
+  ],
+  "definition": "La lecture de plusieurs tables liées en une seule requête : un créneau **avec** sa discipline. Prisma l’écrit avec `include` ou un `select` imbriqué.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "cuid",
+  "terme": "cuid",
+  "variantes": [
+   "cuid",
+   "cuids"
+  ],
+  "definition": "Un identifiant généré, sous forme de chaîne (`clx3f…`), unique sans avoir à consulter la base. Le projet l’utilise comme clé primaire de la plupart des tables.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Identifier et relier"
+  }
+ },
+ {
+  "id": "orm",
+  "terme": "ORM",
+  "variantes": [
+   "ORM"
+  ],
+  "definition": "*Object-Relational Mapping* : une bibliothèque qui fait correspondre les tables à des objets du langage, et fabrique les requêtes SQL. Prisma est l’ORM du projet.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Prisma, et ce qu’il ajoute"
+  }
+ },
+ {
+  "id": "client-genere",
+  "terme": "client généré",
+  "variantes": [
+   "client généré",
+   "client prisma"
+  ],
+  "definition": "Le code TypeScript que Prisma produit à partir du schéma (`prisma generate`) : les fonctions pour lire et écrire, et leurs types.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Prisma, et ce qu’il ajoute"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/le-modele-executable"
+  }
+ },
+ {
+  "id": "seed",
+  "terme": "seed",
+  "variantes": [
+   "seed"
+  ],
+  "definition": "Un script qui remplit une base vide avec des données de démonstration.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Prisma, et ce qu’il ajoute"
+  }
+ },
+ {
+  "id": "migration",
+  "terme": "migration",
+  "variantes": [
+   "migration",
+   "migrations"
+  ],
+  "definition": "Un fichier SQL qui fait passer la base d’une version du schéma à la suivante. Les migrations s’appliquent une fois, dans l’ordre, sur chaque base.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Prisma, et ce qu’il ajoute"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/ecrire-et-faire-evoluer",
+   "section": "Faire évoluer la base : les migrations"
+  }
+ },
+ {
+  "id": "transaction",
+  "terme": "transaction",
+  "variantes": [
+   "transaction",
+   "transactions"
+  ],
+  "definition": "Plusieurs écritures regroupées en une seule : soit elles réussissent toutes, soit la base les annule toutes.",
+  "definiEn": {
+   "vers": "dev/donnees/pourquoi-le-modele",
+   "section": "Prisma, et ce qu’il ajoute"
+  },
+  "approfondiEn": {
+   "vers": "dev/donnees/ecrire-et-faire-evoluer",
+   "section": "Écrire de façon cohérente : les transactions"
+  }
+ },
+ {
+  "id": "dsl",
+  "terme": "DSL",
+  "variantes": [
+   "DSL"
+  ],
+  "definition": "*Domain-specific language* : un petit langage dédié à un seul usage, comme celui de `schema.prisma`, qui ne décrit que des tables.",
+  "definiEn": {
+   "vers": "dev/donnees/lire-le-schema",
+   "section": "2.4 — Le generator : là où le modèle devient exploitable"
+  }
+ },
+ {
+  "id": "dto",
+  "terme": "DTO",
+  "variantes": [
+   "DTO"
+  ],
+  "definition": "*Data Transfer Object* : un type recopié à la main pour décrire ce qui voyage entre deux couches. Le projet s’en passe, les types venant du schéma.",
+  "definiEn": {
+   "vers": "dev/donnees/le-modele-executable",
+   "section": "5.6 — Pourquoi cela simplifie tout le reste"
+  }
+ },
+ {
+  "id": "schema-zod",
+  "terme": "schéma Zod",
+  "variantes": [
+   "schéma zod",
+   "schémas zod",
+   "schéma de validation",
+   "schémas de validation",
+   "zod"
+  ],
+  "definition": "La description, écrite avec la bibliothèque Zod, de la forme qu’une donnée doit avoir ; elle refuse ce qui ne la respecte pas, avant toute écriture.",
+  "definiEn": {
+   "vers": "dev/donnees/lire-le-schema",
+   "section": "2.5 — Les modèles : là où le système prend forme"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/valider-l-entree",
+   "section": "Où vit la validation ?"
+  }
+ },
+ {
+  "id": "procedure",
+  "terme": "procédure",
+  "variantes": [
+   "procédure",
+   "procédures",
+   "procédure trpc",
+   "procédures trpc"
+  ],
+  "definition": "Une fonction du serveur que le navigateur appelle par son nom (`discipline.update`), avec des types vérifiés des deux côtés.",
+  "definiEn": {
+   "vers": "dev/front/styles",
+   "section": "L'enregistrement : une ligne en base, réservée aux administrateurs"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/fabriquer-une-procedure"
+  }
+ },
+ {
+  "id": "routeur",
+  "terme": "routeur",
+  "variantes": [
+   "routeur",
+   "routeurs"
+  ],
+  "definition": "Le regroupement des procédures d’une même entité (`discipline.create`, `discipline.update`…), branché sur l’API du projet.",
+  "definiEn": {
+   "vers": "dev/domaine/comprendre-le-domaine",
+   "section": "Pourquoi commencer par le vocabulaire"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/le-routeur-metier",
+   "section": "Le router métier (là où l’intention devient action)"
+  }
+ },
+ {
+  "id": "trpc",
+  "terme": "tRPC",
+  "variantes": [
+   "tRPC"
+  ],
+  "definition": "La bibliothèque qui permet au navigateur d’appeler une procédure du serveur par son nom, avec les types vérifiés des deux côtés, sans écrire d’adresse d’API.",
+  "definiEn": {
+   "vers": "dev/demarrer/avant-de-commencer",
+   "section": "Le trajet d'une action"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/pourquoi-trpc"
+  }
+ },
+ {
+  "id": "middleware",
+  "terme": "middleware",
+  "variantes": [
+   "middleware",
+   "middlewares"
+  ],
+  "definition": "Une fonction exécutée avant le traitement (d’une requête, d’une procédure), qui peut l’arrêter : `isAdmin` refuse quiconque n’est pas administrateur.",
+  "definiEn": {
+   "vers": "dev/demarrer/avant-de-commencer",
+   "section": "Le trajet d'une action"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/la-session-dans-le-backend",
+   "section": "Comment `protectedProcedure` exploite cette session"
+  }
+ },
+ {
+  "id": "cache",
+  "terme": "cache",
+  "variantes": [
+   "cache",
+   "caches"
+  ],
+  "definition": "Les réponses déjà reçues, gardées pour ne pas les redemander. **Invalider** une réponse du cache, c’est la déclarer périmée : elle sera redemandée.",
+  "definiEn": {
+   "vers": "dev/demarrer/avant-de-commencer",
+   "section": "Le trajet d'une action"
+  },
+  "approfondiEn": {
+   "vers": "dev/api/le-circuit-complet",
+   "section": "🖥️ Côté navigateur : deux clients"
+  }
+ },
+ {
+  "id": "invalider",
+  "terme": "invalider",
+  "variantes": [
+   "invalider",
+   "invalident",
+   "invalidation",
+   "invalidations",
+   "invalidée",
+   "invalidées"
+  ],
+  "definition": "Déclarer périmée une réponse gardée en cache : chaque composant qui l’affiche la redemande, et se met à jour.",
+  "definiEn": {
+   "vers": "dev/interface/header",
+   "section": "Des signaux qui ne parlent que pour dire quelque chose"
+  }
+ },
+ {
+  "id": "store",
+  "terme": "store",
+  "variantes": [
+   "store",
+   "stores"
+  ],
+  "definition": "Un objet d’état partagé par tous les composants du navigateur, qui les prévient quand il change. Le projet utilise Zustand.",
+  "definiEn": {
+   "vers": "dev/interface/header",
+   "section": "Qui est connecté, dès le premier affichage"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/le-navigateur-et-le-proxy",
+   "section": "Pourquoi deux endroits : un contexte et un store"
+  }
+ },
+ {
+  "id": "contexte-react",
+  "terme": "contexte React",
+  "variantes": [
+   "contexte react",
+   "contextes react"
+  ],
+  "definition": "Une valeur transmise à tous les composants d’un sous-arbre sans passer par leurs props ; côté serveur, propre à chaque requête.",
+  "definiEn": {
+   "vers": "dev/front/routage",
+   "section": "La session dès le premier affichage"
+  },
+  "approfondiEn": {
+   "vers": "dev/auth/le-navigateur-et-le-proxy",
+   "section": "Pourquoi deux endroits : un contexte et un store"
+  }
+ },
+ {
+  "id": "cookie",
+  "terme": "cookie",
+  "variantes": [
+   "cookie",
+   "cookies"
+  ],
+  "definition": "Une donnée courte que le serveur demande au navigateur de garder, et que le navigateur lui renvoie de lui-même à chaque requête vers le même site.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Le cookie : une petite mémoire que le navigateur porte"
+  }
+ },
+ {
+  "id": "sans-etat",
+  "terme": "sans état",
+  "variantes": [
+   "sans état"
+  ],
+  "definition": "Se dit d’un protocole qui ne garde aucun souvenir d’une requête à l’autre : c’est le cas de HTTP, d’où le besoin d’une session.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Une requête, et un serveur qui oublie"
+  }
+ },
+ {
+  "id": "session",
+  "terme": "session",
+  "variantes": [
+   "session",
+   "sessions"
+  ],
+  "definition": "La période pendant laquelle le serveur reconnaît un membre déjà connecté, sans lui redemander de preuve. Une ligne de `Session` en garde la trace, un cookie la désigne.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "La session : une confiance qui dure"
+  }
+ },
+ {
+  "id": "jeton-signe",
+  "terme": "jeton signé",
+  "variantes": [
+   "jeton signé",
+   "jetons signés",
+   "JWT"
+  ],
+  "definition": "Une donnée accompagnée d’une signature que seul le serveur sait produire (un JWT dans le projet) : on peut la lire, pas la falsifier.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Le jeton signé : un ticket infalsifiable"
+  }
+ },
+ {
+  "id": "empreinte",
+  "terme": "empreinte",
+  "variantes": [
+   "empreinte",
+   "empreintes"
+  ],
+  "definition": "Le résultat d’un calcul à sens unique sur une donnée (un mot de passe) : on peut vérifier qu’une saisie redonne la même empreinte, jamais retrouver la donnée.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Une empreinte n’est pas un chiffrement"
+  }
+ },
+ {
+  "id": "revocation",
+  "terme": "révocation",
+  "variantes": [
+   "révocation",
+   "révoquer",
+   "révoqué",
+   "révoquée",
+   "révoquées"
+  ],
+  "definition": "Mettre fin à une session avant sa date d’expiration, en supprimant sa ligne : le cookie, même intact, ne vaut plus rien.",
+  "definiEn": {
+   "vers": "dev/auth/pourquoi-une-chaine",
+   "section": "Expirer, révoquer"
+  }
+ },
+ {
+  "id": "contrat",
+  "terme": "contrat",
+  "variantes": [
+   "contrat",
+   "contrats"
+  ],
+  "definition": "La description, partagée par le serveur et le navigateur, de la forme d’une donnée. Elle vit dans `packages/contracts`.",
+  "definiEn": {
+   "vers": "dev/auth/le-modele-et-le-contrat",
+   "section": "Le contrat partagé : `SessionClient`"
+  }
+ },
+ {
+  "id": "projection",
+  "terme": "projection",
+  "variantes": [
+   "projection",
+   "projections"
+  ],
+  "definition": "La copie d’une donnée réduite aux seuls champs qu’un lecteur doit voir : on ne transmet pas une ligne entière, on en choisit les champs.",
+  "definiEn": {
+   "vers": "dev/auth/le-modele-et-le-contrat",
+   "section": "Le contrat partagé : `SessionClient`"
+  }
+ },
+ {
+  "id": "proxy",
+  "terme": "proxy",
+  "variantes": [
+   "proxy"
+  ],
+  "definition": "Dans Next.js, le fichier `proxy.ts`, dont la fonction s’exécute avant le rendu d’une page et peut la laisser passer ou rediriger.",
+  "definiEn": {
+   "vers": "dev/auth/le-navigateur-et-le-proxy",
+   "section": "Le proxy : pré-filtre à l’entrée des pages protégées"
+  }
+ },
+ {
+  "id": "garde",
+  "terme": "garde",
+  "variantes": [
+   "garde",
+   "gardes"
+  ],
+  "definition": "Une vérification qui arrête une action quand une condition manque : un droit pour une procédure, une règle du projet pour `pnpm check`.",
+  "definiEn": {
+   "vers": "dev/auth/les-droits-par-les-groupes",
+   "section": "Les gardes"
+  },
+  "approfondiEn": {
+   "vers": "dev/qualite/les-gardes-maison"
+  }
+ },
+ {
+  "id": "slug",
+  "terme": "slug",
+  "variantes": [
+   "slug",
+   "slugs"
+  ],
+  "definition": "Le dernier segment, lisible, de l’adresse d’une page (`tchoy-lee-fut` dans `/disciplines/tchoy-lee-fut`), saisi une fois et stable.",
+  "definiEn": {
+   "vers": "dev/domaine/comprendre-le-domaine",
+   "section": "Une discipline n’est pas un cours : c’est un art"
+  },
+  "approfondiEn": {
+   "vers": "dev/domaine/un-modele-qui-s-ouvre",
+   "section": "Des adresses stables : le slug"
+  }
+ },
+ {
+  "id": "constructeur-de-pages",
+  "terme": "constructeur de pages",
+  "variantes": [
+   "constructeur de pages"
+  ],
+  "definition": "L’éditeur du tableau de bord qui assemble un contenu à partir de blocs : un texte, une galerie, une liste de documents.",
+  "definiEn": {
+   "vers": "dev/domaine/comprendre-le-domaine",
+   "section": "Pourquoi commencer par le vocabulaire"
+  },
+  "approfondiEn": {
+   "vers": "dev/contenu/un-contenu-fait-de-blocs"
+  }
+ }
+]

@@ -4,6 +4,8 @@ import type { ReactNode, ReactElement } from "react"
 
 import { Callout } from "@features/docs/ui/Callout"
 import { Promesse } from "@features/docs/ui/Promesse"
+import { Terme } from "@features/docs/glossary/Terme"
+import { Glossaire } from "@features/docs/glossary/Glossaire"
 import { CodeBlock } from "@features/docs/ui/CodeBlock"
 import CodeSnippet from "@features/docs/ui/CodeSnippet"
 import CodeSnippetWalkthrough from "@features/docs/ui/CodeSnippetWalkthrough"
@@ -65,6 +67,8 @@ export const mdxComponents: MDXComponents = {
   Callout,
   // « Nous y reviendrons » : une explication courte et le chapitre qui approfondit (numéro calculé).
   Promesse,
+  Terme,
+  Glossaire,
   CodeBlock,
   CodeExample,
   CodeWalkthrough,

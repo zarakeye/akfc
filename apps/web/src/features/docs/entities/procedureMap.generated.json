@@ -35712,7 +35712,7 @@
   "page /docs/[...slug]": {
    "kind": "page",
    "file": "apps/web/src/app/docs/[...slug]/page.tsx",
-   "line": 31,
+   "line": 32,
    "effects": [
     {
      "model": "Session",

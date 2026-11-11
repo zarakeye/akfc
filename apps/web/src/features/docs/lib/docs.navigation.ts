@@ -38,10 +38,11 @@ const SECTION_ORDER = [
   "Qualité",
   "Infrastructure et déploiement",
   "Étude de cas",
+  "Annexe : glossaire",
 ] as const
 
-/** Parties d'accueil d'un espace : en tête de la barre latérale, sans numéro. */
-const UNNUMBERED_SECTIONS: readonly string[] = ["Introduction", "Accueil"]
+/** Parties sans numéro : l'accueil d'un espace (en tête de la barre latérale) et le glossaire (à la fin). */
+const UNNUMBERED_SECTIONS: readonly string[] = ["Introduction", "Accueil", "Annexe : glossaire"]
 
 function getSectionRank(section: string): number {
   const index = SECTION_ORDER.indexOf(

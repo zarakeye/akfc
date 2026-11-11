@@ -21,6 +21,7 @@ import { getEntityMap } from "@features/docs/entities/prismaSchema"
 import { buildChapterGraph } from "@features/docs/entities/chapterGraph"
 import { EntityCode, EntityExplorer } from "@features/docs/entities/EntityExplorer"
 import { readChapterStories } from "@features/docs/entities/stories"
+import { remarkGlossary } from "@features/docs/glossary/remarkGlossary"
 
 interface PageProps {
   params: Promise<{
@@ -93,6 +94,8 @@ export default async function Page({ params }: PageProps) {
     },
     options: {
       parseFrontmatter: false,
+      // Doc développeur : chaque terme du glossaire devient un <Terme>, avec sa carte au survol.
+      mdxOptions: space.id === "dev" ? { remarkPlugins: [[remarkGlossary, { slug }]] } : undefined,
     },
   })
 
@@ -105,7 +108,10 @@ export default async function Page({ params }: PageProps) {
         <DocsSearch docs={searchDocs} />
       </div>
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">
+        <h1
+          className="text-4xl font-bold tracking-tight"
+          data-doc-label={chapterNumber ? `${chapterNumber} ${frontmatter.title}` : frontmatter.title}
+        >
           {chapterNumber ? (
             <span className="mr-3 tabular-nums text-muted-foreground">{chapterNumber}</span>
           ) : null}
