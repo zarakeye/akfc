@@ -63,7 +63,7 @@ Avant de construire, Docker envoie au moteur le **contexte** : le dossier du dé
   fullFileTitle="Voir le fichier complet"
 />
 
-Aucun `.env` n’entre dans l’image : les secrets sont donnés au **conteneur**, au démarrage, par le serveur (partie « Configuration », chapitre « Les variables d’environnement »). Une image peut être partagée, poussée sur un registre, inspectée couche par couche ; elle ne contient rien qu’on ne puisse montrer.
+Aucun `.env` n’entre dans l’image : les secrets sont donnés au **conteneur**, au démarrage, par le serveur (partie « Configuration », chapitre « Les variables d’environnement »). Une image peut être partagée, poussée sur un registre (un entrepôt d’images en ligne, comme Docker Hub), inspectée couche par couche ; elle ne contient rien qu’on ne puisse montrer.
 
 La relecture a ajouté la construction des tests de bout en bout (`.next-e2e`, qui pèse plusieurs centaines de mégaoctets), les tests et leurs résultats, et les scripts `apply-*.sh` qu’on dépose à la racine du dépôt pour appliquer une modification : ils ne servent ni au build ni au site.
 

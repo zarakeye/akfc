@@ -112,7 +112,7 @@ La bulle se pose **sous** la cible s’il y reste au moins 200 pixels (`BUBBLE_R
   fullFileTitle="Voir le fichier complet"
 />
 
-Le clic est écouté sur tout le document, en **phase de capture** (`true`) : avant que l’élément cliqué ne le reçoive, et quoi qu’il en fasse — même un composant qui arrête la propagation ne le cache pas au tuto. L’étape passe ensuite, au tour suivant de la boucle d’événements (`setTimeout(…, 0)`) : l’élément a d’abord traité son clic (ouvert le formulaire, suivi le lien).
+Le clic est écouté sur tout le document, en **phase de capture** (`true`) : avant que l’élément cliqué ne le reçoive, et quoi qu’il en fasse — même un composant qui arrête la propagation ne le cache pas au tuto. L’étape passe ensuite, au tour suivant de la boucle d’événements (`setTimeout(…, 0)` : le navigateur traite ses tâches une à une, et celle-ci passera après le clic en cours) : l’élément a d’abord traité son clic (ouvert le formulaire, suivi le lien).
 
 <DocsTable columnsJson='["Étape", "Ce qui la fait passer", "Qui le constate"]' rowsJson='[["click", "Un clic sur la cible.", "L’overlay, en capture sur le document."], ["input", "« Suivant », actif dès que validate accepte la valeur.", "L’overlay, qui relit la valeur à chaque image."], ["route", "L’arrivée sur une page qui correspond.", "Le fournisseur, qui survit au changement de page."], ["next", "« Suivant » (ou « Terminer » à la dernière étape).", "La bulle."]]' />
 

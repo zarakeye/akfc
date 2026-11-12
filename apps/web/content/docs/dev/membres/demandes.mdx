@@ -137,7 +137,7 @@ export async function canHandleCategory(db: Db, userId: string, categoryId: stri
 
 Contrairement aux espaces collaboratifs, l'appartenance n'est pas héritée de la hiérarchie : être membre d'un groupe parent ne donne pas à traiter les demandes de ses sous-groupes. Traiter une demande, c'est répondre au nom du club ; ce rôle se confie nommément.
 
-Toutes les opérations passent par cette vérification : prendre en charge, transférer, répondre, clore, rouvrir. Un **transfert** exige une note pour la personne qui reprend, et cette personne doit elle-même pouvoir traiter la catégorie. Un membre qui traite les demandes voit le nom du demandeur, mais pas son adresse : seuls les administrateurs la voient (voir « La frontière serveur / client »).
+Toutes les opérations passent par cette vérification : prendre en charge, transférer, répondre, clore, rouvrir. Un **transfert** exige une note pour la personne qui reprend, et cette personne doit elle-même pouvoir traiter la catégorie. Un membre qui traite les demandes voit le nom du demandeur, mais pas son adresse : seuls les administrateurs la voient (partie « Fondations front », chapitre « La frontière serveur / client »).
 
 ## Répondre : l'e-mail d'abord
 
