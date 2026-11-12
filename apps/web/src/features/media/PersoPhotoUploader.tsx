@@ -10,7 +10,8 @@ import { uploadToR2 } from '@features/media/uploadToR2';
 /**
  * PersoPhotoUploader
  *
- * Uploader de l'espace photos PERSO d'un admin. Volontairement léger et
+ * Envoi de photos dans l'espace PERSONNEL du membre connecté (monté sur le profil d'un
+ * instructeur, pour les photos de sa présentation). Volontairement léger et
  * distinct du `DragNDropForm` de la bibliothèque :
  *   - images UNIQUEMENT (le back refuse le reste sur destination `perso`) ;
  *   - aucune catégorie / discipline : la destination est `{ kind: 'perso' }`,
@@ -318,13 +319,13 @@ export default function PersoPhotoUploader(): JSX.Element {
         <input {...getInputProps()} />
         {atCapacity ? (
           <p className="text-sm text-gray-600">
-            Quota atteint — supprime des photos pour en ajouter.
+            Quota atteint. Pour libérer de la place, adressez-vous au club.
           </p>
         ) : isDragActive ? (
-          <p className="text-sm text-blue-600">Dépose les photos ici…</p>
+          <p className="text-sm text-blue-600">Déposez les photos ici…</p>
         ) : (
           <>
-            <p className="text-sm">Glisse tes photos ou clique pour choisir</p>
+            <p className="text-sm">Glissez vos photos ici, ou cliquez pour les choisir</p>
             <p className="text-xs text-gray-500 mt-1">
               Images uniquement · {MAX_FILE_SIZE_MB} Mo max · {remaining}{' '}
               restante(s)

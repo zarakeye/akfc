@@ -144,11 +144,13 @@ Ensuite, si l’administrateur a coché « mettre les PDF à disposition des mem
 
 ## L’espace personnel : un quota, un par un
 
+Le formulaire vit dans le profil d’un instructeur, à la section « Ma présentation d’instructeur » : ce sont les photos que sa présentation pourra montrer, une fois validées. Il a longtemps été monté sur une page du tableau de bord, `/dashboard/mes-photos`, réservée aux administrateurs et que rien n’annonçait : les instructeurs, à qui il était destiné, n’y avaient pas accès.
+
 L’espace personnel d’un membre a un quota d’images, en attente et validées confondues. Le formulaire lit la place restante avant d’accepter quoi que ce soit, et ne prend dans le lot que ce qui tient :
 
 <CodeExample
   language="tsx"
-  filepath="apps/web/src/features/admin/perso/PersoPhotoUploader.tsx"
+  filepath="apps/web/src/features/media/PersoPhotoUploader.tsx"
   filename="PersoPhotoUploader.tsx"
   snippetStart="const addAccepted = useCallback("
   snippetEnd="setBanner(null);"
