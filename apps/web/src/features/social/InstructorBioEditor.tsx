@@ -12,6 +12,7 @@ import {
 import { finderStorageAdapter } from "@/features/finder-adapters/storage/finderStorage.adapter";
 import { APP_ROOT } from "@config/app";
 import PersoPhotoUploader from "@features/media/PersoPhotoUploader";
+import { useSessionStore } from "@lib/stores/useSessionStore";
 
 /**
  * Éditeur de la présentation publique d'un instructeur, sur SON profil.
@@ -54,6 +55,9 @@ export function InstructorBioEditor(): JSX.Element | null {
   // redevient « à jour » au lieu de garder un faux positif jusqu'au
   // rechargement.
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  // Un administrateur choisit ses images dans toute la bibliothèque : l'espace personnel lui
+  // ferait doublon, et une photo envoyée là attendrait une validation que personne ne guette.
+  const isAdmin = useSessionStore((s) => s.session?.user?.isAdmin ?? false);
 
   if (state.isLoading) return null;
   // Non-titulaire : aucune section. C'est le backend qui tranche.
@@ -109,14 +113,21 @@ export function InstructorBioEditor(): JSX.Element | null {
 
       {/* Les photos de la présentation viennent de l'espace personnel du membre : il les y
           dépose ici, un administrateur les valide, puis le sélecteur d'images les propose. */}
-      <details className="mb-4 rounded-md border border-border p-3">
-        <summary className="cursor-pointer text-sm font-medium">Mes photos</summary>
-        <p className="mt-2 mb-3 text-sm text-muted-foreground">
-          Les photos envoyées ici attendent la validation d&apos;un administrateur. Une fois
-          validées, le choix d&apos;une image dans votre présentation les propose.
+      {isAdmin ? (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Vos images viennent de la bibliothèque : le choix d&apos;une image dans votre
+          présentation vous la propose en entier.
         </p>
-        <PersoPhotoUploader />
-      </details>
+      ) : (
+        <details className="mb-4 rounded-md border border-border p-3">
+          <summary className="cursor-pointer text-sm font-medium">Mes photos</summary>
+          <p className="mt-2 mb-3 text-sm text-muted-foreground">
+            Les photos envoyées ici attendent la validation d&apos;un administrateur. Une fois
+            validées, le choix d&apos;une image dans votre présentation les propose.
+          </p>
+          <PersoPhotoUploader />
+        </details>
+      )}
 
       <PageBuilder
         value={current}
