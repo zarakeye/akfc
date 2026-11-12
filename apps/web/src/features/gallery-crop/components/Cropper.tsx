@@ -196,12 +196,14 @@ export default function Cropper({
       if (initialTransform) {
         const gf = initialTransform.gridFrac;
         setGrid({ x: gf.x * w, y: gf.y * w, width: gf.width * w, height: gf.height * w });
-      } else if (responsive) {
-        const side = w * 0.6;
+      } else {
+        // Un carré centré, en proportion de l'établi : 60 % pour l'avatar, 40 % pour la
+        // galerie (200 px sur l'établi de 500 px, comme l'ancien cadre fixe). En pixels
+        // fixes, le cadre de la galerie n'était centré que sur un établi de 500 px.
+        const side = w * (responsive ? 0.6 : 0.4);
         const off = (w - side) / 2;
         setGrid({ x: off, y: off, width: side, height: side });
       }
-      // sinon (galerie) : on garde le défaut {150,150,200,200}.
     };
     seed(el.getBoundingClientRect().width);
     if (seededGrid.current) return;

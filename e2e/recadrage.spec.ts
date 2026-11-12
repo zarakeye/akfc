@@ -59,4 +59,40 @@ test.describe("Recadrage : le fichier produit", () => {
     await page.getByRole("button", { name: "Envoyer" }).click();
     await expect(page.getByText("✅ OK")).toBeVisible({ timeout: 30_000 });
   });
+
+  test("sur un téléphone, le cadre de départ de la galerie est centré dans l'établi", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAs(page, USERS.admin.email);
+    await page.goto("/dashboard/library/add");
+
+    const base64 = await page.evaluate(async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 600;
+      canvas.getContext("2d")!.fillRect(0, 0, 800, 600);
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
+      const bytes = new Uint8Array(await blob!.arrayBuffer());
+      let bin = "";
+      bytes.forEach((b) => (bin += String.fromCharCode(b)));
+      return btoa(bin);
+    });
+    await page.locator("select").first().selectOption({ label: DISCIPLINES.publiee.name });
+    await page.locator('input[type="file"]').last().setInputFiles({
+      name: `cadre-e2e-${Date.now()}.jpg`,
+      mimeType: "image/jpeg",
+      buffer: Buffer.from(base64, "base64"),
+    });
+    await page.locator("form img").first().click();
+
+    // L'établi rétrécit avec l'écran ; le cadre doit rester un carré centré, à 40 % de sa largeur.
+    const workspace = page.locator(".bg-checkerboard.aspect-square").first();
+    const frame = workspace.locator(".cursor-move.touch-none");
+    await expect(frame).toBeVisible();
+    const w = (await workspace.boundingBox())!;
+    const f = (await frame.boundingBox())!;
+    expect(w.width).toBeLessThan(500);
+    expect(Math.abs(f.width - w.width * 0.4)).toBeLessThan(2);
+    expect(Math.abs(f.x - w.x - (w.width - f.width) / 2)).toBeLessThan(2);
+    expect(Math.abs(f.y - w.y - (w.height - f.height) / 2)).toBeLessThan(2);
+  });
 });
