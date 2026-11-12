@@ -49,7 +49,7 @@ Le module `browserImages.ts` remplace chaque HEIC par un JPEG avant qu’il n’
   fullFileTitle="Voir le fichier complet"
 />
 
-La conversion s’appuie sur **libheif**, la bibliothèque de référence du format, compilée en WebAssembly (un format qui fait tourner dans le navigateur du code écrit en C ou en Rust, presque à sa vitesse d’origine) (le paquet `heic-to`). Trois choix la cadrent.
+La conversion s’appuie sur **libheif**, la bibliothèque de référence du format, compilée en WebAssembly (un format qui fait tourner dans le navigateur du code écrit en C ou en Rust, presque à sa vitesse d’origine), et livrée par le paquet `heic-to`. Trois choix la cadrent.
 
 **Sur l’appareil, pas ailleurs.** Des services en ligne convertissent du HEIC en un appel. Ce serait envoyer les photos des membres, souvent des enfants, à un tiers. La règle du projet est inverse : les vraies photos ne quittent pas l’appareil de l’adhérent et le serveur du club. Le WebAssembly tourne dans l’onglet ; rien ne sort.
 
@@ -125,7 +125,11 @@ La bibliothèque accepte toujours l’extension `.heic` (`ALLOWED_UPLOAD_TYPES`)
   fullFileTitle="Voir le fichier complet"
 />
 
-`sharp`, qui fabrique les vignettes AVIF, ne lit pas le HEIC. `decodeHeif` passe donc par l’outil `heif-dec` de libheif (ou `heif-convert`, son ancien nom), qui écrit un JPEG dans un dossier temporaire, en appliquant la rotation de la photo. L’image Docker de production installe ces outils (chapitre « L’image Docker »). Si l’outil manque, sur un poste de développement par exemple, le serveur le note une fois dans les journaux et sert l’original tel quel : la photo reste téléchargeable, sans vignette.
+`sharp`, qui fabrique les vignettes AVIF, ne lit pas le HEIC. `decodeHeif` passe donc par l’outil `heif-dec` de libheif (ou `heif-convert`, son ancien nom), qui écrit un JPEG dans un dossier temporaire, en appliquant la rotation de la photo. Le serveur de production les a : son image Docker les installe. Si l’outil manque, sur un poste de développement par exemple, le serveur le note une fois dans les journaux et sert l’original tel quel : la photo reste téléchargeable, sans vignette.
+
+<Promesse vers="dev/infrastructure/l-image-docker" section="Une image, des étapes 🐳">
+L’image du projet se construit en plusieurs étapes, et l’une d’elles ajoute ces outils système ; on la verra avec la mise en production.
+</Promesse>
 
 <Callout type="warning">
 **Deux lignes, pas deux fois le même travail.** Le navigateur convertit pour que le fichier stocké soit lisible partout, y compris en téléchargement. Le serveur décode pour que les vignettes existent quand le fichier stocké est un HEIC. Retirer la première ligne ne casserait pas les vignettes ; elle laisserait des originaux que la plupart des visiteurs ne savent pas ouvrir.

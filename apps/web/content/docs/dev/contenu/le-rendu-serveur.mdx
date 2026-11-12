@@ -60,7 +60,7 @@ La page « L’association » fait quatre choses : décider si le visiteur peut 
 
 `PageRenderer` est un composant serveur **asynchrone** : une fonction `async` qui rend du JSX. Avant de rendre le moindre bloc, il prépare tout ce dont les blocs auront besoin.
 
-Il lit la base et résout les médias : il ne doit jamais partir dans le code du navigateur. Son fichier commence par `import "server-only"`, qui fait échouer le build si un composant client l’importe, et il ne figure pas dans l’entrée `@features/page-builder` que les formulaires d’administration utilisent pour le constructeur (partie « Étude de cas (1) », chapitre « Lancer, vérifier, écrire »).
+Il lit la base et résout les médias : il ne doit jamais partir dans le code du navigateur. Son fichier commence par `import "server-only"`, qui fait échouer le build si un composant client l’importe, et il ne figure pas dans l’entrée `@features/page-builder` que les formulaires d’administration utilisent pour le constructeur (plus loin, partie « Étude de cas (1) », chapitre « Lancer, vérifier, écrire »).
 
 <CodeWalkthrough
   language="ts"

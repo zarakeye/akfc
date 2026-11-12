@@ -45,7 +45,11 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Les formulaires de lot pilotent vingt fichiers et leur sort ; les photos d’iPhone y entrent converties. Restent les écrans où il n’y a qu’un fichier, et où ce fichier a un seul usage.
 
-Un seul fichier ne veut pas dire un envoi plus simple. Le portrait d’un membre est vu partout (en-tête, profil, commentaires, pages d’instructeurs) ; il doit être juste du premier coup, et remplacer l’ancien partout à la fois. Un formulaire signé change ce que le site a le droit de publier. Un PDF déposé dans un espace devient un document que d’autres liront. Le côté serveur de chacun est raconté ailleurs (« L’avatar », « Le droit à l’image », « Les espaces collaboratifs ») ; ce chapitre suit le navigateur.
+Un seul fichier ne veut pas dire un envoi plus simple. Le portrait d’un membre est vu partout (en-tête, profil, commentaires, pages d’instructeurs) ; il doit être juste du premier coup, et remplacer l’ancien partout à la fois. Un formulaire signé change ce que le site a le droit de publier. Un PDF déposé dans un espace devient un document que d’autres liront. Ce chapitre suit le navigateur.
+
+<Promesse vers="dev/membres/l-avatar" section="Ce que le serveur vérifie">
+Côté serveur, chacun de ces envois a son chapitre : l’avatar et ses contrôles, le formulaire signé avec le droit à l’image, le dépôt avec les espaces collaboratifs. Ils viendront avec l’espace des membres, une fois le site en ligne.
+</Promesse>
 
 ## Les parcours du chapitre
 
@@ -104,7 +108,7 @@ Le recadrage ne déclenche **pas** l’envoi. Il produit une proposition locale,
 
 La proposition garde trois choses : le fichier recadré, qui partira ; l’original, non recadré ; et la **recette** du recadrage (zoom, rotation, position, forme). Toucher la vignette rouvre le recadrage sur l’original, exactement dans l’état laissé. Le membre peut ajuster trois fois avant de confirmer, sans dégrader l’image : on recadre toujours l’original, jamais un recadrage.
 
-À ✓, les trois temps s’enchaînent (`avatar.createUpload`, envoi direct, `avatar.register`), comme le montre le chapitre « L’avatar ». À ✗, la proposition et sa recette sont jetées. Dans les deux cas, la recette est consommée.
+À ✓, les trois temps s’enchaînent (`avatar.createUpload`, envoi direct, `avatar.register`), le circuit dédié du premier chapitre. À ✗, la proposition et sa recette sont jetées. Dans les deux cas, la recette est consommée.
 
 <Callout type="concept">
 **Une recette plutôt qu’un résultat.** Garder les paramètres d’une transformation, et non seulement son produit, rend la transformation réversible et rejouable. C’est ce qui permet de rouvrir un recadrage sans perte.
