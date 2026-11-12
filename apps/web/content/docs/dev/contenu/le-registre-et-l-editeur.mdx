@@ -62,7 +62,7 @@ Voici une définition complète :
   fullFileTitle="Voir le fichier complet"
 />
 
-`Editor` est un composant **client**, utilisé dans le tableau de bord. `View` est un composant **serveur** : son fichier s’appelle `view.server.tsx`, et il ne s’exécute jamais dans le navigateur (chapitre 4). `defaultData` fabrique le bloc vide que le menu « + » insère ; l’identifiant lui est fourni par le constructeur.
+`Editor` est un composant **client**, utilisé dans le tableau de bord. `View` est un composant **serveur** : son fichier s’appelle `view.server.tsx`, et il ne s’exécute jamais dans le navigateur (plus loin, chapitre 4). `defaultData` fabrique le bloc vide que le menu « + » insère ; l’identifiant lui est fourni par le constructeur.
 
 ## Un registre que le compilateur vérifie
 
@@ -117,7 +117,7 @@ Le constructeur, lui, parcourt une liste de blocs de types **mélangés**. `bloc
 
 Pourquoi ce refus ? Un éditeur reçoit `onChange: (next: TBlock) => void`. Une fonction qui attend un bloc de texte ne peut pas être utilisée là où l’on pourrait lui passer une galerie : en position de **paramètre**, un type plus précis n’est pas substituable à un type plus large. C’est la **contravariance** des paramètres de fonction. Le compilateur ne peut pas suivre le lien entre `block.type` et la définition choisie ; il voit seulement qu’une des six pourrait recevoir le mauvais bloc.
 
-Le développeur, lui, sait que ce n’est jamais le cas : la définition est choisie **par** `block.type`, elle accepte donc exactement ce bloc. Le cast exprime ce savoir. Il est écrit à deux endroits seulement (`BlockShell` pour l’édition, `PageRenderer` pour le rendu), commenté, et ne peut rien masquer d’autre.
+Le développeur, lui, sait que ce n’est jamais le cas : la définition est choisie **par** `block.type`, elle accepte donc exactement ce bloc. Le cast exprime ce savoir : un `as`, qui demande au compilateur de traiter une valeur comme étant d’un type donné, sans le vérifier. Il est écrit à deux endroits seulement (`BlockShell` pour l’édition, `PageRenderer` pour le rendu), commenté, et ne peut rien masquer d’autre.
 
 <Callout type="info">
 Un cast acceptable est **local**, **justifié** par un invariant que le compilateur ne voit pas, et placé là où cet invariant est garanti. Un `as` répandu dans chaque composant de bloc serait l’inverse : chaque copie pourrait se tromper.
@@ -153,7 +153,7 @@ La liste est une liste d’**autorisation** : un bloc ajouté au registre plus t
 
 ## Choisir un fichier
 
-Les éditeurs de blocs ouvrent le sélecteur de fichiers de la bibliothèque — le Finder de la partie précédente, en mode sélection. Ils ont besoin de deux valeurs que l’hôte connaît, partagées par un **contexte** React plutôt que passées de bloc en bloc :
+Les éditeurs de blocs ouvrent le sélecteur de fichiers de la bibliothèque — le finder de la partie « Le finder », en mode sélection. Ils ont besoin de deux valeurs que l’hôte connaît, partagées par un **contexte** React plutôt que passées de bloc en bloc :
 
 <CodeExample
   language="tsx"
@@ -166,7 +166,7 @@ Les éditeurs de blocs ouvrent le sélecteur de fichiers de la bibliothèque —
   fullFileTitle="Voir le fichier complet"
 />
 
-`appRoot` est la racine de l’application (`AKFC`), envoyée avec chaque requête de fichiers : le serveur la compare à la sienne (`sameAppRoot`). `mediaRoot` est le dossier où **s’ouvre** le sélecteur. Pour un administrateur, c’est la racine : toute la bibliothèque. Pour un instructeur qui rédige sa présentation, c’est son espace personnel, le seul dont il puisse publier les fichiers (chapitre 6). Les deux valeurs étaient confondues : le sélecteur d’un instructeur s’ouvrait sur la racine, que le serveur refusait de lui lister.
+`appRoot` est la racine de l’application (`AKFC`), envoyée avec chaque requête de fichiers : le serveur la compare à la sienne (`sameAppRoot`). `mediaRoot` est le dossier où **s’ouvre** le sélecteur. Pour un administrateur, c’est la racine : toute la bibliothèque. Pour un instructeur qui rédige sa présentation, c’est son espace personnel, le seul dont il puisse publier les fichiers (plus loin, chapitre 6). Les deux valeurs étaient confondues : le sélecteur d’un instructeur s’ouvrait sur la racine, que le serveur refusait de lui lister.
 
 Le sélecteur rend des **chemins** ; un bloc enregistre des **identifiants**. La traduction est faite par le serveur, au moment du choix :
 
@@ -180,7 +180,7 @@ Le sélecteur rend des **chemins** ; un bloc enregistre des **identifiants**. La
   stepsJson='[{"title": "La promesse de l’éditeur", "body": "L’éditeur de texte a demandé une image en ouvrant le sélecteur, et attend une promesse. On la récupère ; annuler la résout avec `null`.", "scope": "3-6", "focus": "4-5"}, {"title": "Le serveur traduit", "body": "`media.resolveByPaths` vérifie que l’utilisateur peut lire ces chemins, puis rend l’identifiant de chacun (ou `null` pour un chemin sans fichier enregistré).", "scope": "11-14", "focus": "11-13"}, {"title": "Le premier identifiant trouvé", "body": "Le nœud image du texte n’en prend qu’un. C’est cet identifiant, et non le chemin, qui entre dans le document.", "scope": "15-19", "focus": "18-19"}]'
 />
 
-Le sélecteur ne montre que les fichiers ; il ne garantit pas qu’ils sont **validés**. Un fichier en attente peut être choisi, mais l’enregistrement le refusera (chapitre 5) : on ne publie pas un fichier qu’un administrateur n’a pas validé.
+Le sélecteur ne montre que les fichiers ; il ne garantit pas qu’ils sont **validés**. Un fichier en attente peut être choisi, mais l’enregistrement le refusera (plus loin, chapitre 5) : on ne publie pas un fichier qu’un administrateur n’a pas validé.
 
 ## L’aperçu, sous chaque éditeur
 

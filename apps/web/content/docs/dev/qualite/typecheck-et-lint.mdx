@@ -49,7 +49,7 @@ De même, deux états de l'arborescence du Finder (« chargement », « erreur �
 
 ## Les règles du React Compiler
 
-Le React Compiler réécrit chaque composant pour éviter les calculs et les rendus inutiles, sans `useMemo` ni `useCallback` écrits à la main. Il ne peut le faire que si le composant respecte les règles de React : un rendu ne doit rien modifier hors de lui, un effet sert à se synchroniser avec l'extérieur, pas à recopier des données. Quand un composant s'en écarte, le Compiler **renonce à l'optimiser**, et la règle de lint correspondante le signale. Les seize cas du projet relevaient de six motifs.
+Le React Compiler réécrit chaque composant pour éviter les calculs et les rendus inutiles, sans `useMemo` ni `useCallback` écrits à la main. On dit qu’il **mémoïse** : il garde un résultat, et le réutilise tant que ce dont il dépend n’a pas changé. Il ne peut le faire que si le composant respecte les règles de React : un rendu ne doit rien modifier hors de lui, un effet sert à se synchroniser avec l'extérieur, pas à recopier des données. Quand un composant s'en écarte, le Compiler **renonce à l'optimiser**, et la règle de lint correspondante le signale. Les seize cas du projet relevaient de six motifs.
 
 <Callout type="info">
 **Les règles d'abord, le Compiler ensuite.** Pendant longtemps, le projet a vérifié les règles du Compiler sans l'exécuter : `next.config.ts` ne contenait pas `reactCompiler: true`, et Next.js ne l'active pas de lui-même. Le lint a d'abord été ramené à zéro, puis le Compiler activé. Si un composant enfreint une règle que le lint n'a pas vue, le Compiler ne le casse pas : il le laisse tel quel, sans optimisation.

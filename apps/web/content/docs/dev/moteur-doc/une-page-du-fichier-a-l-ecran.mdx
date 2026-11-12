@@ -77,7 +77,7 @@ Une page n’est pas construite à l’avance. Quand un lecteur ouvre `/docs/dev
   fullFileTitle="Voir le fichier complet"
 />
 
-Compiler, c’est faire trois choses. **Analyser** le texte en un arbre (l’arbre *mdast* : des paragraphes, des titres, des listes, du texte, et les composants écrits dans le texte). **Transformer** cet arbre, par des *plugins remark* : c’est là que le glossaire repère ses termes (chapitre 3). Puis **produire** des composants React, en remplaçant chaque nom (`Callout`, `CodeExample`, mais aussi `h2` ou `pre`) par le composant que donne la table `mdxComponents`.
+Compiler, c’est faire trois choses. **Analyser** le texte en un arbre (l’arbre *mdast* : des paragraphes, des titres, des listes, du texte, et les composants écrits dans le texte). **Transformer** cet arbre, par des *plugins remark* : c’est là que le glossaire repère ses termes (plus loin, chapitre 3). Puis **produire** des composants React, en remplaçant chaque nom (`Callout`, `CodeExample`, mais aussi `h2` ou `pre`) par le composant que donne la table `mdxComponents`.
 
 Les composants de la documentation sont pour la plupart des **composants serveur** : `CodeExample` lit le fichier cité sur le disque, `Promesse` consulte la navigation, `Terme` prépare une définition. Le navigateur ne reçoit que leur résultat. Les seules parties interactives (ouvrir le fichier complet, survoler un terme, parcourir un walkthrough) sont de petits composants client, glissés dans ce résultat.
 

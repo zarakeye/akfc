@@ -68,7 +68,7 @@ Un brouillon (sans date de publication) ou un contenu programmé (date future) n
 
 ### Les pages « en construction »
 
-Les pages éditoriales (accueil, association, contacts) peuvent être dépubliées depuis le tableau de bord (voir « Authentification et droits », visibilité des pages). Le visiteur voit alors un message « Page en construction », **à la même adresse** que la vraie page. Pour un moteur, c'est une page comme une autre : sans consigne, il pourrait l'indexer, et « Page en construction » s'afficherait dans les résultats sous le nom du club. Chacune de ces pages ajoute donc la consigne tant qu'elle n'est pas publiée :
+Les pages éditoriales (accueil, association, contacts) peuvent être dépubliées depuis le tableau de bord (partie « Authentification et droits », chapitre « Les droits par les groupes », section « Les pages en construction »). Le visiteur voit alors un message « Page en construction », **à la même adresse** que la vraie page. Pour un moteur, c'est une page comme une autre : sans consigne, il pourrait l'indexer, et « Page en construction » s'afficherait dans les résultats sous le nom du club. Chacune de ces pages ajoute donc la consigne tant qu'elle n'est pas publiée :
 
 <CodeExample
   language="ts"
@@ -139,12 +139,12 @@ Le plan du site et les consignes `noindex` disent donc la même chose de deux fa
 />
 
 <Callout type="warning">
-`robots.txt` est une consigne d'**exploration**, pas une protection. Un robot poli ne visite pas ces adresses ; un robot malveillant les visite quand même. Ces pages sont protégées par la session (voir « Authentification et droits ») ; le `robots.txt` évite seulement que des robots honnêtes perdent leur temps sur des pages de connexion. À l'inverse, il ne suffit pas pour empêcher une indexation : une adresse interdite d'exploration mais citée ailleurs peut apparaître dans les résultats, sans contenu. C'est pourquoi les pages publiques non publiées portent un `noindex`, et ne sont pas ajoutées au `robots.txt` : pour lire la consigne `noindex`, le robot doit pouvoir explorer la page.
+`robots.txt` est une consigne d'**exploration**, pas une protection. Un robot poli ne visite pas ces adresses ; un robot malveillant les visite quand même. Ces pages sont protégées par la session (partie « Authentification et droits ») ; le `robots.txt` évite seulement que des robots honnêtes perdent leur temps sur des pages de connexion. À l'inverse, il ne suffit pas pour empêcher une indexation : une adresse interdite d'exploration mais citée ailleurs peut apparaître dans les résultats, sans contenu. C'est pourquoi les pages publiques non publiées portent un `noindex`, et ne sont pas ajoutées au `robots.txt` : pour lire la consigne `noindex`, le robot doit pouvoir explorer la page.
 </Callout>
 
 ## Ce qui ne doit pas être lu par les robots
 
-Certaines données publiques attirent les robots collecteurs, qui parcourent le web à la recherche d'adresses e-mail à démarcher. La page des instructeurs est publique, mais l'adresse du club de chaque instructeur n'y est affichée qu'aux membres connectés : la page lit la session pour le savoir. Les adresses personnelles, elles, ne sont jamais affichées (voir « La frontière serveur / client »).
+Certaines données publiques attirent les robots collecteurs, qui parcourent le web à la recherche d'adresses e-mail à démarcher. La page des instructeurs est publique, mais l'adresse du club de chaque instructeur n'y est affichée qu'aux membres connectés : la page lit la session pour le savoir. Les adresses personnelles, elles, ne sont jamais affichées (partie « Fondations front », chapitre « La frontière serveur / client »).
 
 ## Récapitulatif
 

@@ -69,7 +69,7 @@ Il lit la base et résout les médias : il ne doit jamais partir dans le code du
   snippetStart="export async function PageRenderer({ content, audience ="
   snippetEnd=".filter((b) => b.type ==="
   title="PageRenderer — préparer, puis rendre"
-  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience demandée : publique par défaut, privée pour l’aperçu d’un brouillon par un administrateur.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "22-23", "focus": "22-23"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "32-40", "focus": "38-38"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "43-63", "focus": "48-50"}]'
+  stepsJson='[{"title": "Une page vide ne coûte rien", "body": "Aucun bloc : rien à résoudre, aucune requête. Le test est fait AVANT les lectures, pas après.", "scope": "3-5", "focus": "3-4"}, {"title": "Tous les fichiers de la page", "body": "La même extraction que l’enregistrement (plus loin, chapitre 5) rassemble les identifiants de tous les blocs, y compris les images au milieu d’un texte. Une seule requête les résout tous, pour l’audience demandée : publique par défaut, privée pour l’aperçu d’un brouillon par un administrateur.", "scope": "8-14", "focus": "8-14"}, {"title": "Une fonction synchrone", "body": "Le résultat est une table. `resolveMedia` la lit sans rien attendre : c’est elle que chaque bloc recevra.", "scope": "22-23", "focus": "22-23"}, {"title": "Les avatars", "body": "Un bloc média-texte ou texte enrobant peut montrer « l’avatar de tel membre ». Ces références logiques sont rassemblées et résolues, elles aussi, en une requête.", "scope": "32-40", "focus": "38-38"}, {"title": "Le logo du site", "body": "Le logo est unique : une ligne de réglages, et une URL qui change avec lui (`?v=`). Sans logo envoyé, le logo embarqué dans l’application.", "scope": "43-63", "focus": "48-50"}]'
 />
 
 Puis chaque bloc est rendu par la `View` de sa définition, avec ce qui a été préparé :
@@ -126,7 +126,7 @@ La résolution ne rend pas tous les fichiers demandés :
   stepsJson='[{"title": "Chaque identifiant a une réponse", "body": "La table est préremplie avec `null` pour chaque identifiant demandé. Un fichier absent de la base reste `null`, et la View sait qu’il n’y a rien à montrer.", "scope": "6-8", "focus": "7-7"}, {"title": "Validé, et hors de la corbeille", "body": "Seuls les fichiers validés sont résolus ; un fichier jeté, dont la ligne a suivi l’objet dans la corbeille, non plus. Le contenu d’une page ne force jamais l’affichage d’un fichier que la bibliothèque ne montre plus.", "scope": "10-15", "focus": "13-15"}, {"title": "La sorte, d’après le type MIME", "body": "Vidéo, audio, image ou document : la View choisit son élément (`<video>`, `<audio>`, `<img>`, un lien).", "scope": "28-30", "focus": "28-30"}, {"title": "L’URL, pour l’audience demandée", "body": "L’URL du fichier et celle de l’affiche d’une vidéo sont construites pour la même audience. L’affiche était construite sur la route privée : sur une page publique, elle répondait 401 à tout visiteur.", "scope": "34-43", "focus": "34-38"}]'
 />
 
-Un fichier repassé en attente ou jeté **après** avoir été placé disparaît de la page au rendu suivant. La page ne casse pas : la `View` omet ce qui est `null`. En pratique, les deux cas sont rares, parce que l’enregistrement et la bibliothèque les empêchent (chapitre 5) ; le rendu ne compte pas dessus.
+Un fichier repassé en attente ou jeté **après** avoir été placé disparaît de la page au rendu suivant. La page ne casse pas : la `View` omet ce qui est `null`. En pratique, les deux cas sont rares, parce que l’enregistrement et la bibliothèque les empêchent (plus loin, chapitre 5) ; le rendu ne compte pas dessus.
 
 ## Une URL pour qui ?
 
@@ -151,7 +151,7 @@ Le rendu public demande l’audience `public` (la valeur par défaut de `PageRen
 Une page publique se vérifie **déconnecté**, dans une fenêtre privée. Connecté, on voit ce que voit un administrateur, pas ce que voit un visiteur.
 </Callout>
 
-Une page a pourtant une raison de demander l’audience `admin` : le **brouillon**. Ses fichiers sont recensés dès son premier enregistrement, mais la route publique ne les sert pas tant que le contenu n’est pas publié (chapitre 5). La page d’un brouillon répond 404 à un visiteur ; pour un administrateur, elle s’affiche avec le badge « Page non publiée », et ses fichiers passent par la route privée :
+Une page a pourtant une raison de demander l’audience `admin` : le **brouillon**. Ses fichiers sont recensés dès son premier enregistrement, mais la route publique ne les sert pas tant que le contenu n’est pas publié (plus loin, chapitre 5). La page d’un brouillon répond 404 à un visiteur ; pour un administrateur, elle s’affiche avec le badge « Page non publiée », et ses fichiers passent par la route privée :
 
 ```tsx
 // apps/web/src/app/(public)/disciplines/[slug]/page.tsx (extrait)
@@ -180,10 +180,10 @@ Un avatar n’est pas un fichier de la bibliothèque : c’est une clé de stock
   fullFileTitle="Voir le fichier complet"
 />
 
-L’URL porte l’identifiant du membre, pas la clé du fichier : si le membre change d’avatar, l’URL ne change pas, et chaque page qui la montre suit. Le logo du site suit le même principe, avec une URL versionnée par la date de modification des réglages (chapitre 7).
+L’URL porte l’identifiant du membre, pas la clé du fichier : si le membre change d’avatar, l’URL ne change pas, et chaque page qui la montre suit. Le logo du site suit le même principe, avec une URL versionnée par la date de modification des réglages (plus loin, chapitre 7).
 
 <Callout type="info">
-La route des avatars sert l’avatar de n’importe quel membre : un avatar est fait pour **représenter** son titulaire, à côté de son nom (un commentaire, l’auteur d’une actualité). Ce qui est interdit, c’est de le **poser** dans un contenu à sa place : un contenu ne montre que l’avatar de son auteur (chapitre 6).
+La route des avatars sert l’avatar de n’importe quel membre : un avatar est fait pour **représenter** son titulaire, à côté de son nom (un commentaire, l’auteur d’une actualité). Ce qui est interdit, c’est de le **poser** dans un contenu à sa place : un contenu ne montre que l’avatar de son auteur (plus loin, chapitre 6).
 </Callout>
 
 ## L’alternance, sans mutation

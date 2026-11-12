@@ -35,7 +35,7 @@ L’inverse — le nouveau code d’abord — fait démarrer un site qui lit des
 L’ordre retenu demande en échange que **l’ancien code supporte le nouveau schéma**, le temps de reconstruire l’image. C’est le cas d’une migration qui **ajoute** (une table, une colonne facultative ou avec une valeur par défaut) : l’ancien code ne la voit pas. Une migration qui **retire** ou **renomme** se fait en deux déploiements : d’abord le code qui ne lit plus l’ancienne colonne, ensuite la migration qui la supprime.
 
 <Callout type="info">
-Une migration ne se défait pas. Prisma n’a pas de « migrate down » : revenir en arrière, c’est écrire une nouvelle migration. C’est une raison de plus de n’écrire que des migrations qui ajoutent, et de relire chacune avant de la commiter (partie « Données »).
+Une migration ne se défait pas. Prisma n’a pas de « migrate down » : revenir en arrière, c’est écrire une nouvelle migration. C’est une raison de plus de n’écrire que des migrations qui ajoutent, et de relire chacune avant de la commiter (partie « Données (2) »).
 </Callout>
 
 ### Lancer la migration
@@ -59,7 +59,7 @@ Le dépôt fournit l’image `migrator` (chapitre 1), dont la seule commande est
 
 Une migration qui échoue arrête la chaîne : le nouveau conteneur ne démarre pas, et le site continue de tourner sur l’ancien. La base, elle, a pu recevoir une partie de la migration — Prisma ne l’enveloppe pas dans une transaction. L’échec est noté dans `_prisma_migrations`, et les déploiements suivants s’arrêtent au même endroit tant qu’il n’a pas été examiné, la base remise d’aplomb, et l’échec résolu (`prisma migrate resolve`). C’est une raison de plus de tester chaque migration sur la base locale, puis dans les tests de bout en bout, qui rejouent toutes les migrations depuis zéro (partie « Qualité (2) »). `restart: "no"` empêche Docker de relancer le migrateur en boucle : il tourne une fois par déploiement.
 
-La sandbox enchaîne déjà ses services ainsi (chapitre 3). Sur le serveur, la migration a longtemps été une étape **à la main** du déploiement, et l’oublier mettait en ligne un code qui attendait une base plus récente que la vraie (partie « Données ») ; elle fait désormais partie du `up`.
+La sandbox enchaîne déjà ses services ainsi (plus loin, chapitre 3). Sur le serveur, la migration a longtemps été une étape **à la main** du déploiement, et l’oublier mettait en ligne un code qui attendait une base plus récente que la vraie (partie « Données (2) ») ; elle fait désormais partie du `up`.
 
 En secours, une migration peut aussi partir du clone, avec la CLI Prisma de ses dépendances. Le fichier d’environnement désigne alors un hôte (le nom du service Postgres) que le serveur lui-même, hors des conteneurs, ne connaît pas : l’adresse de la base se donne le temps de la commande, pointée sur le conteneur Postgres. `dotenv` ne remplace pas une variable déjà présente : celle donnée sur la ligne de commande l’emporte sur le fichier.
 

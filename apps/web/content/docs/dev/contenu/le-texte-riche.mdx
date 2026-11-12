@@ -90,7 +90,7 @@ Trois effets, tous réels avant ce chapitre :
 
 <DocsTable columnsJson='["Ce qui est envoyé", "Ce que le rendu en faisait", "Conséquence"]' rowsJson='[["textAlign avec du CSS à la suite", "L’extension d’alignement écrit style=\"text-align: …\" en recopiant la valeur.", "Le paragraphe recouvre toute la page (position: fixed), avec une image prise ailleurs : un faux écran du club."], ["La couleur d’un surlignage", "Recopiée de la même façon dans un style.", "Le même recouvrement, par un autre attribut."], ["Un lien javascript:", "Le lien est écrit tel quel.", "Un clic exécute du script sur le domaine du club, avec la session du visiteur."], ["Un type de nœud inconnu", "generateHTML lève une exception.", "La page entière tombe en erreur, pas seulement le bloc."]]' />
 
-L’éditeur ne produit aucun de ces documents, et une page n’est écrite que par un administrateur. Mais la présentation d’un instructeur est écrite par un **membre** (chapitre 6), et « l’éditeur ne le produit pas » n’est pas une protection : le serveur reçoit ce qu’on lui envoie, pas ce que l’éditeur aurait envoyé.
+L’éditeur ne produit aucun de ces documents, et une page n’est écrite que par un administrateur. Mais la présentation d’un instructeur est écrite par un **membre** (plus loin, chapitre 6), et « l’éditeur ne le produit pas » n’est pas une protection : le serveur reçoit ce qu’on lui envoie, pas ce que l’éditeur aurait envoyé.
 
 <Callout type="warning">
 Un contenu rendu en HTML brut est une **entrée utilisateur** jusqu’à preuve du contraire. On ne la valide pas en vérifiant qu’elle « a la bonne forme » (un objet), mais en ne gardant que ce qu’on sait rendre sans danger.

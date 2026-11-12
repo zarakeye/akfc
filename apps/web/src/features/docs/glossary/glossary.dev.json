@@ -2122,5 +2122,70 @@
    "vers": "dev/qualite/typecheck-et-lint",
    "section": "Une source extérieure : useSyncExternalStore"
   }
+ },
+ {
+  "id": "cast",
+  "terme": "cast",
+  "variantes": [
+   "cast",
+   "casts"
+  ],
+  "definition": "Une conversion de type écrite à la main (`valeur as Type`) : on demande au compilateur de croire que la valeur a ce type, sans qu’il le vérifie. Acceptable seulement local et justifié.",
+  "definiEn": {
+   "vers": "dev/contenu/le-registre-et-l-editeur",
+   "section": "Parcourir des blocs de types différents"
+  }
+ },
+ {
+  "id": "composant-controle",
+  "terme": "composant contrôlé",
+  "variantes": [
+   "composant contrôlé",
+   "composants contrôlés"
+  ],
+  "definition": "Un composant qui ne garde pas sa valeur : il la reçoit de son parent (`value`) et signale chaque modification (`onChange`), comme un `<input value onChange>`.",
+  "definiEn": {
+   "vers": "dev/contenu/le-registre-et-l-editeur",
+   "section": "Un éditeur contrôlé"
+  }
+ },
+ {
+  "id": "react-compiler",
+  "terme": "React Compiler",
+  "variantes": [
+   "React Compiler"
+  ],
+  "definition": "L’outil qui réécrit les composants React à la construction pour éviter les calculs et rendus inutiles, à condition qu’ils respectent les règles de React.",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Les règles du React Compiler"
+  }
+ },
+ {
+  "id": "memoiser",
+  "terme": "mémoïser",
+  "variantes": [
+   "mémoïser",
+   "mémoïse",
+   "mémoïsation",
+   "mémoïsations"
+  ],
+  "definition": "Garder le résultat d’un calcul et le réutiliser tant que ses entrées n’ont pas changé, au lieu de le refaire.",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Les règles du React Compiler"
+  }
+ },
+ {
+  "id": "never",
+  "terme": "never",
+  "variantes": [
+   "type never"
+  ],
+  "definition": "Le type TypeScript qui n’a aucune valeur. Dans un `switch` exhaustif, la branche `default` reçoit `never` quand tous les cas sont traités ; un cas oublié y arrive avec son type, et la compilation échoue.",
+  "definiEn": {
+   "vers": "dev/contenu/le-recensement-des-fichiers",
+   "section": "Extraire, sans en oublier"
+  }
  }
 ]

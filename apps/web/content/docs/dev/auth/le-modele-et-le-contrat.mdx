@@ -240,7 +240,7 @@ Supprimer une trace, c’est une migration, donc une décision : vérifier d’a
   snippetTitle="Être administrateur, en une ligne au plus"
   fullFileTitle="Voir le fichier complet"
 />
- Les droits plus fins — l’accès à l’espace d’un groupe — se calculent à la demande, quand une procédure en a besoin (chapitre 9).
+ Les droits plus fins — l’accès à l’espace d’un groupe — se calculent à la demande, quand une procédure en a besoin (plus loin, chapitre 9).
 
 C’est cette chaîne qui rend possible l’écriture, dans n’importe quelle procédure, de :
 
@@ -297,12 +297,12 @@ Le projet définit cette frontière dans `packages/contracts`, partagé entre fr
 ---
 
 <Callout type="tip">
-`SessionClient` est un contrat : il décrit ce que le système promet d’exposer au navigateur, et rien de plus. La projection qui le remplit (chapitre 4) ne peut rien y ajouter que le contrat ne prévoie : TypeScript refuserait.
+`SessionClient` est un contrat : il décrit ce que le système promet d’exposer au navigateur, et rien de plus. La projection qui le remplit (plus loin, chapitre 4) ne peut rien y ajouter que le contrat ne prévoie : TypeScript refuserait.
 </Callout>
 
 ---
 
-Cette définition gouverne tout ce qui suit. Quand nous lirons `getSessionFromRequest` (chapitre 4), la construction du `SessionClient` sera vérifiée par TypeScript contre ce contrat.
+Cette définition gouverne tout ce qui suit. Quand nous lirons `getSessionFromRequest` (plus loin, chapitre 4), la construction du `SessionClient` sera vérifiée par TypeScript contre ce contrat.
 
 Si demain quelqu’un ajoute un champ sensible à `User` dans Prisma, ce champ ne sortira pas tant qu’il n’aura pas été explicitement ajouté au contrat **et** à la sélection qui lit la session. C’est une protection passive, qui ne demande aucune vigilance répétée, parce qu’elle est portée par les types.
 

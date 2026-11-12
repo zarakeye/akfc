@@ -53,7 +53,7 @@ Qui l’appelle ? `createTRPCContext`, exactement comme nous l’avons vu dans l
 
 À partir de là, **toutes les procédures** du backend ont accès à `ctx.sessionClient`. Une procédure publique reçoit `null` si personne n’est connecté. Une procédure protégée bénéficie du contexte resserré, et lit `ctx.sessionClient.user.id` sans vérification.
 
-tRPC n’est pas le seul client de `getSessionFromRequest`. Les pages rendues par le serveur l’appellent aussi, sans requête à lui passer : la fonction lit alors le cookie avec `cookies()` de Next. C’est le cas du layout racine (chapitre 8), du layout qui garde le tableau de bord, et des pages éditoriales encore en construction (chapitre 9).
+tRPC n’est pas le seul client de `getSessionFromRequest`. Les pages rendues par le serveur l’appellent aussi, sans requête à lui passer : la fonction lit alors le cookie avec `cookies()` de Next. C’est le cas du layout racine (plus loin, chapitre 8), du layout qui garde le tableau de bord, et des pages éditoriales encore en construction (plus loin, chapitre 9).
 
 C’est ce que nous avons construit dans la partie « API », mais maintenant nous savons précisément **d’où vient cette session** et **comment elle est reconstruite**.
 
@@ -128,7 +128,7 @@ Tout cela est **garanti par la chaîne** :
 - `createTRPCContext` a injecté le résultat dans `ctx.sessionClient` ;
 - `protectedProcedure` a vérifié que `user` est présent, et a resserré le type.
 
-Le proxy, lui, n’est pas dans cette chaîne : il ne s’exécute que devant les pages du tableau de bord et du profil, jamais devant `/api/trpc` (chapitre 8). Une procédure ne doit donc jamais compter sur lui.
+Le proxy, lui, n’est pas dans cette chaîne : il ne s’exécute que devant les pages du tableau de bord et du profil, jamais devant `/api/trpc` (plus loin, chapitre 8). Une procédure ne doit donc jamais compter sur lui.
 
 Quand la procédure écrit `ctx.sessionClient.user.id`, elle s’appuie sur **toute cette chaîne**. Et l’identifiant vient de la session, jamais de l’entrée : un membre ne peut pas enregistrer la présentation de quelqu’un d’autre en envoyant un autre identifiant.
 

@@ -14,7 +14,7 @@ L’intégration continue fait tourner les deux **à chaque push**, sur une mach
 
 ## Le workflow
 
-Un seul fichier, `.github/workflows/ci.yml`. Il se déclenche à chaque push, sur une pull request, et à la main depuis l’onglet **Actions** du dépôt.
+Un seul fichier, `.github/workflows/ci.yml` : un **workflow**, la recette que GitHub Actions, le service d’exécution de GitHub, suit pas à pas sur une machine neuve. Il se déclenche à chaque push, sur une pull request (une demande de fusion d’une branche, qu’on relit avant de l’intégrer à la branche principale), et à la main depuis l’onglet **Actions** du dépôt.
 
 <CodeExample
   language="yaml"
@@ -46,7 +46,7 @@ Les tests de bout en bout parlent à des adresses fixes (`e2e/env.mjs`) : Postgr
   fullFileTitle="Voir le fichier complet"
 />
 
-`--wait` rend la main quand la base et le stockage répondent à leur `healthcheck`, et que Mailpit tourne. Un changement de port ou d’image dans le compose vaut donc aussi pour la CI : il n’y a rien à maintenir en double.
+`--wait` rend la main quand la base et le stockage répondent à leur `healthcheck` (la commande que Docker lance pour savoir si un service est prêt), et que Mailpit tourne. Un changement de port ou d’image dans le compose vaut donc aussi pour la CI : il n’y a rien à maintenir en double.
 
 ### Ce que la machine neuve a trouvé
 

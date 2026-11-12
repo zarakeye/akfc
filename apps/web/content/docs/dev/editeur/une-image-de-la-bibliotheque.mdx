@@ -95,7 +95,7 @@ Dans l’éditeur, le nœud s’affiche par une vue React (`ReactNodeViewRendere
 
 Trois états : en chargement, prête, indisponible. `media.resolveByIds` ne rend une adresse que pour un fichier **validé** : une image encore en attente, ou retirée de la bibliothèque depuis, s’affiche en encadré rouge « Média indisponible », avec son identifiant. L’administrateur le voit dans l’éditeur, avant que la page ne soit publiée sans elle.
 
-Le drapeau `cancelled` règle une course : si l’image est remplacée pendant que la première adresse est encore demandée, la réponse tardive arrive après le démontage de l’effet, et elle est ignorée. Sans lui, l’ancienne image pourrait s’afficher par-dessus la nouvelle.
+Le drapeau `cancelled` règle une *course* (deux réponses qui peuvent arriver dans un ordre imprévu) : si l’image est remplacée pendant que la première adresse est encore demandée, la réponse tardive arrive après le démontage de l’effet, et elle est ignorée. Sans lui, l’ancienne image pourrait s’afficher par-dessus la nouvelle.
 
 ## Une légende hors de ProseMirror
 

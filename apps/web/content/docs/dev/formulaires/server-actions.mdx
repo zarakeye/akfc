@@ -392,7 +392,7 @@ export type FormActionState<T = undefined, F extends string = string> =
   | FormActionError<F>;
 ```
 
-Trois états possibles, que TypeScript distingue par `status` : rien n'a encore été envoyé, l'envoi a réussi, ou il a échoué. En cas d'échec, `fieldErrors` peut associer un message à chaque champ : le formulaire de profil s'en sert pour afficher, sous chaque champ, l'erreur trouvée par le serveur (chapitre 6). Les formulaires plus anciens (catégorie, origine, famille, galerie) utilisent une forme plus simple, `{ success, error }`, comme `SaveCategoryFormState` plus haut.
+Trois états possibles, que TypeScript distingue par `status` : rien n'a encore été envoyé, l'envoi a réussi, ou il a échoué. En cas d'échec, `fieldErrors` peut associer un message à chaque champ : le formulaire de profil s'en sert pour afficher, sous chaque champ, l'erreur trouvée par le serveur (plus loin, chapitre 6). Les formulaires plus anciens (catégorie, origine, famille, galerie) utilisent une forme plus simple, `{ success, error }`, comme `SaveCategoryFormState` plus haut.
 
 Un piège propre aux fichiers `"use server"` : ils ne peuvent exporter **que des fonctions asynchrones**, puisque chaque export devient un point d'accès. Une constante, même un simple état initial, y provoque une erreur au premier envoi. L'état initial du formulaire de profil vit donc dans un fichier de types à part, sans la directive :
 

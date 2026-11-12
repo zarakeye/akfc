@@ -36,7 +36,7 @@ Tous ces textes sont écrits avec le même outil, le **constructeur de pages**, 
 
 <DocsTable columnsJson='["Bloc", "Ce qu’il affiche"]' rowsJson='[["tiptap", "Du texte riche : titres, listes, liens, citations, code, cases à cocher, images de la bibliothèque dans le texte."], ["image-gallery", "Une galerie d’images, en grille, carrousel ou mosaïque, avec légendes."], ["audio-collection", "Une liste de pistes audio."], ["document-list", "Une liste de documents à télécharger."], ["media-text", "Un média (image, vidéo, avatar d’un membre ou logo du site) à côté d’un texte, sur deux colonnes."], ["float-text", "Une petite image que le texte enrobe, comme un portrait dans une présentation."]]' />
 
-Chaque endroit qui accueille un tel contenu est une colonne JSON d’une entité : `SitePage.content`, `Post.content`, `Discipline.description` et `Discipline.summary`, `Course.content`, `Seminar.description`, `program` et `summary`, `Event.content` et `summary`, `User.instructorBio`. La base en garde la liste, parce que chacun doit déclarer les fichiers qu’il affiche (chapitre 5) :
+Chaque endroit qui accueille un tel contenu est une colonne JSON d’une entité : `SitePage.content`, `Post.content`, `Discipline.description` et `Discipline.summary`, `Course.content`, `Seminar.description`, `program` et `summary`, `Event.content` et `summary`, `User.instructorBio`. La base en garde la liste, parce que chacun doit déclarer les fichiers qu’il affiche (plus loin, chapitre 5) :
 
 <CodeExample
   language="prisma"
@@ -111,7 +111,7 @@ Le bloc média-texte montre comment un contrat absorbe son propre passé :
   stepsJson='[{"title": "Deux parties facultatives", "body": "Le texte et le média sont facultatifs. Avec les deux, le bloc s’affiche sur deux colonnes ; avec un seul, centré sur toute la largeur. Un bloc vide est permis : c’est l’état d’un bloc qu’on vient d’ajouter.", "scope": "4-4", "focus": "4-4"}, {"title": "Un ancien tableau devient un média", "body": "Ce bloc acceptait autrefois une LISTE de médias. Un contenu de cette époque est encore en base : `z.preprocess` reçoit la valeur brute avant toute validation et réduit un tableau à son premier élément.", "scope": "13-15", "focus": "15-15"}, {"title": "Un objet sans sorte devient un fichier", "body": "Avant l’arrivée des avatars, un média n’avait pas de `kind`. Un objet sans ce champ est un ancien fichier de bibliothèque : on lui ajoute `kind: \"library\"`, et l’union discriminée qui suit peut le reconnaître.", "scope": "16-24", "focus": "22-22"}, {"title": "Puis la validation ordinaire", "body": "Ce qui sort du preprocess est validé par le schéma d’aujourd’hui. Le passé est traduit à la LECTURE, une fois pour toutes, au lieu d’être traité par chaque composant qui lit un bloc.", "scope": "25-25", "focus": "25-25"}]'
 />
 
-Le côté du média n’est **pas** enregistré dans un bloc média-texte : le rendu alterne, gauche puis droite, d’un bloc média-texte au suivant (chapitre 4). Le bloc texte enrobant, lui, enregistre son côté :
+Le côté du média n’est **pas** enregistré dans un bloc média-texte : le rendu alterne, gauche puis droite, d’un bloc média-texte au suivant (plus loin, chapitre 4). Le bloc texte enrobant, lui, enregistre son côté :
 
 <CodeExample
   language="ts"
@@ -145,7 +145,7 @@ Les six schémas sont réunis en une seule union, discriminée par le champ `typ
 
 Côté TypeScript, l’union donne le **rétrécissement** : dans `if (block.type === "image-gallery")`, le compilateur sait que `block.items` existe. Un `switch` sur `block.type` peut même être vérifié **exhaustif** — le chapitre 5 s’en sert pour qu’aucun bloc n’échappe au recensement des fichiers.
 
-`PageBlockKindV1` est l’union des valeurs de `type` : `"tiptap" | "image-gallery" | …`. Le registre des blocs (chapitre 3) l’utilise pour exiger une définition par type.
+`PageBlockKindV1` est l’union des valeurs de `type` : `"tiptap" | "image-gallery" | …`. Le registre des blocs (plus loin, chapitre 3) l’utilise pour exiger une définition par type.
 
 ## L’enveloppe versionnée
 

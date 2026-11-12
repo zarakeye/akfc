@@ -176,7 +176,7 @@ Le problème concret : `JSON.stringify` ne sait pas encoder tout ce que TypeScri
 
 Ce que fait `superjson` : il sérialise les données en deux parties. D’un côté, les valeurs elles-mêmes, encodées en JSON ordinaire. De l’autre, une petite annotation qui décrit quels types spéciaux existent dans la structure, et où. À la réception, il reconstruit tout fidèlement. Le réseau transporte donc toujours du JSON ; ce qui change, c’est que personne n’a à le décoder à la main, et que rien ne se perd au passage.
 
-Pour que cela marche, les deux extrémités doivent parler la même langue. Le transformateur est déclaré **deux fois** : côté serveur dans `initTRPC` (ligne 56 de `core.ts`, ci-dessus), côté navigateur dans le lien du client (chapitre 10). Si l’un des deux l’oubliait, l’autre recevrait un format qu’il ne sait pas lire.
+Pour que cela marche, les deux extrémités doivent parler la même langue. Le transformateur est déclaré **deux fois** : côté serveur dans `initTRPC` (ligne 56 de `core.ts`, ci-dessus), côté navigateur dans le lien du client (plus loin, chapitre 10). Si l’un des deux l’oubliait, l’autre recevrait un format qu’il ne sait pas lire.
 
 Résultat : quand le backend renvoie une `Date`, le client reçoit une `Date`. Le typage n’est plus une promesse qui se brise au passage du réseau — il est respecté jusqu’à la réception.
 

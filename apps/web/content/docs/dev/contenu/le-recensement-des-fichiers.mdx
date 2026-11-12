@@ -66,7 +66,7 @@ model PageMediaReference {
   mediaAsset   MediaAsset         @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
 ```
 
-Une ligne par fichier et par contenu. `pageType` dit **quelle colonne** (chapitre 1 : `SITE_PAGE`, `POST`, `DISCIPLINE`, `INSTRUCTOR_BIO`…), `pageId` **quelle ligne** — en texte, parce que certains contenus ont un identifiant numérique, d’autres un slug, d’autres un cuid. La relation vers le fichier est en `onDelete: Restrict` : la base refuse de supprimer un fichier encore recensé (partie « Données »).
+Une ligne par fichier et par contenu. `pageType` dit **quelle colonne** (chapitre 1 : `SITE_PAGE`, `POST`, `DISCIPLINE`, `INSTRUCTOR_BIO`…), `pageId` **quelle ligne** — en texte, parce que certains contenus ont un identifiant numérique, d’autres un slug, d’autres un cuid. La relation vers le fichier est en `onDelete: Restrict` : la base refuse de supprimer un fichier encore recensé (partie « Données (1) »).
 
 Une table précalculée n’est utile que si elle est **juste**. Deux conditions : savoir extraire, sans en oublier, les fichiers d’un contenu ; et tenir la table à jour à chaque enregistrement, sans fenêtre où elle ment.
 

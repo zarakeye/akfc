@@ -216,7 +216,7 @@ Le commentaire du `matcher` raconte une erreur instructive. Les pages du tableau
 
 L’ancien `matcher` visait pourtant `"/(admin)/:path*"`. Aucune adresse ne commençant par `/(admin)`, le proxy ne s’exécutait **jamais**. Rien ne le signalait : aucune erreur, aucune page cassée. Un visiteur sans jeton qui ouvrait `/dashboard` n’était pas renvoyé à l’accueil par le proxy — il passait.
 
-Ce qui a évité le pire, c’est que le proxy n’était pas seul : chaque procédure d’administration exige `isAdmin`. Le visiteur voyait au mieux le squelette du tableau de bord, dont aucune donnée ne se chargeait. Depuis, le `matcher` vise les vraies adresses, et un layout serveur garde aussi l’interface du tableau de bord (chapitre 9).
+Ce qui a évité le pire, c’est que le proxy n’était pas seul : chaque procédure d’administration exige `isAdmin`. Le visiteur voyait au mieux le squelette du tableau de bord, dont aucune donnée ne se chargeait. Depuis, le `matcher` vise les vraies adresses, et un layout serveur garde aussi l’interface du tableau de bord (plus loin, chapitre 9).
 
 C’est la meilleure démonstration du principe de la section suivante : la protection qui compte vit **plus bas**, là où elle ne dépend pas d’une configuration qu’on ne voit pas fonctionner.
 
