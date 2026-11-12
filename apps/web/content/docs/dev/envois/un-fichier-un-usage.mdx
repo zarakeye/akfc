@@ -147,9 +147,9 @@ Dans « Mes espaces », un membre éditeur d’un espace voit une barre de dép�
 
 <CodeExample
   language="tsx"
-  filepath="apps/web/src/app/(public)/mes-espaces/[groupId]/page.tsx"
+  filepath="apps/web/src/app/(public)/mes-espaces/page.tsx"
   filename="page.tsx"
-  snippetStart="const onFileChosen = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {"
+  snippetStart="async function onFileChosen(e: ChangeEvent<HTMLInputElement>): Promise<void> {"
   snippetEnd="(fin du bloc)"
   snippetHighlight="9,11,18"
   snippetTitle="Envoyer, puis faire un document du groupe"
@@ -160,8 +160,8 @@ D’abord, le fichier entre dans la bibliothèque par la famille commune, avec l
 
 La destination désigne un groupe, pas un dossier : le fichier arrive à la racine de l’espace, même si le membre regardait un sous-dossier. Le sélecteur ne propose que des PDF ; c’est un choix d’interface, le serveur acceptant dans un espace tous les formats de la bibliothèque.
 
-<Callout type="warning">
-Cette séquence est écrite deux fois : dans la barre de dépôt de `/mes-espaces`, et dans la page d’un espace, `/mes-espaces/[groupId]`, à laquelle aucun lien du site ne mène plus depuis que les espaces s’ouvrent dans le finder. Les deux versions sont identiques aujourd’hui ; elles peuvent diverger demain. Retirer la page, ou partager la fonction, est une piste.
+<Callout type="insight">
+Cette séquence a longtemps été écrite deux fois : dans la barre de dépôt de `/mes-espaces`, et dans une page par espace, `/mes-espaces/[groupId]`, à laquelle plus aucun lien ne menait depuis que les espaces s’ouvrent dans le finder. La page a été retirée. Une copie que plus rien n’affiche n’est relue par personne : le jour où l’original change, elle diverge en silence, et un lien ancien ou un favori y mène encore.
 </Callout>
 
 ## Récapitulatif
