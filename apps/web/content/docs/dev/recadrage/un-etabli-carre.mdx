@@ -10,10 +10,10 @@ import DocsTable from "@/features/docs/ui/DocsTable"
 
 > **Précédemment.** Trois formulaires d’envoi proposent de recadrer une image avant de l’envoyer : la bibliothèque, le dépôt des membres et l’avatar. Le chapitre « Un fichier, un usage » s’est arrêté à la porte du recadrage, avec sa recette.
 
-Recadrer, c’est répondre à trois questions : quelle partie de l’image garder, à quel zoom, sous quel angle. Il existe d’excellentes bibliothèques pour cela, et le projet en a installé une (Cropper.js 2, et son adaptateur React). Elles ne servent plus : le composant `Cropper` du site (le « cropper », dans la suite) est écrit à la main, en un peu moins de quatre cents lignes. Cette partie le démonte en deux chapitres : ici, comment on voit et règle un recadrage ; ensuite, comment on en sort un fichier juste.
+Recadrer, c’est répondre à trois questions : quelle partie de l’image garder, à quel zoom, sous quel angle. Il existe d’excellentes bibliothèques pour cela, et le projet en avait installé une (Cropper.js 2, et son adaptateur React), avant de s’en passer : le composant `Cropper` du site (le « cropper », dans la suite) est écrit à la main, en un peu moins de quatre cents lignes. Cette partie le démonte en deux chapitres : ici, comment on voit et règle un recadrage ; ensuite, comment on en sort un fichier juste.
 
-<Callout type="warning">
-Les dépendances `cropperjs`, `@cropper/elements` et `react-cropper`, déclarées à la racine du dépôt, ne sont importées nulle part ; le fichier `cropper-elements.d.ts` déclare des balises que rien n’utilise. Ce sont des vestiges d’un premier essai. Les retirer allège l’installation ; c’est une décision à part, qui touche au fichier de verrouillage.
+<Callout type="insight">
+Les dépendances de ce premier essai (`cropperjs`, `@cropper/elements`, `react-cropper`) sont restées déclarées longtemps après qu’aucun fichier ne les importait plus, avec `cropper-elements.d.ts`, qui déclarait leurs balises pour TypeScript. Elles ont été retirées, et le fichier de verrouillage avec elles. Une dépendance inutilisée n’est pas gratuite : elle s’installe sur chaque machine et dans chaque image Docker, se met à jour, et déclenche des alertes de sécurité pour du code que rien n’exécute. Avant de la retirer, on vérifie qu’aucun fichier ne l’importe : une recherche du nom du paquet dans le dépôt, puis `pnpm check`.
 </Callout>
 
 ## Quatre fichiers 🖼️
