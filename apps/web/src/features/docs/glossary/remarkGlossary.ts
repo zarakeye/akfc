@@ -12,7 +12,7 @@ interface MdNode {
 
 /** Là où un terme n'est jamais lié : titres, liens, code, et composants qui affichent du code. */
 const SKIP_TYPES = new Set(["heading", "link", "linkReference", "code", "inlineCode", "mdxjsEsm", "mdxFlowExpression", "mdxTextExpression"])
-const SKIP_JSX = new Set(["Terme", "a", "Link", "CodeSnippet", "CodeExample", "CodeWalkthrough", "CodeSnippetWalkthrough", "DocsTable"])
+const SKIP_JSX = new Set(["Terme", "GlossaireCartes", "a", "Link", "CodeSnippet", "CodeExample", "CodeWalkthrough", "CodeSnippetWalkthrough", "DocsTable"])
 
 /** Le texte d'un titre tel qu'il est écrit dans le fichier (le code entre accents graves). */
 function headingText(node: MdNode): string {
@@ -90,6 +90,16 @@ export function collectGlossary(tree: MdNode, slug: string[], transform: boolean
     if (child.type === "heading" && (child.depth === 2 || child.depth === 3)) section = headingText(child).trim()
     // Une enveloppe autour de chaque bloc : le bloc lui-même est conservé, seuls ses enfants changent.
     visit({ type: "wrapper", children: [child] })
+  }
+  if (transform && occurrences.length > 0 && tree.children) {
+    // Les cartes de la page : une par terme présent, préparées une fois, en fin de chapitre.
+    const ids = [...new Set(occurrences.map((o) => o.id))].join(",")
+    tree.children.push({
+      type: "mdxJsxFlowElement",
+      name: "GlossaireCartes",
+      attributes: [{ type: "mdxJsxAttribute", name: "ids", value: ids }],
+      children: [],
+    })
   }
   return occurrences
 }

@@ -6,6 +6,7 @@ import { Callout } from "@features/docs/ui/Callout"
 import { Promesse } from "@features/docs/ui/Promesse"
 import { Terme } from "@features/docs/glossary/Terme"
 import { Glossaire } from "@features/docs/glossary/Glossaire"
+import { GlossaireCartes } from "@features/docs/glossary/GlossaireCartes"
 import { CodeBlock } from "@features/docs/ui/CodeBlock"
 import CodeSnippet from "@features/docs/ui/CodeSnippet"
 import CodeSnippetWalkthrough from "@features/docs/ui/CodeSnippetWalkthrough"
@@ -69,6 +70,7 @@ export const mdxComponents: MDXComponents = {
   Promesse,
   Terme,
   Glossaire,
+  GlossaireCartes,
   CodeBlock,
   CodeExample,
   CodeWalkthrough,
