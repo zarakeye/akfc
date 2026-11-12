@@ -105,7 +105,11 @@ Au-delà de la profondeur chargée, un dossier a `children: undefined` (« pas e
 />
 
 <Callout type="warning">
-Cette règle a une conséquence que le projet a payée : un nœud fabriqué à la main, sans `children`, reste « en train de se matérialiser » pour toujours, car aucun palier ne le chargera. Le chapitre « Trois finders en un » raconte comment l’imbrication des espaces de groupe a fait tourner un indicateur sans fin, et la règle qui en est sortie : **ne jamais fabriquer de nœud d’arbre ; réarranger les nœuds réels**.
+Cette règle a une conséquence que le projet a payée : un nœud fabriqué à la main, sans `children`, reste « en train de se matérialiser » pour toujours, car aucun palier ne le chargera.
+
+<Promesse vers="dev/finder/trois-finders-en-un" section="Deux bugs, deux règles">
+C’est arrivé : l’imbrication des espaces de groupe a fait tourner un indicateur sans fin. La règle qui en est sortie : **ne jamais fabriquer de nœud d’arbre ; réarranger les nœuds réels**.
+</Promesse>
 </Callout>
 
 ## La grille, en trois vues

@@ -161,7 +161,7 @@ La première version de cette imbrication **fabriquait** des nœuds : pour chaqu
 **Règle 1.** Dans ce finder, on ne fabrique jamais un nœud d’arbre. On réarrange les nœuds réels, déjà peuplés par le chargement en profondeur.
 </Callout>
 
-Le second bug est venu d’un administrateur qui ouvrait « Mes espaces ». Dans la grille, chaque sous-espace apparaissait **deux fois**, avec un avertissement de React sur deux enfants de même clé. Deux mécanismes imbriquaient les mêmes espaces : l’adaptateur des membres, et la transformation de la grille, active pour un administrateur (pour un membre, `groupSpaceHierarchy` est vide : le bug ne se voyait pas). La transformation se retire désormais quand le finder est en lecture seule :
+Le second bug est venu d’un administrateur qui ouvrait « Mes espaces ». Dans la grille, chaque sous-espace apparaissait **deux fois**, avec un avertissement de React sur deux enfants de même clé (la `key`, qui permet à React de reconnaître chaque élément d’une liste d’un rendu à l’autre). Deux mécanismes imbriquaient les mêmes espaces : l’adaptateur des membres, et la transformation de la grille, active pour un administrateur (pour un membre, `groupSpaceHierarchy` est vide : le bug ne se voyait pas). La transformation se retire désormais quand le finder est en lecture seule :
 
 <CodeExample
   language="tsx"

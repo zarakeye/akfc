@@ -101,7 +101,7 @@ Un dossier de 200 photos coûte **deux** requêtes, pas 400. La version naïve �
 
 ## Les libellés des dossiers
 
-Les dossiers suivent le même découplage que les fichiers : la clé ne change jamais, et `FolderLabel` donne un nom d’affichage. Le fil d’Ariane et l’arbre lisent ces libellés en une seule requête (`storage.folderLabels`), et « Renommer » une racine de contenu modifie son libellé, pas son chemin (`storage.setFolderLabel`, garde d’écriture comprise : un libellé change ce que **tout le monde** voit).
+Les dossiers suivent le même découplage que les fichiers : la clé ne change jamais, et `FolderLabel` donne un nom d’affichage. Le fil d’Ariane (la ligne de liens qui montre le chemin du dossier courant, de la racine jusqu’à lui) et l’arbre lisent ces libellés en une seule requête (`storage.folderLabels`), et « Renommer » une racine de contenu modifie son libellé, pas son chemin (`storage.setFolderLabel`, garde d’écriture comprise : un libellé change ce que **tout le monde** voit).
 
 <Callout type="tip">
 Partout dans le Finder, deux notions cohabitent : l’**identité** d’un nœud (sa clé, stable, qui sert aux opérations et aux jointures) et son **nom affiché** (nom d’origine, `displayName`, `FolderLabel`). Une opération ne reconstruit jamais un chemin à partir d’un nom affiché.
@@ -139,11 +139,11 @@ La recherche (`media.searchRecursive`) parcourt le dossier courant et tous ses s
 
 La première version lisait « les 1 000 premières lignes du sous-arbre », puis filtrait. Tout fichier correspondant au-delà de ces 1 000 était **introuvable**, sans que rien ne le signale. La lecture se fait maintenant par **paquets** triés par chemin, avec un curseur (`cursor` + `skip: 1` reprend juste après la dernière ligne lue), jusqu’à épuisement du sous-arbre ou à une borne de 10 000 lignes — auquel cas le résultat est marqué **tronqué**, et l’interface le dit.
 
-Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière (un motif de recherche dans du texte, comme `^photo-\d+`) réservée aux administrateurs (une expression mal construite peut bloquer le serveur, chapitre 4 et fiche 1.8).
+Deux gardes précèdent la lecture : le droit de lire le dossier de départ, et l’expression régulière (un motif de recherche dans du texte, comme `^photo-\d+`) réservée aux administrateurs. L’expression est exécutée sur le serveur, et certaines, mal construites, comme `(a+)+$`, obligent le moteur à essayer un nombre de combinaisons qui double à chaque caractère : une seule recherche peut alors occuper le serveur de longues secondes.
 
 ## Côté navigateur : un cache par dossier
 
-Le composant garde son état dans un store Zustand (`useFinderStore`) : dossier courant, contenu, sélection, tri, mode d’affichage. Le hook `useFinderData` charge le contenu du dossier courant et le range dans un **cache par chemin** :
+Le composant garde son état dans un store Zustand (`useFinderStore`) — Zustand est la petite bibliothèque d’état partagé du projet, à côté de React Query qui, lui, garde les réponses du serveur : dossier courant, contenu, sélection, tri, mode d’affichage. Le hook `useFinderData` charge le contenu du dossier courant et le range dans un **cache par chemin** :
 
 <CodeExample
   language="ts"

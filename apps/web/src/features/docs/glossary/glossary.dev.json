@@ -2044,5 +2044,83 @@
    "vers": "dev/stockage/servir-un-fichier",
    "section": "Les déclinaisons"
   }
+ },
+ {
+  "id": "upsert",
+  "terme": "upsert",
+  "variantes": [
+   "upsert",
+   "upserts"
+  ],
+  "definition": "Une seule requête qui crée une ligne si elle n’existe pas, et la met à jour sinon ; elle s’appuie sur un champ unique pour savoir si la ligne existe.",
+  "definiEn": {
+   "vers": "dev/donnees/lire-le-schema",
+   "section": "2.5 — Les modèles : là où le système prend forme"
+  }
+ },
+ {
+  "id": "n-plus-1",
+  "terme": "N + 1",
+  "variantes": [
+   "N + 1",
+   "N+1"
+  ],
+  "definition": "Le piège d’une requête pour la liste, puis d’une requête par élément : invisible sur trois lignes de test, il rend lente une page de deux cents éléments. On le corrige en lisant tous les éléments en une requête.",
+  "definiEn": {
+   "vers": "dev/stockage/lire-l-arbre",
+   "section": "Ce que la base sait des fichiers"
+  }
+ },
+ {
+  "id": "fil-d-ariane",
+  "terme": "fil d’Ariane",
+  "variantes": [
+   "fil d’Ariane",
+   "fils d’Ariane"
+  ],
+  "definition": "La ligne de liens qui montre le chemin de l’élément courant, de la racine jusqu’à lui, et permet d’y remonter d’un clic.",
+  "definiEn": {
+   "vers": "dev/stockage/lire-l-arbre",
+   "section": "Les libellés des dossiers"
+  }
+ },
+ {
+  "id": "expression-reguliere",
+  "terme": "expression régulière",
+  "variantes": [
+   "expression régulière",
+   "expressions régulières",
+   "regex"
+  ],
+  "definition": "Un motif de recherche dans du texte, comme `^photo-\\d+` (« commence par photo- suivi de chiffres »). Exécutée sur le serveur, une expression mal construite peut l’occuper longtemps.",
+  "definiEn": {
+   "vers": "dev/stockage/lire-l-arbre",
+   "section": "Chercher dans un sous-arbre"
+  }
+ },
+ {
+  "id": "props",
+  "terme": "props",
+  "variantes": [
+   "props",
+   "prop"
+  ],
+  "definition": "Les valeurs qu’un composant React reçoit de son parent, comme les arguments d’une fonction ; le composant les lit sans les modifier.",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Les bibliothèques : useWatch plutôt que watch"
+  }
+ },
+ {
+  "id": "localstorage",
+  "terme": "localStorage",
+  "variantes": [
+   "localStorage"
+  ],
+  "definition": "Un petit espace clé-valeur que le navigateur réserve à chaque site et garde d’une visite à l’autre ; le serveur ne le voit pas, et il peut être vide ou refusé (navigation privée).",
+  "definiEn": {
+   "vers": "dev/qualite/typecheck-et-lint",
+   "section": "Une source extérieure : useSyncExternalStore"
+  }
  }
 ]

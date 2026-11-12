@@ -84,7 +84,7 @@ Renommer un **dossier**, en revanche, est un vrai déplacement : sa clé est la 
   snippetStart="rename: protectedProcedure"
   snippetEnd="}),"
   title="storage.rename — refuser d’abord, déplacer ensuite"
-  stepsJson='[{"title": "Le droit d’écrire", "body": "Un administrateur partout, un éditeur dans l’espace de son groupe. Renommer le dossier d’un autre groupe est une écriture comme une autre (fiche 3.11).", "scope": "12-12", "focus": "12-12"}, {"title": "Un nom qui reste un nom", "body": "Ni vide, ni « / » (il créerait un sous-dossier), ni « .. » : un chemin qui en contient un est refusé par toutes les gardes de lecture, et le dossier deviendrait illisible pour tout le monde.", "scope": "15-35", "focus": "30-30"}, {"title": "Les dossiers que le code connaît", "body": "Un dossier-entité (l’espace d’un groupe, d’un membre, un dossier d’avatars) et une racine de contenu (cours, stages…) ont un chemin connu du code : destinations d’envoi, gardes de lecture. Leur « Renommer » édite le libellé (FolderLabel), jamais le chemin.", "scope": "51-71", "focus": "64-64"}, {"title": "L’extension, si c’en est une", "body": "Un point n’est pas forcément un séparateur d’extension : « CNI recto (ep. BAZZE) » en contient un. On ne garde qu’un suffixe qui A LA FORME d’une extension, et jamais pour un dossier.", "scope": "103-106", "focus": "103-104"}, {"title": "Ne rien écraser", "body": "La cible doit être libre partout : chez le stockage, dans MediaAsset, dans Folder. Une seule de ces trois sources ne suffit pas — un dossier vide enregistré n’a aucun objet, un fichier en corbeille n’a plus d’objet mais garde sa ligne.", "scope": "120-130", "focus": "125-125"}, {"title": "Puis déplacer", "body": "Le renommage d’un dossier passe par le même `adapter.move` qu’un déplacement : copie de chaque objet, réécriture du préfixe en base.", "scope": "141-144", "focus": "141-141"}]'
+  stepsJson='[{"title": "Le droit d’écrire", "body": "Un administrateur partout, un éditeur dans l’espace de son groupe. Renommer le dossier d’un autre groupe est une écriture comme une autre (partie « Authentification et droits », chapitre 9).", "scope": "12-12", "focus": "12-12"}, {"title": "Un nom qui reste un nom", "body": "Ni vide, ni « / » (il créerait un sous-dossier), ni « .. » : un chemin qui en contient un est refusé par toutes les gardes de lecture, et le dossier deviendrait illisible pour tout le monde.", "scope": "15-35", "focus": "30-30"}, {"title": "Les dossiers que le code connaît", "body": "Un dossier-entité (l’espace d’un groupe, d’un membre, un dossier d’avatars) et une racine de contenu (cours, stages…) ont un chemin connu du code : destinations d’envoi, gardes de lecture. Leur « Renommer » édite le libellé (FolderLabel), jamais le chemin.", "scope": "51-71", "focus": "64-64"}, {"title": "L’extension, si c’en est une", "body": "Un point n’est pas forcément un séparateur d’extension : « CNI recto (ep. BAZZE) » en contient un. On ne garde qu’un suffixe qui A LA FORME d’une extension, et jamais pour un dossier.", "scope": "103-106", "focus": "103-104"}, {"title": "Ne rien écraser", "body": "La cible doit être libre partout : chez le stockage, dans MediaAsset, dans Folder. Une seule de ces trois sources ne suffit pas — un dossier vide enregistré n’a aucun objet, un fichier en corbeille n’a plus d’objet mais garde sa ligne.", "scope": "120-130", "focus": "125-125"}, {"title": "Puis déplacer", "body": "Le renommage d’un dossier passe par le même `adapter.move` qu’un déplacement : copie de chaque objet, réécriture du préfixe en base.", "scope": "141-144", "focus": "141-141"}]'
 />
 
 ## Déplacer, c’est copier puis supprimer
@@ -133,7 +133,7 @@ La réécriture des lignes est écrite **une fois**, et sert à tous les gestes 
   fullFileTitle="Voir le fichier complet"
 />
 
-Prisma n’offre pas de remplacement de sous-chaîne dans `updateMany` : d’où le SQL brut, **paramétré** — le gabarit étiqueté `$executeRaw` transforme chaque valeur interpolée en paramètre de requête, jamais en texte concaténé (fiche 6.5). Dans un `LIKE`, `_` et `%` sont des jokers : un dossier « cours_2026 » correspondrait aussi à « coursX2026 ». On les échappe ; seul le `%` final reste un joker. Et `SUBSTRING` remplace le début du chemin, sous-chemin préservé.
+Prisma n’offre pas de remplacement de sous-chaîne dans `updateMany` : d’où le SQL brut, **paramétré** — le gabarit étiqueté `$executeRaw` transforme chaque valeur interpolée en paramètre de requête, jamais en texte concaténé (partie « Données (2) »). Dans un `LIKE` (l’opérateur SQL qui compare un texte à un motif), `_` et `%` sont des jokers : un dossier « cours_2026 » correspondrait aussi à « coursX2026 ». On les échappe ; seul le `%` final reste un joker. Et `SUBSTRING` remplace le début du chemin, sous-chemin préservé.
 
 ### La structure se déplace avec ce qu’on déplace
 
@@ -180,9 +180,9 @@ Un geste multiple n’a pas de transaction commune : chaque opération touche le
   fullFileTitle="Voir le fichier complet"
 />
 
-Si l’opération *k* échoue, l’adapter a déjà ramené ses propres objets ; on défait alors les opérations 1 à *k − 1* **en sens inverse**, de la plus récente à la plus ancienne — l’ordre compte, car une opération peut dépendre de la place libérée par la précédente. L’administrateur retrouve la bibliothèque telle qu’avant son geste, et un message qui le dit.
+Si l’opération *k* échoue, `move` a déjà ramené ses propres objets à la source (on l’a vu plus haut) ; on défait alors les opérations 1 à *k − 1* **en sens inverse**, de la plus récente à la plus ancienne — l’ordre compte, car une opération peut dépendre de la place libérée par la précédente. L’administrateur retrouve la bibliothèque telle qu’avant son geste, et un message qui le dit.
 
-Le code d’erreur est `SERVICE_UNAVAILABLE`, pas `INTERNAL_SERVER_ERROR` : c’est le stockage ou la base qui a failli, pas la requête (fiche 5.3) — et le message, qui dit si quelque chose est resté en route, doit arriver jusqu’à l’écran, alors qu’une erreur interne voit le sien remplacé en production.
+Le code d’erreur est `SERVICE_UNAVAILABLE`, pas `INTERNAL_SERVER_ERROR` : c’est le stockage ou la base qui a failli, pas la requête (partie « API », chapitre 8) — et le message, qui dit si quelque chose est resté en route, doit arriver jusqu’à l’écran, alors qu’une erreur interne voit le sien remplacé en production.
 
 <Callout type="warning">
 Ce que la compensation ne couvre pas : un **arrêt du serveur** au milieu d’un geste. Plus personne n’est là pour défaire. C’est la limite de toute compensation applicative ; la lever demanderait un journal des opérations en cours, rejoué au démarrage.
@@ -207,7 +207,7 @@ La corbeille n’est pas un statut : c’est un **rangement**. `trash.trashToBin
 
 Avant la boucle, trois refus, tous **avant** le moindre déplacement — rien n’est jeté si un seul élément est refusé :
 
-- les **dossiers-entités** et les dossiers de **disciplines** ou de **catégories**, qui se suppriment par leur gestionnaire (supprimer un groupe supprime son espace, après vérification qu’il est vide) ;
+- les **dossiers-entités**, ceux qu’une ligne de la base fait exister (l’espace d’un groupe, par exemple), et les dossiers de **disciplines** ou de **catégories** : tous se suppriment par leur gestionnaire (supprimer un groupe supprime son espace, après vérification qu’il est vide) ;
 - les **racines de contenu** (stages, événements, espaces, dépôt commun) ;
 - les **fichiers encore utilisés** :
 
@@ -239,7 +239,7 @@ Une ligne en quarantaine garde son statut. Elle ne doit pourtant plus compter nu
   fullFileTitle="Voir le fichier complet"
 />
 
-La quarantaine n’est modifiable que par le routeur `trash` : le routeur `storage` refuse d’y renommer ou d’y déplacer quoi que ce soit, dans un sens comme dans l’autre (`assertOutsideBin`), et l’arbre ne montre jamais son contenu. Sans ce refus, un glisser-déposer depuis la vue de la corbeille sortirait un fichier de quarantaine sans passer par la restauration : sa `TrashEntry` resterait « dans la corbeille », pointant vers un emplacement vide. La restauration et la suppression définitive revérifient, avant d’agir, que la `storageRoot` d’une entrée est **bien** sous `bin/.trash/` : une ligne `TrashEntry` falsifiée ou corrompue ne doit pas pouvoir faire supprimer un dossier de la bibliothèque. Deux routeurs, deux zones : on ne mélange pas le rangement ordinaire et la quarantaine.
+La quarantaine n’est modifiable que par le routeur `trash` : le routeur `storage` refuse d’y renommer ou d’y déplacer quoi que ce soit, dans un sens comme dans l’autre (`assertOutsideBin`), et l’arbre ne montre jamais son contenu. Sans ce refus, un glisser-déposer depuis la vue de la corbeille sortirait un fichier de quarantaine sans passer par la restauration : sa `TrashEntry` resterait « dans la corbeille », pointant vers un emplacement vide. La restauration et la suppression définitive revérifient, avant d’agir, que la `storageRoot` d’une entrée (l’emplacement de l’élément dans la quarantaine) est **bien** sous `bin/.trash/` : une ligne `TrashEntry` falsifiée ou corrompue ne doit pas pouvoir faire supprimer un dossier de la bibliothèque. Deux routeurs, deux zones : on ne mélange pas le rangement ordinaire et la quarantaine.
 
 ## Restaurer
 
@@ -288,7 +288,7 @@ La suppression définitive (une entrée, ou toute la corbeille) efface les objet
   fullFileTitle="Voir le fichier complet"
 />
 
-Les lignes qui ont suivi leurs objets dans la quarantaine sont effacées directement. Pour les éléments jetés avant ce changement, une ligne restée au chemin d’origine n’est effacée que si **aucun objet** n’existe plus à son chemin : un fichier redéposé au même endroit entre-temps a repris la ligne (un `upsert` sur `fullPath`), et elle lui appartient désormais. La décision se prend en interrogeant le stockage, pas en supposant.
+Les lignes qui ont suivi leurs objets dans la quarantaine sont effacées directement. Pour les éléments jetés avant ce changement, une ligne restée au chemin d’origine n’est effacée que si **aucun objet** n’existe plus à son chemin : un fichier redéposé au même endroit entre-temps a repris la ligne (un `upsert` sur `fullPath` : la ligne de ce chemin a été mise à jour au lieu d’être recréée), et elle lui appartient désormais. La décision se prend en interrogeant le stockage, pas en supposant.
 
 <Callout type="warning">
 Le stockage et la base doivent rester d’accord. Chaque geste du Finder écrit des deux côtés, dans un ordre choisi, après avoir vérifié que rien ne sera écrasé. Une opération qui ne toucherait que l’un des deux laisserait des fichiers sans statut, ou des lignes qui pointent vers rien — et rien, ensuite, ne permettrait de les distinguer des vrais.
