@@ -14,7 +14,7 @@ Une documentation de code a un ennemi : le temps. Le chapitre est écrit un jour
 
 ## Un extrait lu sur le disque 🔎
 
-`CodeExample` ne contient pas de code. Il désigne un fichier du dépôt et un passage de ce fichier ; à chaque visite, le composant serveur lit le fichier, découpe le passage, le colore, et envoie au navigateur l’extrait **et** le fichier complet, que le lecteur peut déplier pour voir l’extrait dans son contexte.
+`CodeExample` ne contient pas de code. Il désigne un fichier du dépôt et un passage de ce fichier ; à chaque visite, le composant serveur lit le fichier, découpe le passage, le colore, et envoie au navigateur l’extrait. Le lecteur peut déplier le fichier complet pour voir l’extrait dans son contexte ; ce fichier-là n’arrive qu’au clic (voir plus bas).
 
 ```mdx
 <CodeExample
@@ -26,6 +26,18 @@ Une documentation de code a un ennemi : le temps. Le chapitre est écrit un jour
 ```
 
 La coloration est faite par **Shiki**, côté serveur, avec les mêmes grammaires que l’éditeur VS Code : le navigateur reçoit du HTML déjà coloré, sans bibliothèque de coloration à charger. Les lignes à surligner (`snippetHighlight`) sont comptées **dans l’extrait** (1 pour sa première ligne) : elles restent justes quand l’extrait se déplace dans le fichier.
+
+## Le fichier complet, à la demande
+
+Au début, le fichier complet partait avec la page, déjà coloré, pour chaque extrait. Le bouton s’ouvrait sans attente ; la page, elle, pesait lourd. Un fichier de huit cents lignes coloré par Shiki fait plusieurs centaines de kilo-octets de HTML, et un chapitre qui le cite dix fois l’envoyait dix fois, puis une seconde fois dans les données que React transmet au navigateur pour reprendre la main sur la page. « Modifier sans casser » pesait 11,5 Mo, et mettait trois secondes à se construire. Presque personne ne déplie un fichier ; tout le monde payait.
+
+Le fichier complet est maintenant demandé au premier clic sur « Voir le fichier complet ». Le navigateur appelle une **server action**, `loadFullCode`, avec le chemin de la page, le fichier et les lignes à encadrer ; il affiche « Chargement du fichier… » le temps de la réponse, puis la garde pour le reste de la visite. Deux extraits d’un même fichier, dans la même page, ne font qu’une requête.
+
+Une server action est un point d’accès public : n’importe qui peut l’appeler, avec n’importe quel chemin. Sans contrôle, elle lirait `.env` aussi volontiers qu’un service. `fullCode.server.ts` refait donc les contrôles de la page : l’espace existe, l’appelant a le droit de le lire (l’espace d’administration reste réservé), la page existe, et **elle cite ce fichier**. Un fichier qu’aucune page ne montre n’est jamais rendu. En production, le HTML produit est gardé en mémoire : le deuxième lecteur qui déplie le même fichier ne refait pas la coloration.
+
+Les lectures guidées gardent le fichier affiché d’emblée : c’est leur principe. Mais elles en envoyaient une copie colorée par étape, alors que d’une étape à l’autre, seules changent les lignes encadrées et éclairées. Le fichier est désormais coloré une fois ; le navigateur pose lui-même, à chaque étape, les classes `snippet-scope-line` et `highlight-line` sur les lignes, repérées par leur numéro (`data-line`). La même page pèse aujourd’hui 3,9 Mo, et ce qui reste est surtout le texte de ces lectures guidées.
+
+**Ce qui est rarement vu se charge quand on le demande.** Et tout ce qu’un navigateur peut demander, le serveur le vérifie comme s’il venait d’un inconnu.
 
 ## Désigner un passage par son texte
 
@@ -104,7 +116,7 @@ Le motif « un fichier généré, versionné, et une garde qui vérifie qu’il 
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où vient le code d’un extrait ?", "Du fichier du dépôt, lu à chaque visite : rien n’est recopié."], ["Comment désigne-t-on le passage ?", "Par une ancre de texte (snippetStart), puis une fin : un nombre de lignes, la fin du bloc, ou une seconde ancre."], ["Et si l’ancre disparaît ?", "La page affiche un avertissement, et check-doc-snippets arrête pnpm check."], ["Où sont comptés les surlignages ?", "Dans l’extrait : ils suivent le passage quand il se déplace."], ["Qui écrit les effets d’un parcours ?", "Le code, relevé par build-procedure-map.mjs ; le chapitre ne cite que l’appel."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["D’où vient le code d’un extrait ?", "Du fichier du dépôt, lu à chaque visite : rien n’est recopié."], ["Comment désigne-t-on le passage ?", "Par une ancre de texte (snippetStart), puis une fin : un nombre de lignes, la fin du bloc, ou une seconde ancre."], ["Et si l’ancre disparaît ?", "La page affiche un avertissement, et check-doc-snippets arrête pnpm check."], ["Où sont comptés les surlignages ?", "Dans l’extrait : ils suivent le passage quand il se déplace."], ["Quand le fichier complet arrive-t-il ?", "Au premier clic, par la server action loadFullCode, qui vérifie que la page est lisible et qu’elle cite le fichier."], ["Qui écrit les effets d’un parcours ?", "Le code, relevé par build-procedure-map.mjs ; le chapitre ne cite que l’appel."]]' />
 
 ## À suivre
 

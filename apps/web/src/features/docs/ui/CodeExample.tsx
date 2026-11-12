@@ -125,14 +125,8 @@ export async function CodeExample({
     startingLineNumber: start ?? 1,
   })
 
-  const fullCodeHtml = await renderCodeBlockHtml({
-    code: source,
-    language,
-    highlightLines: fullCodeHighlightLines,
-    scopeLines: snippetScopeLines,
-    showLineNumbers: true,
-    startingLineNumber: 1,
-  })
+  // Le fichier complet n'est pas rendu ici : la page n'embarque que l'extrait, et le navigateur
+  // demande le fichier au premier clic sur « Voir le fichier complet » (useFullCode).
 
   return (
     <CodeExampleClient
@@ -140,9 +134,9 @@ export async function CodeExample({
       filename={filename}
       filepath={filepath}
       snippet={snippet}
-      fullCode={source}
       snippetHtml={snippetHtml}
-      fullCodeHtml={fullCodeHtml}
+      fullScope={snippetScopeLines}
+      fullHighlight={fullCodeHighlightLines}
       snippetTitle={snippetTitle}
       fullFileTitle={fullFileTitle}
       focusStartLine={start}

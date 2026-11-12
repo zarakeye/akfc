@@ -6,6 +6,7 @@ import { Check, Clipboard } from "lucide-react"
 import FileIcon from "./FileIcon"
 import CodePath from "./CodePath"
 import { CodeBlockFrame } from "./CodeBlockFrame"
+import { useFullCode } from "./useFullCode"
 
 export type FenceSibling = {
   /** Titre de la section où figure l'extrait. */
@@ -23,13 +24,16 @@ interface CodeFenceClientProps {
   note: string | null
   language: string
   snippet: string
-  fullCode: string
   snippetHtml: string
-  fullHtml: string
+  /** Lignes du fichier citées par la page, encadrées dans le fichier complet. */
+  fullScope: number[]
   siblings: FenceSibling[]
   /** Position de CET extrait dans `siblings`. */
   selfIndex: number
 }
+
+/** Aucune ligne surlignée par le serveur : l'extrait actif l'est dans le navigateur. */
+const NO_LINES: number[] = []
 
 function linesLabel(s: FenceSibling): string {
   return s.first === s.last ? `ligne ${s.first}` : `lignes ${s.first}–${s.last}`
@@ -45,9 +49,8 @@ export function CodeFenceClient({
   note,
   language,
   snippet,
-  fullCode,
   snippetHtml,
-  fullHtml,
+  fullScope,
   siblings,
   selfIndex,
 }: CodeFenceClientProps) {
@@ -55,11 +58,13 @@ export function CodeFenceClient({
   const [active, setActive] = useState(selfIndex)
   const [copied, setCopied] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { state: full, load } = useFullCode({ filepath: path, kind: "fence", language, scope: fullScope, highlight: NO_LINES })
+  const fullReady = full.status === "ready" ? full.full : null
 
   // Fichier déplié : surligne l'extrait actif et l'amène au centre de la zone de code.
   useEffect(() => {
     const box = scrollRef.current
-    if (!expanded || !box) return
+    if (!expanded || !box || !fullReady) return
     const wanted = new Set((siblings[active]?.lines ?? []).map(String))
     let first: HTMLElement | null = null
     box.querySelectorAll<HTMLElement>(".line[data-line]").forEach((el) => {
@@ -71,10 +76,10 @@ export function CodeFenceClient({
     if (target) {
       box.scrollTo({ top: Math.max(0, target.offsetTop - box.clientHeight / 3), behavior: "smooth" })
     }
-  }, [expanded, active, siblings])
+  }, [expanded, active, siblings, fullReady])
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(expanded ? fullCode : snippet)
+    await navigator.clipboard.writeText(expanded && fullReady ? fullReady.code : snippet)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
   }
@@ -94,6 +99,7 @@ export function CodeFenceClient({
             <button
               type="button"
               onClick={() => {
+                if (!expanded) load()
                 setExpanded((v) => !v)
                 setActive(selfIndex)
               }}
@@ -150,7 +156,15 @@ export function CodeFenceClient({
         ) : null}
 
         <div ref={scrollRef} className={`relative overflow-auto ${expanded ? "max-h-[70vh]" : ""}`}>
-          <CodeBlockFrame html={expanded ? fullHtml : snippetHtml} />
+          {!expanded ? (
+            <CodeBlockFrame html={snippetHtml} />
+          ) : fullReady ? (
+            <CodeBlockFrame html={fullReady.html} />
+          ) : (
+            <div className="px-4 py-4 text-sm text-white/45" role="status">
+              {full.status === "error" ? "Le fichier complet n’a pas pu être chargé." : "Chargement du fichier…"}
+            </div>
+          )}
         </div>
       </div>
     </div>

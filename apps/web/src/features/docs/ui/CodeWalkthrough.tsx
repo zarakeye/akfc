@@ -133,29 +133,20 @@ export async function CodeWalkthrough({
   }
   const { start, end } = bounds.error ? { start: 1, end: 2 } : bounds
 
-  const htmlByStep = await Promise.all(
-    steps.map(async (step) => {
-      const absoluteScopeLines = toAbsoluteLines(step.scope, start)
-      const absoluteFocusLines = toAbsoluteLines(step.focus, start)
+  // Le fichier est rendu UNE fois, avec les lignes de la première étape. Les autres étapes ne
+  // changent que des classes de lignes : le navigateur les pose lui-même (CodeWalkthroughClient),
+  // au lieu de recevoir une copie complète du fichier par étape.
+  const stepLines = steps.map((step) => ({
+    scope: toAbsoluteLines(step.scope, start),
+    focus: toAbsoluteLines(step.focus, start),
+  }))
+  const first = stepLines[0] ?? { scope: rangeToLines(start, end), focus: [] }
 
-      return renderCodeBlockHtml({
-        code: source,
-        language,
-        scopeLines: absoluteScopeLines,
-        highlightLines: absoluteFocusLines,
-        showLineNumbers: true,
-        startingLineNumber: 1,
-      })
-    })
-  )
-
-  const defaultScopeLines = rangeToLines(start, end)
-
-  const defaultHtml = await renderCodeBlockHtml({
+  const html = await renderCodeBlockHtml({
     code: source,
     language,
-    scopeLines: defaultScopeLines,
-    highlightLines: [],
+    scopeLines: first.scope,
+    highlightLines: first.focus,
     showLineNumbers: true,
     startingLineNumber: 1,
   })
@@ -167,8 +158,8 @@ export async function CodeWalkthrough({
       filepath={filepath}
       code={source}
       title={title}
-      htmlByStep={htmlByStep}
-      defaultHtml={defaultHtml}
+      html={html}
+      stepLines={stepLines}
       steps={steps}
       focusStartLine={start}
       focusEndLine={end}

@@ -58,24 +58,6 @@ function applyLineMap(html: string, lineMap: (number | null)[]): string {
   })
 }
 
-/** Fichier complet surligné une seule fois par page et par fichier. */
-const fullHtmlCache = new WeakMap<FenceIndex, Map<string, Promise<string>>>()
-
-function fullHtmlFor(index: FenceIndex, path: string, language: string): Promise<string> {
-  let perIndex = fullHtmlCache.get(index)
-  if (!perIndex) {
-    perIndex = new Map()
-    fullHtmlCache.set(index, perIndex)
-  }
-  let html = perIndex.get(path)
-  if (!html) {
-    const scope = [...new Set((index.byPath.get(path) ?? []).flatMap((e) => e.location.lines))]
-    html = highlight(index.files.get(path) ?? "", language, { numbers: true, scope })
-    perIndex.set(path, html)
-  }
-  return html
-}
-
 export async function MdxCodeFence({ children, index }: { children?: ReactNode; index?: FenceIndex }) {
   const child = Array.isArray(children) ? children[0] : children
   const language = languageOf(child)
@@ -91,19 +73,18 @@ export async function MdxCodeFence({ children, index }: { children?: ReactNode; 
       first: e.location.first ?? 1,
       last: e.location.last ?? 1,
     }))
-    const [snippetRaw, fullHtml] = await Promise.all([
-      highlight(body, language, { numbers: true }),
-      fullHtmlFor(index, path, language),
-    ])
+    const snippetRaw = await highlight(body, language, { numbers: true })
+    // Le fichier complet n'est pas rendu ici : le navigateur le demande au premier clic (useFullCode).
+    // Les extraits de la page y restent encadrés.
+    const fullScope = [...new Set(siblingsEntries.flatMap((e) => e.location.lines))].sort((a, b) => a - b)
     return (
       <CodeFenceClient
         path={path}
         note={note}
         language={language}
         snippet={body}
-        fullCode={index.files.get(path) ?? ""}
         snippetHtml={applyLineMap(snippetRaw, entry.location.lineMap)}
-        fullHtml={fullHtml}
+        fullScope={fullScope}
         siblings={siblings}
         selfIndex={Math.max(0, siblingsEntries.indexOf(entry))}
       />

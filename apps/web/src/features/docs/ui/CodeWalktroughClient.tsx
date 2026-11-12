@@ -26,8 +26,10 @@ interface CodeWalkthroughClientProps {
   filepath: string
   code: string
   title?: string
-  htmlByStep: string[]
-  defaultHtml: string
+  /** Le fichier complet, rendu une fois avec les lignes de la première étape. */
+  html: string
+  /** Lignes (numéros du fichier) encadrées et surlignées à chaque étape. */
+  stepLines: { scope: number[]; focus: number[] }[]
   steps: WalkthroughStep[]
   focusStartLine?: number
   focusEndLine?: number
@@ -93,8 +95,8 @@ export function CodeWalkthroughClient({
   filepath,
   code,
   title = "Code walkthrough",
-  htmlByStep,
-  defaultHtml,
+  html,
+  stepLines,
   steps,
   focusStartLine,
   focusEndLine,
@@ -107,9 +109,23 @@ export function CodeWalkthroughClient({
   const activeStep = steps[activeIndex]
 
   useEffect(() => {
+    const box = codeScrollRef.current
+    const lines = stepLines[activeIndex]
+    if (box && lines) {
+      // Mêmes classes que celles que le serveur pose (CodeBlock) : seule l'étape change.
+      const scope = new Set(lines.scope.map(String))
+      const focus = new Set(lines.focus.map(String))
+      box.querySelectorAll<HTMLElement>(".line[data-line]").forEach((el) => {
+        const n = el.dataset.line ?? ""
+        el.classList.toggle("snippet-scope-line", scope.has(n))
+        el.classList.toggle("highlight-line", focus.has(n))
+        el.classList.toggle("snippet-focus-line", scope.has(n) && focus.has(n))
+      })
+    }
+
     const target =
-      codeScrollRef.current?.querySelector(".highlight-line") ??
-      codeScrollRef.current?.querySelector(".snippet-scope-line")
+      box?.querySelector(".highlight-line") ??
+      box?.querySelector(".snippet-scope-line")
 
     if (target instanceof HTMLElement) {
       target.scrollIntoView({
@@ -117,7 +133,7 @@ export function CodeWalkthroughClient({
         behavior: "smooth",
       })
     }
-  }, [activeIndex])
+  }, [activeIndex, stepLines])
 
   async function handleCopy() {
     await navigator.clipboard.writeText(code)
@@ -136,8 +152,6 @@ export function CodeWalkthroughClient({
     if (!focusStartLine || !focusEndLine) return null
     return `guided extract: lines ${focusStartLine}-${focusEndLine}`
   }, [focusStartLine, focusEndLine])
-
-  const currentHtml = htmlByStep[activeIndex] ?? defaultHtml
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -241,7 +255,7 @@ export function CodeWalkthroughClient({
                 isExpanded ? "max-h-[85vh]" : "max-h-[70vh]"
               }`}
             >
-              <CodeBlockFrame html={currentHtml} />
+              <CodeBlockFrame html={html} />
             </div>
           </div>
         </div>

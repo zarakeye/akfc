@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Clipboard, Check } from "lucide-react"
 
 import FileIcon from "./FileIcon"
+import { useFullCode } from "./useFullCode"
 import CodePath from "./CodePath"
 import { CodeBlockFrame } from "./CodeBlockFrame"
 
@@ -19,9 +20,11 @@ interface CodeExampleClientProps {
   filename?: string
   filepath: string
   snippet: string
-  fullCode: string
   snippetHtml: string
-  fullCodeHtml: string
+  /** Lignes de l'extrait, encadrées dans le fichier complet. */
+  fullScope: number[]
+  /** Lignes surlignées dans le fichier complet. */
+  fullHighlight: number[]
   snippetTitle?: string
   fullFileTitle?: string
   focusStartLine?: number
@@ -43,9 +46,9 @@ export function CodeExampleClient({
   language = "ts",
   filepath,
   snippet,
-  fullCode,
   snippetHtml,
-  fullCodeHtml,
+  fullScope,
+  fullHighlight,
   snippetTitle = "Focused extract",
   focusStartLine,
   focusEndLine,
@@ -54,11 +57,20 @@ export function CodeExampleClient({
   const [copied, setCopied] = useState(false)
   const codeScrollRef = useRef<HTMLDivElement>(null)
 
-  const displayedCode = expanded ? fullCode : snippet
+  const { state: full, load } = useFullCode({
+    filepath,
+    kind: "example",
+    language,
+    scope: fullScope,
+    highlight: fullHighlight,
+  })
+  const fullReady = full.status === "ready" ? full.full : null
+
+  const displayedCode = expanded && fullReady ? fullReady.code : snippet
   const focusLabel = formatFocusLines(focusStartLine, focusEndLine)
 
   useEffect(() => {
-    if (!expanded) return
+    if (!expanded || !fullReady) return
 
     const target =
       codeScrollRef.current?.querySelector(".highlight-line") ??
@@ -70,7 +82,7 @@ export function CodeExampleClient({
         behavior: "smooth",
       })
     }
-  }, [expanded])
+  }, [expanded, fullReady])
 
   async function handleCopy() {
     await navigator.clipboard.writeText(displayedCode)
@@ -128,7 +140,10 @@ export function CodeExampleClient({
 
             <button
               type="button"
-              onClick={() => setExpanded((value) => !value)}
+              onClick={() => {
+                if (!expanded) load()
+                setExpanded((value) => !value)
+              }}
               className="shrink-0 rounded-md border border-white/10 bg-white/4 px-3 py-1 text-xs text-white/70 transition hover:bg-white/[0.07] hover:text-white"
             >
               {expanded ? "Revenir à l’extrait" : "Voir le fichier complet"}
@@ -142,7 +157,13 @@ export function CodeExampleClient({
 
         <div ref={codeScrollRef} className="max-h-[70vh] overflow-auto">
           {expanded ? (
-            <CodeBlockFrame html={fullCodeHtml} />
+            fullReady ? (
+              <CodeBlockFrame html={fullReady.html} />
+            ) : (
+              <div className="px-4 py-4 text-sm text-white/45" role="status">
+                {full.status === "error" ? "Le fichier complet n’a pas pu être chargé." : "Chargement du fichier…"}
+              </div>
+            )
           ) : (
             <CodeBlockFrame html={snippetHtml} />
           )}

@@ -119,30 +119,17 @@ export async function CodeSnippetWalkthrough({
     return <div className="text-red-500">CodeSnippetWalkthrough: empty steps</div>
   }
 
-  const htmlByStep = await Promise.all(
-    steps.map(async (step) => {
-      const absoluteScopeLines = toAbsoluteLines(step.scope, startingLineNumber)
-      const absoluteFocusLines =
-        step.focus?.trim()
-          ? toAbsoluteLines(step.focus, startingLineNumber)
-          : absoluteScopeLines
+  // Rendu une fois, avec les lignes de la première étape ; le navigateur pose celles des autres.
+  const stepLines = steps.map((step) => {
+    const scope = toAbsoluteLines(step.scope, startingLineNumber)
+    return { scope, focus: step.focus?.trim() ? toAbsoluteLines(step.focus, startingLineNumber) : scope }
+  })
 
-      return renderCodeBlockHtml({
-        code,
-        language,
-        scopeLines: absoluteScopeLines,
-        highlightLines: absoluteFocusLines,
-        showLineNumbers: true,
-        startingLineNumber,
-      })
-    })
-  )
-
-  const defaultHtml = await renderCodeBlockHtml({
+  const html = await renderCodeBlockHtml({
     code,
     language,
-    scopeLines: [],
-    highlightLines: [],
+    scopeLines: stepLines[0].scope,
+    highlightLines: stepLines[0].focus,
     showLineNumbers: true,
     startingLineNumber,
   })
@@ -154,8 +141,8 @@ export async function CodeSnippetWalkthrough({
       filepath={getKindLabel(kind)}
       code={code}
       title={title}
-      htmlByStep={htmlByStep}
-      defaultHtml={defaultHtml}
+      html={html}
+      stepLines={stepLines}
       steps={steps}
       focusStartLine={startingLineNumber}
       focusEndLine={getLastLineNumber(code, startingLineNumber)}

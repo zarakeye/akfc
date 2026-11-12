@@ -29813,6 +29813,64 @@
    ],
    "emails": []
   },
+  "loadFullCode": {
+   "kind": "server action",
+   "file": "apps/web/src/features/docs/lib/fullCode.action.ts",
+   "line": 22,
+   "effects": [
+    {
+     "model": "Session",
+     "op": "delete",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadFullCodeFor",
+        "apps/web/src/features/docs/lib/fullCode.server.ts:84"
+       ],
+       [
+        "citedSource",
+        "apps/web/src/features/docs/lib/fullCode.server.ts:54"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.deleteMany",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:98"
+       ]
+      ]
+     ]
+    },
+    {
+     "model": "Session",
+     "op": "read",
+     "fields": [],
+     "trails": [
+      [
+       [
+        "loadFullCodeFor",
+        "apps/web/src/features/docs/lib/fullCode.server.ts:84"
+       ],
+       [
+        "citedSource",
+        "apps/web/src/features/docs/lib/fullCode.server.ts:54"
+       ],
+       [
+        "getSessionFromRequest",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:86"
+       ],
+       [
+        "prisma.session.findUnique",
+        "packages/backend/src/modules/auth/getSessionFromRequest.ts:90"
+       ]
+      ]
+     ]
+    }
+   ],
+   "emails": []
+  },
   "page /dashboard/categories/[id]/edit": {
    "kind": "page",
    "file": "apps/web/src/app/(admin)/dashboard/categories/[id]/edit/page.tsx",
