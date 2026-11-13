@@ -2,6 +2,7 @@ import remarkMdx from "remark-mdx"
 import remarkParse from "remark-parse"
 import { unified } from "unified"
 
+import type { GlossarySpace } from "@features/docs/glossary/glossary"
 import { collectGlossary } from "@features/docs/glossary/remarkGlossary"
 import { generateDocsIndex } from "@features/docs/lib/docs.index"
 import { getDocSource } from "@features/docs/lib/docs.source"
@@ -17,7 +18,7 @@ export interface Citation {
   count: number
 }
 
-let memo: Map<string, Citation[]> | null = null
+const memo = new Map<GlossarySpace, Map<string, Citation[]>>()
 
 /**
  * Pour chaque terme, les pages qui le citent, dans l'ordre de lecture.
@@ -26,11 +27,12 @@ let memo: Map<string, Citation[]> | null = null
  * (`collectGlossary`) : l'ancre citée ici est celle que porte la page. Calculé une fois par processus
  * en production ; à chaque visite en développement, pour suivre les modifications.
  */
-export function getGlossaryCitations(): Map<string, Citation[]> {
-  if (memo && process.env.NODE_ENV === "production") return memo
+export function getGlossaryCitations(space: GlossarySpace): Map<string, Citation[]> {
+  const known = memo.get(space)
+  if (known && process.env.NODE_ENV === "production") return known
   const byTerm = new Map<string, Citation[]>()
   const parser = unified().use(remarkParse).use(remarkMdx)
-  for (const group of generateDocsIndex("dev").navigation) {
+  for (const group of generateDocsIndex(space).navigation) {
     for (const page of group.items) {
       const { source } = getDocSource(page.slug)
       let occurrences
@@ -52,6 +54,6 @@ export function getGlossaryCitations(): Map<string, Citation[]> {
       }
     }
   }
-  memo = byTerm
+  memo.set(space, byTerm)
   return byTerm
 }

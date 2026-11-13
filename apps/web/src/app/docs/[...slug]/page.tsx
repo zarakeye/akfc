@@ -94,8 +94,8 @@ export default async function Page({ params }: PageProps) {
     },
     options: {
       parseFrontmatter: false,
-      // Doc développeur : chaque terme du glossaire devient un <Terme>, et la page reçoit ses cartes.
-      mdxOptions: space.id === "dev" ? { remarkPlugins: [[remarkGlossary, { slug }]] } : undefined,
+      // Chaque espace a son glossaire : ses termes deviennent des <Terme>, et la page reçoit ses cartes.
+      mdxOptions: { remarkPlugins: [[remarkGlossary, { slug }]] },
     },
   })
 

@@ -1,4 +1,4 @@
-import { GLOSSARY_PAGE, findTerms, glossaryEntry } from "@features/docs/glossary/glossary"
+import { glossaryOfPage } from "@features/docs/glossary/glossary"
 
 /** Le strict nécessaire de l'arbre mdast (et de ses nœuds MDX) pour ce parcours. */
 interface MdNode {
@@ -36,11 +36,15 @@ export interface GlossaryOccurrence {
  *
  * Un terme n'est pas lié dans la section qui le définit (ou dans l'introduction du chapitre, quand
  * c'est elle qui le définit) : il y est déjà expliqué.
+ *
+ * Le glossaire est celui de l'espace de la page (`glossaryOfPage`). Dans le Guide et l'Admin
+ * (`firstOnly`), seule la première occurrence d'un terme est liée sur une page.
  */
 export function collectGlossary(tree: MdNode, slug: string[], transform: boolean): GlossaryOccurrence[] {
   const page = slug.join("/")
   const occurrences: GlossaryOccurrence[] = []
-  if (page === GLOSSARY_PAGE) return occurrences
+  const glossary = glossaryOfPage(slug)
+  if (!glossary || page === glossary.page) return occurrences
   const counters = new Map<string, number>()
   let section: string | null = null
 
@@ -59,10 +63,11 @@ export function collectGlossary(tree: MdNode, slug: string[], transform: boolean
       }
       const text = child.value ?? ""
       let cursor = 0
-      for (const match of findTerms(text)) {
-        const entry = glossaryEntry(match.id)
+      for (const match of glossary.findTerms(text)) {
+        const entry = glossary.entry(match.id)
         if (!entry) continue
         if (entry.definiEn.vers === page && (entry.definiEn.section ?? null) === section) continue
+        if (glossary.firstOnly && counters.has(match.id)) continue
         const n = (counters.get(match.id) ?? 0) + 1
         counters.set(match.id, n)
         const anchor = `t-${match.id}-${n}`
@@ -75,6 +80,7 @@ export function collectGlossary(tree: MdNode, slug: string[], transform: boolean
           attributes: [
             { type: "mdxJsxAttribute", name: "id", value: match.id },
             { type: "mdxJsxAttribute", name: "anchor", value: anchor },
+            { type: "mdxJsxAttribute", name: "space", value: glossary.space },
           ],
           children: [{ type: "text", value: text.slice(match.start, match.end) }],
         })
@@ -97,7 +103,10 @@ export function collectGlossary(tree: MdNode, slug: string[], transform: boolean
     tree.children.push({
       type: "mdxJsxFlowElement",
       name: "GlossaireCartes",
-      attributes: [{ type: "mdxJsxAttribute", name: "ids", value: ids }],
+      attributes: [
+        { type: "mdxJsxAttribute", name: "ids", value: ids },
+        { type: "mdxJsxAttribute", name: "space", value: glossary.space },
+      ],
       children: [],
     })
   }

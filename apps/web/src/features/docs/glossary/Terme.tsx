@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { glossaryEntry, glossaryHref } from "@features/docs/glossary/glossary"
+import { GLOSSARIES, type GlossarySpace } from "@features/docs/glossary/glossary"
 
 /**
  * Un terme du glossaire dans le texte d'un chapitre. Inséré par `remarkGlossary`, jamais écrit à la
@@ -9,12 +9,24 @@ import { glossaryEntry, glossaryHref } from "@features/docs/glossary/glossary"
  * termes à leur attribut `data-glossaire`. Une page peut citer plus de cent termes : une carte par
  * occurrence, c'était autant de composants à hydrater et de définitions recopiées.
  */
-export function Terme({ id, anchor, children }: { id: string; anchor: string; children: ReactNode }) {
-  if (!glossaryEntry(id)) return <>{children}</>
+export function Terme({
+  id,
+  anchor,
+  space = "dev",
+  children,
+}: {
+  id: string
+  anchor: string
+  /** L'espace du glossaire : un même identifiant peut exister dans le Guide et dans l'Admin. */
+  space?: GlossarySpace
+  children: ReactNode
+}) {
+  const glossary = GLOSSARIES[space]
+  if (!glossary.entry(id)) return <>{children}</>
   return (
     <a
       id={anchor}
-      href={glossaryHref(id)}
+      href={glossary.href(id)}
       data-glossaire={id}
       className="scroll-mt-24 rounded-sm text-inherit underline decoration-muted-foreground/60 decoration-dotted decoration-1 underline-offset-[3px] hover:decoration-foreground target:bg-amber-100 dark:target:bg-amber-900/40"
     >

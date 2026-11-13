@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import { GLOSSARY } from "@features/docs/glossary/glossary"
+import { GLOSSARIES, type GlossarySpace } from "@features/docs/glossary/glossary"
 import { getGlossaryCitations } from "@features/docs/glossary/glossaryCitations"
 import { docTarget } from "@features/docs/glossary/glossaryLinks"
 import { InlineMd } from "@features/docs/glossary/InlineMd"
@@ -13,9 +13,9 @@ const initial = (terme: string) =>
  * La page du glossaire : les termes par ordre alphabétique, chacun avec sa définition courte, le
  * chapitre qui le définit (et celui qui l'approfondit), et l'index des pages qui le citent.
  */
-export function Glossaire() {
-  const entries = [...GLOSSARY].sort((a, b) => a.terme.localeCompare(b.terme, "fr", { sensitivity: "base" }))
-  const citations = getGlossaryCitations()
+export function Glossaire({ space = "dev" }: { space?: GlossarySpace }) {
+  const entries = [...GLOSSARIES[space].entries].sort((a, b) => a.terme.localeCompare(b.terme, "fr", { sensitivity: "base" }))
+  const citations = getGlossaryCitations(space)
   const letters = [...new Set(entries.map((e) => initial(e.terme)))]
 
   return (

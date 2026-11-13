@@ -1,6 +1,8 @@
-import data from "@features/docs/glossary/glossary.dev.json"
+import dev from "@features/docs/glossary/glossary.dev.json"
+import guide from "@features/docs/glossary/glossary.guide.json"
+import admin from "@features/docs/glossary/glossary.admin.json"
 
-/** Un terme du glossaire de la documentation développeur (`glossary.dev.json`). */
+/** Un terme d'un glossaire de la documentation (`glossary.<espace>.json`). */
 export interface GlossaryEntry {
   /** Identifiant stable : l'ancre `#g-<id>` du glossaire, et le nom des ancres de ses citations. */
   id: string
@@ -14,32 +16,42 @@ export interface GlossaryEntry {
   /** La définition courte, en une ou deux phrases : `code`, **gras** et *italique* permis. */
   definition: string
   /**
-   * Le chapitre et la section où le terme est défini pour la première fois dans le parcours.
-   * Sans section : l'introduction du chapitre, avant son premier titre.
+   * Le chapitre et la section où le terme est défini pour la première fois dans le parcours, dans
+   * le même espace. Sans section : l'introduction du chapitre, avant son premier titre.
    */
   definiEn: { vers: string; section?: string }
   /** Facultatif : le chapitre qui l'approfondit. */
   approfondiEn?: { vers: string; section?: string }
 }
 
-export const GLOSSARY: readonly GlossaryEntry[] = data as GlossaryEntry[]
-export const GLOSSARY_PAGE = "dev/annexe/glossaire"
-export const glossaryHref = (id: string) => `/docs/${GLOSSARY_PAGE}#g-${id}`
+export interface TermMatch {
+  start: number
+  end: number
+  id: string
+}
 
-const BY_ID = new Map(GLOSSARY.map((entry) => [entry.id, entry]))
-export const glossaryEntry = (id: string) => BY_ID.get(id)
+/** Les espaces de la documentation qui ont un glossaire. */
+export type GlossarySpace = "dev" | "guide" | "admin"
+
+/** Le glossaire d'un espace : ses termes, sa page, et la façon de les repérer dans un texte. */
+export interface Glossary {
+  space: GlossarySpace
+  entries: readonly GlossaryEntry[]
+  /** La page annexe du glossaire, sans `/docs/` (« dev/annexe/glossaire »). */
+  page: string
+  /**
+   * Lier chaque occurrence (la doc développeur, aux termes techniques et assez rares), ou la
+   * première de chaque page seulement (le Guide et l'Admin, où « stage » ou « groupe » reviennent
+   * à chaque phrase : tout souligner rendrait le texte illisible).
+   */
+  firstOnly: boolean
+  href: (id: string) => string
+  entry: (id: string) => GlossaryEntry | undefined
+  /** Les termes présents dans un texte, sans chevauchement (le plus tôt, puis le plus long). */
+  findTerms: (text: string) => TermMatch[]
+}
 
 const isAcronym = (variant: string) => (variant.match(/\p{Lu}/gu) ?? []).length >= 2
-
-/** Forme reconnue → identifiant : les sigles tels quels, le reste en minuscules. */
-const EXACT = new Map<string, string>()
-const FOLDED = new Map<string, string>()
-for (const entry of GLOSSARY) {
-  for (const variant of entry.variantes) {
-    if (isAcronym(variant)) EXACT.set(variant, entry.id)
-    else FOLDED.set(variant.toLowerCase(), entry.id)
-  }
-}
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
@@ -49,32 +61,62 @@ function wordRegex(variants: string[], flags: string): RegExp | null {
   const alternation = [...variants].sort((a, b) => b.length - a.length).map(escape).join("|")
   return new RegExp(`(?<![\\p{L}\\p{N}_-])(?:${alternation})(?![\\p{L}\\p{N}_-])`, flags)
 }
-const EXACT_RE = wordRegex([...EXACT.keys()], "gu")
-const FOLDED_RE = wordRegex([...FOLDED.keys()], "giu")
 
-export interface TermMatch {
-  start: number
-  end: number
-  id: string
-}
+function createGlossary(space: GlossarySpace, data: unknown, firstOnly: boolean): Glossary {
+  const entries = data as GlossaryEntry[]
+  const page = `${space}/annexe/glossaire`
+  const byId = new Map(entries.map((entry) => [entry.id, entry]))
 
-/** Les termes du glossaire présents dans un texte, sans chevauchement (le plus tôt, puis le plus long). */
-export function findTerms(text: string): TermMatch[] {
-  const found: TermMatch[] = []
-  for (const [re, lookup] of [
-    [EXACT_RE, (m: string) => EXACT.get(m)],
-    [FOLDED_RE, (m: string) => FOLDED.get(m.toLowerCase())],
-  ] as const) {
-    if (!re) continue
-    for (const m of text.matchAll(re)) {
-      const id = lookup(m[0])
-      if (id && m.index !== undefined) found.push({ start: m.index, end: m.index + m[0].length, id })
+  /** Forme reconnue → identifiant : les sigles tels quels, le reste en minuscules. */
+  const exact = new Map<string, string>()
+  const folded = new Map<string, string>()
+  for (const entry of entries) {
+    for (const variant of entry.variantes) {
+      if (isAcronym(variant)) exact.set(variant, entry.id)
+      else folded.set(variant.toLowerCase(), entry.id)
     }
   }
-  found.sort((a, b) => a.start - b.start || b.end - a.end)
-  const kept: TermMatch[] = []
-  for (const match of found) {
-    if (kept.length === 0 || match.start >= kept[kept.length - 1].end) kept.push(match)
+  const exactRe = wordRegex([...exact.keys()], "gu")
+  const foldedRe = wordRegex([...folded.keys()], "giu")
+
+  const findTerms = (text: string): TermMatch[] => {
+    const found: TermMatch[] = []
+    for (const [re, lookup] of [
+      [exactRe, (m: string) => exact.get(m)],
+      [foldedRe, (m: string) => folded.get(m.toLowerCase())],
+    ] as const) {
+      if (!re) continue
+      for (const m of text.matchAll(re)) {
+        const id = lookup(m[0])
+        if (id && m.index !== undefined) found.push({ start: m.index, end: m.index + m[0].length, id })
+      }
+    }
+    found.sort((a, b) => a.start - b.start || b.end - a.end)
+    const kept: TermMatch[] = []
+    for (const match of found) {
+      if (kept.length === 0 || match.start >= kept[kept.length - 1].end) kept.push(match)
+    }
+    return kept
   }
-  return kept
+
+  return {
+    space,
+    entries,
+    page,
+    firstOnly,
+    href: (id) => `/docs/${page}#g-${id}`,
+    entry: (id) => byId.get(id),
+    findTerms,
+  }
+}
+
+export const GLOSSARIES: Record<GlossarySpace, Glossary> = {
+  dev: createGlossary("dev", dev, false),
+  guide: createGlossary("guide", guide, true),
+  admin: createGlossary("admin", admin, true),
+}
+
+/** Le glossaire d'une page, d'après le premier segment de son adresse (`guide/...`). */
+export function glossaryOfPage(slug: readonly string[]): Glossary | undefined {
+  return (GLOSSARIES as Record<string, Glossary | undefined>)[slug[0] ?? ""]
 }
