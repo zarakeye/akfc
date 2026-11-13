@@ -14,6 +14,7 @@ import { formatBytes } from '@features/finder-core/utils/formatBytes';
 import { formatDate } from '@features/finder-core/utils/formatDate';
 import PreviewModal from '@features/finder-core/components/PreviewModal';
 import DescriptionField from '@features/finder-core/components/DescriptionField';
+import VersionsPanel from '@features/finder-core/components/VersionsPanel';
 
 /* -------------------------------------------------------------------------- */
 /*                              PREVIEW KIND                                  */
@@ -166,6 +167,9 @@ export default function PreviewPanel({ adapter }: Props): JSX.Element {
           ou R2 pas encore couvert), la mutation backend retourne une erreur
           gérée par le composant. */}
       <DescriptionField file={file} />
+
+      {/* Anciennes versions (remplacer un fichier garde l'actuel) — silencieux hors de portée. */}
+      <VersionsPanel key={file.id} file={file} />
 
       {/* Path complet en bas, muted, sélectionnable pour copier */}
       <div className="mt-auto pt-2 border-t border-gray-100 text-xs text-gray-400 break-all select-text">

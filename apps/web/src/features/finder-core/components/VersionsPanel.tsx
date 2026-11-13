@@ -1,0 +1,152 @@
+'use client';
+
+import { JSX, useState } from 'react';
+import { Download, History, RotateCcw, Trash2 } from 'lucide-react';
+
+import type { FinderNode } from '@contracts/finder';
+import { trpc } from '@trpc/trpcClient';
+import { useFinderStore } from '@features/finder-core/state/useFinderStore';
+import { formatBytes } from '@features/finder-core/utils/formatBytes';
+import { formatDate } from '@features/finder-core/utils/formatDate';
+
+/**
+ * Panneau « Versions » d'un fichier sélectionné (aperçu du finder, admin et « Mes espaces »).
+ *
+ * Remplacer un fichier garde son contenu précédent en version (fileVersion.*). Le panneau liste
+ * le contenu actuel puis les anciennes versions, de la plus récente à la plus ancienne :
+ * télécharger (tous ceux qui voient l'espace), restaurer (admin, éditeur de l'espace du groupe),
+ * effacer (admin). Restaurer échange la version et le contenu actuel : on peut revenir en arrière.
+ *
+ * Silencieux quand le serveur refuse (fichier hors d'un espace pour un membre) ou ne connaît pas
+ * le fichier (non suivi en base).
+ */
+export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Element | null {
+  const utils = trpc.useUtils();
+  const { data, isError } = trpc.fileVersion.list.useQuery({ fullPath: file.path }, { retry: false });
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const done = (text: string) => {
+    setConfirmId(null);
+    setMessage({ ok: true, text });
+    void utils.fileVersion.list.invalidate({ fullPath: file.path });
+    useFinderStore.getState().reloadFolderContent();
+  };
+  const fail = (err: { message: string }) => setMessage({ ok: false, text: err.message });
+
+  const restore = trpc.fileVersion.restore.useMutation({
+    onSuccess: () => done('Version restaurée. Le contenu remplacé est gardé dans les versions.'),
+    onError: fail,
+  });
+  const remove = trpc.fileVersion.delete.useMutation({ onSuccess: () => done('Version effacée.'), onError: fail });
+  const download = trpc.fileVersion.downloadUrl.useMutation({
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: fail,
+  });
+
+  if (isError || !data) return null;
+  const busy = restore.isPending || remove.isPending;
+
+  return (
+    <details className="border-t border-gray-100 pt-3 text-xs" data-testid="versions-panel">
+      <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-gray-700">
+        <History className="h-3.5 w-3.5 text-gray-500" aria-hidden />
+        Versions ({data.versions.length + 1})
+      </summary>
+
+      <ol className="mt-2 space-y-2">
+        <li className="rounded border border-emerald-200 bg-emerald-50/60 px-2 py-1.5">
+          <div className="font-medium text-emerald-800">Version actuelle</div>
+          <div className="text-gray-600">
+            {formatDate(data.current.uploadedAt)}
+            {data.current.authorName ? ` · ${data.current.authorName}` : ''} · {formatBytes(data.current.bytes)}
+          </div>
+        </li>
+
+        {data.versions.map((v) => (
+          <li key={v.id} className="rounded border border-gray-200 px-2 py-1.5">
+            <div className="text-gray-800">
+              Déposée le {formatDate(v.uploadedAt)}
+              {v.authorName ? ` par ${v.authorName}` : ''}
+            </div>
+            <div className="text-gray-500">
+              Remplacée le {formatDate(v.replacedAt)} · {formatBytes(v.bytes)}
+            </div>
+
+            {confirmId === v.id ? (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2" role="alert">
+                <span className="text-gray-700">Remettre cette version à la place de l&apos;actuelle ?</span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => restore.mutate({ versionId: v.id })}
+                  className="rounded bg-blue-600 px-2 py-0.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Restaurer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmId(null)}
+                  className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => download.mutate({ versionId: v.id })}
+                  className="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-gray-700 hover:bg-gray-50"
+                >
+                  <Download className="h-3 w-3" aria-hidden />
+                  Télécharger
+                </button>
+                {data.canRestore && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setMessage(null);
+                      setConfirmId(v.id);
+                    }}
+                    className="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-3 w-3" aria-hidden />
+                    Restaurer…
+                  </button>
+                )}
+                {data.canDelete && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => remove.mutate({ versionId: v.id })}
+                    className="inline-flex items-center gap-1 rounded border border-red-200 px-1.5 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    aria-label={`Effacer la version déposée le ${formatDate(v.uploadedAt)}`}
+                  >
+                    <Trash2 className="h-3 w-3" aria-hidden />
+                    Effacer
+                  </button>
+                )}
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      {data.versions.length === 0 && (
+        <p className="mt-2 text-gray-500">
+          Aucune ancienne version. Remplacer ce fichier par un fichier du même nom gardera l&apos;actuel ici.
+        </p>
+      )}
+      {message && (
+        <p className={`mt-2 ${message.ok ? 'text-emerald-700' : 'text-red-600'}`} role="status">
+          {message.text}
+        </p>
+      )}
+      <p className="mt-2 text-gray-400">Les 10 dernières versions sont gardées, un an au plus.</p>
+    </details>
+  );
+}

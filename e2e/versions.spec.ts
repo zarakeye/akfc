@@ -151,3 +151,41 @@ test.describe.serial("Nouvelle version d'un document des membres", () => {
     await expect(item).toContainText("nouvelle version du");
   });
 });
+
+test.describe.serial("Panneau « Versions » du finder", () => {
+  test("un éditeur retrouve et restaure une version depuis « Mes espaces »", async ({ page }) => {
+    await loginAs(page, USERS.membreA.email);
+    expect((await upload(page.request, V1, false, "reglement.pdf")).status).toBe(200);
+    expect((await upload(page.request, V2, true, "reglement.pdf")).status).toBe(200);
+
+    await page.goto("/mes-espaces");
+    // L'aperçu est ouvert d'emblée sur un écran large.
+    await page.getByTitle(ATELIER.name, { exact: true }).dblclick();
+    // La vignette de la grille (son aperçu, une iframe, porte aussi le nom).
+    await page.getByTitle("reglement.pdf", { exact: true }).first().click();
+
+    const panel = page.getByTestId("versions-panel");
+    await panel.getByText("Versions (2)").click();
+    await expect(panel).toContainText("Version actuelle");
+    await expect(panel).toContainText(`par ${USERS.membreA.firstName}`);
+    await panel.getByRole("button", { name: "Restaurer…" }).click();
+    await panel.getByRole("button", { name: "Restaurer", exact: true }).click();
+    await expect(panel).toContainText("Version restaurée");
+    // Le contenu remplacé est à son tour une version : on peut revenir en arrière.
+    await expect(panel.getByText("Versions (2)")).toBeVisible();
+  });
+
+  test("un lecteur voit les versions, sans bouton pour restaurer", async ({ page }) => {
+    await loginAs(page, USERS.membreB.email);
+    await page.goto("/mes-espaces");
+    // L'aperçu est ouvert d'emblée sur un écran large.
+    await page.getByTitle(ATELIER.name, { exact: true }).dblclick();
+    // La vignette de la grille (son aperçu, une iframe, porte aussi le nom).
+    await page.getByTitle("reglement.pdf", { exact: true }).first().click();
+
+    const panel = page.getByTestId("versions-panel");
+    await panel.getByText("Versions (2)").click();
+    await expect(panel.getByRole("button", { name: "Télécharger" })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Restaurer…" })).toHaveCount(0);
+  });
+});
