@@ -1,1 +1,359 @@
-[]
+[
+ {
+  "id": "panneau-de-controle",
+  "terme": "panneau de contrôle",
+  "variantes": [
+   "panneau de contrôle"
+  ],
+  "definition": "Le menu du tableau de bord, à gauche, qui mène à toutes les pages d'administration, rangées par rubrique.",
+  "definiEn": {
+   "vers": "admin/tableau-de-bord",
+   "section": "Le panneau de contrôle"
+  }
+ },
+ {
+  "id": "en-attente",
+  "terme": "en attente",
+  "variantes": [
+   "en attente"
+  ],
+  "definition": "L'état d'un fichier qui vient d'entrer dans la bibliothèque : il n'apparaît sur aucune page publique tant qu'un administrateur ne l'a pas validé.",
+  "definiEn": {
+   "vers": "admin/valider-les-medias"
+  }
+ },
+ {
+  "id": "valide",
+  "terme": "validé",
+  "variantes": [
+   "validé",
+   "validés",
+   "validée",
+   "validées"
+  ],
+  "definition": "L'état d'un fichier qu'un administrateur a accepté : il peut être placé dans une page ou une galerie.",
+  "definiEn": {
+   "vers": "admin/valider-les-medias"
+  }
+ },
+ {
+  "id": "mode-selection",
+  "terme": "mode sélection",
+  "variantes": [
+   "mode sélection"
+  ],
+  "definition": "Le mode de la bibliothèque, ouvert par un appui long sur un fichier, où l'on choisit plusieurs fichiers pour les traiter ensemble.",
+  "definiEn": {
+   "vers": "admin/valider-les-medias",
+   "section": "Valider"
+  }
+ },
+ {
+  "id": "depot-commun",
+  "terme": "Dépôt commun",
+  "variantes": [
+   "Dépôt commun"
+  ],
+  "definition": "Le dossier où arrivent les fichiers que les membres déposent sans les rattacher à une discipline, un stage ou un évènement.",
+  "definiEn": {
+   "vers": "admin/valider-les-medias",
+   "section": "Trouver ce qui attend"
+  }
+ },
+ {
+  "id": "corbeille",
+  "terme": "corbeille",
+  "variantes": [
+   "corbeille"
+  ],
+  "definition": "Le dossier où attendent les éléments retirés de la bibliothèque : on les y restaure, ou on les y supprime définitivement.",
+  "definiEn": {
+   "vers": "admin/la-corbeille"
+  }
+ },
+ {
+  "id": "documents-des-membres",
+  "terme": "documents des membres",
+  "variantes": [
+   "documents des membres"
+  ],
+  "definition": "Les fichiers de la bibliothèque que le club met à disposition de tous les membres, de groupes ou de personnes ; ils les lisent dans **Mes documents**.",
+  "definiEn": {
+   "vers": "admin/documents-des-membres"
+  }
+ },
+ {
+  "id": "brouillon",
+  "terme": "brouillon",
+  "variantes": [
+   "brouillon",
+   "brouillons"
+  ],
+  "definition": "Un contenu enregistré mais invisible des visiteurs tant que vous ne l'avez pas publié.",
+  "definiEn": {
+   "vers": "admin/pages-editoriales"
+  }
+ },
+ {
+  "id": "en-construction",
+  "terme": "en construction",
+  "variantes": [
+   "en construction"
+  ],
+  "definition": "Ce que voit un visiteur sur une page éditoriale encore en brouillon, à la même adresse que la vraie page.",
+  "definiEn": {
+   "vers": "admin/pages-editoriales",
+   "section": "Ce que montre la page"
+  }
+ },
+ {
+  "id": "constructeur",
+  "terme": "constructeur",
+  "variantes": [
+   "constructeur"
+  ],
+  "definition": "L'outil qui compose le contenu des pages, des actualités, des disciplines, des stages et des évènements, bloc par bloc.",
+  "definiEn": {
+   "vers": "admin/le-constructeur"
+  }
+ },
+ {
+  "id": "bloc",
+  "terme": "bloc",
+  "variantes": [
+   "bloc",
+   "blocs"
+  ],
+  "definition": "Un morceau d'un contenu du constructeur : un texte, une galerie, des documents… Les blocs s'affichent de haut en bas.",
+  "definiEn": {
+   "vers": "admin/le-constructeur",
+   "section": "Les blocs"
+  }
+ },
+ {
+  "id": "flash-info",
+  "terme": "flash info",
+  "variantes": [
+   "flash info"
+  ],
+  "definition": "Un message court qui défile dans le ruban, sous l'en-tête de toutes les pages publiques.",
+  "definiEn": {
+   "vers": "admin/creer-un-flash-info"
+  }
+ },
+ {
+  "id": "ruban",
+  "terme": "ruban",
+  "variantes": [
+   "ruban"
+  ],
+  "definition": "La bande sous l'en-tête des pages publiques où défilent les flash infos ; un clic l'ouvre en entier.",
+  "definiEn": {
+   "vers": "admin/creer-un-flash-info"
+  }
+ },
+ {
+  "id": "slug",
+  "terme": "slug",
+  "variantes": [
+   "slug",
+   "slugs"
+  ],
+  "definition": "La fin de l'adresse d'une page (`/disciplines/tai-chi`), remplie d'après le nom. Elle ne change pas quand on renomme, pour que les liens partagés restent valides.",
+  "definiEn": {
+   "vers": "admin/creer-une-discipline",
+   "section": "Les étapes"
+  }
+ },
+ {
+  "id": "seance",
+  "terme": "séance",
+  "variantes": [
+   "séance",
+   "séances"
+  ],
+  "definition": "Une date d'un stage ou d'un évènement, avec ses horaires. Sans séance à venir, il n'apparaît pas dans l'agenda.",
+  "definiEn": {
+   "vers": "admin/ajouter-des-seances"
+  }
+ },
+ {
+  "id": "tag",
+  "terme": "tag",
+  "variantes": [
+   "tag",
+   "tags",
+   "taguer",
+   "tagué",
+   "taguée",
+   "tagués"
+  ],
+  "definition": "L'indication qu'une personne apparaît sur une photo, posée à la main. Le site compare la photo à son droit à l'image.",
+  "definiEn": {
+   "vers": "admin/droit-a-l-image-des-photos"
+  }
+ },
+ {
+  "id": "pastille",
+  "terme": "pastille",
+  "variantes": [
+   "pastille",
+   "pastilles"
+  ],
+  "definition": "Le petit signe qui dit, pour un usage, ce que permet le droit à l'image : vert accord, rouge refus, orange pas de réponse, gris personne n'est tagué.",
+  "definiEn": {
+   "vers": "admin/droit-a-l-image-des-photos",
+   "section": "Lire les pastilles"
+  }
+ },
+ {
+  "id": "droit-a-l-image",
+  "terme": "droit à l'image",
+  "variantes": [
+   "droit à l'image",
+   "droits à l'image"
+  ],
+  "definition": "L'accord de chaque membre, usage par usage, pour que le club diffuse des photos où il est reconnaissable ; prouvé par un formulaire signé.",
+  "definiEn": {
+   "vers": "admin/droit-a-l-image-des-photos"
+  }
+ },
+ {
+  "id": "formulaire-signe",
+  "terme": "formulaire signé",
+  "variantes": [
+   "formulaire signé",
+   "formulaires signés"
+  ],
+  "definition": "Le formulaire papier de droit à l'image, signé par le membre (ou son parent), que vous déposez sur sa fiche. C'est lui qui prouve l'accord.",
+  "definiEn": {
+   "vers": "admin/gerer-un-membre",
+   "section": "Déposer un formulaire signé"
+  }
+ },
+ {
+  "id": "parent-referent",
+  "terme": "parent référent",
+  "variantes": [
+   "parent référent"
+  ],
+  "definition": "Pour un membre mineur, le parent qui autorise l'usage de son image ; ses coordonnées viennent du dossier d'inscription.",
+  "definiEn": {
+   "vers": "admin/droit-image-d-un-mineur"
+  }
+ },
+ {
+  "id": "compte-de-demonstration",
+  "terme": "compte de démonstration",
+  "variantes": [
+   "compte de démonstration",
+   "comptes de démonstration"
+  ],
+  "definition": "Un compte fictif (`@akfc.demo`) qui sert à montrer le site. Ils sont masqués des listes par défaut et marqués **Démo**.",
+  "definiEn": {
+   "vers": "admin/gerer-un-membre",
+   "section": "La liste des comptes"
+  }
+ },
+ {
+  "id": "groupe-administrateurs",
+  "terme": "groupe Administrateurs",
+  "variantes": [
+   "groupe Administrateurs"
+  ],
+  "definition": "Le groupe dont l'appartenance fait d'un membre un administrateur. Il est la racine de tous les autres groupes.",
+  "definiEn": {
+   "vers": "admin/creer-un-groupe"
+  }
+ },
+ {
+  "id": "groupe-parent",
+  "terme": "groupe parent",
+  "variantes": [
+   "groupe parent"
+  ],
+  "definition": "Le groupe sous lequel un groupe est rangé. Ses membres ont accès, au même niveau, aux espaces de ses sous-groupes.",
+  "definiEn": {
+   "vers": "admin/creer-un-groupe",
+   "section": "Les étapes"
+  }
+ },
+ {
+  "id": "espace-collaboratif",
+  "terme": "espace collaboratif",
+  "variantes": [
+   "espace collaboratif",
+   "espaces collaboratifs"
+  ],
+  "definition": "Le dossier partagé d'un groupe, où chaque membre est éditeur (il dépose) ou lecteur (il consulte).",
+  "definiEn": {
+   "vers": "admin/creer-un-groupe",
+   "section": "Les étapes"
+  }
+ },
+ {
+  "id": "lecteur",
+  "terme": "lecteur",
+  "variantes": [
+   "lecteur",
+   "lecteurs"
+  ],
+  "definition": "Dans un espace collaboratif, l'accès qui permet de consulter sans déposer.",
+  "definiEn": {
+   "vers": "admin/gerer-un-groupe",
+   "section": "Les membres"
+  }
+ },
+ {
+  "id": "editeur",
+  "terme": "éditeur",
+  "variantes": [
+   "éditeur",
+   "éditeurs"
+  ],
+  "definition": "Dans un espace collaboratif, l'accès qui permet de déposer des fichiers. Un compte est créé éditeur dans ses groupes.",
+  "definiEn": {
+   "vers": "admin/gerer-un-groupe",
+   "section": "Les membres"
+  }
+ },
+ {
+  "id": "ancien-membre",
+  "terme": "Ancien membre",
+  "variantes": [
+   "Ancien membre"
+  ],
+  "definition": "Ce qui s'affiche à la place de l'auteur d'un commentaire ou d'une actualité dont le compte a été supprimé.",
+  "definiEn": {
+   "vers": "admin/gerer-un-membre",
+   "section": "Supprimer un compte"
+  }
+ },
+ {
+  "id": "registre-rgpd",
+  "terme": "registre RGPD",
+  "variantes": [
+   "registre RGPD",
+   "registre des traitements",
+   "registre des activités de traitement"
+  ],
+  "definition": "Le document que le RGPD demande à l'association : ce qu'elle fait des données personnelles, pourquoi, combien de temps. Le site le génère.",
+  "definiEn": {
+   "vers": "admin/le-registre-rgpd"
+  }
+ },
+ {
+  "id": "tuto",
+  "terme": "tuto",
+  "variantes": [
+   "tuto",
+   "tutos",
+   "tutoriel",
+   "tutoriels"
+  ],
+  "definition": "Un guidage sur la vraie page du tableau de bord : seul l'élément de l'étape est actif, une bulle dit quoi faire.",
+  "definiEn": {
+   "vers": "admin/index"
+  }
+ }
+]

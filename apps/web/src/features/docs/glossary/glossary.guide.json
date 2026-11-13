@@ -1,1 +1,191 @@
-[]
+[
+ {
+  "id": "espace-collaboratif",
+  "terme": "espace collaboratif",
+  "variantes": [
+   "espace collaboratif",
+   "espaces collaboratifs"
+  ],
+  "definition": "Le dossier partagé d'un groupe du club, où ses membres consultent et déposent des fichiers. On le retrouve dans **Mes espaces**.",
+  "definiEn": {
+   "vers": "guide/mes-espaces"
+  }
+ },
+ {
+  "id": "lecteur",
+  "terme": "lecteur",
+  "variantes": [
+   "lecteur",
+   "lecteurs"
+  ],
+  "definition": "Dans un espace collaboratif, le membre qui peut consulter les fichiers, mais pas en déposer.",
+  "definiEn": {
+   "vers": "guide/mes-espaces",
+   "section": "Lecteur ou éditeur"
+  }
+ },
+ {
+  "id": "editeur",
+  "terme": "éditeur",
+  "variantes": [
+   "éditeur",
+   "éditeurs"
+  ],
+  "definition": "Dans un espace collaboratif, le membre qui peut aussi y déposer des fichiers.",
+  "definiEn": {
+   "vers": "guide/mes-espaces",
+   "section": "Lecteur ou éditeur"
+  }
+ },
+ {
+  "id": "cloche",
+  "terme": "cloche",
+  "variantes": [
+   "cloche"
+  ],
+  "definition": "L'icône de l'en-tête qui signale les nouveaux documents de vos espaces, avec leur nombre. Elle n'apparaît que si vous avez au moins un espace.",
+  "definiEn": {
+   "vers": "guide/mes-espaces",
+   "section": "La cloche"
+  }
+ },
+ {
+  "id": "tuto",
+  "terme": "tuto",
+  "variantes": [
+   "tuto",
+   "tutos",
+   "tutoriel",
+   "tutoriels"
+  ],
+  "definition": "Un guidage sur la vraie page du site : l'écran s'assombrit autour de l'élément à utiliser, et une bulle dit quoi faire, étape par étape.",
+  "definiEn": {
+   "vers": "guide/index"
+  }
+ },
+ {
+  "id": "pseudo",
+  "terme": "pseudo",
+  "variantes": [
+   "pseudo",
+   "pseudos"
+  ],
+  "definition": "Le nom que vous choisissez d'afficher à la place de vos prénom et nom, par exemple sous vos commentaires.",
+  "definiEn": {
+   "vers": "guide/mon-profil",
+   "section": "Ce que montre la page"
+  }
+ },
+ {
+  "id": "droit-a-l-image",
+  "terme": "droit à l'image",
+  "variantes": [
+   "droit à l'image",
+   "droits à l'image"
+  ],
+  "definition": "Votre accord, usage par usage (espace membres, site public, réseaux…), pour que le club diffuse des photos où vous êtes reconnaissable.",
+  "definiEn": {
+   "vers": "guide/mon-profil",
+   "section": "Ce que montre la page"
+  }
+ },
+ {
+  "id": "reaction",
+  "terme": "réaction",
+  "variantes": [
+   "réaction",
+   "réactions"
+  ],
+  "definition": "Un émoji posé sous une actualité ou un commentaire (👍 ❤️ 😂 😮 😢 👏). Un nouveau clic le retire.",
+  "definiEn": {
+   "vers": "guide/actualites",
+   "section": "Réagir"
+  }
+ },
+ {
+  "id": "sondage",
+  "terme": "sondage",
+  "variantes": [
+   "sondage",
+   "sondages"
+  ],
+  "definition": "Une question posée sous une actualité, à un ou plusieurs choix. On peut changer son vote tant qu'il n'est pas clos.",
+  "definiEn": {
+   "vers": "guide/actualites",
+   "section": "Voter à un sondage"
+  }
+ },
+ {
+  "id": "ancien-membre",
+  "terme": "Ancien membre",
+  "variantes": [
+   "Ancien membre"
+  ],
+  "definition": "Ce qui s'affiche à la place du nom d'un membre dont le compte a été supprimé : ses commentaires restent, sans son nom.",
+  "definiEn": {
+   "vers": "guide/actualites",
+   "section": "Commenter"
+  }
+ },
+ {
+  "id": "depot-commun",
+  "terme": "Dépôt commun",
+  "variantes": [
+   "Dépôt commun"
+  ],
+  "definition": "La destination des fichiers que vous déposez sans les rattacher à une discipline, un stage ou un évènement. Un administrateur les range ensuite.",
+  "definiEn": {
+   "vers": "guide/deposer-des-fichiers",
+   "section": "Choisir la destination"
+  }
+ },
+ {
+  "id": "recadrage",
+  "terme": "recadrage",
+  "variantes": [
+   "recadrage",
+   "recadrer"
+  ],
+  "definition": "Le choix de la partie d'une image à garder, avant de l'envoyer : on déplace un cadre, on zoome, on tourne.",
+  "definiEn": {
+   "vers": "guide/deposer-des-fichiers",
+   "section": "Choisir les fichiers"
+  }
+ },
+ {
+  "id": "heic",
+  "terme": "HEIC",
+  "variantes": [
+   "HEIC"
+  ],
+  "definition": "Le format des photos d'iPhone. Le site les convertit en JPEG avant l'envoi, pour que tout le monde puisse les voir.",
+  "definiEn": {
+   "vers": "guide/deposer-des-fichiers",
+   "section": "Choisir les fichiers"
+  }
+ },
+ {
+  "id": "en-attente",
+  "terme": "en attente",
+  "variantes": [
+   "en attente"
+  ],
+  "definition": "L'état d'un fichier envoyé qu'aucun administrateur n'a encore validé : il n'est montré sur aucune page.",
+  "definiEn": {
+   "vers": "guide/deposer-des-fichiers",
+   "section": "Déposer"
+  }
+ },
+ {
+  "id": "espace-personnel",
+  "terme": "espace personnel",
+  "variantes": [
+   "espace personnel"
+  ],
+  "definition": "Le dossier où un instructeur envoie ses propres photos, pour les montrer dans sa présentation une fois validées.",
+  "definiEn": {
+   "vers": "guide/presentation-instructeur",
+   "section": "Ajouter ses photos"
+  }
+ }
+]
