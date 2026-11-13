@@ -30,12 +30,27 @@ test("chaque chapitre qui installe une dépendance s'affiche, avec sa commande",
     fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
       d.isDirectory() ? walk(path.join(dir, d.name)) : d.name.endsWith(".mdx") ? [path.join(dir, d.name)] : [],
     );
-  const pages = walk(root).filter((f) => fs.readFileSync(f, "utf8").includes("<Installer paquets="));
+  test.setTimeout(180_000);
+  // Comme la garde check-doc-installs : un <Installer> cité dans du code n'en est pas un.
+  const sansCode = (t: string) => t.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+  const pages = walk(root).filter((f) => sansCode(fs.readFileSync(f, "utf8")).includes("<Installer paquets="));
   expect(pages.length).toBeGreaterThan(20);
   for (const f of pages) {
     const slug = f.slice(root.length + 1, -".mdx".length);
     const res = await page.goto(`/docs/dev/${slug}`);
     expect(res?.status(), slug).toBe(200);
     await expect(page.getByText(/À installer|Installé par/).first(), slug).toBeVisible();
+  }
+});
+
+test("la 2.1 montre chaque package.json et les seize scripts de la racine", async ({ page }) => {
+  const res = await page.goto("/docs/dev/configuration/package-json-et-monorepo");
+  expect(res?.status()).toBe(200);
+  await expect(page.getByRole("tree", { name: "Arborescence de akfc/" })).toContainText("finder-core");
+  for (const titre of ["packages/finder-core/package.json, en entier", "packages/config/package.json, en entier", "apps/web/package.json, en entier", "package.json (la racine), en entier"]) {
+    await expect(page.getByText(titre), titre).toBeVisible();
+  }
+  for (const script of ["dev:infra:stop", "db:seed:dev", "docs:procedures", "e2e:report"]) {
+    await expect(page.getByRole("cell", { name: script, exact: true }), script).toBeVisible();
   }
 });
