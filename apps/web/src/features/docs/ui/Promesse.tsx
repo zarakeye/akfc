@@ -28,7 +28,9 @@ export function Promesse({ vers, section, children }: PromesseProps) {
   const target = space ? getNumberedDoc(generateDocsIndex(space.id).pages, slug) : null
 
   return (
-    <aside className="my-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-7 dark:border-slate-500 dark:bg-slate-200 dark:text-slate-950">
+    // Mode sombre : bg-slate-50 est réorienté vers le thème (styles/dark-legacy.css, hors couche,
+    // il l'emporte sur dark:bg-…). Le texte suit donc le thème lui aussi, sans couleur forcée.
+    <aside className="my-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-7 text-foreground">
       <div className="flex gap-2">
         <span aria-hidden="true" className="select-none text-slate-500">↪</span>
         <div className="min-w-0">{children}</div>
@@ -39,7 +41,7 @@ export function Promesse({ vers, section, children }: PromesseProps) {
             Approfondi en{" "}
             <Link
               href={`/docs/${slug.join("/")}${section ? `#${slugifyHeading(section)}` : ""}`}
-              className="font-medium underline underline-offset-2 hover:text-slate-950"
+              className="font-medium underline underline-offset-2 hover:text-foreground"
             >
               {target.page.number ? `${target.page.number} ` : ""}
               {target.page.title}
