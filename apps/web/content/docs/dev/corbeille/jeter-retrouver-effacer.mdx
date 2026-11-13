@@ -19,13 +19,13 @@ stories:
       - label: Il efface définitivement un dossier ; un fichier pris dans ce dossier ne s’efface pas seul
         call: trash.purge
         section: Un élément jeté s’efface en entier
-  - title: Un éditeur jette un document de l’espace de son groupe, un autre le récupère
-    actor: Membres éditeurs d’un espace
+  - title: Un document de l’espace d’un groupe est jeté, un éditeur le récupère
+    actor: Administrateur, puis membre éditeur d’un espace
     steps:
       - label: Le document part à la corbeille ; la mise à la corbeille retient qui l’a jeté
         call: trash.trashToBin
         section: Qui jette, qui récupère
-      - label: Un autre éditeur du groupe le voit dans « Corbeille de mes espaces »
+      - label: Un éditeur du groupe le voit dans « Corbeille de mes espaces »
         call: trash.listSpacesBin
         section: Qui jette, qui récupère
       - label: Il le restaure, bien qu’il ne l’ait pas jeté
@@ -108,7 +108,7 @@ Un double-clic sur un dossier jeté ne passe pas par une procédure dédiée : i
   fullFileTitle="Voir le fichier complet"
 />
 
-Trois procédures sont ouvertes aux membres : **jeter**, **lister** la corbeille de ses espaces, et **restaurer**. Pour jeter, il faut être éditeur de l’espace de groupe où se trouve l’élément :
+Trois procédures sont ouvertes aux membres : **jeter**, **lister** la corbeille de ses espaces, et **restaurer**. Pour jeter, il faut être éditeur de l’espace de groupe où se trouve l’élément. Aucun écran ne le propose pourtant à un membre : « Mes espaces » est en lecture seule (chapitre « Trois finders en un »), et le club a choisi de le garder ainsi. La procédure reste ouverte, gardée :
 
 <CodeExample
   language="ts"
@@ -138,12 +138,12 @@ La règle se lit sur le **chemin d’origine** de l’élément, pas sur son emp
 
 Un éditeur n’ouvre pas la corbeille du finder, réservée aux administrateurs : elle mêle tous les espaces. `trash.listSpacesBin` lui rend seulement ce qui vient des espaces où il est éditeur, avec le nom du groupe, et « Mes espaces collaboratifs » le montre dans un bloc repliable, « Corbeille de mes espaces », avec un bouton « Restaurer » par élément.
 
-Effacer définitivement reste aux administrateurs. C’est ce qui garde la corbeille sûre : un éditeur fâché peut jeter le travail de son groupe, un autre éditeur peut le rendre, personne dans le groupe ne peut le détruire.
+Effacer définitivement reste aux administrateurs. C’est ce qui garde la corbeille sûre : personne dans le groupe ne peut détruire le travail du groupe.
 
 La garde a une autre conséquence, moins visible. Un membre ne peut pas jeter dans son **espace personnel** : seul l’espace d’un groupe lui est ouvert. Une photo déposée par erreur dans « Mes photos » reste là, et compte dans son quota, jusqu’à ce qu’un administrateur la jette. Ouvrir la corbeille aux membres pour leur propre espace est une décision à prendre ; ce chapitre se contente de la signaler.
 
 <Callout type="insight">
-**Un geste réversible pour qui peut le reprendre.** « Tu pourras le restaurer ensuite » promettait trop à un éditeur, tant que seul un administrateur restaurait. La règle a rattrapé le texte : dans l’espace d’un groupe, l’éditeur qui jette, ou un autre, peut le reprendre.
+**Un geste réversible, et pas seulement pour qui l’a fait.** Un administrateur qui range l’espace d’un groupe peut se tromper ; les éditeurs du groupe n’ont pas à attendre qu’il s’en aperçoive pour récupérer leur document.
 </Callout>
 
 ## Effacer par identifiant, effacer par chemin

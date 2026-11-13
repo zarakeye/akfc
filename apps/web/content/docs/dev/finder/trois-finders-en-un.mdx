@@ -81,7 +81,9 @@ Le serveur reste juge (`media.resolveByPaths`) : un chemin qui ne correspond à 
 
 ## Lire sans modifier
 
-`readOnly` retire tout ce qui modifie : l’entrée dans le mode sélection (l’appui long ne fait plus rien), la barre de sélection multiple (changement de statut, suppression groupée), le bouton supprimer. Restent la navigation, l’arbre, la grille, l’aperçu, la recherche, la lentille de statut et le choix de la vue.
+`readOnly` retire tout ce qui modifie : l’entrée dans le mode sélection (l’appui long ne fait plus rien), la barre de sélection multiple (changement de statut, suppression groupée), le bouton supprimer, le **menu contextuel** et le **glisser-déposer**. Restent la navigation, l’arbre, la grille, l’aperçu, la recherche, la lentille de statut et le choix de la vue.
+
+Le menu contextuel et le glisser sont décidés dans chaque élément (vignette, ligne du tableau, ligne compacte, nœuds de l’arbre), loin de `Finder`. Les cinq composants recevaient bien `isStatus`, pas `readOnly` : le clic droit proposait encore, dans « Mes espaces », Renommer, Déplacer… et Mettre à la corbeille. Plutôt que de faire descendre la prop à travers l’arbre, `Finder` la pose dans un contexte React, `FinderReadOnlyContext`, que chaque élément lit avec `useFinderReadOnly()`.
 
 Ce n’est pas une protection : c’est un confort. La protection est au serveur, dont les gardes refusent toute modification à qui n’en a pas le droit. Une interface qui proposerait un bouton que le serveur refuserait toujours mentirait à l’utilisateur ; `readOnly` évite ce mensonge.
 

@@ -81,4 +81,14 @@ test.describe("Corbeille", () => {
     const after = await trpcQuery(page.request, "trash.listSpacesBin", undefined);
     expect((after.result as SpaceBinItem[]).map((e) => e.id)).not.toContain(TRASHED_IN_GROUP.id);
   });
+
+  test("« Mes espaces » est en lecture seule : pas de menu au clic droit", async ({ page }) => {
+    await loginAs(page, USERS.membreA.email);
+    await page.goto("/mes-espaces");
+    await page.getByTitle(ATELIER.name, { exact: true }).click();
+    // Le fichier restauré au test précédent est revenu dans l'espace.
+    await page.getByTitle(TRASHED_IN_GROUP.displayName, { exact: true }).first().click({ button: "right" });
+    await expect(page.getByText("Mettre à la corbeille")).toHaveCount(0);
+    await expect(page.getByText("Renommer", { exact: true })).toHaveCount(0);
+  });
 });

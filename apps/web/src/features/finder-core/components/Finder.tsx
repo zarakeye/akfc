@@ -31,6 +31,7 @@ import { useFinderStore } from "@features/finder-core/state/useFinderStore";
 
 import Breadcrumb from "@features/finder-core/components/Breadcrumb";
 import PreviewPanel from "@features/finder-core/components/PreviewPanel";
+import { FinderReadOnlyContext } from "@features/finder-core/state/FinderReadOnlyContext";
 import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
 import FinderTree from "@features/finder-core/components/FinderTree";
 import GridItem from "@features/finder-core/components/GridItem";
@@ -491,6 +492,11 @@ export default function Finder({
    * 🔹 DnD — démarrage du drag depuis un item de la grille.
    */
   function handleDragStart(e: React.DragEvent, node: FinderNode) {
+    // Lecture seule : rien ne se déplace.
+    if (readOnly) {
+      e.preventDefault();
+      return;
+    }
     let items: DragItem[];
 
     if (multiSelectActive && selection.roots.has(node.id)) {
@@ -586,6 +592,7 @@ export default function Finder({
   }
 
   return (
+    <FinderReadOnlyContext.Provider value={readOnly}>
     <div className="flex flex-col h-full border rounded overflow-hidden">
       {/* ──────────────────────── HEADER : breadcrumb + actions ─────────── */}
       <div className="px-3 py-2 border-b text-sm flex flex-wrap items-center gap-2 min-h-10">
@@ -1186,6 +1193,7 @@ export default function Finder({
         />
       )}
     </div>
+    </FinderReadOnlyContext.Provider>
   );
 }
 

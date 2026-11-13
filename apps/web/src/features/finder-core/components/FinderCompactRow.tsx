@@ -1,5 +1,6 @@
 'use client';
 
+import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
 import { JSX, useState } from 'react';
 import { Folder, FileText, Image as ImageIcon, FileVideo, FileAudio, FileType } from 'lucide-react';
 import type { FinderNode } from '@contracts/finder';
@@ -44,6 +45,8 @@ export default function FinderCompactRow({
   onLongPress,
   onDragStart,
 }: Props): JSX.Element {
+  // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
+  const readOnly = useFinderReadOnly();
   const longPress = useLongPress(onLongPress);
   const isFolder = node.type === 'folder';
 
@@ -105,10 +108,10 @@ export default function FinderCompactRow({
     <div
       onClick={onClick}
       onDoubleClick={onDoubleClick}
-      draggable
+      draggable={!readOnly}
       onDragStart={onDragStart}
       onContextMenu={
-        isStatus
+        isStatus || readOnly
           ? undefined
           : (e) => {
               e.preventDefault();

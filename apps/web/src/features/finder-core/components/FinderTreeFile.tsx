@@ -1,5 +1,6 @@
 'use client';
 
+import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
 import { JSX, useState } from 'react';
 import { File, Music, Check, FileText, Play } from 'lucide-react';
 import { effectiveExtension, isAudioFile, isPdfFile, isTextFile, videoPosterUrl, displayName } from '@features/finder-core/utils/fileType';
@@ -108,7 +109,9 @@ export default function FinderTreeFile({
   const isActive =
     currentPath === parentPath(node.path) && selectedIds.has(node.id);
 
-  const isDraggable = Boolean(onDragStart);
+  // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
+  const readOnly = useFinderReadOnly();
+  const isDraggable = Boolean(onDragStart) && !readOnly;
 
   // En pickMode, ce fichier est-il dans le panier ? (coche verte)
   const pinned = pickMode && Boolean(isInCart?.(node.path));
@@ -181,11 +184,15 @@ export default function FinderTreeFile({
     <>
       <div
         onClick={handleClick}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setMenuPos({ x: e.clientX, y: e.clientY });
-        }}
+        onContextMenu={
+          readOnly
+            ? undefined
+            : (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuPos({ x: e.clientX, y: e.clientY });
+              }
+        }
         onMouseDown={longPress.onMouseDown}
         onMouseUp={longPress.onMouseUp}
         onMouseLeave={longPress.onMouseLeave}

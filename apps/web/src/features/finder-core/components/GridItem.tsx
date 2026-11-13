@@ -1,5 +1,6 @@
 'use client';
 
+import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
 import { JSX, useState } from 'react';
 import { Folder, Users, User, CircleUserRound, Music, Check, FileText, Play } from 'lucide-react';
 import clsx from 'clsx';
@@ -158,6 +159,8 @@ export default function GridItem({
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { effectiveNodesFor, deleteNodes, deleteLabel, renameNode, moveNodes } = useNodeActions();
   const isAdmin = useSessionStore((st) => (st.session?.user?.isAdmin ?? false));
+  // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
+  const readOnly = useFinderReadOnly();
 
   const isFolder = node.type === 'folder';
   const kind = node.meta?.kind;
@@ -245,7 +248,7 @@ export default function GridItem({
   return (
     <>
       <div
-        draggable={!isStatus}
+        draggable={!isStatus && !readOnly}
         onClick={(e) => {
           // Avale le click parasite qui suit immédiatement un longpress
           // (cf. doc dans useLongPress.ts). Sans ce skip, le toggle dans
@@ -263,7 +266,7 @@ export default function GridItem({
         }}
         onDoubleClick={onDoubleClick}
         onContextMenu={
-          isStatus
+          isStatus || readOnly
             ? undefined
             : (e) => {
                 // Bloque le menu contextuel natif ; affiche le nôtre.

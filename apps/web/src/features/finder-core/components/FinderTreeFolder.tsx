@@ -1,5 +1,6 @@
 "use client";
 
+import { useFinderReadOnly } from "@features/finder-core/state/FinderReadOnlyContext";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
@@ -102,7 +103,9 @@ export default function FinderTreeFolder({
     if (onLongPress) onLongPress(node);
   });
 
-  const isDraggable = Boolean(onDragStart) && !isStatus;
+  // Lecture seule (« Mes espaces ») : ni menu contextuel, ni glisser.
+  const readOnly = useFinderReadOnly();
+  const isDraggable = Boolean(onDragStart) && !isStatus && !readOnly;
 
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [isRenamingFolder, setIsRenamingFolder] = useState(false);
@@ -368,7 +371,7 @@ export default function FinderTreeFolder({
       <div
         onClick={handleRowClick}
         onContextMenu={
-          isStatus && !isRenamableRoot
+          readOnly || (isStatus && !isRenamableRoot)
             ? undefined
             : (e) => {
                 e.preventDefault();
