@@ -51,7 +51,7 @@ export default function VersionsPanel({ file }: { file: FinderNode }): JSX.Eleme
 
   return (
     <details className="border-t border-gray-100 pt-3 text-xs" data-testid="versions-panel">
-      <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-gray-700">
+      <summary className="flex cursor-pointer items-center gap-1.5 font-medium text-gray-700" data-tour="finder.versions">
         <History className="h-3.5 w-3.5 text-gray-500" aria-hidden />
         Versions ({data.versions.length + 1})
       </summary>

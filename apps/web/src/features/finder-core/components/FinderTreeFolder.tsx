@@ -396,6 +396,8 @@ export default function FinderTreeFolder({
         onTouchStart={longPress.onTouchStart}
         onTouchEnd={longPress.onTouchEnd}
         data-finder-drop-path={node.path}
+        // Cible du tuto « Restaurer un élément de la corbeille ».
+        data-tour={isBinRoot ? "finder.bin" : undefined}
         className={clsx(
           "flex items-center gap-1.5 rounded px-2 py-1 cursor-pointer text-sm",
           isActive &&

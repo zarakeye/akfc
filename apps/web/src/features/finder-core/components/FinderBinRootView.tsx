@@ -98,7 +98,7 @@ export default function FinderBinRootView(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0" data-tour="bin.view">
 
       {/* Header local : titre + viewmodes + vider */}
       <div className="px-3 py-2 border-b flex items-center gap-3 flex-wrap text-sm">

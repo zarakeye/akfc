@@ -3,6 +3,7 @@ import { adminBibliotheque } from "./definitions/admin.bibliotheque";
 import { adminBreakingNewsCreate } from "./definitions/admin.breaking-news.create";
 import { adminCategoriesCreate } from "./definitions/admin.categories.create";
 import { adminConstructeur } from "./definitions/admin.constructeur";
+import { adminCorbeilleRestaurer } from "./definitions/admin.corbeille.restaurer";
 import { adminCoursesCreate } from "./definitions/admin.courses.create";
 import { adminDroitImagePhotos } from "./definitions/admin.droit-image.photos";
 import { adminDisciplinesCreate } from "./definitions/admin.disciplines.create";
@@ -22,6 +23,7 @@ import { adminUsersCreate } from "./definitions/admin.users.create";
 import { adminUsersDroitImageMineur } from "./definitions/admin.users.droit-image-mineur";
 import { membreContacterLeClub } from "./definitions/membre.contacter-le-club";
 import { membreDocuments } from "./definitions/membre.documents";
+import { membreVersions } from "./definitions/membre.versions";
 import { membreProfil } from "./definitions/membre.profil";
 import { publicDecouvrirLeSite } from "./definitions/public.decouvrir-le-site";
 import { publicMotDePasseOublie } from "./definitions/public.mot-de-passe-oublie";
@@ -36,6 +38,7 @@ export const TOURS: Tour[] = [
   membreProfil,
   membreDocuments,
   membreContacterLeClub,
+  membreVersions,
   adminTableauDeBord,
   adminPostsCreate,
   adminBreakingNewsCreate,
@@ -51,6 +54,7 @@ export const TOURS: Tour[] = [
   adminEventsCreate,
   adminConstructeur,
   adminBibliotheque,
+  adminCorbeilleRestaurer,
   adminGalleriesCreate,
   adminDroitImagePhotos,
   adminCategoriesCreate,

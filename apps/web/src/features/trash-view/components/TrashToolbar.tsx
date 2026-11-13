@@ -73,6 +73,7 @@ export default function TrashToolbar(): JSX.Element | null {
           type="button"
           onClick={handleRestore}
           disabled={isRestoring}
+          data-tour="bin.restore"
           className="
             flex items-center gap-1.5 px-3 py-1 rounded text-sm
             bg-white border hover:bg-gray-50
