@@ -66,7 +66,7 @@
   "variantes": [
    "corbeille"
   ],
-  "definition": "Le dossier où attendent les éléments retirés de la bibliothèque : on les y restaure, ou on les y supprime définitivement.",
+  "definition": "Le dossier où attendent les éléments retirés de la bibliothèque : on les y restaure, ou on les y supprime définitivement. Ils sont effacés d'eux-mêmes au bout de 90 jours (réglable).",
   "definiEn": {
    "vers": "admin/la-corbeille"
   }
@@ -354,6 +354,30 @@
   "definition": "Un guidage sur la vraie page du tableau de bord : seul l'élément de l'étape est actif, une bulle dit quoi faire.",
   "definiEn": {
    "vers": "admin/index"
+  }
+ },
+ {
+  "id": "version",
+  "terme": "version",
+  "variantes": [
+   "version",
+   "versions"
+  ],
+  "definition": "Un ancien contenu d'un fichier, gardé quand on le remplace par un fichier du même nom : les dix dernières, un an au plus.",
+  "definiEn": {
+   "vers": "admin/les-versions-d-un-fichier"
+  }
+ },
+ {
+  "id": "preavis",
+  "terme": "préavis",
+  "variantes": [
+   "préavis"
+  ],
+  "definition": "L'annonce, par la cloche, sept jours avant, des éléments que la corbeille va effacer définitivement.",
+  "definiEn": {
+   "vers": "admin/la-corbeille",
+   "section": "Combien de temps la corbeille garde"
   }
  }
 ]

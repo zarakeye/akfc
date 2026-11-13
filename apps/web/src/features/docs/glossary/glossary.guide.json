@@ -187,5 +187,44 @@
    "vers": "guide/presentation-instructeur",
    "section": "Ajouter ses photos"
   }
+ },
+ {
+  "id": "version",
+  "terme": "version",
+  "variantes": [
+   "version",
+   "versions",
+   "ancienne version",
+   "anciennes versions"
+  ],
+  "definition": "Un ancien contenu d'un fichier, gardé quand on le remplace par un fichier du même nom. On le retrouve dans le panneau **Versions** de l'aperçu.",
+  "definiEn": {
+   "vers": "guide/mes-espaces",
+   "section": "Retrouver une version précédente"
+  }
+ },
+ {
+  "id": "nouvelle-version",
+  "terme": "Nouvelle version",
+  "variantes": [
+   "Nouvelle version"
+  ],
+  "definition": "Le badge d'un document que vous aviez lu et qui a été remplacé par une version corrigée : il repasse en non lu.",
+  "definiEn": {
+   "vers": "guide/mes-documents",
+   "section": "Lire un document"
+  }
+ },
+ {
+  "id": "corbeille-de-mes-espaces",
+  "terme": "Corbeille de mes espaces",
+  "variantes": [
+   "Corbeille de mes espaces"
+  ],
+  "definition": "Le bloc de **Mes espaces** où un éditeur retrouve ce qui a été jeté dans ses espaces, pour le restaurer.",
+  "definiEn": {
+   "vers": "guide/mes-espaces",
+   "section": "Restaurer ce qui a été jeté"
+  }
  }
 ]

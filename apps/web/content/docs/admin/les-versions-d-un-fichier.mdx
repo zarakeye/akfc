@@ -1,0 +1,36 @@
+---
+title: "Les versions d'un fichier"
+description: "Remplacer un fichier sans perdre l'ancien : retrouver, télécharger, remettre en place ou effacer une version."
+section: "Médiathèque"
+order: 7
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Corriger un fichier sans perdre ce qu'il contenait : quand un fichier est remplacé par un autre du même nom, le site garde l'ancien contenu. Ce sont ses **versions**. On les retrouve, on les télécharge, on remet l'une d'elles en place.
+
+**Avant de commencer.** Être administrateur. Panneau de contrôle → **Médiathèque** → **Bibliothèque**. Les éditeurs d'un espace collaboratif ont le même panneau dans **Mes espaces**, pour les fichiers de leur espace.
+
+## Remplacer un fichier
+
+1. **Ajouter des fichiers** dans le même dossier, avec un fichier **du même nom**.
+2. Le formulaire signale qu'il existe déjà : choisissez **Remplacer**.
+3. Le nouveau contenu prend la place de l'ancien, au même nom et à la même adresse : les pages et galeries qui l'affichaient montrent le nouveau. L'ancien devient une version.
+
+Un fichier [mis à disposition des membres](/docs/admin/documents-des-membres) repasse en non lu pour eux, avec le badge **Nouvelle version**.
+
+## Le panneau Versions
+
+Sélectionnez le fichier : en bas de l'aperçu, ouvrez **Versions**. La **version actuelle** est en tête, puis les anciennes, de la plus récente à la plus ancienne, avec leur date de dépôt, la personne qui les avait déposées, leur date de remplacement et leur taille.
+
+- **Télécharger** enregistre une ancienne version sur votre appareil.
+- **Restaurer…** la remet à la place de l'actuelle, après confirmation. L'actuelle devient à son tour une version : on peut revenir en arrière.
+- **Effacer** supprime une version, sans toucher au fichier. Réservé aux administrateurs.
+
+## Combien de versions
+
+Le site garde les **dix dernières versions** de chaque fichier, et aucune de plus d'**un an**. Les plus anciennes sont effacées pendant la nuit.
+
+<Callout type="info">
+Les versions suivent leur fichier : renommé, déplacé, jeté puis restauré, il les garde. Supprimé définitivement de la corbeille, il les emporte.
+</Callout>
