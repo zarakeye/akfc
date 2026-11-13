@@ -10,6 +10,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** TypeScript vérifie le code avec six `tsconfig`, sans jamais produire de JavaScript. C'est Next.js qui construit l'application, et il a sa propre configuration.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="babel-plugin-react-compiler" dans="web" dev />
+
 `apps/web/next.config.ts` est lu une seule fois, au démarrage de `pnpm dev` ou de `pnpm build`. Une modification n'a donc aucun effet tant que le serveur de développement tourne : il faut l'arrêter et le relancer. Le fichier tient en moins de cent lignes, et chaque réglage répond à une question précise. Nous les prenons dans l'ordre où ils servent : d'abord la forme du build, puis ce qu'il compile, enfin ce qu'il fait des adresses.
 
 ```ts

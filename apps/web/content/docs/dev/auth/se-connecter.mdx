@@ -15,6 +15,13 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Une session est une ligne `Session` en base, reliée au membre ; aucun droit n’y est recopié. Ce qui part vers le navigateur est borné par le contrat `SessionClient`.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="bcryptjs jsonwebtoken" dans="backend" />
+<Installer paquets="bcryptjs" dans="racine" />
+<Installer paquets="@types/jsonwebtoken" dans="racine" dev />
+<Installer paquets="jsonwebtoken" dans="web" />
+
 ## La validation des identifiants
 
 Entrons dans le flux de connexion.

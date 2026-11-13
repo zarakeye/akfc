@@ -26,6 +26,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Les formulaires de lot préparent leurs fichiers avant l’envoi : un type, une taille, un éventuel recadrage. Ils en préparent un de plus que les autres : la photo d’iPhone.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="heic-to" dans="web" />
+
 Depuis 2017, un iPhone enregistre ses photos en **HEIC** (une image au format HEIF, compressée avec HEVC, le codec des vidéos récentes) : environ deux fois plus léger qu’un JPEG à qualité égale. Safari l’affiche. Chrome et Firefox non. Une photo de stage envoyée telle quelle depuis un iPhone serait donc visible pour l’administrateur qui l’a déposée depuis son Mac, et cassée pour la plupart des visiteurs.
 
 Deux réponses possibles : convertir sur le serveur, ou dans le navigateur. Le projet fait les deux, dans cet ordre de préférence.

@@ -10,6 +10,12 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La partie « Contenu éditorial » a suivi le texte riche du côté de la page : un document ProseMirror rangé dans le contenu, assaini par une liste blanche, rendu en HTML sur le serveur. Elle laissait de côté l’endroit où ce document est écrit.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="@types/lodash.throttle" dans="racine" dev />
+<Installer paquets="@tiptap/react @tiptap/starter-kit @tiptap/pm @tiptap/extensions @tiptap/extension-highlight @tiptap/extension-horizontal-rule @tiptap/extension-image @tiptap/extension-list @tiptap/extension-subscript @tiptap/extension-superscript @tiptap/extension-text-align @tiptap/extension-typography @radix-ui/react-popover @radix-ui/react-dropdown-menu react-hotkeys-hook lodash.throttle" dans="web" />
+<Installer paquets="sass" dans="web" dev />
+
 Un éditeur de texte riche est un des composants les plus difficiles à écrire soi-même : la sélection, le presse-papier, l’annulation, les listes imbriquées, la saisie sur mobile. Le projet ne l’a pas écrit. Il s’appuie sur **Tiptap**, une surcouche de ProseMirror, et sur un modèle d’interface que Tiptap publie. Cette partie raconte, en deux chapitres, ce qui a été adopté tel quel, ce qui a été taillé, et le seul nœud écrit pour le club : l’image de la bibliothèque.
 
 ## Un modèle copié, pas une dépendance ✍️

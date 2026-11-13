@@ -10,6 +10,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La fracture n’est pas réseau, elle est structurelle : traduire à la main une donnée typée en JSON, puis la reconstruire, n’a plus de contrepartie quand le front et le back partagent leurs types. tRPC en est la conséquence.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="@trpc/server superjson" dans="backend" />
+<Installer paquets="@trpc/server @trpc/client @trpc/react-query @tanstack/react-query @tanstack/react-query-devtools superjson" dans="web" />
+
 Nous avons posé le problème, identifié la fracture et fait émerger une contrainte simple :
 
 👉 **la donnée ne doit plus être traduite en JSON pour circuler**

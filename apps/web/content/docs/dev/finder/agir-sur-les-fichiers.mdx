@@ -33,6 +33,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Le finder montre : un arbre chargé par paliers, une grille en trois vues, une recherche, un fil d’Ariane et un aperçu, tous nourris par le même store.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="react-dnd react-dnd-html5-backend" dans="web" />
+
 Agir sur un fichier, c’est presque toujours appeler une procédure du router `storage`, `media` ou `trash`, que la partie Stockage a décrites côté serveur (« Modifier sans casser »). Ce chapitre regarde l’autre bout : comment le finder **désigne** ce sur quoi on agit, comment il **demande**, et comment il reste **juste** une fois la réponse arrivée.
 
 ## Les parcours du chapitre

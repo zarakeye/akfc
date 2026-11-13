@@ -21,3 +21,21 @@ test("les arborescences de « Démarrer » s'affichent, branches comprises", asy
   await page.goto("/docs/dev/demarrer/organiser-le-depot");
   await expect(page.getByRole("tree", { name: "Arborescence de akfc/" })).toContainText("tsconfig.base.json");
 });
+
+test("chaque chapitre qui installe une dépendance s'affiche, avec sa commande", async ({ page }) => {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const root = "apps/web/content/docs/dev";
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+      d.isDirectory() ? walk(path.join(dir, d.name)) : d.name.endsWith(".mdx") ? [path.join(dir, d.name)] : [],
+    );
+  const pages = walk(root).filter((f) => fs.readFileSync(f, "utf8").includes("<Installer paquets="));
+  expect(pages.length).toBeGreaterThan(20);
+  for (const f of pages) {
+    const slug = f.slice(root.length + 1, -".mdx".length);
+    const res = await page.goto(`/docs/dev/${slug}`);
+    expect(res?.status(), slug).toBe(200);
+    await expect(page.getByText(/À installer|Installé par/).first(), slug).toBeVisible();
+  }
+});

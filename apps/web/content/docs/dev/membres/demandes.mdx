@@ -55,6 +55,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Les membres reçoivent les documents du club et partagent leurs fichiers dans les espaces de leurs groupes, avec des droits qui descendent l’arbre des groupes et se lisent dans le chemin de chaque fichier.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="imapflow mailparser" dans="backend" />
+<Installer paquets="@types/mailparser" dans="racine" dev />
+
 Un membre a parfois besoin de s'adresser au club : poser une question, signaler un problème sur le site, demander une attestation. Le club a fixé quatre exigences : **un message, un numéro, un responsable, un délai**. Chaque demande est numérotée, quelqu'un en est responsable, et le club s'engage sur un délai de première réponse. Sans que l'adresse personnelle de personne ne circule, ni celle du membre, ni celle de qui lui répond.
 
 ## Les parcours du chapitre

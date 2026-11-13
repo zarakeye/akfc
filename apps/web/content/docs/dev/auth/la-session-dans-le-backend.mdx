@@ -10,6 +10,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** `getSessionFromRequest` vérifie le jeton, relit la session et le membre en base, contrôle l’expiration, et renvoie un `SessionClient` — ou `null`.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="next" dans="backend" />
+
 ## L’injection : `createTRPCContext` reprend le relais
 
 Nous avons construit `getSessionFromRequest`. Mais cette fonction est inerte tant que personne ne l’appelle.

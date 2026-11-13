@@ -14,6 +14,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Une session meurt par la déconnexion, par expiration (supprimée au passage ou par la purge de la nuit), ou parce que le mot de passe change.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="nodemailer" dans="backend" />
+<Installer paquets="@types/nodemailer" dans="racine" dev />
+
 ## Le mot de passe oublié : un sous-flux complet et sensible
 
 La réinitialisation est un mécanisme à part. Elle mérite une attention particulière parce qu’elle est **la seule façon de reprendre la main sur un compte sans connaître son mot de passe**. C’est donc une cible privilégiée.

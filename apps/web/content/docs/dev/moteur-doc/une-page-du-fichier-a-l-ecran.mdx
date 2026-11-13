@@ -10,6 +10,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Le moteur des tutoriels a traversé presque toutes les couches du projet : des données typées, un état hors de React, un composant serveur tenu hors du navigateur, une garde maison, un test de bout en bout.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="gray-matter next-mdx-remote" dans="web" />
+<Installer paquets="@types/mdx" dans="web" dev />
+
 Cette documentation est elle-même une fonctionnalité du site. Elle vit dans le même dépôt, se construit avec le même Next.js, passe par le même `pnpm check`, et elle a eu ses propres bugs : des extraits qui montraient le code d’à côté, des renvois vers des chapitres déplacés, des encadrés sans couleur. Cette seconde étude de cas la traverse comme la première a traversé les tutoriels, en trois chapitres :
 
 <DocsTable columnsJson='["Chapitre", "La question"]' rowsJson='[["1. Une page, du fichier à l’écran", "Qu’est-ce qu’une page pour le site, et comment devient-elle ce qu’on lit ?"], ["2. Du code cité au code montré", "Comment un chapitre montre le vrai code du projet, sans jamais montrer celui d’à côté ?"], ["3. Relier les chapitres", "Comment un chapitre renvoie à un autre, et comment un mot renvoie à sa définition, sans que rien ne casse quand la documentation bouge ?"]]' />

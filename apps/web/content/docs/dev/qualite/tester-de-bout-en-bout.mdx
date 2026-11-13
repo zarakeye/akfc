@@ -10,6 +10,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Les gardes maison, le typecheck et le lint lisent le code sans l’exécuter : ils ne voient ni une règle de droits mal appliquée, ni une page qui répond ce qu’elle ne devrait pas.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="@playwright/test @aws-sdk/client-s3" dans="racine" dev />
+
 Un test **de bout en bout** se place là où se place un utilisateur : devant un navigateur. Il ouvre une page, remplit un formulaire, clique, et vérifie ce que l’écran affiche ou ce que le serveur répond. Entre les deux, tout s’exécute pour de vrai : le composant React, la procédure tRPC, la requête Prisma, la base, le stockage, l’envoi d’un e-mail. Rien n’est simulé ; c’est ce qui le rend lent, et c’est ce qui le rend probant.
 
 Le projet utilise **Playwright**, qui pilote un vrai Chromium (le navigateur libre sur lequel Chrome est construit). Les tests vivent dans `e2e/` à la racine, et se lancent par une commande à part, `pnpm e2e` : quelques minutes, contre quelques secondes pour `pnpm check`, qui reste la vérification de chaque commit.

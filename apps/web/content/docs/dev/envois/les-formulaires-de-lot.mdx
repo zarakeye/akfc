@@ -44,6 +44,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Quatre portes du site passent par la famille commune : une destination, un fichier, et `uploadToR2`, qui autorise, envoie et fait enregistrer. Pour **un** fichier.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="react-dropzone" dans="web" />
+
 Un administrateur revient d’un stage avec quarante photos. Il en glisse vingt dans le formulaire. Trois portent un nom déjà pris, une pèse 80 Mo, une autre est refusée par le stockage parce que l’autorisation a expiré pendant qu’il buvait son café. Que doit-il voir ? Que doit-il pouvoir relancer, sans renvoyer ce qui est déjà arrivé ?
 
 Trois formulaires répondent à cette question, chacun à sa manière, parce qu’ils ne servent pas la même personne.

@@ -53,6 +53,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Le modèle vit dans le code : `prisma generate` en a fait un client typé, et le noyau (membres, sessions, groupes) se lit comme une architecture. Mais ce noyau dit comment le site **connaît** ses membres, pas ce qu’il **montre**. Ce que le site montre d’abord, ce sont les disciplines, les cours, les stages et les événements du club.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="react-ts-tab-lib" dans="web" />
+
 ## Les parcours du chapitre
 
 Trois cas d’utilisation traversent ce chapitre : ouvrir une discipline et ses cours, programmer un stage, et ce qu’en voit un visiteur. Chaque onglet en déroule les étapes et ce qu’elles lisent ou écrivent en base, relevé dans le code ; chaque étape mène à son explication plus bas, ou à la carte des entités, rejouée à cette étape.

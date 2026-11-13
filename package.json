@@ -19,7 +19,7 @@
     "e2e": "node e2e/prepare.mjs && playwright test",
     "e2e:report": "playwright show-report",
     "docs:procedures": "node scripts/build-procedure-map.mjs --write",
-    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && pnpm clean && pnpm typecheck && pnpm lint"
+    "check": "node scripts/check-next-conventions.mjs && node scripts/check-tour-targets.mjs && node scripts/build-procedure-map.mjs && node scripts/check-doc-entities.mjs && node scripts/check-doc-snippets.mjs && node scripts/check-doc-components.mjs && node scripts/check-doc-installs.mjs && pnpm clean && pnpm typecheck && pnpm lint"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -44,7 +44,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9.39.4",
     "prisma": "^6.19.0",
-    "tsx": "^4.22.4",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"

@@ -24,6 +24,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Un fichier ne passe pas par notre serveur : le navigateur l’envoie directement au stockage, avec une URL présignée que le backend fabrique sans jamais révéler son secret. Reste à savoir ce que l’on signe.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="@aws-sdk/s3-request-presigner slugify" dans="backend" />
+<Installer paquets="@aws-sdk/s3-request-presigner" dans="web" />
+
 ## Les parcours du chapitre
 
 Un seul parcours traverse ce chapitre : un membre choisit des fichiers et une destination, et obtient pour chacun une autorisation d’envoi. L’onglet en déroule les étapes, relevées dans le code ; chacune mène à son explication plus bas.

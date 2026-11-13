@@ -26,6 +26,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La partie « Stockage et médias » a montré le serveur : un stockage plat qui ne connaît que des clés, une base qui sait ce que valent les fichiers, et `storage.getTree`, qui fabrique à chaque ouverture l’arbre d’un dossier. Elle s’arrêtait au `FinderNode`, le nœud que le serveur rend au navigateur.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="zustand" dans="finder-core" />
+<Installer paquets="zustand" dans="web" />
+
 Ouvrons maintenant le navigateur. Le **finder** est l’explorateur de fichiers du site : un arbre à gauche, une grille au centre, un aperçu à droite, une barre d’outils au-dessus. Il pèse un peu plus de dix mille lignes, dans `apps/web/src/features/finder-core`. Cette partie le parcourt en quatre chapitres : ici, ce qui le nourrit ; ensuite, ce qu’il affiche ; puis ce qu’on y fait ; enfin, les trois finders qu’il sait être.
 
 ## Les parcours du chapitre

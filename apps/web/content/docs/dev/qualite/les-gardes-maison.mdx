@@ -12,7 +12,7 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 Certaines erreurs n’appartiennent qu’à ce projet. Elles ont un point commun : **rien ne les signale**. Le code compile, le lint ne dit rien, la page s’affiche — et pourtant quelque chose ne fonctionne plus, ou la documentation ment. Pour chacune, le projet a écrit une garde : un script de quelques dizaines de lignes, lancé au début de `pnpm check`, qui cherche cette erreur-là et l’explique en français quand il la trouve.
 
-<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."], ["check-doc-snippets.mjs", "Un extrait de code de la documentation dont l’ancre a disparu ou est devenue ambiguë : il montrerait le code d’à côté."], ["check-doc-components.mjs", "Une promesse vers un chapitre ou une section qui n’existe plus, un encadré d’un type inconnu, un terme du glossaire sans définition ou revendiqué deux fois."]]' />
+<DocsTable columnsJson='["Garde", "Erreur silencieuse qu’elle cherche"]' rowsJson='[["check-next-conventions.mjs", "Un fichier de convention de Next (proxy, instrumentation) posé là où Next ne le lit pas : il est ignoré sans avertissement."], ["check-tour-targets.mjs", "Une étape de tutoriel interactif qui vise un élément renommé ou supprimé, un tuto absent du registre, un bouton de fiche ou un parcours qui désigne un tuto inconnu, un tuto sans fiche : le tutoriel se bloque, ou n’apparaît pas."], ["build-procedure-map.mjs", "Une carte des procédures qui ne correspond plus au backend : les parcours de la doc décrivent un code disparu."], ["check-doc-entities.mjs", "Une doc qui cite une entité, une propriété, une procédure ou une section qui n’existe plus."], ["check-doc-snippets.mjs", "Un extrait de code de la documentation dont l’ancre a disparu ou est devenue ambiguë : il montrerait le code d’à côté."], ["check-doc-components.mjs", "Une promesse vers un chapitre ou une section qui n’existe plus, un encadré d’un type inconnu, un terme du glossaire sans définition ou revendiqué deux fois."], ["check-doc-installs.mjs", "Une dépendance déclarée dans un package.json sans sa commande d’installation dans la doc, ou installée deux fois ; une installation qui ne correspond à aucune déclaration."]]' />
 
 ## Les fichiers que Next lit en silence 🧭
 
@@ -146,6 +146,16 @@ Le numéro affiché par une promesse (« Approfondi en 10.7 ») n’est écrit n
 <Promesse vers="dev/moteur-doc/du-code-cite-au-code-montre" section="Désigner un passage par son texte">
 Ces trois gardes protègent le moteur de la documentation : des extraits lus sur le disque à chaque visite, des renvois dont le numéro se calcule, un glossaire repéré dans le texte. Le moteur lui-même est la seconde étude de cas, en fin de parcours.
 </Promesse>
+
+## Chaque dépendance, installée une fois
+
+Un chapitre qui se sert d’une bibliothèque pour la première fois donne sa commande d’installation, avec le composant `<Installer>` : `<Installer paquets="zod" dans="contracts" />` affiche `pnpm --filter @akfc/contracts add zod`. Rien n’obligerait pourtant à s’en souvenir. `check-doc-installs.mjs` relit tous les `package.json` du dépôt, puis toutes les pages de la documentation développeur, et vérifie trois choses :
+
+- chaque dépendance déclarée a sa commande, au paquet où elle est déclarée, et en dépendance de développement si elle l’est ;
+- aucune n’est installée deux fois ;
+- la doc n’installe rien qui ne soit déclaré à cet endroit.
+
+Une dépendance ajoutée au code sans chapitre pour la présenter fait donc échouer `pnpm check`. Une seule exception, explicite : `<Installer … par="create-next-app" />` raconte ce qu’un générateur a installé de lui-même ; il compte s’il correspond à une déclaration, et n’est pas une erreur sinon (le projet a pu déplacer la dépendance depuis).
 
 ## Écrire une garde
 

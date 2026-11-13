@@ -10,6 +10,10 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Quelques commandes ont posé une application Next.js, un workspace pnpm, deux paquets vides et Prisma. L’ensemble démarre, mais rien n’y est encore réglé pour un monorepo.
 
+L'outillage que `create-next-app` avait installé dans `apps/web` sert à tout le dépôt (les types de Node et de React, ESLint pour les paquets) : il est déclaré aussi à la racine.
+
+<Installer paquets="@types/node @types/react @types/react-dom eslint" dans="racine" dev />
+
 Ce chapitre part de l’arborescence brute du chapitre précédent et arrive à celle du projet. Il ne refait pas l’histoire commit par commit : il dit, pour chaque écart entre ce que les outils ont posé et ce que le projet utilise, **ce qui a été fait à la main, et pourquoi**. Les chapitres de la partie « Configuration » reprennent ensuite chaque fichier en détail.
 
 ## La structure visée

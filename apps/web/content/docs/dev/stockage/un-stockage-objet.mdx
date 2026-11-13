@@ -12,6 +12,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** Les données passent par tRPC et Prisma, et chaque procédure connaît l’utilisateur grâce à sa session ; des tests de bout en bout vérifient que les règles de droits tiennent. Tout ce que tRPC transporte tient en quelques kilo-octets : des identifiants, des textes, des dates.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="@aws-sdk/client-s3" dans="backend" />
+<Installer paquets="@aws-sdk/client-s3" dans="web" />
+
 ## Quand le fichier est plus lourd que l’API
 
 Jusqu’ici, le système manipule des **données** : des identifiants, des chaînes de caractères, des dates, des relations. Tout ce que tRPC transporte tient dans quelques kilo-octets.

@@ -10,6 +10,11 @@ import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
 > **Précédemment.** La sécurité est dans la chaîne des procédures (`protectedProcedure`, `isAdmin`), et les règles métier qui dépendent de l’entrée vivent dans la procédure, jamais seulement dans l’interface.
 
+Ce chapitre utilise pour la première fois les dépendances suivantes ; chacune s'ajoute au paquet qui l'importe :
+
+<Installer paquets="zod" dans="backend" />
+<Installer paquets="zod" dans="contracts" />
+
 Nous avons structuré le flux, le contexte, la sécurité.
 
 Mais une faille potentielle subsiste.
