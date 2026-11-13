@@ -6,6 +6,7 @@ import { avatarRouter } from "@backend/modules/avatar/router";
 import { imageConsentRouter } from "@backend/modules/imageConsent/router";
 import { mediaPeopleRouter } from "@backend/modules/mediaPeople/router";
 import { trashRouter } from "@backend/modules/trash/router";
+import { fileVersionRouter } from "@backend/modules/fileVersions/router";
 import { categoryRouter } from "@backend/modules/categories/router";
 import { courseRouter } from "@backend/modules/courses/router";
 import { disciplineRouter } from "@backend/modules/disciplines/router";
@@ -47,6 +48,7 @@ export const appRouter = router({
   imageConsent: imageConsentRouter,
   mediaPeople: mediaPeopleRouter,
   trash: trashRouter,
+  fileVersion: fileVersionRouter,
   category: categoryRouter,
   course: courseRouter,
   discipline: disciplineRouter,

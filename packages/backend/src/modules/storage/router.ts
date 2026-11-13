@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { confirmReplacement, prepareReplacement } from "@backend/modules/fileVersions/fileVersions.service";
 import { countBinExpiringSoon } from "@backend/modules/trash/services/trashRetention.service";
 import { assertOutsideAvatars, avatarsPrefix, outsideBin } from "@backend/modules/storage/mediaPaths";
 import { TRPCError } from "@trpc/server";
@@ -827,6 +828,8 @@ export const storageRouter = router({
           message: `« ${fileName} » existe déjà et ne peut être remplacé que par un administrateur. Renommez votre fichier.`,
         });
       }
+      // Remplacement : le contenu actuel est gardé en version (confirmée à l'enregistrement).
+      if (existing) await prepareReplacement(ctx.prisma, path);
       if (input.destination.kind === "perso" && !existing) {
         const { total } = await countPersoImages({ prisma: ctx.prisma, appRoot: ctx.appRoot, userId: ctx.sessionClient.user.id });
         if (total + 1 > PERSO_PHOTO_QUOTA) {
@@ -890,7 +893,7 @@ export const storageRouter = router({
         prisma: ctx.prisma,
         appRoot: ctx.appRoot,
       });
-      return adapter.registerUploadedAsset({
+      const registered = await adapter.registerUploadedAsset({
         path: input.path,
         userId: ctx.sessionClient.user.id,
         expectedBytes: input.expectedBytes,
@@ -898,5 +901,8 @@ export const storageRouter = router({
         destination: input.destination,
         originalFileName: input.originalFileName,
       });
+      // Un fichier remplacé : sa version préparée devient visible, ses vignettes sont refaites.
+      if (existing) await confirmReplacement(ctx.prisma, registered.mediaAssetId, input.path);
+      return registered;
     }),
 });

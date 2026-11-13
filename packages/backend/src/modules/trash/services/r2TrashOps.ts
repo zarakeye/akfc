@@ -96,6 +96,18 @@ export async function r2MoveFile(srcKey: string, dstKey: string): Promise<void> 
   await s3.send(new DeleteObjectCommand({ Bucket, Key: srcKey }));
 }
 
+/** Copie un objet R2 (la source reste en place, type MIME compris). */
+export async function r2CopyFile(srcKey: string, dstKey: string): Promise<void> {
+  const s3: S3Client = getR2Client();
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket: getR2Bucket(),
+      Key: dstKey,
+      CopySource: buildCopySource(getR2Bucket(), srcKey),
+    }),
+  );
+}
+
 /** Liste (paginée) les clés R2 sous un préfixe. */
 export async function r2ListByPrefix(
   prefix: string,

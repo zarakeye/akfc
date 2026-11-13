@@ -510,6 +510,8 @@ export function createR2StorageAdapter(
           // Pas de changement de catégorie/discipline sur re-upload (ce qui
           // serait peu intuitif — l'user qui re-soumet veut juste écraser).
           uploaderUserId: input.userId,
+          // Date du contenu : l'ancien est parti en version avec la sienne.
+          uploadedAt: new Date(),
         },
       });
 

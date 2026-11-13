@@ -168,6 +168,9 @@ model User {
   /// Éléments qu'il a mis à la corbeille (1–N, TrashEntry.trashedBy). Gardés sans auteur
   /// à sa suppression.
   trashedEntries TrashEntry[] @relation("UserTrashedEntries")
+  /// Anciennes versions de fichiers dont il avait déposé le contenu (1–N,
+  /// FileVersion.author). Gardées sans auteur à sa suppression.
+  authoredFileVersions FileVersion[] @relation("UserFileVersions")
   /// Médias qu'il a téléversés (1–N, MediaAsset.uploader). Gardés sans téléverseur à
   /// sa suppression : un fichier appartient au club.
   uploadedMediaAssets       MediaAsset[]  @relation("UserMediaUploads")
@@ -1128,6 +1131,9 @@ model MediaAsset {
 
   /// Personnes taguées sur ce média (admin), comparées à leur droit à l'image.
   people MediaPerson[]
+  /// Anciennes versions du fichier (1–N, FileVersion.mediaAsset). Elles suivent la
+  /// ligne (renommage, déplacement, corbeille) et sont effacées avec elle.
+  versions FileVersion[]
   /// Coché par un admin : aucune personne reconnaissable (salle, matériel, de dos) → vert partout.
   noRecognizablePerson Boolean @default(false)
 
@@ -1210,12 +1216,53 @@ enum FolderStatus {
   bin
 }
 
+/// Ancienne version d'un fichier de la bibliothèque. Créée quand un fichier est
+/// remplacé (envoi d'un fichier du même nom, confirmé) ou quand une version est
+/// restaurée : le contenu remplacé est copié sous _versions/{mediaAssetId}/{id}.
+/// Conservation : les 10 plus récentes de chaque fichier, et pas plus d'un an
+/// (purge de nuit, qui efface aussi les objets sans ligne).
+model FileVersion {
+  /// Identifiant CUID ; il figure dans la clé de stockage.
+  id               String     @id @default(cuid())
+  /// Fichier dont c'est une ancienne version.
+  mediaAssetId     String
+  /// Fichier (N–1, MediaAsset.versions). Versions effacées avec lui.
+  mediaAsset       MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  /// Clé de l'objet copié, hors de l'arborescence du club : _versions/{mediaAssetId}/{id}.
+  storageKey       String     @unique
+  /// Nom du fichier tel qu'il avait été déposé.
+  originalFileName String
+  /// Type MIME du contenu.
+  mimeType         String
+  /// Taille, en octets.
+  bytes            Int
+  /// Largeur en pixels (images, vidéos), si connue.
+  width            Int?
+  /// Hauteur en pixels (images, vidéos), si connue.
+  height           Int?
+  /// Durée en secondes (vidéos, sons), si connue.
+  duration         Float?
+  /// Membre qui avait déposé ce contenu.
+  authorId         String?
+  /// Auteur (N–1, User.authoredFileVersions). Détaché à sa suppression.
+  author           User?      @relation("UserFileVersions", fields: [authorId], references: [id], onDelete: SetNull)
+  /// Date à laquelle ce contenu avait été déposé.
+  uploadedAt       DateTime
+  /// Date à laquelle il a été remplacé (création de la version).
+  createdAt        DateTime   @default(now())
+  /// Faux tant que l'envoi du remplaçant n'est pas confirmé (registerR2Upload) :
+  /// une version non confirmée est invisible, et purgée après un jour.
+  confirmed        Boolean    @default(false)
+
+  @@index([mediaAssetId, createdAt])
+}
+
 /// Élément (fichier ou dossier) placé dans la corbeille, avec sa provenance
 /// pour pouvoir le restaurer. Créé au passage en corbeille (trashToBin), AVANT
 /// le déplacement physique vers {appRoot}/bin/.trash/{id}/{displayName}.
 /// Suppression définitive : depuis la vue corbeille, par identifiant
-/// (deleteForever), ou depuis le finder, par chemin (purge). Aucune purge
-/// automatique n'existe.
+/// (deleteForever), ou depuis le finder, par chemin (purge), ou par la purge de
+/// nuit, trashRetentionDays jours après la mise à la corbeille.
 model TrashEntry {
   /// Identifiant UUID, réservé avant le déplacement ; il figure dans le chemin
   /// de rangement.

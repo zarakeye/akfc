@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { parisClock } from "@backend/modules/tickets/recap.service";
 import { sweepOrphanDerivatives } from "@backend/modules/media/services/mediaDerivatives.service";
+import { purgeFileVersions } from "@backend/modules/fileVersions/fileVersions.service";
 import { purgeExpiredTrash } from "@backend/modules/trash/services/trashRetention.service";
 import { purgeDetachedImageConsentForms } from "@backend/modules/imageConsent/imageConsentForm.service";
 
@@ -11,7 +12,8 @@ import { purgeDetachedImageConsentForms } from "@backend/modules/imageConsent/im
  *     supprimée avec ses messages et son historique ;
  *   - sessions expirées et liens de réinitialisation périmés : supprimés ;
  *   - formulaires de droit à l'image d'un compte supprimé depuis plus de 5 ans : supprimés ;
- *   - éléments de la corbeille jetés depuis plus de N jours (réglage trashRetentionDays) : supprimés.
+ *   - éléments de la corbeille jetés depuis plus de N jours (réglage trashRetentionDays) : supprimés ;
+ *   - anciennes versions des fichiers : les 10 plus récentes de chaque fichier, pas plus d'un an.
  * Les comptes ne sont JAMAIS supprimés automatiquement (le site ne connaît pas la fin d'adhésion) :
  * listInactiveAccounts les signale aux administrateurs (registre RGPD), qui décident.
  */
@@ -59,6 +61,10 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
     console.error("[rgpd/purge] corbeille :", err instanceof Error ? err.message : err);
     return 0;
   });
+  const versions = await purgeFileVersions(db, now).catch((err) => {
+    console.error("[rgpd/purge] versions :", err instanceof Error ? err.message : err);
+    return 0;
+  });
   return {
     tickets: tickets.count,
     sessions: sessions.count,
@@ -67,6 +73,7 @@ export async function purgeExpiredData(db: PrismaClient, now = new Date()) {
     derivatives,
     imageConsentForms,
     trash,
+    versions,
   };
 }
 
@@ -113,8 +120,8 @@ export function startRetentionSchedule(db: PrismaClient): boolean {
     lastDay = parisClock(now).day;
     purgeExpiredData(db, now)
       .then((r) => {
-        if (r.tickets || r.sessions || r.resetTokens || r.guardianRequests || r.derivatives || r.imageConsentForms || r.trash) {
-          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.guardianRequests} demande(s) au parent expirée(s), ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image, ${r.trash} élément(s) de la corbeille supprimé(s)`);
+        if (r.tickets || r.sessions || r.resetTokens || r.guardianRequests || r.derivatives || r.imageConsentForms || r.trash || r.versions) {
+          console.log(`[rgpd/purge] ${r.tickets} demande(s) close(s), ${r.sessions} session(s), ${r.resetTokens} lien(s) de réinitialisation, ${r.guardianRequests} demande(s) au parent expirée(s), ${r.derivatives} vignette(s) orpheline(s), ${r.imageConsentForms} formulaire(s) de droit à l'image, ${r.trash} élément(s) de la corbeille, ${r.versions} ancienne(s) version(s) supprimé(s)`);
         }
       })
       .catch((err) => console.error("[rgpd/purge] échec :", err instanceof Error ? err.message : err))
