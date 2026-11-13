@@ -1,0 +1,34 @@
+---
+title: "Gérer un groupe"
+description: "Renommer un groupe, le déplacer dans l'arbre, ouvrir son espace, y ajouter des membres et régler leurs accès."
+section: "Membres et demandes"
+order: 4
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Faire vivre un groupe après sa création : ses membres, leurs accès à son espace, sa place parmi les autres groupes.
+
+**Avant de commencer.** Être administrateur, et que le groupe existe ([Créer un groupe](/docs/admin/creer-un-groupe)). Panneau de contrôle → **Membres & accès** → **Groupes de membres**, puis un clic sur le groupe.
+
+## Le groupe lui-même
+
+- **Renommer** : le nom change partout, y compris celui de son espace ; aucun fichier ne bouge.
+- **Espace collaboratif** : coché, le groupe a un dossier partagé où chaque membre est éditeur ou lecteur. Décocher n'efface pas le dossier.
+- **Groupe parent** : sa place dans l'arbre des groupes. Les membres d'un groupe ont accès, au même niveau, aux espaces de tous ses sous-groupes. **Administrateurs** est la racine de tous les groupes et ne peut être placé sous aucun autre.
+
+## Les membres
+
+- La liste **Membres** montre ceux du groupe. **Retirer** en enlève un.
+- En dessous, les autres comptes, avec **Ajouter**. Les comptes de démonstration sont masqués, un lien les affiche.
+- Dans un groupe qui a un espace, le bouton **éditeur** / **lecteur** à côté de chaque membre bascule son accès : l'éditeur dépose des fichiers, le lecteur consulte. Un compte est créé éditeur dans ses groupes.
+
+Dans le groupe Administrateurs, votre propre ligne affiche **vous** à la place de **Retirer** : vous ne pouvez pas vous retirer vous-même, pour ne jamais laisser le club sans administrateur. Un autre administrateur peut le faire.
+
+## Supprimer le groupe
+
+**Zone dangereuse** → **Supprimer le groupe**, puis **Confirmer la suppression**. L'espace du groupe doit être vide ; ses sous-groupes passent sous son parent. Le groupe Administrateurs ne peut pas être supprimé.
+
+<Callout type="warning">
+Les documents adressés à un groupe suivent ses membres : un membre ajouté reçoit les documents déjà envoyés au groupe, un membre retiré ne les voit plus.
+</Callout>

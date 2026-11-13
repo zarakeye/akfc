@@ -1,0 +1,63 @@
+---
+title: "Gérer un membre"
+description: "La liste des comptes, la fiche d'un membre, son droit à l'image, son adresse du club et la suppression de son compte."
+section: "Membres et demandes"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Tenir à jour, après sa création, ce que le club sait d'un membre : sa majorité, son droit à l'image, ses groupes, et, s'il quitte le club, supprimer son compte.
+
+**Avant de commencer.** Être administrateur. Panneau de contrôle → **Membres & accès** → **Utilisateurs**.
+
+## La liste des comptes
+
+Une ligne par compte : **Email**, **Nom**, **Groupes** (le groupe Administrateurs ressort en couleur), **Majorité** (Majeur, Mineur ou Non renseignée), **Photos** (le droit à l'image : Accordée, Refusée ou Non recueillie) et **Formulaire** (ce qui le prouve : Papier signé, En ligne, En ligne (parent), Attente du parent ou Aucun). La recherche et le tri portent sur toutes les colonnes.
+
+Les comptes de démonstration (`@akfc.demo`) sont masqués ; un lien au-dessus de la liste les affiche, marqués **Démo**.
+
+<Callout type="warning">
+Un droit à l'image « Accordée » avec « Aucun » formulaire n'a pas de valeur de preuve : c'est une réponse notée à la main. Recueillez le formulaire signé dès que possible.
+</Callout>
+
+## La fiche d'un membre
+
+Un clic sur une ligne ouvre la fiche.
+
+- **Majorité et parent référent** : majeur ou mineur, la date de naissance (à cocher vérifiée quand vous l'avez lue sur un document), et, pour un mineur, le parent référent. La fiche dit ce qui manque. Une fois tout renseigné, le lien **Formulaire de droit à l'image pré-rempli** télécharge le formulaire papier au nom du membre (ou de son parent), à faire signer. Le cas du mineur a sa fiche : [Le droit à l'image d'un mineur](/docs/admin/droit-image-d-un-mineur).
+- **Droit à l'image** : la réponse du membre, quand vous n'avez pas encore de formulaire.
+- **Formulaires signés** : l'historique des formulaires, du plus récent au plus ancien.
+
+## Déposer un formulaire signé
+
+Pour un formulaire papier rendu au club :
+
+1. Dans **Formulaires signés**, ouvrez **Déposer un formulaire signé**.
+2. Choisissez le fichier : le PDF scanné, ou une photo du formulaire (15 Mo au plus).
+3. Cochez les usages marqués « Oui » sur le papier (aucun coché vaut refus de tout), le choix **Après le départ** et la **date de signature**.
+4. Validez. Le message indique si le formulaire a changé le statut du membre.
+
+Un formulaire plus ancien que les droits en vigueur (une archive retrouvée, par exemple) est gardé comme pièce, sans rien changer : seuls des droits plus récents remplacent les précédents. Le membre retrouve ses formulaires dans son profil.
+
+## L'adresse du club
+
+**Modifier** ouvre la seule donnée de la fiche que vous saisissez à la place du membre : son **adresse du club** (`prenom@akfc.fr`), quand il en a une. Elle s'affiche aux membres connectés sur la page des instructeurs. Le reste du profil (nom, pseudo, téléphone…) appartient au membre, qui le modifie lui-même.
+
+## Ses groupes et ses accès
+
+Les groupes d'un membre, et son accès lecteur ou éditeur dans chacun, se règlent depuis la page de chaque groupe : voir [Gérer un groupe](/docs/admin/gerer-un-groupe). C'est l'appartenance au groupe **Administrateurs** qui fait d'un membre un administrateur.
+
+## Supprimer un compte
+
+Depuis la liste (dernière colonne) ou depuis **Modifier** → **Supprimer**, après confirmation. La suppression est définitive.
+
+- **Ce qui part avec le compte** : ses sessions, sa photo de profil, ses appartenances aux groupes, ses accusés de lecture, ses réactions et ses votes.
+- **Ce qui reste, sans son nom** : ses commentaires et ses actualités restent en place, signés « Ancien membre » ; les fichiers qu'il a envoyés restent dans la bibliothèque. Un commentaire qui pose problème (son texte le nomme, par exemple) se retire avec **Supprimer**, que tout administrateur voit sous chaque commentaire.
+- **Ce qui est gardé à part** : ses formulaires de droit à l'image signés, détachés du compte, cinq ans : ils prouvent que les photos publiées l'ont été avec son accord.
+
+La suppression est **refusée** tant que le membre est instructeur principal d'une discipline, animateur principal d'un stage ou organisateur d'un évènement : le message les nomme. Désignez quelqu'un d'autre sur ces fiches, puis recommencez. Vous ne pouvez pas non plus supprimer votre propre compte : un autre administrateur doit le faire.
+
+<Callout type="info">
+Le site ne sait pas quand une adhésion prend fin : il ne supprime jamais un compte de lui-même. Les comptes restés longtemps sans connexion sont listés dans le registre des traitements, pour que vous décidiez.
+</Callout>
