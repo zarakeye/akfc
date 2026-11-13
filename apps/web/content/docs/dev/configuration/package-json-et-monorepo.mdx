@@ -85,9 +85,11 @@ Ces deux champs sont un standard de Node, pas une option de TypeScript. TypeScri
 
 ## Les dépendances : où elles sont déclarées
 
-La règle habituelle d'un monorepo veut que chaque paquet déclare ce qu'il importe. Le projet s'en écarte : le `package.json` de la racine porte l'essentiel des dépendances (environ quatre-vingts, de React à Prisma), et celui de `apps/web` seulement celles ajoutées plus tard (le stockage S3, MDX, l'aperçu des PDF…).
+La règle d'un monorepo : **chaque paquet déclare ce qu'il importe**. `zod` figure ainsi dans trois `package.json` (contracts, backend, web), `@trpc/server` dans deux, `react` dans celui du web seulement. pnpm n'installe pas trois copies : il en garde une dans son magasin et la relie là où elle est déclarée.
 
-Cela fonctionne grâce à la résolution de Node : un `import "zod"` depuis `apps/web/src/…` cherche `node_modules/zod` dans le dossier du fichier, puis dans chaque dossier parent, jusqu'à la racine du dépôt, où pnpm l'a installé. L'inconvénient : rien n'empêche un paquet d'importer une bibliothèque qu'il ne déclare pas, et le jour où un paquet serait sorti du dépôt, ses vraies dépendances seraient à reconstituer.
+<DocsTable columnsJson='["Où", "Ce qui y est déclaré"]' rowsJson='[["La racine", "L’outillage du dépôt (TypeScript, ESLint, Prisma, Playwright, tsx, les types @types/*) et ce qu’importent ses propres scripts : le client Prisma, généré là pour tout le dépôt, dotenv et bcryptjs (les données de démonstration)."], ["apps/web", "Tout ce que l’application importe (React, Next.js, tRPC côté client, Tiptap, MDX…) et ses outils de construction (Tailwind, Sass, le compilateur React)."], ["packages/backend", "Ce que l’API importe : tRPC côté serveur, le stockage S3, les e-mails, sharp, Zod… et next, dont il lit les en-têtes."], ["packages/contracts", "Zod."], ["packages/finder-core", "Zustand, et les contrats."]]' />
+
+Ce n'était pas le cas au départ : le `package.json` de la racine portait l'essentiel des dépendances, et le code les trouvait grâce à la résolution de Node, qui remonte de dossier en dossier jusqu'à la racine. Rien n'empêchait alors un paquet d'importer une bibliothèque qu'il ne déclarait pas, et 34 dépendances n'étaient plus importées par personne (Material UI, Emotion, bcrypt doublé de bcryptjs, des extensions Tiptap, le paquet `fs` du registre…). Un relevé des imports de chaque paquet a remis chaque dépendance à sa place, et retiré les autres.
 
 ### dependencies et devDependencies
 
@@ -107,7 +109,7 @@ Dans un `package.json`, `"zod": "^4.1.12"` est une **plage** : toute version 4 �
 `pnpm install` met le fichier de verrouillage à jour si un `package.json` a changé. `pnpm install --frozen-lockfile`, utilisé par le `Dockerfile`, refuse au contraire de le modifier et échoue si le fichier ne correspond plus aux `package.json` : la production n'installe jamais une version qui n'a pas été vue en développement.
 
 <Callout type="warning">
-Ajouter une dépendance se fait avec `pnpm add <paquet>` (à la racine, ou `pnpm --filter web add <paquet>` pour un paquet donné), qui met à jour le `package.json` **et** le fichier de verrouillage. Modifier le `package.json` à la main sans relancer `pnpm install` laisse les deux en désaccord, et la construction de l'image échoue.
+Ajouter une dépendance se fait avec `pnpm --filter <paquet> add <dépendance>` dans le paquet qui l'importe (ou `pnpm add -w <dépendance>` pour l'outillage de la racine), qui met à jour le `package.json` **et** le fichier de verrouillage. Chaque chapitre de cette documentation donne la commande de chaque dépendance au moment où elle sert pour la première fois. Modifier le `package.json` à la main sans relancer `pnpm install` laisse les deux en désaccord, et la construction de l'image échoue.
 </Callout>
 
 ### Forcer une version : overrides
@@ -157,7 +159,7 @@ Les scripts de la racine délèguent souvent au paquet concerné, qui a les sien
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment pnpm connaît-il les paquets ?", "pnpm-workspace.yaml : tout dossier de apps/ et packages/ qui a un package.json."], ["Comment désigner un paquet ?", "Par le nom de son package.json (@akfc/web, @akfc/backend), avec --filter, avec ou sans sa portée."], ["Comment le code atteint-il un fichier ?", "#chemin.ext dans son propre paquet (imports) ; @akfc/paquet/chemin.ext dans un autre (exports, et une dépendance workspace:*)."], ["Où sont déclarées les dépendances ?", "Surtout à la racine ; Node les trouve en remontant les dossiers."], ["Qui fixe les versions installées ?", "pnpm-lock.yaml, versionné ; le Dockerfile l’exige à l’identique (--frozen-lockfile)."], ["Comment ajouter une dépendance ?", "pnpm add (ou pnpm --filter web add), jamais à la main dans le package.json."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Comment pnpm connaît-il les paquets ?", "pnpm-workspace.yaml : tout dossier de apps/ et packages/ qui a un package.json."], ["Comment désigner un paquet ?", "Par le nom de son package.json (@akfc/web, @akfc/backend), avec --filter, avec ou sans sa portée."], ["Comment le code atteint-il un fichier ?", "#chemin.ext dans son propre paquet (imports) ; @akfc/paquet/chemin.ext dans un autre (exports, et une dépendance workspace:*)."], ["Où sont déclarées les dépendances ?", "Dans le paquet qui les importe ; à la racine, l’outillage et le client Prisma."], ["Qui fixe les versions installées ?", "pnpm-lock.yaml, versionné ; le Dockerfile l’exige à l’identique (--frozen-lockfile)."], ["Comment ajouter une dépendance ?", "pnpm add (ou pnpm --filter web add), jamais à la main dans le package.json."]]' />
 
 ## À suivre
 

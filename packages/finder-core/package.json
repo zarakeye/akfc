@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@akfc/contracts": "workspace:*"
+    "@akfc/contracts": "workspace:*",
+    "zustand": "^5.0.8"
   }
 }
