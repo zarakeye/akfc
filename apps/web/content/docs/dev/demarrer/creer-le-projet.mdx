@@ -58,23 +58,21 @@ cd ..
 Le générateur installe les dépendances, puis affiche `Success! Created web at …/akfc/apps/web`. Il a posé ceci :
 
 <Arbre racine="web/" texte="
-public/                 # cinq images de démonstration (file.svg, globe.svg, next.svg…)
-src/
-  app/
-    favicon.ico
-    globals.css         # le CSS global, qui importe Tailwind
-    layout.tsx          # le gabarit commun à toutes les pages
-    page.tsx            # la page d'accueil de démonstration
+public/              # cinq images de démonstration (file.svg, globe.svg, next.svg…)
+src/app/favicon.ico
+src/app/globals.css  # le CSS global, qui importe Tailwind
+src/app/layout.tsx   # le gabarit commun à toutes les pages
+src/app/page.tsx     # la page d'accueil de démonstration
 .gitignore
-AGENTS.md               # des consignes pour les assistants de code
+AGENTS.md            # des consignes pour les assistants de code
 CLAUDE.md
 README.md
 eslint.config.mjs
-next-env.d.ts           # les types de Next.js, régénéré : à ne pas modifier
-next.config.ts          # vide : « config options here »
+next-env.d.ts        # les types de Next.js, régénéré : à ne pas modifier
+next.config.ts       # vide : « config options here »
 package.json
-pnpm-lock.yaml          # ⚠ un fichier de verrouillage propre à web
-pnpm-workspace.yaml     # ⚠ un workspace propre à web
+pnpm-lock.yaml       # ⚠ un fichier de verrouillage propre à web
+pnpm-workspace.yaml  # ⚠ un workspace propre à web
 postcss.config.mjs
 tsconfig.json
 " />
@@ -130,8 +128,7 @@ pnpm exec prisma init
 `prisma init` annonce ce qu’il crée, puis propose de brancher une base existante ou d’en créer une :
 
 <Arbre racine="akfc/" texte="
-prisma/
-  schema.prisma       # le schéma : un générateur, une source de données, aucun modèle
+prisma/schema.prisma  # le schéma : un générateur, une source de données, aucun modèle
 prisma.config.ts      # la configuration de la CLI Prisma (chemins, URL de la base)
 .env                  # DATABASE_URL, avec une valeur d'exemple
 .gitignore            # ignore .env et /generated/prisma
@@ -157,29 +154,22 @@ Le schéma est vide, et la base n’existe pas encore. `prisma init` suggère `p
 Voici le dépôt après ces commandes, hors `node_modules` et `.git` :
 
 <Arbre racine="akfc/" texte="
-apps/
-  web/
-    public/
-    src/
-      app/
-    AGENTS.md
-    CLAUDE.md
-    README.md
-    eslint.config.mjs
-    next-env.d.ts
-    next.config.ts
-    package.json
-    postcss.config.mjs
-    tsconfig.json
-packages/
-  backend/
-    src/
-    package.json
-  contracts/
-    src/
-    package.json
-prisma/
-  schema.prisma
+apps/web/public/
+apps/web/src/app/
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
+apps/web/README.md
+apps/web/eslint.config.mjs
+apps/web/next-env.d.ts
+apps/web/next.config.ts
+apps/web/package.json
+apps/web/postcss.config.mjs
+apps/web/tsconfig.json
+packages/backend/src/
+packages/backend/package.json
+packages/contracts/src/
+packages/contracts/package.json
+prisma/schema.prisma
 .env
 .gitignore
 package.json

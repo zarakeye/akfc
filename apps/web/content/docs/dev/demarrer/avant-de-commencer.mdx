@@ -53,29 +53,26 @@ Gardons le dépôt ouvert à côté. Chaque chemin cité s'ouvre dans l'éditeur
 Le projet est un **monorepo** géré par pnpm : un seul dépôt Git, plusieurs paquets qui se connaissent par leur nom.
 
 <Arbre racine="akfc/" texte="
-apps/                       # les applications
-  web/                      # l'application Next.js : pages, composants, client tRPC
-    content/
-      docs/                 # cette documentation, en MDX (guide, admin, dev)
-    src/
-      app/                  # les routes : (public) pour le site, (admin)/dashboard, docs
-      features/             # le code rangé par fonctionnalité (admin, finder, page-builder, tours…)
-      proxy.ts              # le filtre d'authentification qui garde /dashboard et /profil
-packages/                   # le code partagé, en paquets
-  backend/                  # l'API : routeurs tRPC, accès base, e-mails, stockage
-    src/
-      modules/              # un dossier par domaine (posts, disciplines, storage, tickets…)
-      trpc/                 # la construction de tRPC : contexte, procédures publiques, protégées, admin
-  config/                   # la configuration partagée
-  contracts/                # les types et schémas partagés par le front et le back
-  finder-core/              # le moteur du finder (l'explorateur de fichiers), indépendant du stockage
-prisma/                     # le schéma de la base (50 modèles) et ses migrations
-scripts/                    # les vérifications lancées par pnpm check
-e2e/                        # les tests de bout en bout
-docker-compose.dev.yml      # la base, le stockage et la boîte mail de développement
-Dockerfile                  # l'image de production
-package.json                # les scripts du projet et la plupart des dépendances
-pnpm-workspace.yaml         # la liste des paquets du monorepo
+apps/                          # les applications
+apps/web/                      # l'application Next.js : pages, composants, client tRPC
+apps/web/content/docs/         # cette documentation, en MDX (guide, admin, dev)
+apps/web/src/app/              # les routes : (public) pour le site, (admin)/dashboard, docs
+apps/web/src/features/         # le code rangé par fonctionnalité (admin, finder, page-builder, tours…)
+apps/web/src/proxy.ts          # le filtre d'authentification qui garde /dashboard et /profil
+packages/                      # le code partagé, en paquets
+packages/backend/              # l'API : routeurs tRPC, accès base, e-mails, stockage
+packages/backend/src/modules/  # un dossier par domaine (posts, disciplines, storage, tickets…)
+packages/backend/src/trpc/     # la construction de tRPC : contexte, procédures publiques, protégées, admin
+packages/config/               # la configuration partagée
+packages/contracts/            # les types et schémas partagés par le front et le back
+packages/finder-core/          # le moteur du finder (l'explorateur de fichiers), indépendant du stockage
+prisma/                        # le schéma de la base (50 modèles) et ses migrations
+scripts/                       # les vérifications lancées par pnpm check
+e2e/                           # les tests de bout en bout
+docker-compose.dev.yml         # la base, le stockage et la boîte mail de développement
+Dockerfile                     # l'image de production
+package.json                   # les scripts du projet et l'outillage
+pnpm-workspace.yaml            # la liste des paquets du monorepo
 " />
 
 Une règle découpe ce territoire : **`apps/web` affiche, `packages/backend` décide**. Le front ne parle jamais à la base ; il appelle une procédure tRPC, et c'est le backend qui vérifie les droits, valide l'entrée, lit ou écrit. Les types qui circulent entre les deux vivent dans `packages/contracts`. Ce découpage permet qu'un changement d'un côté casse la compilation de l'autre, et donc qu'une incompatibilité soit détectée sur notre machine plutôt que devant un membre.

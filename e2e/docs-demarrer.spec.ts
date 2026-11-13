@@ -10,6 +10,8 @@ test("les arborescences de « Démarrer » s'affichent, branches comprises", asy
   const carte = page.getByRole("tree", { name: "Arborescence de akfc/" });
   await expect(carte).toContainText("proxy.ts");
   await expect(carte).toContainText("├── ");
+  // La profondeur est respectée : backend est DANS packages (une branche │ devant).
+  await expect(carte).toContainText("│ ├── backend");
 
   await page.goto("/docs/dev/demarrer/creer-le-projet");
   await expect(page.getByRole("tree", { name: "Arborescence de web/" })).toContainText("pnpm-workspace.yaml");

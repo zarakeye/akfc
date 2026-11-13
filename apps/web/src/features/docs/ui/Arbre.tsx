@@ -1,58 +1,76 @@
 import { FileText, Folder } from "lucide-react"
 
 /*
- * Arborescence façon explorateur d'IDE (VS Code) : des branches (├── └── │), le NOM seul de
- * chaque élément (jamais le chemin de son parent), et un commentaire facultatif aligné à droite.
+ * Arborescence façon explorateur de VS Code : des branches (├── └── │), le NOM seul de chaque
+ * élément, un commentaire facultatif.
  *
- *   <Arbre texte="
- *   apps/                  # les applications
- *     web/                 # l'application Next.js
- *       package.json
- *   pnpm-workspace.yaml    # la liste des paquets
+ * Chaque ligne donne le CHEMIN COMPLET d'un élément, depuis la racine : le composant en déduit la
+ * profondeur, crée les dossiers intermédiaires et range le tout comme VS Code (dossiers d'abord,
+ * puis fichiers, par ordre alphabétique).
+ *
+ *   <Arbre racine="akfc/" texte="
+ *   apps/web/                  # l'application Next.js
+ *   packages/backend/src/      # l'API
+ *   pnpm-workspace.yaml        # la liste des paquets
  *   " />
  *
- * Un attribut texte ENTRE GUILLEMETS, sur plusieurs lignes : les pages MDX sont compilées sans
- * expressions JavaScript (next-mdx-remote les retire), donc pas de texte={`…`}. Pas de « " »
- * dans l'arborescence.
- *
- * Deux espaces d'indentation par niveau. Un nom qui finit par « / » est un dossier ; « # » ouvre
- * le commentaire. `racine` affiche le dossier de départ en tête (« akfc/ »).
+ * Un nom qui finit par « / » est un dossier ; « # » ouvre le commentaire. L'attribut est ENTRE
+ * GUILLEMETS, sur plusieurs lignes : les pages MDX sont compilées sans expressions JavaScript
+ * (next-mdx-remote les retire), et l'indentation d'un attribut n'y est pas conservée — d'où des
+ * chemins complets plutôt qu'un retrait. Pas de « " » dans l'arborescence.
  */
 
 interface Noeud {
   nom: string
+  dossier: boolean
   commentaire: string | null
-  enfants: Noeud[]
+  enfants: Map<string, Noeud>
 }
 
-function analyser(texte: string | undefined): Noeud[] {
-  if (!texte) return []
-  const racines: Noeud[] = []
-  const pile: { niveau: number; noeud: Noeud }[] = []
-  for (const brute of texte.split("\n")) {
-    if (!brute.trim()) continue
-    const niveau = Math.floor((brute.length - brute.trimStart().length) / 2)
-    const [avant, ...apres] = brute.trim().split(/\s+#\s?/)
-    const noeud: Noeud = { nom: avant.trim(), commentaire: apres.length ? apres.join(" # ").trim() : null, enfants: [] }
-    while (pile.length && pile[pile.length - 1].niveau >= niveau) pile.pop()
-    if (pile.length) pile[pile.length - 1].noeud.enfants.push(noeud)
-    else racines.push(noeud)
-    pile.push({ niveau, noeud })
+const nouveau = (nom: string, dossier: boolean): Noeud => ({ nom, dossier, commentaire: null, enfants: new Map() })
+
+/** Lignes « chemin # commentaire » → arbre ; les dossiers intermédiaires sont créés au passage. */
+export function construireArbre(texte: string | undefined): Noeud {
+  const racine = nouveau("", true)
+  for (const brute of (texte ?? "").split("\n")) {
+    const ligne = brute.trim()
+    if (!ligne) continue
+    const [chemin, ...reste] = ligne.split(/\s+#\s?/)
+    const dossier = chemin.endsWith("/")
+    const segments = chemin.split("/").filter(Boolean)
+    let courant = racine
+    segments.forEach((seg, i) => {
+      const dernier = i === segments.length - 1
+      let n = courant.enfants.get(seg)
+      if (!n) {
+        n = nouveau(seg, !dernier || dossier)
+        courant.enfants.set(seg, n)
+      }
+      if (!dernier) n.dossier = true
+      courant = n
+    })
+    if (reste.length) courant.commentaire = reste.join(" # ").trim()
   }
-  return racines
+  return racine
+}
+
+/** L'ordre de VS Code : dossiers d'abord, puis fichiers ; alphabétique, sans tenir compte de la casse. */
+export function trier(noeuds: Iterable<Noeud>): Noeud[] {
+  return [...noeuds].sort(
+    (a, b) => Number(b.dossier) - Number(a.dossier) || a.nom.localeCompare(b.nom, "fr", { sensitivity: "base", numeric: true }),
+  )
 }
 
 function Ligne({ prefixe, noeud }: { prefixe: string; noeud: Noeud }) {
-  const dossier = noeud.nom.endsWith("/") || noeud.enfants.length > 0
-  const Icone = dossier ? Folder : FileText
+  const Icone = noeud.dossier ? Folder : FileText
   return (
     <div className="flex items-center gap-1.5 whitespace-pre leading-6">
       <span aria-hidden="true" className="text-muted-foreground/60">{prefixe}</span>
       <Icone
         aria-hidden="true"
-        className={`h-3.5 w-3.5 shrink-0 ${dossier ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400"}`}
+        className={`h-3.5 w-3.5 shrink-0 ${noeud.dossier ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400"}`}
       />
-      <span className="font-medium text-foreground">{noeud.nom.replace(/\/$/, "")}</span>
+      <span className="font-medium text-foreground">{noeud.nom}</span>
       {noeud.commentaire && (
         <span className="ml-3 whitespace-normal font-sans text-xs text-muted-foreground">{noeud.commentaire}</span>
       )}
@@ -60,15 +78,16 @@ function Ligne({ prefixe, noeud }: { prefixe: string; noeud: Noeud }) {
   )
 }
 
-function Branches({ noeuds, retrait }: { noeuds: Noeud[]; retrait: string }) {
+function Branches({ noeud, retrait }: { noeud: Noeud; retrait: string }) {
+  const enfants = trier(noeud.enfants.values())
   return (
     <>
-      {noeuds.map((n, i) => {
-        const dernier = i === noeuds.length - 1
+      {enfants.map((n, i) => {
+        const dernier = i === enfants.length - 1
         return (
-          <div key={`${retrait}${n.nom}${i}`}>
+          <div key={n.nom}>
             <Ligne prefixe={`${retrait}${dernier ? "└── " : "├── "}`} noeud={n} />
-            {n.enfants.length > 0 && <Branches noeuds={n.enfants} retrait={`${retrait}${dernier ? "    " : "│   "}`} />}
+            {n.enfants.size > 0 && <Branches noeud={n} retrait={`${retrait}${dernier ? "    " : "│   "}`} />}
           </div>
         )
       })}
@@ -77,7 +96,7 @@ function Branches({ noeuds, retrait }: { noeuds: Noeud[]; retrait: string }) {
 }
 
 export function Arbre({ texte, racine }: { texte?: string; racine?: string }) {
-  const noeuds = analyser(texte)
+  const arbre = construireArbre(texte)
   return (
     <div
       role="tree"
@@ -90,7 +109,7 @@ export function Arbre({ texte, racine }: { texte?: string; racine?: string }) {
           <span className="font-semibold text-foreground">{racine.replace(/\/$/, "")}</span>
         </div>
       )}
-      <Branches noeuds={noeuds} retrait="" />
+      <Branches noeud={arbre} retrait="" />
     </div>
   )
 }
