@@ -1,0 +1,166 @@
+---
+title: "Les versions d’un fichier"
+description: "Remplacer un fichier sans perdre l’ancien : un système de versions plutôt qu’une convention de nommage ; une copie préparée avant l’envoi et confirmée après ; des versions rattachées à la ligne du fichier, qui le suivent partout ; restaurer en échangeant ; dix versions, un an au plus ; un document des membres qui repasse à « non lu » ; le panneau « Versions » de l’aperçu."
+section: "La corbeille"
+order: 2
+entities:
+  FileVersion: [mediaAssetId, mediaAsset, storageKey, originalFileName, bytes, authorId, author, uploadedAt, createdAt, confirmed]
+  MediaAsset: [versions, uploadedAt]
+  MemberDocument: [versionedAt]
+stories:
+  - title: Un éditeur remplace le compte rendu de son groupe
+    actor: Membre éditeur d’un espace
+    steps:
+      - label: Il dépose un fichier du même nom et confirme « Remplacer » ; l’actuel est copié en version
+        call: storage.createR2Upload
+        section: Une copie préparée, puis confirmée
+      - label: L’envoi enregistré, la version devient visible ; le document repasse à « non lu » pour les autres
+        call: storage.registerR2Upload
+        section: Un document des membres qui change
+  - title: Un membre retrouve une version précédente
+    actor: Membre d’un espace
+    steps:
+      - label: Il ouvre l’aperçu du fichier ; « Versions » liste l’actuelle et les anciennes
+        call: fileVersion.list
+        section: Le panneau « Versions »
+      - label: Il télécharge une ancienne version
+        call: fileVersion.downloadUrl
+        section: Le panneau « Versions »
+      - label: Éditeur, il la remet en place ; le contenu remplacé devient à son tour une version
+        call: fileVersion.restore
+        section: Restaurer, c’est échanger
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+import DocsTable from "@/features/docs/ui/DocsTable"
+
+> **Précédemment.** Le chapitre précédent a montré la corbeille : jeter, rendre, et une durée au bout de laquelle on efface. Il reste une autre façon de perdre un contenu, plus discrète : le remplacer.
+
+Un compte rendu d’assemblée corrigé, déposé sous le même nom que le premier, **écrasait** l’ancien. La bibliothèque demandait confirmation (« Écraser »), puis l’ancien contenu disparaissait, sans corbeille pour le rattraper. Ce chapitre suit ce qui a remplacé l’écrasement : des versions.
+
+## Les parcours du chapitre
+
+<Parcours />
+
+## Un système plutôt qu’une convention 🗂️
+
+Le club avait deux options. La première ne demandait aucun code : une **convention de nommage** (« compte-rendu-AG-v2.pdf », « compte-rendu-AG-final.pdf »). Elle repose sur la discipline de chacun, et elle échoue de la façon la plus ordinaire : quelqu’un dépose sous le même nom, confirme, et l’ancien est perdu. Elle multiplie aussi les documents des membres : chaque « v2 » est un nouveau document, que tout le monde doit relire sans savoir ce qui a changé.
+
+La seconde est un **système de versions** : on garde le même nom, et le site garde les contenus précédents. C’est celle qu’a choisie le club. Un fichier reste un fichier, avec un seul nom et une seule adresse ; ses anciens contenus vivent à côté, dans une table à part.
+
+<DocsTable columnsJson='["", "Convention de nommage", "Versions"]' rowsJson='[["Coût", "Aucun code.", "Une table, un service, un panneau."], ["Un dépôt sous le même nom", "Écrase l’ancien.", "Garde l’ancien en version."], ["Les liens vers le fichier", "Pointent vers l’ancien nom.", "Pointent toujours vers le contenu actuel."], ["Un document des membres", "Un nouveau document par version.", "Le même document, signalé « Nouvelle version »."]]' />
+
+## Une copie préparée, puis confirmée
+
+Un envoi se fait en trois temps (chapitre « Signer un envoi ») : le serveur signe une adresse, le navigateur envoie **directement** au stockage, puis le serveur enregistre. Le deuxième temps échappe au serveur : quand il voit arriver l’enregistrement, l’ancien contenu est déjà écrasé dans le stockage. La copie doit donc être faite **avant**, au premier temps :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/fileVersions/fileVersions.service.ts"
+  filename="fileVersions.service.ts"
+  snippetStart="export async function prepareReplacement(prisma: PrismaClient, fullPath: string): Promise<void> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="4,8,9"
+  snippetTitle="Avant l’envoi : copier l’actuel, sans le montrer"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La copie part sous `_versions/{mediaAssetId}/{id}`, hors de l’arborescence du club, comme les vignettes sous `_derived/` : le finder ne la voit pas. Elle est **non confirmée** : si le navigateur abandonne l’envoi, le fichier n’a pas changé, et une version identique au contenu actuel serait une fausse alerte. Une demande d’envoi répétée retire d’abord la copie précédente, pour ne pas en empiler.
+
+L’enregistrement confirme :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/fileVersions/fileVersions.service.ts"
+  filename="fileVersions.service.ts"
+  snippetStart="export async function confirmReplacement("
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="7,8,9,10"
+  snippetTitle="Après l’envoi : la version devient visible"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Une version non confirmée depuis plus d’un jour est un envoi abandonné : la purge de la nuit l’efface. La confirmation corrige aussi un défaut ancien. Les vignettes d’un fichier sont rangées par son chemin ; remplacer une photo gardait donc les vignettes de l’**ancienne**, et la grille montrait l’ancienne image. `deleteDerivatives` les efface : elles seront refaites à la prochaine demande.
+
+<Callout type="concept">
+**Préparer, puis confirmer.** Quand une action se fait en plusieurs temps et que le serveur n’en voit pas un, ce qui doit précéder ce temps se prépare avant, en état provisoire, et se confirme après. Ce qui n’est jamais confirmé se nettoie seul.
+</Callout>
+
+## Des versions qui suivent leur fichier
+
+Une version n’est pas rattachée à un **chemin**, mais à la **ligne** `MediaAsset` du fichier (`FileVersion.mediaAssetId`, effacée en cascade). Or renommer, déplacer, jeter et restaurer gardent la même ligne : ils en changent seulement le chemin (`rewriteAssetPaths`, chapitre « Modifier sans casser »). Les versions suivent donc leur fichier partout, sans une ligne de code dans ces opérations. Quand le fichier est effacé définitivement, ses versions partent avec sa ligne ; leurs copies dans le stockage, devenues orphelines, sont effacées par la purge de la nuit, qui compare les objets de `_versions/` aux lignes restantes.
+
+<Callout type="insight">
+Rattacher les versions au chemin aurait demandé de les déplacer à chaque renommage, dans chacune des opérations du finder, sans en oublier aucune. Rattachées à l’identifiant, elles n’ont rien à faire : c’est la clé qui ne change pas.
+</Callout>
+
+## Restaurer, c’est échanger
+
+Restaurer une version ne détruit pas le contenu actuel : il devient à son tour une version, puis la version choisie est recopiée à la place du fichier, et quitte la liste.
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/fileVersions/fileVersions.service.ts"
+  filename="fileVersions.service.ts"
+  snippetStart="export async function restoreVersion(params: { prisma: PrismaClient; user: User; versionId: string }): Promise<{ fullPath: string }> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5,9,10,11,24,27"
+  snippetTitle="L’actuel en version, la version à sa place"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La ligne du fichier reprend les caractéristiques de la version : taille, type, nom d’origine, auteur et date de dépôt. On peut donc toujours revenir en arrière, et un mauvais clic se rattrape par un second.
+
+Les droits suivent ceux des espaces : voir et télécharger les versions, un administrateur ou un membre de l’espace du groupe ; restaurer, un administrateur ou un **éditeur** de l’espace ; effacer une version, un administrateur. Le téléchargement passe par une adresse signée pour dix minutes, au nom d’origine de la version.
+
+## Dix versions, un an au plus
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/fileVersions/fileVersions.service.ts"
+  filename="fileVersions.service.ts"
+  snippetStart="async function applyRetention(prisma: PrismaClient, mediaAssetId: string, now = new Date()): Promise<number> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="7,8"
+  snippetTitle="La première limite atteinte l’emporte"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Chaque fichier garde ses **dix** versions les plus récentes, et aucune de plus d’**un an**. La règle s’applique à chaque nouvelle version, pour le fichier concerné, et chaque nuit pour tous. Les deux limites ne se cumulent pas : la première atteinte l’emporte, ce qui borne la place prise dans le stockage.
+
+## Un document des membres qui change
+
+Un fichier de la bibliothèque peut être publié aux membres (chapitre « Les documents des membres »). Quand son contenu change, par un remplacement ou une version restaurée, le document doit être relu :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/fileVersions/fileVersions.service.ts"
+  filename="fileVersions.service.ts"
+  snippetStart="async function announceNewVersion(prisma: PrismaClient, mediaAssetId: string, actorId: string): Promise<void> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="5,7,8,13"
+  snippetTitle="Non lu pour tous, sauf pour l’auteur du changement"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+`MemberDocument.versionedAt` date la dernière nouvelle version. Les reçus de lecture des autres repassent à `null` : le document revient « non lu », la page Documents affiche « Nouvelle version » au lieu de « Nouveau », et la cloche le compte, y compris pour un membre arrivé dans l’année, puisque `versionedAt` compte comme une publication. Celui qui a déposé la version l’a vue : son reçu est daté.
+
+## Le panneau « Versions »
+
+L’aperçu d’un fichier, dans la bibliothèque comme dans « Mes espaces », se termine par un bloc repliable, « Versions (N) » : la version actuelle, puis les anciennes avec leur date de dépôt, leur auteur, leur date de remplacement et leur taille. Les boutons dépendent des droits que renvoie `fileVersion.list` (`canRestore`, `canDelete`) : « Télécharger » pour tous, « Restaurer… » avec une confirmation, « Effacer » pour les administrateurs. Pour un fichier hors de portée, le serveur refuse et le bloc ne s’affiche pas.
+
+Côté dépôt, le dialogue de la bibliothèque dit maintenant « Remplacer » au lieu de « Écraser », et précise que l’actuel est gardé ; « Mes espaces » propose aussi « Remplacer » quand un fichier du même nom existe, au lieu d’un message d’erreur.
+
+Les tests de bout en bout (`e2e/versions.spec.ts`) déposent puis remplacent un fichier dans l’espace d’un groupe, et vérifient : la version gardée et son contenu téléchargé, le lecteur qui voit sans restaurer, le non-membre refusé, l’échange à la restauration, l’effacement réservé aux administrateurs, le document repassé « non lu » pour un autre membre et pas pour l’auteur, et le panneau dans le finder.
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Pourquoi pas une convention de nommage ?", "Elle compte sur la discipline de chacun et échoue au premier dépôt sous le même nom."], ["Quand la copie est-elle faite ?", "Avant l’envoi (createR2Upload), non confirmée ; l’enregistrement la confirme. Abandonnée, la purge l’efface après un jour."], ["Où sont les copies ?", "Sous _versions/, hors de l’arborescence du club."], ["Que deviennent les versions quand on renomme ou jette ?", "Elles suivent : elles sont rattachées à la ligne du fichier, pas à son chemin."], ["Restaurer perd-il l’actuel ?", "Non : l’actuel devient une version, la version prend sa place."], ["Combien de versions ?", "Les dix plus récentes, un an au plus."], ["Qui fait quoi ?", "Voir : membre de l’espace. Restaurer : éditeur. Effacer : administrateur."], ["Et un document des membres ?", "Il repasse à « non lu » (« Nouvelle version »), sauf pour l’auteur du changement."]]' />
+
+## À suivre
+
+Les fichiers se rangent, se trouvent, se jettent, se rendent et se remplacent sans se perdre. Reste à savoir comment chacun est entré : par quel écran, sous quelles limites, et ce qui arrive quand vingt fichiers partent ensemble et que trois échouent.
+
+<Callout type="tip">
+**Partie suivante : les envois de fichiers.** Les sept portes par où un fichier entre sur le site, les trois circuits qu’elles empruntent, les formulaires de lot, les photos d’iPhone converties sur l’appareil, et les envois d’un seul fichier pour un seul usage.
+</Callout>

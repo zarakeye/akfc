@@ -178,6 +178,8 @@ Le badge de l’entrée « Documents » ne signale pas tout l’historique. Un m
 
 Le **début de l’année**, et non la date exacte d’adhésion : un membre qui arrive après l’assemblée générale est quand même invité à lire son compte rendu. Les documents plus anciens restent dans la liste de la page ; les lire est une démarche volontaire, pas une alerte. Les documents personnels et ceux des groupes sont toujours signalés : ils ont été adressés à ce membre en particulier.
 
+`freshSince` accepte deux dates : la publication, ou la **dernière nouvelle version** du fichier (`versionedAt`). Un compte rendu ancien, corrigé cette année, est de nouveau à lire. Remplacer le fichier d’un document, ou en restaurer une version, remet les reçus des autres membres à `null` : la page affiche « Nouvelle version » au lieu de « Nouveau », avec sa date, et la cloche des espaces le signale aussi. Le détail est au chapitre « Les versions d’un fichier ».
+
 Le badge affiche un total **distinct** : un document qui atteint le membre par deux chemins (à titre personnel et par son groupe) ne compte qu’une fois. L’infobulle détaille le nombre par provenance : le club, chaque groupe, les documents personnels.
 
 ## Servir le fichier à ceux qui peuvent l’ouvrir

@@ -1,10 +1,11 @@
 ---
 title: "Jeter, retrouver, effacer"
-description: "La corbeille vue du navigateur : une liste plate des éléments jetés posée dans le finder, chargée par pages de cent ; entrer dans un dossier jeté ; qui peut jeter (un administrateur partout, un éditeur dans l’espace de son groupe) et qui seul peut restaurer ou effacer ; effacer par identifiant ou par chemin ; un élément jeté qui ne s’efface qu’en entier ; ce que la corbeille garde, et ce qu’elle ne fait pas."
+description: "La corbeille vue du navigateur : une liste plate des éléments jetés posée dans le finder, chargée par pages de cent ; entrer dans un dossier jeté ; qui peut jeter, qui peut restaurer (un éditeur rend ce qui a été jeté dans l’espace de son groupe, quel que soit l’auteur) et qui seul peut effacer ; effacer par identifiant ou par chemin ; un élément jeté qui ne s’efface qu’en entier ; une durée de conservation réglable, tenue par la purge de la nuit, avec un préavis."
 section: "La corbeille"
 order: 1
 entities:
-  TrashEntry: [kind, status, displayName, previousPath, storageRoot, trashedAt, deletedAt]
+  TrashEntry: [kind, status, displayName, previousPath, storageRoot, trashedAt, trashedById, trashedBy, deletedAt]
+  SiteSettings: [trashRetentionDays]
 stories:
   - title: Un administrateur fait le ménage dans la corbeille
     actor: Administrateur
@@ -18,12 +19,27 @@ stories:
       - label: Il efface définitivement un dossier ; un fichier pris dans ce dossier ne s’efface pas seul
         call: trash.purge
         section: Un élément jeté s’efface en entier
-  - title: Un éditeur jette un document de l’espace de son groupe
-    actor: Membre éditeur d’un espace
+  - title: Un éditeur jette un document de l’espace de son groupe, un autre le récupère
+    actor: Membres éditeurs d’un espace
     steps:
-      - label: Le document part à la corbeille ; seul un administrateur pourra le restaurer
+      - label: Le document part à la corbeille ; la mise à la corbeille retient qui l’a jeté
         call: trash.trashToBin
         section: Qui jette, qui récupère
+      - label: Un autre éditeur du groupe le voit dans « Corbeille de mes espaces »
+        call: trash.listSpacesBin
+        section: Qui jette, qui récupère
+      - label: Il le restaure, bien qu’il ne l’ait pas jeté
+        call: trash.restoreFromBin
+        section: Qui jette, qui récupère
+  - title: La corbeille se vide d’elle-même
+    actor: Le serveur, la nuit
+    steps:
+      - label: Sept jours avant, la cloche des administrateurs annonce ce qui va être effacé
+        call: storage.getAttentionCounts
+        section: Combien de temps la corbeille garde
+      - label: Passé la durée réglée, la purge de la nuit efface définitivement
+        call: purgeExpiredTrash
+        section: Combien de temps la corbeille garde
 ---
 
 import { Callout } from "@/features/docs/ui/Callout"
@@ -87,12 +103,12 @@ Un double-clic sur un dossier jeté ne passe pas par une procédure dédiée : i
   filename="router.ts"
   snippetStart="export const trashRouter = router({"
   snippetEnd="(fin du bloc)"
-  snippetHighlight="2,8,14,19,35,41,47"
-  snippetTitle="Une procédure pour les membres, cinq pour les administrateurs"
+  snippetHighlight="2,8,14,19,36,42,45,54,60"
+  snippetTitle="Jeter, lister et restaurer pour les membres ; le reste aux administrateurs"
   fullFileTitle="Voir le fichier complet"
 />
 
-Une seule procédure est ouverte aux membres : **jeter**. Encore faut-il être éditeur de l’espace de groupe où se trouve l’élément :
+Trois procédures sont ouvertes aux membres : **jeter**, **lister** la corbeille de ses espaces, et **restaurer**. Pour jeter, il faut être éditeur de l’espace de groupe où se trouve l’élément :
 
 <CodeExample
   language="ts"
@@ -105,12 +121,29 @@ Une seule procédure est ouverte aux membres : **jeter**. Encore faut-il être �
   fullFileTitle="Voir le fichier complet"
 />
 
-Lister, regarder, restaurer et effacer restent aux administrateurs. La conséquence se dit en une phrase : **un membre qui jette ne peut pas revenir en arrière seul**. Il ne voit pas la corbeille ; il demande à un administrateur. C’est cohérent avec le reste (la bibliothèque est tenue par les administrateurs), et c’est aussi ce qui rend la corbeille sûre : un éditeur fâché ne peut pas effacer définitivement le travail de son groupe.
+Restaurer a longtemps été réservé aux administrateurs : **un membre qui jetait ne pouvait pas revenir en arrière seul**. Le club a tranché. Dans l’espace d’un groupe, n’importe quel éditeur du groupe restaure ce qui y a été jeté, **quel que soit celui qui l’a jeté** : le travail d’un groupe appartient au groupe. Hors des espaces de groupe, chacun ne restaure que ce qu’il a jeté lui-même. Pour le savoir, la mise à la corbeille retient désormais son auteur (`TrashEntry.trashedById`, détaché si son compte est supprimé).
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashRetention.service.ts"
+  filename="trashRetention.service.ts"
+  snippetStart="export async function assertCanRestoreEntries(params: {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="8,16,19,22"
+  snippetTitle="Restaurer : l’espace du groupe d’abord, l’auteur ensuite"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+La règle se lit sur le **chemin d’origine** de l’élément, pas sur son emplacement actuel dans la corbeille : `groupIdFromLogicalPath(previousPath)` dit de quel espace il vient. Une seule entrée refusée fait refuser toute la demande, avant qu’aucun fichier ne bouge.
+
+Un éditeur n’ouvre pas la corbeille du finder, réservée aux administrateurs : elle mêle tous les espaces. `trash.listSpacesBin` lui rend seulement ce qui vient des espaces où il est éditeur, avec le nom du groupe, et « Mes espaces collaboratifs » le montre dans un bloc repliable, « Corbeille de mes espaces », avec un bouton « Restaurer » par élément.
+
+Effacer définitivement reste aux administrateurs. C’est ce qui garde la corbeille sûre : un éditeur fâché peut jeter le travail de son groupe, un autre éditeur peut le rendre, personne dans le groupe ne peut le détruire.
 
 La garde a une autre conséquence, moins visible. Un membre ne peut pas jeter dans son **espace personnel** : seul l’espace d’un groupe lui est ouvert. Une photo déposée par erreur dans « Mes photos » reste là, et compte dans son quota, jusqu’à ce qu’un administrateur la jette. Ouvrir la corbeille aux membres pour leur propre espace est une décision à prendre ; ce chapitre se contente de la signaler.
 
-<Callout type="warning">
-**Un geste réversible pour qui ne peut pas le reprendre.** Pour le membre, « Envoyer à la corbeille » est définitif tant qu’aucun administrateur n’intervient. Le texte de confirmation (« Tu pourras le restaurer ensuite ») est écrit pour un administrateur ; pour un éditeur, il promet un peu trop.
+<Callout type="insight">
+**Un geste réversible pour qui peut le reprendre.** « Tu pourras le restaurer ensuite » promettait trop à un éditeur, tant que seul un administrateur restaurait. La règle a rattrapé le texte : dans l’espace d’un groupe, l’éditeur qui jette, ou un autre, peut le reprendre.
 </Callout>
 
 ## Effacer par identifiant, effacer par chemin
@@ -140,28 +173,51 @@ La procédure refuse désormais un chemin plus profond que l’élément lui-mê
 
 L’élément entier reste effaçable de deux façons : depuis la liste plate, ou, une fois entré, en sélectionnant le dossier jeté lui-même (son chemin est le `storageRoot` de l’entrée). Le refus arrive dans le finder avec son message (« Ce fichier fait partie de « … », jeté en entier : revenez à la corbeille… ») : `deleteNodes` ne laissait jusqu’ici aucune erreur remonter, elles finissaient dans la console. Elles s’affichent maintenant dans le bandeau d’erreur du finder.
 
-Un test de bout en bout, `e2e/corbeille.spec.ts`, prépare un dossier jeté avec une photo, demande d’effacer la photo seule, et vérifie le refus et que le dossier est toujours dans la corbeille ; un second vérifie qu’un membre ne peut pas lister la corbeille.
+Un test de bout en bout, `e2e/corbeille.spec.ts`, prépare un dossier jeté avec une photo, demande d’effacer la photo seule, et vérifie le refus et que le dossier est toujours dans la corbeille ; d’autres vérifient qu’un membre ne peut pas lister la corbeille du finder, qu’un lecteur du groupe ne restaure pas, et qu’un éditeur restaure, depuis « Mes espaces », ce qu’un administrateur a jeté.
 
 <Callout type="concept">
 **Le serveur garde la règle, l’interface la rend lisible.** On aurait pu griser « Supprimer » dans un dossier jeté. Mais une règle qui n’existe que dans l’interface s’oublie au prochain écran : la procédure refuse, et l’interface n’a plus qu’à afficher pourquoi.
 </Callout>
 
-## Ce que la corbeille garde, et ce qu’elle ne fait pas
+## Ce que la corbeille garde
 
 Une `TrashEntry` n’est jamais effacée. Restaurée, elle passe à `RESTORED` (avec la date et le chemin de retour) ; effacée, à `DELETED` (avec la date). La table est un **journal** de ce qui a été jeté, rendu et détruit, et c’est la seule trace qui reste d’un fichier effacé.
 
 La cloche du tableau de bord compte les éléments dans la corbeille, avec les fichiers en attente et les contenus non publiés. Son libellé pour les lecteurs d’écran oubliait les contenus non publiés : avec seulement cinq brouillons, la pastille affichait 5 et l’annonce était « 0 contenu dans la corbeille ». Il énumère maintenant tout ce que compte la pastille.
 
-Ce que la corbeille ne fait pas : elle ne se vide **jamais d’elle-même**. Pas de durée de conservation, pas de purge nocturne. Elle grossit jusqu’à ce qu’un administrateur la vide. Deux raisons de s’en soucier un jour : la place dans le stockage, et les données personnelles (une photo jetée reste une photo stockée, avec les personnes qu’elle montre). Une rétention de quelques mois, effacée par la tâche nocturne qui existe déjà pour les formulaires signés, serait la suite naturelle ; c’est une décision du club.
+## Combien de temps la corbeille garde
+
+La corbeille ne se vidait jamais d’elle-même. Elle grossissait jusqu’à ce qu’un administrateur la vide, avec deux soucis : la place dans le stockage, et les données personnelles (une photo jetée reste une photo stockée, avec les personnes qu’elle montre). Le club a fixé la durée de la corbeille : **90 jours**, réglable dans les Réglages (`SiteSettings.trashRetentionDays`, de 8 à 3 650 jours), à côté des autres durées de conservation. Le registre des traitements et la politique de confidentialité l’annoncent, à partir de la même valeur.
+
+La purge de la nuit, celle qui tient déjà les autres durées, efface ce qui a dépassé la durée :
+
+<CodeExample
+  language="ts"
+  filepath="packages/backend/src/modules/trash/services/trashRetention.service.ts"
+  filename="trashRetention.service.ts"
+  snippetStart="export async function purgeExpiredTrash(db: PrismaClient, now = new Date()): Promise<number> {"
+  snippetEnd="(fin du bloc)"
+  snippetHighlight="3,5,12"
+  snippetTitle="Passé la durée, l’effacement ordinaire"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Elle ne réécrit rien : elle appelle `deleteForever`, l’effacement d’un administrateur, une entrée à la fois. L’échec de l’une, un stockage injoignable par exemple, est noté et n’arrête pas les autres ; elle sera reprise la nuit suivante.
+
+Effacer sans prévenir serait brutal. Sept jours avant, la cloche des administrateurs l’annonce (« dont 2 effacés définitivement d’ici 7 jours ») : `storage.getAttentionCounts` renvoie `binExpiringSoon`, compté par la même règle décalée d’une semaine. C’est aussi pourquoi la durée ne descend pas sous 8 jours : il faut laisser passer le préavis. Dans la corbeille, deux colonnes complètent « Jeté le » : « Jeté par » et « Effacé le », en rouge à moins de sept jours.
+
+<Callout type="concept">
+**Une date calculée, pas stockée.** « Effacé le » n’est pas une colonne de la base : c’est `trashedAt` plus la durée réglée (`purgeAt`, calculé à la lecture). Allonger la durée dans les Réglages repousse aussitôt toutes les dates, sans migration ni réécriture.
+</Callout>
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où voit-on la corbeille ?", "Dans le finder, en liste plate des TrashEntry (FinderBinRootView). La vue autonome ne sert qu’au banc d’essai."], ["Et au-delà de cent éléments ?", "La liste se charge par pages ; « Afficher plus » demande la suivante."], ["Comment regarder dans un dossier jeté ?", "Le finder va sur son vrai chemin de stockage ; la lecture est réservée aux administrateurs."], ["Qui peut jeter ?", "Un administrateur partout ; un éditeur dans l’espace de son groupe. Pas un membre dans son espace personnel."], ["Qui peut restaurer ou effacer ?", "Les administrateurs seulement."], ["deleteForever ou purge ?", "Par identifiant (la liste) ou par chemin (le finder) ; purge efface aussi les vestiges."], ["Peut-on effacer un fichier d’un dossier jeté ?", "Non : l’élément s’efface en entier, ou pas du tout. La procédure refuse, le finder affiche pourquoi."], ["La corbeille se vide-t-elle seule ?", "Non. Une durée de conservation reste à décider."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Où voit-on la corbeille ?", "Dans le finder, en liste plate des TrashEntry (FinderBinRootView). La vue autonome ne sert qu’au banc d’essai."], ["Et au-delà de cent éléments ?", "La liste se charge par pages ; « Afficher plus » demande la suivante."], ["Comment regarder dans un dossier jeté ?", "Le finder va sur son vrai chemin de stockage ; la lecture est réservée aux administrateurs."], ["Qui peut jeter ?", "Un administrateur partout ; un éditeur dans l’espace de son groupe. Pas un membre dans son espace personnel."], ["Qui peut restaurer ?", "Un administrateur, tout ; un éditeur, ce qui a été jeté dans l’espace de son groupe, quel que soit l’auteur ; ailleurs, chacun ce qu’il a jeté lui-même."], ["Qui peut effacer ?", "Les administrateurs seulement."], ["deleteForever ou purge ?", "Par identifiant (la liste) ou par chemin (le finder) ; purge efface aussi les vestiges."], ["Peut-on effacer un fichier d’un dossier jeté ?", "Non : l’élément s’efface en entier, ou pas du tout. La procédure refuse, le finder affiche pourquoi."], ["La corbeille se vide-t-elle seule ?", "Oui : la purge de la nuit efface ce qui a été jeté depuis plus de 90 jours (réglable), après un préavis de sept jours dans la cloche."]]' />
 
 ## À suivre
 
-Les fichiers se rangent, se trouvent, se jettent et se rendent. Reste à savoir comment chacun est entré : par quel écran, sous quelles limites, et ce qui arrive quand vingt fichiers partent ensemble et que trois échouent.
+Jeter n’est pas la seule façon de perdre un contenu : on peut aussi le **remplacer**. Un compte rendu corrigé déposé sous le même nom écrasait l’ancien, sans corbeille pour le rattraper.
 
 <Callout type="tip">
-**Partie suivante : les envois de fichiers.** Les sept portes par où un fichier entre sur le site, les trois circuits qu’elles empruntent, les formulaires de lot, les photos d’iPhone converties sur l’appareil, et les envois d’un seul fichier pour un seul usage.
+**Chapitre suivant : les versions d’un fichier.** Remplacer un fichier garde l’ancien contenu ; on le retrouve, on le télécharge, on le remet en place.
 </Callout>

@@ -158,6 +158,8 @@ Dans « Mes espaces », un membre éditeur d’un espace voit une barre de dép�
 
 D’abord, le fichier entre dans la bibliothèque par la famille commune, avec la destination `{ kind: "group", groupId }`. Puis `memberDocument.depositToGroupSpace` en fait un document du groupe, que ses membres verront dans leurs documents. La seconde procédure revérifie le droit d’écrire, et que le fichier se trouve bien **dans** l’espace de ce groupe : être éditeur d’un groupe ne permet pas d’y diffuser un fichier pris ailleurs.
 
+Un fichier du même nom existe déjà ? Le serveur refuse (`CONFLICT`), et la barre ne s’arrête pas sur ce refus : elle propose « Remplacer », puis renvoie avec `allowOverwrite`. L’actuel est gardé dans les versions du fichier, et le document du groupe, déjà publié, repasse à « non lu » pour les autres membres.
+
 La destination désigne un groupe, pas un dossier : le fichier arrive à la racine de l’espace, même si le membre regardait un sous-dossier. Le sélecteur ne propose que des PDF ; c’est un choix d’interface, le serveur acceptant dans un espace tous les formats de la bibliothèque.
 
 <Callout type="insight">

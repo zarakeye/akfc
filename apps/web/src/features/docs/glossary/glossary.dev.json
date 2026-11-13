@@ -2187,5 +2187,32 @@
    "vers": "dev/contenu/le-recensement-des-fichiers",
    "section": "Extraire, sans en oublier"
   }
+ },
+ {
+  "id": "version-fichier",
+  "terme": "version d’un fichier",
+  "variantes": [
+   "version d’un fichier",
+   "versions d’un fichier",
+   "ancienne version",
+   "anciennes versions"
+  ],
+  "definition": "Un contenu précédent d’un fichier de la bibliothèque, gardé quand on le remplace par un fichier du même nom. On peut le télécharger ou le remettre en place.",
+  "definiEn": {
+   "vers": "dev/corbeille/les-versions-d-un-fichier",
+   "section": "Un système plutôt qu’une convention 🗂️"
+  }
+ },
+ {
+  "id": "duree-corbeille",
+  "terme": "durée de la corbeille",
+  "variantes": [
+   "durée de la corbeille"
+  ],
+  "definition": "Le temps au bout duquel un élément jeté est effacé définitivement par la purge de la nuit : 90 jours par défaut, réglable.",
+  "definiEn": {
+   "vers": "dev/corbeille/jeter-retrouver-effacer",
+   "section": "Combien de temps la corbeille garde"
+  }
  }
 ]

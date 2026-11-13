@@ -10,7 +10,7 @@ entities:
   PasswordResetToken: [expiresAt]
   ImageConsentForm: [detachedAt]
   User: [lastLoginAt, createdAt, memberSince]
-  SiteSettings: [accountRetentionMonths, ticketRetentionMonths]
+  SiteSettings: [accountRetentionMonths, ticketRetentionMonths, trashRetentionDays]
 stories:
   - title: La purge de la nuit
     actor: Serveur (chaque nuit à 3 heures, et au démarrage)
@@ -66,7 +66,7 @@ La purge est lancée au démarrage du serveur, puis chaque nuit à 3 heures, heu
 
 Pas de planificateur externe : une minuterie vérifie chaque minute s’il est 3 heures et si la purge du jour n’a pas déjà tourné (`lastDay`). `busy` empêche deux passes de se chevaucher. `RETENTION_PURGE_DISABLED=1` la coupe, pour un environnement de démonstration ou une base qu’on examine.
 
-<DocsTable columnsJson='["Données", "Ce que fait la purge"]' rowsJson='[["Demandes closes", "Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."], ["Souhaits d’un mineur sans réponse du parent", "Supprimés trente jours après l’expiration du lien envoyé au parent ; validés, ils rejoignent aussitôt le formulaire signé."], ["Sessions expirées, liens de réinitialisation périmés", "Supprimés."], ["Vignettes et affiches dont l’original a disparu", "Supprimées du stockage."], ["Formulaires de droit à l’image d’un compte supprimé", "Supprimés cinq ans après la suppression du compte."], ["Comptes", "Jamais supprimés automatiquement : listés aux administrateurs."]]' />
+<DocsTable columnsJson='["Données", "Ce que fait la purge"]' rowsJson='[["Demandes closes", "Supprimées avec leurs messages et leur historique, une fois la durée réglée écoulée depuis la clôture et le dernier message."], ["Souhaits d’un mineur sans réponse du parent", "Supprimés trente jours après l’expiration du lien envoyé au parent ; validés, ils rejoignent aussitôt le formulaire signé."], ["Sessions expirées, liens de réinitialisation périmés", "Supprimés."], ["Vignettes et affiches dont l’original a disparu", "Supprimées du stockage."], ["Formulaires de droit à l’image d’un compte supprimé", "Supprimés cinq ans après la suppression du compte."], ["Éléments de la corbeille", "Effacés définitivement après la durée réglée (90 jours par défaut), avec leurs fichiers ; les administrateurs sont prévenus sept jours avant."], ["Anciennes versions des fichiers", "Les dix plus récentes de chaque fichier, un an au plus ; les copies sans fichier sont effacées du stockage."], ["Comptes", "Jamais supprimés automatiquement : listés aux administrateurs."]]' />
 
 ## Des comptes, jamais supprimés sans décision
 
@@ -126,7 +126,7 @@ Un export de données personnelles se construit par une **liste blanche** de cha
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Les durées de conservation sont-elles tenues ?", "Oui : purge au démarrage et chaque nuit à 3 h des demandes closes anciennes, sessions et liens périmés, vignettes orphelines, anciens formulaires détachés."], ["D’où viennent les durées ?", "Des Réglages, comme le texte de la politique : la promesse et son application lisent la même valeur."], ["Et les comptes ?", "Jamais supprimés automatiquement : listés aux administrateurs, qui décident."], ["Comment un membre accède-t-il à ses données ?", "Par un export JSON depuis son profil, en pièce jointe, jamais en cache."], ["Que ne contient pas l’export ?", "Le mot de passe (ni son empreinte), et les données d’autres personnes : seul le nombre de réponses écrites pour d’autres."]]' />
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Les durées de conservation sont-elles tenues ?", "Oui : purge au démarrage et chaque nuit à 3 h des demandes closes anciennes, sessions et liens périmés, vignettes orphelines, anciens formulaires détachés, corbeille et anciennes versions de fichiers."], ["D’où viennent les durées ?", "Des Réglages, comme le texte de la politique : la promesse et son application lisent la même valeur."], ["Et les comptes ?", "Jamais supprimés automatiquement : listés aux administrateurs, qui décident."], ["Comment un membre accède-t-il à ses données ?", "Par un export JSON depuis son profil, en pièce jointe, jamais en cache."], ["Que ne contient pas l’export ?", "Le mot de passe (ni son empreinte), et les données d’autres personnes : seul le nombre de réponses écrites pour d’autres."]]' />
 
 ## À suivre
 

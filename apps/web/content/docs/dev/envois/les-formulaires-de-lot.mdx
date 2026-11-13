@@ -54,7 +54,7 @@ Trois formulaires répondent à cette question, chacun à sa manière, parce qu�
 
 ## Trois formulaires, trois réglages
 
-<DocsTable columnsJson='["", "Bibliothèque", "Espace personnel", "Dépôt des membres"]' rowsJson='[["Composant", "DragNDropForm", "PersoPhotoUploader", "CommonRepositoryUpload"], ["Formats", "Images, vidéos, sons, documents, archives", "Images seulement", "Tout ce que la bibliothèque accepte"], ["Limites côté navigateur", "20 fichiers ; 50 Mo par image, 500 Mo pour le reste", "20 fichiers, 50 Mo, et la place restante du quota", "Aucune : le serveur juge"], ["Envoi", "En parallèle", "Un par un", "Un par un"], ["Nom déjà pris", "Un dialogue : ignorer ou écraser", "Ignoré, signalé", "Refus du serveur, affiché"], ["Après un échec", "Seuls les fichiers en erreur repartent", "Seuls les fichiers en attente repartent", "Seuls les fichiers non arrivés restent dans la liste"]]' />
+<DocsTable columnsJson='["", "Bibliothèque", "Espace personnel", "Dépôt des membres"]' rowsJson='[["Composant", "DragNDropForm", "PersoPhotoUploader", "CommonRepositoryUpload"], ["Formats", "Images, vidéos, sons, documents, archives", "Images seulement", "Tout ce que la bibliothèque accepte"], ["Limites côté navigateur", "20 fichiers ; 50 Mo par image, 500 Mo pour le reste", "20 fichiers, 50 Mo, et la place restante du quota", "Aucune : le serveur juge"], ["Envoi", "En parallèle", "Un par un", "Un par un"], ["Nom déjà pris", "Un dialogue : ignorer ou remplacer (l’actuel est gardé en version)", "Ignoré, signalé", "Refus du serveur, affiché"], ["Après un échec", "Seuls les fichiers en erreur repartent", "Seuls les fichiers en attente repartent", "Seuls les fichiers non arrivés restent dans la liste"]]' />
 
 Les limites du navigateur ne protègent rien : le serveur refait chaque contrôle à la signature, puis à l’enregistrement. Elles évitent d’envoyer ce qui sera refusé, et de le dire après trois minutes de transfert.
 
@@ -128,7 +128,7 @@ Les fichiers retenus partent ensemble, avec `Promise.all`. Le piège classique e
   fullFileTitle="Voir le fichier complet"
 />
 
-Chaque envoi rend un objet `{ ok: true, path }` ou `{ ok: false, error }`. Une fois tous terminés, le formulaire répartit les statuts : `done` pour les arrivés, `error` avec son message pour les autres, `pending` pour ceux que l’administrateur a choisi de ne pas écraser. La vignette de chaque fichier montre son sort.
+Chaque envoi rend un objet `{ ok: true, path }` ou `{ ok: false, error }`. Une fois tous terminés, le formulaire répartit les statuts : `done` pour les arrivés, `error` avec son message pour les autres, `pending` pour ceux que l’administrateur a choisi de ne pas remplacer. La vignette de chaque fichier montre son sort.
 
 Relancer est alors sans danger : la soumission ne reprend que les fichiers en `pending` ou en `error`. Ceux qui sont arrivés restent affichés comme tels, et ne repartent pas.
 

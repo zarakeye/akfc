@@ -177,7 +177,7 @@ Une exception : le type `application/octet-stream`, « suite d’octets sans typ
 
 ### Pas d’écrasement silencieux
 
-Deux fichiers de même nom dans la même destination donnent la même clé. Envoyer le second **remplacerait** le premier dans le stockage. La procédure refuse donc par défaut (`CONFLICT`), et n’écrase que sur confirmation explicite (`allowOverwrite`).
+Deux fichiers de même nom dans la même destination donnent la même clé. Envoyer le second **remplacerait** le premier dans le stockage. La procédure refuse donc par défaut (`CONFLICT`), et ne remplace que sur confirmation explicite (`allowOverwrite`). Remplacer ne perd plus rien : avant de signer, `prepareReplacement` copie le contenu actuel en version, que l’enregistrement confirme (chapitre « Les versions d’un fichier »).
 
 Mais confirmer ne suffit pas. Écraser, c’est remplacer le contenu d’un fichier **sans repasser par la validation** : la ligne garde son statut. Dans une destination ouverte à tous, un membre pourrait sinon remplacer une photo **publiée**, posée sur la page d’accueil, par n’importe quelle image de son choix. D’où une seconde règle, lue dans la procédure ci-dessous : n’écrase qu’un administrateur, un éditeur dans l’espace de son groupe, ou l’auteur d’un fichier encore en attente.
 
