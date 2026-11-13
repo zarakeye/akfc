@@ -1,0 +1,32 @@
+---
+title: "La corbeille"
+description: "Envoyer des fichiers à la corbeille, les restaurer, ou les supprimer définitivement."
+section: "Médiathèque"
+order: 6
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Retirer un fichier ou un dossier de la bibliothèque sans le perdre tout de suite : il attend dans la corbeille, d'où on le restaure à sa place, ou d'où on l'efface pour de bon.
+
+**Avant de commencer.** Être administrateur. Panneau de contrôle → **Médiathèque** → **Bibliothèque** ; la corbeille est un dossier de l'arborescence.
+
+## Envoyer à la corbeille
+
+Sélectionnez un ou plusieurs éléments, puis le bouton **Envoyer à la corbeille** en haut, ou passez par le **clic droit** sur un élément. Une confirmation rappelle qu'on pourra les restaurer.
+
+La corbeille **refuse** un fichier encore utilisé : affiché dans une page, une galerie ou une actualité, ou mis à disposition des membres. Le message dit où il est utilisé : retirez-le d'abord de ces contenus.
+
+Un éditeur d'un espace collaboratif peut lui aussi jeter un fichier de cet espace. Restaurer et effacer restent aux administrateurs.
+
+## Restaurer ou effacer
+
+Dans le dossier **Corbeille**, chaque élément jeté a son **nom**, son **chemin d'origine**, sa date (**Supprimé le**) et sa **taille**. Un dossier jeté s'ouvre, pour regarder dedans avant de décider.
+
+- **Restaurer** remet l'élément à son chemin d'origine, sans confirmation : c'est réversible. Si un autre fichier a pris sa place entre-temps, il n'est pas écrasé : l’élément restauré reçoit un nom suffixé.
+- **Supprimer définitivement** efface l'élément, après confirmation.
+- **Vider la corbeille** efface tout ce qu'elle contient, après confirmation.
+
+<Callout type="warning">
+Supprimer définitivement est irréversible : le fichier disparaît du stockage. La corbeille ne se vide jamais d'elle-même ; pensez à la vider de temps en temps, notamment des photos où des personnes sont reconnaissables.
+</Callout>

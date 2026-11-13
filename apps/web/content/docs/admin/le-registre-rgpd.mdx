@@ -1,0 +1,30 @@
+---
+title: "Le registre RGPD"
+description: "Le registre des activités de traitement du club, et les comptes inactifs à examiner."
+section: "Réglages"
+order: 2
+---
+
+import { Callout } from "@/features/docs/ui/Callout"
+
+**À quoi ça sert.** Le RGPD demande à l'association de tenir un **registre des activités de traitement** : ce qu'elle fait des données personnelles, pourquoi, combien de temps elle les garde. Le site le tient à jour pour vous, et signale les comptes dont il faudrait décider le sort.
+
+**Avant de commencer.** Être administrateur. Panneau de contrôle → **Configuration & outils** → **Registre RGPD**.
+
+## Le registre
+
+Le registre est **généré** : il se compose à partir des [réglages du site](/docs/admin/les-reglages) (informations légales, durées de conservation) et de la description des traitements que fait le site. Il n'y a rien à y saisir.
+
+Il présente le responsable du traitement, puis chaque traitement (la gestion des membres, les demandes, les documents, les photos et vidéos…) avec sa **finalité**, les **personnes concernées**, les **données**, la **base légale**, les **destinataires**, les **sous-traitants**, les éventuels **transferts hors UE** et la **durée de conservation**. Suivent les mesures de sécurité et les procédures : demandes d'exercice des droits, violation de données, contrats de sous-traitance.
+
+C'est un document interne : à présenter à la CNIL si elle le demande. Il s'imprime tel quel, sans le reste de l'écran.
+
+## Les comptes à examiner
+
+En tête de page, **Comptes à examiner** liste les comptes restés sans connexion au-delà de la durée réglée (**Comptes des anciens membres**, dans les réglages), ou jamais utilisés depuis aussi longtemps.
+
+Le site ne sait pas quand une adhésion prend fin : il ne supprime jamais un compte de lui-même. Pour chacun : si la personne n'est plus adhérente, supprimez son compte ([Gérer un membre](/docs/admin/gerer-un-membre)) ; sinon, il n'y a rien à faire.
+
+<Callout type="info">
+Le reste se purge seul, chaque nuit : demandes closes anciennes, sessions et liens périmés, formulaires de droit à l'image des anciens membres au bout de cinq ans.
+</Callout>
