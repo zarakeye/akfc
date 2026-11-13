@@ -123,6 +123,7 @@ export const siteSettingsRouter = router({
       accountRetentionMonths: input.accountRetentionMonths,
       ticketRetentionMonths: input.ticketRetentionMonths,
       backupRetentionDays: input.backupRetentionDays,
+      ...(input.trashRetentionDays !== undefined ? { trashRetentionDays: input.trashRetentionDays } : {}),
       legalUpdatedAt: new Date(),
     };
     await ctx.prisma.siteSettings.upsert({

@@ -90,3 +90,15 @@ export const TRASHED_FOLDER = {
   storageRoot: "AKFC/bin/.trash/e2e-corbeille/dossier-jete-e2e",
   fileKey: "AKFC/bin/.trash/e2e-corbeille/dossier-jete-e2e/photo.png",
 };
+
+/**
+ * Un groupe collaboratif (membre A éditeur, membre B lecteur) et un fichier jeté par l'admin dans
+ * son espace : n'importe quel éditeur du groupe peut le restaurer, pas un lecteur.
+ */
+export const ATELIER = { id: "e2egroupeatelier", name: "Atelier e2e", slug: "atelier-e2e" };
+export const TRASHED_IN_GROUP = {
+  id: "e2e-corbeille-groupe",
+  displayName: "notes-atelier.png",
+  previousPath: "AKFC/collaborative-group-spaces/atelier-e2e-e2egroupeatelier/notes-atelier.png",
+  storageRoot: "AKFC/bin/.trash/e2e-corbeille-groupe/notes-atelier.png",
+};

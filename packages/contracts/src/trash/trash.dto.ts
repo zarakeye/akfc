@@ -34,6 +34,10 @@ export type TrashEntryDTO = {
 
   /** Date de mise en corbeille (sert au tri et au suffix de restore si collision) */
   trashedAt: string; // ISO string
+  /** Date de la suppression définitive automatique (trashedAt + durée réglée), ISO. */
+  purgeAt: string;
+  /** Qui a jeté l'élément ; `null` pour une entrée ancienne ou un compte supprimé. */
+  trashedByName: string | null;
 
   /**
    * Taille, utile à la comparaison.
@@ -75,4 +79,22 @@ export type ListBinOutput = {
   items: TrashEntryDTO[];
   nextCursor?: string | null;
   totalApprox?: number;
+};
+/**
+ * « Récemment jetés » d'un espace de groupe, vus par un éditeur : ce qui a été jeté dans les
+ * espaces où il est éditeur, quel que soit celui qui l'a jeté (trash.listSpacesBin).
+ */
+export type SpaceBinItem = {
+  id: string;
+  kind: TrashEntryKind;
+  displayName: string;
+  /** Chemin d'origine, dans l'espace. */
+  previousPath: string;
+  /** Le groupe dont l'espace contenait l'élément. */
+  groupId: string;
+  groupName: string;
+  trashedAt: string;
+  purgeAt: string;
+  trashedByName: string | null;
+  sizeBytes?: number;
 };

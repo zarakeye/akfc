@@ -11,6 +11,8 @@ export type RetentionSettings = {
   accountRetentionMonths: number;
   ticketRetentionMonths: number;
   backupRetentionDays: number | null;
+  /** Séjour dans la corbeille avant la suppression définitive (90 jours par défaut). */
+  trashRetentionDays?: number;
   storageRegion: StorageRegion;
 };
 
@@ -119,7 +121,7 @@ export function processingActivities(s: RetentionSettings): ProcessingActivity[]
       recipients: "Public ou membres, selon la galerie et les usages autorisés ; le formulaire : la personne et les administrateurs",
       processors: ["Hetzner Online GmbH", "Cloudflare (R2)"],
       retention:
-        "Images : tant que l'autorisation n'est pas retirée, et au plus tard un an après le départ sauf accord pour un usage au-delà ; formulaire signé : durée de l'adhésion, puis 5 ans ; souhaits d'un mineur non validés : 30 jours après l'expiration du lien",
+        `Images : tant que l'autorisation n'est pas retirée, et au plus tard un an après le départ sauf accord pour un usage au-delà ; mises à la corbeille : supprimées définitivement ${s.trashRetentionDays ?? 90} jours après ; formulaire signé : durée de l'adhésion, puis 5 ans ; souhaits d'un mineur non validés : 30 jours après l'expiration du lien`,
     },
     {
       id: "security",

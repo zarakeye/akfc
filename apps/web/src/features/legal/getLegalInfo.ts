@@ -41,6 +41,7 @@ export async function getLegalInfo(): Promise<LegalInfo> {
     accountRetentionMonths: s?.accountRetentionMonths ?? 12,
     ticketRetentionMonths: s?.ticketRetentionMonths ?? 36,
     backupRetentionDays: s?.backupRetentionDays ?? null,
+    trashRetentionDays: s?.trashRetentionDays ?? 90,
     storageRegion: region as StorageRegion,
   };
 }

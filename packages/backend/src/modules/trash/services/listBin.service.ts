@@ -9,6 +9,7 @@ import {
   bigIntToSafeNumber,
   buildPreviousPathShort,
 } from "@backend/modules/trash/utils";
+import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "@backend/modules/trash/services/trashRetention.service";
 
 /**
  * listBin.service.ts
@@ -27,6 +28,7 @@ export async function listBin(params: {
 }): Promise<ListBinOutput> {
   const { prisma, input } = params;
 
+  const days = await trashRetentionDays(prisma);
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
 
   const where: Prisma.TrashEntryWhereInput = {
@@ -64,6 +66,7 @@ export async function listBin(params: {
       sizeBytes: true,
       providerCreatedAt: true,
       mediaKind: true,
+      trashedBy: { select: { firstName: true, lastName: true, email: true } },
     },
   });
 
@@ -79,6 +82,8 @@ export async function listBin(params: {
     previousPath: r.previousPath,
     previousPathShort: buildPreviousPathShort(r.previousPath),
     trashedAt: r.trashedAt.toISOString(),
+    purgeAt: purgeAtOf(r.trashedAt, days).toISOString(),
+    trashedByName: trashedByNameOf(r.trashedBy),
     sizeBytes: bigIntToSafeNumber(r.sizeBytes),
     createdAt: r.providerCreatedAt ? r.providerCreatedAt.toISOString() : undefined,
     storageKey: r.kind === "file" ? r.storageRoot : undefined,

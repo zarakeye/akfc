@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { countBinExpiringSoon } from "@backend/modules/trash/services/trashRetention.service";
 import { assertOutsideAvatars, avatarsPrefix, outsideBin } from "@backend/modules/storage/mediaPaths";
 import { TRPCError } from "@trpc/server";
 
@@ -145,7 +146,7 @@ export const storageRouter = router({
    * compteurs de toute la bibliothèque, et la cloche qui les affiche n'existe que pour eux.
    */
   getAttentionCounts: protectedProcedure.use(isAdmin).query(async ({ ctx }) => {
-    const [pending, bin, commonRepositoryPending, persoCounts] = await Promise.all([
+    const [pending, bin, commonRepositoryPending, persoCounts, binExpiringSoon] = await Promise.all([
       // Hors corbeille : un fichier jeté garde sa ligne (pour sa restauration), pas son tour.
       ctx.prisma.mediaAsset.count({ where: { appRoot: ctx.appRoot, status: "pending", ...outsideBin(ctx.appRoot) } }),
       ctx.prisma.trashEntry.count({ where: { status: "IN_BIN" } }),
@@ -161,12 +162,15 @@ export const storageRouter = router({
         appRoot: ctx.appRoot,
         userId: ctx.sessionClient.user.id,
       }),
+      // Préavis : supprimés définitivement dans les 7 jours.
+      countBinExpiringSoon(ctx.prisma),
     ]);
     return {
       pending,
       bin,
       commonRepositoryPending,
       persoPending: persoCounts.pending,
+      binExpiringSoon,
     };
   }),
 

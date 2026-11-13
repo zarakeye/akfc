@@ -17,6 +17,7 @@ import { trashToBin } from "@backend/modules/trash/services/trashToBin.service";
 import { assertCanTrashPaths } from "@backend/modules/memberGroups/assertCanTrashPaths.service";
 import { restoreFromBin } from "@backend/modules/trash/services/restoreFromBin.service";
 import { deleteForever } from "@backend/modules/trash/services/deleteForever.service";
+import { assertCanRestoreEntries, listSpacesBin } from "@backend/modules/trash/services/trashRetention.service";
 import { purge, type PurgeOutput } from "@backend/modules/trash/services/purge.service";
 import { assertOutsideAvatars } from "@backend/modules/storage/mediaPaths";
 
@@ -96,7 +97,7 @@ export const trashRouter = router({
     .input(trashToBinInputSchema)
     .mutation(async ({ ctx, input }): Promise<TrashToBinOutput> => {
       // Garde : admin partout ; sinon uniquement dans un espace de groupe
-      // (`groups/…`) dont l'utilisateur est EDITOR. Purge/restore restent admin.
+      // (`groups/…`) dont l'utilisateur est EDITOR. Purge et suppression définitive restent admin.
       await assertCanTrashPaths({
         prisma: ctx.prisma,
         userId: ctx.sessionClient.user.id,
@@ -110,12 +111,25 @@ export const trashRouter = router({
         input.sources.flatMap((source) => (source.kind === "selection" ? source.roots : [source.fullPath])),
       );
 
-      return trashToBin({ prisma: ctx.prisma, input });
+      return trashToBin({ prisma: ctx.prisma, input, trashedById: ctx.sessionClient.user.id });
     }),
 
-  restoreFromBin: adminProcedure
+  /** Corbeille des espaces de groupe où le membre est éditeur (tout, pour un admin). */
+  listSpacesBin: memberProcedure.query(async ({ ctx }) => {
+    return listSpacesBin({ prisma: ctx.prisma, userId: ctx.sessionClient.user.id, appRoot: ctx.appRoot });
+  }),
+
+  // Admin : tout. Éditeur d'un groupe : ce qui a été jeté dans l'espace du groupe, quel que soit
+  // l'auteur. Ailleurs : seulement ce que l'utilisateur a jeté lui-même.
+  restoreFromBin: memberProcedure
     .input(restoreFromBinInputSchema)
     .mutation(async ({ ctx, input }): Promise<RestoreFromBinOutput> => {
+      await assertCanRestoreEntries({
+        prisma: ctx.prisma,
+        userId: ctx.sessionClient.user.id,
+        appRoot: input.appRoot,
+        ids: input.ids,
+      });
       return restoreFromBin({ prisma: ctx.prisma, input });
     }),
 

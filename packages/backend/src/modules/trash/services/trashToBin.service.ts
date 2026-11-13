@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { purgeAtOf, trashRetentionDays, trashedByNameOf } from "@backend/modules/trash/services/trashRetention.service";
 import type { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 
@@ -176,9 +177,22 @@ async function normalizeSources(params: { prisma: PrismaClient; input: TrashToBi
 export async function trashToBin(params: {
   prisma: PrismaClient;
   input: TrashToBinInput;
+  /** Auteur de la mise à la corbeille (droits de restauration, colonne « Jeté par »). */
+  trashedById?: string;
 }): Promise<TrashToBinOutput> {
   const { prisma, input } = params;
   const appRoot = input.appRoot;
+
+  // Durée de conservation et nom de l'auteur, pour la réponse (date de suppression, « Jeté par »).
+  const days = await trashRetentionDays(prisma);
+  const trashedByName = params.trashedById
+    ? trashedByNameOf(
+        await prisma.user.findUnique({
+          where: { id: params.trashedById },
+          select: { firstName: true, lastName: true, email: true },
+        }),
+      )
+    : null;
 
   // Normalise la liste et déduplique.
   const sources = await normalizeSources({ prisma, input });
@@ -258,6 +272,8 @@ export async function trashToBin(params: {
       // mediaKind reste undefined pour un folder (pas de type unique applicable)
     }
 
+    const trashedAt = new Date();
+
     // 2) Création TrashEntry (avant move) : on "réserve" l'id et on garde la provenance.
     await prisma.trashEntry.create({
       data: {
@@ -268,7 +284,8 @@ export async function trashToBin(params: {
         displayName,
         previousPath: normalized,
         storageRoot,
-        trashedAt: new Date(),
+        trashedAt,
+        trashedById: params.trashedById ?? null,
         sizeBytes,
         providerCreatedAt,
         mediaKind,
@@ -326,7 +343,9 @@ export async function trashToBin(params: {
       displayName,
       previousPath: normalized,
       previousPathShort: buildPreviousPathShort(normalized),
-      trashedAt: new Date().toISOString(),
+      trashedAt: trashedAt.toISOString(),
+      purgeAt: purgeAtOf(trashedAt, days).toISOString(),
+      trashedByName,
       sizeBytes: bigIntToSafeNumber(sizeBytes),
       createdAt: providerCreatedAt ? providerCreatedAt.toISOString() : undefined,
       mediaKind,

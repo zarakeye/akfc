@@ -49,6 +49,11 @@ export const saveLegalSettingsSchema = z.object({
   ticketRetentionMonths: months,
   /** Durée de conservation des sauvegardes, en jours (vide : non renseignée). */
   backupRetentionDays: z.number().int().min(1).max(3650).nullable(),
+  /**
+   * Séjour dans la corbeille, en jours, avant la suppression définitive par la purge de nuit.
+   * Au moins 8 : les administrateurs sont prévenus 7 jours avant. Absent : inchangé.
+   */
+  trashRetentionDays: z.number().int().min(8).max(3650).optional(),
 });
 export type SaveLegalSettingsInput = z.infer<typeof saveLegalSettingsSchema>;
 
