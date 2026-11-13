@@ -8,7 +8,7 @@ order: 1
 import { Callout } from "#features/docs/ui/Callout.tsx"
 import DocsTable from "#features/docs/ui/DocsTable.tsx"
 
-> **Précédemment.** La configuration est posée : les paquets, les `tsconfig`, le build de Next et les variables d’environnement. Nous allons bientôt écrire du code ; avant, installons ce qui le vérifiera à chaque modification.
+> **Précédemment.** La configuration est posée, et nous savons ce que Docker fait tourner, de la machine du développeur au serveur. Nous allons bientôt écrire du code ; avant, installons ce qui le vérifiera à chaque modification.
 
 Une erreur qu’un outil peut trouver ne devrait jamais attendre qu’un humain la croise. Cette partie présente les vérifications **statiques** du projet : celles qui lisent le code sans l’exécuter. Ce chapitre les prend ensemble, comme une chaîne : ce que lance `pnpm check`, dans quel ordre, et ce que chaque maillon couvre. Le chapitre suivant entre dans le typecheck et le lint.
 

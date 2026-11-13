@@ -12,7 +12,7 @@ interface MdNode {
 
 /** Là où un terme n'est jamais lié : titres, liens, code, et composants qui affichent du code. */
 const SKIP_TYPES = new Set(["heading", "link", "linkReference", "code", "inlineCode", "mdxjsEsm", "mdxFlowExpression", "mdxTextExpression"])
-const SKIP_JSX = new Set(["Arbre", "Installer", "Terme", "GlossaireCartes", "a", "Link", "CodeSnippet", "CodeExample", "CodeWalkthrough", "CodeSnippetWalkthrough", "DocsTable"])
+const SKIP_JSX = new Set(["Arbre", "Infra", "Installer", "Terme", "GlossaireCartes", "a", "Link", "CodeSnippet", "CodeExample", "CodeWalkthrough", "CodeSnippetWalkthrough", "DocsTable"])
 
 /** Le texte d'un titre tel qu'il est écrit dans le fichier (le code entre accents graves). */
 function headingText(node: MdNode): string {

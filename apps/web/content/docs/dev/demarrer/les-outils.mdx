@@ -20,7 +20,11 @@ Avant la première ligne de code, il faut une poignée d'outils sur la machine. 
 
 Le site a besoin, dès sa première page, d'une base PostgreSQL, d'un stockage de fichiers compatible S3 et d'un serveur d'e-mails. Les installer directement sur la machine, c'est trois logiciels à configurer, à mettre à jour, et qui resteraient là d'un projet à l'autre. Docker les fait tourner dans des **conteneurs** : chacun part d'une image figée, à une version écrite dans le dépôt (`docker-compose.dev.yml`), démarre en une commande et disparaît en une autre, sans rien laisser sur le système.
 
-Docker sert ensuite une seconde fois : l'application elle-même est empaquetée dans une **image** pour partir en production. Les deux usages, et l'infrastructure qu'ils dessinent en local et sur le serveur, ont leur propre partie dans cette documentation, après la configuration du projet.
+Docker sert ensuite une seconde fois : l'application elle-même est empaquetée dans une **image** pour partir en production.
+
+<Promesse vers="dev/docker/pourquoi-docker" section="Quatre usages dans le projet 🐳">
+Docker sert en fait à quatre choses dans le projet : les services de développement, les tests, l'image de production et la sandbox. Pour installer les outils, il suffit de savoir qu'il fait tourner des logiciels à une version écrite dans le dépôt, isolés du reste de la machine.
+</Promesse>
 
 Les commandes qui diffèrent d'un système à l'autre sont présentées par onglets ; le système choisi est retenu pour toute la documentation.
 

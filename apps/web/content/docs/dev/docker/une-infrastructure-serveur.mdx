@@ -1,0 +1,128 @@
+---
+title: "Une infrastructure de serveur"
+description: "Un modèle d’infrastructure pour héberger le site sur un serveur loué, sur le même principe que celui du projet : un dossier d’infrastructure versionné à part, un proxy inverse qui reçoit les visiteurs et s’occupe du HTTPS, le site et son migrateur construits depuis un clone, une base sur un réseau interne, des données dans des dossiers qu’on peut sauvegarder, et ce qui diffère de la machine du développeur."
+section: "Docker : en local et sur le serveur"
+order: 4
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Le Dockerfile produit deux images : un migrateur, qui applique les migrations puis s’arrête, et le service, qui ne contient que ce qui s’exécute, sans un seul secret.
+
+Ce chapitre décrit **un modèle** d’infrastructure : celui du projet, débarrassé de ce qui lui est propre (noms de machine, adresses, autres sites hébergés). Les noms de domaine sont des exemples (`example.org`) et aucun secret n’y figure. On peut le reprendre tel quel pour héberger le site, ou un autre projet bâti de la même façon.
+
+## Les mots du serveur
+
+- Un **serveur loué** (un *VPS*, serveur privé virtuel) est une machine Linux chez un hébergeur, joignable depuis Internet à une adresse fixe, sur laquelle on se connecte en SSH.
+- Un **proxy inverse** est le serveur web placé devant les sites : il reçoit toutes les requêtes des visiteurs, s’occupe du HTTPS, et transmet chacune au conteneur du bon site selon le nom de domaine demandé. Ici, **Caddy**.
+- Un **déploiement** remplace la version du site qui tourne sur le serveur par une nouvelle, sans perdre de données.
+- Le **migrateur** est un conteneur lancé à chaque déploiement, avant le site : il applique les migrations en attente, puis s’arrête.
+- Les **journaux** (*logs*) sont ce que le site écrit pendant qu’il tourne : démarrages, erreurs, tâches de la nuit. Sur un serveur, c’est le seul moyen de savoir ce qui s’est passé.
+
+## Le schéma
+
+<Infra titre="Le serveur" machine="serveur" texte="
+[Réseau web : relié à Internet]
+caddy | Caddy, le proxy inverse : obtient les certificats HTTPS, puis transmet chaque requête au bon conteneur | 80 et 443, les seuls ports ouverts sur Internet | ./caddy/data (certificats)
+akfc | Le site : l’image de service (runner) du chapitre 3. Aussi sur le réseau internal, pour joindre la base | 3000, joignable par les autres conteneurs seulement | aucune : les fichiers sont chez R2
+pgadmin | L’interface d’administration de la base. Aussi sur le réseau internal | 127.0.0.1:5050, par un tunnel SSH | ./pgadmin/data
+[Réseau internal : sans accès à Internet]
+postgres | PostgreSQL 17 : une base par site hébergé | 5432, joignable par les autres conteneurs seulement | ./postgres/data
+akfc-migrator | Le migrateur (image migrator) : lancé à chaque déploiement, puis arrêté | aucun | aucune
+[Hors du serveur]
+Cloudflare R2 | Le stockage des fichiers du club | HTTPS, depuis le conteneur akfc
+Fournisseur SMTP | L’envoi des e-mails | SMTP chiffré, depuis le conteneur akfc
+" />
+
+Un visiteur ne parle qu’à Caddy, sur les ports 80 et 443. Caddy parle au site, sur le réseau `web` ; le site parle à la base, sur le réseau `internal`. La base n’a **aucun** port ouvert sur la machine, et le réseau `internal` n’a pas de sortie vers Internet : même un conteneur compromis sur ce réseau ne peut rien envoyer au dehors.
+
+## Le dossier d’infrastructure
+
+Tout ce qui décrit le serveur vit dans un seul dossier, par exemple `~/infra`. Il est **versionné dans un dépôt Git privé, distinct de celui du site** : le dépôt du site décrit le site ; celui-ci décrit le serveur, qui peut héberger plusieurs sites.
+
+<Arbre racine="infra/" texte="
+docker-compose.yml          # tous les services du serveur — versionné
+.env                        # secrets du compose (mot de passe Postgres…) — tapé sur le serveur, jamais versionné
+.gitignore                  # tout ignorer, puis ré-autoriser ce qui est connu et sans secret
+caddy/Caddyfile             # les sites et leurs domaines — versionné
+caddy/data/                 # certificats HTTPS — non versionné
+postgres/data/              # les données de toutes les bases — non versionné, à sauvegarder
+postgres/init/              # création des bases et des utilisateurs au premier démarrage — en modèle, sans mot de passe
+pgadmin/data/               # réglages de pgAdmin — non versionné
+apps/akfc/                  # un clone du dépôt du site, mis à jour par git pull — ignoré par le dépôt d’infrastructure
+apps/akfc/.env              # secrets du site — tapé sur le serveur, jamais versionné
+" />
+
+Le `.gitignore` du dépôt d’infrastructure fonctionne **à l’envers** de l’habitude : il ignore tout (`*`), puis ré-autorise un par un les fichiers connus et sans secret (`!docker-compose.yml`, `!caddy/Caddyfile`…). Un fichier nouveau, un dump oublié, un `.env` de plus restent donc hors du dépôt tant qu’on ne les a pas autorisés. Un fichier qui doit contenir un mot de passe (un script de `postgres/init/`) est versionné en **modèle** (`.template`), le mot de passe remplacé par un repère ; le vrai fichier, lui, est ignoré.
+
+Les données sont dans des **dossiers de la machine** montés dans les conteneurs (*bind mounts*), pas dans des volumes nommés : on les voit, on connaît leur chemin, on sait ce qu’il faut sauvegarder. Le dépôt restaure la configuration ; les sauvegardes, les données. Les deux sont nécessaires : après une panne de disque, un dépôt sans données redonne un serveur vide, des données sans dépôt un serveur qu’il faut redécrire de mémoire.
+
+## Le compose du serveur
+
+<CodeSnippet
+  language="yaml"
+  title="docker-compose.yml (modèle, dans le dossier d’infrastructure)"
+  kind="pattern"
+  codeJson='"name: infra\n\nservices:\n  caddy:\n    image: caddy:2\n    restart: unless-stopped\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro\n      - ./caddy/data:/data\n    networks: [web]\n\n  postgres:\n    image: postgres:17\n    restart: unless-stopped\n    environment:\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}\n    volumes:\n      - ./postgres/data:/var/lib/postgresql/data\n      - ./postgres/init:/docker-entrypoint-initdb.d:ro\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 5s\n      retries: 20\n    networks: [internal]\n\n  akfc-migrator:\n    build:\n      context: ./apps/akfc\n      target: migrator\n    restart: \"no\"\n    env_file: ./apps/akfc/.env\n    depends_on:\n      postgres:\n        condition: service_healthy\n    networks: [internal]\n\n  akfc:\n    build:\n      context: ./apps/akfc\n      target: runner\n    restart: unless-stopped\n    env_file: ./apps/akfc/.env\n    depends_on:\n      akfc-migrator:\n        condition: service_completed_successfully\n    networks: [web, internal]\n\n  pgadmin:\n    image: dpage/pgadmin4\n    restart: unless-stopped\n    environment:\n      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}\n      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}\n    ports:\n      - \"127.0.0.1:5050:80\"\n    volumes:\n      - ./pgadmin/data:/var/lib/pgadmin\n    networks: [web, internal]\n\nnetworks:\n  web:\n  internal:\n    internal: true"'
+/>
+
+Ce qui change par rapport au compose de développement :
+
+- **`restart: unless-stopped`** : un conteneur qui s’arrête sur une erreur est relancé, et tous redémarrent avec le serveur. Sauf le migrateur (`restart: "no"`), qui doit tourner une fois par déploiement, pas en boucle.
+- **`build`** au lieu d’`image` pour le site : le serveur construit lui-même les deux images du chapitre 3, à partir du clone, en choisissant l’étape (`target`). Il les construit pour sa propre architecture.
+- **`depends_on` avec une condition** : le migrateur attend que la base soit `healthy` ; le site attend que le migrateur se soit **terminé sans erreur** (`service_completed_successfully`). Une migration qui échoue empêche donc le nouveau site de démarrer, et l’ancien continue de servir.
+- **`env_file`** : les secrets arrivent au conteneur au démarrage, depuis un fichier du serveur. Dans ce fichier, l’hôte de la base est le **nom du service**, `postgres`, pas `localhost` : dans un conteneur, `localhost` désigne le conteneur lui-même.
+- **`${POSTGRES_PASSWORD}`** : Compose remplace cette expression par la valeur du `.env` posé à côté de lui. Le fichier versionné ne contient que le nom de la variable.
+- **Aucun port publié**, sauf ceux de Caddy et celui de pgAdmin, limité à `127.0.0.1`.
+
+<Callout type="warning">
+**Un port publié contourne le pare-feu.** Sur Linux, Docker écrit ses propres règles réseau, qui passent **avant** celles d’un pare-feu comme `ufw`. Un `ports: "5432:5432"` ouvre la base à Internet même si `ufw` n’autorise que 22, 80 et 443. D’où les deux règles de ce modèle : ne publier que ce qui doit l’être, et préfixer par `127.0.0.1` tout ce qui ne sert qu’à l’administrateur.
+</Callout>
+
+## Le proxy inverse
+
+<CodeSnippet
+  language="txt"
+  title="caddy/Caddyfile (modèle)"
+  kind="pattern"
+  codeJson='"akfc.example.org {\n\treverse_proxy akfc:3000\n}"'
+/>
+
+Trois lignes par site. Quand le nom de domaine pointe vers l’adresse du serveur et que les ports 80 et 443 sont ouverts, Caddy obtient seul un certificat HTTPS (Let’s Encrypt), le renouvelle avant son expiration, et redirige le HTTP vers le HTTPS. `akfc:3000` est le nom du service du site et son port, résolus sur le réseau `web`. Héberger un second site, c’est un second bloc, et un second service dans le compose.
+
+Après une modification du Caddyfile, Caddy relit sa configuration sans couper les sites en cours :
+
+```bash
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+## Administrer la base
+
+pgAdmin n’est pas exposé sur Internet : son port n’est publié que sur `127.0.0.1` **du serveur**. Pour s’en servir depuis sa machine, on ouvre un **tunnel SSH**, qui fait passer un port local par la connexion SSH :
+
+```bash
+ssh -L 5050:127.0.0.1:5050 utilisateur@serveur
+```
+
+Tant que la connexion est ouverte, `http://localhost:5050` sur la machine affiche le pgAdmin du serveur. L’accès est protégé par la clé SSH, en plus du mot de passe de pgAdmin. Dans pgAdmin, l’hôte de la base est, là encore, le nom du service : `postgres`.
+
+<Callout type="info">
+**Plusieurs sites, une seule base.** Quand plusieurs applications partagent le même Postgres, chacune ouvre ses propres connexions, et leur nombre total peut dépasser la limite du serveur. Un **pgbouncer**, placé entre les applications et Postgres sur le réseau `internal`, les regroupe. Ce n’est pas indispensable pour un site seul ; si on l’ajoute, Prisma doit le savoir (`pgbouncer=true` dans l’adresse de la base).
+</Callout>
+
+## Du développement au serveur
+
+<DocsTable columnsJson='["", "Sur la machine du développeur", "Sur le serveur"]' rowsJson='[["Le site", "Hors Docker, pnpm dev, rechargé à chaque enregistrement.", "Dans un conteneur, construit depuis le clone par le Dockerfile."], ["Les migrations", "pnpm db:migrate, à la main.", "Le conteneur akfc-migrator, à chaque déploiement, avant le site."], ["La base", "Port publié sur 127.0.0.1:5435.", "Aucun port publié : joignable par son nom de service, sur le réseau internal."], ["Les fichiers", "SeaweedFS, dans un conteneur.", "Cloudflare R2, hors du serveur."], ["Les e-mails", "Mailpit : capturés, jamais envoyés.", "Un vrai fournisseur SMTP."], ["Les visiteurs", "Seulement nous, sur localhost:3000.", "Tout Internet, par Caddy, en HTTPS."], ["Les données", "Volumes nommés, qu’on recrée sans regret.", "Dossiers de la machine, à sauvegarder."], ["Les secrets", "Des valeurs de développement, publiques par nature, dans .env.dev.example.", "Tapés sur le serveur, dans des fichiers jamais versionnés ni copiés ailleurs."]]' />
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du modèle"]' rowsJson='[["Où est décrit le serveur ?", "Dans un dossier d’infrastructure, versionné dans un dépôt privé distinct de celui du site."], ["Qu’est-ce qui est ouvert sur Internet ?", "Les ports 80 et 443 de Caddy, et SSH ; rien d’autre."], ["Comment le site joint-il la base ?", "Par le nom du service, postgres, sur le réseau internal."], ["Pourquoi deux réseaux ?", "web reçoit les visiteurs ; internal, sans sortie vers Internet, isole la base."], ["Qui applique les migrations ?", "akfc-migrator, dont le site attend la fin sans erreur."], ["Où sont les secrets ?", "Dans deux .env du serveur, jamais versionnés : celui du compose et celui du site."], ["Qu’est-ce qui se sauvegarde ?", "Les dossiers de données (postgres/data surtout) ; la configuration est dans le dépôt d’infrastructure."], ["Comment administrer la base ?", "pgAdmin sur 127.0.0.1 du serveur, par un tunnel SSH."]]' />
+
+## À suivre
+
+L’infrastructure est en place, et l’image sait se construire. Reste à **déployer** : dans quel ordre, avec quelles précautions pour les migrations, comment lire ce que dit le site en démarrant et comment revenir en arrière. C’est la partie « Infrastructure et déploiement », une fois le site construit et vérifié.
+
+<Callout type="tip">
+**Partie suivante : Qualité (1).** Avant d’écrire la première ligne de code du site, la chaîne de vérifications qui la relira à chaque commit.
+</Callout>

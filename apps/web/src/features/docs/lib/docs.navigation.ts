@@ -15,6 +15,7 @@ const SECTION_ORDER = [
   "Réglages",
   "Démarrer",
   "Configuration",
+  "Docker : en local et sur le serveur",
   "Qualité (1) : vérifier avant d’enregistrer",
   "Fondations front",
   "Données (1) : modéliser et lire",

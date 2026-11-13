@@ -1,0 +1,140 @@
+---
+title: "L’image Docker"
+description: "Le site entre dans Docker : un seul Dockerfile en plusieurs étapes — dépendances en cache, build autonome de Next, migrateur à part, image de service sans outils ni secrets —, ce que next.config.ts prépare pour elle (traçage depuis la racine, fichiers que le traceur ne voit pas, sharp), et ce que Docker ne reçoit jamais."
+section: "Docker : en local et sur le serveur"
+order: 3
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Sur la machine du développeur, Docker fait tourner la base, le stockage et la boîte mail ; le site, lui, tourne hors de Docker, avec `pnpm dev`.
+
+En production, c’est l’inverse : le site lui-même entre dans un conteneur. Il faut donc une **image** du site, construite à partir du dépôt par une recette, le `Dockerfile`. Ce chapitre la lit étape par étape, puis montre ce que `next.config.ts` prépare pour elle, et ce qu’elle ne doit jamais contenir.
+
+## Une image, des étapes 🐳
+
+Une image Docker est un système de fichiers figé : un Linux minimal, Node, l’application compilée, ce qu’il faut pour la lancer. Le serveur la construit à partir du dépôt, puis en démarre un **conteneur**. Le `Dockerfile` en est la recette, exécutée ligne à ligne ; chaque ligne produit une **couche**, que Docker garde en cache tant que ce dont elle dépend n’a pas changé.
+
+Le Dockerfile du projet est **multi-étapes** : plusieurs `FROM`, chacun une image intermédiaire nommée, qui peut recopier des fichiers d’une étape précédente. Deux images en sortent :
+
+<DocsTable columnsJson='["Étape", "Rôle", "Sort de la construction ?"]' rowsJson='[["base", "Debian slim, Node 22, openssl, pnpm par Corepack.", "Non : le socle des autres."], ["deps", "Les dépendances, installées depuis le fichier de verrouillage.", "Non."], ["builder", "Le client Prisma généré, le build Next, sharp mis à plat.", "Non : seuls ses résultats sont recopiés."], ["migrator", "Le schéma, les migrations, la CLI Prisma.", "Oui : lancé avant de démarrer une nouvelle version, puis arrêté."], ["runner", "Le serveur Next autonome, ffmpeg, libheif. Rien d’autre.", "Oui : le service qui répond aux visiteurs."]]' />
+
+Séparer construction et service, c’est ne pas livrer les outils de construction : le compilateur TypeScript, ESLint, les sources, les dépendances de développement restent dans `builder`, qui n’est jamais démarré. L’image de service est plus petite, et ce qu’elle ne contient pas ne peut pas servir à un attaquant.
+
+<CodeWalkthrough
+  language="dockerfile"
+  filepath="Dockerfile"
+  filename="Dockerfile"
+  snippetStart="ARG NODE_VERSION=22"
+  snippetLines="89"
+  title="Dockerfile"
+  stepsJson='[{"title": "Debian, pas Alpine", "body": "`node:22-slim` est une Debian minimale. Alpine serait plus légère, mais sa bibliothèque C (musl) oblige Prisma à un autre moteur, à déclarer et à resurveiller à chaque montée de version (le commentaire d’en-tête le dit). Corepack installe pnpm à la version épinglée par le `packageManager` du dépôt.", "scope": "1-9", "focus": "4-4"}, {"title": "Les dépendances d’abord, seules", "body": "Seuls les `package.json`, le fichier de verrouillage et le schéma Prisma entrent dans cette étape. Tant qu’aucune dépendance ne change, la couche `pnpm install` vient du cache, même si tout le code a changé : c’est la ligne la plus longue, et elle ne se refait que quand il le faut. `--frozen-lockfile` refuse d’installer autre chose que ce que le fichier de verrouillage décrit (partie « Configuration »). Le magasin de pnpm est un cache de construction (`--mount=type=cache`), partagé d’une construction à l’autre.", "scope": "12-22", "focus": "22-22"}, {"title": "Le code, puis le build", "body": "Le reste du dépôt arrive ensuite (`COPY . .`, filtré par `.dockerignore`). Le client Prisma est régénéré pour Linux — celui qu’on aurait apporté du Mac viserait une autre plateforme —, puis Next construit le site en sortie autonome (section suivante).", "scope": "25-38", "focus": "32-32"}, {"title": "Une NEXT_PUBLIC_, au build", "body": "Une variable `NEXT_PUBLIC_` est recopiée dans le code compilé : elle doit exister pendant `next build`, d’où l’argument de build. Il a désormais une **valeur par défaut**, la racine de stockage du club. Sans elle, un argument oublié dans le compose donnait une chaîne vide, et l’explorateur cherchait les fichiers sous une racine de secours que le serveur ne crée pas : c’est arrivé en production.", "scope": "34-37", "focus": "36-36"}, {"title": "sharp, à plat", "body": "sharp produit les vignettes des images. Il charge des binaires natifs par des chemins que le traçage de Next ne suit pas : la construction le recopie avec ses dépendances dans un dossier à plat, et **échoue ici** s’il ne se charge pas — un build cassé vaut mieux qu’une API qui casse en production.", "scope": "39-44", "focus": "44-44"}, {"title": "Le migrateur", "body": "Une image à part, qui ne contient que les dépendances, le schéma et les migrations, et dont la seule commande est `prisma migrate deploy`. pnpm y est désormais téléchargé **au build** (`corepack install`) : avant, Corepack le téléchargeait au lancement, et une migration de production dépendait de la disponibilité du registre npm à cet instant. Et Prisma n’y vérifie plus, à chaque lancement, s’il existe une version plus récente : sa version est celle du fichier de verrouillage, elle change par une modification du dépôt, pas au déploiement.", "scope": "47-58", "focus": "54-54"}, {"title": "Le service, sans droits", "body": "L’image de service crée un utilisateur sans privilèges (`nextjs`) et s’exécute sous son nom (`USER nextjs`) : une faille dans le site ne donne pas la main sur le système du conteneur.", "scope": "61-71", "focus": "69-69"}, {"title": "Les outils lourds avant l’application", "body": "ffmpeg (les affiches des vidéos) et libheif (les photos HEIC des iPhone) sont installés **avant** la copie de l’application. L’ordre compte : une couche est refaite si une couche précédente a changé. Installés après la copie, ils étaient retéléchargés et réinstallés à chaque déploiement — la couche la plus lourde de l’image, refaite pour une ligne de code modifiée. La relecture de cette partie les a remontés.", "scope": "73-80", "focus": "74-74"}, {"title": "Ce que le service contient", "body": "Le dossier autonome de Next (son `server.js` et les seuls fichiers que le code atteint), les fichiers statiques, `public/`, et sharp. Puis le conteneur passe sous `nextjs` et lance `node apps/web/server.js`.", "scope": "82-89", "focus": "82-82"}]'
+/>
+
+<Callout type="tip">
+**Ordonner les couches du plus stable au plus changeant.** Le système et les outils, puis les dépendances, puis le code. Une construction ne refait alors que ce qui a changé, et la suite : une ligne de code modifiée ne refait que les dernières couches.
+</Callout>
+
+## Ce que next.config.ts prépare pour l’image
+
+Le chapitre « Next.js et next.config.ts » a présenté la **sortie autonome** : `next build` suit les imports et recopie dans `.next/standalone` les seuls fichiers atteints, avec un `server.js`. L’image de service n’embarque que ce dossier, et trois autres :
+
+```dockerfile
+# Dockerfile (extrait)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
+```
+
+Le dossier `static` (les fichiers JavaScript et CSS envoyés au navigateur) et `public` ne font pas partie du dossier autonome : Next.js part du principe qu'ils peuvent être servis par un CDN. Le Dockerfile les recopie à côté. La dernière ligne concerne `sharp`, nous y revenons plus bas.
+
+### Tracer depuis la racine du dépôt
+
+Ce suivi des imports s'appelle le **traçage**. Il part par défaut du dossier de l'application, `apps/web`, et ne regarde jamais au-dessus. Or le backend et les contrats vivent dans `packages/`, un niveau plus haut.
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Racine de traçage des fichiers.
+   *
+   * Indispensable en monorepo, et souvent oublié : par défaut Next trace
+   * depuis `apps/web` et manque donc `packages/backend` et
+   * `packages/contracts`, qui vivent AU-DESSUS. Le serveur démarre alors
+   * normalement puis s'effondre au premier import.
+   */
+  outputFileTracingRoot: path.join(process.cwd(), "../../"),
+```
+
+`process.cwd()` est le dossier depuis lequel la commande est lancée. `pnpm --filter web build` l'exécute dans `apps/web`, donc `../../` désigne la racine du dépôt. Le chemin est calculé ainsi parce que `next.config.ts` est compilé en CommonJS, où `import.meta.url` (la façon moderne de connaître l'emplacement d'un fichier) n'existe pas.
+
+### Ce que le traçage ne voit pas
+
+Le traceur lit le code sans l'exécuter. Il suit un `import` écrit en toutes lettres, mais deux sortes de fichiers lui échappent.
+
+```ts
+// apps/web/next.config.ts (extrait)
+  /**
+   * Le traceur du build `standalone` rate les fichiers atteints par des
+   * `await import()` DYNAMIQUES (instrumentation.ts → services backend, résolus
+   * via `@akfc/backend/…`, vers la source) et les assets NON-JS (schéma
+   * Prisma, migrations). Sans eux dans l'image, le boot crashe en « Code file
+   * not found » et le self-heal ne tourne jamais. On force donc leur inclusion.
+   * Globs relatifs au dossier du projet (apps/web) ; clé `**` = toutes entrées.
+   */
+  outputFileTracingIncludes: {
+    "**": [
+      "../../packages/backend/**/*",
+      "../../packages/contracts/**/*",
+      "../../prisma/**/*",
+      // sharp (déclinaisons d'images R2) : binaires natifs chargés dynamiquement.
+      "../../node_modules/sharp/**/*",
+      "../../node_modules/.pnpm/sharp@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-linux-x64@*/**/*",
+      "../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**/*",
+    ],
+  },
+```
+
+Les **imports dynamiques** d'abord. Au démarrage, `instrumentation.ts` charge les services du backend avec `await import(...)`, pour qu'ils ne soient lus que côté serveur Node. Le traceur ne les suit pas toujours. Les **fichiers qui ne sont pas du code** ensuite : le schéma Prisma et ses migrations, lus sur le disque, jamais importés. Sans eux, l'image démarre puis échoue au premier besoin. `outputFileTracingIncludes` force leur copie ; la clé `"**"` signifie « pour toutes les pages et routes ».
+
+Les quatre dernières lignes visent `sharp`, la bibliothèque qui produit les déclinaisons d'images. Elle s'appuie sur des binaires natifs, chargés par un `require` calculé à l'exécution selon la machine. Le Dockerfile prend une seconde précaution : il recopie `sharp` et ses dépendances à plat dans `/opt/sharp`, vérifie qu'il se charge (`node -e "require('/opt/sharp')"`), et le pose dans l'image (la ligne `/opt/sharp` vue plus haut). Si `sharp` ne se charge pas, c'est le build qui échoue, pas l'envoi d'une photo en production.
+
+<Callout type="warning">
+**Le symptôme d'un fichier non tracé est trompeur.** Tout fonctionne avec `pnpm dev`, qui lit directement le dépôt. Le build réussit aussi. C'est l'image Docker qui échoue, au démarrage ou à la première requête concernée, avec « Cannot find module » ou « Code file not found ». Devant ce message en production seulement, la première question est : ce fichier est-il atteint par un import écrit en toutes lettres ?
+</Callout>
+
+
+## Ce que Docker ne reçoit pas
+
+Avant de construire, Docker envoie au moteur le **contexte** : le dossier du dépôt, filtré par `.dockerignore`. Tout ce qui entre dans le contexte peut finir dans une couche, et une couche garde ce qu’on y a copié même si une étape suivante le supprime.
+
+<CodeExample
+  language="bash"
+  filepath=".dockerignore"
+  filename=".dockerignore"
+  snippetStart="# Ce que Docker ne doit JAMAIS recevoir dans son contexte de construction."
+  snippetEnd="!.env.example"
+  snippetHighlight="12,21"
+  snippetTitle="Les dépendances, les constructions, les secrets"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Aucun `.env` n’entre dans l’image : les secrets sont donnés au **conteneur**, au démarrage, par le serveur (partie « Configuration », chapitre « Les variables d’environnement »). Une image peut être partagée, poussée sur un registre (un entrepôt d’images en ligne, comme Docker Hub), inspectée couche par couche ; elle ne contient rien qu’on ne puisse montrer.
+
+La relecture a ajouté la construction des tests de bout en bout (`.next-e2e`, qui pèse plusieurs centaines de mégaoctets), les tests et leurs résultats, et les scripts `apply-*.sh` qu’on dépose à la racine du dépôt pour appliquer une modification : ils ne servent ni au build ni au site.
+
+<DocsTable columnsJson='["Exclu", "Pourquoi"]' rowsJson='[["node_modules, .next, .next-e2e", "Reconstruits dans l’image, pour Linux : ceux du Mac viseraient une autre plateforme, et alourdiraient le contexte."], [".env, .env.*", "Des secrets : jamais dans une couche."], [".git, .github, .vscode", "L’historique et l’outillage : rien à faire dans le site."], ["e2e, test-results, playwright-report", "Les tests et leurs traces : utiles sur la machine, pas en production."], ["apply-*.sh, *.sql, *.png de la racine", "Des scripts et des fichiers de passage, parfois des sauvegardes : ce qui traîne à la racine n’entre pas."]]' />
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Combien d’images sort la construction ?", "Deux : migrator (les migrations) et runner (le site)."], ["Pourquoi Debian slim et pas Alpine ?", "La bibliothèque C d’Alpine impose à Prisma un moteur différent, à surveiller à chaque version."], ["Pourquoi les dépendances dans une étape à part ?", "pnpm install, la ligne la plus longue, vient du cache tant que les dépendances ne changent pas."], ["Comment une NEXT_PUBLIC_ entre-t-elle dans le site ?", "Par un argument de build, avec une valeur par défaut ; la changer impose de reconstruire."], ["Sous quel utilisateur tourne le site ?", "nextjs, sans privilèges."], ["Où sont les secrets ?", "Nulle part dans l’image : donnés au conteneur au démarrage."], ["Qu’a changé la relecture ?", "pnpm figé au build du migrateur, ffmpeg et libheif remontés avant la copie (en cache), contexte allégé, défaut de la racine de stockage."]]' />
+
+## À suivre
+
+L’image est prête, mais une image ne tourne nulle part toute seule. Sur le serveur, elle rejoint d’autres conteneurs — la base, le serveur web qui reçoit les visiteurs — dans un compose qui n’est pas celui du développement.
+
+<Callout type="tip">
+**Chapitre suivant : une infrastructure de serveur.** Un modèle d’infrastructure sur un serveur loué : le serveur web, le site et son migrateur, la base, deux réseaux, et ce qui se sauvegarde.
+</Callout>

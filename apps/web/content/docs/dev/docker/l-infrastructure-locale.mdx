@@ -1,0 +1,124 @@
+---
+title: "L’infrastructure locale"
+description: "Ce qui tourne sur la machine du développeur, en un schéma : le site hors Docker, trois services dans Docker. Le fichier docker-compose.dev.yml service par service — ports décalés et privés, healthchecks, volumes nommés, versions figées —, puis les mêmes conteneurs au service des tests et de l’intégration continue."
+section: "Docker : en local et sur le serveur"
+order: 2
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Docker fait tourner des services à une version exacte, décrite dans le dépôt. En développement, il fait tourner les services du site, pas le site lui-même.
+
+## Le schéma
+
+Voici ce qui tourne sur la machine du développeur pendant une séance de travail, après `pnpm dev:infra` puis `pnpm dev` :
+
+<Infra titre="La machine du développeur" machine="poste" texte="
+[Sur la machine, hors Docker]
+pnpm dev | Next.js, le site en développement, rechargé à chaque enregistrement | http://localhost:3000
+client de base de données | TablePlus, pgAdmin ou psql, au choix (chapitre « Les outils ») | se connecte à 127.0.0.1:5435
+[Docker, projet akfc-dev]
+db | PostgreSQL 17 : la base akfc_db (développement) et la base akfc_e2e (tests) | 127.0.0.1:5435 → 5432 | volume akfc-dev_akfc-dev-pgdata
+storage | SeaweedFS, stockage compatible S3 : les buckets akfc-dev et akfc-e2e | 127.0.0.1:9200 → 8333 (S3) · 9201 → 8888 (fichiers) | volume akfc-dev_akfc-dev-seaweedfs
+mail | Mailpit : capture tous les e-mails, n’en envoie aucun | 127.0.0.1:1026 → 1025 (SMTP) · 8026 → 8025 (web) | aucune : les messages vivent en mémoire
+" />
+
+Le site tourne **hors** de Docker et joint chaque service par son port publié, comme il joindrait un logiciel installé sur la machine : `127.0.0.1:5435` pour la base, `127.0.0.1:9200` pour le stockage, `127.0.0.1:1026` pour le SMTP. Ces adresses sont celles de `.env.dev.example`, que la mise en route copie en `.env`. Les trois services n’ont pas besoin de se parler entre eux : chacun ne répond qu’au site.
+
+## Le fichier, service par service
+
+`docker-compose.dev.yml` tient en une page. Son en-tête rappelle les trois commandes utiles et les adresses ; le reste se lit service par service.
+
+### Le projet et la base
+
+<CodeExample
+  language="yaml"
+  filepath="docker-compose.dev.yml"
+  filename="docker-compose.dev.yml"
+  snippetStart="name: akfc-dev"
+  snippetEnd="retries: 20"
+  snippetHighlight="1,5,11,14"
+  snippetTitle="Le nom du projet, puis le service db"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+- **`name: akfc-dev`** fixe le nom du projet Compose. Sans lui, Compose prendrait le nom du dossier (`akfc`), et deux clones du dépôt dans deux dossiers différents auraient deux bases différentes. Ce nom préfixe les volumes : `akfc-dev_akfc-dev-pgdata`.
+- **`image: postgres:17-alpine`** : la version majeure est écrite ici, et nulle part ailleurs. La variante `alpine` est la plus légère ; pour une base qu’on ne fait que lancer, elle suffit (l’image du site, elle, a ses raisons de ne pas l’être, chapitre 3).
+- **`environment`** : l’image officielle de Postgres lit ces trois variables **au premier démarrage**, quand le volume est vide, pour créer l’utilisateur et la base. Les changer ensuite ne change rien : la base existe déjà dans le volume.
+- **`ports: "127.0.0.1:5435:5432"`** se lit « adresse de la machine : port de la machine : port du conteneur ». Le port 5435, et non 5432, laisse la place à un Postgres déjà installé ; `127.0.0.1` réserve l’accès à la machine elle-même. Sans cette adresse, Docker publierait le port **sur toutes les interfaces**, et la base, avec son mot de passe public, serait joignable depuis le Wi-Fi du café.
+- **`volumes`** : le dossier où Postgres range ses données, `/var/lib/postgresql/data`, est un volume nommé. Supprimer le conteneur ne touche pas aux données.
+- **`healthcheck`** : toutes les trois secondes, Docker lance `pg_isready` dans le conteneur. Tant qu’il échoue, le service est `starting` ; ensuite, `healthy`. C’est ce que `--wait` attend, dans `pnpm dev:infra` : la commande ne rend la main que quand la base **répond**, pas seulement quand son conteneur a démarré.
+
+### Le stockage
+
+<CodeExample
+  language="yaml"
+  filepath="docker-compose.dev.yml"
+  filename="docker-compose.dev.yml"
+  snippetStart="  # Stockage compatible S3"
+  snippetEnd="      retries: 20"
+  snippetHighlight="7,8,13,14"
+  snippetTitle="Le service storage"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+SeaweedFS imite Cloudflare R2 : il parle le même protocole, S3, et le site s’y adresse avec le même client (`@aws-sdk/client-s3`). Seules changent l’adresse et les clés, dans `.env`. Sa version est **figée** (`4.52`, pas `latest`) : une image `latest` change sans prévenir, et c’est exactement ce que Docker devait éviter. Le commentaire du fichier garde la raison du choix : MinIO, le stockage précédent, a retiré ses images en septembre 2026, et le projet a préféré un logiciel libre à une offre gratuite qui peut disparaître.
+
+La ligne `command` lance SeaweedFS en mode tout-en-un (`mini`), crée le bucket `akfc-dev` s’il manque, et coupe ce dont le projet n’a pas besoin. Deux ports sont publiés : l’API S3, pour le site, et une page web qui montre les fichiers stockés, pour nous.
+
+### La boîte mail
+
+<CodeExample
+  language="yaml"
+  filepath="docker-compose.dev.yml"
+  filename="docker-compose.dev.yml"
+  snippetStart="  # Capture TOUS"
+  snippetEnd="MP_SMTP_AUTH_ALLOW_INSECURE"
+  snippetTitle="Le service mail"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Mailpit accepte n’importe quel identifiant SMTP et ne transmet rien : envoyer un vrai e-mail depuis le développement est **impossible**, pas seulement déconseillé. Il n’a ni volume ni healthcheck : ses messages vivent en mémoire et disparaissent quand il s’arrête, et le site n’a pas besoin de lui pour démarrer.
+
+### Les volumes
+
+<CodeExample
+  language="yaml"
+  filepath="docker-compose.dev.yml"
+  filename="docker-compose.dev.yml"
+  snippetStart="^volumes:"
+  snippetLines="3"
+  snippetTitle="Les volumes nommés, déclarés une fois"
+  fullFileTitle="Voir le fichier complet"
+/>
+
+Un volume nommé se déclare en bas du fichier, puis s’utilise dans un service. Docker le crée au premier `up` et le garde jusqu’à un `down -v` ou un `docker volume rm`. En local, un volume nommé suffit : on ne sauvegarde pas une base de développement, on la recrée (`pnpm db:migrate`, puis `pnpm db:seed:dev`). Sur le serveur, ce sera un dossier de la machine, qu’on peut sauvegarder (chapitre 4).
+
+## Les mêmes conteneurs pour les tests
+
+Les tests de bout en bout pilotent un vrai navigateur sur le site, qui écrit dans une vraie base : il leur faut les mêmes services. Plutôt qu’un second fichier compose, ils prennent **une autre base et un autre bucket dans les mêmes conteneurs** : `akfc_e2e` dans le Postgres de `db`, `akfc-e2e` dans SeaweedFS. Le script qui prépare chaque lancement les crée au besoin, puis les remet à zéro ; la base de développement, `akfc_db`, n’est jamais touchée.
+
+Sur GitHub, l’intégration continue démarre les trois mêmes services, depuis le même fichier, avant de lancer les tests :
+
+```yaml
+# .github/workflows/ci.yml (extrait)
+- name: Services de test (base, stockage, boîte mail)
+  run: docker compose -f docker-compose.dev.yml up -d --wait db storage mail
+```
+
+Les adresses sont donc les mêmes sur le Mac et sur GitHub, et un test qui passe ici passe là-bas pour les mêmes raisons. Les tests eux-mêmes, leurs données et leurs gardes sont la partie « Qualité (2) » ; l’intégration continue, la partie « Qualité (3) ».
+
+<Callout type="info">
+**Une seule description, trois usages.** Développement, tests et intégration continue lisent le même `docker-compose.dev.yml`. Changer de version de Postgres, c’est une ligne, et les trois suivent. C’est l’argument du chapitre précédent, appliqué.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Que lance pnpm dev:infra ?", "Trois services : db (Postgres 17), storage (SeaweedFS, S3), mail (Mailpit), et attend qu’ils soient prêts."], ["Pourquoi 5435 et non 5432 ?", "Pour coexister avec un Postgres installé ou avec la sandbox ; tous les ports sont décalés."], ["Pourquoi 127.0.0.1 devant chaque port ?", "Sans lui, le port serait publié sur toutes les interfaces, donc joignable depuis le réseau, mot de passe public compris."], ["Que vérifie un healthcheck ?", "Que le service répond (pg_isready, /healthz) ; --wait attend cet état."], ["Où sont les données ?", "Dans deux volumes nommés, préfixés akfc-dev_ ; down -v les efface."], ["Comment les tests ont-ils leurs données à part ?", "Une base akfc_e2e et un bucket akfc-e2e dans les mêmes conteneurs, remis à zéro à chaque lancement."]]' />
+
+## À suivre
+
+<Callout type="tip">
+**Chapitre suivant : l’image Docker.** Cette fois, c’est le site qui entre dans Docker : ce que `next.config.ts` prépare pour lui, le Dockerfile étape par étape, et ce qui ne doit jamais entrer dans l’image.
+</Callout>

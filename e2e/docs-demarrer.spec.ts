@@ -54,3 +54,19 @@ test("la 2.1 montre chaque package.json et les seize scripts de la racine", asyn
     await expect(page.getByRole("cell", { name: script, exact: true }), script).toBeVisible();
   }
 });
+
+test("la partie Docker s'affiche, schémas compris, et la 2.3 y renvoie", async ({ page }) => {
+  for (const slug of ["pourquoi-docker", "l-infrastructure-locale", "l-image-docker", "une-infrastructure-serveur"]) {
+    const res = await page.goto(`/docs/dev/docker/${slug}`);
+    expect(res?.status(), slug).toBe(200);
+  }
+  await page.goto("/docs/dev/docker/l-infrastructure-locale");
+  const local = page.getByRole("figure", { name: "Schéma : La machine du développeur" });
+  await expect(local).toContainText("akfc-dev_akfc-dev-pgdata");
+  await expect(local).toContainText("pnpm dev");
+  await page.goto("/docs/dev/docker/une-infrastructure-serveur");
+  await expect(page.getByRole("figure", { name: "Schéma : Le serveur" })).toContainText("Réseau internal");
+  await expect(page.getByRole("tree", { name: "Arborescence de infra/" })).toContainText("Caddyfile");
+  await page.goto("/docs/dev/configuration/next-config");
+  await expect(page.getByRole("link", { name: /L’image Docker · Ce que next\.config\.ts prépare pour l’image/ })).toBeVisible();
+});

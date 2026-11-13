@@ -1,0 +1,77 @@
+---
+title: "Pourquoi Docker"
+description: "Le problème que Docker règle dans ce projet, ses mots (image, couche, conteneur, volume, port, réseau, Compose, Dockerfile, registre), ses quatre usages — les services de développement, les tests, l’image de production, la sandbox —, ce qu’il ne fait pas, et les commandes de tous les jours."
+section: "Docker : en local et sur le serveur"
+order: 1
+---
+
+import { Callout } from "#features/docs/ui/Callout.tsx"
+import DocsTable from "#features/docs/ui/DocsTable.tsx"
+
+> **Précédemment.** Le dépôt est configuré, fichier par fichier : les `package.json`, les `tsconfig`, `next.config.ts`, les variables d’environnement. Il nous a fallu, dès la mise en route, une commande Docker (`pnpm dev:infra`) sans vraiment dire pourquoi.
+
+Cette partie répond à cette question, puis suit Docker partout où le projet s’en sert : sur la machine du développeur (chapitre 2), dans l’image qui part en production (chapitre 3), et sur le serveur qui la fait tourner (chapitre 4).
+
+## Le problème
+
+Le site ne vit pas seul. Pour afficher sa première page, il lui faut une base **PostgreSQL** ; pour une photo, un **stockage de fichiers** compatible S3 ; pour un mot de passe oublié, un **serveur d’e-mails**. Sans Docker, chacun de ces logiciels s’installe sur la machine : une version de Postgres choisie par Homebrew, un serveur S3 à configurer à la main, un faux serveur SMTP. Trois logiciels qui démarrent avec l’ordinateur, se mettent à jour quand ils veulent, et restent là d’un projet à l’autre.
+
+Et chaque machine a les siens. Le Mac d’un développeur a Postgres 15, celui d’un autre Postgres 17, le serveur une troisième version : le même code ne voit pas la même base. C’est l’origine de la phrase la plus redoutée du métier, « ça marche sur ma machine ».
+
+Docker change la question. Au lieu d’**installer** un logiciel, on **décrit** dans le dépôt celui dont le projet a besoin, à une version exacte (`postgres:17-alpine`), et Docker le fait tourner, isolé du reste de la machine. La description est versionnée avec le code : un `git pull` qui change de version de Postgres la change pour tout le monde, Mac, intégration continue et serveur.
+
+## Les mots de Docker
+
+La mise en route en a donné quatre, juste assez pour lancer la base. Les voici tous, dans l’ordre où ils s’emboîtent.
+
+- Une **image** est un modèle figé : un système de fichiers minimal (un Linux réduit à l’essentiel) avec un programme déjà installé et réglé, PostgreSQL par exemple. On ne modifie jamais une image : on en construit une nouvelle.
+- Une image est faite de **couches** empilées : chaque instruction de sa recette en ajoute une. Deux images qui partent du même socle partagent ses couches sur le disque, et une reconstruction ne refait que les couches qui ont changé.
+- Un **conteneur** est une image **en marche** : un processus isolé, qui voit le système de fichiers de l’image comme s’il était seul sur la machine. Plusieurs conteneurs peuvent naître de la même image ; on les arrête, les supprime et les recrée à volonté.
+- Un **volume** est un espace disque que Docker garde **hors** du conteneur. Ce qu’un conteneur écrit ailleurs disparaît avec lui ; ce qu’il écrit dans un volume survit. Les données de la base vivent donc dans un volume. Un volume peut être **nommé** (Docker choisit où le ranger) ou être un **dossier de la machine** monté dans le conteneur (*bind mount*), qu’on voit et sauvegarde comme n’importe quel dossier.
+- Un **port publié** relie un port de la machine à un port du conteneur. Postgres écoute sur 5432 **dans** son conteneur ; le publier sur `127.0.0.1:5435` le rend joignable depuis la machine, à cette adresse seulement.
+- Un **réseau** Docker relie des conteneurs entre eux. Sur un même réseau, chaque conteneur joint les autres par leur **nom de service** (`db`, `postgres`), sans publier de port. C’est ainsi que le site parle à sa base, en production.
+- Un **Dockerfile** est la recette d’une image : partir de telle image, copier ces fichiers, lancer cette commande. Une construction **en plusieurs étapes** (*multi-stage*) enchaîne plusieurs images dans un même Dockerfile : les premières installent et compilent, la dernière ne recopie que le résultat.
+- **Docker Compose** décrit dans un fichier YAML plusieurs conteneurs qui fonctionnent ensemble, appelés **services**, avec leurs volumes, leurs ports et leurs réseaux. Une commande les crée tous, dans l’ordre ; une autre les arrête. L’ensemble porte un nom de **projet**, qui préfixe ses volumes et ses réseaux.
+- Un **registre** est un entrepôt d’images en ligne (Docker Hub, le registre de GitHub `ghcr.io`) : `postgres:17-alpine` y est téléchargée au premier lancement, puis gardée sur la machine.
+
+<Callout type="concept">
+**Image et conteneur, comme classe et objet.** L’image est le modèle, le conteneur une instance. On peut détruire et recréer un conteneur sans rien perdre, à condition que ses données soient dans un volume : c’est ce qui rend une mise à jour de Postgres, ou un nouveau déploiement du site, aussi simple que « supprimer l’ancien conteneur, démarrer le nouveau ».
+</Callout>
+
+## Quatre usages dans le projet 🐳
+
+Docker sert quatre fois, à partir de trois fichiers du dépôt :
+
+<DocsTable columnsJson='["Usage", "Fichier", "Ce qui tourne dans Docker", "Où c’est expliqué"]' rowsJson='[["Les services de développement", "docker-compose.dev.yml", "La base, le stockage et la boîte mail. Le site, lui, tourne sur la machine (pnpm dev).", "Chapitre 2, l’infrastructure locale."], ["Les tests de bout en bout et l’intégration continue", "docker-compose.dev.yml, le même", "Les mêmes services, avec une base et un bucket réservés aux tests ; sur GitHub, les mêmes conteneurs, aux mêmes adresses.", "Chapitre 2, puis la partie « Qualité (2) »."], ["L’image de production", "Dockerfile", "Le site lui-même, construit et empaqueté, plus un migrateur qui applique les migrations.", "Chapitre 3, l’image Docker."], ["La sandbox", "docker-compose.sandbox.yml", "Tout : la base, le stockage, la boîte mail, le migrateur, les données de démonstration et le site, construit avec le Dockerfile.", "Partie « Infrastructure et déploiement »."]]' />
+
+Le serveur de production, enfin, fait tourner l’image du chapitre 3 dans son propre compose, avec la base et le serveur web : c’est le chapitre 4.
+
+## Ce que Docker ne fait pas ici
+
+**Le site, en développement, ne tourne pas dans Docker.** `pnpm dev` s’exécute directement sur la machine : Next.js y recompile une page à chaque enregistrement, en une fraction de seconde. Dans un conteneur, il faudrait monter tout le dépôt dans le conteneur ; sur macOS, Docker tourne dans une machine virtuelle, et chaque lecture de fichier à travers ce montage coûte. Le rechargement deviendrait lent, pour un gain nul : le code du site n’a pas de version à figer, il est dans le dépôt. Seuls les **services** dont il dépend sont dans Docker.
+
+**Les fichiers de production ne sont pas dans Docker.** Les photos et documents du club sont chez Cloudflare R2, un stockage en ligne (partie « Stockage et médias »). En local, SeaweedFS joue son rôle ; en production, le site parle directement à R2.
+
+<Callout type="info">
+**Docker sur un Mac.** Les conteneurs sont une fonction du noyau Linux. Docker Desktop démarre donc une petite machine virtuelle Linux, invisible, où tournent les conteneurs (chapitre « Les outils »). Les images ont une architecture : sur un Mac Apple Silicon, Docker télécharge leur variante ARM, quand le serveur, un processeur x86, prend la variante x86. Le projet ne construit jamais l’image de production sur le Mac pour l’envoyer au serveur : le serveur la construit lui-même, pour sa propre architecture.
+</Callout>
+
+## Les commandes de tous les jours
+
+Toutes se lancent depuis la racine du dépôt. Celles qui visent un fichier compose précisent `-f` ; les scripts `pnpm dev:infra` et `pnpm dev:infra:stop` le font pour nous.
+
+<DocsTable columnsJson='["Commande", "Ce qu’elle fait"]' rowsJson='[["docker compose -f docker-compose.dev.yml ps", "Les services du projet, leur état (running, healthy) et leurs ports."], ["docker compose -f docker-compose.dev.yml logs -f db", "Les journaux d’un service, en continu (Ctrl+C pour sortir)."], ["docker compose -f docker-compose.dev.yml exec db psql -U akfc akfc_db", "Ouvre psql DANS le conteneur de la base, sans rien installer sur la machine."], ["pnpm dev:infra:stop", "Arrête les conteneurs ; les volumes, et donc les données, restent."], ["docker compose -f docker-compose.dev.yml down", "Supprime les conteneurs et le réseau ; les volumes restent."], ["docker compose -f docker-compose.dev.yml down -v", "Supprime aussi les volumes : la base et les fichiers de développement repartent de zéro."], ["docker volume ls", "Tous les volumes de la machine, préfixés par leur projet (akfc-dev_…)."], ["docker system df", "La place prise par les images, les conteneurs, les volumes et le cache de construction."]]' />
+
+<Callout type="warning">
+**Jamais `docker system prune --volumes` à la légère.** La commande supprime tous les volumes qu’aucun conteneur n’utilise **à cet instant**, sur toute la machine, tous projets confondus. Une base dont le conteneur est arrêté passe pour inutilisée. Sur un serveur qui héberge plusieurs sites, c’est la perte de données la plus rapide qui soit. On supprime un volume par son nom, après avoir vérifié à quoi il sert.
+</Callout>
+
+## Récapitulatif
+
+<DocsTable columnsJson='["Question", "Réponse du projet"]' rowsJson='[["Quel problème Docker règle-t-il ?", "Des services à une version exacte, décrite dans le dépôt, identique sur chaque machine, isolée du système."], ["Image ou conteneur ?", "L’image est le modèle figé, le conteneur une image en marche ; on recrée le conteneur, les données restent dans un volume."], ["Combien de fichiers Docker dans le dépôt ?", "Trois : docker-compose.dev.yml (développement, tests, CI), Dockerfile (l’image de production), docker-compose.sandbox.yml (la sandbox)."], ["Le site tourne-t-il dans Docker en développement ?", "Non : pnpm dev tourne sur la machine, pour un rechargement rapide ; seuls ses services sont dans Docker."], ["Comment joindre la base depuis la machine ?", "Par son port publié, 127.0.0.1:5435 ; un conteneur, lui, la joint par son nom de service."], ["Qu’est-ce qui efface les données ?", "down -v pour un projet ; un prune --volumes pour toute la machine, à éviter."]]' />
+
+## À suivre
+
+<Callout type="tip">
+**Chapitre suivant : l’infrastructure locale.** Le fichier `docker-compose.dev.yml`, service par service : pourquoi ces ports, ce que vérifie un *healthcheck*, où vont les données, et comment les mêmes conteneurs servent aux tests et à l’intégration continue.
+</Callout>

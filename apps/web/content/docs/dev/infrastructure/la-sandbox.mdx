@@ -2,7 +2,7 @@
 title: "La sandbox"
 description: "Le site entier — application, base, stockage, boîte e-mail — lancé par une seule commande, sans compte ni service extérieur, avec des comptes de démonstration : pour montrer le projet, essayer une idée ou tout casser sans conséquence. Comment les services s’attendent, comment le navigateur atteint un stockage qui n’existe que dans Docker, et comment tout effacer."
 section: "Infrastructure et déploiement"
-order: 3
+order: 2
 ---
 
 import { Callout } from "#features/docs/ui/Callout.tsx"
@@ -23,7 +23,7 @@ Le site répond alors sur `http://localhost:3010`, les fichiers stockés sur `ht
 
 <DocsTable columnsJson='["Service", "Image", "Rôle"]' rowsJson='[["postgres", "postgres:16-alpine", "La base, dans un volume nommé : elle survit à un redémarrage."], ["storage", "ghcr.io/chrislusf/seaweedfs (SeaweedFS)", "Le stockage compatible S3, à la place de Cloudflare R2 ; crée son bucket au démarrage."], ["mailpit", "ghcr.io/axllent/mailpit (v1.33.0)", "Capture tous les e-mails envoyés, et les affiche dans une page web."], ["migrator", "la cible migrator du Dockerfile", "Applique les migrations, puis s’arrête."], ["seeder", "la même image", "Crée les comptes et le contenu de démonstration, puis s’arrête."], ["app", "la cible runner du Dockerfile", "Le site, construit comme en production."]]' />
 
-L’application de la sandbox est **l’image de production** (chapitre 1), construite à partir du même Dockerfile. Seuls l’environnement et les services autour changent : ce qu’on y essaie est ce qui tourne pour les membres.
+L’application de la sandbox est **l’image de production** (partie « Docker », chapitre « L’image Docker »), construite à partir du même Dockerfile. Seuls l’environnement et les services autour changent : ce qu’on y essaie est ce qui tourne pour les membres.
 
 <CodeWalkthrough
   language="yaml"

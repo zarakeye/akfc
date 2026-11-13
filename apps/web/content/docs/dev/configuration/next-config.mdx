@@ -1,6 +1,6 @@
 ---
 title: "Next.js et next.config.ts"
-description: "Le fichier qui règle le build : la sortie autonome pour l'image Docker et ce que le traceur oublie, les paquets laissés hors du bundle serveur, le React Compiler, les redirections, les extensions de page et la compilation de cette documentation, Turbopack en développement et webpack au build, et ce qui a été retiré du fichier."
+description: "Le fichier qui règle le build : la sortie autonome (détaillée avec l'image Docker), les paquets laissés hors du bundle serveur, le React Compiler, les redirections, les extensions de page et la compilation de cette documentation, Turbopack en développement et webpack au build, et ce qui a été retiré du fichier."
 section: "Configuration"
 order: 3
 ---
@@ -26,15 +26,9 @@ const nextConfig: NextConfig = {
 
 Un seul objet, typé par `NextConfig` : l'éditeur complète les noms d'options et signale une faute de frappe. `path` sert plus bas, pour calculer des chemins à partir du dossier où la commande est lancée.
 
-## Le build autonome
+## La sortie autonome
 
-Deux mots, avant d'entrer dans ce réglage. **Construire** l'application (`next build`), c'est transformer tout notre code en fichiers prêts à être servis, optimisés et vérifiés, une fois pour toutes ; c'est ce qui tourne en production. L'**image Docker** de production est le paquet qui contient ce résultat et de quoi le lancer, que le serveur exécute tel quel.
-
-<Promesse vers="dev/infrastructure/l-image-docker">
-L'image est construite en plusieurs étapes par le `Dockerfile` ; ici, il suffit de savoir qu'elle doit être aussi petite que possible et ne contenir que ce qui s'exécute.
-</Promesse>
-
-Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarrer, de tout le `node_modules` du projet. Dans un monorepo, c'est plusieurs centaines de mégaoctets, dont l'essentiel ne sert jamais en production (outils de lint, de test, de build).
+**Construire** l'application (`next build`), c'est transformer tout notre code en fichiers prêts à être servis, optimisés et vérifiés, une fois pour toutes ; c'est ce qui tourne en production. Par défaut, le résultat, le dossier `.next`, a besoin pour démarrer de tout le `node_modules` du projet. Dans un monorepo, c'est plusieurs centaines de mégaoctets, dont l'essentiel ne sert jamais en production (outils de lint, de test, de build).
 
 <CodeExample
   language="ts"
@@ -43,78 +37,17 @@ Par défaut, `next build` produit un dossier `.next` qui a besoin, pour démarre
   snippetStart="^/**"
   snippetEnd="output: e2e ? undefined :"
   snippetHighlight="15"
-  snippetTitle="La sortie autonome (et la construction des tests)"
+  snippetTitle="La sortie autonome"
   fullFileTitle="Voir le fichier complet"
 />
 
-La construction des tests de bout en bout (`AKFC_E2E=1`, partie « Qualité (2) ») fait exception : elle a son propre dossier, `.next-e2e`, pour ne pas écraser celui de `pnpm dev`, et se lance avec `next start`, sans sortie autonome. Toute autre construction, celle de l’image Docker comprise, est autonome.
+Avec `output: "standalone"`, Next.js suit chaque `import` depuis les pages et les routes — c'est le **traçage** — et recopie dans `.next/standalone` uniquement les fichiers réellement atteints, avec un petit `server.js` qui les sert. Une seule construction s'en passe : celle des tests de bout en bout (`AKFC_E2E=1`), rangée dans son propre dossier, `.next-e2e`, et présentée avec eux.
 
-Avec `output: "standalone"`, Next.js suit chaque `import` depuis les pages et les routes, et recopie dans `.next/standalone` uniquement les fichiers réellement atteints, avec un petit `server.js` qui les sert. L'image Docker n'embarque que ce dossier :
+Ce dossier autonome n'a qu'un destinataire, l'image Docker de production. Deux autres réglages du fichier, `outputFileTracingRoot` et `outputFileTracingIncludes`, corrigent ce que le traçage manque dans un monorepo ; ils se comprennent avec l'image, qui les met à l'épreuve.
 
-```dockerfile
-# Dockerfile (extrait)
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
-COPY --from=builder --chown=nextjs:nodejs /opt/sharp ./node_modules/sharp
-```
-
-Le dossier `static` (les fichiers JavaScript et CSS envoyés au navigateur) et `public` ne font pas partie du dossier autonome : Next.js part du principe qu'ils peuvent être servis par un CDN. Le Dockerfile les recopie à côté. La dernière ligne concerne `sharp`, nous y revenons plus bas.
-
-### Tracer depuis la racine du dépôt
-
-Ce suivi des imports s'appelle le **traçage**. Il part par défaut du dossier de l'application, `apps/web`, et ne regarde jamais au-dessus. Or le backend et les contrats vivent dans `packages/`, un niveau plus haut.
-
-```ts
-// apps/web/next.config.ts (extrait)
-  /**
-   * Racine de traçage des fichiers.
-   *
-   * Indispensable en monorepo, et souvent oublié : par défaut Next trace
-   * depuis `apps/web` et manque donc `packages/backend` et
-   * `packages/contracts`, qui vivent AU-DESSUS. Le serveur démarre alors
-   * normalement puis s'effondre au premier import.
-   */
-  outputFileTracingRoot: path.join(process.cwd(), "../../"),
-```
-
-`process.cwd()` est le dossier depuis lequel la commande est lancée. `pnpm --filter web build` l'exécute dans `apps/web`, donc `../../` désigne la racine du dépôt. Le chemin est calculé ainsi parce que `next.config.ts` est compilé en CommonJS, où `import.meta.url` (la façon moderne de connaître l'emplacement d'un fichier) n'existe pas.
-
-### Ce que le traçage ne voit pas
-
-Le traceur lit le code sans l'exécuter. Il suit un `import` écrit en toutes lettres, mais deux sortes de fichiers lui échappent.
-
-```ts
-// apps/web/next.config.ts (extrait)
-  /**
-   * Le traceur du build `standalone` rate les fichiers atteints par des
-   * `await import()` DYNAMIQUES (instrumentation.ts → services backend, résolus
-   * via `@akfc/backend/…`, vers la source) et les assets NON-JS (schéma
-   * Prisma, migrations). Sans eux dans l'image, le boot crashe en « Code file
-   * not found » et le self-heal ne tourne jamais. On force donc leur inclusion.
-   * Globs relatifs au dossier du projet (apps/web) ; clé `**` = toutes entrées.
-   */
-  outputFileTracingIncludes: {
-    "**": [
-      "../../packages/backend/**/*",
-      "../../packages/contracts/**/*",
-      "../../prisma/**/*",
-      // sharp (déclinaisons d'images R2) : binaires natifs chargés dynamiquement.
-      "../../node_modules/sharp/**/*",
-      "../../node_modules/.pnpm/sharp@*/**/*",
-      "../../node_modules/.pnpm/@img+sharp-linux-x64@*/**/*",
-      "../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/**/*",
-    ],
-  },
-```
-
-Les **imports dynamiques** d'abord. Au démarrage, `instrumentation.ts` charge les services du backend avec `await import(...)`, pour qu'ils ne soient lus que côté serveur Node. Le traceur ne les suit pas toujours. Les **fichiers qui ne sont pas du code** ensuite : le schéma Prisma et ses migrations, lus sur le disque, jamais importés. Sans eux, l'image démarre puis échoue au premier besoin. `outputFileTracingIncludes` force leur copie ; la clé `"**"` signifie « pour toutes les pages et routes ».
-
-Les quatre dernières lignes visent `sharp`, la bibliothèque qui produit les déclinaisons d'images. Elle s'appuie sur des binaires natifs, chargés par un `require` calculé à l'exécution selon la machine. Le Dockerfile prend une seconde précaution : il recopie `sharp` et ses dépendances à plat dans `/opt/sharp`, vérifie qu'il se charge (`node -e "require('/opt/sharp')"`), et le pose dans l'image (la ligne `/opt/sharp` vue plus haut). Si `sharp` ne se charge pas, c'est le build qui échoue, pas l'envoi d'une photo en production.
-
-<Callout type="warning">
-**Le symptôme d'un fichier non tracé est trompeur.** Tout fonctionne avec `pnpm dev`, qui lit directement le dépôt. Le build réussit aussi. C'est l'image Docker qui échoue, au démarrage ou à la première requête concernée, avec « Cannot find module » ou « Code file not found ». Devant ce message en production seulement, la première question est : ce fichier est-il atteint par un import écrit en toutes lettres ?
-</Callout>
+<Promesse vers="dev/docker/l-image-docker" section="Ce que next.config.ts prépare pour l’image">
+Retenons ici que le traçage lit le code sans l'exécuter : il part de `apps/web` et ne voit ni `packages/`, au-dessus, ni les fichiers chargés autrement que par un `import` écrit en toutes lettres. Les deux réglages lui font remonter à la racine du dépôt et ajoutent ce qu'il ne voit pas.
+</Promesse>
 
 ## Les paquets laissés hors du bundle
 
@@ -259,7 +192,7 @@ La méthode vaut pour tout fichier de configuration. Pour chaque ligne, une ques
 
 ## Récapitulatif
 
-<DocsTable columnsJson='["Réglage", "Ce qu’il règle"]' rowsJson='[["output: \"standalone\"", "Un dossier autonome, avec seulement les fichiers atteints, pour une image Docker légère."], ["outputFileTracingRoot", "Le traçage part de la racine du dépôt, pour atteindre packages/."], ["outputFileTracingIncludes", "Les fichiers que le traçage ne voit pas : imports dynamiques, Prisma, binaires de sharp."], ["serverExternalPackages", "Prisma, sharp, imapflow, mailparser restent des modules Node, hors des bundles."], ["reactCompiler", "Les composants qui respectent les règles de React sont optimisés au build."], ["redirects", "Les anciennes adresses mènent aux nouvelles : 307 si le changement peut s’inverser, 308 s’il est définitif."], ["pageExtensions", "Seuls les .ts et .tsx de app/ sont des pages ; la documentation est compilée à la demande."]]' />
+<DocsTable columnsJson='["Réglage", "Ce qu’il règle"]' rowsJson='[["output: \"standalone\"", "Un dossier autonome, avec seulement les fichiers atteints, pour une image Docker légère."], ["outputFileTracingRoot, outputFileTracingIncludes", "Ce que le traçage manque dans un monorepo (partie « Docker », chapitre « L’image Docker »)."], ["serverExternalPackages", "Prisma, sharp, imapflow, mailparser restent des modules Node, hors des bundles."], ["reactCompiler", "Les composants qui respectent les règles de React sont optimisés au build."], ["redirects", "Les anciennes adresses mènent aux nouvelles : 307 si le changement peut s’inverser, 308 s’il est définitif."], ["pageExtensions", "Seuls les .ts et .tsx de app/ sont des pages ; la documentation est compilée à la demande."]]' />
 
 ## À suivre
 

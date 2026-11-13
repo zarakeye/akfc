@@ -12,6 +12,7 @@ import CodeSnippet from "#features/docs/ui/CodeSnippet.tsx"
 import CodeSnippetWalkthrough from "#features/docs/ui/CodeSnippetWalkthrough.tsx"
 import { FileTree, FileTreeItem } from "#features/docs/ui/FileTree.tsx"
 import { Arbre } from "#features/docs/ui/Arbre.tsx"
+import { Infra } from "#features/docs/ui/Infra.tsx"
 import { Installer } from "#features/docs/ui/Installer.tsx"
 import { ArchitectureDiagram } from "#features/docs/ui/ArchitectureDiagram.tsx"
 import { CodeExample } from "#features/docs/ui/CodeExample.tsx"
@@ -84,6 +85,8 @@ export const mdxComponents: MDXComponents = {
   Arbre,
   // La commande qui ajoute une dépendance, au chapitre de sa première utilisation.
   Installer,
+  // Schéma d'une infrastructure : une machine, ses réseaux, ses services.
+  Infra,
   ArchitectureDiagram,
   ProjectArchitectureTree,
   ProjectArchitectureLayers,

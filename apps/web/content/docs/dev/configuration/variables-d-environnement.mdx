@@ -236,8 +236,8 @@ Sans `TICKET_IMAP_HOST`, la fonction renvoie `null` et la relève reste éteinte
 
 ## À suivre
 
-La partie « Configuration » s'achève : nous savons d'où viennent les paquets, les types, le build et les réglages. Avant d'écrire le moindre composant, installons ce qui vérifiera chacune de nos modifications : dès qu'on écrit du TypeScript, on peut se tromper sans que rien ne s'affiche.
+La partie « Configuration » s'achève : nous savons d'où viennent les paquets, les types, le build et les réglages. Une question reste en suspens depuis la mise en route : pourquoi la base, le stockage et la boîte mail tournent-ils dans Docker, et que devient le site quand il quitte la machine du développeur ?
 
 <Callout type="tip">
-**Partie suivante : Qualité (1), vérifier avant d’enregistrer.** La commande `pnpm check`, maillon par maillon ; puis le typecheck et le lint, et ce que les règles de React apprennent sur la façon d'écrire un composant.
+**Partie suivante : Docker, en local et sur le serveur.** Ce que Docker règle, l'infrastructure de la machine du développeur, l'image de production, et un modèle d'infrastructure de serveur.
 </Callout>

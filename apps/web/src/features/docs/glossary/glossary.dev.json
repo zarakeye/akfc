@@ -28,7 +28,8 @@
    "section": "La base, le stockage et la boîte mail"
   },
   "approfondiEn": {
-   "vers": "dev/infrastructure/l-image-docker"
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   }
  },
  {
@@ -42,6 +43,10 @@
   "definiEn": {
    "vers": "dev/demarrer/mise-en-route",
    "section": "La base, le stockage et la boîte mail"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   }
  },
  {
@@ -55,6 +60,10 @@
   "definiEn": {
    "vers": "dev/demarrer/mise-en-route",
    "section": "La base, le stockage et la boîte mail"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   }
  },
  {
@@ -68,6 +77,10 @@
   "definiEn": {
    "vers": "dev/demarrer/mise-en-route",
    "section": "La base, le stockage et la boîte mail"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   }
  },
  {
@@ -80,7 +93,7 @@
   "definition": "La construction de la version de production du site : Next.js compile les pages et le code, une fois, avant la mise en ligne (`pnpm build`).",
   "definiEn": {
    "vers": "dev/configuration/next-config",
-   "section": "Le build autonome"
+   "section": "La sortie autonome"
   }
  },
  {
@@ -1507,11 +1520,11 @@
   ],
   "definition": "La recette d’une image Docker : les instructions que Docker exécute pour la construire.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   },
   "approfondiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
+   "vers": "dev/docker/l-image-docker",
    "section": "Une image, des étapes 🐳"
   }
  },
@@ -1524,11 +1537,11 @@
   ],
   "definition": "Un Dockerfile qui enchaîne plusieurs images : les premières installent et compilent, la dernière ne recopie que le résultat.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
   },
   "approfondiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
+   "vers": "dev/docker/l-image-docker",
    "section": "Une image, des étapes 🐳"
   }
  },
@@ -1541,8 +1554,12 @@
   ],
   "definition": "L’outil qui décrit dans un fichier plusieurs conteneurs qui fonctionnent ensemble (des services : le site, la base, le stockage) et les démarre dans l’ordre.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/l-infrastructure-locale",
+   "section": "Le fichier, service par service"
   }
  },
  {
@@ -1556,8 +1573,8 @@
   ],
   "definition": "Le remplacement de la version du site qui tourne sur le serveur par une nouvelle, sans perdre de données.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Les mots du serveur"
   },
   "approfondiEn": {
    "vers": "dev/infrastructure/mettre-en-production",
@@ -1572,8 +1589,8 @@
   ],
   "definition": "Le conteneur lancé à chaque déploiement, avant le site, qui applique les migrations en attente puis s’arrête.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Les mots du serveur"
   },
   "approfondiEn": {
    "vers": "dev/infrastructure/mettre-en-production",
@@ -1592,12 +1609,60 @@
   ],
   "definition": "Ce que le site écrit pendant qu’il tourne : démarrages, erreurs, tâches de la nuit. Sur un serveur, le seul moyen de savoir ce qui s’est passé.",
   "definiEn": {
-   "vers": "dev/infrastructure/l-image-docker",
-   "section": "Avant de commencer : les mots de cette partie"
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Les mots du serveur"
   },
   "approfondiEn": {
    "vers": "dev/infrastructure/mettre-en-production",
    "section": "Lire les journaux"
+  }
+ },
+ {
+  "id": "proxy-inverse",
+  "terme": "proxy inverse",
+  "variantes": [
+   "proxy inverse",
+   "proxys inverses",
+   "reverse proxy"
+  ],
+  "definition": "Le serveur web placé devant les sites : il reçoit les requêtes des visiteurs, s’occupe du HTTPS et transmet chacune au conteneur du bon site. Ici, Caddy.",
+  "definiEn": {
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Les mots du serveur"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Le proxy inverse"
+  }
+ },
+ {
+  "id": "reseau-docker",
+  "terme": "réseau Docker",
+  "variantes": [
+   "réseau Docker",
+   "réseaux Docker"
+  ],
+  "definition": "Un réseau qui relie des conteneurs : chacun y joint les autres par leur nom de service, sans publier de port.",
+  "definiEn": {
+   "vers": "dev/docker/pourquoi-docker",
+   "section": "Les mots de Docker"
+  },
+  "approfondiEn": {
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Le schéma"
+  }
+ },
+ {
+  "id": "tunnel-ssh",
+  "terme": "tunnel SSH",
+  "variantes": [
+   "tunnel SSH",
+   "tunnels SSH"
+  ],
+  "definition": "Un port de sa propre machine relié, à travers une connexion SSH, à un port du serveur qui n’est pas ouvert sur Internet.",
+  "definiEn": {
+   "vers": "dev/docker/une-infrastructure-serveur",
+   "section": "Administrer la base"
   }
  },
  {
